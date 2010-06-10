@@ -39,12 +39,12 @@ public class JPEGFilter implements ContentDataFilter {
 	//private static final int MARKER_SOI = 0xD8; // Start of image
 	private static final int MARKER_RST0 = 0xD0; // First reset marker
 	private static final int MARKER_RST7 = 0xD7; // Last reset marker
-	
+
 	JPEGFilter(boolean deleteComments, boolean deleteExif) {
 		this.deleteComments = deleteComments;
 		this.deleteExif = deleteExif;
 	}
-	
+
 	static final byte[] soi = new byte[] {
 		(byte)0xFF, (byte)0xD8 // Start of Image
 	};
@@ -54,16 +54,16 @@ public class JPEGFilter implements ContentDataFilter {
 	static final byte[] extensionIdentifier = new byte[] {
 		(byte)'J', (byte)'F', (byte)'X', (byte)'X', 0
 	};
-	
+
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+			FilterCallback cb) throws DataFilterException, IOException {
 		readFilter(input, output, charset, otherParams, cb, deleteComments, deleteExif);
 		output.flush();
 	}
-	
+
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb, boolean deleteComments, boolean deleteExif)
-			throws DataFilterException, IOException {
+	throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long length = input.available();
 		if(length < 6) {
@@ -71,58 +71,225 @@ public class JPEGFilter implements ContentDataFilter {
 		}
 		CountedInputStream cis = new CountedInputStream(input);
 		DataInputStream dis = new DataInputStream(cis);
-			assertHeader(dis, soi);
-			if(output != null) output.write(soi);
-			
-			ByteArrayOutputStream baos = null;
-			DataOutputStream dos = null;
-			if(output != null) {
-				baos = new ByteArrayOutputStream();
-				dos = new DataOutputStream(baos);
+		assertHeader(dis, soi);
+		if(output != null) output.write(soi);
+
+		ByteArrayOutputStream baos = null;
+		DataOutputStream dos = null;
+		if(output != null) {
+			baos = new ByteArrayOutputStream();
+			dos = new DataOutputStream(baos);
+		}
+
+		// Check the chunks.
+
+		boolean finished = false;
+		int forceMarkerType = -1;
+		while(dos == null || !finished) {
+			if(baos != null)
+				baos.reset();
+			int markerType;
+			if(forceMarkerType != -1) {
+				markerType = forceMarkerType;
+				forceMarkerType = -1;
+			} else {
+				int markerStart = dis.read();
+				if(markerStart == -1) {
+					// No more chunks to scan.
+					break;
+				} else if(finished) {
+					if(logMINOR)
+						Logger.minor(this, "More data after EOI, copying to truncate");
+					return;
+				}
+				if(markerStart != 0xFF) {
+					throwError("Invalid marker", "The file includes an invalid marker start "+Integer.toHexString(markerStart)+" and cannot be parsed further.");
+				}
+				if(baos != null) baos.write(0xFF);
+				markerType = dis.readUnsignedByte();
+				if(baos != null) baos.write(markerType);
 			}
-			
-			// Check the chunks.
-			
-			boolean finished = false;
-			int forceMarkerType = -1;
-			while(dos == null || !finished) {
+			if(logMINOR)
+				Logger.minor(this, "Marker type: "+Integer.toHexString(markerType));
+			long countAtStart = cis.count(); // After marker but before type
+			int blockLength;
+			if(markerType == MARKER_EOI || markerType >= MARKER_RST0 && markerType <= MARKER_RST7)
+				blockLength = 0;
+			else {
+				blockLength = dis.readUnsignedShort();
+				if(dos != null) dos.writeShort(blockLength);
+			}
+			if(markerType == 0xDA) {
+				// Start of scan marker
+
+				// Copy marker
+				if(blockLength < 2)
+					throwError("Invalid frame length", "The file includes an invalid frame (length "+blockLength+").");
+				if(dos != null) {
+					byte[] buf = new byte[blockLength - 2];
+					dis.readFully(buf);
+					dos.write(buf);
+				} else
+					skipBytes(dis, blockLength - 2);
+				Logger.minor(this, "Copied start-of-frame marker length "+(blockLength-2));
+
 				if(baos != null)
-					baos.reset();
-				int markerType;
-				if(forceMarkerType != -1) {
-					markerType = forceMarkerType;
-					forceMarkerType = -1;
-				} else {
-					int markerStart = dis.read();
-					if(markerStart == -1) {
-						// No more chunks to scan.
+					baos.writeTo(output); // will continue; at end
+
+				// Now copy the scan itself
+
+				int prevChar = -1;
+				while(true) {
+					int x = dis.read();
+					if(prevChar != -1 && output != null) {
+						output.write(prevChar);
+					}
+					if(x == -1) {
+						// Termination inside a scan; valid I suppose
 						break;
-					} else if(finished) {
+					}
+					if(prevChar == 0xFF && x != 0 &&
+							!(x >= MARKER_RST0 && x <= MARKER_RST7)) { // reset markers can occur in the scan
+
+						forceMarkerType = x;
 						if(logMINOR)
-							Logger.minor(this, "More data after EOI, copying to truncate");
-						return;
+							Logger.minor(this, "Moved scan at "+cis.count()+", found a marker type "+Integer.toHexString(x));
+						if(output != null) output.write(x);
+						break; // End of scan, new marker
 					}
-					if(markerStart != 0xFF) {
-						throwError("Invalid marker", "The file includes an invalid marker start "+Integer.toHexString(markerStart)+" and cannot be parsed further.");
-					}
-					if(baos != null) baos.write(0xFF);
-					markerType = dis.readUnsignedByte();
-					if(baos != null) baos.write(markerType);
+					prevChar = x;
 				}
+
+				continue; // Avoid writing the header twice
+
+			} else if(markerType == 0xE0) { // APP0
+				if(logMINOR) Logger.minor(this, "APP0");
+				String type = readNullTerminatedAsciiString(dis);
+				if(baos != null) writeNullTerminatedString(baos, type);
+				if(logMINOR) Logger.minor(this, "Type: "+type+" length "+type.length());
+				if(type.equals("JFIF")) {
+					Logger.minor(this, "JFIF Header");
+					// File header
+					int majorVersion = dis.readUnsignedByte();
+					if(majorVersion != 1)
+						throwError("Invalid header", "Unrecognized major version "+majorVersion+".");
+					if(dos != null) dos.write(majorVersion);
+					int minorVersion = dis.readUnsignedByte();
+					if(minorVersion > 2)
+						throwError("Invalid header", "Unrecognized version 1."+minorVersion+".");
+					if(dos != null) dos.write(minorVersion);
+					int units = dis.readUnsignedByte();
+					if(units > 2)
+						throwError("Invalid header", "Unrecognized units type "+units+".");
+					if(dos != null) dos.write(units);
+					if(dos != null) {
+						dos.writeShort(dis.readShort()); // Copy Xdensity
+						dos.writeShort(dis.readShort()); // Copy Ydensity
+					} else {
+						dis.readShort(); // Ignore Xdensity
+						dis.readShort(); // Ignore Ydensity
+					}
+					int thumbX = dis.readUnsignedByte();
+					if(dos != null) dos.writeByte(thumbX);
+					int thumbY = dis.readUnsignedByte();
+					if(dos != null) dos.writeByte(thumbY);
+					int thumbLen = thumbX * thumbY * 3;
+					if(thumbLen > length-cis.count())
+						throwError("Invalid header", "There should be "+thumbLen+" bytes of thumbnail but there are only "+(length-cis.count())+" bytes left in the file.");
+					if(dos != null) {
+						byte[] buf = new byte[thumbLen];
+						dis.readFully(buf);
+						dos.write(buf);
+					} else 
+						skipBytes(dis, thumbLen);
+				} else if(type.equals("JFXX")) {
+					// JFIF extension marker
+					int extensionCode = dis.readUnsignedByte();
+					if(extensionCode == 0x10 || extensionCode == 0x11 || extensionCode == 0x13) {
+						// Alternate thumbnail, perfectly valid
+						skipRest(blockLength, countAtStart, cis, dis, dos, "thumbnail frame");
+						Logger.minor(this, "Thumbnail frame");
+					} else
+						throwError("Unknown JFXX extension "+extensionCode, "The file contains an unknown JFXX extension.");
+				} else {
+					if(logMINOR)
+						Logger.minor(this, "Dropping application-specific APP0 chunk named "+type);
+					// Application-specific extension
+					skipRest(blockLength, countAtStart, cis, dis, dos, "application-specific frame");
+					continue; // Don't write the frame.
+				}
+			} else if(markerType == 0xE1) { // EXIF
+				if(deleteExif) {
+					if(logMINOR)
+						Logger.minor(this, "Dropping EXIF data");
+					skipBytes(dis, blockLength - 2);
+					continue; // Don't write the frame
+				}
+				skipRest(blockLength, countAtStart, cis, dis, dos, "EXIF frame");
+			} else if(markerType == 0xFE) {
+				// Comment
+				if(deleteComments) {
+					skipBytes(dis, blockLength - 2);
+					if(logMINOR)
+						Logger.minor(this, "Dropping comment length "+(blockLength - 2)+'.');
+					continue; // Don't write the frame
+				}
+				skipRest(blockLength, countAtStart, cis, dis, dos, "comment");
+			} else if(markerType == 0xD9) {
+				// End of image
+				finished = true;
 				if(logMINOR)
-					Logger.minor(this, "Marker type: "+Integer.toHexString(markerType));
-				long countAtStart = cis.count(); // After marker but before type
-				int blockLength;
-				if(markerType == MARKER_EOI || markerType >= MARKER_RST0 && markerType <= MARKER_RST7)
-					blockLength = 0;
-				else {
-					blockLength = dis.readUnsignedShort();
-					if(dos != null) dos.writeShort(blockLength);
+					Logger.minor(this, "End of image");
+			} else {
+				boolean valid = false;
+				// We used to support only DB C4 C0, because some website said they were
+				// sufficient for decoding a JPEG. Unfortunately they are not, JPEG is a 
+				// very complex standard and the full spec is only available for a fee.
+				// FIXME somebody who has access to the spec should have a look at this,
+				// and ideally write some chunk sanitizers.
+				switch(markerType) {
+				// descriptions from http://svn.xiph.org/experimental/giles/jpegdump.c (GPL)
+				case 0xc0: // start of frame
+				case 0xc1: // extended sequential, huffman
+				case 0xc2: // progressive, huffman
+				case 0xc3: // lossless, huffman
+				case 0xc5: // differential sequential, huffman
+				case 0xc6: // differential progressive, huffman
+				case 0xc7: // differential lossless, huffman
+					// DELETE 0xc8 - "reserved for JPEG extension" - likely to be used for Bad Things
+				case 0xc9: // extended sequential, arithmetic
+				case 0xca: // progressive, arithmetic
+				case 0xcb: // lossless, arithmetic
+				case 0xcd: // differential sequential, arithmetic
+				case 0xcf: // differential lossless, arithmetic
+				case 0xc4: // define huffman tables
+				case 0xcc: // define arithmetic-coding conditioning
+					// Restart markers
+				case 0xd0:
+				case 0xd1:
+				case 0xd2:
+				case 0xd3:
+				case 0xd4:
+				case 0xd5:
+				case 0xd6:
+				case 0xd7:
+					// Delimiters:
+				case 0xd8: // start of image
+				case 0xd9: // end of image
+				case 0xda: // start of scan
+				case 0xdb: // define quantization tables
+				case 0xdc: // define number of lines
+				case 0xdd: // define restart interval
+				case 0xde: // define hierarchical progression
+				case 0xdf: // expand reference components
+					// DELETE APP0 - APP15 - application data sections, likely to be troublesome.
+					// DELETE extension data sections JPG0-6,SOF48,LSE,JPG9-JPG13, JCOM (comment!!), TEM ("temporary private use for arithmetic coding")
+					// DELETE 0x02 - 0xbf reserved sections.
+					// Do not support JPEG2000 at the moment. Probably has different headers. FIXME.
+					valid = true;
 				}
-				if(markerType == 0xDA) {
-					// Start of scan marker
-					
-					// Copy marker
+				if(valid) {
+					// Essential, non-terminal, but unparsed frames.
 					if(blockLength < 2)
 						throwError("Invalid frame length", "The file includes an invalid frame (length "+blockLength+").");
 					if(dos != null) {
@@ -131,202 +298,35 @@ public class JPEGFilter implements ContentDataFilter {
 						dos.write(buf);
 					} else
 						skipBytes(dis, blockLength - 2);
-					Logger.minor(this, "Copied start-of-frame marker length "+(blockLength-2));
-					
-					if(baos != null)
-						baos.writeTo(output); // will continue; at end
-					
-					// Now copy the scan itself
-					
-					int prevChar = -1;
-					while(true) {
-						int x = dis.read();
-						if(prevChar != -1 && output != null) {
-							output.write(prevChar);
-						}
-						if(x == -1) {
-							// Termination inside a scan; valid I suppose
-							break;
-						}
-						if(prevChar == 0xFF && x != 0 &&
-								!(x >= MARKER_RST0 && x <= MARKER_RST7)) { // reset markers can occur in the scan
-							
-							forceMarkerType = x;
-							if(logMINOR)
-								Logger.minor(this, "Moved scan at "+cis.count()+", found a marker type "+Integer.toHexString(x));
-							if(output != null) output.write(x);
-							break; // End of scan, new marker
-						}
-						prevChar = x;
-					}
-					
-					continue; // Avoid writing the header twice
-					
-				} else if(markerType == 0xE0) { // APP0
-					if(logMINOR) Logger.minor(this, "APP0");
-					String type = readNullTerminatedAsciiString(dis);
-					if(baos != null) writeNullTerminatedString(baos, type);
-					if(logMINOR) Logger.minor(this, "Type: "+type+" length "+type.length());
-					if(type.equals("JFIF")) {
-						Logger.minor(this, "JFIF Header");
-						// File header
-						int majorVersion = dis.readUnsignedByte();
-						if(majorVersion != 1)
-							throwError("Invalid header", "Unrecognized major version "+majorVersion+".");
-						if(dos != null) dos.write(majorVersion);
-						int minorVersion = dis.readUnsignedByte();
-						if(minorVersion > 2)
-							throwError("Invalid header", "Unrecognized version 1."+minorVersion+".");
-						if(dos != null) dos.write(minorVersion);
-						int units = dis.readUnsignedByte();
-						if(units > 2)
-							throwError("Invalid header", "Unrecognized units type "+units+".");
-						if(dos != null) dos.write(units);
-						if(dos != null) {
-							dos.writeShort(dis.readShort()); // Copy Xdensity
-							dos.writeShort(dis.readShort()); // Copy Ydensity
-						} else {
-							dis.readShort(); // Ignore Xdensity
-							dis.readShort(); // Ignore Ydensity
-						}
-						int thumbX = dis.readUnsignedByte();
-						if(dos != null) dos.writeByte(thumbX);
-						int thumbY = dis.readUnsignedByte();
-						if(dos != null) dos.writeByte(thumbY);
-						int thumbLen = thumbX * thumbY * 3;
-						if(thumbLen > length-cis.count())
-							throwError("Invalid header", "There should be "+thumbLen+" bytes of thumbnail but there are only "+(length-cis.count())+" bytes left in the file.");
-						if(dos != null) {
-							byte[] buf = new byte[thumbLen];
-							dis.readFully(buf);
-							dos.write(buf);
-						} else 
-							skipBytes(dis, thumbLen);
-					} else if(type.equals("JFXX")) {
-						// JFIF extension marker
-						int extensionCode = dis.readUnsignedByte();
-						if(extensionCode == 0x10 || extensionCode == 0x11 || extensionCode == 0x13) {
-							// Alternate thumbnail, perfectly valid
-							skipRest(blockLength, countAtStart, cis, dis, dos, "thumbnail frame");
-							Logger.minor(this, "Thumbnail frame");
-						} else
-							throwError("Unknown JFXX extension "+extensionCode, "The file contains an unknown JFXX extension.");
-					} else {
-						if(logMINOR)
-							Logger.minor(this, "Dropping application-specific APP0 chunk named "+type);
-						// Application-specific extension
-						skipRest(blockLength, countAtStart, cis, dis, dos, "application-specific frame");
-						continue; // Don't write the frame.
-					}
-				} else if(markerType == 0xE1) { // EXIF
-					if(deleteExif) {
-						if(logMINOR)
-							Logger.minor(this, "Dropping EXIF data");
-						skipBytes(dis, blockLength - 2);
-						continue; // Don't write the frame
-					}
-					skipRest(blockLength, countAtStart, cis, dis, dos, "EXIF frame");
-				} else if(markerType == 0xFE) {
-					// Comment
-					if(deleteComments) {
-						skipBytes(dis, blockLength - 2);
-						if(logMINOR)
-							Logger.minor(this, "Dropping comment length "+(blockLength - 2)+'.');
-						continue; // Don't write the frame
-					}
-					skipRest(blockLength, countAtStart, cis, dis, dos, "comment");
-				} else if(markerType == 0xD9) {
-					// End of image
-					finished = true;
-					if(logMINOR)
-						Logger.minor(this, "End of image");
+					Logger.minor(this, "Essential frame type "+Integer.toHexString(markerType)+" length "+(blockLength-2)+" offset at end "+cis.count());
 				} else {
-					boolean valid = false;
-					// We used to support only DB C4 C0, because some website said they were
-					// sufficient for decoding a JPEG. Unfortunately they are not, JPEG is a 
-					// very complex standard and the full spec is only available for a fee.
-					// FIXME somebody who has access to the spec should have a look at this,
-					// and ideally write some chunk sanitizers.
-					switch(markerType) {
-					// descriptions from http://svn.xiph.org/experimental/giles/jpegdump.c (GPL)
-					case 0xc0: // start of frame
-					case 0xc1: // extended sequential, huffman
-					case 0xc2: // progressive, huffman
-					case 0xc3: // lossless, huffman
-					case 0xc5: // differential sequential, huffman
-					case 0xc6: // differential progressive, huffman
-					case 0xc7: // differential lossless, huffman
-						// DELETE 0xc8 - "reserved for JPEG extension" - likely to be used for Bad Things
-					case 0xc9: // extended sequential, arithmetic
-					case 0xca: // progressive, arithmetic
-					case 0xcb: // lossless, arithmetic
-					case 0xcd: // differential sequential, arithmetic
-					case 0xcf: // differential lossless, arithmetic
-					case 0xc4: // define huffman tables
-					case 0xcc: // define arithmetic-coding conditioning
-						// Restart markers
-					case 0xd0:
-					case 0xd1:
-					case 0xd2:
-					case 0xd3:
-					case 0xd4:
-					case 0xd5:
-					case 0xd6:
-					case 0xd7:
-						// Delimiters:
-					case 0xd8: // start of image
-					case 0xd9: // end of image
-					case 0xda: // start of scan
-					case 0xdb: // define quantization tables
-					case 0xdc: // define number of lines
-					case 0xdd: // define restart interval
-					case 0xde: // define hierarchical progression
-					case 0xdf: // expand reference components
-						// DELETE APP0 - APP15 - application data sections, likely to be troublesome.
-						// DELETE extension data sections JPG0-6,SOF48,LSE,JPG9-JPG13, JCOM (comment!!), TEM ("temporary private use for arithmetic coding")
-						// DELETE 0x02 - 0xbf reserved sections.
-						// Do not support JPEG2000 at the moment. Probably has different headers. FIXME.
-						valid = true;
-					}
-					if(valid) {
-						// Essential, non-terminal, but unparsed frames.
-						if(blockLength < 2)
-							throwError("Invalid frame length", "The file includes an invalid frame (length "+blockLength+").");
-						if(dos != null) {
-							byte[] buf = new byte[blockLength - 2];
-							dis.readFully(buf);
-							dos.write(buf);
-						} else
-							skipBytes(dis, blockLength - 2);
-						Logger.minor(this, "Essential frame type "+Integer.toHexString(markerType)+" length "+(blockLength-2)+" offset at end "+cis.count());
+					if(markerType >= 0xE0 && markerType <= 0xEF) {
+						// APP marker. Can be safely deleted.
+						if(logMINOR)
+							Logger.minor(this, "Dropping application marker type "+Integer.toHexString(markerType)+" length "+blockLength);
 					} else {
-						if(markerType >= 0xE0 && markerType <= 0xEF) {
-							// APP marker. Can be safely deleted.
-							if(logMINOR)
-								Logger.minor(this, "Dropping application marker type "+Integer.toHexString(markerType)+" length "+blockLength);
-						} else {
-							if(logMINOR)
-								Logger.minor(this, "Dropping unknown frame type "+Integer.toHexString(markerType)+" blockLength");
-						}
-						// Delete frame
-						skipBytes(dis, blockLength - 2);
-						continue;
+						if(logMINOR)
+							Logger.minor(this, "Dropping unknown frame type "+Integer.toHexString(markerType)+" blockLength");
 					}
-				}
-				
-				if(cis.count() != countAtStart + blockLength)
-					throwError("Invalid frame", "The length of the frame is incorrect (read "+
-							(cis.count()-countAtStart)+" bytes, frame length "+blockLength+" for type "+Integer.toHexString(markerType)+").");
-				if(dos != null) {
-					// Write frame
-					baos.writeTo(output);
-					output.flush();
+					// Delete frame
+					skipBytes(dis, blockLength - 2);
+					continue;
 				}
 			}
-			
-			// In future, maybe we will check the other chunks too.
-			// In particular, we may want to delete, or filter, the comment blocks.
-			// FIXME
+
+			if(cis.count() != countAtStart + blockLength)
+				throwError("Invalid frame", "The length of the frame is incorrect (read "+
+						(cis.count()-countAtStart)+" bytes, frame length "+blockLength+" for type "+Integer.toHexString(markerType)+").");
+			if(dos != null) {
+				// Write frame
+				baos.writeTo(output);
+				output.flush();
+			}
+		}
+
+		// In future, maybe we will check the other chunks too.
+		// In particular, we may want to delete, or filter, the comment blocks.
+		// FIXME
 	}
 
 	private static String l10n(String key) {
@@ -408,7 +408,7 @@ public class JPEGFilter implements ContentDataFilter {
 	}
 
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+			FilterCallback cb) throws DataFilterException, IOException {
 		return;
 	}
 
