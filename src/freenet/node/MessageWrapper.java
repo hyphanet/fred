@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -100,9 +101,81 @@ public class MessageWrapper {
 	private class RangeComparator implements Comparator<int[]> {
 
 		public int compare(int[] o1, int[] o2) {
-	                return o2[0] - o1[0];
-                }
-		
+			return o2[0] - o1[0];
+		}
+
+	}
+
+	private void addRangeToSet(int start, int end, SortedSet<int[]> set) {
+		if(start > end) {
+			Logger.error(this, "Adding bad range. Start: " + start + ", end: " + end, new Exception());
+			return;
+		}
+
+		synchronized(set) {
+			Iterator<int[]> it = set.iterator();
+			while (it.hasNext()) {
+				int[] range = it.next();
+				if(range[0] >= start && range[1] <= end) {
+					// Equal or inside
+					return;
+				} else if((range[0] <= start && range[1] >= start)
+				                || (range[0] <= end && range[1] >= end)) {
+					// Overlapping
+					it.remove();
+
+					int[] newRange = new int[2];
+					newRange[0] = Math.min(range[0], start);
+					newRange[1] = Math.max(range[1], end);
+					set.add(newRange);
+					return;
+				}
+			}
+		}
+	}
+
+	private void removeRangeFromSet(int start, int end, SortedSet<int[]> set) {
+		if(start > end) {
+			Logger.error(this, "Removing bad range. Start: " + start + ", end: " + end, new Exception());
+			return;
+		}
+
+		synchronized(set) {
+			LinkedList<int[]> toAdd = new LinkedList<int[]>();
+
+			Iterator<int[]> it = set.iterator();
+			while (it.hasNext()) {
+				int[] range = it.next();
+
+				if(range[0] < start) {
+					if(range[1] < start) {
+						//Outside
+						continue;
+					} else if(range[1] <= end) {
+						//Overlaps beginning
+						toAdd.add(new int [] {range[0], start - 1});
+					} else /* (range[1] > end) */{
+						//Overlaps entire range
+						toAdd.add(new int [] {range[0], start - 1});
+						toAdd.add(new int [] {end + 1, range[1]});
+					}
+				} else if(range[0] >= start && range[0] <= end) {
+					if (range[1] <= end) {
+						// Equal or inside
+						it.remove();
+					} else /* (range[1] > end) */ {
+						// Overlaps end
+						toAdd.add(new int [] {end + 1, range[1]});
+					}
+				} else /* (range[0] > end) */ {
+					//Outside
+					continue;
+				}
+				it.remove();
+			}
+
+			set.addAll(toAdd);
+		}
 	}
 
 }
