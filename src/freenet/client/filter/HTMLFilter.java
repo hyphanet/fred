@@ -202,6 +202,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// If detecting charset, stop after </head> even if haven't found <meta> charset tag.
 				if(onlyDetectingCharset && failedDetectCharset)
 					return temp;
+				// If detecting charset, and found it, stop afterwards.
+				if(onlyDetectingCharset && detectedCharset != null)
+					return temp;
 				int x;
 				
 				try {
