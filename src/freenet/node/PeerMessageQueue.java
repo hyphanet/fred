@@ -295,6 +295,22 @@ public class PeerMessageQueue {
 			itemsByID = null;
 		}
 
+		public MessageItem poll() {
+			if(itemsNoID != null) {
+				MessageItem item = itemsNoID.poll();
+				if(item != null) return item;
+			}
+
+			if(itemsWithID != null) {
+				for(LinkedList<MessageItem> list : itemsWithID) {
+					MessageItem item = list.poll();
+					if(item != null) return item;
+				}
+			}
+
+			return null;
+                }
+
 
 
 	}
@@ -363,6 +379,14 @@ public class PeerMessageQueue {
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addFirst(addMe);
 	}
+
+	public synchronized MessageItem grabQueuedMessageItem() {
+		MessageItem output = null;
+		for(PrioQueue queue : queuesByPriority) {
+			output = queue.poll();
+		}
+		return output;
+        }
 
 	public synchronized MessageItem[] grabQueuedMessageItems() {
 		int size = 0;
