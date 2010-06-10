@@ -2244,6 +2244,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 										throwFilterException(l10n("multipleCharsetsInMeta"));
 									pc.detectedCharset = typesplit[1].trim();
 								}
+								break;
 							}
 						}
 						
