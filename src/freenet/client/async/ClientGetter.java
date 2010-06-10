@@ -23,6 +23,7 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.UnsafeContentTypeException;
+import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -213,10 +214,10 @@ public class ClientGetter extends BaseClientGetter {
 				else filteredResult = returnBucket;
 				input = result.asBucket().getInputStream();
 				output = filteredResult.getOutputStream();
-				ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
+				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
 				output.close();
-				result = new FetchResult(result, filteredResult, null);
+				result = new FetchResult(result, filteredResult, filterStatus.mimeType+"; charset="+filterStatus.charset);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED, expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
