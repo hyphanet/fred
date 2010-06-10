@@ -25,6 +25,7 @@ import freenet.client.filter.MIMEType;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.UnsupportedCharsetInFilterException;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
+import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
@@ -905,10 +906,11 @@ public class CSSParserTest extends TestCase {
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" or \""+family+"\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || (family != null && family.equalsIgnoreCase(detectedCharset)));
 		detectedCharset = ContentFilter.detectCharset(bytes, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset.equalsIgnoreCase(detectedCharset));
-		ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4oobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
+		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4oobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
 		inputStream.close();
 		outputStream.close();
-		//assertTrue("ContentFilter.filter() returned wrong charset \""+fo.type+"\" should be \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
+		assertEquals("text/css", filterStatus.mimeType);
+		assertEquals(charset, filterStatus.charset);
 		String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
 		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" for charset \""+charset+"\"", original.equals(filtered));
 	}
@@ -928,9 +930,10 @@ public class CSSParserTest extends TestCase {
 		detectedCharset = ContentFilter.detectCharset(bytes, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset == null || "utf-8".equalsIgnoreCase(detectedCharset));
 		try {
-			ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
+			FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
 			// It is safe to return utf-8, as long as we clobber the actual content; utf-8 is the default, but other stuff decoded to it is unlikely to be coherent...
-			//assertTrue("ContentFilter.filter() returned charset \""+fo.type+"\" should be unknown testing unsupported charset \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset) || fo.type.equalsIgnoreCase("text/css; charset=utf-8"));
+			assertTrue("ContentFilter.filter() returned charset \""+filterStatus.charset+"\" should be unknown testing  unsupported charset \""+charset+"\"", filterStatus.charset.equalsIgnoreCase(charset) || filterStatus.charset.equalsIgnoreCase("utf-8"));//If we switch to JUnit 4, this may be replaced with an assertThat
+			assertEquals("text/css", filterStatus.mimeType);
 			String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
 			assertTrue("ContentFilter.filter() returns something: \""+filtered+"\" should be empty as unsupported charset, original: \""+original+"\" for charset \""+charset+"\"", filtered.equals(""));
 		} catch (UnsupportedCharsetInFilterException e) {
@@ -959,10 +962,11 @@ public class CSSParserTest extends TestCase {
 		Bucket outputBucket = new ArrayBucket();
 		InputStream inputStream = inputBucket.getInputStream();
 		OutputStream outputStream = outputBucket.getOutputStream();
-		ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, charset);
+		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, charset);
 		inputStream.close();
 		outputStream.close();
-		//assertTrue("ContentFilter.filter() returned wrong charset with maybeCharset: \""+fo.type+"\" should be \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
+		assertEquals(charset, filterStatus.charset);
+		assertEquals("text/css", filterStatus.mimeType);
 		String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
 		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" with maybeCharset \""+charset+"\"", original.equals(filtered));
 	}
