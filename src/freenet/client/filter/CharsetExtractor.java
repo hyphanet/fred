@@ -12,8 +12,6 @@ import freenet.support.api.Bucket;
  * possible.
  */
 public interface CharsetExtractor {
-	/**The number of bytes to read while searching for a charset*/
-	static final int BUFFERSIZE = 1024*64;
 	
 	String getCharset(byte[] input, String parseCharset) throws DataFilterException, IOException;
 

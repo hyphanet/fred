@@ -256,7 +256,7 @@ public class ClientGetter extends BaseClientGetter {
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state /* not strictly to blame, but we're not ako ClientGetState... */, container, context);
 				return;
 			}
-			result = new FetchResult(result, to, null);
+			result = new FetchResult(result, to);
 		} else {
 			if(returnBucket != null && logMINOR)
 				Logger.minor(this, "client.async returned data in returnBucket");

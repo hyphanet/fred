@@ -216,7 +216,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		if(!block.isMetadata()) {
-			onSuccess(new FetchResult(clientMetadata, data, null), container, context);
+			onSuccess(new FetchResult(clientMetadata, data), container, context);
 		} else {
 			if(!ctx.followRedirects) {
 				onFailure(new FetchException(FetchException.INVALID_METADATA, "Told me not to follow redirects (splitfile block??)"), false, container, context);
@@ -303,7 +303,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					return;
 				}
 			}
-			result = new FetchResult(result, data, null);
+			result = new FetchResult(result, data);
 			if(persistent) {
 				container.store(this);
 				container.store(decompressors);
@@ -647,7 +647,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
 					// Return the data
-					onSuccess(new FetchResult(clientMetadata, dataBucket, null), container, context);
+					onSuccess(new FetchResult(clientMetadata, dataBucket), container, context);
 					return;
 				} else {
 					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey="+thisKey+ ')');
@@ -660,7 +660,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							if(logMINOR) Logger.minor(this, "Returning data");
-							onSuccess(new FetchResult(clientMetadata, data, null), container, context);
+							onSuccess(new FetchResult(clientMetadata, data), container, context);
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}

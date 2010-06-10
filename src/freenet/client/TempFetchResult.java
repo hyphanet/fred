@@ -7,7 +7,7 @@ public class TempFetchResult extends FetchResult {
 	public final boolean freeWhenDone;
 	
 	public TempFetchResult(ClientMetadata dm, Bucket fetched, boolean freeWhenDone) {
-		super(dm, fetched, null);
+		super(dm, fetched);
 		this.freeWhenDone = freeWhenDone;
 	}
 	

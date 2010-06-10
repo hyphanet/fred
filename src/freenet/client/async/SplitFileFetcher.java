@@ -526,7 +526,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				}
 				count++;
 			}
-			cb.onSuccess(new FetchResult(clientMetadata, data, null), this, container, context);
+			cb.onSuccess(new FetchResult(clientMetadata, data), this, container, context);
 		} catch (FetchException e) {
 			cb.onFailure(e, this, container, context);
 		} catch (OutOfMemoryError e) {

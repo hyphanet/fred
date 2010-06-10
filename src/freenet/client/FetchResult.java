@@ -15,36 +15,25 @@ public class FetchResult {
 
 	final ClientMetadata metadata;
 	final Bucket data;
-	/**If the ContentFilter finds the MIME and charset to be incorrect,
-	 * this value should contain the valid setting.
-	 * @param overrideMIME TODO
-	 */
-	final String overrideMIME;
 	
-	public FetchResult(ClientMetadata dm, Bucket fetched, String overrideMIME) {
+	public FetchResult(ClientMetadata dm, Bucket fetched) {
 		metadata = dm;
 		data = fetched;
-		this.overrideMIME = overrideMIME;
 	}
 
 	/**
 	 * Create a FetchResult with a new Bucket of data, but everything else
 	 * the same as the old one.
-	 * @param overrideMIME TODO
 	 */
-	public FetchResult(FetchResult fr, Bucket output, String overrideMIME) {
-		this.data = output == null ? fr.data : output;
+	public FetchResult(FetchResult fr, Bucket output) {
+		this.data = output;
 		this.metadata = fr.metadata;
-		this.overrideMIME = overrideMIME == null ? fr.overrideMIME : overrideMIME;
 	}
 
-	/** Get the MIME type of the fetched data.
-	 * If the filter has overridden the MIME type,
-	 * if it has detected a new charset, for example,
-	 * this will be returned.
+	/** Get the MIME type of the fetched data. 
 	 * If unknown, returns application/octet-stream. */
 	public String getMimeType() {
-		return overrideMIME == null ? metadata.getMIMEType() : overrideMIME;
+		return metadata.getMIMEType();
 	}
 
 	/** Get the client-level metadata. */
