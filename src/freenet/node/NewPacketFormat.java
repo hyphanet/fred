@@ -34,6 +34,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		offset = insertAcks(packet, offset);
 		offset = insertStartedMessages(packet, offset, maxPacketSize);
+		offset = insertMessages(packet, offset, maxPacketSize);
 
 		//TODO: Get Messages from the queue until the packet is big enough, or there are no Messages left
 		
@@ -130,6 +131,11 @@ public class NewPacketFormat implements PacketFormat {
 		
 		return offset;
 	}
+
+	private int insertMessages(byte[] packet, int offset, int maxPacketSize) {
+		//TODO: Get Messages from the queue until the packet is big enough, or there are no Messages left
+		throw new UnsupportedOperationException();
+        }
 
 	private class MessageWrapper {
 		private final byte[] data;
