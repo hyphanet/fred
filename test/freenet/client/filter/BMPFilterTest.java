@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.api.Bucket;
@@ -49,21 +50,7 @@ public class BMPFilterTest extends TestCase {
 			String filename=(String) test[0];
 			int expectedresult = Integer.parseInt(test[1].toString());
 			Bucket ib;
-			try {
-				ib = resourceToBucket(filename);
-
-			} 	
-
-			catch (FileNotFoundException e) {
-				assertFalse(filename +" not found in BMP test", false);
-				continue;
-			}
-			catch (IOException e) {
-				System.out.println("IOException during reading "+filename);
-				continue;
-			}
-
-
+			ib = resourceToBucket(filename);
 			InputStream inputStream = null;
 			OutputStream outputStream = null;
 			try {
@@ -74,7 +61,7 @@ public class BMPFilterTest extends TestCase {
 				outputStream.close();
 				assertEquals(filename + " should be valid", expectedresult,0);
 				assertEquals("Input and output should be the same length", ib.size(), output.size());
-				assertEquals("Input and output should be identical", BucketTools.toByteArray(ib), BucketTools.toByteArray(output));
+				assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(ib), BucketTools.toByteArray(output)));
 			} 
 			catch (DataFilterException dfe) {
 

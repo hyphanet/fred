@@ -217,6 +217,9 @@
 		<copy todir="${build-test}/freenet/client/filter/png">
 			<fileset dir="${test}/freenet/client/filter/png"/>
 		</copy>
+		<copy todir="${build-test}/freenet/client/filter/bmp">
+			<fileset dir="${test}/freenet/client/filter/bmp"/>
+		</copy>
 	</target>
 
 	<target name="unit" depends="unit-build" if="do.junit">
