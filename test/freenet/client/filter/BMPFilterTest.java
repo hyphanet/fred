@@ -1,7 +1,6 @@
 package freenet.client.filter;
 
 import junit.framework.TestCase;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileNotFoundException;
@@ -13,7 +12,6 @@ import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import freenet.support.io.FileBucket;
 import freenet.support.io.NullBucket;
 
 
@@ -61,15 +59,6 @@ public class BMPFilterTest extends TestCase {
 				objBMPFilter.readFilter(inputStream, outputStream, "", null, null);
 				inputStream.close();
 				outputStream.close();
-				if(ib.size() != output.size() || !Arrays.equals(BucketTools.toByteArray(ib), BucketTools.toByteArray(output))) {
-					File inputDump = new File("BMPInputDump");
-					File outputDump = new File("BMPOutputDump");
-					System.out.println("Buckets don't match! Dumping to "+inputDump.getCanonicalPath()+" and "+ outputDump.getCanonicalPath());
-					FileBucket inputDumpBucket = new FileBucket(inputDump, false, false, false, false, false);
-					FileBucket outputDumpBucket = new FileBucket(outputDump, false, false, false, false, false);
-					BucketTools.copy(ib, inputDumpBucket);
-					BucketTools.copy(output, outputDumpBucket);
-				}
 				assertEquals(filename + " should be valid", expectedresult,0);
 				assertEquals("Input and output should be the same length", ib.size(), output.size());
 				assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(ib), BucketTools.toByteArray(output)));
