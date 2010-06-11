@@ -47,6 +47,8 @@ public class StandardOnionFECCodec extends FECCodec {
 	}
 
 	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
+		if(checkBlocks == 0 || dataBlocks == 0)
+			throw new IllegalArgumentException("data blocks "+dataBlocks+" check blocks "+checkBlocks);
 		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
 		StandardOnionFECCodec codec = recentlyUsedCodecs.get(key);
 		if(codec != null) {
@@ -75,7 +77,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			if(fec != null) return;
 		}
 		FECCode fec2 = null;
-		if(!noNative) {
+		if((!noNative) && k <= 256 && n <= 256) {
 			try {
 				fec2 = new Native8Code(k,n);
 				Logger.minor(this, "Loaded native FEC.");
