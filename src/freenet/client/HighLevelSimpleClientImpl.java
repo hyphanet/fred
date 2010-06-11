@@ -80,7 +80,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
 	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
 	public static final int SPLITFILE_BLOCKS_PER_SEGMENT = 128;
-	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
+	public static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
 	public static final int EXTRA_INSERTS_SINGLE_BLOCK = 0;
 	public static final int EXTRA_INSERTS_SPLITFILE_HEADER = 2;
 	/*Whether or not to filter fetched content*/
