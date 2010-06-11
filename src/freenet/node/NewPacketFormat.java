@@ -33,46 +33,7 @@ public class NewPacketFormat implements PacketFormat {
 		int offset = 9; // Sequence number (4), HMAC (4), ACK count (1)
 
 		offset = insertAcks(packet, offset);
-
-		// Try to finish Messages that have been started
-		synchronized(started) {
-			Iterator<MessageWrapper> it = started.iterator();
-			while (it.hasNext() && (offset + MIN_MESSAGE_FRAGMENT_SIZE < maxPacketSize)) {
-				MessageWrapper wrapper = it.next();
-
-				// MessageID and flags
-				int messageID = wrapper.getMessageID();
-				messageID = messageID & 0x7FFF; //Make sure the flag bits are 0
-				if(wrapper.isLongMessage) messageID = messageID | 0x8000;
-				
-				//TODO: Check that we have always sent the first fragment here
-				//Since the message is on the started list, it is fragmented, and we have sent the first
-				//fragment
-				messageID = messageID | 0x6000;
-				
-				//TODO: Add sanity checks for the flags
-				
-				packet[offset++] = (byte) (messageID >>> 8);
-				packet[offset++] = (byte) (messageID);
-				
-				// Insert data
-				int[] added = wrapper.getData(packet, offset + (wrapper.isLongMessage ? 5 : 2),
-				                maxPacketSize - offset);
-
-				//Add fragment length, 2 bytes if long message
-				if(wrapper.isLongMessage) packet[offset++] = (byte) (added[0] >>> 8);
-				packet[offset++] = (byte) (added[0]);
-				
-				//Add fragment offset
-				if(wrapper.isLongMessage) {
-					packet[offset++] = (byte) (added[1] >>> 16);
-					packet[offset++] = (byte) (added[1] >>> 8);
-				}
-				packet[offset++] = (byte) (added[1]);
-				
-				offset += added[0];
-			}
-		}
+		offset = insertStartedMessages(packet, offset, maxPacketSize);
 
 		//TODO: Get Messages from the queue until the packet is big enough, or there are no Messages left
 		
@@ -120,6 +81,50 @@ public class NewPacketFormat implements PacketFormat {
 
 				++numAcks;
 				it.remove();
+			}
+		}
+		
+		return offset;
+	}
+	
+	private int insertStartedMessages(byte[] packet, int offset, int maxPacketSize) {
+		// Try to finish Messages that have been started
+		synchronized(started) {
+			Iterator<MessageWrapper> it = started.iterator();
+			while (it.hasNext() && (offset + MIN_MESSAGE_FRAGMENT_SIZE < maxPacketSize)) {
+				MessageWrapper wrapper = it.next();
+
+				// MessageID and flags
+				int messageID = wrapper.getMessageID();
+				messageID = messageID & 0x7FFF; //Make sure the flag bits are 0
+				if(wrapper.isLongMessage) messageID = messageID | 0x8000;
+				
+				//TODO: Check that we have always sent the first fragment here
+				//Since the message is on the started list, it is fragmented, and we have sent the first
+				//fragment
+				messageID = messageID | 0x6000;
+				
+				//TODO: Add sanity checks for the flags
+				
+				packet[offset++] = (byte) (messageID >>> 8);
+				packet[offset++] = (byte) (messageID);
+				
+				// Insert data
+				int[] added = wrapper.getData(packet, offset + (wrapper.isLongMessage ? 5 : 2),
+				                maxPacketSize - offset);
+
+				//Add fragment length, 2 bytes if long message
+				if(wrapper.isLongMessage) packet[offset++] = (byte) (added[0] >>> 8);
+				packet[offset++] = (byte) (added[0]);
+				
+				//Add fragment offset
+				if(wrapper.isLongMessage) {
+					packet[offset++] = (byte) (added[1] >>> 16);
+					packet[offset++] = (byte) (added[1] >>> 8);
+				}
+				packet[offset++] = (byte) (added[1]);
+				
+				offset += added[0];
 			}
 		}
 		
