@@ -66,19 +66,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		InputStreamReader isr = null;
 		OutputStreamWriter osw = null;
 		try {
-			try {
-				isr = new InputStreamReader(bis, charset);
-				osw = new OutputStreamWriter(bos, charset);
-				r = new BufferedReader(isr, 4096);
-				w = new BufferedWriter(osw, 4096);
-			} catch(UnsupportedEncodingException e) {
-				throw UnknownCharsetException.create(e, charset);
-			}
-			HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
-			pc.run();
-		} finally {
-			w.flush();
+			isr = new InputStreamReader(bis, charset);
+			osw = new OutputStreamWriter(bos, charset);
+			r = new BufferedReader(isr, 4096);
+			w = new BufferedWriter(osw, 4096);
+		} catch(UnsupportedEncodingException e) {
+			throw UnknownCharsetException.create(e, charset);
 		}
+		HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
+		pc.run();
+		w.flush();
 	}
 	
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,

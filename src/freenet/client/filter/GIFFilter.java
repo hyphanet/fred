@@ -30,18 +30,15 @@ public class GIFFilter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		DataInputStream dis = new DataInputStream(input);
-		try {
-			// Check the header
-			byte[] headerCheck = new byte[HEADER_SIZE];
-			dis.readFully(headerCheck);
-			if((!Arrays.equals(headerCheck, gif87aHeader)) && (!Arrays.equals(headerCheck, gif89aHeader))) {
-				throwHeaderError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
-			}
-			output.write(headerCheck);
-			FileUtil.copy(dis, output, -1);
-		} finally {
-			output.flush();
+		// Check the header
+		byte[] headerCheck = new byte[HEADER_SIZE];
+		dis.readFully(headerCheck);
+		if((!Arrays.equals(headerCheck, gif87aHeader)) && (!Arrays.equals(headerCheck, gif89aHeader))) {
+			throwHeaderError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
 		}
+		output.write(headerCheck);
+		FileUtil.copy(dis, output, -1);
+		output.flush();
 	}
 
 	private static String l10n(String key) {

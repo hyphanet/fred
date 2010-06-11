@@ -320,7 +320,6 @@ public class JPEGFilter implements ContentDataFilter {
 			if(dos != null) {
 				// Write frame
 				baos.writeTo(output);
-				output.flush();
 			}
 		}
 

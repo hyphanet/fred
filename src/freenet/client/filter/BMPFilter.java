@@ -90,77 +90,74 @@ public class BMPFilter implements ContentDataFilter {
 			FilterCallback cb) throws DataFilterException, IOException {
 		DataInputStream dis = new DataInputStream(input);
 		dis.mark(54);
-		try {
-			byte[] StartWord = new byte[2];
-			dis.readFully(StartWord);
-			if((!Arrays.equals(StartWord, bmpHeaderwindows)) && (!Arrays.equals(StartWord, bmpHeaderos2bArray)) && (!Arrays.equals(StartWord, bmpHeaderos2cIcon)) && (!Arrays.equals(StartWord, bmpHeaderos2cPointer)) && (!Arrays.equals(StartWord, bmpHeaderos2Icon)) && (!Arrays.equals(StartWord, bmpHeaderos2Pointer))) {	//Checking the first word
-				throwHeaderError(l10n("InvalidStartWordT"), l10n("InvalidStartWordD"));
-			}
-
-			int fileSize = readInt(dis); // read total file size
-			byte[] skipbytes=new byte[4];
-			dis.readFully(skipbytes);
-			int headerSize = readInt(dis); // read file header size or pixel offset
-			if(headerSize<0) {
-				throwHeaderError(l10n("InvalidOffsetT"), l10n("InvalidOffsetD"));
-			}
-
-			int size_bitmapinfoheader=readInt(dis);
-			if(size_bitmapinfoheader!=40) {
-				throwHeaderError(l10n("InvalidBitMapInfoHeaderSizeT"), l10n("InvalidBitMapInfoHeaderSizeD"));
-			}
-
-			int imageWidth = readInt(dis); // read width
-			int imageHeight = readInt(dis); // read height
-			if(imageWidth<0 || imageHeight<0) {
-				throwHeaderError(l10n("InvalidDimensionT"), l10n("InvalidDimensionD"));
-			}
-
-			int no_plane=readShort(dis);
-			if(no_plane!=1) { // No of planes should be 1
-				throwHeaderError(l10n("InvalidNoOfPlanesT"), l10n("InvalidNoOfPlanesD"));
-			}
-
-			int bitDepth = readShort(dis);
-			// Bit depth should be 1,2,4,8,16 or 32.
-			if(bitDepth!=1 && bitDepth!=2 && bitDepth!=4 && bitDepth!=8 && bitDepth!=16 && bitDepth!=24 && bitDepth!=32) {
-				throwHeaderError(l10n("InvalidBitDepthT"), l10n("InvalidBitDepthD"));
-			}
-
-			int compression_type=readInt(dis);
-			if( !(compression_type>=0 && compression_type<=3) ) {
-				throwHeaderError(l10n("Invalid Compression type"), l10n("Compression type field is set to "+compression_type+" instead of 0-3"));
-			}
-
-			int imagedatasize=readInt(dis);
-			if(fileSize!=headerSize+imagedatasize) {
-				throwHeaderError(l10n("InvalidFileSizeT"), l10n("InvalidFileSizeD"));
-			}
-
-			int horizontal_resolution=readInt(dis);
-			int vertical_resolution=readInt(dis);
-			if(horizontal_resolution<0 || vertical_resolution<0) {
-				throwHeaderError(l10n("InvalidResolutionT"), l10n("InvalidResolutionD"));
-			}
-
-			if(compression_type==0) {
-				// Verifying the file size w.r.t. image dimensions(width and height), bitDepth with imagedatasize(including padding).
-				int bytesperline=(int)Math.ceil((imageWidth*bitDepth)/8);
-				int paddingperline=0;
-				if(bytesperline%4!=0) {
-					paddingperline=4-bytesperline%4;
-				}
-				int calculatedsize= (int)Math.ceil((imageWidth*imageHeight*bitDepth)/8)+paddingperline*imageHeight;
-				if(calculatedsize!=imagedatasize) {
-					throwHeaderError(l10n("InvalidImageDataSizeT"), l10n("InvalidImageDataSizeD" ));
-				}
-			}
-			dis.reset();
-
-			FileUtil.copy(dis, output, -1);
-		} finally {
-			output.flush();
+		byte[] StartWord = new byte[2];
+		dis.readFully(StartWord);
+		if((!Arrays.equals(StartWord, bmpHeaderwindows)) && (!Arrays.equals(StartWord, bmpHeaderos2bArray)) && (!Arrays.equals(StartWord, bmpHeaderos2cIcon)) && (!Arrays.equals(StartWord, bmpHeaderos2cPointer)) && (!Arrays.equals(StartWord, bmpHeaderos2Icon)) && (!Arrays.equals(StartWord, bmpHeaderos2Pointer))) {	//Checking the first word
+			throwHeaderError(l10n("InvalidStartWordT"), l10n("InvalidStartWordD"));
 		}
+
+		int fileSize = readInt(dis); // read total file size
+		byte[] skipbytes=new byte[4];
+		dis.readFully(skipbytes);
+		int headerSize = readInt(dis); // read file header size or pixel offset
+		if(headerSize<0) {
+			throwHeaderError(l10n("InvalidOffsetT"), l10n("InvalidOffsetD"));
+		}
+
+		int size_bitmapinfoheader=readInt(dis);
+		if(size_bitmapinfoheader!=40) {
+			throwHeaderError(l10n("InvalidBitMapInfoHeaderSizeT"), l10n("InvalidBitMapInfoHeaderSizeD"));
+		}
+
+		int imageWidth = readInt(dis); // read width
+		int imageHeight = readInt(dis); // read height
+		if(imageWidth<0 || imageHeight<0) {
+			throwHeaderError(l10n("InvalidDimensionT"), l10n("InvalidDimensionD"));
+		}
+
+		int no_plane=readShort(dis);
+		if(no_plane!=1) { // No of planes should be 1
+			throwHeaderError(l10n("InvalidNoOfPlanesT"), l10n("InvalidNoOfPlanesD"));
+		}
+
+		int bitDepth = readShort(dis);
+		// Bit depth should be 1,2,4,8,16 or 32.
+		if(bitDepth!=1 && bitDepth!=2 && bitDepth!=4 && bitDepth!=8 && bitDepth!=16 && bitDepth!=24 && bitDepth!=32) {
+			throwHeaderError(l10n("InvalidBitDepthT"), l10n("InvalidBitDepthD"));
+		}
+
+		int compression_type=readInt(dis);
+		if( !(compression_type>=0 && compression_type<=3) ) {
+			throwHeaderError(l10n("Invalid Compression type"), l10n("Compression type field is set to "+compression_type+" instead of 0-3"));
+		}
+
+		int imagedatasize=readInt(dis);
+		if(fileSize!=headerSize+imagedatasize) {
+			throwHeaderError(l10n("InvalidFileSizeT"), l10n("InvalidFileSizeD"));
+		}
+
+		int horizontal_resolution=readInt(dis);
+		int vertical_resolution=readInt(dis);
+		if(horizontal_resolution<0 || vertical_resolution<0) {
+			throwHeaderError(l10n("InvalidResolutionT"), l10n("InvalidResolutionD"));
+		}
+
+		if(compression_type==0) {
+			// Verifying the file size w.r.t. image dimensions(width and height), bitDepth with imagedatasize(including padding).
+			int bytesperline=(int)Math.ceil((imageWidth*bitDepth)/8);
+			int paddingperline=0;
+			if(bytesperline%4!=0) {
+				paddingperline=4-bytesperline%4;
+			}
+			int calculatedsize= (int)Math.ceil((imageWidth*imageHeight*bitDepth)/8)+paddingperline*imageHeight;
+			if(calculatedsize!=imagedatasize) {
+				throwHeaderError(l10n("InvalidImageDataSizeT"), l10n("InvalidImageDataSizeD" ));
+			}
+		}
+		dis.reset();
+
+		FileUtil.copy(dis, output, -1);
+		output.flush();
 	}
 
 	private static String l10n(String key) {
