@@ -292,10 +292,10 @@ public class PNGFilter implements ContentDataFilter {
 			System.out.println("Internal error: " + e.getMessage());
 		} catch (InvalidThresholdException e) {
 		} finally {
-			inputBucket.free();
-			outputBucket.free();
 			Closer.close(inputStream);
 			Closer.close(outputStream);
+			inputBucket.free();
+			outputBucket.free();
 		}
 	}
 

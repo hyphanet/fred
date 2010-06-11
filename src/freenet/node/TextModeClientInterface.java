@@ -437,11 +437,11 @@ public class TextModeClientInterface implements Runnable {
     		outsb.append("Internal error: " + e.getMessage());
     		Logger.error(this, "Internal error: " + e, e);
     	} finally {
-    		input.free();
-    		output.free();
     		Closer.close(inputStream);
     		Closer.close(outputStream);
     		Closer.close(bis);
+    		input.free();
+    		output.free();
     	}
     	outsb.append("\r\n");
     }else if(uline.startsWith("BLOW")) {
