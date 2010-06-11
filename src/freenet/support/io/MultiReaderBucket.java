@@ -109,7 +109,11 @@ public class MultiReaderBucket {
 			public final void close() throws IOException {
 				is.close();
 			}
-			
+
+			@Override
+			public final int available() throws IOException {
+				return is.available();
+			}
 		}
 		
 		public String getName() {
