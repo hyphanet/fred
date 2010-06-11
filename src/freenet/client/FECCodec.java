@@ -9,6 +9,7 @@ import java.io.OutputStream;
 
 import com.db4o.ObjectContainer;
 import com.onionnetworks.fec.FECCode;
+import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.util.Buffer;
 
 import freenet.support.Logger;
@@ -189,7 +190,12 @@ public abstract class FECCodec {
 
 			if(numberToDecode > 0)
 				// Do the (striped) decode
-
+				
+				if(fec instanceof Native8Code) {
+					System.out.println("Decoding with native code, n = "+n+" k = "+k);
+					System.out.flush();
+				}
+				
 				for(int offset = 0; offset < blockLength; offset += STRIPE_SIZE) {
 					// Read the data in first
 					for(int i = 0; i < k; i++) {
@@ -303,6 +309,11 @@ public abstract class FECCodec {
 			if(logMINOR)
 				Logger.minor(this, "Memory in use before encodes: " + memUsedBeforeEncodes);
 
+			if(fec instanceof Native8Code) {
+				System.out.println("Encoding with native code, n = "+n+" k = "+k);
+				System.out.flush();
+			}
+			
 			if(numberToEncode > 0)
 				// Do the (striped) encode
 
