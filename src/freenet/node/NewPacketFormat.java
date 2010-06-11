@@ -31,40 +31,8 @@ public class NewPacketFormat implements PacketFormat {
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
 		byte[] packet = new byte[maxPacketSize];
 		int offset = 9; // Sequence number (4), HMAC (4), ACK count (1)
-		int numAcks = 0;
 
-		// Insert acks
-		synchronized(acks) {
-			int firstAck = 0;
-			Iterator<Integer> it = acks.iterator();
-			while (it.hasNext() && numAcks < 256) {
-				int ack = it.next();
-				if(numAcks == 0) {
-					firstAck = ack;
-
-					byte[] data = new byte[4];
-					data[0] = (byte) (ack >>> 24);
-					data[1] = (byte) (ack >>> 16);
-					data[2] = (byte) (ack >>> 8);
-					data[3] = (byte) ack;
-
-					System.arraycopy(data, 0, packet, offset, data.length);
-					offset += data.length;
-				} else {
-					// Compress if possible
-					int compressedAck = ack - firstAck;
-					if((compressedAck < 0) || (compressedAck > 255)) {
-						// TODO: If less that 0, we could replace firstAck
-						continue;
-					}
-
-					packet[offset++] = (byte) (compressedAck);
-				}
-
-				++numAcks;
-				it.remove();
-			}
-		}
+		offset = insertAcks(packet, offset);
 
 		// Try to finish Messages that have been started
 		synchronized(started) {
@@ -117,6 +85,45 @@ public class NewPacketFormat implements PacketFormat {
                 }
 
 		return false;
+	}
+	
+	private int insertAcks(byte[] packet, int offset) {
+		int numAcks = 0;
+
+		// Insert acks
+		synchronized(acks) {
+			int firstAck = 0;
+			Iterator<Integer> it = acks.iterator();
+			while (it.hasNext() && numAcks < 256) {
+				int ack = it.next();
+				if(numAcks == 0) {
+					firstAck = ack;
+
+					byte[] data = new byte[4];
+					data[0] = (byte) (ack >>> 24);
+					data[1] = (byte) (ack >>> 16);
+					data[2] = (byte) (ack >>> 8);
+					data[3] = (byte) ack;
+
+					System.arraycopy(data, 0, packet, offset, data.length);
+					offset += data.length;
+				} else {
+					// Compress if possible
+					int compressedAck = ack - firstAck;
+					if((compressedAck < 0) || (compressedAck > 255)) {
+						// TODO: If less that 0, we could replace firstAck
+						continue;
+					}
+
+					packet[offset++] = (byte) (compressedAck);
+				}
+
+				++numAcks;
+				it.remove();
+			}
+		}
+		
+		return offset;
 	}
 
 	private class MessageWrapper {
