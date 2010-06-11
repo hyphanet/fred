@@ -118,7 +118,7 @@ public class SplitFileInserter implements ClientPutState {
 		if(splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT)
 			checkSegmentSize = 0;
 		else
-			checkSegmentSize = Math.min(ctx.splitfileSegmentCheckBlocks, segmentSize + 1);
+			checkSegmentSize = FECCodec.getCheckBlocks(splitfileAlgorithm, segmentSize);
 		
 		this.persistent = persistent;
 		if(persistent) {
