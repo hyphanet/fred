@@ -297,7 +297,8 @@ class SingleFileInserter implements ClientPutState {
 				cb.onMetadata(meta, this, container, context);
 				cb.onTransition(this, dataPutter, container);
 				dataPutter.schedule(container, context);
-				cb.onBlockSetFinished(this, container, context);
+				if(!isUSK)
+					cb.onBlockSetFinished(this, container, context);
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token, persistent);
@@ -329,7 +330,8 @@ class SingleFileInserter implements ClientPutState {
 				if(earlyEncode && metaPutter instanceof SingleBlockInserter)
 					((SingleBlockInserter)metaPutter).getBlock(container, context, true);
 				metaPutter.schedule(container, context);
-				cb.onBlockSetFinished(this, container, context);
+				if(!isUSK)
+					cb.onBlockSetFinished(this, container, context);
 			}
 			started = true;
 			if(persistent) {
