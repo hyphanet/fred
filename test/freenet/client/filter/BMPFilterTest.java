@@ -49,21 +49,7 @@ public class BMPFilterTest extends TestCase {
 			String filename=(String) test[0];
 			int expectedresult = Integer.parseInt(test[1].toString());
 			Bucket ib;
-			try {
-				ib = resourceToBucket(filename);
-
-			} 	
-
-			catch (FileNotFoundException e) {
-				assertFalse(filename +" not found in BMP test", false);
-				continue;
-			}
-			catch (IOException e) {
-				System.out.println("IOException during reading "+filename);
-				continue;
-			}
-
-
+			ib = resourceToBucket(filename);
 			InputStream inputStream = null;
 			OutputStream outputStream = null;
 			try {
