@@ -256,19 +256,19 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		for(int i=0;i<waitingFor.size();i++) {
 			if(waitingFor.get(i) == oldState) {
 				waitingFor.set(i, newState);
-				container.ext().store(waitingFor, 2);
+				if(persistent) container.ext().store(waitingFor, 2);
 			}
 		}
 		for(int i=0;i<waitingForBlockSet.size();i++) {
 			if(waitingForBlockSet.get(i) == oldState) {
 				waitingForBlockSet.set(i, newState);
-				container.ext().store(waitingFor, 2);
+				if(persistent) container.ext().store(waitingFor, 2);
 			}
 		}
 		for(int i=0;i<waitingForFetchable.size();i++) {
 			if(waitingForFetchable.get(i) == oldState) {
 				waitingForFetchable.set(i, newState);
-				container.ext().store(waitingFor, 2);
+				if(persistent) container.ext().store(waitingFor, 2);
 			}
 		}
 		if(persistent) container.store(this);
