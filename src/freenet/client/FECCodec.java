@@ -84,6 +84,9 @@ public abstract class FECCodec {
 		int checkBlocks = dataBlocks * HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT / HighLevelSimpleClientImpl.SPLITFILE_BLOCKS_PER_SEGMENT;
 		if(dataBlocks >= HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT) 
 			checkBlocks = HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT;
+		// One more for extra persistence for small segments, but not if it pushes us over 256 blocks.
+		if(dataBlocks+checkBlocks != 256)
+			checkBlocks++;
 		return checkBlocks;
 	}
 
