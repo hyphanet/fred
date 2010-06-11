@@ -72,7 +72,7 @@ public class BMPFilterTest extends TestCase {
 				}
 				assertEquals(filename + " should be valid", expectedresult,0);
 				assertEquals("Input and output should be the same length", ib.size(), output.size());
-				assertEquals("Input and output should be identical", BucketTools.toByteArray(ib), BucketTools.toByteArray(output));
+				assertTrue("Input and output are not identical", Arrays.equals(BucketTools.toByteArray(ib), BucketTools.toByteArray(output)));
 			} 
 			catch (DataFilterException dfe) {
 
