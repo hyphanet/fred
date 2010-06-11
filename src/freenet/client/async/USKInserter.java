@@ -205,7 +205,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				} // Else try to insert the other hints.
 			}
 		}
-		parent.onTransition(this, m, container);
+		cb.onTransition(this, m, container);
 		m.arm(container, context);
 		if(!parentActive)
 			container.deactivate(parent, 1);
