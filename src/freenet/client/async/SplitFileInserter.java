@@ -108,9 +108,18 @@ public class SplitFileInserter implements ClientPutState {
 		countDataBlocks = dataBuckets.length;
 		// Encoding is done by segments
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
-		segmentSize = ctx.splitfileSegmentDataBlocks;
-		checkSegmentSize = splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT ? 0 : ctx.splitfileSegmentCheckBlocks;
-
+		int maxSegSize = ctx.splitfileSegmentDataBlocks;
+		
+		// Segment size cannot be greater than ctx.splitfileSegmentDataBlocks.
+		// But IT CAN BE SMALLER!
+		int segs = (int)Math.ceil(((double)countDataBlocks) / ((double)maxSegSize));
+		segmentSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+		
+		if(splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT)
+			checkSegmentSize = 0;
+		else
+			checkSegmentSize = Math.min(ctx.splitfileSegmentCheckBlocks, segmentSize + 1);
+		
 		this.persistent = persistent;
 		if(persistent) {
 			container.activate(parent, 1);
