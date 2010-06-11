@@ -217,7 +217,10 @@ public class ClientGetter extends BaseClientGetter {
 				assert(result.asBucket() != returnBucket);
 				Bucket filteredResult;
 				if(returnBucket == null) filteredResult = context.getBucketFactory(persistent()).makeBucket(-1);
-				else filteredResult = returnBucket;
+				else {
+					if(persistent()) container.activate(returnBucket, 5);
+					filteredResult = returnBucket;
+				}
 				input = result.asBucket().getInputStream();
 				output = filteredResult.getOutputStream();
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
