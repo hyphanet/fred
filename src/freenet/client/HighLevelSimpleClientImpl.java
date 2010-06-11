@@ -79,7 +79,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	// going by memory usage only; 4kB per stripe
 	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
 	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
-	public static final int SPLITFILE_BLOCKS_PER_SEGMENT = 128;
+	/* We can go down to 131 data 125 check if it avoids creating a new segment.
+	 * FECCodec.standardOnionCheckBlocks will automatically reduce check blocks to compensate for more than half data blocks. */
+	public static final int SPLITFILE_BLOCKS_PER_SEGMENT = 131;
 	public static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
 	public static final int EXTRA_INSERTS_SINGLE_BLOCK = 0;
 	public static final int EXTRA_INSERTS_SPLITFILE_HEADER = 2;
