@@ -1,6 +1,7 @@
 window.onload = started;
 
 var req;
+var timer_disabled=0;
 
 function loadXMLDoc(url) {
 	req = false;
@@ -47,14 +48,17 @@ function substringTillClosing(str,fromIndex){
 }
 
 function processReqChange() {
+	if (timer_disabled) return;
 	if (req.readyState == 4) {
 		if (req.status == 200) {
 			if(req.responseText.indexOf("infoContent")==-1){
+				timer_disabled=1;
 				window.location.reload();
 			}else{
 				document.getElementById('infoContent').innerHTML=substringTillClosing(req.responseText,req.responseText.indexOf("id=\"infoContent\""))
 			}
 		}else if(req.status==500){
+			timer_disabled=1;
 			window.location.reload();
 		}
 		setTimeout(sendRequest, 2000);
