@@ -77,6 +77,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			if(fec != null) return;
 		}
 		FECCode fec2 = null;
+		if(k >= n) throw new IllegalArgumentException("n must be >k: n = "+n+" k = "+k);
 		if(k > 256 || n > 256) Logger.error(this, "Wierd FEC parameters? k = "+k+" n = "+n);
 		if((!noNative) && k <= 256 && n <= 256) { // native code segfaults if k < 256 and n > 256
 			try {
