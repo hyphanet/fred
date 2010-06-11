@@ -111,6 +111,10 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			if(logMINOR) Logger.minor(this, "Processing "+u);
 			uri = URIPreEncoder.encodeURI(u).normalize();
 			if(logMINOR) Logger.minor(this, "Processing "+uri);
+			if(u.startsWith("/") || u.startsWith("%2f"))
+				// Don't bother with relative URIs if it's obviously absolute.
+				// Don't allow encoded /'s, they're just too confusing (here they would get decoded and then coalesced with other slashes).
+				noRelative = true;
 			if(!noRelative)
 				resolved = baseURI.resolve(uri);
 			else
@@ -178,12 +182,12 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				try {
 					String p = rpath;
 					while(p.startsWith("/")) {
-						isAbsolute = true;
 						p = p.substring(1);
 					}
 					FreenetURI furi = new FreenetURI(p, true);
+					isAbsolute = true;
 					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-					return processURI(furi, uri, overrideType, noRelative || isAbsolute, inline);
+					return processURI(furi, uri, overrideType, true, inline);
 				} catch (MalformedURLException e) {
 					// Not a FreenetURI
 					if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);

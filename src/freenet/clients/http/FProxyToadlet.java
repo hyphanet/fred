@@ -380,6 +380,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest httprequest, ToadletContext ctx) 
+	throws ToadletContextClosedException, IOException, RedirectException {
+		handleMethodGET(uri, httprequest, ctx, 0);
+	}
+	
+	static final int MAX_RECURSION = 5;
+	
+	public void handleMethodGET(URI uri, HTTPRequest httprequest, ToadletContext ctx, int recursion) 
 			throws ToadletContextClosedException, IOException, RedirectException {
 
 		String ks = uri.getPath();
@@ -701,6 +708,17 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				Logger.minor(this, "Failed to fetch "+uri+" : "+e);
 			}
 			if(e.newURI != null) {
+				if(accept != null && (accept.startsWith("text/css") || accept.startsWith("image/")) && recursion++ < MAX_RECURSION) {
+					// If it's an image or a CSS fetch, auto-follow the redirect, up to a limit.
+					String link = getLink(e.newURI, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
+					try {
+						uri = new URI(link);
+						handleMethodGET(uri, httprequest, ctx, recursion);
+						return;
+					} catch (URISyntaxException e1) {
+						Logger.error(this, "Caught "+e1+" parsing new link "+link, e1);
+					}
+				}
 				Toadlet.writePermanentRedirect(ctx, msg,
 					getLink(e.newURI, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload")));
 			} else if(e.mode == FetchException.TOO_BIG) {

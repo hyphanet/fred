@@ -16,6 +16,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.CHKBlock;
@@ -226,6 +227,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
 			segmentCount = (splitfileDataBlocks.length / blocksPerSegment) +
 				(splitfileDataBlocks.length % blocksPerSegment == 0 ? 0 : 1);
+			if(segmentCount > 1 && ((blocksPerSegment != HighLevelSimpleClientImpl.SPLITFILE_BLOCKS_PER_SEGMENT) || (checkBlocksPerSegment != HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT))) {
+				System.out.println("Decoding unusual splitfile: Total data blocks "+splitfileDataBlocks.length+" total check blocks "+splitfileCheckBlocks.length+" data blocks per segment "+blocksPerSegment+" check blocks per segment "+checkBlocksPerSegment+" segments "+segmentCount);
+			}
+				
 			// Onion, 128/192.
 			// Will be segmented.
 		} else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
@@ -346,8 +351,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(checkBlocksPtr != splitfileCheckBlocks.length)
 				throw new FetchException(FetchException.INVALID_METADATA, "Unable to allocate all check blocks to segments - buggy or malicious inserter");
 		}
-		parent.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length, container);
 		parent.addMustSucceedBlocks(splitfileDataBlocks.length, container);
+		parent.addBlocks(splitfileCheckBlocks.length, container);
 		parent.notifyClients(container, context);
 
 		try {

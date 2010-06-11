@@ -126,7 +126,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.getCHKOnly = getCHKOnly;
 		isSSK = uri.getKeyType().toUpperCase().equals("SSK");
 		if(addToParent) {
-			parent.addBlock(container);
 			parent.addMustSucceedBlocks(1, container);
 			parent.notifyClients(container, context);
 		}

@@ -35,9 +35,10 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		this.rcb = rcb;
 		this.token = l;
 		if(!dontAdd) {
-			parent.addBlock(container);
 			if(isEssential)
 				parent.addMustSucceedBlocks(1, container);
+			else
+				parent.addBlock(container);
 			parent.notifyClients(container, context);
 		}
 	}
