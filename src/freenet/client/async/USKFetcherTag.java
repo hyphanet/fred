@@ -128,7 +128,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		synchronized(this) {
 			finished = true;
 		}
-		if(persistent) {
+		if(persistent && container == null) {
 			// If cancelled externally, and this function is called from USKFetcher,
 			// container may be null even though we are running on the database thread,
 			// resulting in a database leak.
