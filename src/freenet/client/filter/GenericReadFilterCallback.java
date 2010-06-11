@@ -162,10 +162,9 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				throw new CommentException("URI looked like localhost but could not parse: "+e);
 			}
 			host = null;
-			resolved = uri;
 		}
 		
-		String rpath = resolved.getPath();
+		String rpath = uri.getPath();
 		if(logMINOR) Logger.minor(this, "Path: \""+path+"\" rpath: \""+rpath+"\"");
 		
 		if(host == null) {
