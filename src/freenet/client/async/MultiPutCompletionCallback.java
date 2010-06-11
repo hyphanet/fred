@@ -7,10 +7,23 @@ import com.db4o.ObjectContainer;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	// Vector's rather than HashSet's for memory reasons.
 	// This class will not be used with large sets, so O(n) is cheaper than O(1) -
 	// at least it is on memory!
@@ -111,6 +124,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				this.e = e;
 				if(persistent)
 					container.store(this);
+				if(logMINOR) Logger.minor(this, "Still running: "+waitingFor.size()+" started = "+started);
 				complete = false;
 			}
 			if(state == generator) {
