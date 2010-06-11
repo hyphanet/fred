@@ -20,12 +20,19 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
+		// TODO: Decrypt
+		// TODO: Check HMAC
+		// TODO: Ack packet sequence number
+		// TODO: Go through the acks
+		// TODO: Handle received message fragments
 		throw new UnsupportedOperationException();
 
 	}
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
+		// TODO: Record what was sent in this packet
+
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
 		byte[] packet = new byte[maxPacketSize];
 		int offset = 9; // Sequence number (4), HMAC (4), ACK count (1)
