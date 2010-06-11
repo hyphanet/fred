@@ -150,7 +150,7 @@ public class ClientGetter extends BaseClientGetter {
 				}
 				currentState = SingleFileFetcher.create(this, this,
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						filtering ? returnBucket : null, true, container, context);
+						filtering ? null : returnBucket, true, container, context);
 			}
 			if(cancelled) cancel();
 			// schedule() may deactivate stuff, so store it now.
