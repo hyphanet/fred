@@ -203,6 +203,7 @@ public abstract class ClientRequester {
 
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
 	public synchronized void addMustSucceedBlocks(int blocks, ObjectContainer container) {
+		totalBlocks += blocks;
 		minSuccessBlocks += blocks;
 		if(persistent()) container.store(this);
 		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 

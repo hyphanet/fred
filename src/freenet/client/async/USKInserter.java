@@ -339,7 +339,6 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		this.token = token;
 		this.getCHKOnly = getCHKOnly;
 		if(addToParent) {
-			parent.addBlock(container);
 			parent.addMustSucceedBlocks(1, container);
 			parent.notifyClients(container, context);
 		}

@@ -346,8 +346,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(checkBlocksPtr != splitfileCheckBlocks.length)
 				throw new FetchException(FetchException.INVALID_METADATA, "Unable to allocate all check blocks to segments - buggy or malicious inserter");
 		}
-		parent.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length, container);
 		parent.addMustSucceedBlocks(splitfileDataBlocks.length, container);
+		parent.addBlocks(splitfileCheckBlocks.length, container);
 		parent.notifyClients(container, context);
 
 		try {
