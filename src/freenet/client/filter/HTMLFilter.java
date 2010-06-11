@@ -89,7 +89,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	public String getCharset(byte[] input, String parseCharset) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
-		ByteArrayInputStream strm = new ByteArrayInputStream(input);
+		if(input.length > getCharsetBufferSize() && Logger.shouldLog(Logger.MINOR, this)) {
+			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
+		}		ByteArrayInputStream strm = new ByteArrayInputStream(input);
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
 		Writer w = new NullWriter();
 		Reader r;
@@ -2630,6 +2632,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		// FIXME XML BOMs???
 		return null;
 	}
-	
 
+	public int getCharsetBufferSize() {
+		//Read in 64 kilobytes. The charset could be defined anywhere in the head section
+		return 1024*64;
+	}
 }

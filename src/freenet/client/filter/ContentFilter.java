@@ -214,9 +214,11 @@ public class ContentFilter {
 			// Run the read filter if there is one.
 			if(handler.readFilter != null) {
 				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
-					input.mark(64*1024);
-					byte[] charsetBuffer = new byte[64*1024];
-					input.read(charsetBuffer, 0, 64*1024);
+					int bufferSize = handler.charsetExtractor.getCharsetBufferSize();
+					if(input.available() < bufferSize) bufferSize = input.available();
+					input.mark(bufferSize);
+					byte[] charsetBuffer = new byte[bufferSize];
+					input.read(charsetBuffer, 0, bufferSize);
 					input.reset();
 					charset = detectCharset(charsetBuffer, handler, maybeCharset);
 				}

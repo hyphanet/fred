@@ -28,7 +28,12 @@ public interface CharsetExtractor {
 	 * @throws IOException 
 	 */
 	BOMDetection getCharsetByBOM(byte[] input) throws DataFilterException, IOException;
-	
+
+	/**How many bytes must be fed into the CharsetExtractor to figure
+	 * out the charset
+	 */
+	public int getCharsetBufferSize();
+
 	public class BOMDetection {
 		/** The charset, guessed from the first few characters. */
 		final String charset;
@@ -41,5 +46,4 @@ public interface CharsetExtractor {
 			this.mustHaveCharset = mustHaveCharset;
 		}
 	}
-	
 }
