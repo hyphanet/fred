@@ -30,7 +30,7 @@ public class KnownUnsafeContentTypeException extends UnsafeContentTypeException 
 	@Override
 	public List<String> details() {
 		List<String> details = new LinkedList<String>();
-		if(type.dangerousInlines) details.add(l10n("dangerousInlines")+l10n("dangerousInlines"));
+		if(type.dangerousInlines) details.add(l10n("dangerousInlinesLabel")+l10n("dangerousInlines"));
 		if(type.dangerousLinks) details.add(l10n("dangerousLinksLabel")+l10n("dangerousLinks"));
 		if(type.dangerousScripting) details.add(l10n("dangerousScriptsLabel")+l10n("dangerousScripts"));
 		if(type.dangerousScripting) details.add(l10n("dangerousMetadataLabel")+l10n("dangerousMetadata"));
