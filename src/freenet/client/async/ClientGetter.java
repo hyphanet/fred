@@ -224,6 +224,7 @@ public class ClientGetter extends BaseClientGetter {
 				input.close();
 				output.close();
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
+				result.asBucket().free();
 				result = new FetchResult(new ClientMetadata(detectedMIMEType), filteredResult);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
