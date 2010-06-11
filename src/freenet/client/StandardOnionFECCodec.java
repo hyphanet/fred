@@ -81,6 +81,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		if(k > 256 || n > 256) Logger.error(this, "Wierd FEC parameters? k = "+k+" n = "+n);
 		if((!noNative) && k <= 256 && n <= 256) { // native code segfaults if k < 256 and n > 256
 			System.out.println("Creating native FEC: n="+n+" k="+k);
+			System.out.flush();
 			try {
 				fec2 = new Native8Code(k,n);
 				Logger.minor(this, "Loaded native FEC.");
