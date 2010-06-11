@@ -5,6 +5,7 @@ package freenet.client.filter;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -214,12 +215,13 @@ public class ContentFilter {
 			// Run the read filter if there is one.
 			if(handler.readFilter != null) {
 				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
+					DataInputStream dataInput = new DataInputStream(input);
 					int bufferSize = handler.charsetExtractor.getCharsetBufferSize();
-					if(input.available() < bufferSize) bufferSize = input.available();
-					input.mark(bufferSize);
+					if(dataInput.available() < bufferSize) bufferSize = dataInput.available();
+					dataInput.mark(bufferSize);
 					byte[] charsetBuffer = new byte[bufferSize];
-					input.read(charsetBuffer, 0, bufferSize);
-					input.reset();
+					dataInput.readFully(charsetBuffer);
+					dataInput.reset();
 					charset = detectCharset(charsetBuffer, handler, maybeCharset);
 				}
 				try {
