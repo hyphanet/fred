@@ -118,7 +118,7 @@ public class SplitFileInserter implements ClientPutState {
 		if(splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT)
 			checkSegmentSize = 0;
 		else
-			checkSegmentSize = FECCodec.getCheckBlocks(splitfileAlgorithm, segmentSize);
+			checkSegmentSize = FECCodec.getCheckBlocks(splitfileAlgorithm, segmentSize, ctx.compatibilityMode);
 		
 		this.persistent = persistent;
 		if(persistent) {
@@ -259,7 +259,7 @@ public class SplitFileInserter implements ClientPutState {
 		// First split the data up
 		if((dataBlocks < segmentSize) || (segmentSize == -1)) {
 			// Single segment
-			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length), origDataBlocks, ctx, getCHKOnly, 0, container);
+			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, ctx.compatibilityMode), origDataBlocks, ctx, getCHKOnly, 0, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
@@ -271,7 +271,7 @@ public class SplitFileInserter implements ClientPutState {
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, seg.length), seg, ctx, getCHKOnly, segNo, container);
+				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, seg.length, ctx.compatibilityMode), seg, ctx, getCHKOnly, segNo, container);
 				segs.add(s);
 
 				if(i == dataBlocks) break;

@@ -48,10 +48,18 @@ public class InsertContext implements Cloneable {
 	public int extraInsertsSingleBlock;
 	/** Number of extra inserts for a block inserted above a splitfile. */
 	public int extraInsertsSplitfileHeaderBlock;
+	// FIXME DB4O: This should really be an enum. However, db4o has a tendency to copy enum's,
+	// which wastes space (often unrecoverably), confuses programmers, creates wierd bugs and breaks == comparison.
+	/** Backward compatibility support for network level metadata. */
+	public long compatibilityMode;
+	/** No compatibility issues, use the most efficient metadata possible. */
+	public static final long COMPAT_NONE = 0;
+	/** 1250 or previous: Segments up to 128 data 128 check, check <= data. */
+	public static final long COMPAT_1250 = 1;
 
 	public InsertContext(
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock) {
+			ClientEventProducer eventProducer, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, long compatibilityMode) {
 		dontCompress = false;
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
 		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
@@ -64,6 +72,7 @@ public class InsertContext implements Cloneable {
 		this.compressorDescriptor = compressorDescriptor;
 		this.extraInsertsSingleBlock = extraInsertsSingleBlock;
 		this.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeaderBlock;
+		this.compatibilityMode = compatibilityMode;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
@@ -78,6 +87,7 @@ public class InsertContext implements Cloneable {
 		this.forkOnCacheable = ctx.forkOnCacheable;
 		this.extraInsertsSingleBlock = ctx.extraInsertsSingleBlock;
 		this.extraInsertsSplitfileHeaderBlock = ctx.extraInsertsSplitfileHeaderBlock;
+		this.compatibilityMode = ctx.compatibilityMode;
 	}
 	
 	/** Make public, but just call parent for a field for field copy */

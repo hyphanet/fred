@@ -61,18 +61,18 @@ public abstract class FECCodec {
 	 * Get a codec where we know only the number of data blocks and the codec
 	 * type. Normally for encoding.
 	 */
-	public static FECCodec getCodec(short splitfileType, int dataBlocks) {
+	public static FECCodec getCodec(short splitfileType, int dataBlocks, long compatibilityMode) {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			int checkBlocks = standardOnionCheckBlocks(dataBlocks);
+			int checkBlocks = standardOnionCheckBlocks(dataBlocks, compatibilityMode);
 			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks);
 		}
 		else
 			return null;
 	}
 	
-	private static int standardOnionCheckBlocks(int dataBlocks) {
+	private static int standardOnionCheckBlocks(int dataBlocks, long compatibilityMode) {
 		/**
 		 * ALCHEMY: What we do know is that redundancy by FEC is much more efficient than 
 		 * redundancy by simply duplicating blocks, for obvious reasons (see e.g. Wuala). But
@@ -90,12 +90,18 @@ public abstract class FECCodec {
 		// Keep it within 256 blocks.
 		if(dataBlocks < 256 && dataBlocks + checkBlocks > 256)
 			checkBlocks = 256 - dataBlocks;
+		if(compatibilityMode == InsertContext.COMPAT_1250) {
+			// Pre-1250, redundancy was always 100% or less.
+			// Builds of that period using the native FEC (ext #26) will segfault sometimes on >100% redundancy.
+			// So limit check blocks to data blocks.
+			if(checkBlocks > dataBlocks) checkBlocks = dataBlocks;
+		}
 		return checkBlocks;
 	}
 
-	public static int getCheckBlocks(short splitfileType, int dataBlocks) {
+	public static int getCheckBlocks(short splitfileType, int dataBlocks, long compatibilityMode) {
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			return standardOnionCheckBlocks(dataBlocks);
+			return standardOnionCheckBlocks(dataBlocks, compatibilityMode);
 		} else
 			return 0;
 	}

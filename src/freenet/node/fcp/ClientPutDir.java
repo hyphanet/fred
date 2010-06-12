@@ -58,7 +58,7 @@ public class ClientPutDir extends ClientPutBase {
 			HashMap<String, Object> manifestElements, boolean wasDiskPut, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, null,
 				handler, message.priorityClass, message.persistenceType, message.clientToken,
-				message.global, message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, server, container);
+				message.global, message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.compatibilityMode, server, container);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.wasDiskPut = wasDiskPut;
 		
