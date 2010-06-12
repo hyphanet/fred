@@ -98,7 +98,7 @@ public class StandardOnionFECCodec extends FECCodec {
 				if(t instanceof UnsatisfiedLinkError)
 					noNative = true;
 			}
-		}
+		} // FIXME 16-bit native FEC???
 
 		if (fec2 != null){
 			synchronized(this) {
