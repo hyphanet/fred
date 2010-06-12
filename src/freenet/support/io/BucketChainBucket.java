@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,6 +23,7 @@ public class BucketChainBucket implements Bucket {
 	private boolean freed;
 	private boolean readOnly;
 	private final BucketFactory bf;
+	private final boolean cacheWholeBucket;
 
 	/**
 	 * @param bucketSize
@@ -29,21 +31,23 @@ public class BucketChainBucket implements Bucket {
 	 * @param dbJobRunner If not null, use this to store buckets to disk progressively
 	 * to avoid a big transaction at the end. Caller then MUST call storeTo() at some point.
 	 */
-	public BucketChainBucket(long bucketSize, BucketFactory bf) {
+	public BucketChainBucket(long bucketSize, BucketFactory bf, boolean cacheWholeBucket) {
 		this.bucketSize = bucketSize;
 		this.buckets = new Vector<Bucket>();
 		this.bf = bf;
 		size = 0;
 		freed = false;
 		readOnly = false;
+		this.cacheWholeBucket = cacheWholeBucket;
 	}
 
-	private BucketChainBucket(Vector<Bucket> newBuckets, long bucketSize2, long size2, boolean readOnly, BucketFactory bf2) {
+	private BucketChainBucket(Vector<Bucket> newBuckets, long bucketSize2, long size2, boolean readOnly, BucketFactory bf2, boolean cacheWholeBucket) {
 		this.buckets = newBuckets;
 		this.bucketSize = bucketSize2;
 		this.size = size2;
 		this.readOnly = readOnly;
 		this.bf = bf2;
+		this.cacheWholeBucket = cacheWholeBucket;
 	}
 
 	public void free() {
@@ -212,6 +216,11 @@ public class BucketChainBucket implements Bucket {
 			private int bucketNo = 0;
 			private OutputStream curBucketStream = makeBucketOutputStream(0);
 			private long bucketLength = 0;
+			private ByteArrayOutputStream baos;
+			{
+				if(cacheWholeBucket)
+					baos = new ByteArrayOutputStream((int)bucketSize);
+			}
 			
 			@Override
 			public void write(int c) throws IOException {
@@ -228,11 +237,18 @@ public class BucketChainBucket implements Bucket {
 					}
 				}
 				if(bucketLength == bucketSize) {
+					if(baos != null) {
+						curBucketStream.write(baos.toByteArray());
+						baos.reset();
+					}
 					curBucketStream.close();
 					curBucketStream = makeBucketOutputStream(++bucketNo);
 					bucketLength = 0;
 				}
-				curBucketStream.write(c);
+				if(baos != null)
+					baos.write(c);
+				else
+					curBucketStream.write(c);
 				bucketLength++;
 				synchronized(BucketChainBucket.this) {
 					size++;
@@ -260,6 +276,10 @@ public class BucketChainBucket implements Bucket {
 				}
 				if(length <= 0) return;
 				if(bucketLength == bucketSize) {
+					if(baos != null) {
+						curBucketStream.write(baos.toByteArray());
+						baos.reset();
+					}
 					curBucketStream.close();
 					curBucketStream = makeBucketOutputStream(++bucketNo);
 					bucketLength = 0;
@@ -270,7 +290,10 @@ public class BucketChainBucket implements Bucket {
 					write(buf, offset + split, length - split);
 					return;
 				}
-				curBucketStream.write(buf, offset, length);
+				if(baos != null)
+					baos.write(buf, offset, length);
+				else
+					curBucketStream.write(buf, offset, length);
 				bucketLength += length;
 				synchronized(BucketChainBucket.this) {
 					size += length;
@@ -279,8 +302,13 @@ public class BucketChainBucket implements Bucket {
 			
 			@Override
 			public void close() throws IOException {
-				if(curBucketStream != null)
+				if(curBucketStream != null) {
+					if(baos != null) {
+						curBucketStream.write(baos.toByteArray());
+						baos.reset();
+					}
 					curBucketStream.close();
+				}
 			}
 			
 		};
@@ -331,7 +359,7 @@ public class BucketChainBucket implements Bucket {
 			}
 			newBuckets.add(shadow);
 		}
-		return new BucketChainBucket(newBuckets, bucketSize, size, true, bf);
+		return new BucketChainBucket(newBuckets, bucketSize, size, true, bf, cacheWholeBucket);
 	}
 
 }
