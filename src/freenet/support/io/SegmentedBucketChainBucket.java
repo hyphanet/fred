@@ -291,13 +291,15 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			int segmentNo = 0;
 			int bucketNo = 0;
 			SegmentedChainBucketSegment seg = makeSegment(segmentNo, null);
-			OutputStream cur = seg.makeBucketStream(bucketNo);
+			OutputStream cur;
 			private long bucketLength;
 			private boolean closed;
 			private ByteArrayOutputStream baos;
 			{
 				if(cacheWholeBucket)
 					baos = new ByteArrayOutputStream((int)bucketSize);
+				else
+					cur = seg.makeBucketStream(bucketNo);
 			}
 
 			@Override
@@ -323,18 +325,21 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				if(closed) throw new IOException("Already closed");
 				while(length > 0) {
 					if(bucketLength == bucketSize) {
-						bucketNo++;
-						if(baos != null) {
-							cur.write(baos.toByteArray());
-							baos.reset();
-						}
-						cur.close();
 						if(bucketNo == segmentSize) {
 							bucketNo = 0;
 							segmentNo++;
 							seg = makeSegment(segmentNo, seg);
 						}
-						cur = seg.makeBucketStream(bucketNo);
+						if(baos != null) {
+							OutputStream os = seg.makeBucketStream(bucketNo);
+							bucketNo++;
+							os.write(baos.toByteArray());
+							baos.reset();
+							os.close();
+						} else {
+							cur.close();
+							cur = seg.makeBucketStream(++bucketNo);
+						}
 						bucketLength = 0;
 					}
 					int left = (int)Math.min(Integer.MAX_VALUE, bucketSize - bucketLength);
@@ -357,11 +362,20 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				if(closed) return;
 				if(Logger.shouldLog(Logger.MINOR, this)) 
 					Logger.minor(this, "Closing "+this+" for "+SegmentedBucketChainBucket.this);
-				if(baos != null) {
-					cur.write(baos.toByteArray());
+				if(baos != null && baos.size() > 0) {
+					if(bucketNo == segmentSize) {
+						bucketNo = 0;
+						segmentNo++;
+						seg = makeSegment(segmentNo, seg);
+					}
+					OutputStream os = seg.makeBucketStream(bucketNo);
+					bucketNo++;
+					os.write(baos.toByteArray());
 					baos.reset();
+					os.close();
+				} else {
+					cur.close();
 				}
-				cur.close();
 				closed = true;
 				cur = null;
 				final SegmentedChainBucketSegment oldSeg = seg;

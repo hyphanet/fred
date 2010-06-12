@@ -214,35 +214,46 @@ public class BucketChainBucket implements Bucket {
 		return new OutputStream() {
 
 			private int bucketNo = 0;
-			private OutputStream curBucketStream = makeBucketOutputStream(0);
+			private OutputStream curBucketStream;
 			private long bucketLength = 0;
 			private ByteArrayOutputStream baos;
 			{
 				if(cacheWholeBucket)
 					baos = new ByteArrayOutputStream((int)bucketSize);
+				else
+					curBucketStream = makeBucketOutputStream(0);
 			}
 			
 			@Override
 			public void write(int c) throws IOException {
 				synchronized(BucketChainBucket.this) {
 					if(freed) {
-						curBucketStream.close();
-						curBucketStream = null;
+						if(baos == null) {
+							curBucketStream.close();
+							curBucketStream = null;
+						}
 						throw new IOException("Freed");
 					}
 					if(readOnly) {
-						curBucketStream.close();
-						curBucketStream = null;
+						if(baos == null) {
+							curBucketStream.close();
+							curBucketStream = null;
+						}
 						throw new IOException("Read-only");
 					}
 				}
 				if(bucketLength == bucketSize) {
 					if(baos != null) {
-						curBucketStream.write(baos.toByteArray());
+						OutputStream os = makeBucketOutputStream(bucketNo);
+						bucketNo++;
+						os.write(baos.toByteArray());
 						baos.reset();
+						os.close();
+					} else {
+						curBucketStream.close();
+						curBucketStream = makeBucketOutputStream(++bucketNo);
 					}
-					curBucketStream.close();
-					curBucketStream = makeBucketOutputStream(++bucketNo);
+					
 					bucketLength = 0;
 				}
 				if(baos != null)
@@ -264,24 +275,33 @@ public class BucketChainBucket implements Bucket {
 			public void write(byte[] buf, int offset, int length) throws IOException {
 				synchronized(BucketChainBucket.this) {
 					if(freed) {
-						curBucketStream.close();
-						curBucketStream = null;
+						if(baos == null) {
+							curBucketStream.close();
+							curBucketStream = null;
+						}
 						throw new IOException("Freed");
 					}
 					if(readOnly) {
-						curBucketStream.close();
-						curBucketStream = null;
+						if(baos == null) {
+							curBucketStream.close();
+							curBucketStream = null;
+						}
 						throw new IOException("Read-only");
 					}
 				}
 				if(length <= 0) return;
 				if(bucketLength == bucketSize) {
 					if(baos != null) {
-						curBucketStream.write(baos.toByteArray());
+						OutputStream os = makeBucketOutputStream(bucketNo);
+						bucketNo++;
+						os.write(baos.toByteArray());
 						baos.reset();
+						os.close();
+					} else {
+						curBucketStream.close();
+						curBucketStream = makeBucketOutputStream(++bucketNo);
 					}
-					curBucketStream.close();
-					curBucketStream = makeBucketOutputStream(++bucketNo);
+					
 					bucketLength = 0;
 				}
 				if(bucketLength + length > bucketSize) {
@@ -302,11 +322,13 @@ public class BucketChainBucket implements Bucket {
 			
 			@Override
 			public void close() throws IOException {
-				if(curBucketStream != null) {
-					if(baos != null) {
-						curBucketStream.write(baos.toByteArray());
-						baos.reset();
-					}
+				if(baos != null && baos.size() > 0) {
+					OutputStream os = makeBucketOutputStream(bucketNo);
+					bucketNo++;
+					os.write(baos.toByteArray());
+					baos.reset();
+					os.close();
+				} else if(curBucketStream != null) {
 					curBucketStream.close();
 				}
 			}
