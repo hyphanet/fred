@@ -1,5 +1,6 @@
 package freenet.node;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
@@ -15,6 +16,7 @@ public class NewPacketFormat implements PacketFormat {
 	private LinkedList<MessageWrapper> started = new LinkedList<MessageWrapper>();
 	private LinkedList<Integer> acks = new LinkedList<Integer>();
 	private long nextSequenceNumber = 0;
+	private HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
@@ -32,8 +34,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
-		// TODO: Record what was sent in this packet
-
+		SentPacket sentPacket = new SentPacket();
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
 		byte[] packet = new byte[maxPacketSize];
 		int offset = 9; // Sequence number (4), HMAC (4), ACK count (1)
@@ -45,7 +46,7 @@ public class NewPacketFormat implements PacketFormat {
 			Iterator<MessageWrapper> it = started.iterator();
 			while (it.hasNext() && (offset + MIN_MESSAGE_FRAGMENT_SIZE < maxPacketSize)) {
 				MessageWrapper wrapper = it.next();
-				offset = insertFragment(packet, offset, maxPacketSize, wrapper);
+				offset = insertFragment(packet, offset, maxPacketSize, wrapper, sentPacket);
 			}
 		}
 
@@ -60,7 +61,7 @@ public class NewPacketFormat implements PacketFormat {
 
 			MessageWrapper wrapper = new MessageWrapper(item);
 
-			offset = insertFragment(packet, offset, maxPacketSize, wrapper);
+			offset = insertFragment(packet, offset, maxPacketSize, wrapper, sentPacket);
 			synchronized(started) {
 				started.add(wrapper);
 			}
@@ -84,6 +85,9 @@ public class NewPacketFormat implements PacketFormat {
 	                Logger.error(this, "Caught exception while sending packet", e);
                 }
 
+		synchronized(sentPackets) {
+			sentPackets.put(sequenceNumber, sentPacket);
+		}
 		return false;
 	}
 	
@@ -126,7 +130,7 @@ public class NewPacketFormat implements PacketFormat {
 		return offset;
 	}
 
-	private int insertFragment(byte[] packet, int offset, int maxPacketSize, MessageWrapper wrapper) {
+	private int insertFragment(byte[] packet, int offset, int maxPacketSize, MessageWrapper wrapper, SentPacket sent) {
 		// Insert data
 		int[] added = wrapper.getData(packet, offset + (wrapper.isLongMessage() ? 5 : 2),
 		                maxPacketSize - offset);
@@ -161,8 +165,32 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		offset += added[0];
+		sent.addFragment(wrapper, added[1], added[1] + added[0] - 1);
 
 		return offset;
+	}
+
+	private class SentPacket {
+		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
+		LinkedList<int[]> ranges = new LinkedList<int[]>();
+
+		public void addFragment(MessageWrapper source, int start, int end) {
+			messages.add(source);
+			ranges.add(new int[] { start, end });
+		}
+
+		public void acked() {
+			Iterator<MessageWrapper> msgIt = messages.iterator();
+			Iterator<int[]> rangeIt = ranges.iterator();
+
+			while(msgIt.hasNext()) {
+				MessageWrapper wrapper = msgIt.next();
+				int[] range = rangeIt.next();
+				wrapper.ack(range[0], range[1]);
+
+				// TODO: Remove MessageWrapper from started if we have received acks for everything
+			}
+		}
 	}
 
 }
