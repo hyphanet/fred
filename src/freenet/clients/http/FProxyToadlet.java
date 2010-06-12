@@ -760,12 +760,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
-				PageNode page = ctx.getPageMaker().getPageNode(e.getCause() == null ? FetchException.getShortMessage(e.mode) : FetchException.getShortMessage(e.mode)+": "+e.getCause().toString(), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(e.getShortMessage(), ctx);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
 
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
-				infobox.addChild("div", "class", "infobox-header", l10n("errorWithReason", "error", e.getCause() == null ? FetchException.getShortMessage(e.mode) : FetchException.getShortMessage(e.mode)+": "+e.getCause().toString()));
+				infobox.addChild("div", "class", "infobox-header", l10n("errorWithReason", "error", e.getShortMessage()));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				HTMLNode fileInformationList = infoboxContent.addChild("ul");
 				HTMLNode option = fileInformationList.addChild("li");
