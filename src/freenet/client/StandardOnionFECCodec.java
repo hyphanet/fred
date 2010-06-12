@@ -27,7 +27,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		/** Number of output blocks, including input blocks */
 		int n;
 
-		public MyKey(int n, int k) {
+		public MyKey(int k, int n) {
 			this.n = n;
 			this.k = k;
 		}
