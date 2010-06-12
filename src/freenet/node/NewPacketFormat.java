@@ -65,8 +65,6 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		//TODO: Get Messages from the queue until the packet is big enough, or there are no Messages left
-		
 		//TODO: Encrypt, add HMAC, add sequence number
 
 		byte[] data = new byte[offset];
