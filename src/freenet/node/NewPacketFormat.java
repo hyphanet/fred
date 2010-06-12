@@ -14,6 +14,7 @@ public class NewPacketFormat implements PacketFormat {
 	private PeerNode pn;
 	private LinkedList<MessageWrapper> started = new LinkedList<MessageWrapper>();
 	private LinkedList<Integer> acks = new LinkedList<Integer>();
+	private long nextSequenceNumber = 0;
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
@@ -65,10 +66,17 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		//TODO: Encrypt, add HMAC, add sequence number
+		//TODO: Encrypt, add HMAC
 
 		byte[] data = new byte[offset];
 		System.arraycopy(packet, 0, data, 0, data.length);
+
+		//Add sequence number
+		long sequenceNumber = nextSequenceNumber++;
+		data[0] = (byte) (sequenceNumber >>> 24);
+		data[1] = (byte) (sequenceNumber >>> 16);
+		data[2] = (byte) (sequenceNumber >>> 8);
+		data[3] = (byte) (sequenceNumber);
 
 		try {
 	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
