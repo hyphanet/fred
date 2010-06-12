@@ -56,6 +56,10 @@ public class InsertContext implements Cloneable {
 	public static final long COMPAT_NONE = 0;
 	/** 1250 or previous: Segments up to 128 data 128 check, check <= data. */
 	public static final long COMPAT_1250 = 1;
+	/** 1251: Allow more check blocks than data blocks, but do not allow hashes. */
+	public static final long COMPAT_1251 = 2;
+	/** Allow hashes, new format metadata */
+	public static final long COMPAT_HASHES = 3;
 
 	public InsertContext(
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,

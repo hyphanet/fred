@@ -24,6 +24,7 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.crypt.HashResult;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -83,6 +84,7 @@ public class Metadata implements Cloneable {
 	static final short FLAGS_FULL_KEYS = 32;
 //	static final short FLAGS_SPLIT_USE_LENGTHS = 64; FIXME not supported, reassign to something else if we need a new flag
 	static final short FLAGS_COMPRESSED = 128;
+	static final short FLAGS_HASHES = 256;
 
 	/** Container archive type
 	 * @see ARCHIVE_TYPE
@@ -136,6 +138,9 @@ public class Metadata implements Cloneable {
 	String targetName;
 
 	ClientMetadata clientMetadata;
+	private final HashResult[] hashes;
+	
+	final int compatibilityMode;
 
 	@Override
 	public Object clone() {
@@ -196,7 +201,7 @@ public class Metadata implements Cloneable {
 		if(magic != FREENET_METADATA_MAGIC)
 			throw new MetadataParseException("Invalid magic "+magic);
 		short version = dis.readShort();
-		if(version != 0)
+		if(version < 0 || version > 1)
 			throw new MetadataParseException("Unsupported version "+version);
 		documentType = dis.readByte();
 		if((documentType < 0) || (documentType > 6))
@@ -213,6 +218,9 @@ public class Metadata implements Cloneable {
 			extraMetadata = (flags & FLAGS_EXTRA_METADATA) == FLAGS_EXTRA_METADATA;
 			fullKeys = (flags & FLAGS_FULL_KEYS) == FLAGS_FULL_KEYS;
 			compressed = (flags & FLAGS_COMPRESSED) == FLAGS_COMPRESSED;
+			if((flags & FLAGS_HASHES) == FLAGS_HASHES) {
+				hashes = HashResult.readHashes(dis);
+			}
 		}
 
 		if(documentType == ARCHIVE_MANIFEST) {
@@ -381,6 +389,7 @@ public class Metadata implements Cloneable {
 	 */
 	private Metadata() {
 		hashCode = super.hashCode();
+		hashes = null;
 		// Should be followed by addRedirectionManifest
 	}
 
@@ -487,6 +496,7 @@ public class Metadata implements Cloneable {
 	 */
 	Metadata(HashMap<String, Object> dir, String prefix) {
 		hashCode = super.hashCode();
+		hashes = null;
 		// Simple manifest - contains actual redirects.
 		// Not archive manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
@@ -576,8 +586,11 @@ public class Metadata implements Cloneable {
 	}
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize,
-			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata) {
+			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, int compatibilityMode, HashResult[] hashes) {
 		hashCode = super.hashCode();
+		if(hashes != null && !(compatibilityMode == 0 || compatibilityMode >= InsertContext.COMPAT_HASHES))
+			throw new IllegalArgumentException("Compatibility mode specified and hashes passed in anyway?!");
+		this.hashes = hashes;
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
 		else {
@@ -868,7 +881,10 @@ public class Metadata implements Cloneable {
 	 * @throws MetadataUnresolvedException */
 	public void writeTo(DataOutputStream dos) throws IOException, MetadataUnresolvedException {
 		dos.writeLong(FREENET_METADATA_MAGIC);
-		dos.writeShort(0); // version
+		if(compatibilityMode < InsertContext.COMPAT_HASHES || hashes == null)
+			dos.writeShort(0); // version
+		else
+			dos.writeShort(1); // version 1 is the same as version 0 but supports hashes.
 		dos.writeByte(documentType);
 		if(haveFlags()) {
 			short flags = 0;
@@ -879,7 +895,10 @@ public class Metadata implements Cloneable {
 			if(extraMetadata) flags |= FLAGS_EXTRA_METADATA;
 			if(fullKeys) flags |= FLAGS_FULL_KEYS;
 			if(compressionCodec != null) flags |= FLAGS_COMPRESSED;
+			if(hashes != null) flags |= hashes;
 			dos.writeShort(flags);
+			if(hashes != null)
+				HashResult.write(hashes, dos);
 		}
 
 		if(documentType == ARCHIVE_MANIFEST) {

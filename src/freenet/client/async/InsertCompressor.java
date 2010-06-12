@@ -1,12 +1,16 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.client.InsertException;
+import freenet.crypt.HashResult;
+import freenet.crypt.MultiHashOutputStream;
 import freenet.keys.CHKBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.SSKBlock;
@@ -46,6 +50,7 @@ public class InsertCompressor implements CompressJob {
 	public final String compressorDescriptor;
 	private transient boolean scheduled;
 	private static volatile boolean logMINOR;
+	private final long generateHashes;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -57,7 +62,7 @@ public class InsertCompressor implements CompressJob {
 		});
 	}
 	
-	public InsertCompressor(long nodeDBHandle2, SingleFileInserter inserter2, Bucket origData2, int minSize2, BucketFactory bf, boolean persistent) {
+	public InsertCompressor(long nodeDBHandle2, SingleFileInserter inserter2, Bucket origData2, int minSize2, BucketFactory bf, boolean persistent, long generateHashes) {
 		this.nodeDBHandle = nodeDBHandle2;
 		this.inserter = inserter2;
 		this.origData = origData2;
@@ -65,6 +70,7 @@ public class InsertCompressor implements CompressJob {
 		this.bucketFactory = bf;
 		this.persistent = persistent;
 		this.compressorDescriptor = inserter.ctx.compressorDescriptor;
+		this.generateHashes = generateHashes;
 	}
 
 	public void init(ObjectContainer container, final ClientContext ctx) {
@@ -110,6 +116,8 @@ public class InsertCompressor implements CompressJob {
 		Bucket bestCompressedData = origData;
 		long bestCompressedDataSize = origSize;
 		
+		HashResult[] hashes = null;
+		
 		if(logMINOR) Logger.minor(this, "Attempt to compress the data");
 		// Try to compress the data.
 		// Try each algorithm, starting with the fastest and weakest.
@@ -117,6 +125,7 @@ public class InsertCompressor implements CompressJob {
 		try {
 			BucketChainBucketFactory bucketFactory2 = new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, 1024);
 			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor);
+			boolean first = true;
 			for (final COMPRESSOR_TYPE comp : comps) {
 				boolean shouldFreeOnFinally = true;
 				Bucket result = null;
@@ -150,8 +159,21 @@ public class InsertCompressor implements CompressJob {
 						}
 					}
 
-					result = comp.compress(origData, bucketFactory2, origSize, bestCompressedDataSize);
+					InputStream is = origData.getInputStream();
+					result = bucketFactory2.makeBucket(-1);
+					OutputStream os = result.getOutputStream();
+					MultiHashOutputStream hasher = null;
+					long maxOutputSize = bestCompressedDataSize;
+					if(first && generateHashes != 0) {
+						os = hasher = new MultiHashOutputStream(os, generateHashes);
+						maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
+					}
+					first = false;
+					result = comp.compress(is, os, origSize, maxOutputSize);
+					is.close();
+					os.close();
 					long resultSize = result.size();
+					if(hasher != null) hashes = hasher.getResults();
 					// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH
 					if(resultSize <= minSize) {
 						if(logMINOR)
@@ -189,7 +211,7 @@ public class InsertCompressor implements CompressJob {
 				}
 			}
 			
-			final CompressionOutput output = new CompressionOutput(bestCompressedData, bestCodec);
+			final CompressionOutput output = new CompressionOutput(bestCompressedData, bestCodec, hashes);
 			
 			if(persistent) {
 			
@@ -284,10 +306,10 @@ public class InsertCompressor implements CompressJob {
 	 * @return
 	 */
 	public static InsertCompressor start(ObjectContainer container, ClientContext context, SingleFileInserter inserter, 
-			Bucket origData, int minSize, BucketFactory bf, boolean persistent) {
+			Bucket origData, int minSize, BucketFactory bf, boolean persistent, long generateHashes) {
 		if(persistent != (container != null))
 			throw new IllegalStateException("Starting compression, persistent="+persistent+" but container="+container);
-		InsertCompressor compressor = new InsertCompressor(context.nodeDBHandle, inserter, origData, minSize, bf, persistent);
+		InsertCompressor compressor = new InsertCompressor(context.nodeDBHandle, inserter, origData, minSize, bf, persistent, generateHashes);
 		if(persistent)
 			container.store(compressor);
 		compressor.init(container, context);

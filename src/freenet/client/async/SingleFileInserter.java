@@ -15,6 +15,9 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.StartedCompressionEvent;
+import freenet.crypt.HashResult;
+import freenet.crypt.HashType;
+import freenet.crypt.MultiHashOutputStream;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
@@ -27,6 +30,7 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NotPersistentBucket;
+import freenet.support.io.NullOutputStream;
 import freenet.support.io.SegmentedBucketChainBucket;
 
 /**
@@ -188,6 +192,7 @@ class SingleFileInserter implements ClientPutState {
 	}
 	
 	void onCompressedInner(CompressionOutput output, ObjectContainer container, ClientContext context) throws InsertException {
+		HashResult[] hashes = output.hashes;
 		boolean parentWasActive = true;
 		if(container != null) {
 			container.activate(block, 2);
@@ -293,7 +298,7 @@ class SingleFileInserter implements ClientPutState {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock);
 				if(logMINOR)
 					Logger.minor(this, "Inserting with metadata: "+dataPutter+" for "+this);
-				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context));
+				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context), hashes);
 				cb.onMetadata(meta, this, container, context);
 				cb.onTransition(this, dataPutter, container);
 				dataPutter.schedule(container, context);
@@ -306,7 +311,7 @@ class SingleFileInserter implements ClientPutState {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock);
 				if(logMINOR)
 					Logger.minor(this, "Inserting data: "+dataPutter+" for "+this);
-				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context));
+				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context), hashes);
 				Bucket metadataBucket;
 				try {
 					metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), meta.writeToByteArray());
@@ -441,12 +446,34 @@ class SingleFileInserter implements ClientPutState {
 			throw new InsertException(InsertException.INVALID_URI, "Unknown key type: "+type, null);
 		}
 		
+		// We always want SHA256, even for small files.
+		long wantHashes = 0;
+		if((ctx.compatibilityMode == 0 || ctx.compatibilityMode > InsertContext.COMPAT_1251) && (!metadata)) {
+			// We verify this. We want it for *all* files.
+			wantHashes |= HashType.SHA256.bitmask;
+			// FIXME: If the user requests it, calculate the others for small files.
+			// FIXME maybe the thresholds should be configurable.
+			if(data.size() > 1024*1024) {
+				// This is for cross-network. SHA1 is fairly common, so is MD5.
+				// SHA-384 and SHA-512 are not so common.
+				wantHashes |= HashType.SHA1.bitmask;
+				wantHashes |= HashType.MD5.bitmask;
+			}
+		}
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
-			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent);
+			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent, wantHashes);
 		} else {
 			if(logMINOR) Logger.minor(this, "Not compressing "+origData+" size = "+origSize+" block size = "+blockSize);
-			CompressionOutput output = new CompressionOutput(data, null);
+			// Need to get the hashes anyway
+			NullOutputStream nos = new NullOutputStream();
+			MultiHashOutputStream hasher = new MultiHashOutputStream(nos, wantHashes);
+			try {
+				BucketTools.copyTo(data, hasher, data.size());
+			} catch (IOException e) {
+				throw new InsertException(InsertException.BUCKET_ERROR, "I/O error generating hashes", null);
+			}
+			CompressionOutput output = new CompressionOutput(data, null, hasher.getResults());
 			onCompressed(output, container, context);
 		}
 	}

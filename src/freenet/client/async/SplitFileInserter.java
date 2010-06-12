@@ -15,6 +15,7 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
+import freenet.crypt.HashResult;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.support.Executor;
@@ -63,6 +64,7 @@ public class SplitFileInserter implements ClientPutState {
 	private boolean forceEncode;
 	private final long decompressedLength;
 	final boolean persistent;
+	final HashResult[] hashes;
 
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -74,7 +76,7 @@ public class SplitFileInserter implements ClientPutState {
 		return hashCode;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context) throws InsertException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context, HashResult[] hashes) throws InsertException {
 		hashCode = super.hashCode();
 		if(put == null) throw new NullPointerException();
 		this.parent = put;
@@ -89,6 +91,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.ctx = ctx;
 		this.decompressedLength = decompressedLength;
 		this.dataLength = data.size();
+		this.hashes = hashes;
 		Bucket[] dataBuckets;
 		context.jobRunner.setCommitThisTransaction();
 		try {
@@ -164,6 +167,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.cb = cb;
 		this.ctx = ctx;
 		this.persistent = parent.persistent();
+		this.hashes = null;
 		context.jobRunner.setCommitThisTransaction();
 		// Don't read finished, wait for the segmentFinished()'s.
 		String length = fs.get("DataLength");
