@@ -213,7 +213,7 @@ public class ContentFilterTest extends TestCase {
 		}
 		try {
 			ArrayBucket out = new ArrayBucket();
-			FilterStatus fo = ContentFilter.filter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "text/html", null, null);
+			FilterStatus fo = ContentFilter.filter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "text/html", total.length, null, null);
 			fos = new FileOutputStream("output.filtered");
 			fos.write(out.toByteArray());
 			fos.close();
@@ -255,7 +255,7 @@ public class ContentFilterTest extends TestCase {
 		ArrayBucket output = new ArrayBucket();
 		InputStream inputStream = input.getInputStream();
 		OutputStream outputStream = output.getOutputStream();
-		ContentFilter.filter(inputStream, outputStream, typeName, baseURI, null, null, null);
+		ContentFilter.filter(inputStream, outputStream, typeName, dataToFilter.length, baseURI, null, null, null);
 		inputStream.close();
 		outputStream.close();
 		returnValue = output.toString();

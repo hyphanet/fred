@@ -135,6 +135,7 @@ public class ContentFilter {
 	 *            Stream to write filtered data to
 	 * @param typeName
 	 *            MIME type for input data
+	 * @param bucketSize TODO
 	 * @param maybeCharset 
 	 * 			  MIME type of the referring document, as a hint, some types,
 	 * 			  such as CSS, will inherit it if no other data is available.
@@ -146,8 +147,8 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
-		return filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, long bucketSize, URI baseURI, FoundURICallback cb , TagReplacerCallback trc, String maybeCharset) throws UnsafeContentTypeException, IOException {
+		return filter(input, output, typeName, bucketSize, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
 	}
 
 	/**
@@ -159,6 +160,7 @@ public class ContentFilter {
 	 *            Stream to write filtered data to
 	 * @param typeName
 	 *            MIME type for input data
+	 * @param bucketSize TODO
 	 * @param maybeCharset 
 	 * 			  MIME type of the referring document, as a hint, some types,
 	 * 			  such as CSS, will inherit it if no other data is available.
@@ -169,7 +171,7 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, long bucketSize, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
 		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class)) Logger.minor(ContentFilter.class, "Filtering data of type"+typeName);
 		String type = typeName;
 		String options = "";
@@ -217,7 +219,7 @@ public class ContentFilter {
 				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
 					DataInputStream dataInput = new DataInputStream(input);
 					int bufferSize = handler.charsetExtractor.getCharsetBufferSize();
-					if(dataInput.available() < bufferSize) bufferSize = dataInput.available();
+					if(bucketSize < bufferSize) bufferSize = (int)bucketSize;
 					dataInput.mark(bufferSize);
 					byte[] charsetBuffer = new byte[bufferSize];
 					dataInput.readFully(charsetBuffer);

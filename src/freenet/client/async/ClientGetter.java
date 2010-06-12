@@ -223,9 +223,10 @@ public class ClientGetter extends BaseClientGetter {
 				}
 				input = result.asBucket().getInputStream();
 				output = filteredResult.getOutputStream();
-				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
+				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, result.asBucket().size(), uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
 				output.close();
+				ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(filterStatus.mimeType), container, context);
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
 				result.asBucket().free();
 				result = new FetchResult(new ClientMetadata(detectedMIMEType), filteredResult);
