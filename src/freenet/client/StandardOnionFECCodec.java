@@ -27,7 +27,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		/** Number of output blocks, including input blocks */
 		int n;
 
-		public MyKey(int n, int k) {
+		public MyKey(int k, int n) {
 			this.n = n;
 			this.k = k;
 		}
@@ -47,6 +47,8 @@ public class StandardOnionFECCodec extends FECCodec {
 	}
 
 	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
+		if(checkBlocks == 0 || dataBlocks == 0)
+			throw new IllegalArgumentException("data blocks "+dataBlocks+" check blocks "+checkBlocks);
 		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
 		StandardOnionFECCodec codec = recentlyUsedCodecs.get(key);
 		if(codec != null) {
@@ -75,7 +77,13 @@ public class StandardOnionFECCodec extends FECCodec {
 			if(fec != null) return;
 		}
 		FECCode fec2 = null;
-		if(!noNative) {
+		if(k >= n) throw new IllegalArgumentException("n must be >k: n = "+n+" k = "+k);
+		if(k > 256 || n > 256) Logger.error(this, "Wierd FEC parameters? k = "+k+" n = "+n);
+		// native code segfaults if k < 256 and n > 256
+		// native code segfaults if n > k*2 i.e. if we have extra blocks beyond 100% redundancy
+		if((!noNative) && k <= 256 && n <= 256 && n <= k*2) { 
+			System.out.println("Creating native FEC: n="+n+" k="+k);
+			System.out.flush();
 			try {
 				fec2 = new Native8Code(k,n);
 				Logger.minor(this, "Loaded native FEC.");

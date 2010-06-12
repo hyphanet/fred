@@ -96,6 +96,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 
 	protected final int MAX_LIST_SIZE;
 	protected long MAX_LIST_BYTES = 10 * (1 << 20);
+	protected long LIST_WRITE_THRESHOLD;
 
 	/**
 	 * Something weird happens when the disk gets full, also we don't want to
@@ -132,6 +133,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	public void setMaxListBytes(long len) {
 		synchronized(list) {
 			MAX_LIST_BYTES = len;
+			LIST_WRITE_THRESHOLD = MAX_LIST_BYTES / 4;
 		}
 	}
 
@@ -322,6 +324,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							try {
 								if(thisTime < maxWait) {
 									list.wait(Math.min(500, (int)(Math.min(maxWait-thisTime, Integer.MAX_VALUE))));
+									if(listBytes < LIST_WRITE_THRESHOLD) // Don't write at all until the lower bytes threshold is exceeded, or the time threshold is.
+										continue;
 									// Do NOT use list.poll(timeout) because it uses a separate lock.
 									o = list.poll();
 								}

@@ -52,11 +52,13 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	public boolean forkOnCacheable;
 	final int extraInsertsSingleBlock;
 	final int extraInsertsSplitfileHeaderBlock;
+	final long compatibilityMode;
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
 		global = Fields.stringToBool(fs.get("Global"), false);
 		defaultName = fs.get("DefaultName");
+		compatibilityMode = fs.getLong("CompatibilityMode", 0);
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
 		try {
