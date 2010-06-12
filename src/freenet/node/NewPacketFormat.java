@@ -73,7 +73,7 @@ public class NewPacketFormat implements PacketFormat {
 		System.arraycopy(packet, 0, data, 0, data.length);
 
 		try {
-	                pn.crypto.socket.sendPacket(packet, pn.getPeer(), pn.allowLocalAddresses());
+	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
                 } catch (LocalAddressException e) {
 	                Logger.error(this, "Caught exception while sending packet", e);
                 }
