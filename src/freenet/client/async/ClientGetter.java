@@ -226,7 +226,6 @@ public class ClientGetter extends BaseClientGetter {
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
 				output.close();
-				ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(filterStatus.mimeType), container, context);
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
 				result.asBucket().free();
 				result = new FetchResult(new ClientMetadata(detectedMIMEType), filteredResult);
@@ -567,7 +566,7 @@ public class ClientGetter extends BaseClientGetter {
 	/** Called when we know the MIME type of the final data */
 	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
 		if(finalizedMetadata) return;
-		expectedMIME = mime;
+		expectedMIME = ctx.overrideMIME == null ? mime : ctx.overrideMIME;
 		if(persistent()) {
 			container.store(this);
 			container.activate(ctx, 1);
