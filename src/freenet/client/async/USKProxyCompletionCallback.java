@@ -67,7 +67,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		// Ignore
 	}
 
-	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
+	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException {
 		if(container != null && persistent)
 			container.activate(cb, 1);
 		cb.onExpectedMIME(mime, container, context);
