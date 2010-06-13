@@ -834,7 +834,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					}
 				}
 
-				if(!e.isFatal() && (ctx.isAllowedFullAccess() || !container.publicGatewayMode())) {
+				if((!e.isFatal() || filterException != null) && (ctx.isAllowedFullAccess() || !container.publicGatewayMode())) {
 					addDownloadOptions(ctx, optionList, key, mimeType, core);
 					optionList.addChild("li").
 						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null),
@@ -844,9 +844,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", NodeL10n.getBase().
 						getString("Toadlet.homepage") }, l10n("abortToHomepage"));
 				
-				option = optionList.addChild("li");
-				option.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
-				
+				optionList.addChild("li").addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
 				this.writeHTMLReply(ctx, (e.mode == 10) ? 404 : 500 /* close enough - FIXME probably should depend on status code */,
 						"Internal Error", pageNode.generate());
 			}
