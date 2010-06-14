@@ -88,7 +88,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
 		if(length > getCharsetBufferSize() && Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
-		}		ByteArrayInputStream strm = new ByteArrayInputStream(input, 0, length);
+		}
+		ByteArrayInputStream strm = new ByteArrayInputStream(input, 0, length);
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
 		Writer w = new NullWriter();
 		Reader r;
