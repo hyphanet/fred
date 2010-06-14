@@ -530,6 +530,8 @@ final public class FileUtil {
 					count += written;
 				}
 				raf.getFD().sync();
+				raf.close();
+				raf = null;
 			} finally {
 				Closer.close(raf);
 			}
