@@ -20,7 +20,9 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
+import freenet.client.filter.ContentFilter;
 import freenet.client.filter.FoundURICallback;
+import freenet.client.filter.MIMEType;
 import freenet.client.filter.PushingTagReplacerCallback;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.clients.http.ajaxpush.DismissAlertToadlet;
@@ -277,7 +279,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private static void addDownloadOptions(ToadletContext ctx, HTMLNode optionList, FreenetURI key, String mimeType, boolean disableFiltration, NodeClientCore core) {
 		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
-		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW && core.node.securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
+		NETWORK_THREAT_LEVEL netLevel = core.node.securityLevels.getNetworkThreatLevel();
+		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW && netLevel == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
+		if((!filterChecked) && mimeType != null && !mimeType.equals("application/octet-stream") && !mimeType.equals("")) {
+			MIMEType type = ContentFilter.getMIMEType(mimeType);
+			if((!(type.safeToRead || type.readFilter != null)) && !(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM || netLevel == NETWORK_THREAT_LEVEL.HIGH || netLevel == NETWORK_THREAT_LEVEL.MAXIMUM))
+				filterChecked = false;
+		}
 		if(threatLevel != PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
