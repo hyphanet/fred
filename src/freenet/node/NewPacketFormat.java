@@ -1,16 +1,19 @@
 package freenet.node;
 
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
+import freenet.crypt.SHA256;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Logger;
 
 public class NewPacketFormat implements PacketFormat {
 
 	public static final int MIN_MESSAGE_FRAGMENT_SIZE = 20;
+	public static final int HMAC_LENGTH = 4;
 
 	private PeerNode pn;
 	private LinkedList<MessageWrapper> started = new LinkedList<MessageWrapper>();
@@ -37,7 +40,7 @@ public class NewPacketFormat implements PacketFormat {
 		SentPacket sentPacket = new SentPacket();
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
 		byte[] packet = new byte[maxPacketSize];
-		int offset = 9; // Sequence number (4), HMAC (4), ACK count (1)
+		int offset = 5 + HMAC_LENGTH; // Sequence number (4), HMAC, ACK count (1)
 
 		offset = insertAcks(packet, offset);
 
@@ -67,7 +70,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		//TODO: Encrypt, add HMAC
+		//TODO: Encrypt
 
 		byte[] data = new byte[offset];
 		System.arraycopy(packet, 0, data, 0, data.length);
@@ -78,6 +81,13 @@ public class NewPacketFormat implements PacketFormat {
 		data[1] = (byte) (sequenceNumber >>> 16);
 		data[2] = (byte) (sequenceNumber >>> 8);
 		data[3] = (byte) (sequenceNumber);
+
+		//Add hash
+		//TODO: Encrypt this to make a HMAC
+		MessageDigest md = SHA256.getMessageDigest();
+		byte[] hash = md.digest(data);
+
+		System.arraycopy(hash, 0, data, 4, HMAC_LENGTH);
 
 		try {
 	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
