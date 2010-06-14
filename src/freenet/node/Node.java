@@ -2936,10 +2936,10 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("Defragmenting persistent downloads database.");
 
 		File backupFile = new File(databaseFile.getPath()+".tmp");
-		if(backupFile.exists()) FileUtil.secureDelete(backupFile, random);
+		FileUtil.secureDelete(backupFile, random);
 
 		File tmpFile = new File(databaseFile.getPath()+".map");
-		if(tmpFile.exists()) FileUtil.secureDelete(tmpFile, random);
+		FileUtil.secureDelete(tmpFile, random);
 
 		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
 		config.storedClassFilter(new AvailableClassFilter());
