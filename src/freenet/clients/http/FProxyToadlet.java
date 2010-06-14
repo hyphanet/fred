@@ -44,7 +44,6 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.HTMLEncoder;
@@ -277,7 +276,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private static void addDownloadOptions(ToadletContext ctx, HTMLNode optionList, FreenetURI key, String mimeType, boolean disableFiltration, NodeClientCore core) {
 		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
-		String filterChecked = (((threatLevel == PHYSICAL_THREAT_LEVEL.LOW && core.node.securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration) ? "" : "checked";
 		if(threatLevel != PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
@@ -293,7 +291,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					new String[] { "dir", "page", "/link" },
 					new String[] { HTMLEncoder.encode(core.getDownloadDir().getAbsolutePath()), "<a href=\"/downloads\">", "</a>" });
 			HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
-			filterControl.addChild("input", new String[] { "type", "name", "value", filterChecked }, new String[] { "checkbox", "filterData", "filterData", filterChecked});
+			filterControl.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "filterData", "filterData", "checked"});
 			filterControl.addChild("div", l10n("filterDataMessage"));
 			if (threatLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
 				NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadToDiskSecurityWarning",
@@ -315,7 +313,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			optionForm.addChild("input", new String[] { "type", "name", "value" },
 					new String[] { "submit", "download", l10n("downloadInBackgroundToTempSpaceButton") });
 			HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
-			filterControl.addChild("input", new String[] { "type", "name", "value", filterChecked }, new String[] { "checkbox", "filterData", "filterData", filterChecked});
+			filterControl.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "filterData", "filterData", "checked"});
 			filterControl.addChild("div", l10n("filterDataMessage"));
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace",
 					new String[] { "page", "/link" }, new String[] { "<a href=\"/downloads\">", "</a>" });
