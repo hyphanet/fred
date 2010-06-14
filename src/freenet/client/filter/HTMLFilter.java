@@ -90,11 +90,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
 		}
 		ByteArrayInputStream strm = new ByteArrayInputStream(input, 0, length);
-		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
 		Writer w = new NullWriter();
 		Reader r;
 		try {
-			r = new BufferedReader(new InputStreamReader(bis, parseCharset), 4096);
+			r = new BufferedReader(new InputStreamReader(strm, parseCharset), 4096);
 		} catch (UnsupportedEncodingException e) {
 			strm.close();
 			throw e;
