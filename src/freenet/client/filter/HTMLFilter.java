@@ -2193,7 +2193,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		static final String[] allowedContentTypes = {
 				"text/html",
 				"application/xhtml+xml",
-				"application/xhtml" // Unofficial but seen in the wild by TheSeeker
+				"application/xhtml", // Unofficial but seen in the wild by TheSeeker
+				"text/xhtml" // Also unofficial? Also seen in the wild.
 		};
 		static final String[] locallyVerifiedAttrs = {
 			"http-equiv",
