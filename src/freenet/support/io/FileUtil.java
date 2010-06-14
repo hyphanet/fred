@@ -535,7 +535,7 @@ final public class FileUtil {
 			}
 		}
 		if((!file.delete()) && file.exists())
-			throw new IOException("Unable to delete file");
+			throw new IOException("Unable to delete file "+file);
 	}
 
 	public static final long getFreeSpace(File dir) {
