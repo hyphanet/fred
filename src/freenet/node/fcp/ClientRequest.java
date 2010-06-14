@@ -388,7 +388,7 @@ public abstract class ClientRequest {
 	public abstract double getFailedBlocks(ObjectContainer container);
 	public abstract double getFatalyFailedBlocks(ObjectContainer container);
 
-	public abstract String getFailureReason(ObjectContainer container);
+	public abstract String getFailureReason(boolean longDescription, ObjectContainer container);
 
 	/**
 	 * Has the total number of blocks to insert been determined yet?

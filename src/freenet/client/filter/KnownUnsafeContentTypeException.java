@@ -6,6 +6,7 @@ package freenet.client.filter;
 import java.util.LinkedList;
 import java.util.List;
 
+import freenet.client.FetchException;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 
@@ -53,6 +54,11 @@ public class KnownUnsafeContentTypeException extends UnsafeContentTypeException 
 
 	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("KnownUnsafeContentTypeException."+key, pattern, value);
+	}
+
+	@Override
+	public int getFetchErrorCode() {
+		return FetchException.CONTENT_VALIDATION_BAD_MIME;
 	}
 
 }

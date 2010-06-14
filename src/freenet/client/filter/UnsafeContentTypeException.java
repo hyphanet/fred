@@ -6,6 +6,8 @@ package freenet.client.filter;
 import java.io.IOException;
 import java.util.List;
 
+import freenet.client.FetchException;
+
 /**
  * Thrown by the filter when it cannot guarantee the safety of the data, because it is an unknown type,
  * because it cannot be filtered, or because we do not know how to filter it.
@@ -44,5 +46,13 @@ public abstract class UnsafeContentTypeException extends IOException {
 	public String toString() {
 		return getRawTitle();
 	}
-	
+
+	/**
+	 * Returns the error code that a FetchException may be instantiated with
+	 * Subclasses of this exception may override this method to provide more 
+	 * detailed error messages.
+	 */
+	public int getFetchErrorCode() {
+		return FetchException.CONTENT_VALIDATION_FAILED;
+	}
 }

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import freenet.client.FetchException;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 
@@ -42,5 +43,9 @@ public class UnknownContentTypeException extends UnsafeContentTypeException {
 	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("UnknownContentTypeException."+key, pattern, value);
 	}
-	
+
+	@Override
+	public int getFetchErrorCode() {
+		return FetchException.CONTENT_VALIDATION_UNKNOWN_MIME;
+	}
 }

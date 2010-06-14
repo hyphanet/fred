@@ -536,13 +536,13 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public synchronized String getFailureReason(ObjectContainer container) {
+	public synchronized String getFailureReason(boolean longDescription, ObjectContainer container) {
 		if(putFailedMessage == null)
 			return null;
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(putFailedMessage, 5);
 		String s = putFailedMessage.shortCodeDescription;
-		if(putFailedMessage.extraDescription != null)
+		if(longDescription && putFailedMessage.extraDescription != null)
 			s += ": "+putFailedMessage.extraDescription;
 		return s;
 	}

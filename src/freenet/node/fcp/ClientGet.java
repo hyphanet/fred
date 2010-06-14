@@ -825,17 +825,16 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	@Override
-	public String getFailureReason(ObjectContainer container) {
+	public String getFailureReason(boolean longDescription, ObjectContainer container) {
 		if(getFailedMessage == null)
 			return null;
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(getFailedMessage, 5);
 		String s = getFailedMessage.shortCodeDescription;
-		if(getFailedMessage.extraDescription != null)
+		if(longDescription && getFailedMessage.extraDescription != null)
 			s += ": "+getFailedMessage.extraDescription;
 		return s;
 	}
-
 
 	@Override
 	public boolean isTotalFinalized(ObjectContainer container) {

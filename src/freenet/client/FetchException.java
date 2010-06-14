@@ -429,8 +429,12 @@ public class FetchException extends Exception {
 	public static final int WRONG_MIME_TYPE = 29;
 	/** A node killed the request because it had recently been tried and had DNFed */
 	public static final int RECENTLY_FAILED = 30;
-	/** Content filtration failed */
+	/** Content filtration has generally failed to produce clean data */
 	public static final int CONTENT_VALIDATION_FAILED = 31;
+	/** The content filter does not recognize this data type */
+	public static final int CONTENT_VALIDATION_UNKNOWN_MIME = 32;
+	/** The content filter knows this data type is dangerous */
+	public static final int CONTENT_VALIDATION_BAD_MIME = 33;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
