@@ -281,9 +281,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 		NETWORK_THREAT_LEVEL netLevel = core.node.securityLevels.getNetworkThreatLevel();
 		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW && netLevel == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
-		if((!filterChecked) && mimeType != null && !mimeType.equals("application/octet-stream") && !mimeType.equals("")) {
+		if((filterChecked) && mimeType != null && !mimeType.equals("application/octet-stream") && !mimeType.equals("")) {
 			MIMEType type = ContentFilter.getMIMEType(mimeType);
-			if((!(type.safeToRead || type.readFilter != null)) && !(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM || netLevel == NETWORK_THREAT_LEVEL.HIGH || netLevel == NETWORK_THREAT_LEVEL.MAXIMUM))
+			if((type == null || (!(type.safeToRead || type.readFilter != null))) && !(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM || netLevel == NETWORK_THREAT_LEVEL.HIGH || netLevel == NETWORK_THREAT_LEVEL.MAXIMUM))
 				filterChecked = false;
 		}
 		if(threatLevel != PHYSICAL_THREAT_LEVEL.MAXIMUM) {
@@ -760,7 +760,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", l10n("fetchLargeFileAnywayAndDisplayButton") });
 					optionForm.addChild("#", " - " + l10n("fetchLargeFileAnywayAndDisplay"));
-					addDownloadOptions(ctx, optionList, key, mimeType, false, core);
+					addDownloadOptions(ctx, optionList, key, mime, false, core);
 				}
 				
 
