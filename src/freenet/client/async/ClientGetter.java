@@ -16,6 +16,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
+import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -571,18 +572,20 @@ public class ClientGetter extends BaseClientGetter {
 	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException {
 		if(finalizedMetadata) return;
 		expectedMIME = ctx.overrideMIME == null ? mime : ctx.overrideMIME;
-		MIMEType handler = ContentFilter.getMIMEType(expectedMIME);
-		if((handler == null || (handler.readFilter == null && !handler.safeToRead)) && ctx.filterData) {
-			UnsafeContentTypeException e;
-			if(handler == null) {
-				if(logMINOR) Logger.minor(this, "Unable to get filter handler for MIME type "+expectedMIME);
-				e = new UnknownContentTypeException(expectedMIME);
+		if(!(expectedMIME == null || expectedMIME.equals("") || expectedMIME.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE)) {
+			MIMEType handler = ContentFilter.getMIMEType(expectedMIME);
+			if((handler == null || (handler.readFilter == null && !handler.safeToRead)) && ctx.filterData) {
+				UnsafeContentTypeException e;
+				if(handler == null) {
+					if(logMINOR) Logger.minor(this, "Unable to get filter handler for MIME type "+expectedMIME);
+					e = new UnknownContentTypeException(expectedMIME);
+				}
+				else {
+					if(logMINOR) Logger.minor(this, "Unable to filter unsafe MIME type "+expectedMIME);
+					e = new KnownUnsafeContentTypeException(handler);
+				}
+				throw new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, expectedMIME);
 			}
-			else {
-				if(logMINOR) Logger.minor(this, "Unable to filter unsafe MIME type "+expectedMIME);
-				e = new KnownUnsafeContentTypeException(handler);
-			}
-			throw new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, expectedMIME);
 		}
 		if(persistent()) {
 			container.store(this);
