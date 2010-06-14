@@ -2936,8 +2936,6 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("Defragmenting persistent downloads database.");
 
 		File backupFile = new File(databaseFile.getPath()+".tmp");
-		backupFile.delete();
-		backupFile.deleteOnExit();
 		if(backupFile.exists()) FileUtil.secureDelete(backupFile, random);
 
 		File tmpFile = new File(databaseFile.getPath()+".map");
