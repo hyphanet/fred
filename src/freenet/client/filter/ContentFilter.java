@@ -225,7 +225,7 @@ public class ContentFilter {
 						totalRead += bytesRead;
 					}
 					input.reset();
-					charset = detectCharset(charsetBuffer, handler, maybeCharset);
+					charset = detectCharset(charsetBuffer, totalRead, handler, maybeCharset);
 				}
 				try {
 					handler.readFilter.readFilter(input, output, charset, otherParams, filterCallback);
@@ -252,18 +252,18 @@ public class ContentFilter {
 		return null;
 	}
 
-	public static String detectCharset(byte[] input, MIMEType handler, String maybeCharset) throws IOException {
+	public static String detectCharset(byte[] input, int length, MIMEType handler, String maybeCharset) throws IOException {
 		// Detect charset
-		String charset = detectBOM(input);
+		String charset = detectBOM(input, length);
 		if((charset == null) && (handler.charsetExtractor != null)) {
-			BOMDetection bom = handler.charsetExtractor.getCharsetByBOM(input);
+			BOMDetection bom = handler.charsetExtractor.getCharsetByBOM(input, length);
 			if(bom != null) {
 				charset = bom.charset;
 				if(charset != null) {
 					// These detections are not firm, and can detect a family e.g. ASCII, EBCDIC,
 					// so check with the full extractor.
 					try {
-						if((charset = handler.charsetExtractor.getCharset(input, charset)) != null) {
+						if((charset = handler.charsetExtractor.getCharset(input, length, charset)) != null) {
 							if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
 								Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 							return charset;
@@ -281,7 +281,7 @@ public class ContentFilter {
 			
 			if(handler.defaultCharset != null) {
 				try {
-					if((charset = handler.charsetExtractor.getCharset(input, handler.defaultCharset)) != null) {
+					if((charset = handler.charsetExtractor.getCharset(input, length, handler.defaultCharset)) != null) {
 				        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
 				        	Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 						return charset;
@@ -291,25 +291,25 @@ public class ContentFilter {
 				}
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(input, "ISO-8859-1")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, length, "ISO-8859-1")) != null)
 					return charset;
 			} catch (DataFilterException e) {
 				// Ignore
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(input, "UTF-8")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, length, "UTF-8")) != null)
 					return charset;
 			} catch (DataFilterException e) {
 				// Ignore
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(input, "UTF-16")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, length, "UTF-16")) != null)
 					return charset;
 			} catch (DataFilterException e) {
 				// Ignore
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(input, "UTF-32")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, length, "UTF-32")) != null)
 					return charset;
 			} catch (UnsupportedEncodingException e) {
 				// Doesn't seem to be supported by prior to 1.6.
@@ -335,33 +335,33 @@ public class ContentFilter {
 	 * specific charset.
 	 * @throws IOException 
 	 */
-	private static String detectBOM(byte[] input) throws IOException {
-		if(startsWith(input, bom_utf8))
+	private static String detectBOM(byte[] input, int length) throws IOException {
+		if(startsWith(input, bom_utf8, length))
 			return "UTF-8";
-		if(startsWith(input, bom_utf16_be))
+		if(startsWith(input, bom_utf16_be, length))
 			return "UTF-16BE";
-		if(startsWith(input, bom_utf16_le))
+		if(startsWith(input, bom_utf16_le, length))
 			return "UTF-16LE";
-		if(startsWith(input, bom_utf32_be))
+		if(startsWith(input, bom_utf32_be, length))
 			return "UTF-32BE";
-		if(startsWith(input, bom_utf32_le))
+		if(startsWith(input, bom_utf32_le, length))
 			return "UTF-32LE";
 		// We do NOT support UTF-32-2143 or UTF-32-3412
 		// Java does not have charset support for them, and well,
 		// very few people create web content on a PDP-11!
 
-		if(startsWith(input, bom_utf32_2143))
+		if(startsWith(input, bom_utf32_2143, length))
 			throw new UnsupportedCharsetInFilterException("UTF-32-2143");
-		if(startsWith(input, bom_utf32_3412))
+		if(startsWith(input, bom_utf32_3412, length))
 			throw new UnsupportedCharsetInFilterException("UTF-32-3412");
 
-		if(startsWith(input, bom_scsu))
+		if(startsWith(input, bom_scsu, length))
 			return "SCSU";
-		if(startsWith(input, bom_utf7_1) || startsWith(input, bom_utf7_2) || startsWith(input, bom_utf7_3) || startsWith(input, bom_utf7_4) || startsWith(input, bom_utf7_5))
+		if(startsWith(input, bom_utf7_1, length) || startsWith(input, bom_utf7_2, length) || startsWith(input, bom_utf7_3, length) || startsWith(input, bom_utf7_4, length) || startsWith(input, bom_utf7_5, length))
 			return "UTF-7";
-		if(startsWith(input, bom_utf_ebcdic))
+		if(startsWith(input, bom_utf_ebcdic, length))
 			return "UTF-EBCDIC";
-		if(startsWith(input, bom_bocu_1))
+		if(startsWith(input, bom_bocu_1, length))
 			return "BOCU-1";
 		return null;
 	}
@@ -388,7 +388,8 @@ public class ContentFilter {
 	static byte[] bom_utf32_2143 = new byte[] { (byte)0x00, (byte)0x00, (byte)0xff, (byte)0xfe };
 	static byte[] bom_utf32_3412 = new byte[] { (byte)0xfe, (byte)0xff, (byte)0x00, (byte)0x00 };
 
-	public static boolean startsWith(byte[] data, byte[] cmp) {
+	public static boolean startsWith(byte[] data, byte[] cmp, int length) {
+		if(cmp.length > length) return false;
 		for(int i=0;i<cmp.length;i++) {
 			if(data[i] != cmp[i]) return false;
 		}

@@ -83,12 +83,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		throw new UnsupportedOperationException();
 	}
 	
-	public String getCharset(byte[] input, String parseCharset) throws DataFilterException, IOException {
+	public String getCharset(byte[] input, int length, String parseCharset) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
-		if(input.length > getCharsetBufferSize() && Logger.shouldLog(Logger.MINOR, this)) {
+		if(length > getCharsetBufferSize() && Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
-		}		ByteArrayInputStream strm = new ByteArrayInputStream(input);
+		}		ByteArrayInputStream strm = new ByteArrayInputStream(input, 0, length);
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
 		Writer w = new NullWriter();
 		Reader r;
@@ -2624,7 +2624,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
 	}
 
-	public BOMDetection getCharsetByBOM(byte[] input) throws DataFilterException {
+	public BOMDetection getCharsetByBOM(byte[] input, int length) throws DataFilterException {
 		// No enhanced BOMs.
 		// FIXME XML BOMs???
 		return null;
