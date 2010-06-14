@@ -112,8 +112,14 @@ public class SplitFileInserter implements ClientPutState {
 		
 		// Segment size cannot be greater than ctx.splitfileSegmentDataBlocks.
 		// But IT CAN BE SMALLER!
-		int segs = (int)Math.ceil(((double)countDataBlocks) / ((double)maxSegSize));
-		segmentSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+		int segs;
+		if(ctx.compatibilityMode == InsertContext.COMPAT_1250_EXACT) {
+			segs = countDataBlocks / 128 + (countDataBlocks % 128 == 0 ? 0 : 1);
+			segmentSize = 128;
+		} else {
+			segs = (int)Math.ceil(((double)countDataBlocks) / ((double)maxSegSize));
+			segmentSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+		}
 		
 		if(splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT)
 			checkSegmentSize = 0;

@@ -90,7 +90,7 @@ public abstract class FECCodec {
 		// Keep it within 256 blocks.
 		if(dataBlocks < 256 && dataBlocks + checkBlocks > 256)
 			checkBlocks = 256 - dataBlocks;
-		if(compatibilityMode == InsertContext.COMPAT_1250) {
+		if(compatibilityMode == InsertContext.COMPAT_1250 || compatibilityMode == InsertContext.COMPAT_1250_EXACT) {
 			// Pre-1250, redundancy was always 100% or less.
 			// Builds of that period using the native FEC (ext #26) will segfault sometimes on >100% redundancy.
 			// So limit check blocks to data blocks.

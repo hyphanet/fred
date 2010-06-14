@@ -54,8 +54,10 @@ public class InsertContext implements Cloneable {
 	public long compatibilityMode;
 	/** No compatibility issues, use the most efficient metadata possible. */
 	public static final long COMPAT_NONE = 0;
+	/** Exactly as before 1250: Segments of exactly 128 data, 128 check, check = data */
+	public static final long COMPAT_1250_EXACT = 1;
 	/** 1250 or previous: Segments up to 128 data 128 check, check <= data. */
-	public static final long COMPAT_1250 = 1;
+	public static final long COMPAT_1250 = 2;
 
 	public InsertContext(
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
