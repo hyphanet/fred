@@ -123,6 +123,10 @@ public class ContentFilter {
 	}
 
 	public static MIMEType getMIMEType(String mimeType) {
+		int x; 
+		if((x=mimeType.indexOf(';')) != -1) {
+			mimeType = mimeType.substring(0, x).trim();
+		}
 		return mimeTypesByName.get(mimeType);
 	}
 
