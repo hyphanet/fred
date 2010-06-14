@@ -571,8 +571,11 @@ public class ClientGetter extends BaseClientGetter {
 	 * @throws FetchException */
 	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException {
 		if(finalizedMetadata) return;
+		if(persistent()) {
+			container.activate(ctx, 1);
+		}
 		expectedMIME = ctx.overrideMIME == null ? mime : ctx.overrideMIME;
-		if(!(expectedMIME == null || expectedMIME.equals("") || expectedMIME.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE)) {
+		if(!(expectedMIME == null || expectedMIME.equals("") || expectedMIME.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))) {
 			MIMEType handler = ContentFilter.getMIMEType(expectedMIME);
 			if((handler == null || (handler.readFilter == null && !handler.safeToRead)) && ctx.filterData) {
 				UnsafeContentTypeException e;
@@ -589,7 +592,6 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		if(persistent()) {
 			container.store(this);
-			container.activate(ctx, 1);
 			container.activate(ctx.eventProducer, 1);
 		}
 		ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(mime), container, context);
