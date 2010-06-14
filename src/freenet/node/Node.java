@@ -2938,10 +2938,10 @@ public class Node implements TimeSkewDetectorCallback {
 		File backupFile = new File(databaseFile.getPath()+".tmp");
 		backupFile.delete();
 		backupFile.deleteOnExit();
+		if(backupFile.exists()) FileUtil.secureDelete(backupFile, random);
 
 		File tmpFile = new File(databaseFile.getPath()+".map");
-		tmpFile.delete();
-		tmpFile.deleteOnExit();
+		if(tmpFile.exists()) FileUtil.secureDelete(tmpFile, random);
 
 		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
 		config.storedClassFilter(new AvailableClassFilter());
