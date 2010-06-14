@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.HashSet;
+import java.util.List;
 
 import com.db4o.ObjectContainer;
 
@@ -36,7 +37,10 @@ import freenet.keys.Key;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
+import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.Compressor;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 
@@ -191,7 +195,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * @param result The final data.
 	 * @param state The ClientGetState which retrieved the data.
 	 */
-	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(FetchResult result, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
 		if(persistent())
@@ -209,7 +213,66 @@ public class ClientGetter extends BaseClientGetter {
 		// set is the returnBucket and the result. Not locking not only prevents
 		// nested locking resulting in deadlocks, it also prevents long locks due to
 		// doing massive encrypted I/Os while holding a lock.
-		
+
+		Bucket data = result.asBucket();
+		// Decompress
+		if(decompressors != null) {
+			Logger.minor(this, "decompressing...");
+			try {
+				if(persistent()) {
+					container.activate(decompressors, 5);
+					container.activate(returnBucket, 5);
+					container.activate(ctx, 1);
+					if(ctx == null) {
+						Logger.error(this, "Fetch context is null");
+						if(!container.ext().isActive(ctx)) {
+							Logger.error(this, "Fetch context is null and splitfile is not activated", new Exception("error"));
+							container.activate(this, 1);
+							container.activate(decompressors, 5);
+							container.activate(returnBucket, 5);
+							container.activate(ctx, 1);
+						} else {
+							Logger.error(this, "Fetch context is null and splitfile IS activated", new Exception("error"));
+						}
+					}
+					container.activate(ctx, 1);
+				}
+				int count = 0;
+				while(!decompressors.isEmpty()) {
+					Compressor c = decompressors.remove(decompressors.size()-1);
+					if(logMINOR)
+						Logger.minor(this, "Decompressing with "+c);
+					long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+					try {
+						Bucket out = returnBucket;
+						if(!decompressors.isEmpty()) out = null;
+						data = c.decompress(data, context.getBucketFactory(persistent()), maxLen, maxLen * 4, null);
+					} catch (IOException e) {
+						if(e.getMessage().equals("Not in GZIP format") && count == 1) {
+							Logger.error(this, "Attempting to decompress twice, failed, returning first round data: "+this);
+							break;
+						}
+						onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+						return;
+					} catch (CompressionOutputSizeException e) {
+						if(logMINOR)
+							Logger.minor(this, "Too big: maxSize = "+ctx.maxOutputLength+" maxTempSize = "+ctx.maxTempLength);
+						onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false, result.getMimeType()), state, container, context);
+						return;
+					}
+					count++;
+				}
+			} catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
+				System.err.println("Failing above attempted fetch...");
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t, t);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			}
+		}
+		result = new FetchResult(result, data);
+
 		//Filter the data, if we are supposed to
 		if(ctx.filterData){
 			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
@@ -218,14 +281,14 @@ public class ClientGetter extends BaseClientGetter {
 			try {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
 				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
-				assert(result.asBucket() != returnBucket);
+				assert(data != returnBucket);
 				Bucket filteredResult;
 				if(returnBucket == null) filteredResult = context.getBucketFactory(persistent()).makeBucket(-1);
 				else {
 					if(persistent()) container.activate(returnBucket, 5);
 					filteredResult = returnBucket;
 				}
-				input = result.asBucket().getInputStream();
+				input = data.getInputStream();
 				output = filteredResult.getOutputStream();
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
@@ -255,8 +318,8 @@ public class ClientGetter extends BaseClientGetter {
 			if(logMINOR) Logger.minor(this, "Ignoring content filter.");
 		}
 		if(returnBucket == null) if(logMINOR) Logger.minor(this, "Returnbucket is null");
-		if((returnBucket != null) && (result.asBucket() != returnBucket)) {
-			Bucket from = result.asBucket();
+		if((returnBucket != null) && (data != returnBucket)) {
+			Bucket from = data;
 			Bucket to = returnBucket;
 			try {
 				if(logMINOR)

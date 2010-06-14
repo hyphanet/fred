@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.net.MalformedURLException;
+import java.util.List;
 
 import com.db4o.ObjectContainer;
 
@@ -15,6 +16,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
+import freenet.support.compress.Compressor;
 
 /**
  * Poll a USK, and when a new slot is found, fetch it. 
@@ -61,7 +63,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		}
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(FetchResult result, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Success on "+this+" from "+state+" : length "+result.size()+" mime type "+result.getMimeType());
 		cb.onFound(origUSK, state.getToken(), result);

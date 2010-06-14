@@ -27,9 +27,7 @@ import freenet.support.BloomFilter;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
-import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 
 /**
@@ -398,10 +396,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				container.activate(returnBucket, 5);
 		}
 		try {
-			if((returnBucket != null) && decompressors.isEmpty()) {
-				output = returnBucket;
-			} else
-				output = context.getBucketFactory(parent.persistent()).makeBucket(finalLength);
+			output = context.getBucketFactory(parent.persistent()).makeBucket(finalLength);
 			os = output.getOutputStream();
 			for(int i=0;i<segments.length;i++) {
 				SplitFileFetcherSegment s = segments[i];
@@ -468,6 +463,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 		context.getChkFetchScheduler().removePendingKeys(this, true);
 		boolean cbWasActive = true;
+		Bucket data = null;
 		try {
 			synchronized(this) {
 				if(otherFailure != null) {
@@ -482,71 +478,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			context.jobRunner.setCommitThisTransaction();
 			if(persistent)
 				container.store(this);
-			Bucket data = finalStatus(container, context);
-			// Decompress
-			if(persistent) {
-				container.activate(decompressors, 5);
-				container.activate(returnBucket, 5);
-				cbWasActive = container.ext().isActive(cb);
-				if(!cbWasActive)
-					container.activate(cb, 1);
-				container.activate(fetchContext, 1);
-				if(fetchContext == null) {
-					Logger.error(this, "Fetch context is null");
-					if(!container.ext().isActive(fetchContext)) {
-						Logger.error(this, "Fetch context is null and splitfile is not activated", new Exception("error"));
-						container.activate(this, 1);
-						container.activate(decompressors, 5);
-						container.activate(returnBucket, 5);
-						container.activate(fetchContext, 1);
-					} else {
-						Logger.error(this, "Fetch context is null and splitfile IS activated", new Exception("error"));
-					}
-				}
-				container.activate(fetchContext, 1);
-			}
-			int count = 0;
-			while(!decompressors.isEmpty()) {
-				Compressor c = decompressors.remove(decompressors.size()-1);
-				if(logMINOR)
-					Logger.minor(this, "Decompressing with "+c);
-				long maxLen = Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength);
-				Bucket orig = data;
-				try {
-					Bucket out = returnBucket;
-					if(!decompressors.isEmpty()) out = null;
-					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, out);
-				} catch (IOException e) {
-					if(e.getMessage().equals("Not in GZIP format") && count == 1) {
-						Logger.error(this, "Attempting to decompress twice, failed, returning first round data: "+this);
-						break;
-					}
-					cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), this, container, context);
-					return;
-				} catch (CompressionOutputSizeException e) {
-					if(logMINOR)
-						Logger.minor(this, "Too big: maxSize = "+fetchContext.maxOutputLength+" maxTempSize = "+fetchContext.maxTempLength);
-					cb.onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, clientMetadata.getMIMEType()), this, container, context);
-					return;
-				} finally {
-					if(orig != data) {
-						orig.free();
-						if(persistent) orig.removeFrom(container);
-					}
-				}
-				count++;
-			}
-			cb.onSuccess(new FetchResult(clientMetadata, data), this, container, context);
-		} catch (FetchException e) {
-			cb.onFailure(e, this, container, context);
-		} catch (OutOfMemoryError e) {
-			OOMHandler.handleOOM(e);
-			System.err.println("Failing above attempted fetch...");
-			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), this, container, context);
-		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t, t);
-			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), this, container, context);
+			data = finalStatus(container, context);
 		}
+		 catch (FetchException e) {
+				cb.onFailure(e, this, container, context);
+		 }
+		cb.onSuccess(new FetchResult(clientMetadata, data), decompressors, this, container, context);
 		if(!cbWasActive)
 			container.deactivate(cb, 1);
 	}

@@ -32,8 +32,10 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.Compressor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 
@@ -282,34 +284,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
 		}
-		if(!decompressors.isEmpty()) {
-			Bucket data = result.asBucket();
-			while(!decompressors.isEmpty()) {
-				COMPRESSOR_TYPE c = decompressors.removeLast();
-				try {
-					long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-					if(logMINOR)
-						Logger.minor(this, "Decompressing "+data+" size "+data.size()+" max length "+maxLen);
-					Bucket out = decompressors.isEmpty() ? returnBucket : null;
-					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, out);
-					if(logMINOR)
-						Logger.minor(this, "Decompressed to "+data+" size "+data.size());
-				} catch (IOException e) {
-					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
-					return;
-				} catch (CompressionOutputSizeException e) {
-					if(logMINOR)
-						Logger.minor(this, "Too big: limit="+ctx.maxOutputLength+" temp="+ctx.maxTempLength);
-					onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, (rcb == parent), result.getMimeType()), false, container, context);
-					return;
-				}
-			}
-			result = new FetchResult(result, data);
-			if(persistent) {
-				container.store(this);
-				container.store(decompressors);
-			}
-		}
 		if((!ctx.ignoreTooManyPathComponents) && (!metaStrings.isEmpty()) && isFinal) {
 			// Some meta-strings left
 			if(addedMetaStrings > 0) {
@@ -336,7 +310,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			result.asBucket().free();
 			if(persistent) result.asBucket().removeFrom(container);
 		} else {
-			rcb.onSuccess(result, this, container, context);
+			rcb.onSuccess(result, decompressors, this, container, context);
 		}
 	}
 
@@ -995,10 +969,69 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.persistent = SingleFileFetcher.this.persistent;
 		}
 		
-		public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(FetchResult result, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+			Bucket data = result.asBucket();
+			if(decompressors != null) {
+				try {
+					if(persistent()) {
+						container.activate(decompressors, 5);
+						container.activate(returnBucket, 5);
+						container.activate(ctx, 1);
+						if(ctx == null) {
+							Logger.error(this, "Fetch context is null");
+							if(!container.ext().isActive(ctx)) {
+								Logger.error(this, "Fetch context is null and splitfile is not activated", new Exception("error"));
+								container.activate(this, 1);
+								container.activate(decompressors, 5);
+								container.activate(returnBucket, 5);
+								container.activate(ctx, 1);
+							} else {
+								Logger.error(this, "Fetch context is null and splitfile IS activated", new Exception("error"));
+							}
+						}
+						container.activate(ctx, 1);
+					}
+					int count = 0;
+					while(!decompressors.isEmpty()) {
+						Compressor c = decompressors.remove(decompressors.size()-1);
+						if(logMINOR)
+							Logger.minor(this, "Decompressing with "+c);
+						long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+						Bucket orig = result.asBucket();
+						try {
+							data = c.decompress(data, context.getBucketFactory(persistent()), maxLen, maxLen * 4, null);
+						} catch (IOException e) {
+							if(e.getMessage().equals("Not in GZIP format") && count == 1) {
+								Logger.error(this, "Attempting to decompress twice, failed, returning first round data: "+this);
+								break;
+							}
+							onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+							return;
+						} catch (CompressionOutputSizeException e) {
+							if(logMINOR)
+								Logger.minor(this, "Too big: maxSize = "+ctx.maxOutputLength+" maxTempSize = "+ctx.maxTempLength);
+							onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, result.getMimeType()), state, container, context);
+							return;
+						} finally {
+							if(orig != data) {
+								orig.free();
+								if(persistent()) orig.removeFrom(container);
+							}
+						}
+						count++;
+					}
+				} catch (OutOfMemoryError e) {
+					OOMHandler.handleOOM(e);
+					System.err.println("Failing above attempted fetch...");
+					onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+					onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				}
+			}
 			if(!persistent) {
 				// Run directly - we are running on some thread somewhere, don't worry about it.
-				innerSuccess(result, container, context);
+				innerSuccess(data, container, context);
 			} else {
 				boolean wasActive;
 				// We are running on the database thread.
@@ -1021,9 +1054,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 		}
 
-		private void innerSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
+		private void innerSuccess(Bucket data, ObjectContainer container, ClientContext context) {
 			try {
-				ah.extractToCache(result.asBucket(), actx, element, callback, context.archiveManager, container, context);
+				ah.extractToCache(data, actx, element, callback, context.archiveManager, container, context);
 			} catch (ArchiveFailureException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 				return;
@@ -1031,8 +1064,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 				return;
 			} finally {
-				result.asBucket().free();
-				if(persistent) result.asBucket().removeFrom(container);
+				data.free();
+				if(persistent) data.removeFrom(container);
 			}
 			if(callback != null) return;
 			innerWrapHandleMetadata(true, container, context);
@@ -1109,7 +1142,69 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.persistent = SingleFileFetcher.this.persistent;
 		}
 		
-		public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(FetchResult result, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+			Bucket data = result.asBucket();
+			if(decompressors != null) {
+				Logger.minor(this, "decompressing...");
+				try {
+					if(persistent()) {
+						container.activate(decompressors, 5);
+						container.activate(returnBucket, 5);
+						container.activate(ctx, 1);
+						if(ctx == null) {
+							Logger.error(this, "Fetch context is null");
+							if(!container.ext().isActive(ctx)) {
+								Logger.error(this, "Fetch context is null and splitfile is not activated", new Exception("error"));
+								container.activate(this, 1);
+								container.activate(decompressors, 5);
+								container.activate(returnBucket, 5);
+								container.activate(ctx, 1);
+							} else {
+								Logger.error(this, "Fetch context is null and splitfile IS activated", new Exception("error"));
+							}
+						}
+						container.activate(ctx, 1);
+					}
+					int count = 0;
+					while(!decompressors.isEmpty()) {
+						Compressor c = decompressors.remove(decompressors.size()-1);
+						if(logMINOR)
+							Logger.minor(this, "Decompressing with "+c);
+						long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+						Bucket orig = result.asBucket();
+						try {
+							Bucket out = returnBucket;
+							if(!decompressors.isEmpty()) out = null;
+							data = c.decompress(data, context.getBucketFactory(persistent()), maxLen, maxLen * 4, out);
+						} catch (IOException e) {
+							if(e.getMessage().equals("Not in GZIP format") && count == 1) {
+								Logger.error(this, "Attempting to decompress twice, failed, returning first round data: "+this);
+								break;
+							}
+							onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+							return;
+						} catch (CompressionOutputSizeException e) {
+							if(logMINOR)
+								Logger.minor(this, "Too big: maxSize = "+ctx.maxOutputLength+" maxTempSize = "+ctx.maxTempLength);
+							onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, result.getMimeType()), state, container, context);
+							return;
+						} finally {
+							if(orig != data) {
+								orig.free();
+								if(persistent()) orig.removeFrom(container);
+							}
+						}
+						count++;
+					}
+				} catch (OutOfMemoryError e) {
+					OOMHandler.handleOOM(e);
+					System.err.println("Failing above attempted fetch...");
+					onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+					onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				}
+			}
 			boolean wasActive = true;
 			if(persistent) {
 				wasActive = container.ext().isActive(SingleFileFetcher.this);
