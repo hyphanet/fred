@@ -27,7 +27,7 @@ public interface GetCompletionCallback {
 
 	public void onExpectedSize(long size, ObjectContainer container, ClientContext context);
 	
-	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context);
+	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException;
 	
 	public void onFinalizedMetadata(ObjectContainer container);
 	

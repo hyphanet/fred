@@ -215,13 +215,16 @@ public class ContentFilter {
 			// Run the read filter if there is one.
 			if(handler.readFilter != null) {
 				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
-					DataInputStream dataInput = new DataInputStream(input);
 					int bufferSize = handler.charsetExtractor.getCharsetBufferSize();
-					if(dataInput.available() < bufferSize) bufferSize = dataInput.available();
-					dataInput.mark(bufferSize);
+					input.mark(bufferSize);
 					byte[] charsetBuffer = new byte[bufferSize];
-					dataInput.readFully(charsetBuffer);
-					dataInput.reset();
+					int bytesRead, totalRead = 0;
+					while(true) {
+						bytesRead = input.read(charsetBuffer, totalRead, bufferSize-totalRead);
+						if(bytesRead == -1 || bytesRead == 0) break;
+						totalRead += bytesRead;
+					}
+					input.reset();
 					charset = detectCharset(charsetBuffer, handler, maybeCharset);
 				}
 				try {

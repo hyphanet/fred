@@ -320,6 +320,12 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
+	/** Get the short name of this exception's failure. */
+	public String getShortMessage() {
+		if (getCause() == null) return getShortMessage(mode);
+		else return getCause().toString();
+	}
+
 	/** Get the (localised) short name of this failure mode. */
 	public static String getShortMessage(int mode) {
 		String ret = NodeL10n.getBase().getString("FetchException.shortError."+mode);

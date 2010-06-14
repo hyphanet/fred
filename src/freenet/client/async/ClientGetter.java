@@ -24,6 +24,9 @@ import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
+import freenet.client.filter.KnownUnsafeContentTypeException;
+import freenet.client.filter.MIMEType;
+import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.keys.ClientKeyBlock;
@@ -563,10 +566,24 @@ public class ClientGetter extends BaseClientGetter {
 		return binaryBlobBucket != null;
 	}
 
-	/** Called when we know the MIME type of the final data */
-	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
+	/** Called when we know the MIME type of the final data 
+	 * @throws FetchException */
+	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException {
 		if(finalizedMetadata) return;
-		expectedMIME = mime;
+		expectedMIME = ctx.overrideMIME == null ? mime : ctx.overrideMIME;
+		MIMEType handler = ContentFilter.getMIMEType(expectedMIME);
+		if((handler == null || (handler.readFilter == null && !handler.safeToRead)) && ctx.filterData) {
+			UnsafeContentTypeException e;
+			if(handler == null) {
+				if(logMINOR) Logger.minor(this, "Unable to get filter handler for MIME type "+expectedMIME);
+				e = new UnknownContentTypeException(expectedMIME);
+			}
+			else {
+				if(logMINOR) Logger.minor(this, "Unable to filter unsafe MIME type "+expectedMIME);
+				e = new KnownUnsafeContentTypeException(handler);
+			}
+			throw new FetchException(FetchException.CONTENT_VALIDATION_FAILED, expectedSize, e.getMessage(), e, expectedMIME);
+		}
 		if(persistent()) {
 			container.store(this);
 			container.activate(ctx, 1);

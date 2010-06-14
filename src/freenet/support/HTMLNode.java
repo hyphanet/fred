@@ -58,6 +58,7 @@ public class HTMLNode implements XMLCharacterClasses {
 				throw new IllegalArgumentException("attribute names and values differ in length");
 			}
 			for (int attributeIndex = 0, attributeCount = attributeNames.length; attributeIndex < attributeCount; attributeIndex++) {
+				if(attributeNames[attributeIndex].equalsIgnoreCase("")) continue;
 				if ((attributeNames[attributeIndex] == null) || !checkNamePattern(attributeNames[attributeIndex])) {
 					throw new IllegalArgumentException("attributeName is not legal");
 				}
