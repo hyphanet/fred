@@ -17,7 +17,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	private PeerNode pn;
 	private LinkedList<MessageWrapper> started = new LinkedList<MessageWrapper>();
-	private LinkedList<Integer> acks = new LinkedList<Integer>();
+	private LinkedList<Long> acks = new LinkedList<Long>();
 	private long nextSequenceNumber = 0;
 	private HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
 
@@ -106,10 +106,10 @@ public class NewPacketFormat implements PacketFormat {
 
 		// Insert acks
 		synchronized(acks) {
-			int firstAck = 0;
-			Iterator<Integer> it = acks.iterator();
+			long firstAck = 0;
+			Iterator<Long> it = acks.iterator();
 			while (it.hasNext() && numAcks < 256) {
-				int ack = it.next();
+				long ack = it.next();
 				if(numAcks == 0) {
 					firstAck = ack;
 
@@ -123,7 +123,7 @@ public class NewPacketFormat implements PacketFormat {
 					offset += data.length;
 				} else {
 					// Compress if possible
-					int compressedAck = ack - firstAck;
+					long compressedAck = ack - firstAck;
 					if((compressedAck < 0) || (compressedAck > 255)) {
 						// TODO: If less that 0, we could replace firstAck
 						continue;
