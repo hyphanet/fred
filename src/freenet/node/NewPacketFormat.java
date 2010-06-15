@@ -113,14 +113,10 @@ public class NewPacketFormat implements PacketFormat {
 				if(numAcks == 0) {
 					firstAck = ack;
 
-					byte[] data = new byte[4];
-					data[0] = (byte) (ack >>> 24);
-					data[1] = (byte) (ack >>> 16);
-					data[2] = (byte) (ack >>> 8);
-					data[3] = (byte) ack;
-
-					System.arraycopy(data, 0, packet, offset, data.length);
-					offset += data.length;
+					packet[offset++] = (byte) (ack >>> 24);
+					packet[offset++] = (byte) (ack >>> 16);
+					packet[offset++] = (byte) (ack >>> 8);
+					packet[offset++] = (byte) (ack);
 				} else {
 					// Compress if possible
 					long compressedAck = ack - firstAck;
