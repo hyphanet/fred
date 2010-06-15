@@ -3,7 +3,6 @@ package freenet.support;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class SparseBitmap {
@@ -59,6 +58,13 @@ public class SparseBitmap {
 		int start; // inclusive
 		int end;   // inclusive
 
+		public Range() {}
+
+		public Range(int start, int end) {
+			this.start = start;
+			this.end = end;
+		}
+
 		@Override
 		public String toString() {
 			return "Range:"+start+"->"+end;
@@ -71,47 +77,44 @@ public class SparseBitmap {
 		}
 	}
 
-	private void removeRangeFromSet(int start, int end, SortedSet<int[]> set) {
+	public void remove(int start, int end) {
 		if(start > end) {
-			Logger.error(this, "Removing bad range. Start: " + start + ", end: " + end, new Exception());
-			return;
+			throw new IllegalArgumentException("Removing bad range. Start: " + start + ", end: " + end);
 		}
 
-		synchronized(set) {
-			LinkedList<int[]> toAdd = new LinkedList<int[]>();
+		LinkedList<Range> toAdd = new LinkedList<Range>();
 
-			Iterator<int[]> it = set.iterator();
-			while (it.hasNext()) {
-				int[] range = it.next();
+		Iterator<Range> it = ranges.iterator();
+		while (it.hasNext()) {
+			Range range = it.next();
 
-				if(range[0] < start) {
-					if(range[1] < start) {
-						//Outside
-						continue;
-					} else if(range[1] <= end) {
-						//Overlaps beginning
-						toAdd.add(new int [] {range[0], start - 1});
-					} else /* (range[1] > end) */{
-						//Overlaps entire range
-						toAdd.add(new int [] {range[0], start - 1});
-						toAdd.add(new int [] {end + 1, range[1]});
-					}
-				} else if(range[0] >= start && range[0] <= end) {
-					if (range[1] <= end) {
-						// Equal or inside
-						it.remove();
-					} else /* (range[1] > end) */ {
-						// Overlaps end
-						toAdd.add(new int [] {end + 1, range[1]});
-					}
-				} else /* (range[0] > end) */ {
+			if(range.start < start) {
+				if(range.end < start) {
 					//Outside
 					continue;
+				} else if(range.end <= end) {
+					//Overlaps beginning
+					toAdd.add(new Range(range.start, start - 1));
+				} else /* (range[1] > end) */{
+					//Overlaps entire range
+					toAdd.add(new Range(range.start, start - 1));
+					toAdd.add(new Range(end + 1, range.end));
 				}
-				it.remove();
+			} else if(range.start >= start && range.start <= end) {
+				if (range.end <= end) {
+					// Equal or inside
+					it.remove();
+				} else /* (range[1] > end) */ {
+					// Overlaps end
+					toAdd.add(new Range(end + 1, range.end));
+				}
+			} else /* (range[0] > end) */ {
+				//Outside
+				continue;
 			}
-
-			set.addAll(toAdd);
+			it.remove();
 		}
+
+		ranges.addAll(toAdd);
 	}
 }
