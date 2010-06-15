@@ -46,7 +46,30 @@ public class NewPacketFormat implements PacketFormat {
 			acks.addLast(sequenceNumber);
 		}
 
-		// TODO: Go through the acks
+		int numAcks = buf[offset];
+		if(numAcks > 0) {
+			long firstAck = 0;
+			for (int i = 0; i < numAcks; i++) {
+				long ack = 0;
+				if(i == 0) {
+					firstAck = (buf[offset] << 24) | (buf[offset + 1] << 16) | (buf[offset + 2] << 8) | buf[offset + 3];
+					offset += 4;
+				} else {
+					ack = buf[offset++];
+				}
+
+				SentPacket sent = null;
+				synchronized(sentPackets) {
+					sent = sentPackets.remove(firstAck + ack);
+				}
+				if(sent == null) {
+					if(logMINOR) Logger.minor(this, "Received ack for unknown packet. Already acked?");
+				} else {
+					sent.acked();
+				}
+			}
+		}
+
 		// TODO: Handle received message fragments
 		throw new UnsupportedOperationException();
 
