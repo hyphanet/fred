@@ -28,7 +28,13 @@ public class NewPacketFormat implements PacketFormat {
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
 		// TODO: Check HMAC
 		// TODO: Decrypt
-		// TODO: Ack packet sequence number
+
+		long sequenceNumber = (buf[offset] << 24) | (buf[offset + 1] << 16) | (buf[offset + 2] << 8) | buf[offset + 3];
+		offset += 4;
+		synchronized(acks) {
+			acks.addLast(sequenceNumber);
+		}
+
 		// TODO: Go through the acks
 		// TODO: Handle received message fragments
 		throw new UnsupportedOperationException();
