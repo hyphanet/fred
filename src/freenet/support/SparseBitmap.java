@@ -1,18 +1,41 @@
 package freenet.support;
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class SparseBitmap {
-	final LinkedList<Range> ranges;
+	private final TreeSet<Range> ranges;
 
 	public SparseBitmap() {
-		ranges = new LinkedList<Range>();
+		ranges = new TreeSet<Range>(new RangeComparator());
 	}
 
 	public void add(int start, int end) {
-		throw new UnsupportedOperationException();
+		if(start > end) {
+			throw new IllegalArgumentException("Tried adding badd range. Start: " + start + ", end: " + end);
+		}
+
+		Iterator<Range> it = ranges.iterator();
+		while (it.hasNext()) {
+			Range range = it.next();
+			if(range.start >= start && range.end <= end) {
+				// Equal or inside
+				return;
+			} else if((range.start <= start && range.end >= start)
+			                || (range.start <= end && range.end >= end)) {
+				// Overlapping
+				it.remove();
+
+				Range newRange = new Range();
+				newRange.start = Math.min(range.start, start);
+				newRange.end = Math.max(range.end, end);
+				ranges.add(newRange);
+				return;
+			}
+		}
 	}
 
 	public boolean contains(int index) {
@@ -42,31 +65,9 @@ public class SparseBitmap {
 		}
 	}
 
-	private void addRangeToSet(int start, int end, SortedSet<int[]> set) {
-		if(start > end) {
-			Logger.error(this, "Adding bad range. Start: " + start + ", end: " + end, new Exception());
-			return;
-		}
-
-		synchronized(set) {
-			Iterator<int[]> it = set.iterator();
-			while (it.hasNext()) {
-				int[] range = it.next();
-				if(range[0] >= start && range[1] <= end) {
-					// Equal or inside
-					return;
-				} else if((range[0] <= start && range[1] >= start)
-				                || (range[0] <= end && range[1] >= end)) {
-					// Overlapping
-					it.remove();
-
-					int[] newRange = new int[2];
-					newRange[0] = Math.min(range[0], start);
-					newRange[1] = Math.max(range[1], end);
-					set.add(newRange);
-					return;
-				}
-			}
+	private class RangeComparator implements Comparator<Range> {
+		public int compare(Range r1, Range r2) {
+			return r2.start - r1.start;
 		}
 	}
 
