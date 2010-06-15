@@ -196,6 +196,9 @@ public class NewPacketFormat implements PacketFormat {
 
 		// Add messageID and flags
 		int messageID = wrapper.getMessageID();
+		if(messageID != (messageID & 0x7FFF)) {
+			Logger.error(this, "MessageID was " + messageID + ", masked is: " + (messageID & 0x7FFF));
+		}
 		messageID = messageID & 0x7FFF; // Make sure the flag bits are 0
 
 		if(wrapper.isLongMessage()) messageID = messageID | 0x8000;
