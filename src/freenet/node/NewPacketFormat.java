@@ -9,11 +9,22 @@ import java.util.Vector;
 import freenet.crypt.SHA256;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 public class NewPacketFormat implements PacketFormat {
 
 	public static final int MIN_MESSAGE_FRAGMENT_SIZE = 20;
 	public static final int HMAC_LENGTH = 4;
+
+	private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	private PeerNode pn;
 	private LinkedList<MessageWrapper> started = new LinkedList<MessageWrapper>();
@@ -133,6 +144,7 @@ public class NewPacketFormat implements PacketFormat {
 
 					packet[offset++] = (byte) (compressedAck);
 				}
+				if(logMINOR) Logger.minor(this, "Adding ack for packet " + ack);
 
 				++numAcks;
 				it.remove();
