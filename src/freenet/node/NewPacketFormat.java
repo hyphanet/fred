@@ -40,7 +40,30 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
-		// TODO: Check HMAC
+		//Only keep out packet
+		byte[] temp = new byte[buf.length - offset];
+		System.arraycopy(buf, offset, temp, 0, temp.length);
+		buf = temp;
+		offset = 0;
+
+		//Check the hash
+		//TODO: Decrypt hash first
+		byte[] packetHash = new byte[HMAC_LENGTH];
+		for (int i = 0; i < packetHash.length; i++) {
+			packetHash[i] = buf[4 + i];
+			buf[4 + i] = 0;
+		}
+
+		MessageDigest md = SHA256.getMessageDigest();
+		byte[] hash = md.digest(buf);
+
+		for(int i = 0; i < packetHash.length; i++) {
+			if(packetHash[i] != hash[i]) {
+				Logger.warning(this, "Wrong hash for received packet. Discarding");
+				return;
+			}
+		}
+
 		// TODO: Decrypt
 
 		//Process received acks
