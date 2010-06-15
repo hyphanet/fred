@@ -27,10 +27,11 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private PeerNode pn;
-	private LinkedList<MessageWrapper> started = new LinkedList<MessageWrapper>();
+	private HashMap<Integer, MessageWrapper> started = new HashMap<Integer, MessageWrapper>();
 	private LinkedList<Long> acks = new LinkedList<Long>();
 	private long nextSequenceNumber = 0;
 	private HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
+	private int nextMessageID = 0;
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
@@ -88,7 +89,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		// Try to finish Messages that have been started
 		synchronized(started) {
-			Iterator<MessageWrapper> it = started.iterator();
+			Iterator<MessageWrapper> it = started.values().iterator();
 			while (it.hasNext() && (offset + MIN_MESSAGE_FRAGMENT_SIZE < maxPacketSize)) {
 				MessageWrapper wrapper = it.next();
 				offset = insertFragment(packet, offset, maxPacketSize, wrapper, sentPacket);
@@ -104,11 +105,17 @@ public class NewPacketFormat implements PacketFormat {
 			}
 			if(item == null) break;
 
-			MessageWrapper wrapper = new MessageWrapper(item, 0);
+			int messageID = getMessageID();
+			if(messageID == -1) {
+				if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
+				messageQueue.pushfrontPrioritizedMessageItem(item);
+				break;
+			}
+			MessageWrapper wrapper = new MessageWrapper(item, messageID);
 
 			offset = insertFragment(packet, offset, maxPacketSize, wrapper, sentPacket);
 			synchronized(started) {
-				started.add(wrapper);
+				started.put(messageID, wrapper);
 			}
 		}
 
@@ -217,6 +224,17 @@ public class NewPacketFormat implements PacketFormat {
 		sent.addFragment(wrapper, added[1], added[1] + added[0] - 1);
 
 		return offset;
+	}
+
+	private int getMessageID() {
+		int messageID = nextMessageID;
+
+		synchronized(started) {
+			if(started.containsKey(messageID)) return -1;
+		}
+
+		nextMessageID = (nextMessageID + 1) % 8192;
+		return messageID;
 	}
 
 	private class SentPacket {
