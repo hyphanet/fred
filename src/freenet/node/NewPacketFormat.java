@@ -33,6 +33,8 @@ public class NewPacketFormat implements PacketFormat {
 	private HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
 	private int nextMessageID = 0;
 
+	private HashMap<Integer, byte[]> receiveBuffers = new HashMap<Integer, byte[]>();
+
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
 	}
@@ -66,7 +68,50 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		// TODO: Handle received message fragments
+		//Handle received message fragments
+		while(offset < buf.length) { //FIXME: Wrong if offset doesn't start at 0
+			boolean shortMessage = (buf[offset] & 0x80) != 0;
+			boolean isFragmented = (buf[offset] & 0x40) != 0;
+			boolean firstFragment = (buf[offset] & 0x20) != 0;
+			int messageID = ((buf[offset] & 0x1F) << 8) | buf[offset + 1];
+			offset += 2;
+
+			int fragmentLength;
+			if(shortMessage) {
+				fragmentLength = buf[offset++];
+			} else {
+				fragmentLength = (buf[offset] << 8) | buf[offset + 1];
+				offset += 2;
+			}
+
+			int messageLength = -1;
+			int fragmentOffset = -1;
+			if(isFragmented) {
+				int value;
+				if(shortMessage) {
+					value = buf[offset++];
+				} else {
+					value = (buf[offset] << 16) | (buf[offset + 1] << 8) | buf[offset + 2];
+					offset += 3;
+				}
+
+				if(firstFragment) messageLength = value;
+				else fragmentOffset = value;
+			}
+
+			byte[] recvBuf = receiveBuffers.get(messageID);
+			if(recvBuf == null) {
+				if(!firstFragment) return; //For now we need the message length first
+
+				if(logMINOR) Logger.minor(this, "Creating buffer for messageID " + messageID + " of length " + messageLength);
+				recvBuf = new byte[messageLength];
+				receiveBuffers.put(messageID, recvBuf);
+			}
+
+			System.arraycopy(buf, offset, recvBuf, fragmentOffset, fragmentLength);
+			offset += fragmentLength;
+			//TODO: Check if we have received all messages for this messageID
+		}
 
 		//Ack received packet
 		long sequenceNumber = (buf[offset] << 24) | (buf[offset + 1] << 16) | (buf[offset + 2] << 8) | buf[offset + 3];
