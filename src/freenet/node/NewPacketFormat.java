@@ -26,8 +26,8 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
-		// TODO: Decrypt
 		// TODO: Check HMAC
+		// TODO: Decrypt
 		// TODO: Ack packet sequence number
 		// TODO: Go through the acks
 		// TODO: Handle received message fragments
@@ -70,8 +70,6 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		//TODO: Encrypt
-
 		byte[] data = new byte[offset];
 		System.arraycopy(packet, 0, data, 0, data.length);
 
@@ -81,6 +79,8 @@ public class NewPacketFormat implements PacketFormat {
 		data[1] = (byte) (sequenceNumber >>> 16);
 		data[2] = (byte) (sequenceNumber >>> 8);
 		data[3] = (byte) (sequenceNumber);
+
+		//TODO: Encrypt
 
 		//Add hash
 		//TODO: Encrypt this to make a HMAC
