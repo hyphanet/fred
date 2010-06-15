@@ -104,7 +104,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 			if(item == null) break;
 
-			MessageWrapper wrapper = new MessageWrapper(item);
+			MessageWrapper wrapper = new MessageWrapper(item, 0);
 
 			offset = insertFragment(packet, offset, maxPacketSize, wrapper, sentPacket);
 			synchronized(started) {

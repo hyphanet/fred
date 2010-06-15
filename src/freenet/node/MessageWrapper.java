@@ -11,14 +11,16 @@ import freenet.support.Logger;
 public class MessageWrapper {
 	private final MessageItem item;
 	private final boolean isLongMessage;
+	private final int messageID;
 	
 	//Sorted lists of non-overlapping ranges
 	private final SortedSet<int[]> acks = new TreeSet<int[]>(new RangeComparator());
 	private final SortedSet<int[]> sent = new TreeSet<int[]>(new RangeComparator());
 
-	public MessageWrapper(MessageItem item) {
+	public MessageWrapper(MessageItem item, int messageID) {
 		this.item = item;
 		isLongMessage = item.buf.length > 255;
+		this.messageID = messageID;
 	}
 
 	/**
@@ -90,7 +92,7 @@ public class MessageWrapper {
 	}
 
 	public int getMessageID() {
-		throw new UnsupportedOperationException();
+		return messageID;
 	}
 
 	public int getLength() {
