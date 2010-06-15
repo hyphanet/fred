@@ -31,7 +31,7 @@ public class ContentFilter {
 	static final Hashtable<String, MIMEType> mimeTypesByName = new Hashtable<String, MIMEType>();
 	
 	/** The HTML mime types are defined here, to allow other modules to identify it*/
-	public static String[] HTML_MIME_TYPES=new String[]{"text/html", "text/xhtml", "text/xml+xhtml", "application/xhtml+xml"};
+	public static String[] HTML_MIME_TYPES=new String[]{"text/html", "application/xhtml+xml", "text/xml+xhtml", "text/xhtml", "application/xhtml"};
 	
 	static {
 		init();
