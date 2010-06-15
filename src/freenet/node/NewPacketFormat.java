@@ -41,13 +41,6 @@ public class NewPacketFormat implements PacketFormat {
 		// TODO: Check HMAC
 		// TODO: Decrypt
 
-		//Ack received packet
-		long sequenceNumber = (buf[offset] << 24) | (buf[offset + 1] << 16) | (buf[offset + 2] << 8) | buf[offset + 3];
-		offset += 4;
-		synchronized(acks) {
-			acks.addLast(sequenceNumber);
-		}
-
 		//Process received acks
 		int numAcks = buf[offset];
 		if(numAcks > 0) {
@@ -74,6 +67,14 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		// TODO: Handle received message fragments
+
+		//Ack received packet
+		long sequenceNumber = (buf[offset] << 24) | (buf[offset + 1] << 16) | (buf[offset + 2] << 8) | buf[offset + 3];
+		offset += 4;
+		synchronized(acks) {
+			acks.addLast(sequenceNumber);
+		}
+
 		throw new UnsupportedOperationException();
 
 	}
