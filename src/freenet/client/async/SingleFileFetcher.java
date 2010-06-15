@@ -4,6 +4,8 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -34,10 +36,12 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
-import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
+import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
@@ -971,6 +975,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		
 		public void onSuccess(FetchResult result, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 			Bucket data = result.asBucket();
+			InputStream input = null;
+			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 			if(decompressors != null) {
 				try {
 					if(persistent()) {
@@ -992,34 +998,21 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						container.activate(ctx, 1);
 					}
 					int count = 0;
+					input = data.getInputStream();
+					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, maxLen);
 					while(!decompressors.isEmpty()) {
 						Compressor c = decompressors.remove(decompressors.size()-1);
 						if(logMINOR)
 							Logger.minor(this, "Decompressing with "+c);
-						long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-						Bucket orig = result.asBucket();
-						try {
-							data = c.decompress(data, context.getBucketFactory(persistent()), maxLen, maxLen * 4, null);
-						} catch (IOException e) {
-							if(e.getMessage().equals("Not in GZIP format") && count == 1) {
-								Logger.error(this, "Attempting to decompress twice, failed, returning first round data: "+this);
-								break;
-							}
-							onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
-							return;
-						} catch (CompressionOutputSizeException e) {
-							if(logMINOR)
-								Logger.minor(this, "Too big: maxSize = "+ctx.maxOutputLength+" maxTempSize = "+ctx.maxTempLength);
-							onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, result.getMimeType()), state, container, context);
-							return;
-						} finally {
-							if(orig != data) {
-								orig.free();
-								if(persistent()) orig.removeFrom(container);
-							}
-						}
+						decompressorManager.addDecompressor(c);
 						count++;
 					}
+					input = decompressorManager.execute();
+					if(returnBucket != null) data = returnBucket;
+					else data = context.getBucketFactory(persistent()).makeBucket(maxLen);
+					BucketTools.copyFrom(data, input, -1);
+					input.close();
+					result = new FetchResult(result, data);
 				} catch (OutOfMemoryError e) {
 					OOMHandler.handleOOM(e);
 					System.err.println("Failing above attempted fetch...");
@@ -1027,8 +1020,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
 					onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				} finally {
+					Closer.close(input);
 				}
 			}
+
 			if(!persistent) {
 				// Run directly - we are running on some thread somewhere, don't worry about it.
 				innerSuccess(data, container, context);
@@ -1144,6 +1140,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		
 		public void onSuccess(FetchResult result, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 			Bucket data = result.asBucket();
+			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+			InputStream input = null;
 			if(decompressors != null) {
 				Logger.minor(this, "decompressing...");
 				try {
@@ -1166,36 +1164,22 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						container.activate(ctx, 1);
 					}
 					int count = 0;
+					input = data.getInputStream();
+					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, maxLen);
 					while(!decompressors.isEmpty()) {
 						Compressor c = decompressors.remove(decompressors.size()-1);
 						if(logMINOR)
 							Logger.minor(this, "Decompressing with "+c);
-						long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-						Bucket orig = result.asBucket();
-						try {
-							Bucket out = returnBucket;
-							if(!decompressors.isEmpty()) out = null;
-							data = c.decompress(data, context.getBucketFactory(persistent()), maxLen, maxLen * 4, out);
-						} catch (IOException e) {
-							if(e.getMessage().equals("Not in GZIP format") && count == 1) {
-								Logger.error(this, "Attempting to decompress twice, failed, returning first round data: "+this);
-								break;
-							}
-							onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
-							return;
-						} catch (CompressionOutputSizeException e) {
-							if(logMINOR)
-								Logger.minor(this, "Too big: maxSize = "+ctx.maxOutputLength+" maxTempSize = "+ctx.maxTempLength);
-							onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, result.getMimeType()), state, container, context);
-							return;
-						} finally {
-							if(orig != data) {
-								orig.free();
-								if(persistent()) orig.removeFrom(container);
-							}
-						}
+						decompressorManager.addDecompressor(c);
 						count++;
 					}
+					input = decompressorManager.execute();
+					if(returnBucket != null) data = returnBucket;
+					else data = context.getBucketFactory(persistent()).makeBucket(maxLen);
+					BucketTools.copyFrom(data, input, -1);
+					input.close();
+					result.asBucket().free();
+					result = new FetchResult(result, data);
 				} catch (OutOfMemoryError e) {
 					OOMHandler.handleOOM(e);
 					System.err.println("Failing above attempted fetch...");

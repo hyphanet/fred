@@ -57,21 +57,7 @@ public class Bzip2Compressor implements Compressor {
 		return output;
 	}
 
-	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
-		Bucket output;
-		if(preferred != null)
-			output = preferred;
-		else
-			output = bf.makeBucket(maxLength);
-		InputStream is = data.getInputStream();
-		OutputStream os = output.getOutputStream();
-		decompress(is, os, maxLength, maxCheckSizeLength);
-		os.close();
-		is.close();
-		return output;
-	}
-
-	private long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
+	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		CBZip2InputStream bz2is = new CBZip2InputStream(is);
 		long written = 0;
 		byte[] buffer = new byte[4096];
@@ -109,7 +95,7 @@ public class Bzip2Compressor implements Compressor {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream(output.length);
 		int bytes = 0;
 		try {
-			bytes = (int)decompress(bais, baos, output.length, -1);
+			decompress(bais, baos, output.length, -1);
 		} catch (IOException e) {
 			// Impossible
 			throw new Error("Got IOException: " + e.getMessage(), e);

@@ -53,24 +53,6 @@ public class LZMACompressor implements Compressor {
 		return output;
 	}
 
-	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
-		Bucket output;
-		if(preferred != null)
-			output = preferred;
-		else
-			output = bf.makeBucket(maxLength);
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
-		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
-		CountedOutputStream os = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
-		decompress(is, os, maxLength, maxCheckSizeLength);
-		os.close();
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count()+" written "+os.written());
-		return output;
-	}
-
-	
 	// Copied from DecoderThread
 	// LICENSING: DecoderThread is LGPL 2.1/CPL according to comments.
 	
@@ -88,10 +70,12 @@ public class LZMACompressor implements Compressor {
         props[4] = 0x00;
     }
 
-	private void decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
+	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
+		CountedOutputStream cos = new CountedOutputStream(os);
 		Decoder decoder = new Decoder();
 		decoder.SetDecoderProperties(props);
-		decoder.Code(is, os, maxLength);
+		decoder.Code(is, cos, maxLength);
+		return cos.written();
 	}
 
 	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {

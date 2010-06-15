@@ -8,6 +8,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.HashSet;
@@ -41,6 +43,7 @@ import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
+import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 
@@ -215,6 +218,8 @@ public class ClientGetter extends BaseClientGetter {
 		// doing massive encrypted I/Os while holding a lock.
 
 		Bucket data = result.asBucket();
+		OutputStream output = null;
+		InputStream input = null;
 		// Decompress
 		if(decompressors != null) {
 			Logger.minor(this, "decompressing...");
@@ -238,30 +243,18 @@ public class ClientGetter extends BaseClientGetter {
 					container.activate(ctx, 1);
 				}
 				int count = 0;
+				output = null;
+				input = data.getInputStream();
+				long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+				DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, maxLen);
 				while(!decompressors.isEmpty()) {
 					Compressor c = decompressors.remove(decompressors.size()-1);
 					if(logMINOR)
 						Logger.minor(this, "Decompressing with "+c);
-					long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-					try {
-						Bucket out = returnBucket;
-						if(!decompressors.isEmpty()) out = null;
-						data = c.decompress(data, context.getBucketFactory(persistent()), maxLen, maxLen * 4, null);
-					} catch (IOException e) {
-						if(e.getMessage().equals("Not in GZIP format") && count == 1) {
-							Logger.error(this, "Attempting to decompress twice, failed, returning first round data: "+this);
-							break;
-						}
-						onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
-						return;
-					} catch (CompressionOutputSizeException e) {
-						if(logMINOR)
-							Logger.minor(this, "Too big: maxSize = "+ctx.maxOutputLength+" maxTempSize = "+ctx.maxTempLength);
-						onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false, result.getMimeType()), state, container, context);
-						return;
-					}
+					decompressorManager.addDecompressor(c);
 					count++;
 				}
+				input = decompressorManager.execute();
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
@@ -276,8 +269,6 @@ public class ClientGetter extends BaseClientGetter {
 		//Filter the data, if we are supposed to
 		if(ctx.filterData){
 			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
-			InputStream input = null;
-			OutputStream output = null;
 			try {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
 				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
@@ -288,7 +279,6 @@ public class ClientGetter extends BaseClientGetter {
 					if(persistent()) container.activate(returnBucket, 5);
 					filteredResult = returnBucket;
 				}
-				input = data.getInputStream();
 				output = filteredResult.getOutputStream();
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
