@@ -186,9 +186,11 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				if(req instanceof SendableInsert) {
 					canWriteClientCache = ((SendableInsert)req).canWriteClientCache(null);
 					forkOnCacheable = ((SendableInsert)req).forkOnCacheable(null);
+					localRequestOnly = ((SendableInsert)req).localRequestOnly(null);
 				} else {
 					canWriteClientCache = false;
 					forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
+					localRequestOnly = false;
 				}
 				ignoreStore = false;
 			}
