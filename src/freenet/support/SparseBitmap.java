@@ -35,6 +35,7 @@ public class SparseBitmap {
 				return;
 			}
 		}
+		ranges.add(new Range(start, end));
 	}
 
 	public void clear() {
