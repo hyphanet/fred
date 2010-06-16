@@ -58,6 +58,8 @@ public class InsertContext implements Cloneable {
 	public static final long COMPAT_1250_EXACT = 1;
 	/** 1250 or previous: Segments up to 128 data 128 check, check <= data. */
 	public static final long COMPAT_1250 = 2;
+	/** 1254: Second stage of even splitting, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. */
+	public static final long COMPAT_1254 = 3;
 
 	public InsertContext(
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,

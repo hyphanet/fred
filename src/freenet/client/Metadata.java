@@ -575,7 +575,7 @@ public class Metadata implements Cloneable {
 			throw new IllegalArgumentException();
 	}
 
-	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize,
+	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
 			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata) {
 		hashCode = super.hashCode();
 		if(isMetadata)
@@ -603,7 +603,10 @@ public class Metadata implements Cloneable {
 			setMIMEType(cm.getMIMEType());
 		else
 			setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
-		splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
+		if(deductBlocksFromSegments == 0)
+			splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
+		else
+			splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize, deductBlocksFromSegments } );
 	}
 
 	private boolean keysValid(ClientCHK[] keys) {

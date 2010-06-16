@@ -65,6 +65,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	final int blocksPerSegment;
 	/** The segment length in check blocks. */
 	final int checkBlocksPerSegment;
+	final int deductBlocksFromSegments;
 	/** Total number of segments */
 	final int segmentCount;
 	/** The detailed information on each segment */
@@ -200,6 +201,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			blocksPerSegment = -1;
 			checkBlocksPerSegment = -1;
 			segmentCount = 1;
+			deductBlocksFromSegments = 0;
 			if(splitfileCheckBlocks.length > 0) {
 				Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet "+splitfileCheckBlocks.length+" check blocks found!! : "+this);
 				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile type is non-redundant yet have "+splitfileCheckBlocks.length+" check blocks");
@@ -210,6 +212,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				throw new MetadataParseException("No splitfile params");
 			blocksPerSegment = Fields.bytesToInt(params, 0);
 			int checkBlocks = Fields.bytesToInt(params, 4);
+			if(params.length >= 12)
+				deductBlocksFromSegments = Fields.bytesToInt(params, 8);
+			else
+				deductBlocksFromSegments = 0;
 
 			// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
 			// Work around a bug around build 1135.
@@ -322,6 +328,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				// Create a segment. Give it its keys.
 				int copyDataBlocks = Math.min(splitfileDataBlocks.length - dataBlocksPtr, blocksPerSegment);
 				int copyCheckBlocks = Math.min(splitfileCheckBlocks.length - checkBlocksPtr, checkBlocksPerSegment);
+				if(segments.length - i <= deductBlocksFromSegments) {
+					copyDataBlocks--;
+					// Don't change check blocks.
+				}
 				ClientCHK[] dataBlocks = new ClientCHK[copyDataBlocks];
 				ClientCHK[] checkBlocks = new ClientCHK[copyCheckBlocks];
 				if(copyDataBlocks > 0)

@@ -48,6 +48,7 @@ public class SplitFileInserter implements ClientPutState {
 	final COMPRESSOR_TYPE compressionCodec;
 	final short splitfileAlgorithm;
 	final int segmentSize;
+	final int deductBlocksFromSegments;
 	final int checkSegmentSize;
 	final SplitFileInserterSegment[] segments;
 	final boolean getCHKOnly;
@@ -116,6 +117,7 @@ public class SplitFileInserter implements ClientPutState {
 		if(ctx.compatibilityMode == InsertContext.COMPAT_1250_EXACT) {
 			segs = countDataBlocks / 128 + (countDataBlocks % 128 == 0 ? 0 : 1);
 			segmentSize = 128;
+			deductBlocksFromSegments = 0;
 		} else {
 			// Algorithm from evanbd, see bug #2931.
 			if(countDataBlocks > 520) {
@@ -135,6 +137,12 @@ public class SplitFileInserter implements ClientPutState {
 				segs = 1;
 			}
 			segmentSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+			if(ctx.compatibilityMode == InsertContext.COMPAT_NONE || ctx.compatibilityMode >= InsertContext.COMPAT_1254) {
+				int lastSegmentSize = countDataBlocks - (segmentSize * (segs - 1));
+				deductBlocksFromSegments = segmentSize - lastSegmentSize;
+			} else {
+				deductBlocksFromSegments = 0;
+			}
 		}
 		
 		if(splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT)
@@ -148,7 +156,7 @@ public class SplitFileInserter implements ClientPutState {
 		}
 
 		// Create segments
-		segments = splitIntoSegments(segmentSize, dataBuckets, context.mainExecutor, container, context, persistent, put);
+		segments = splitIntoSegments(segmentSize, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put);
 		if(persistent) {
 			// Deactivate all buckets, and let dataBuckets be GC'ed
 			for(int i=0;i<dataBuckets.length;i++) {
@@ -186,6 +194,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.cb = cb;
 		this.ctx = ctx;
 		this.persistent = parent.persistent();
+		this.deductBlocksFromSegments = 0;
 		context.jobRunner.setCommitThisTransaction();
 		// Don't read finished, wait for the segmentFinished()'s.
 		String length = fs.get("DataLength");
@@ -272,33 +281,49 @@ public class SplitFileInserter implements ClientPutState {
 
 	/**
 	 * Group the blocks into segments.
+	 * @param deductBlocksFromSegments 
 	 */
-	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter) {
+	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, int segCount, int deductBlocksFromSegments, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter) {
 		int dataBlocks = origDataBlocks.length;
 
 		ArrayList<SplitFileInserterSegment> segs = new ArrayList<SplitFileInserterSegment>();
 
 		// First split the data up
-		if((dataBlocks < segmentSize) || (segmentSize == -1)) {
+		if(segCount == 1) {
 			// Single segment
 			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, ctx.compatibilityMode), origDataBlocks, ctx, getCHKOnly, 0, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
 			int segNo = 0;
-			for(int i=segmentSize;;i+=segmentSize) {
+			int data = segmentSize;
+			int check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, ctx.compatibilityMode);
+			for(int i=segmentSize;;) {
 				if(i > dataBlocks) i = dataBlocks;
+				if(data > (i-j)) {
+					// Last segment.
+					assert(i == segmentSize-1);
+					data = i-j;
+					check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, ctx.compatibilityMode);
+				}
 				Bucket[] seg = new Bucket[i-j];
-				System.arraycopy(origDataBlocks, j, seg, 0, i-j);
+				System.arraycopy(origDataBlocks, j, seg, 0, data);
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, seg.length, ctx.compatibilityMode), seg, ctx, getCHKOnly, segNo, container);
+				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, check, seg, ctx, getCHKOnly, segNo, container);
 				segs.add(s);
 
 				if(i == dataBlocks) break;
 				segNo++;
+				i += data;
+				// Deduct one block from each later segment, rather than having a really short last segment.
+				if(segCount - segNo <= deductBlocksFromSegments) {
+					data--;
+					// Don't change check.
+				}
 			}
+			assert(segNo == segCount);
 		}
 		if(persistent)
 			container.activate(parent, 1);
@@ -429,7 +454,7 @@ public class SplitFileInserter implements ClientPutState {
 				if(persistent) container.activate(cm, 5);
 				ClientMetadata meta = cm;
 				if(persistent) meta = meta == null ? null : meta.clone();
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata);
 			}
 			haveSentMetadata = true;
 		}
