@@ -65,36 +65,51 @@ public class SparseBitmapTest extends TestCase {
 			assertTrue(s.contains(i));
 		}
 
+		//Remove begining of one range
+		s.remove(10, 11);
+		for(int i = 0; i <= 4; i++) {
+			assertTrue(s.contains(i));
+		}
+		for(int i = 5; i <= 11; i++) {
+			assertFalse(s.contains(i));
+		}
+		for(int i = 12; i <= 14; i++) {
+			assertTrue(s.contains(i));
+		}
+
+		//Remove end of one range
 		s.remove(4, 4);
 		for(int i = 0; i <= 3; i++) {
 			assertTrue(s.contains(i));
 		}
-		for(int i = 4; i <= 9; i++) {
+		for(int i = 4; i <= 11; i++) {
 			assertFalse(s.contains(i));
 		}
-		for(int i = 10; i <= 14; i++) {
+		for(int i = 12; i <= 14; i++) {
 			assertTrue(s.contains(i));
 		}
 
-		s.remove(4,9);
+		//Remove empty range
+		s.remove(4,11);
 		for(int i = 0; i <= 3; i++) {
 			assertTrue(s.contains(i));
 		}
-		for(int i = 4; i <= 9; i++) {
+		for(int i = 4; i <= 11; i++) {
 			assertFalse(s.contains(i));
 		}
-		for(int i = 10; i <= 14; i++) {
+		for(int i = 12; i <= 14; i++) {
 			assertTrue(s.contains(i));
 		}
 
-		s.remove(3,10);
+		//Remove from two ranges
+		s.remove(3,12);
 		for(int i = 0; i <= 2; i++) {
 			assertTrue(s.contains(i));
 		}
-		for(int i = 3; i <= 10; i++) {
+		for(int i = 3; i <= 12; i++) {
 			assertFalse(s.contains(i));
 		}
-		for(int i = 11; i <= 14; i++) {
+		for(int i = 13; i <= 14; i++) {
 			assertTrue(s.contains(i));
 		}
 	}
