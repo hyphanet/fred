@@ -319,12 +319,12 @@ public class SplitFileInserter implements ClientPutState {
 
 				segNo++;
 				if(i == dataBlocks) break;
-				i += data;
 				// Deduct one block from each later segment, rather than having a really short last segment.
-				if(segCount - segNo <= deductBlocksFromSegments) {
+				if(segCount - segNo == deductBlocksFromSegments) {
 					data--;
 					// Don't change check.
 				}
+				i += data;
 			}
 			assert(segNo == segCount);
 		}
