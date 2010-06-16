@@ -49,4 +49,53 @@ public class SparseBitmapTest extends TestCase {
 		s.clear();
 		assertFalse(s.contains(1));
 	}
+
+	public void testRemove() {
+		SparseBitmap s = new SparseBitmap();
+
+		s.add(0,4);
+		s.add(10, 14);
+		for(int i = 0; i <= 4; i++) {
+			assertTrue(s.contains(i));
+		}
+		for(int i = 5; i <= 9; i++) {
+			assertFalse(s.contains(i));
+		}
+		for(int i = 10; i <= 14; i++) {
+			assertTrue(s.contains(i));
+		}
+
+		s.remove(4, 4);
+		for(int i = 0; i <= 3; i++) {
+			assertTrue(s.contains(i));
+		}
+		for(int i = 4; i <= 9; i++) {
+			assertFalse(s.contains(i));
+		}
+		for(int i = 10; i <= 14; i++) {
+			assertTrue(s.contains(i));
+		}
+
+		s.remove(4,9);
+		for(int i = 0; i <= 3; i++) {
+			assertTrue(s.contains(i));
+		}
+		for(int i = 4; i <= 9; i++) {
+			assertFalse(s.contains(i));
+		}
+		for(int i = 10; i <= 14; i++) {
+			assertTrue(s.contains(i));
+		}
+
+		s.remove(3,10);
+		for(int i = 0; i <= 2; i++) {
+			assertTrue(s.contains(i));
+		}
+		for(int i = 3; i <= 10; i++) {
+			assertFalse(s.contains(i));
+		}
+		for(int i = 11; i <= 14; i++) {
+			assertTrue(s.contains(i));
+		}
+	}
 }
