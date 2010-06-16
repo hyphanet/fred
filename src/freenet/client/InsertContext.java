@@ -48,6 +48,7 @@ public class InsertContext implements Cloneable {
 	public int extraInsertsSingleBlock;
 	/** Number of extra inserts for a block inserted above a splitfile. */
 	public int extraInsertsSplitfileHeaderBlock;
+	public boolean localRequestOnly;
 	// FIXME DB4O: This should really be an enum. However, db4o has a tendency to copy enum's,
 	// which wastes space (often unrecoverably), confuses programmers, creates wierd bugs and breaks == comparison.
 	/** Backward compatibility support for network level metadata. */
@@ -63,7 +64,7 @@ public class InsertContext implements Cloneable {
 
 	public InsertContext(
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, long compatibilityMode) {
+			ClientEventProducer eventProducer, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, long compatibilityMode) {
 		dontCompress = false;
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
 		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
@@ -77,6 +78,7 @@ public class InsertContext implements Cloneable {
 		this.extraInsertsSingleBlock = extraInsertsSingleBlock;
 		this.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeaderBlock;
 		this.compatibilityMode = compatibilityMode;
+		this.localRequestOnly = localRequestOnly;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
@@ -92,6 +94,7 @@ public class InsertContext implements Cloneable {
 		this.extraInsertsSingleBlock = ctx.extraInsertsSingleBlock;
 		this.extraInsertsSplitfileHeaderBlock = ctx.extraInsertsSplitfileHeaderBlock;
 		this.compatibilityMode = ctx.compatibilityMode;
+		this.localRequestOnly = ctx.localRequestOnly;
 	}
 	
 	/** Make public, but just call parent for a field for field copy */

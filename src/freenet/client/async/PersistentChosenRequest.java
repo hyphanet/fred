@@ -68,7 +68,7 @@ public class PersistentChosenRequest {
 			forkOnCacheable = false; // Doesn't exist for requests
 		} else if(req instanceof SendableInsert) {
 			SendableInsert sg = (SendableInsert) req;
-			localRequestOnly = false;
+			localRequestOnly = sg.localRequestOnly(container);
 			canWriteClientCache = sg.canWriteClientCache(container);
 			ignoreStore = false;
 			forkOnCacheable = sg.forkOnCacheable(container);

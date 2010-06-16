@@ -103,7 +103,7 @@ public class ClientPut extends ClientPutBase {
 			String charset, short priorityClass, short persistenceType, String clientToken,
 			boolean getCHKOnly, boolean dontCompress, int maxRetries, short uploadFromType, File origFilename,
 			String contentType, Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {
-		super(uri, identifier, verbosity, charset, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, server, container);
+		super(uri, identifier, verbosity, charset, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, server, container);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!server.core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
@@ -147,7 +147,7 @@ public class ClientPut extends ClientPutBase {
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, null, 
 				handler, message.priorityClass, message.persistenceType, message.clientToken,
-				message.global, message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.compatibilityMode, server, container);
+				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.compatibilityMode, server, container);
 		String salt = null;
 		byte[] saltedHash = null;
 		binaryBlob = message.binaryBlob;

@@ -184,7 +184,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					Logger.normal(this, "No requests to start on "+req);
 			}
 			req = null;
-			cycleTime = sentRequestTime = System.currentTimeMillis();
+			if(!req.localRequestOnly)
+				cycleTime = sentRequestTime = System.currentTimeMillis();
 		}
 	}
 

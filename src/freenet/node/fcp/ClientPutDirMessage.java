@@ -53,12 +53,14 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final int extraInsertsSingleBlock;
 	final int extraInsertsSplitfileHeaderBlock;
 	final long compatibilityMode;
+	final boolean localRequestOnly;
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
 		global = Fields.stringToBool(fs.get("Global"), false);
 		defaultName = fs.get("DefaultName");
 		compatibilityMode = fs.getLong("CompatibilityMode", 0);
+		localRequestOnly = fs.getBoolean("LocalRequestOnly", false);
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
 		try {
