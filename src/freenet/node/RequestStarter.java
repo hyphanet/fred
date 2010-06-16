@@ -183,9 +183,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(!((!req.isPersistent()) && req.isCancelled()))
 					Logger.normal(this, "No requests to start on "+req);
 			}
-			req = null;
 			if(!req.localRequestOnly)
 				cycleTime = sentRequestTime = System.currentTimeMillis();
+			req = null;
 		}
 	}
 
