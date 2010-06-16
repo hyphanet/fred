@@ -18,7 +18,7 @@ public class SparseBitmap {
 		}
 
 		Iterator<Range> it = ranges.iterator();
-		while (it.hasNext()) {
+		while(it.hasNext()) {
 			Range range = it.next();
 			if(range.start >= start && range.end <= end) {
 				// Equal or inside
@@ -62,7 +62,7 @@ public class SparseBitmap {
 		LinkedList<Range> toAdd = new LinkedList<Range>();
 
 		Iterator<Range> it = ranges.iterator();
-		while (it.hasNext()) {
+		while(it.hasNext()) {
 			Range range = it.next();
 
 			if(range.start < start) {
@@ -78,7 +78,7 @@ public class SparseBitmap {
 					toAdd.add(new Range(end + 1, range.end));
 				}
 			} else if(range.start >= start && range.start <= end) {
-				if (range.end <= end) {
+				if(range.end <= end) {
 					// Equal or inside
 					it.remove();
 				} else /* (range[1] > end) */ {
