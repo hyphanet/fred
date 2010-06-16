@@ -117,7 +117,23 @@ public class SplitFileInserter implements ClientPutState {
 			segs = countDataBlocks / 128 + (countDataBlocks % 128 == 0 ? 0 : 1);
 			segmentSize = 128;
 		} else {
-			segs = (int)Math.ceil(((double)countDataBlocks) / ((double)maxSegSize));
+			// Algorithm from evanbd, see bug #2931.
+			if(countDataBlocks > 520) {
+				maxSegSize = 128;
+				segs = (int)Math.ceil(((double)countDataBlocks) / ((double)maxSegSize));
+			} else if(countDataBlocks > 393) {
+				maxSegSize = 130;
+				segs = 4;
+			} else if(countDataBlocks > 266) {
+				maxSegSize = 131;
+				segs = 3;
+			} else if(countDataBlocks > 136) {
+				maxSegSize = 133;
+				segs = 2;
+			} else {
+				maxSegSize = 136;
+				segs = 1;
+			}
 			segmentSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
 		}
 		
