@@ -20,7 +20,7 @@ public class SparseBitmap {
 		Iterator<Range> it = ranges.iterator();
 		while(it.hasNext()) {
 			Range range = it.next();
-			if(range.start >= start && range.end <= end) {
+			if(range.start <= start && range.end >= end) {
 				// Equal or inside
 				return;
 			} else if((range.start <= start && range.end >= start)
