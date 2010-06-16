@@ -332,6 +332,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					copyDataBlocks--;
 					// Don't change check blocks.
 				}
+				if(deductBlocksFromSegments != 0)
+					System.err.println("REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
 				ClientCHK[] dataBlocks = new ClientCHK[copyDataBlocks];
 				ClientCHK[] checkBlocks = new ClientCHK[copyCheckBlocks];
 				if(copyDataBlocks > 0)

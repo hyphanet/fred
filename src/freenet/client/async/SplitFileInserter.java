@@ -313,9 +313,12 @@ public class SplitFileInserter implements ClientPutState {
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
 				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, check, seg, ctx, getCHKOnly, segNo, container);
 				segs.add(s);
+				
+				if(deductBlocksFromSegments != 0)
+					System.err.println("INSERTING: Segment "+segNo+" of "+segCount+" : "+data+" data blocks "+check+" check blocks");
 
-				if(i == dataBlocks) break;
 				segNo++;
+				if(i == dataBlocks) break;
 				i += data;
 				// Deduct one block from each later segment, rather than having a really short last segment.
 				if(segCount - segNo <= deductBlocksFromSegments) {
