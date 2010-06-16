@@ -37,6 +37,10 @@ public class SparseBitmap {
 		}
 	}
 
+	public void clear() {
+		ranges.clear();
+	}
+
 	public boolean contains(int index) {
 		Iterator<Range> it = ranges.iterator();
 		while(it.hasNext()) {
@@ -48,33 +52,6 @@ public class SparseBitmap {
 			}
 		}
 		return false;
-	}
-
-	public void clear() {
-		ranges.clear();
-	}
-
-	private static class Range {
-		int start; // inclusive
-		int end;   // inclusive
-
-		public Range() {}
-
-		public Range(int start, int end) {
-			this.start = start;
-			this.end = end;
-		}
-
-		@Override
-		public String toString() {
-			return "Range:"+start+"->"+end;
-		}
-	}
-
-	private class RangeComparator implements Comparator<Range> {
-		public int compare(Range r1, Range r2) {
-			return r2.start - r1.start;
-		}
 	}
 
 	public void remove(int start, int end) {
@@ -116,5 +93,28 @@ public class SparseBitmap {
 		}
 
 		ranges.addAll(toAdd);
+	}
+
+	private static class Range {
+		int start; // inclusive
+		int end;   // inclusive
+
+		public Range() {}
+
+		public Range(int start, int end) {
+			this.start = start;
+			this.end = end;
+		}
+
+		@Override
+		public String toString() {
+			return "Range:"+start+"->"+end;
+		}
+	}
+
+	private class RangeComparator implements Comparator<Range> {
+		public int compare(Range r1, Range r2) {
+			return r2.start - r1.start;
+		}
 	}
 }
