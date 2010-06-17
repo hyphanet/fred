@@ -10,6 +10,7 @@ import freenet.crypt.SHA256;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.SparseBitmap;
 
 public class NewPacketFormat implements PacketFormat {
 
@@ -34,6 +35,7 @@ public class NewPacketFormat implements PacketFormat {
 	private int nextMessageID = 0;
 
 	private HashMap<Integer, byte[]> receiveBuffers = new HashMap<Integer, byte[]>();
+	private HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
@@ -123,15 +125,20 @@ public class NewPacketFormat implements PacketFormat {
 			}
 
 			byte[] recvBuf = receiveBuffers.get(messageID);
+			SparseBitmap recvMap = receiveMaps.get(messageID);
 			if(recvBuf == null) {
 				if(!firstFragment) return; //For now we need the message length first
 
 				if(logMINOR) Logger.minor(this, "Creating buffer for messageID " + messageID + " of length " + messageLength);
 				recvBuf = new byte[messageLength];
+				recvMap = new SparseBitmap();
+
 				receiveBuffers.put(messageID, recvBuf);
+				receiveMaps.put(messageID, recvMap);
 			}
 
 			System.arraycopy(buf, offset, recvBuf, fragmentOffset, fragmentLength);
+			recvMap.add(fragmentOffset, fragmentOffset + fragmentLength - 1);
 			offset += fragmentLength;
 			//TODO: Check if we have received all messages for this messageID
 		}
