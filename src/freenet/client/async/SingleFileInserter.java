@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
@@ -708,6 +709,7 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent) {
 				container.activate(cb, 1);
 				container.activate(block, 2);
+				container.activate(ctx, 1);
 			}
 			InsertException e = null;
 			if(logMINOR) Logger.minor(this, "Got metadata for "+this+" from "+state);
@@ -780,7 +782,10 @@ class SingleFileInserter implements ClientPutState {
 				fail(ex, container, context);
 				return;
 			}
-			InsertBlock newBlock = new InsertBlock(metadataBucket, meta.getClientMetadata(), block.desiredURI);
+			ClientMetadata m = meta.getClientMetadata();
+			if(!(ctx.compatibilityMode == 0 || ctx.compatibilityMode >= InsertContext.COMPAT_1254))
+				m = null;
+			InsertBlock newBlock = new InsertBlock(metadataBucket, m, block.desiredURI);
 				synchronized(this) {
 					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent);
 					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
