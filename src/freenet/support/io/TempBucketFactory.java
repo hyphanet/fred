@@ -514,7 +514,7 @@ public class TempBucketFactory implements BucketFactory {
 	private void cleanBucketQueue(long now) {
 		boolean shouldContinue = true;
 		// create a new list to avoid race-conditions
-		final Queue<TempBucket> toMigrate = new LinkedList<TempBucket>();
+		Queue<TempBucket> toMigrate = null;
 		do {
 			synchronized(ramBucketQueue) {
 				final WeakReference<TempBucket> tmpBucketRef = ramBucketQueue.peek();
@@ -534,19 +534,22 @@ public class TempBucketFactory implements BucketFactory {
 							Logger.minor(this, "The bucket "+tmpBucket+" is " + TimeUtil.formatTime(now - tmpBucket.creationTime)
 							        + " old: we will force-migrate it to disk.");
 						ramBucketQueue.remove(tmpBucketRef);
+						if(toMigrate == null) toMigrate = new LinkedList<TempBucket>();
 						toMigrate.add(tmpBucket);
 					}
 				}
 			}
 		} while(shouldContinue);
 
+		if(toMigrate == null) return;
 		if(toMigrate.size() > 0) {
+			
+			final Queue<TempBucket> move = toMigrate;
 			executor.execute(new Runnable() {
-
 				public void run() {
 					if(logMINOR)
-						Logger.minor(this, "We are going to migrate " + toMigrate.size() + " RAMBuckets");
-					for(TempBucket tmpBucket : toMigrate) {
+						Logger.minor(this, "We are going to migrate " + move.size() + " RAMBuckets");
+					for(TempBucket tmpBucket : move) {
 						try {
 							tmpBucket.migrateToFileBucket();
 						} catch(IOException e) {
