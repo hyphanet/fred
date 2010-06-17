@@ -169,6 +169,8 @@ public class TempBucketFactory implements BucketFactory {
 		public synchronized OutputStream getOutputStream() throws IOException {
 			if(osIndex > 0)
 				throw new IOException("Only one OutputStream per bucket!");
+			// Hence we don't need to reset currentSize / _hasTaken() if a bucket is reused.
+			// FIXME we should migrate to disk rather than throwing.
 			hasWritten = true;
 			OutputStream os = new TempBucketOutputStream(++osIndex);
 			if(logMINOR)
