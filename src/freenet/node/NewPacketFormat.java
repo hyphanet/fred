@@ -159,8 +159,6 @@ public class NewPacketFormat implements PacketFormat {
 			acks.addLast(sequenceNumber);
 		}
 
-		throw new UnsupportedOperationException();
-
 	}
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
