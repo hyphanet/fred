@@ -123,23 +123,25 @@ public class TempBucketFactory implements BucketFactory {
 		/** A blocking method to force-migrate from a RAMBucket to a FileBucket */
 		final void migrateToFileBucket() throws IOException {
 			Bucket toMigrate = null;
+			long size;
 			synchronized(this) {
 				if(!isRAMBucket() || hasBeenFreed)
 					// Nothing to migrate! We don't want to switch back to ram, do we?					
 					return;
 				toMigrate = currentBucket;
 				Bucket tempFB = _makeFileBucket();
+				size = currentSize;
 				if(os != null) {
 					os.flush();
 					Closer.close(os);
 					// DO NOT INCREMENT THE osIndex HERE!
 					os = tempFB.getOutputStream();
-					if(currentSize > 0)
-						BucketTools.copyTo(toMigrate, os, currentSize);
+					if(size > 0)
+						BucketTools.copyTo(toMigrate, os, size);
 				} else {
-					if(currentSize > 0) {
+					if(size > 0) {
 						OutputStream temp = tempFB.getOutputStream();
-						BucketTools.copyTo(toMigrate, temp, currentSize);
+						BucketTools.copyTo(toMigrate, temp, size);
 						temp.close();
 					}
 				}
@@ -157,7 +159,7 @@ public class TempBucketFactory implements BucketFactory {
 			// We can free it on-thread as it's a rambucket
 			toMigrate.free();
 			// Might have changed already so we can't rely on currentSize!
-			_hasFreed(toMigrate.size());
+			_hasFreed(size);
 		}
 		
 		public synchronized final boolean isRAMBucket() {
