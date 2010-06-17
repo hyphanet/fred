@@ -44,7 +44,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
-		//Only keep out packet
+		//Only keep our packet
 		byte[] temp = new byte[buf.length - offset];
 		System.arraycopy(buf, offset, temp, 0, temp.length);
 		buf = temp;
