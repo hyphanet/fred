@@ -12,47 +12,47 @@ import freenet.node.SyncSendWaitedTooLongException;
 
 /**
  * @author amphibian
- * 
+ *
  * Everything that is needed to send a message, including the Peer.
  * Implemented by PeerNode, for example.
  */
 public interface PeerContext {
-    // Largely opaque interface for now
-    Peer getPeer();
+	// Largely opaque interface for now
+	Peer getPeer();
 
-    /** Force the peer to disconnect.
-     * @param purge If true, the message queue and trackers will be dumped. */
+	/** Force the peer to disconnect.
+	 * @param dump If true, the message queue and trackers will be dumped. */
 	void forceDisconnect(boolean dump);
 
 	/** Is the peer connected? Have we established the session link? */
 	boolean isConnected();
-	
+
 	/** Is the peer connected? are we able to route requests to it? */
 	boolean isRoutable();
 
 	/** Peer version, if this is supported, else -1 */
 	int getVersionNumber();
-	
+
 	/** Send a message to the node */
 	public void sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
-	
-	/** Send a throttled message to the node (may block for a long time). 
+
+	/** Send a throttled message to the node (may block for a long time).
 	 * @throws SyncSendWaitedTooLongException
-	 * @throws NotConnectedException If the peer is disconnected at the time of sending or becomes so later. 
+	 * @throws NotConnectedException If the peer is disconnected at the time of sending or becomes so later.
 	 * @throws PeerRestartedException If the peer is restarted.
 	 * */
 	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean waitForSent, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException;
-	
+
 	/** Get the current boot ID. This is a random number that changes every time the node starts up. */
 	public long getBootID();
 
-	/** Get the PacketThrottle for the node's current address for the standard packet size (if the 
-	 * address changes then we get a new throttle). */ 
+	/** Get the PacketThrottle for the node's current address for the standard packet size (if the
+	 * address changes then we get a new throttle). */
 	public PacketThrottle getThrottle();
 
 	/** Get the SocketHandler which handles incoming packets from this node */
 	SocketHandler getSocketHandler();
-	
+
 	/** Get the OutgoingPacketMangler which encrypts outgoing packets to this node */
 	OutgoingPacketMangler getOutgoingMangler();
 
@@ -62,7 +62,7 @@ public interface PeerContext {
 
 	/** Compact toString() */
 	String shortToString();
-	
+
 	/** Report a transfer failure */
 	void transferFailed(String reason);
 }
