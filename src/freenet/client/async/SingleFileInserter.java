@@ -780,7 +780,7 @@ class SingleFileInserter implements ClientPutState {
 				fail(ex, container, context);
 				return;
 			}
-			InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
+			InsertBlock newBlock = new InsertBlock(metadataBucket, meta.getClientMetadata(), block.desiredURI);
 				synchronized(this) {
 					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent);
 					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
