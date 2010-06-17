@@ -109,7 +109,6 @@ public class SplitFileInserter implements ClientPutState {
 		countDataBlocks = dataBuckets.length;
 		// Encoding is done by segments
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
-		int maxSegSize = ctx.splitfileSegmentDataBlocks;
 		
 		// Segment size cannot be greater than ctx.splitfileSegmentDataBlocks.
 		// But IT CAN BE SMALLER!
@@ -121,22 +120,26 @@ public class SplitFileInserter implements ClientPutState {
 		} else {
 			// Algorithm from evanbd, see bug #2931.
 			if(countDataBlocks > 520) {
-				maxSegSize = 128;
-				segs = (int)Math.ceil(((double)countDataBlocks) / ((double)maxSegSize));
+				segs = (int)Math.ceil(((double)countDataBlocks) / 128);
 			} else if(countDataBlocks > 393) {
-				maxSegSize = 130;
+				//maxSegSize = 130;
 				segs = 4;
 			} else if(countDataBlocks > 266) {
-				maxSegSize = 131;
+				//maxSegSize = 131;
 				segs = 3;
 			} else if(countDataBlocks > 136) {
-				maxSegSize = 133;
+				//maxSegSize = 133;
 				segs = 2;
 			} else {
-				maxSegSize = 136;
+				//maxSegSize = 136;
 				segs = 1;
 			}
-			segmentSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+			int segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+			if(ctx.splitfileSegmentDataBlocks < segSize) {
+				segs = (int)Math.ceil(((double)countDataBlocks) / ((double)ctx.splitfileSegmentDataBlocks));
+				segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+			}
+			segmentSize = segSize;
 			if(ctx.compatibilityMode == InsertContext.COMPAT_NONE || ctx.compatibilityMode >= InsertContext.COMPAT_1254) {
 				int lastSegmentSize = countDataBlocks - (segmentSize * (segs - 1));
 				deductBlocksFromSegments = segmentSize - lastSegmentSize;
