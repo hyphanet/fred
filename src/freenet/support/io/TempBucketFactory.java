@@ -196,7 +196,7 @@ public class TempBucketFactory implements BucketFactory {
 					if(shouldMigrate) {
 						if(logMINOR) {
 							if(isOversized)
-								Logger.minor(this, "The bucket is over "+SizeUtil.formatSize(maxRAMBucketSize*RAMBUCKET_CONVERSION_FACTOR)+": we will force-migrate it to disk.");
+								Logger.minor(this, "The bucket "+TempBucket.this+" is over "+SizeUtil.formatSize(maxRAMBucketSize*RAMBUCKET_CONVERSION_FACTOR)+": we will force-migrate it to disk.");
 							else
 								Logger.minor(this, "The bucketpool is full: force-migrate before we go over the limit");
 						}
@@ -522,7 +522,7 @@ public class TempBucketFactory implements BucketFactory {
 						shouldContinue = false;
 					else {
 						if (logMINOR)
-							Logger.minor(this, "The bucket is " + TimeUtil.formatTime(now - tmpBucket.creationTime)
+							Logger.minor(this, "The bucket "+tmpBucket+" is " + TimeUtil.formatTime(now - tmpBucket.creationTime)
 							        + " old: we will force-migrate it to disk.");
 						ramBucketQueue.remove(tmpBucketRef);
 						toMigrate.add(tmpBucket);
