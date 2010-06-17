@@ -729,7 +729,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		totalInputSinceStartup = fs.getLong("totalInput", 0);
 		totalOutputSinceStartup = fs.getLong("totalOutput", 0);
 
-		packetFormat = new FNPWrapper(this);
+		if(negTypes[negTypes.length - 1] != 5) {
+			packetFormat = new FNPWrapper(this);
+		} else {
+			packetFormat = new NewPacketFormat(this);
+		}
 
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
@@ -2069,6 +2073,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		else if(!wasARekey) {
 			node.peers.addConnectedPeer(this);
 			maybeOnConnect();
+		}
+		
+		if(negType != 5) {
+			packetFormat = new FNPWrapper(this);
+		} else {
+			packetFormat = new NewPacketFormat(this);
 		}
 
 		return packets.trackerID;
