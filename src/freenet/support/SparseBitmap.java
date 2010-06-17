@@ -42,13 +42,13 @@ public class SparseBitmap {
 		ranges.clear();
 	}
 
-	public boolean contains(int index) {
+	public boolean contains(int start, int end) {
 		Iterator<Range> it = ranges.iterator();
 		while(it.hasNext()) {
 			Range r = it.next();
 			if(r.start > r.end) Logger.error(this, "Bad Range: " + r);
 
-			if((r.start <= index) && (r.end >= index)) {
+			if((r.start <= start) && (r.end >= end)) {
 				return true;
 			}
 		}
