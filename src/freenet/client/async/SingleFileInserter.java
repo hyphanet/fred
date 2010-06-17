@@ -257,7 +257,7 @@ class SingleFileInserter implements ClientPutState {
 			throw new InsertException(InsertException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
 
 		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
-		if(noMetadata && archiveType == null) {
+		if((noMetadata || metadata) && archiveType == null) {
 			if(fitsInOneBlockAsIs) {
 				if(persistent && (data instanceof NotPersistentBucket))
 					data = fixNotPersistent(data, context);
