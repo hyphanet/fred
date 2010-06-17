@@ -7,6 +7,8 @@ import java.util.LinkedList;
 import java.util.Vector;
 
 import freenet.crypt.SHA256;
+import freenet.io.comm.Message;
+import freenet.io.comm.MessageCore;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
@@ -324,7 +326,11 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private void processFullyReceived(byte[] buf) {
-
+		MessageCore core = pn.node.usm;
+		Message m = core.decodeSingleMessage(buf, 0, buf.length, pn, 0);
+		if(m != null) {
+			core.checkFilters(m, pn.crypto.socket);
+		}
 	}
 
 	private class SentPacket {
