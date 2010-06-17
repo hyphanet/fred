@@ -328,7 +328,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				// Create a segment. Give it its keys.
 				int copyDataBlocks = Math.min(splitfileDataBlocks.length - dataBlocksPtr, blocksPerSegment);
 				int copyCheckBlocks = Math.min(splitfileCheckBlocks.length - checkBlocksPtr, checkBlocksPerSegment);
-				if(segments.length - i <= deductBlocksFromSegments) {
+				if(segments.length - i <= deductBlocksFromSegments && i != segments.length-1) {
 					copyDataBlocks--;
 					// Don't change check blocks.
 				}
