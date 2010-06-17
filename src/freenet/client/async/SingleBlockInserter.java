@@ -795,7 +795,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(deactivate)
 				container.activate(ctx, 1);
 		}
-		boolean retval = ctx.canWriteClientCache;
+		boolean retval = ctx.localRequestOnly;
 		if(deactivate)
 			container.deactivate(ctx, 1);
 		return retval;
