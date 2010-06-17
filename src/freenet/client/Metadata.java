@@ -44,6 +44,9 @@ public class Metadata implements Cloneable {
 	/** Soft limit, to avoid memory DoS */
 	static final int MAX_SPLITFILE_BLOCKS = 1000*1000;
 
+	public static final short SPLITFILE_PARAMS_SIMPLE_SEGMENT = 0;
+	public static final short SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS = 1;
+	
 	// URI at which this Metadata has been/will be inserted.
 	FreenetURI resolvedURI;
 
@@ -62,6 +65,7 @@ public class Metadata implements Cloneable {
 	public static final byte ARCHIVE_METADATA_REDIRECT = 5;
 	public static final byte SYMBOLIC_SHORTLINK = 6;
 
+	short parsedVersion;
 	// 2 bytes of flags
 	/** Is a splitfile */
 	boolean splitfile;
@@ -198,6 +202,7 @@ public class Metadata implements Cloneable {
 		short version = dis.readShort();
 		if(version < 0 || version > 1)
 			throw new MetadataParseException("Unsupported version "+version);
+		parsedVersion = version;
 		documentType = dis.readByte();
 		if((documentType < 0) || (documentType > 6))
 			throw new MetadataParseException("Unsupported document type: "+documentType);
@@ -603,10 +608,17 @@ public class Metadata implements Cloneable {
 			setMIMEType(cm.getMIMEType());
 		else
 			setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
-		if(deductBlocksFromSegments == 0)
+		if(deductBlocksFromSegments == 0) {
+			parsedVersion = 0;
 			splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
-		else
-			splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize, deductBlocksFromSegments } );
+		} else {
+			parsedVersion = 1;
+			splitfileParams = new byte[10];
+			byte[] b = Fields.shortToBytes(SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS);
+			System.arraycopy(b, 0, splitfileParams, 0, 2);
+			b = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize, deductBlocksFromSegments } );
+			System.arraycopy(b, 0, splitfileParams, 2, b.length);
+		}
 	}
 
 	private boolean keysValid(ClientCHK[] keys) {
@@ -871,10 +883,7 @@ public class Metadata implements Cloneable {
 	 * @throws MetadataUnresolvedException */
 	public void writeTo(DataOutputStream dos) throws IOException, MetadataUnresolvedException {
 		dos.writeLong(FREENET_METADATA_MAGIC);
-		short ver = 0;
-		if(splitfileParams != null && splitfileParams.length > 8)
-			ver = 1;
-		dos.writeShort(ver); // version
+		dos.writeShort(parsedVersion); // version
 		dos.writeByte(documentType);
 		if(haveFlags()) {
 			short flags = 0;
@@ -1222,6 +1231,10 @@ public class Metadata implements Cloneable {
 	@SuppressWarnings("unchecked")
 	final public static HashMap<String, Object> forceMap(Object o) {
 		return (HashMap<String, Object>)o;
+	}
+	
+	public short getParsedVersion() {
+		return parsedVersion;
 	}
 
 }

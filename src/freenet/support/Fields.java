@@ -537,6 +537,20 @@ public abstract class Fields {
 		return x;
 	}
 
+	/**
+	 * Convert an array of bytes to a single int.
+	 */
+	public static short bytesToShort(byte[] buf, int offset) {
+		if(buf.length < 2)
+			throw new IllegalArgumentException();
+		short x = 0;
+		for(int j = 1; j >= 0; j--) {
+			short y = (short)(buf[j + offset] & 0xff);
+			x = (short)((x << 8) | y);
+		}
+		return x;
+	}
+
 	public static int[] bytesToInts(byte[] buf, int offset, int length) {
 		if(length % 4 != 0)
 			throw new IllegalArgumentException();
@@ -580,6 +594,15 @@ public abstract class Fields {
 	public static byte[] intToBytes(int x) {
 		byte[] buf = new byte[4];
 			for(int j = 0; j < 4; j++) {
+				buf[j] = (byte) x;
+				x >>>= 8;
+			}
+		return buf;
+	}
+
+	public static byte[] shortToBytes(short x) {
+		byte[] buf = new byte[2];
+			for(int j = 0; j < 2; j++) {
 				buf[j] = (byte) x;
 				x >>>= 8;
 			}
