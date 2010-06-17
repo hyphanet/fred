@@ -140,7 +140,14 @@ public class NewPacketFormat implements PacketFormat {
 			System.arraycopy(buf, offset, recvBuf, fragmentOffset, fragmentLength);
 			recvMap.add(fragmentOffset, fragmentOffset + fragmentLength - 1);
 			offset += fragmentLength;
-			//TODO: Check if we have received all messages for this messageID
+
+			if(recvMap.contains(0, recvBuf.length - 1)) {
+				//TODO: If the other side resends a packet after we have gotten all the data, we will
+				//never ack the resent packet
+				receiveBuffers.remove(messageID);
+				receiveMaps.remove(messageID);
+				processFullyReceived(recvBuf);
+			}
 		}
 
 		//Ack received packet
@@ -314,6 +321,10 @@ public class NewPacketFormat implements PacketFormat {
 
 		nextMessageID = (nextMessageID + 1) % 8192;
 		return messageID;
+	}
+
+	private void processFullyReceived(byte[] buf) {
+
 	}
 
 	private class SentPacket {
