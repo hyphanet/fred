@@ -563,7 +563,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4)) {
+		if(!(negType == 2 || negType == 4 || negType == 5)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -610,7 +610,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4)) {
+		if(!(negType == 2 || negType == 4 || negType == 5)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -676,9 +676,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} else if (negType == 1) {
 			Logger.error(this, "Old StationToStation (negType 1) not supported.");
 			return;
-		} else if (negType==2 || negType == 4) {
+		} else if (negType==2 || negType == 4 || negType == 5) {
 			// negType == 3 was buggy
 			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
+			// negType == 5 => same as 4, but use new packet format after negotiation
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
 			 * for the initiator and no identity protection for the responder
@@ -2943,7 +2944,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 2, 4 };
+		return new int[] { 2, 4, 5 };
 	}
 
 	public int fullHeadersLengthOneMessage() {
