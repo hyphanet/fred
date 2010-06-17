@@ -923,7 +923,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"listing",
 				"plaintext",
 				"center",
-				"bdo" };
+				"bdo",
+				"aside",
+				"header",
+				"nav",
+				"footer",
+				"article",
+				"section",
+				"hgroup"};
 		for (int x = 0; x < group2.length; x++)
 			allowedTagsVerifiers.put(
 				group2[x],
