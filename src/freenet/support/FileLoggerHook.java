@@ -312,7 +312,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						flush = flushTime;
 						long maxWait;
 						if(timeWaitingForSync == -1)
-							maxWait = thisTime + flush;
+							maxWait = Long.MAX_VALUE;
 						else
 							maxWait = timeWaitingForSync + flush;
 						o = list.poll();
@@ -325,8 +325,12 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 								if(thisTime < maxWait) {
 									list.wait(Math.min(500, (int)(Math.min(maxWait-thisTime, Integer.MAX_VALUE))));
 									thisTime = System.currentTimeMillis();
-									if(listBytes < LIST_WRITE_THRESHOLD) // Don't write at all until the lower bytes threshold is exceeded, or the time threshold is.
+									if(listBytes < LIST_WRITE_THRESHOLD) {
+										// Don't write at all until the lower bytes threshold is exceeded, or the time threshold is.
+										if(listBytes != 0 && maxWait == Long.MAX_VALUE)
+											maxWait = thisTime + flush;
 										continue;
+									}
 									// Do NOT use list.poll(timeout) because it uses a separate lock.
 									o = list.poll();
 								}
