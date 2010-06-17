@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
@@ -155,6 +156,10 @@ public class TempBucketFactory implements BucketFactory {
 			}
 			if(logMINOR)
 				Logger.minor(this, "We have migrated "+toMigrate.hashCode());
+			
+			synchronized(ramBucketQueue) {
+				ramBucketQueue.remove(getReference());
+			}
 			
 			// We can free it on-thread as it's a rambucket
 			toMigrate.free();
