@@ -268,7 +268,18 @@ public class NodeStats implements Persistable {
 		last_output_stat = 0;
 		last_io_stat_time = 3;
 
-		statsConfig.register("threadLimit", 500, sortOrder++, true, true, "NodeStat.threadLimit", "NodeStat.threadLimitLong",
+		int defaultThreadLimit;
+		long memoryLimit = Runtime.getRuntime().maxMemory();
+		if(memoryLimit > 0 && memoryLimit < 128*1024*1024)
+			defaultThreadLimit = 200;
+		else if(memoryLimit > 0 && memoryLimit < 192*1024*1024)
+			defaultThreadLimit = 300;
+		// FIXME: reinstate this once either we raise the default or memory autodetection works on Windows.
+//		else if(memoryLimit > 0 && memoryLimit < 256*1024*1024)
+//			defaultThreadLimit = 400;
+		else
+			defaultThreadLimit = 500;
+		statsConfig.register("threadLimit", defaultThreadLimit, sortOrder++, true, true, "NodeStat.threadLimit", "NodeStat.threadLimitLong",
 				new IntCallback() {
 					@Override
 					public Integer get() {
