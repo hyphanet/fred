@@ -196,7 +196,7 @@ public class Metadata implements Cloneable {
 		if(magic != FREENET_METADATA_MAGIC)
 			throw new MetadataParseException("Invalid magic "+magic);
 		short version = dis.readShort();
-		if(version != 0)
+		if(version < 0 || version > 1)
 			throw new MetadataParseException("Unsupported version "+version);
 		documentType = dis.readByte();
 		if((documentType < 0) || (documentType > 6))
@@ -871,7 +871,10 @@ public class Metadata implements Cloneable {
 	 * @throws MetadataUnresolvedException */
 	public void writeTo(DataOutputStream dos) throws IOException, MetadataUnresolvedException {
 		dos.writeLong(FREENET_METADATA_MAGIC);
-		dos.writeShort(0); // version
+		short ver = 0;
+		if(splitfileParams != null && splitfileParams.length > 8)
+			ver = 1;
+		dos.writeShort(ver); // version
 		dos.writeByte(documentType);
 		if(haveFlags()) {
 			short flags = 0;
