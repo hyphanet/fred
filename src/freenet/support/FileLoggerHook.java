@@ -950,19 +950,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				while ((list.size() > (MAX_LIST_SIZE * 0.9F))
 					|| (listBytes > (MAX_LIST_BYTES * 0.9F))) {
 					byte[] ss;
-					try {
-						ss = list.poll();
-					} catch (NoSuchElementException e) {
-						// Yes I know this is impossible but it happens with 1.6 with heap profiling enabled
-						// This is a bug in sun/netbeans profiler around 2006 era
-						noElementCount++;
-						if(noElementCount > 1000) {
-							System.err.println("Lost log line because of constant NoSuchElementException's");
-							e.printStackTrace();
-							return;
-						}
-						continue;
-					}
+					ss = list.poll();
 					listBytes -= (ss.length + LINE_OVERHEAD);
 					x++;
 				}
