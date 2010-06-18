@@ -372,6 +372,7 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent)
 				container.activate(ctx, 1);
 			boolean allowSizes = (ctx.compatibilityMode == 0 || ctx.compatibilityMode >= InsertContext.COMPAT_1254);
+			if(metadata) allowSizes = false;
 			SplitHandler sh = new SplitHandler(origSize, compressedDataSize, allowSizes);
 			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, origDataLength, origCompressedDataLength);
 			sh.sfi = sfi;
