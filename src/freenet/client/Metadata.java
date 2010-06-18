@@ -87,6 +87,7 @@ public class Metadata implements Cloneable {
 	static final short FLAGS_FULL_KEYS = 32;
 //	static final short FLAGS_SPLIT_USE_LENGTHS = 64; FIXME not supported, reassign to something else if we need a new flag
 	static final short FLAGS_COMPRESSED = 128;
+	static final short FLAGS_TOP_SIZE = 256;
 
 	/** Container archive type
 	 * @see ARCHIVE_TYPE
@@ -140,6 +141,10 @@ public class Metadata implements Cloneable {
 	String targetName;
 
 	ClientMetadata clientMetadata;
+	
+	long topSize;
+	long topCompressedSize;
+	int topBlocks;
 
 	@Override
 	public Object clone() {
@@ -209,6 +214,7 @@ public class Metadata implements Cloneable {
 		if(logMINOR) Logger.minor(this, "Document type: "+documentType);
 
 		boolean compressed = false;
+		boolean hasTopBlocks = false;
 		if(haveFlags()) {
 			short flags = dis.readShort();
 			splitfile = (flags & FLAGS_SPLITFILE) == FLAGS_SPLITFILE;
@@ -218,6 +224,15 @@ public class Metadata implements Cloneable {
 			extraMetadata = (flags & FLAGS_EXTRA_METADATA) == FLAGS_EXTRA_METADATA;
 			fullKeys = (flags & FLAGS_FULL_KEYS) == FLAGS_FULL_KEYS;
 			compressed = (flags & FLAGS_COMPRESSED) == FLAGS_COMPRESSED;
+			hasTopBlocks = (flags & FLAGS_TOP_SIZE) == FLAGS_TOP_SIZE;
+		}
+		
+		if(hasTopBlocks) {
+			if(parsedVersion == 0)
+				throw new MetadataParseException("Top size data not supported in version 0");
+			topSize = dis.readLong();
+			topCompressedSize = dis.readLong();
+			topBlocks = dis.readInt();
 		}
 
 		if(documentType == ARCHIVE_MANIFEST) {
@@ -894,7 +909,17 @@ public class Metadata implements Cloneable {
 			if(extraMetadata) flags |= FLAGS_EXTRA_METADATA;
 			if(fullKeys) flags |= FLAGS_FULL_KEYS;
 			if(compressionCodec != null) flags |= FLAGS_COMPRESSED;
+			if(topBlocks != 0 || topSize != 0 || topCompressedSize != 0) {
+				assert(parsedVersion >= 1);
+				flags |= FLAGS_TOP_SIZE;
+			}
 			dos.writeShort(flags);
+		}
+		
+		if(topBlocks != 0 || topSize != 0 || topCompressedSize != 0) {
+			dos.writeLong(topSize);
+			dos.writeLong(topCompressedSize);
+			dos.writeInt(topBlocks);
 		}
 
 		if(documentType == ARCHIVE_MANIFEST) {
