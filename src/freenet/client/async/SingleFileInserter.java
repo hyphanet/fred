@@ -454,10 +454,17 @@ class SingleFileInserter implements ClientPutState {
 			// FIXME: If the user requests it, calculate the others for small files.
 			// FIXME maybe the thresholds should be configurable.
 			if(data.size() > 1024*1024) {
-				// This is for cross-network. SHA1 is fairly common, so is MD5.
-				// SHA-384 and SHA-512 are not so common.
+				// SHA1 is common and MD5 is cheap.
 				wantHashes |= HashType.SHA1.bitmask;
 				wantHashes |= HashType.MD5.bitmask;
+			}
+			if(data.size() > 4*1024*1024) {
+				// Useful for cross-network, and cheap.
+				wantHashes |= HashType.ED2K.bitmask;
+				// Very widely supported for cross-network.
+				wantHashes |= HashType.TTH.bitmask;
+				// For completeness.
+				wantHashes |= HashType.SHA512.bitmask;
 			}
 		}
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
