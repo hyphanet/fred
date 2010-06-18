@@ -182,7 +182,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		// Add messages from message queue
 		PeerMessageQueue messageQueue = pn.getMessageQueue();
-		while (offset + MIN_MESSAGE_FRAGMENT_SIZE > maxPacketSize) {
+		while (offset + MIN_MESSAGE_FRAGMENT_SIZE < maxPacketSize) {
 			MessageItem item = null;
 			synchronized(messageQueue) {
 				item = messageQueue.grabQueuedMessageItem();
