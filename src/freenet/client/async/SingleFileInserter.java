@@ -473,8 +473,8 @@ class SingleFileInserter implements ClientPutState {
 				if(!wasActive)
 					container.activate(parent, 1);
 			}
-			req = parent.minSuccessBlocks + 1; // This one we are about to insert
-			total = parent.totalBlocks + 1;
+			req = parent.minSuccessBlocks;
+			total = parent.totalBlocks;
 			if(!wasActive) container.deactivate(parent, 1);
 			data = origDataLength;
 			compressed = origCompressedDataLength;

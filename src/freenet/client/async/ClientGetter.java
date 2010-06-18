@@ -694,8 +694,8 @@ public class ClientGetter extends BaseClientGetter {
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 		System.out.println("New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
 		onExpectedSize(size, container, context);
-		this.finalBlocksRequired = blocksReq;
-		this.finalBlocksTotal = blocksTotal;
+		this.finalBlocksRequired = this.minSuccessBlocks + blocksReq;
+		this.finalBlocksTotal = this.totalBlocks + blocksTotal;
 		notifyClients(container, context);
 	}
 }
