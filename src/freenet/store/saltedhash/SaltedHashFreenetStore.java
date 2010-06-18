@@ -1062,6 +1062,18 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					} catch (IOException e) {
 						flags |= FLAG_REBUILD_BLOOM;
 					}
+					try {
+						raf.readInt(); // reserved
+						raf.readLong(); // reserved
+						long w = raf.readLong();
+						writes.set(w);
+						Logger.normal(this, "Set writes to saved value "+w);
+						hits.set(raf.readLong());
+						misses.set(raf.readLong());
+						bloomFalsePos.set(raf.readLong());
+					} catch (EOFException e) {
+						// Ignore, back compatibility.
+					}
 
 					return false;
 				} finally {
@@ -1104,6 +1116,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			raf.writeInt(bloomFilterK);
 			raf.writeInt(0);
 			raf.writeLong(0);
+			raf.writeLong(writes.get());
+			raf.writeLong(hits.get());
+			raf.writeLong(misses.get());
+			raf.writeLong(bloomFalsePos.get());
 
 			raf.getFD().sync();
 			raf.close();
