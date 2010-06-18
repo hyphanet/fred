@@ -410,7 +410,15 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(ctx, 1);
 			container.activate(ctx.eventProducer, 1);
 		}
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
+		int total = this.totalBlocks;
+		int minSuccess = this.minSuccessBlocks;
+		boolean finalized = blockSetFinalized;
+		if(this.finalBlocksRequired != 0) {
+			total = finalBlocksTotal;
+			minSuccess = finalBlocksRequired;
+			finalized = true;
+		}
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, finalized), container, context);
 	}
 
 	/**
@@ -680,7 +688,14 @@ public class ClientGetter extends BaseClientGetter {
 		return old;
 	}
 
+	private int finalBlocksRequired;
+	private int finalBlocksTotal;
+	
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 		System.out.println("New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
+		onExpectedSize(size, container, context);
+		this.finalBlocksRequired = blocksReq;
+		this.finalBlocksTotal = blocksTotal;
+		notifyClients(container, context);
 	}
 }
