@@ -225,12 +225,13 @@ public class NewPacketFormat implements PacketFormat {
 	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
                 } catch (LocalAddressException e) {
 	                Logger.error(this, "Caught exception while sending packet", e);
+			return false;
                 }
 
 		synchronized(sentPackets) {
 			sentPackets.put(sequenceNumber, sentPacket);
 		}
-		return false;
+		return true;
 	}
 	
 	private int insertAcks(byte[] packet, int offset) {
