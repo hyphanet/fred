@@ -699,6 +699,7 @@ public class ClientGetter extends BaseClientGetter {
 		onExpectedSize(size, container, context);
 		this.finalBlocksRequired = this.minSuccessBlocks + blocksReq;
 		this.finalBlocksTotal = this.totalBlocks + blocksTotal;
+		if(persistent()) container.store(this);
 		notifyClients(container, context);
 	}
 }
