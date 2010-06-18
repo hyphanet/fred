@@ -394,6 +394,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					container.deactivate(metaSnoop, 1);
 			}
 			if(metadata.hasTopData()) {
+				if((metadata.topSize > ctx.maxOutputLength) ||
+						(metadata.topCompressedSize > ctx.maxTempLength)) {
+					// Just in case...
+					if(persistent) removeFrom(container, context);
+					throw new FetchException(FetchException.TOO_BIG, metadata.topSize, true, clientMetadata.getMIMEType());
+				}
 				rcb.onExpectedTopSize(metadata.topSize, metadata.topCompressedSize, metadata.topBlocksRequired, metadata.topBlocksTotal, container, context);
 			}
 			if(metadata.isSimpleManifest()) {
