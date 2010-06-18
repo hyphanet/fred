@@ -151,7 +151,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 						}
 				} while(now < sleepUntil);
 				String reason;
-				if(LOCAL_REQUESTS_COMPETE_FAIRLY) {
+				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
 					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false)) != null) {
 						if(logMINOR)
 							Logger.minor(this, "Not sending local request: "+reason);
@@ -183,8 +183,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(!((!req.isPersistent()) && req.isCancelled()))
 					Logger.normal(this, "No requests to start on "+req);
 			}
+			if(!req.localRequestOnly)
+				cycleTime = sentRequestTime = System.currentTimeMillis();
 			req = null;
-			cycleTime = sentRequestTime = System.currentTimeMillis();
 		}
 	}
 

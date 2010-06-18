@@ -49,6 +49,8 @@ public abstract class SendableInsert extends SendableRequest {
 	}
 
 	public abstract boolean canWriteClientCache(ObjectContainer container);
+	
+	public abstract boolean localRequestOnly(ObjectContainer container);
 
 	public abstract boolean forkOnCacheable(ObjectContainer container);
 

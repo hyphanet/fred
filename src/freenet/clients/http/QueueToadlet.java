@@ -1649,7 +1649,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					else
 						requestRow.addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
 				} else if (column == LIST_REASON) {
-					requestRow.addChild(createReasonCell(clientRequest.getFailureReason(container)));
+					requestRow.addChild(createReasonCell(clientRequest.getFailureReason(false, container)));
 				} else if (column == LIST_RECOMMEND && hasFriends) {
 					if(clientRequest instanceof ClientGet) {
 						requestRow.addChild(createRecommendCell(pageMaker, ((ClientGet) clientRequest).getURI(container), ctx));

@@ -334,6 +334,7 @@ public class LongTermManySingleBlocksTest {
 				if(split.length < 3) continue;
 				int seedTime = Integer.parseInt(split[2]);
 				System.out.println("Seed time: "+seedTime);
+				if(split.length < 4) continue;
 				
 				int token = 3;
 			

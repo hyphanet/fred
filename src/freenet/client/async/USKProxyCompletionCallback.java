@@ -67,7 +67,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		// Ignore
 	}
 
-	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
+	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException {
 		if(container != null && persistent)
 			container.activate(cb, 1);
 		cb.onExpectedMIME(mime, container, context);
@@ -83,6 +83,10 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		if(container != null && persistent)
 			container.activate(cb, 1);
 		cb.onFinalizedMetadata(container);
+	}
+
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+		cb.onExpectedTopSize(size, compressed, blocksReq, blocksTotal, container, context);
 	}
 
 }

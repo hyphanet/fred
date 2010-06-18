@@ -83,17 +83,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		throw new UnsupportedOperationException();
 	}
 	
-	public String getCharset(byte[] input, String parseCharset) throws DataFilterException, IOException {
+	public String getCharset(byte[] input, int length, String parseCharset) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
-		if(input.length > getCharsetBufferSize() && Logger.shouldLog(Logger.MINOR, this)) {
+		if(length > getCharsetBufferSize() && Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
-		}		ByteArrayInputStream strm = new ByteArrayInputStream(input);
-		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
+		}
+		ByteArrayInputStream strm = new ByteArrayInputStream(input, 0, length);
 		Writer w = new NullWriter();
 		Reader r;
 		try {
-			r = new BufferedReader(new InputStreamReader(bis, parseCharset), 4096);
+			r = new BufferedReader(new InputStreamReader(strm, parseCharset), 4096);
 		} catch (UnsupportedEncodingException e) {
 			strm.close();
 			throw e;
@@ -923,7 +923,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"listing",
 				"plaintext",
 				"center",
-				"bdo" };
+				"bdo",
+				"aside",
+				"header",
+				"nav",
+				"footer",
+				"article",
+				"section",
+				"hgroup"};
 		for (int x = 0; x < group2.length; x++)
 			allowedTagsVerifiers.put(
 				group2[x],
@@ -2190,11 +2197,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	static class MetaTagVerifier extends TagVerifier {
-		static final String[] allowedContentTypes = {
-				"text/html",
-				"application/xhtml+xml",
-				"application/xhtml" // Unofficial but seen in the wild by TheSeeker
-		};
+		static final String[] allowedContentTypes = ContentFilter.HTML_MIME_TYPES;
 		static final String[] locallyVerifiedAttrs = {
 			"http-equiv",
 			"name",
@@ -2624,7 +2627,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
 	}
 
-	public BOMDetection getCharsetByBOM(byte[] input) throws DataFilterException {
+	public BOMDetection getCharsetByBOM(byte[] input, int length) throws DataFilterException {
 		// No enhanced BOMs.
 		// FIXME XML BOMs???
 		return null;

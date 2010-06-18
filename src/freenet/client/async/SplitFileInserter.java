@@ -49,6 +49,7 @@ public class SplitFileInserter implements ClientPutState {
 	final COMPRESSOR_TYPE compressionCodec;
 	final short splitfileAlgorithm;
 	final int segmentSize;
+	final int deductBlocksFromSegments;
 	final int checkSegmentSize;
 	final SplitFileInserterSegment[] segments;
 	final boolean getCHKOnly;
@@ -65,6 +66,9 @@ public class SplitFileInserter implements ClientPutState {
 	private final long decompressedLength;
 	final boolean persistent;
 	final HashResult[] hashes;
+	
+	public final long topSize;
+	public final long topCompressedSize;
 
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -76,7 +80,7 @@ public class SplitFileInserter implements ClientPutState {
 		return hashCode;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context, HashResult[] hashes) throws InsertException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context, HashResult[] hashes, long origTopSize, long origTopCompressedSize) throws InsertException {
 		hashCode = super.hashCode();
 		if(put == null) throw new NullPointerException();
 		this.parent = put;
@@ -92,6 +96,8 @@ public class SplitFileInserter implements ClientPutState {
 		this.decompressedLength = decompressedLength;
 		this.dataLength = data.size();
 		this.hashes = hashes;
+		this.topSize = origTopSize;
+		this.topCompressedSize = origTopCompressedSize;
 		Bucket[] dataBuckets;
 		context.jobRunner.setCommitThisTransaction();
 		try {
@@ -111,12 +117,44 @@ public class SplitFileInserter implements ClientPutState {
 		countDataBlocks = dataBuckets.length;
 		// Encoding is done by segments
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
-		int maxSegSize = ctx.splitfileSegmentDataBlocks;
 		
 		// Segment size cannot be greater than ctx.splitfileSegmentDataBlocks.
 		// But IT CAN BE SMALLER!
-		int segs = (int)Math.ceil(((double)countDataBlocks) / ((double)maxSegSize));
-		segmentSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+		int segs;
+		if(ctx.compatibilityMode == InsertContext.COMPAT_1250_EXACT) {
+			segs = countDataBlocks / 128 + (countDataBlocks % 128 == 0 ? 0 : 1);
+			segmentSize = 128;
+			deductBlocksFromSegments = 0;
+		} else {
+			// Algorithm from evanbd, see bug #2931.
+			if(countDataBlocks > 520) {
+				segs = (int)Math.ceil(((double)countDataBlocks) / 128);
+			} else if(countDataBlocks > 393) {
+				//maxSegSize = 130;
+				segs = 4;
+			} else if(countDataBlocks > 266) {
+				//maxSegSize = 131;
+				segs = 3;
+			} else if(countDataBlocks > 136) {
+				//maxSegSize = 133;
+				segs = 2;
+			} else {
+				//maxSegSize = 136;
+				segs = 1;
+			}
+			int segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+			if(ctx.splitfileSegmentDataBlocks < segSize) {
+				segs = (int)Math.ceil(((double)countDataBlocks) / ((double)ctx.splitfileSegmentDataBlocks));
+				segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+			}
+			segmentSize = segSize;
+			if(ctx.compatibilityMode == InsertContext.COMPAT_NONE || ctx.compatibilityMode >= InsertContext.COMPAT_1254) {
+				int lastSegmentSize = countDataBlocks - (segmentSize * (segs - 1));
+				deductBlocksFromSegments = segmentSize - lastSegmentSize;
+			} else {
+				deductBlocksFromSegments = 0;
+			}
+		}
 		
 		if(splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT)
 			checkSegmentSize = 0;
@@ -129,7 +167,7 @@ public class SplitFileInserter implements ClientPutState {
 		}
 
 		// Create segments
-		segments = splitIntoSegments(segmentSize, dataBuckets, context.mainExecutor, container, context, persistent, put);
+		segments = splitIntoSegments(segmentSize, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put);
 		if(persistent) {
 			// Deactivate all buckets, and let dataBuckets be GC'ed
 			for(int i=0;i<dataBuckets.length;i++) {
@@ -156,6 +194,8 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, ARCHIVE_TYPE archiveType, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
+		this.topSize = 0;
+		this.topCompressedSize = 0;
 		hashCode = super.hashCode();
 		this.parent = parent;
 		this.archiveType = archiveType;
@@ -168,6 +208,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.ctx = ctx;
 		this.persistent = parent.persistent();
 		this.hashes = null;
+		this.deductBlocksFromSegments = 0;
 		context.jobRunner.setCommitThisTransaction();
 		// Don't read finished, wait for the segmentFinished()'s.
 		String length = fs.get("DataLength");
@@ -254,33 +295,52 @@ public class SplitFileInserter implements ClientPutState {
 
 	/**
 	 * Group the blocks into segments.
+	 * @param deductBlocksFromSegments 
 	 */
-	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter) {
+	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, int segCount, int deductBlocksFromSegments, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter) {
 		int dataBlocks = origDataBlocks.length;
 
 		ArrayList<SplitFileInserterSegment> segs = new ArrayList<SplitFileInserterSegment>();
 
 		// First split the data up
-		if((dataBlocks < segmentSize) || (segmentSize == -1)) {
+		if(segCount == 1) {
 			// Single segment
 			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, ctx.compatibilityMode), origDataBlocks, ctx, getCHKOnly, 0, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
 			int segNo = 0;
-			for(int i=segmentSize;;i+=segmentSize) {
+			int data = segmentSize;
+			int check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, ctx.compatibilityMode);
+			for(int i=segmentSize;;) {
 				if(i > dataBlocks) i = dataBlocks;
+				if(data > (i-j)) {
+					// Last segment.
+					assert(i == segmentSize-1);
+					data = i-j;
+					check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, ctx.compatibilityMode);
+				}
 				Bucket[] seg = new Bucket[i-j];
-				System.arraycopy(origDataBlocks, j, seg, 0, i-j);
+				System.arraycopy(origDataBlocks, j, seg, 0, data);
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, seg.length, ctx.compatibilityMode), seg, ctx, getCHKOnly, segNo, container);
+				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, check, seg, ctx, getCHKOnly, segNo, container);
 				segs.add(s);
+				
+				if(deductBlocksFromSegments != 0)
+					System.err.println("INSERTING: Segment "+segNo+" of "+segCount+" : "+data+" data blocks "+check+" check blocks");
 
-				if(i == dataBlocks) break;
 				segNo++;
+				if(i == dataBlocks) break;
+				// Deduct one block from each later segment, rather than having a really short last segment.
+				if(segCount - segNo == deductBlocksFromSegments) {
+					data--;
+					// Don't change check.
+				}
+				i += data;
 			}
+			assert(segNo == segCount);
 		}
 		if(persistent)
 			container.activate(parent, 1);
@@ -411,7 +471,25 @@ public class SplitFileInserter implements ClientPutState {
 				if(persistent) container.activate(cm, 5);
 				ClientMetadata meta = cm;
 				if(persistent) meta = meta == null ? null : meta.clone();
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata);
+				boolean allowTopBlocks = topSize != 0;
+				int req = 0;
+				int total = 0;
+				long data = 0;
+				long compressed = 0;
+				if(allowTopBlocks) {
+					boolean wasActive = true;
+					if(persistent) {
+						wasActive = container.ext().isActive(parent);
+						if(!wasActive)
+							container.activate(parent, 1);
+					}
+					req = parent.minSuccessBlocks;
+					total = parent.totalBlocks;
+					if(!wasActive) container.deactivate(parent, 1);
+					data = topSize;
+					compressed = topCompressedSize;
+				}
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, data, compressed, req, total);
 			}
 			haveSentMetadata = true;
 		}

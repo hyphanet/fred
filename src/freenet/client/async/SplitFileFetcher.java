@@ -65,6 +65,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	final int blocksPerSegment;
 	/** The segment length in check blocks. */
 	final int checkBlocksPerSegment;
+	final int deductBlocksFromSegments;
 	/** Total number of segments */
 	final int segmentCount;
 	/** The detailed information on each segment */
@@ -200,16 +201,34 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			blocksPerSegment = -1;
 			checkBlocksPerSegment = -1;
 			segmentCount = 1;
+			deductBlocksFromSegments = 0;
 			if(splitfileCheckBlocks.length > 0) {
 				Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet "+splitfileCheckBlocks.length+" check blocks found!! : "+this);
 				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile type is non-redundant yet have "+splitfileCheckBlocks.length+" check blocks");
 			}
 		} else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
 			byte[] params = metadata.splitfileParams();
-			if((params == null) || (params.length < 8))
-				throw new MetadataParseException("No splitfile params");
-			blocksPerSegment = Fields.bytesToInt(params, 0);
-			int checkBlocks = Fields.bytesToInt(params, 4);
+			int checkBlocks;
+			if(metadata.getParsedVersion() == 0) {
+				if((params == null) || (params.length < 8))
+					throw new MetadataParseException("No splitfile params");
+				blocksPerSegment = Fields.bytesToInt(params, 0);
+				checkBlocks = Fields.bytesToInt(params, 4);
+				deductBlocksFromSegments = 0;
+			} else {
+				if(params.length < 10)
+					throw new MetadataParseException("Splitfile parameters too short for version 1");
+				short paramsType = Fields.bytesToShort(params, 0);
+				if(paramsType == Metadata.SPLITFILE_PARAMS_SIMPLE_SEGMENT || paramsType == Metadata.SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS) {
+					blocksPerSegment = Fields.bytesToInt(params, 2);
+					checkBlocks = Fields.bytesToInt(params, 6);
+				} else
+					throw new MetadataParseException("Unknown splitfile params type "+paramsType);
+				if(paramsType == Metadata.SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS) {
+					deductBlocksFromSegments = Fields.bytesToInt(params, 10);
+				} else
+					deductBlocksFromSegments = 0;
+			}
 
 			// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
 			// Work around a bug around build 1135.
@@ -322,6 +341,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				// Create a segment. Give it its keys.
 				int copyDataBlocks = Math.min(splitfileDataBlocks.length - dataBlocksPtr, blocksPerSegment);
 				int copyCheckBlocks = Math.min(splitfileCheckBlocks.length - checkBlocksPtr, checkBlocksPerSegment);
+				if(segments.length - i <= deductBlocksFromSegments && i != segments.length-1) {
+					copyDataBlocks--;
+					// Don't change check blocks.
+				}
+				if(deductBlocksFromSegments != 0)
+					System.err.println("REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
 				ClientCHK[] dataBlocks = new ClientCHK[copyDataBlocks];
 				ClientCHK[] checkBlocks = new ClientCHK[copyCheckBlocks];
 				if(copyDataBlocks > 0)

@@ -64,7 +64,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, long compatibilityMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, long compatibilityMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -77,13 +77,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.extraInsertsSingleBlock = extraInsertsSingleBlock;
 		ctx.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeader;
 		ctx.compatibilityMode = compatibilityMode;
+		ctx.localRequestOnly = localRequestOnly;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);
 	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset,
 			FCPConnectionHandler handler, FCPClient client, short priorityClass, short persistenceType, String clientToken,
-			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -95,6 +96,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.forkOnCacheable = forkOnCacheable;
 		ctx.extraInsertsSingleBlock = extraInsertsSingleBlock;
 		ctx.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeader;
+		ctx.localRequestOnly = localRequestOnly;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);
 	}
@@ -536,13 +538,13 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	@Override
-	public synchronized String getFailureReason(ObjectContainer container) {
+	public synchronized String getFailureReason(boolean longDescription, ObjectContainer container) {
 		if(putFailedMessage == null)
 			return null;
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(putFailedMessage, 5);
 		String s = putFailedMessage.shortCodeDescription;
-		if(putFailedMessage.extraDescription != null)
+		if(longDescription && putFailedMessage.extraDescription != null)
 			s += ": "+putFailedMessage.extraDescription;
 		return s;
 	}

@@ -413,7 +413,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					// Overwrite old offset with same key
 					Entry entry = new Entry(routingKey, header, data, !isOldBlock, wrongStore);
 					writeEntry(entry, oldOffset);
-					writes.incrementAndGet();
+					onWrite();
 					if (oldEntry.generation != generation)
 						keyCount.incrementAndGet();
 					return true;
@@ -434,7 +434,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 								Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 							bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
 							writeEntry(entry, offset[i]);
-							writes.incrementAndGet();
+							onWrite();
 							keyCount.incrementAndGet();
 							return true;
 						} else if(((flag & Entry.ENTRY_WRONG_STORE) == Entry.ENTRY_WRONG_STORE)) {
@@ -475,7 +475,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 					bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
 					writeEntry(entry, offset[i]);
-					writes.incrementAndGet();
+					onWrite();
 					keyCount.incrementAndGet();
 					return true;
 				}
@@ -492,7 +492,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
 				oldEntry = readEntry(offset[0], null, false);
 				writeEntry(entry, offset[0]);
-				writes.incrementAndGet();
+				onWrite();
 				if (oldEntry.generation == generation)
 					bloomFilter.removeKey(oldEntry.getDigestedRoutingKey());
 				else
@@ -503,6 +503,14 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 		} finally {
 			configLock.readLock().unlock();
+		}
+	}
+
+	private void onWrite() {
+		if(writes.incrementAndGet() % (storeSize*2) == 0) {
+			// Rebuild bloom filter.
+			flags |= FLAG_REBUILD_BLOOM;
+			checkBloom = false;
 		}
 	}
 
@@ -1054,6 +1062,18 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					} catch (IOException e) {
 						flags |= FLAG_REBUILD_BLOOM;
 					}
+					try {
+						raf.readInt(); // reserved
+						raf.readLong(); // reserved
+						long w = raf.readLong();
+						writes.set(w);
+						Logger.normal(this, "Set writes to saved value "+w);
+						hits.set(raf.readLong());
+						misses.set(raf.readLong());
+						bloomFalsePos.set(raf.readLong());
+					} catch (EOFException e) {
+						// Ignore, back compatibility.
+					}
 
 					return false;
 				} finally {
@@ -1096,6 +1116,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			raf.writeInt(bloomFilterK);
 			raf.writeInt(0);
 			raf.writeLong(0);
+			raf.writeLong(writes.get());
+			raf.writeLong(hits.get());
+			raf.writeLong(misses.get());
+			raf.writeLong(bloomFalsePos.get());
 
 			raf.getFD().sync();
 			raf.close();

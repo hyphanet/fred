@@ -81,4 +81,8 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
+
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
 }

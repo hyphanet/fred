@@ -16,6 +16,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
+import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -24,6 +25,9 @@ import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
+import freenet.client.filter.KnownUnsafeContentTypeException;
+import freenet.client.filter.MIMEType;
+import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.keys.ClientKeyBlock;
@@ -231,7 +235,7 @@ public class ClientGetter extends BaseClientGetter {
 				result = new FetchResult(new ClientMetadata(detectedMIMEType), filteredResult);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
-				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED, expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
+				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
 				return;
 			} catch (URISyntaxException e) {
 				// Impossible
@@ -296,6 +300,8 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent())
 			container.activate(uri, 5);
 		ClientGetState oldState = null;
+		if(expectedSize > 0 && (e.expectedSize <= 0 || finalBlocksTotal != 0))
+			e.expectedSize = expectedSize;
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;
@@ -406,7 +412,15 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(ctx, 1);
 			container.activate(ctx.eventProducer, 1);
 		}
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
+		int total = this.totalBlocks;
+		int minSuccess = this.minSuccessBlocks;
+		boolean finalized = blockSetFinalized;
+		if(this.finalBlocksRequired != 0) {
+			total = finalBlocksTotal;
+			minSuccess = finalBlocksRequired;
+			finalized = true;
+		}
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, finalized), container, context);
 	}
 
 	/**
@@ -563,13 +577,31 @@ public class ClientGetter extends BaseClientGetter {
 		return binaryBlobBucket != null;
 	}
 
-	/** Called when we know the MIME type of the final data */
-	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
+	/** Called when we know the MIME type of the final data 
+	 * @throws FetchException */
+	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) throws FetchException {
 		if(finalizedMetadata) return;
-		expectedMIME = mime;
+		if(persistent()) {
+			container.activate(ctx, 1);
+		}
+		expectedMIME = ctx.overrideMIME == null ? mime : ctx.overrideMIME;
+		if(!(expectedMIME == null || expectedMIME.equals("") || expectedMIME.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))) {
+			MIMEType handler = ContentFilter.getMIMEType(expectedMIME);
+			if((handler == null || (handler.readFilter == null && !handler.safeToRead)) && ctx.filterData) {
+				UnsafeContentTypeException e;
+				if(handler == null) {
+					if(logMINOR) Logger.minor(this, "Unable to get filter handler for MIME type "+expectedMIME);
+					e = new UnknownContentTypeException(expectedMIME);
+				}
+				else {
+					if(logMINOR) Logger.minor(this, "Unable to filter unsafe MIME type "+expectedMIME);
+					e = new KnownUnsafeContentTypeException(handler);
+				}
+				throw new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, expectedMIME);
+			}
+		}
 		if(persistent()) {
 			container.store(this);
-			container.activate(ctx, 1);
 			container.activate(ctx.eventProducer, 1);
 		}
 		ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(mime), container, context);
@@ -579,6 +611,7 @@ public class ClientGetter extends BaseClientGetter {
 	/** Called when we have some idea of the length of the final data */
 	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		if(finalizedMetadata) return;
+		if(finalBlocksRequired != 0) return;
 		expectedSize = size;
 		if(persistent()) {
 			container.store(this);
@@ -656,5 +689,18 @@ public class ClientGetter extends BaseClientGetter {
 		SnoopBucket old = snoopBucket;
 		snoopBucket = newSnoop;
 		return old;
+	}
+
+	private int finalBlocksRequired;
+	private int finalBlocksTotal;
+	
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+		if(finalBlocksRequired != 0 || finalBlocksTotal != 0) return;
+		System.out.println("New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
+		onExpectedSize(size, container, context);
+		this.finalBlocksRequired = this.minSuccessBlocks + blocksReq;
+		this.finalBlocksTotal = this.totalBlocks + blocksTotal;
+		if(persistent()) container.store(this);
+		notifyClients(container, context);
 	}
 }

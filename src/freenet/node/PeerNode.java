@@ -1178,10 +1178,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Else DO NOT clear trackers, because hopefully it's a temporary connectivity glitch.
 			sendHandshakeTime = now;
 			countFailedRevocationTransfers = 0;
-			synchronized(this) {
-				timePrevDisconnect = timeLastDisconnect;
-				timeLastDisconnect = now;
-			}
+			timePrevDisconnect = timeLastDisconnect;
+			timeLastDisconnect = now;
 			if(dumpMessageQueue) {
 				messagesTellDisconnected = grabQueuedMessageItems();
 			}
@@ -1223,18 +1221,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return ret;
 	}
 
-	private boolean forceDisconnectCalled = false;
-
 	public void forceDisconnect(boolean purge) {
 		Logger.error(this, "Forcing disconnect on " + this, new Exception("debug"));
-		synchronized(this) {
-			forceDisconnectCalled = true;
-		}
 		disconnected(purge, true); // always dump trackers, maybe dump messages
-	}
-
-	boolean forceDisconnectCalled() {
-		return forceDisconnectCalled;
 	}
 
 	/**

@@ -43,7 +43,7 @@ public class LowLevelPutException extends Exception {
 		this.code = code;
 	}
 
-	LowLevelPutException(int reason) {
+	public LowLevelPutException(int reason) {
 		super(getMessage(reason));
 		this.code = reason;
 	}

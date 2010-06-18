@@ -58,13 +58,13 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		throw new UnsupportedOperationException();
 	}
 
-	public String getCharset(byte [] input, String charset) throws DataFilterException, IOException {
+	public String getCharset(byte [] input, int length, String charset) throws DataFilterException, IOException {
 		if(Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
 		if(input.length > getCharsetBufferSize() && Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
 		}
-		InputStream strm = new ByteArrayInputStream(input);
+		InputStream strm = new ByteArrayInputStream(input, 0, length);
 		NullWriter w = new NullWriter();
 		InputStreamReader isr;
 		BufferedReader r = null;
@@ -114,29 +114,29 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		return HexUtil.hexToBytes(s);
 	}
 	
-	public BOMDetection getCharsetByBOM(byte[] input) throws DataFilterException, IOException {
-		if(ContentFilter.startsWith(input, ascii))
+	public BOMDetection getCharsetByBOM(byte[] input, int length) throws DataFilterException, IOException {
+		if(ContentFilter.startsWith(input, ascii, length))
 			return new BOMDetection("UTF-8", true);
-		if(ContentFilter.startsWith(input, utf16be))
+		if(ContentFilter.startsWith(input, utf16be, length))
 			return new BOMDetection("UTF-16BE", true);
-		if(ContentFilter.startsWith(input, utf16le))
+		if(ContentFilter.startsWith(input, utf16le, length))
 			return new BOMDetection("UTF-16LE", true);
-		if(ContentFilter.startsWith(input, utf32_be))
+		if(ContentFilter.startsWith(input, utf32_be, length))
 			return new BOMDetection("UTF-32BE", true);
-		if(ContentFilter.startsWith(input, utf32_le))
+		if(ContentFilter.startsWith(input, utf32_le, length))
 			return new BOMDetection("UTF-32LE", true);
-		if(ContentFilter.startsWith(input, ebcdic))
+		if(ContentFilter.startsWith(input, ebcdic, length))
 			return new BOMDetection("IBM01140", true);
-		if(ContentFilter.startsWith(input, ibm1026))
+		if(ContentFilter.startsWith(input, ibm1026, length))
 			return new BOMDetection("IBM1026", true);
 
 		// Unsupported BOMs
 
-		if(ContentFilter.startsWith(input, utf32_2143))
+		if(ContentFilter.startsWith(input, utf32_2143, length))
 			throw new UnsupportedCharsetInFilterException("UTF-32-2143");
-		if(ContentFilter.startsWith(input, utf32_3412))
+		if(ContentFilter.startsWith(input, utf32_3412, length))
 			throw new UnsupportedCharsetInFilterException("UTF-32-3412");
-		if(ContentFilter.startsWith(input, gsm))
+		if(ContentFilter.startsWith(input, gsm, length))
 			throw new UnsupportedCharsetInFilterException("GSM 03.38");
 		return null;
 	}

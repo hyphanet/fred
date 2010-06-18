@@ -2936,12 +2936,10 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("Defragmenting persistent downloads database.");
 
 		File backupFile = new File(databaseFile.getPath()+".tmp");
-		backupFile.delete();
-		backupFile.deleteOnExit();
+		FileUtil.secureDelete(backupFile, random);
 
 		File tmpFile = new File(databaseFile.getPath()+".map");
-		tmpFile.delete();
-		tmpFile.deleteOnExit();
+		FileUtil.secureDelete(tmpFile, random);
 
 		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
 		config.storedClassFilter(new AvailableClassFilter());
@@ -3209,6 +3207,8 @@ public class Node implements TimeSkewDetectorCallback {
 				bloomSize = (int) Math.min(maxTotalDatastoreSize / 2048, Integer.MAX_VALUE);
 			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
 			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild
+			// Increase size by 10% to allow some space for removing keys. Even a 2-bit counting filter gets saturated.
+			bloomFilterSizeInM *= 1.1;
 
 			final CHKStore chkDatastore = new CHKStore();
 			final SaltedHashFreenetStore<CHKBlock> chkDataFS = makeStore(bloomFilterSizeInM, "CHK", true, chkDatastore, dontResizeOnStart, masterKey);

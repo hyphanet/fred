@@ -899,12 +899,12 @@ public class CSSParserTest extends TestCase {
 		InputStream inputStream = inputBucket.getInputStream();
 		OutputStream outputStream = outputBucket.getOutputStream();
 		// Detect with original charset.
-		String detectedCharset = filter.getCharset(bytes, charset);
+		String detectedCharset = filter.getCharset(bytes, bytes.length, charset);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" even when parsing with correct charset", charset.equalsIgnoreCase(detectedCharset));
-		BOMDetection bom = filter.getCharsetByBOM(bytes);
+		BOMDetection bom = filter.getCharsetByBOM(bytes, bytes.length);
 		String bomCharset = detectedCharset = bom == null ? null : bom.charset;
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" or \""+family+"\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || (family != null && family.equalsIgnoreCase(detectedCharset)));
-		detectedCharset = ContentFilter.detectCharset(bytes, cssMIMEType, null);
+		detectedCharset = ContentFilter.detectCharset(bytes, bytes.length, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset.equalsIgnoreCase(detectedCharset));
 		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4oobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
 		inputStream.close();
@@ -924,10 +924,10 @@ public class CSSParserTest extends TestCase {
 		InputStream inputStream = inputBucket.getInputStream();
 		OutputStream outputStream = outputBucket.getOutputStream();
 		String detectedCharset;
-		BOMDetection bom = filter.getCharsetByBOM(bytes);
+		BOMDetection bom = filter.getCharsetByBOM(bytes, bytes.length);
 		String bomCharset = detectedCharset = bom == null ? null : bom.charset;
 		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from getCharsetByBOM", detectedCharset == null);
-		detectedCharset = ContentFilter.detectCharset(bytes, cssMIMEType, null);
+		detectedCharset = ContentFilter.detectCharset(bytes, bytes.length, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset == null || "utf-8".equalsIgnoreCase(detectedCharset));
 		try {
 			FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);

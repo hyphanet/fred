@@ -186,4 +186,9 @@ public class SimpleSendableInsert extends SendableInsert {
 	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
 		// Ignore.
 	}
+
+	@Override
+	public boolean localRequestOnly(ObjectContainer container) {
+		return false;
+	}
 }
