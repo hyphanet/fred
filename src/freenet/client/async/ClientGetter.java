@@ -300,6 +300,8 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent())
 			container.activate(uri, 5);
 		ClientGetState oldState = null;
+		if(expectedSize > 0)
+			e.expectedSize = expectedSize;
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;

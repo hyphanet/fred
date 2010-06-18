@@ -35,7 +35,7 @@ public class FetchException extends Exception {
 	
 	/** The expected size of the data had the fetch succeeded, or -1. May not be accurate. If retrying 
 	 * after TOO_BIG, you need to set the temporary and final data limits to at least this big! */
-	public final long expectedSize;
+	public long expectedSize;
 	
 	/** The expected final MIME type, or null. */
 	String expectedMimeType;
