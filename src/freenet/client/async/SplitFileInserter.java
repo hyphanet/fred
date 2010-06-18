@@ -124,21 +124,26 @@ public class SplitFileInserter implements ClientPutState {
 			segmentSize = 128;
 			deductBlocksFromSegments = 0;
 		} else {
-			// Algorithm from evanbd, see bug #2931.
-			if(countDataBlocks > 520) {
-				segs = (int)Math.ceil(((double)countDataBlocks) / 128);
-			} else if(countDataBlocks > 393) {
-				//maxSegSize = 130;
-				segs = 4;
-			} else if(countDataBlocks > 266) {
-				//maxSegSize = 131;
-				segs = 3;
-			} else if(countDataBlocks > 136) {
-				//maxSegSize = 133;
-				segs = 2;
+			if(ctx.compatibilityMode == InsertContext.COMPAT_1251) {
+				// Max 131 blocks per segment.
+				segs = (int)Math.ceil(((double)countDataBlocks) / 131);
 			} else {
-				//maxSegSize = 136;
-				segs = 1;
+				// Algorithm from evanbd, see bug #2931.
+				if(countDataBlocks > 520) {
+					segs = (int)Math.ceil(((double)countDataBlocks) / 128);
+				} else if(countDataBlocks > 393) {
+					//maxSegSize = 130;
+					segs = 4;
+				} else if(countDataBlocks > 266) {
+					//maxSegSize = 131;
+					segs = 3;
+				} else if(countDataBlocks > 136) {
+					//maxSegSize = 133;
+					segs = 2;
+				} else {
+					//maxSegSize = 136;
+					segs = 1;
+				}
 			}
 			int segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
 			if(ctx.splitfileSegmentDataBlocks < segSize) {
