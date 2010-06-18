@@ -611,6 +611,7 @@ public class ClientGetter extends BaseClientGetter {
 	/** Called when we have some idea of the length of the final data */
 	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		if(finalizedMetadata) return;
+		if(finalBlocksRequired != 0) return;
 		expectedSize = size;
 		if(persistent()) {
 			container.store(this);
