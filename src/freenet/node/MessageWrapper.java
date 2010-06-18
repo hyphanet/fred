@@ -80,7 +80,11 @@ public class MessageWrapper {
 		addRangeToSet(start, end, acks);
 		if(acks.size() == 1) {
 			int[] range = acks.first();
-			if(range[0] == 0 && (range[1] == (item.buf.length - 1))) return true;
+			if(range[0] == 0 && (range[1] == (item.buf.length - 1))) {
+				//TODO: Add overhead
+				item.onSent(item.buf.length);
+				return true;
+			}
 		}
 		return false;
 	}
