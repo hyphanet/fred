@@ -254,6 +254,10 @@ public class LongTermMHKTest {
 					System.out.println("Seed time: "+seedTime);
 					
 					int token = 3;
+					if(split.length < 4) {
+						linesTooShort++;
+						continue;
+					}
 					
 					for(int i=0;i<3;i++) {
 						int insertTime = Integer.parseInt(split[token]);
