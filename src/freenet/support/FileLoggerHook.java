@@ -965,9 +965,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				if(!list.offer(buf)) {
 					byte[] ss = list.poll();
 					if(ss != null) listBytes -= ss.length + LINE_OVERHEAD;
-					list.offer(buf);
-				}
-				listBytes += (buf.length + LINE_OVERHEAD);
+					if(list.offer(buf))
+						listBytes += (buf.length + LINE_OVERHEAD);
+				} else
+					listBytes += (buf.length + LINE_OVERHEAD);
 			}
 			if (sz == 0)
 				list.notifyAll();
