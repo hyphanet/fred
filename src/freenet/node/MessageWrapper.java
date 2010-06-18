@@ -76,8 +76,13 @@ public class MessageWrapper {
 	 * @param start the first byte to be marked
 	 * @param end the last byte to be marked
 	 */
-	public void ack(int start, int end) {
+	public boolean ack(int start, int end) {
 		addRangeToSet(start, end, acks);
+		if(acks.size() == 1) {
+			int[] range = acks.first();
+			if(range[0] == 0 && (range[1] == (item.buf.length - 1))) return true;
+		}
+		return false;
 	}
 
 	/**
