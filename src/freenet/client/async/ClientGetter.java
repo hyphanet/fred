@@ -679,4 +679,8 @@ public class ClientGetter extends BaseClientGetter {
 		snoopBucket = newSnoop;
 		return old;
 	}
+
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+		System.out.println("New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
+	}
 }

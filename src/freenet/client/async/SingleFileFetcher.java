@@ -393,6 +393,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent)
 					container.deactivate(metaSnoop, 1);
 			}
+			if(metadata.hasTopData()) {
+				rcb.onExpectedTopSize(metadata.topSize, metadata.topCompressedSize, metadata.topBlocksRequired, metadata.topBlocksTotal, container, context);
+			}
 			if(metadata.isSimpleManifest()) {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
 				String name;
@@ -1098,6 +1101,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		public void onFinalizedMetadata(ObjectContainer container) {
 			// Ignore
 		}
+
+		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
 		
 	}
 
@@ -1193,6 +1200,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onFinalizedMetadata(ObjectContainer container) {
+			// Ignore
+		}
+
+		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 		

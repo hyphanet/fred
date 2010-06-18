@@ -31,4 +31,6 @@ public interface GetCompletionCallback {
 	
 	public void onFinalizedMetadata(ObjectContainer container);
 	
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context);
+	
 }

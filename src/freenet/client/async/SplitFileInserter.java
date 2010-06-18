@@ -64,6 +64,10 @@ public class SplitFileInserter implements ClientPutState {
 	private boolean forceEncode;
 	private final long decompressedLength;
 	final boolean persistent;
+	
+	public final long topSize;
+	public final long topCompressedSize;
+
 
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -75,7 +79,7 @@ public class SplitFileInserter implements ClientPutState {
 		return hashCode;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context) throws InsertException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context, long origTopSize, long origTopCompressedSize) throws InsertException {
 		hashCode = super.hashCode();
 		if(put == null) throw new NullPointerException();
 		this.parent = put;
@@ -90,6 +94,8 @@ public class SplitFileInserter implements ClientPutState {
 		this.ctx = ctx;
 		this.decompressedLength = decompressedLength;
 		this.dataLength = data.size();
+		this.topSize = origTopSize;
+		this.topCompressedSize = origTopCompressedSize;
 		Bucket[] dataBuckets;
 		context.jobRunner.setCommitThisTransaction();
 		try {
@@ -186,6 +192,8 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, ARCHIVE_TYPE archiveType, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
+		this.topSize = 0;
+		this.topCompressedSize = 0;
 		hashCode = super.hashCode();
 		this.parent = parent;
 		this.archiveType = archiveType;
@@ -460,7 +468,25 @@ public class SplitFileInserter implements ClientPutState {
 				if(persistent) container.activate(cm, 5);
 				ClientMetadata meta = cm;
 				if(persistent) meta = meta == null ? null : meta.clone();
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata);
+				boolean allowTopBlocks = topSize != 0;
+				int req = 0;
+				int total = 0;
+				long data = 0;
+				long compressed = 0;
+				if(allowTopBlocks) {
+					boolean wasActive = true;
+					if(persistent) {
+						wasActive = container.ext().isActive(parent);
+						if(!wasActive)
+							container.activate(parent, 1);
+					}
+					req = parent.minSuccessBlocks;
+					total = parent.totalBlocks;
+					if(!wasActive) container.deactivate(parent, 1);
+					data = topSize;
+					compressed = topCompressedSize;
+				}
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, data, compressed, req, total);
 			}
 			haveSentMetadata = true;
 		}

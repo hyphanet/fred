@@ -85,4 +85,8 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		cb.onFinalizedMetadata(container);
 	}
 
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+		cb.onExpectedTopSize(size, compressed, blocksReq, blocksTotal, container, context);
+	}
+
 }
