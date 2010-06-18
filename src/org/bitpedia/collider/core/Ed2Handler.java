@@ -5,23 +5,32 @@
  */
 package org.bitpedia.collider.core;
 
-public class Ed2Handler {
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+public class Ed2Handler extends MessageDigest {
 	
 	private static final int EDSEG_SIZE = 1024*9500;
 	
-	private Md4Handler seg;   // the current 9,216,000 byte block
-	private Md4Handler top;   // the total file value
+	private MessageDigest seg;   // the current 9,216,000 byte block
+	private MessageDigest top;   // the total file value
 	private long nextPos;
 
+	public Ed2Handler() {
+		super("ED2K");
+	}
+	
 	public void analyzeInit() {
 		
 		nextPos = 0;
 		
-		seg = new Md4Handler();
-		seg.analyzeInit();
+		try {
+			seg = MessageDigest.getInstance("MD4");
+			top = MessageDigest.getInstance("MD4");
+		} catch (NoSuchAlgorithmException e) {
+			throw new Error("MD4 not supported?!");
+		}
 		
-		top = new Md4Handler();
-		top.analyzeInit();
 	}
 	
 	public void analyzeUpdate(byte[] input, int inputLen) {
@@ -37,17 +46,17 @@ public class Ed2Handler {
 		// now, close up any segment that's been completed
 		if((0 < nextPos) && (0 == (nextPos % EDSEG_SIZE))) {
 			// finish
-			byte[] innerDigest = seg.analyzeFinal();
+			byte[] innerDigest = seg.digest();
 			// feed it to the overall hash
-			top.analyzeUpdate(innerDigest,16);
+			top.update(innerDigest, 0, 16);
 			// reset the current segment
-			seg.analyzeInit();
+			seg.reset();
 		}
 
 	    // now, handle the new data
 		if ((nextPos/EDSEG_SIZE) == (nextPos+inputLen)/EDSEG_SIZE) {
 			// not finishing any segments, just keep feeding segment hash
-			seg.analyzeUpdate(input, ofs, inputLen);
+			seg.update(input, ofs, inputLen);
 			nextPos += inputLen;
 			return;
 		}
@@ -55,7 +64,7 @@ public class Ed2Handler {
 
 		// finish the current segment
 		int firstLen = EDSEG_SIZE - (int)(nextPos % EDSEG_SIZE);
-		seg.analyzeUpdate(input, ofs, firstLen);
+		seg.update(input, ofs, firstLen);
 		nextPos += firstLen;
 
 		// continue with passed-in info
@@ -66,15 +75,35 @@ public class Ed2Handler {
 		
 	    if(nextPos <= EDSEG_SIZE) {
 			// there was only one segment; return its hash
-	    	return seg.analyzeFinal();
+	    	return seg.digest();
 		}
 
 	    // finish the segment in process
-	    byte[] innerDigest = seg.analyzeFinal();
+	    byte[] innerDigest = seg.digest();
 	    // feed it to the overall hash
-		top.analyzeUpdate(innerDigest, 16);
+		top.update(innerDigest, 0, 16);
 		
-	    return top.analyzeFinal();
+	    return top.digest();
+	}
+
+	@Override
+	protected byte[] engineDigest() {
+		return analyzeFinal();
+	}
+
+	@Override
+	protected void engineReset() {
+		analyzeInit();
+	}
+
+	@Override
+	protected void engineUpdate(byte arg0) {
+		engineUpdate(new byte[] { arg0 }, 0, 1);
+	}
+
+	@Override
+	protected void engineUpdate(byte[] arg0, int arg1, int arg2) {
+		analyzeUpdate(arg0, arg1, arg2);
 	}
 
 }
