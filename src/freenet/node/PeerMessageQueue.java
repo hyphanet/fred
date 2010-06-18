@@ -384,8 +384,9 @@ public class PeerMessageQueue {
 		MessageItem output = null;
 		for(PrioQueue queue : queuesByPriority) {
 			output = queue.poll();
+			if(output != null) return output;
 		}
-		return output;
+		return null;
         }
 
 	public synchronized MessageItem[] grabQueuedMessageItems() {
