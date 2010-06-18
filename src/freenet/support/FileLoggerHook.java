@@ -937,14 +937,15 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	private static final int LINE_OVERHEAD = 60;
 	
 	public void logString(byte[] b) {
-		int noElementCount = 0;
 		synchronized (list) {
 			int sz = list.size();
 			if(!list.offer(b)) {
-				list.poll();
-				list.offer(b);
-			}
-			listBytes += (b.length + LINE_OVERHEAD); /* total guess */
+				byte[] ss = list.poll();
+				if(ss != null) listBytes -= ss.length + LINE_OVERHEAD;
+				if(list.offer(b))
+					listBytes += (b.length + LINE_OVERHEAD);
+			} else
+				listBytes += (b.length + LINE_OVERHEAD);
 			int x = 0;
 			if (listBytes > MAX_LIST_BYTES) {
 				while ((list.size() > (MAX_LIST_SIZE * 0.9F))
@@ -962,7 +963,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						+ " bytes in memory\n";
 				byte[] buf = err.getBytes();
 				if(!list.offer(buf)) {
-					list.poll();
+					byte[] ss = list.poll();
+					if(ss != null) listBytes -= ss.length + LINE_OVERHEAD;
 					list.offer(buf);
 				}
 				listBytes += (buf.length + LINE_OVERHEAD);
