@@ -134,7 +134,7 @@ public interface Compressor {
 			return compressor.compress(data, bf, maxReadLength, maxWriteLength);
 		}
 
-		public Bucket compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+		public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 			if(compressor == null) {
 				// DB4O VOODOO! See below.
 				if(name != null) return getOfficial().compress(is, os, maxReadLength, maxWriteLength);
@@ -213,7 +213,7 @@ public interface Compressor {
 	 * @throws IOException If an error occurs reading or writing data.
 	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength. 
 	 */
-	public abstract Bucket compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
+	public abstract long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
 
 	/**
 	 * Decompress data.

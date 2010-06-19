@@ -169,7 +169,7 @@ public class InsertCompressor implements CompressJob {
 						maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
 					}
 					first = false;
-					result = comp.compress(is, os, origSize, maxOutputSize);
+					comp.compress(is, os, origSize, maxOutputSize);
 					is.close();
 					os.close();
 					long resultSize = result.size();
