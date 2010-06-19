@@ -5,6 +5,7 @@ package freenet.node;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
@@ -26,8 +27,6 @@ import freenet.support.api.StringCallback;
 
 public class LoggingConfigHandler {
 	private static class PriorityCallback extends StringCallback implements EnumerableOptionCallback {
-		private final String[] possibleValues = new String[]{ "ERROR", "WARNING", "NORMAL", "MINOR", "DEBUG" };
-
 		@Override
 		public String get() {
 			LoggerHookChain chain = Logger.getChain();
@@ -44,7 +43,12 @@ public class LoggingConfigHandler {
 		}
 
 		public String[] getPossibleValues() {
-			return possibleValues;
+			LogLevel[] priorities = LogLevel.values();
+			ArrayList<String> values = new ArrayList<String>(priorities.length+1);
+			for(LogLevel p : priorities)
+				values.add(p.name());
+			
+			return values.toArray(new String[values.size()]);
 		}
 	}
 
