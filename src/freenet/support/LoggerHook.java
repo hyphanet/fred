@@ -105,7 +105,7 @@ public abstract class LoggerHook extends Logger {
 	}
 
 	public boolean acceptPriority(LogLevel prio) {
-		return prio.ordinal() <= threshold.ordinal();
+		return prio.matchesThreshold(threshold);
 	}
 
 	@Override
@@ -190,7 +190,7 @@ public abstract class LoggerHook extends Logger {
 						thresh = dt.dThreshold;
 				}
 		}
-		return priority.ordinal() <= thresh.ordinal();
+		return priority.matchesThreshold(thresh);
 	}
 
 	@Override

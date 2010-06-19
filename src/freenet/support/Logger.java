@@ -207,7 +207,11 @@ public abstract class Logger {
 		NORMAL,
 		MINOR,
 		DEBUG,
-		INTERNAL
+		INTERNAL;
+		
+		public boolean matchesThreshold(LogLevel threshold) {
+			return this.ordinal() >= threshold.ordinal();
+		}
 	}
 	
 	/**

@@ -142,10 +142,10 @@ public abstract class ClientRequester {
 		}
 
 		if (wasFinalized) {
-			if (Logger.globalGetThreshold().ordinal() < LogLevel.MINOR.ordinal())
-				Logger.error(this, "addBlock() but set finalized! on " + this);
-			else
+			if (LogLevel.MINOR.matchesThreshold(Logger.globalGetThreshold()))
 				Logger.error(this, "addBlock() but set finalized! on " + this, new Exception("error"));
+			else
+				Logger.error(this, "addBlock() but set finalized! on " + this);
 		}
 		
 		if(logMINOR) Logger.minor(this, "addBlock(): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks);
@@ -161,10 +161,10 @@ public abstract class ClientRequester {
 		}
 
 		if (wasFinalized) {
-			if(Logger.globalGetThreshold().ordinal() < LogLevel.MINOR.ordinal())
-				Logger.error(this, "addBlocks() but set finalized! on "+this);
-			else
+			if (LogLevel.MINOR.matchesThreshold(Logger.globalGetThreshold()))
 				Logger.error(this, "addBlocks() but set finalized! on "+this, new Exception("error"));
+			else
+				Logger.error(this, "addBlocks() but set finalized! on "+this);
 		}
 		
 		if(logMINOR) Logger.minor(this, "addBlocks("+num+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
