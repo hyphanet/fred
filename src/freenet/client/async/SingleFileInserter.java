@@ -457,7 +457,7 @@ class SingleFileInserter implements ClientPutState {
 		
 		// We always want SHA256, even for small files.
 		long wantHashes = 0;
-		if((ctx.compatibilityMode == 0 || ctx.compatibilityMode >= InsertContext.COMPAT_HASHES) && (!metadata)) {
+		if((ctx.compatibilityMode == 0 || ctx.compatibilityMode >= InsertContext.COMPAT_1254) && (!metadata)) {
 			// We verify this. We want it for *all* files.
 			wantHashes |= HashType.SHA256.bitmask;
 			// FIXME: If the user requests it, calculate the others for small files.
