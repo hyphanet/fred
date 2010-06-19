@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * A cookie which the server has received from the client.

@@ -7,6 +7,7 @@ package freenet.support.io;
 import freenet.node.NodeStarter;
 import freenet.support.LibraryLoader;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Do *NOT* forget to call super.run() if you extend it!

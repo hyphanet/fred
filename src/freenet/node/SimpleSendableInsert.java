@@ -18,6 +18,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Simple SendableInsert implementation. No feedback, no retries, just insert the
@@ -58,13 +59,13 @@ public class SimpleSendableInsert extends SendableInsert {
 	@Override
 	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
 		// Yay!
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Finished insert of "+block);
 	}
 
 	@Override
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}
 
@@ -85,7 +86,7 @@ public class SimpleSendableInsert extends SendableInsert {
 
 			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
 				// Ignore keyNum, key, since this is a single block
-				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 				try {
 					if(logMINOR) Logger.minor(this, "Starting request: "+this);
 					core.realPut(block, req.canWriteClientCache, Node.FORK_ON_CACHEABLE_DEFAULT);

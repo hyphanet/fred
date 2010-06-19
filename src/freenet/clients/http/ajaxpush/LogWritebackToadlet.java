@@ -12,6 +12,7 @@ import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.api.HTTPRequest;

@@ -25,6 +25,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.Bucket;
@@ -111,7 +112,7 @@ public class ClientPut extends ClientPutBase {
 				throw new FileNotFoundException();
 		}
 
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		binaryBlob = false;
 		this.targetFilename = targetFilename;
 		this.uploadFrom = uploadFromType;
@@ -122,7 +123,7 @@ public class ClientPut extends ClientPutBase {
 		Bucket tempData = data;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = redirectTarget;
@@ -168,7 +169,7 @@ public class ClientPut extends ClientPutBase {
 		}
 			
 		this.targetFilename = message.targetFilename;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.uploadFrom = message.uploadFromType;
 		this.origFilename = message.origFilename;
 		// Now go through the fields one at a time
@@ -263,7 +264,7 @@ public class ClientPut extends ClientPutBase {
 	 */
 	public ClientPut(SimpleFieldSet fs, FCPClient client2, FCPServer server, ObjectContainer container) throws PersistenceParseException, IOException, InsertException {
 		super(fs, client2, server);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		String mimeType = fs.get("Metadata.ContentType");
 
 		String from = fs.get("UploadFrom");
@@ -302,7 +303,7 @@ public class ClientPut extends ClientPutBase {
 					throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
 				}
 			} else {
-				if(Logger.shouldLog(Logger.MINOR, this)) 
+				if(Logger.shouldLog(LogLevel.MINOR, this)) 
 					Logger.minor(this, "Finished already so not reading bucket for "+this);
 				data = null;
 			}
@@ -358,7 +359,7 @@ public class ClientPut extends ClientPutBase {
 	
 	@Override
 	public void start(ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Starting "+this+" : "+identifier);
 		synchronized(this) {
 			if(finished) return;

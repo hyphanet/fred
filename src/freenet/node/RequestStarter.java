@@ -10,6 +10,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.TransientChosenBlock;
 import freenet.keys.Key;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.RandomGrabArrayItem;
 import freenet.support.RandomGrabArrayItemExclusionList;
@@ -30,7 +31,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

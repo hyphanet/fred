@@ -11,6 +11,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Lock Manager
@@ -26,7 +27,7 @@ public class LockManager {
 	private Map<Long, Condition> lockMap = new HashMap<Long, Condition>();
 
 	LockManager() {
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 	}
 
 	/**

@@ -26,6 +26,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
@@ -165,7 +166,7 @@ public class BookmarkManager implements RequestClient {
 	}
 
 	public void addBookmark(String parentPath, Bookmark bookmark) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Adding bookmark " + bookmark + " to " + parentPath);
 		BookmarkCategory parent = getCategoryByPath(parentPath);
 		parent.addBookmark(bookmark);

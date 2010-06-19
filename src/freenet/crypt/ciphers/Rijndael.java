@@ -5,6 +5,7 @@ import java.security.InvalidKeyException;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /*
   This code is part of the Java Adaptive Network Client by Ian Clarke. 

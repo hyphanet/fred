@@ -23,6 +23,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -41,7 +42,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

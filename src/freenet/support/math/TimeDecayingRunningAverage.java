@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import freenet.node.TimeSkewDetectorCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -74,7 +75,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         this.minReport = min;
         this.maxReport = max;
         totalReports = 0;
-        logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+        logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
         if(logDEBUG)
         	Logger.debug(this, "Created "+this,
         			new Exception("debug"));
@@ -101,7 +102,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         this.minReport = min;
         this.maxReport = max;
         totalReports = 0;
-        logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+        logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
         if(logDEBUG)
         	Logger.debug(this, "Created "+this,
         			new Exception("debug"));
@@ -149,7 +150,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         this.minReport = min;
         this.maxReport = max;
         this.defaultValue = defaultValue;
-        logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+        logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
         lastReportTime = -1;
         createdTime = System.currentTimeMillis() - priorExperienceTime;
         totalReports = dis.readLong();

@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 
 /**
@@ -46,7 +47,7 @@ public class DNSRequester implements Runnable {
         PeerNode[] nodes = node.peers.myPeers;
         long now = System.currentTimeMillis();
         if((now - lastLogTime) > 1000) {
-        	if(Logger.shouldLog(Logger.MINOR, this))
+        	if(Logger.shouldLog(LogLevel.MINOR, this))
         		Logger.minor(this, "Processing DNS Requests (log rate-limited)");
             lastLogTime = now;
         }

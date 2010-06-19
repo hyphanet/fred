@@ -16,6 +16,7 @@ import freenet.io.comm.PeerRestartedException;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Bulk data transfer (not block). Bulk transfer is designed for files which may be much bigger than a 
@@ -163,7 +164,7 @@ public class BulkTransmitter {
 	}
 
 	public void cancel(String reason) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Cancelling "+this);
 		sendAbortedMessage();
 		synchronized(this) {
@@ -190,7 +191,7 @@ public class BulkTransmitter {
 	 * @return True if the file was successfully sent. False otherwise.
 	 */
 	public boolean send() {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		long lastSentPacket = System.currentTimeMillis();
 outer:	while(true) {
 			if(prb.isAborted()) {
@@ -226,7 +227,7 @@ outer:	while(true) {
 							cancel("Packet send failed");
 							return false;
 						}
-						if(Logger.shouldLog(Logger.MINOR, this))
+						if(Logger.shouldLog(LogLevel.MINOR, this))
 							Logger.minor(this, "Waiting for packets: remaining: "+inFlightPackets);
 						if(inFlightPackets == 0) break;
 						try {
@@ -322,12 +323,12 @@ outer:	while(true) {
 				if(failed) {
 					failedPacket = true;
 					BulkTransmitter.this.notifyAll();
-					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Packet failed for "+BulkTransmitter.this);
+					if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Packet failed for "+BulkTransmitter.this);
 				} else {
 					inFlightPackets--;
 					if(inFlightPackets <= 0)
 						BulkTransmitter.this.notifyAll();
-					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Packet sent "+BulkTransmitter.this+" remaining in flight: "+inFlightPackets);
+					if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Packet sent "+BulkTransmitter.this+" remaining in flight: "+inFlightPackets);
 				}
 			}
 		}

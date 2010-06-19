@@ -8,6 +8,7 @@ import java.lang.ref.WeakReference;
 import freenet.node.Node;
 import freenet.node.fcp.FCPConnectionHandler;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 

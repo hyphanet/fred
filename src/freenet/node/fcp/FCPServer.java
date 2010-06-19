@@ -44,6 +44,7 @@ import freenet.node.RequestStarter;
 import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.Base64;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
 import freenet.support.api.BooleanCallback;
@@ -112,7 +113,7 @@ public class FCPServer implements Runnable {
 		
 		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null, whiteboard, null);
 		
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		
 	}
 	

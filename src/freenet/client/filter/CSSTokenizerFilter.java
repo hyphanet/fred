@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /** Comprehensive CSS2.1 filter. The old jflex-based filter was very far
  * from comprehensive.

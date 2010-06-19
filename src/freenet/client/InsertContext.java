@@ -8,6 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.PersistentFileTracker;
 

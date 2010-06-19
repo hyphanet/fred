@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.util.Random;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 import net.i2p.util.NativeBigInteger;
 
@@ -90,13 +91,13 @@ public class DSA {
 		try {
 			// 0<r<q has to be true
 			if((sig.getR().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getR()) < 1)) {
-				if(Logger.shouldLog(Logger.MINOR, DSA.class))
+				if(Logger.shouldLog(LogLevel.MINOR, DSA.class))
 					Logger.minor(DSA.class, "r < 0 || r > q: r="+sig.getR()+" q="+kp.getQ());
 				return false;
 			}
 			// 0<s<q has to be true as well
 			if((sig.getS().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getS()) < 1)) {
-				if(Logger.shouldLog(Logger.MINOR, DSA.class))
+				if(Logger.shouldLog(LogLevel.MINOR, DSA.class))
 					Logger.minor(DSA.class, "s < 0 || s > q: s="+sig.getS()+" q="+kp.getQ());
 				return false;
 			}
@@ -111,7 +112,7 @@ public class DSA {
 
 			//FIXME: is there a better way to handle this exception raised on the 'w=' line above?
 		} catch (ArithmeticException e) {  // catch error raised by invalid data
-			if(Logger.shouldLog(Logger.MINOR, DSA.class))
+			if(Logger.shouldLog(LogLevel.MINOR, DSA.class))
 				Logger.minor(DSA.class, "Verify failed: "+e, e);
 			return false;                  // and report that that data is bad.
 		}

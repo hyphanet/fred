@@ -19,6 +19,7 @@ import freenet.support.LimitedRangeIntByteArrayMap;
 import freenet.support.LimitedRangeIntByteArrayMapElement;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.ReceivedPacketNumbers;
 import freenet.support.TimeUtil;
 import freenet.support.UpdatableSortedLinkedListKilledException;
@@ -40,7 +41,7 @@ public class PacketTracker {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

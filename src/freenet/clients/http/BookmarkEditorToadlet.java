@@ -18,6 +18,7 @@ import freenet.node.DarknetPeerNode;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
@@ -287,7 +288,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		HTMLNode addDefaultBookmarksForm = ctx.addFormChild(content, "", "AddDefaultBookmarks");
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", NodeL10n.getBase().getString("BookmarkEditorToadlet.addDefaultBookmarks")});
 
-		if(Logger.shouldLog(Logger.DEBUG, this))
+		if(Logger.shouldLog(LogLevel.DEBUG, this))
 			Logger.debug(this, "Returning:\n"+pageNode.generate());
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());

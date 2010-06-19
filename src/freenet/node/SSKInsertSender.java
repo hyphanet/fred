@@ -20,6 +20,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 import freenet.support.io.NativeThread;
@@ -81,7 +82,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
     SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable) {
-    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    	logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     	this.fromStore = fromStore;
     	this.node = node;
     	this.source = source;

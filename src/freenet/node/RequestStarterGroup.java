@@ -12,6 +12,7 @@ import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -24,7 +25,7 @@ public class RequestStarterGroup {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

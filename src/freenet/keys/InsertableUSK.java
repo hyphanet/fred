@@ -11,6 +11,7 @@ import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * An insertable USK.

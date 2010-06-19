@@ -8,6 +8,7 @@ import java.util.TimeZone;
 
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.math.TrivialRunningAverage;
 
 /** A record of stats during a single hour */

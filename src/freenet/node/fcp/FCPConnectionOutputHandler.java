@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import com.db4o.ObjectContainer;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 
 public class FCPConnectionOutputHandler implements Runnable {
@@ -36,7 +37,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 		try {
 			realRun();
 		} catch (IOException e) {
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(Logger.shouldLog(LogLevel.MINOR, this))
 				Logger.minor(this, "Caught "+e, e);
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
@@ -93,7 +94,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
 
 	public void queue(FCPMessage msg) {
-		if(Logger.shouldLog(Logger.DEBUG, this))
+		if(Logger.shouldLog(LogLevel.DEBUG, this))
 			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
 		if(msg == null) throw new NullPointerException();
 		synchronized(outQueue) {

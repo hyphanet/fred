@@ -20,6 +20,7 @@ import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
 
 /**
@@ -47,8 +48,8 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}

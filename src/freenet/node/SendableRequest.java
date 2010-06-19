@@ -10,6 +10,7 @@ import freenet.client.async.ClientRequester;
 import freenet.client.async.PersistentChosenBlock;
 import freenet.client.async.PersistentChosenRequest;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayItem;
 
@@ -108,7 +109,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 			arr.remove(this, container);
 		} else {
 			// Should this be a higher priority?
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(Logger.shouldLog(LogLevel.MINOR, this))
 				Logger.minor(this, "Cannot unregister "+this+" : not registered", new Exception("debug"));
 		}
 		ClientRequester cr = getClientRequest();

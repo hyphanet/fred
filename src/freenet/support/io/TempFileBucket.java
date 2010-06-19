@@ -6,6 +6,7 @@ import java.io.IOException;
 import com.db4o.ObjectContainer;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -49,7 +50,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		this.generator = generator;
 		this.deleteOnFree = deleteOnFree;
 		synchronized(this) {
-			logDebug = Logger.shouldLog(Logger.DEBUG, this);
+			logDebug = Logger.shouldLog(LogLevel.DEBUG, this);
 		}
 
 		//System.err.println("FProxyServlet.TempFileBucket -- created: " +
@@ -114,7 +115,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Removing from database: "+this);
 		// filenameGenerator is a global, we don't need to worry about it.
 		container.delete(this);

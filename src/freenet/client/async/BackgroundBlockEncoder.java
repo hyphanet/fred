@@ -9,6 +9,7 @@ import com.db4o.query.Query;
 
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**

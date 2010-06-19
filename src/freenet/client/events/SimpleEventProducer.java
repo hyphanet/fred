@@ -10,6 +10,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Event handeling for clients. SimpleEventProducer is a simple

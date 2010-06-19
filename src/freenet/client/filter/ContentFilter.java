@@ -20,6 +20,7 @@ import java.util.Hashtable;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.FileUtil;
 
 /**
@@ -174,7 +175,7 @@ public class ContentFilter {
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
 	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
-		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class)) Logger.minor(ContentFilter.class, "Filtering data of type"+typeName);
+		if(Logger.shouldLog(LogLevel.MINOR, ContentFilter.class)) Logger.minor(ContentFilter.class, "Filtering data of type"+typeName);
 		String type = typeName;
 		String options = "";
 		String charset = null;
@@ -268,7 +269,7 @@ public class ContentFilter {
 					// so check with the full extractor.
 					try {
 						if((charset = handler.charsetExtractor.getCharset(input, length, charset)) != null) {
-							if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+							if(Logger.shouldLog(LogLevel.MINOR, ContentFilter.class))
 								Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 							return charset;
 						} else if(bom.mustHaveCharset)
@@ -286,7 +287,7 @@ public class ContentFilter {
 			if(handler.defaultCharset != null) {
 				try {
 					if((charset = handler.charsetExtractor.getCharset(input, length, handler.defaultCharset)) != null) {
-				        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+				        if(Logger.shouldLog(LogLevel.MINOR, ContentFilter.class))
 				        	Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 						return charset;
 					}
@@ -317,7 +318,7 @@ public class ContentFilter {
 					return charset;
 			} catch (UnsupportedEncodingException e) {
 				// Doesn't seem to be supported by prior to 1.6.
-		        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+		        if(Logger.shouldLog(LogLevel.MINOR, ContentFilter.class))
 		        	Logger.minor(ContentFilter.class, "UTF-32 not supported");
 			} catch (DataFilterException e) {
 				// Ignore

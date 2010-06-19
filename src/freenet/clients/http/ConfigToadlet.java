@@ -26,6 +26,7 @@ import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
@@ -129,7 +130,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		SubConfig[] sc = config.getConfigs();
 		StringBuilder errbuf = new StringBuilder();
 
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		for(int i=0; i<sc.length ; i++){
 			Option<?>[] o = sc[i].getOptions();

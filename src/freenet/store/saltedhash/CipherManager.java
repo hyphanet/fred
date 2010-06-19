@@ -17,6 +17,7 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.node.MasterKeys;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Cipher Manager

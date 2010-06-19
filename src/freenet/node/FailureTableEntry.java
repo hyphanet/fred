@@ -9,6 +9,7 @@ import java.util.HashSet;
 
 import freenet.keys.Key;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
 
 class FailureTableEntry implements TimedOutNodesList {
@@ -51,7 +52,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

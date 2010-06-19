@@ -20,6 +20,7 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -61,7 +62,7 @@ public class BootstrapPullTest {
 			ipOverride = args[0];
         File dir = new File("bootstrap-pull-test");
         FileUtil.removeAll(dir);
-        RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, Logger.ERROR, "", false);
+        RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, LogLevel.ERROR, "", false);
         byte[] seed = new byte[64];
         random.nextBytes(seed);
         MersenneTwister fastRandom = new MersenneTwister(seed);

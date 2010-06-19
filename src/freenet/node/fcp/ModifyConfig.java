@@ -10,6 +10,7 @@ import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 
 public class ModifyConfig extends FCPMessage {
@@ -43,7 +44,7 @@ public class ModifyConfig extends FCPMessage {
 		Config config = node.config;
 		SubConfig[] sc = config.getConfigs();
 		
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		
 		for(int i=0; i<sc.length ; i++){
 			Option<?>[] o = sc[i].getOptions();

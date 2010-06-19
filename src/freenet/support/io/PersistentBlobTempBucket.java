@@ -9,6 +9,7 @@ import java.nio.channels.FileChannel;
 import com.db4o.ObjectContainer;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 /**

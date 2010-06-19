@@ -26,6 +26,7 @@ import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.TimeUtil;
 import freenet.support.URIPreEncoder;
@@ -84,7 +85,7 @@ public class ToadletContextImpl implements ToadletContext {
 		this.uri=uri;
 		sockOutputStream = sock.getOutputStream();
 		remoteAddr = sock.getInetAddress();
-		if(Logger.shouldLog(Logger.DEBUG, this))
+		if(Logger.shouldLog(LogLevel.DEBUG, this))
 			Logger.debug(this, "Connection from "+remoteAddr);
 		this.bf = bf;
 		this.pagemaker = pageMaker;
@@ -169,7 +170,7 @@ public class ToadletContextImpl implements ToadletContext {
 			}
 			mvt.put("cache-control:", "no-cache=\"set-cookie\"");
 			
-			final boolean logMINOR = Logger.shouldLog(Logger.MINOR, ToadletContextImpl.class);
+			final boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, ToadletContextImpl.class);
 
 			// We do NOT use "set-cookie2" even though we should according though RFC2965 - Firefox 3.0.14 ignores it for me!
 			
@@ -363,7 +364,7 @@ public class ToadletContextImpl implements ToadletContext {
 					continue;
 				}
 				
-				boolean logMINOR = Logger.shouldLog(Logger.MINOR, ToadletContextImpl.class);
+				boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, ToadletContextImpl.class);
 				
 				if(logMINOR)
 					Logger.minor(ToadletContextImpl.class, "first line: "+firstLine);

@@ -53,6 +53,7 @@ import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URIPreEncoder;
@@ -109,7 +110,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				public void foundURI(FreenetURI uri, boolean inline) {
 					if(!inline) return;
-					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Prefetching "+uri);
+					if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Prefetching "+uri);
 					client.prefetch(uri, 60*1000, 512*1024, prefetchAllowedTypes);
 				}
 
@@ -135,7 +136,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core, boolean dontFreeData, String maybeCharset) throws ToadletContextClosedException, IOException {
 		ToadletContainer container = context.getContainer();
-		if(Logger.shouldLog(Logger.MINOR, FProxyToadlet.class))
+		if(Logger.shouldLog(LogLevel.MINOR, FProxyToadlet.class))
 			Logger.minor(FProxyToadlet.class, "handleDownload(data.size="+data.size()+", mimeType="+mimeType+", requestedMimeType="+requestedMimeType+", forceDownload="+forceDownload+", basePath="+basePath+", key="+key);
 		String extrasNoMime = extras; // extras will not include MIME type to start with - REDFLAG maybe it should be an array
 		if(requestedMimeType != null) {
@@ -403,7 +404,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		String ks = uri.getPath();
 		
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		
 		if (ks.equals("/")) {
 			if (httprequest.isParameterSet("key")) {
@@ -666,7 +667,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 		
 		try {
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(Logger.shouldLog(LogLevel.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
 			if(data == null && fe == null) {
 				boolean needsFetch=true;
@@ -716,7 +717,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		} catch (FetchException e) {
 			//Handle exceptions thrown from the ContentFilter
 			String msg = e.getMessage();
-			if(Logger.shouldLog(Logger.MINOR, this)) {
+			if(Logger.shouldLog(LogLevel.MINOR, this)) {
 				Logger.minor(this, "Failed to fetch "+uri+" : "+e);
 			}
 			if(e.newURI != null) {
@@ -861,7 +862,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		} catch (SocketException e) {
 			// Probably irrelevant
 			if(e.getMessage().equals("Broken pipe")) {
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(Logger.shouldLog(LogLevel.MINOR, this))
 					Logger.minor(this, "Caught "+e+" while handling GET", e);
 			} else {
 				Logger.normal(this, "Caught "+e);

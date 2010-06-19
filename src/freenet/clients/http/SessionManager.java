@@ -13,6 +13,7 @@ import java.util.UUID;
 import freenet.support.CurrentTimeUTC;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * A basic session manager for cookie-based HTTP session.

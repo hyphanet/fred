@@ -6,6 +6,7 @@ package freenet.client;
 import freenet.keys.FreenetURI;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Tracks all files currently in the cache from a given key.
@@ -85,7 +86,7 @@ class ArchiveStoreContext {
 	void removeItem(ArchiveStoreItem item) {
 		synchronized(myItems) {
 			if(myItems.remove(item) == null) {
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(Logger.shouldLog(LogLevel.MINOR, this))
 					Logger.minor(this, "Not removing: "+item+" for "+this+" - already removed");
 				return; // only removed once
 			}

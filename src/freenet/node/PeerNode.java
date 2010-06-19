@@ -69,6 +69,7 @@ import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WeakHashSet;
@@ -372,7 +373,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

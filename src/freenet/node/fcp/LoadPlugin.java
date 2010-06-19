@@ -11,6 +11,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 
 /**

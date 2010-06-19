@@ -17,6 +17,7 @@ import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
 
 /**
@@ -36,7 +37,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

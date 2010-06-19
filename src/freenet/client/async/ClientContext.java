@@ -18,6 +18,7 @@ import freenet.node.RequestStarterGroup;
 import freenet.node.Ticker;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.RealCompressor;
 import freenet.support.io.FilenameGenerator;

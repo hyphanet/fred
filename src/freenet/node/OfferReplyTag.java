@@ -1,6 +1,7 @@
 package freenet.node;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.TimeUtil;
 
 /**

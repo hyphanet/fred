@@ -12,6 +12,7 @@ import freenet.node.PeerNode;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 
 public class ModifyPeerNote extends FCPMessage {

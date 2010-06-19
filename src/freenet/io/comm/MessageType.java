@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
 
 public class MessageType {

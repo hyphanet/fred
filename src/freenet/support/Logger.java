@@ -12,6 +12,7 @@ import java.util.regex.PatternSyntaxException;
 
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import static freenet.support.Logger.LogLevel.*;
 import freenet.support.io.Closer;
 
 /**
@@ -24,7 +25,7 @@ public abstract class Logger {
 		private static boolean getPIDEnabled = false;
 		private static boolean getPPIDEnabled = false;
 		private static boolean logToFileEnabled = false;
-		private static int logToFileVerbosity = DEBUG;
+		private static LogLevel logToFileVerbosity = DEBUG;
 		private static boolean logToStdOutEnabled = false;
 		private static boolean procSelfStatEnabled = false;
 	
@@ -200,36 +201,27 @@ public abstract class Logger {
 
 	/** These indicate the verbosity levels for calls to log() * */
 
-	/** This message indicates an error which prevents correct functionality* */
-	public static final int ERROR = 32;
-
-	/** This message indicates something that should not happen, but less severe than ERROR* */
-	public static final int WARNING = 16;
-
-	/** A normal level occurrence * */
-	public static final int NORMAL = 8;
-
-	/** A minor occurrence that wouldn't normally be of interest * */
-	public static final int MINOR = 4;
-
-	/** An occurrence which would only be of interest during debugging * */
-	public static final int DEBUG = 2;
-
-	/** Internal occurrances used for eg distribution stats * */
-	public static final int INTERNAL = 1;
-
+	public enum LogLevel {
+		ERROR,
+		WARNING,
+		NORMAL,
+		MINOR,
+		DEBUG,
+		INTERNAL
+	}
+	
 	/**
 	 * Single global LoggerHook.
 	 */
 	static Logger logger = new VoidLogger();
 
 	/** Log to standard output. */
-	public synchronized static FileLoggerHook setupStdoutLogging(int level, String detail) throws InvalidThresholdException {
+	public synchronized static FileLoggerHook setupStdoutLogging(LogLevel level, String detail) throws InvalidThresholdException {
 		setupChain();
 		logger.setThreshold(level);
 		logger.setDetailedThresholds(detail);
 		FileLoggerHook fh;
-		fh = new FileLoggerHook(System.out, "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", level);
+		fh = new FileLoggerHook(System.out, "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", level.name());
 		if (detail != null) fh.setDetailedThresholds(detail);
 		((LoggerHookChain) logger).addHook(fh);
 		fh.start();
@@ -311,7 +303,7 @@ public abstract class Logger {
 		logger.log(o, s, e, WARNING);
 	}
 
-	public synchronized static void logStatic(Object o, String s, int prio) {
+	public synchronized static void logStatic(Object o, String s, LogLevel prio) {
 		logger.log(o, s, prio);
 	}
 
@@ -327,75 +319,75 @@ public abstract class Logger {
 	 * @param e
 	 *            Logs this exception with the message.
 	 * @param priority
-	 *            The priority of the mesage, one of Logger.ERROR,
-	 *            Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
+	 *            The priority of the mesage, one of LogLevel.ERROR,
+	 *            LogLevel.NORMAL, LogLevel.MINOR, or LogLevel.DEBUG.
 	 */
 	public abstract void log(
 			Object o,
 			Class<?> source,
 			String message,
 			Throwable e,
-			int priority);
+			LogLevel priority);
 
 	/**
 	 * Log a message.
 	 * @param source        The source object where this message was generated
 	 * @param message A clear and verbose message describing the event
-	 * @param priority The priority of the mesage, one of Logger.ERROR,
-	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
+	 * @param priority The priority of the mesage, one of LogLevel.ERROR,
+	 *                 LogLevel.NORMAL, LogLevel.MINOR, or LogLevel.DEBUG.
 	 **/
-	public abstract void log(Object source, String message, int priority);
+	public abstract void log(Object source, String message, LogLevel priority);
 
 	/** 
 	 * Log a message with an exception.
 	 * @param o   The source object where this message was generated.
 	 * @param message  A clear and verbose message describing the event.
 	 * @param e        Logs this exception with the message.
-	 * @param priority The priority of the mesage, one of Logger.ERROR,
-	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
+	 * @param priority The priority of the mesage, one of LogLevel.ERROR,
+	 *                 LogLevel.NORMAL, LogLevel.MINOR, or LogLevel.DEBUG.
 	 * @see #log(Object o, String message, int priority)
 	 */
 	public abstract void log(Object o, String message, Throwable e, 
-			int priority);
+			LogLevel priority);
 	/**
 	 * Log a message from static code.
 	 * @param c        The class where this message was generated.
 	 * @param message  A clear and verbose message describing the event
-	 * @param priority The priority of the mesage, one of Logger.ERROR,
-	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
+	 * @param priority The priority of the mesage, one of LogLevel.ERROR,
+	 *                 LogLevel.NORMAL, LogLevel.MINOR, or LogLevel.DEBUG.
 	 */
-	public abstract void log(Class<?> c, String message, int priority);
+	public abstract void log(Class<?> c, String message, LogLevel priority);
 
 	/**
 	 * Log a message from static code.
 	 * @param c     The class where this message was generated.
 	 * @param message A clear and verbose message describing the event
 	 * @param e        Logs this exception with the message.
-	 * @param priority The priority of the mesage, one of Logger.ERROR,
-	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
+	 * @param priority The priority of the mesage, one of LogLevel.ERROR,
+	 *                 LogLevel.NORMAL, LogLevel.MINOR, or LogLevel.DEBUG.
 	 */
 	public abstract void log(Class<?> c, String message, Throwable e,
-			int priority);
+			LogLevel priority);
 
 	/** Should this specific Logger object log a message concerning the 
 	 * given class with the given priority. */
-	public abstract boolean instanceShouldLog(int priority, Class<?> c);
+	public abstract boolean instanceShouldLog(LogLevel priority, Class<?> c);
 
 	/** Would a message concerning an object of the given class be logged
 	 * at the given priority by the global logger? */
-	public static boolean shouldLog(int priority, Class<?> c) {
+	public static boolean shouldLog(LogLevel priority, Class<?> c) {
 		return logger.instanceShouldLog(priority, c);
 	}
 
 	/** Would a message concerning the given object be logged
 	 * at the given priority by the global logger? */
-	public static boolean shouldLog(int priority, Object o) {
+	public static boolean shouldLog(LogLevel priority, Object o) {
 		return shouldLog(priority, o.getClass());
 	}
 
 	/** Should this specific Logger object log a message concerning the 
 	 * given object with the given priority. */
-	public abstract boolean instanceShouldLog(int prio, Object o);
+	public abstract boolean instanceShouldLog(LogLevel prio, Object o);
 
 	/**
 	 * Changes the priority threshold.
@@ -403,7 +395,7 @@ public abstract class Logger {
 	 * @param thresh
 	 *            The new threshhold
 	 */
-	public abstract void setThreshold(int thresh);
+	public abstract void setThreshold(LogLevel thresh);
 
 	/**
 	 * Changes the priority threshold.
@@ -417,7 +409,7 @@ public abstract class Logger {
 	/**
 	 * @return The currently used logging threshold
 	 */
-	public abstract int getThreshold();
+	public abstract LogLevel getThreshold();
 
 	/** Set the detailed list of thresholds. This allows to specify that
 	 * we are interested in debug level logging for one class but are only
@@ -518,12 +510,12 @@ public abstract class Logger {
 
 	/** Set the global threshold. The global logger will ignore messages 
 	 * less significant than the given threshold. */
-	public synchronized static void globalSetThreshold(int i) {
+	public synchronized static void globalSetThreshold(LogLevel i) {
 		logger.setThreshold(i);
 	}
 
 	/** What is the current global logging threshold? */
-	public synchronized static int globalGetThreshold() {
+	public synchronized static LogLevel globalGetThreshold() {
 		return logger.getThreshold();
 	}
 

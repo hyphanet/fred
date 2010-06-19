@@ -28,6 +28,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor;
@@ -97,7 +98,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		this.persistentFileTracker = node.persistentTempBucketFactory;
 		random = r;
 		this.eventProducer = new SimpleEventProducer();
-		eventProducer.addEventListener(new EventLogger(Logger.MINOR, false));
+		eventProducer.addEventListener(new EventLogger(LogLevel.MINOR, false));
 		curMaxLength = Long.MAX_VALUE;
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;

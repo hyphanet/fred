@@ -16,6 +16,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.StringCallback;
 
 /**

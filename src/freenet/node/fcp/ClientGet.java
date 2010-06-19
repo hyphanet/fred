@@ -27,6 +27,7 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.CannotCreateFromFieldSetException;
@@ -614,7 +615,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			finished = true;
 			started = true;
 		}
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed(null, container);
 		if(persistenceType == PERSIST_FOREVER) {

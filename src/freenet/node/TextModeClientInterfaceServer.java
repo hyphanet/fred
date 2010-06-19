@@ -18,6 +18,7 @@ import freenet.crypt.SSL;
 import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;

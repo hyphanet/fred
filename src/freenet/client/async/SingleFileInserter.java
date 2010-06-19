@@ -22,6 +22,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -48,8 +49,8 @@ class SingleFileInserter implements ClientPutState {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

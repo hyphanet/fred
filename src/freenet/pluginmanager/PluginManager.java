@@ -60,6 +60,7 @@ import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SerialExecutor;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
@@ -103,8 +104,8 @@ public class PluginManager {
 	static final short PRIO = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
 
 	public PluginManager(Node node, int lastVersion) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		// config
 
 		toadletList = new HashMap<String, FredPlugin>();

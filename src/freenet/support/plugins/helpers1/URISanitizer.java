@@ -8,6 +8,7 @@ import java.util.List;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 public class URISanitizer {
 

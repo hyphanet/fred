@@ -8,6 +8,7 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 public class CHKStore extends StoreCallback<CHKBlock> {
 

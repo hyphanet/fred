@@ -6,6 +6,7 @@ import java.util.HashSet;
 import freenet.l10n.NodeL10n;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 
 public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {

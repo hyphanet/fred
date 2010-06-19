@@ -11,6 +11,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 
 public class FProxyFetchTracker implements Runnable {
@@ -22,7 +23,7 @@ public class FProxyFetchTracker implements Runnable {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

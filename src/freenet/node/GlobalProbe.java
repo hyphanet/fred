@@ -6,6 +6,7 @@ package freenet.node;
 import java.util.Arrays;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 public class GlobalProbe implements Runnable {
 

@@ -21,6 +21,7 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.io.NativeThread;
@@ -129,7 +130,7 @@ public class FECQueue implements OOMHook {
 				return;
 			}
 		}
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue: "+job+".");
 		int maxThreads = getMaxRunningFECThreads();
@@ -208,7 +209,7 @@ public class FECQueue implements OOMHook {
 						job.running = true;
 					}
 
-					if(Logger.shouldLog(Logger.MINOR, this))
+					if(Logger.shouldLog(LogLevel.MINOR, this))
 						Logger.minor(this, "Running job "+job);
 					// Encode it
 					try {
@@ -237,7 +238,7 @@ public class FECQueue implements OOMHook {
 							else
 								job.callback.onEncodedSegment(null, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 						} else {
-							if(Logger.shouldLog(Logger.MINOR, this))
+							if(Logger.shouldLog(LogLevel.MINOR, this))
 								Logger.minor(this, "Scheduling callback for "+job+"...");
 							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY+1 : NativeThread.NORM_PRIORITY;
 							if(job.priority > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
@@ -254,7 +255,7 @@ public class FECQueue implements OOMHook {
 									// they can't be stored on the FEC thread.
 									Logger.minor(this, "Activating "+job.callback+" is active="+container.ext().isActive(job.callback));
 									container.activate(job.callback, 1);
-									if(Logger.shouldLog(Logger.MINOR, this))
+									if(Logger.shouldLog(LogLevel.MINOR, this))
 										Logger.minor(this, "Running callback for "+job);
 									try {
 									if(job.isADecodingJob)
@@ -277,7 +278,7 @@ public class FECQueue implements OOMHook {
 								}
 								
 							}, prio, false);
-							if(Logger.shouldLog(Logger.MINOR, this))
+							if(Logger.shouldLog(LogLevel.MINOR, this))
 								Logger.minor(this, "Scheduled callback for "+job+"...");
 							
 						}
@@ -315,7 +316,7 @@ public class FECQueue implements OOMHook {
 
 		public boolean run(ObjectContainer container, ClientContext context) {
 			// Try to avoid accessing the database while synchronized on the FECQueue.
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Running FEC cache filler job");
 			while(true) {
 				boolean addedAny = false;

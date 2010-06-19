@@ -5,6 +5,8 @@ import java.util.Comparator;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.Logger.LogLevel;
+
 /**
  * Map of an integer to an element, based on a sorted Vector.
  * Note that we have to shuffle data around, so this is slowish if it gets big.
@@ -122,7 +124,7 @@ public class SortedVectorByNumber {
 			for(int i=0;i<length;i++)
 				container.activate(data[i], 1);
 		}
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Insertion point: "+x);
 		// Move the data
 		if(length == data.length) {

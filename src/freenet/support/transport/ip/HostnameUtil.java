@@ -5,6 +5,7 @@ package freenet.support.transport.ip;
 
 import freenet.io.AddressIdentifier;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
 
 public class HostnameUtil {
@@ -14,7 +15,7 @@ public class HostnameUtil {
                 Logger.registerLogThresholdCallback(new LogThresholdCallback(){
                         @Override
                         public void shouldUpdate(){
-                                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+                                logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
                         }
                 });
         }

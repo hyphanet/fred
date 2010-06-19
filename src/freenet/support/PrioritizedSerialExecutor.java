@@ -7,6 +7,7 @@ import java.util.Map;
 
 import freenet.node.NodeStats;
 import freenet.node.PrioRunnable;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 public class PrioritizedSerialExecutor implements Executor {
@@ -16,7 +17,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

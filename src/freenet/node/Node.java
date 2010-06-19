@@ -144,6 +144,7 @@ import freenet.support.HexUtil;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
@@ -279,8 +280,8 @@ public class Node implements TimeSkewDetectorCallback {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -1537,7 +1538,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(db != null) {
 			db.commit();
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "COMMITTED");
 		}
 
 		// Must be created after darknetCrypto
@@ -1655,10 +1656,10 @@ public class Node implements TimeSkewDetectorCallback {
 				System.err.println("Forcing logging enabled (essential for testnet)");
 				logConfigHandler.forceEnableLogging();
 			}
-			int x = Logger.globalGetThreshold();
-			if(!((x == Logger.MINOR) || (x == Logger.DEBUG))) {
+			LogLevel x = Logger.globalGetThreshold();
+			if(!((x == LogLevel.MINOR) || (x == LogLevel.DEBUG))) {
 				System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
-				Logger.globalSetThreshold(Logger.MINOR);
+				Logger.globalSetThreshold(LogLevel.MINOR);
 			}
 			if(logConfigHandler.getMaxZippedLogFiles() < TESTNET_MIN_MAX_ZIPPED_LOGFILES) {
 				System.err.println("Forcing max zipped logfiles space to 256MB for testnet");
@@ -2572,7 +2573,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(db != null) {
 			db.commit();
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "COMMITTED");
 			try {
 				if(!clientCore.lateInitDatabase(nodeDBHandle, db))
 					failLateInitDatabase();
@@ -2789,7 +2790,7 @@ public class Node implements TimeSkewDetectorCallback {
 			e.printStackTrace();
 		}
 		// DUMP DATABASE CONTENTS
-		if(Logger.shouldLog(Logger.DEBUG, ClientRequestScheduler.class) && database != null) {
+		if(Logger.shouldLog(LogLevel.DEBUG, ClientRequestScheduler.class) && database != null) {
 		try {
 		System.err.println("DUMPING DATABASE CONTENTS:");
 		ObjectSet<Object> contents = database.queryByExample(new Object());
@@ -2910,7 +2911,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) throws IOException {
 		IoAdapter baseAdapter = dbConfig.io();
-		if(Logger.shouldLog(Logger.DEBUG, this))
+		if(Logger.shouldLog(LogLevel.DEBUG, this))
 			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
 		dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
 

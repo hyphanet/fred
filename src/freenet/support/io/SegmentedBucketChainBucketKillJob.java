@@ -6,6 +6,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 public class SegmentedBucketChainBucketKillJob implements DBJob {
 	

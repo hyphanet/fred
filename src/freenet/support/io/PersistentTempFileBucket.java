@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 

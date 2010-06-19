@@ -19,6 +19,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.Bucket;
@@ -43,7 +44,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		this.node = node;
 		this.crypto = crypto;
 		this.detector = detector;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(crypto.isOpennet) darknetOpennetString = "Opennet";
 		else darknetOpennetString = "Darknet";
 		this.enabled = enableARKs;
@@ -60,7 +61,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	}
 	
 	public void update() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "update()");
 		if(!checkIPUpdated()) return;
 		// We'll broadcast the new physical.udp entry to our connected peers via a differential node reference

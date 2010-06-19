@@ -26,6 +26,7 @@ import freenet.node.SendableRequest;
 import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.RandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
@@ -54,7 +55,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

@@ -11,6 +11,7 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 /**

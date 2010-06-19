@@ -21,6 +21,7 @@ import freenet.io.comm.DisconnectedException;
 import freenet.node.DarknetPeerNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
@@ -82,7 +83,7 @@ public class FCPConnectionHandler implements Closeable {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

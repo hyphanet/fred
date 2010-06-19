@@ -8,6 +8,7 @@ import freenet.client.async.ClientContext;
 import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
 import java.util.LinkedList;
@@ -36,7 +37,7 @@ public class RealCompressor implements PrioRunnable {
 	
 	public synchronized void enqueueNewJob(CompressJob j) {
 		_awaitingJobs.add(j);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Enqueueing compression job: "+j);
 		notifyAll();
 	}

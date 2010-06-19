@@ -9,6 +9,7 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Thrown when a high-level request (fetch) fails. Indicates why, whether it is worth retrying, and may give a 

@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
 
 public class LowLevelGetException extends Exception {
@@ -14,7 +15,7 @@ public class LowLevelGetException extends Exception {
 
             @Override
             public void shouldUpdate() {
-                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+                logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
             }
         });
     }

@@ -26,6 +26,7 @@ import freenet.keys.FreenetURI;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -492,7 +493,7 @@ public class Metadata implements Cloneable {
 				Metadata data = (Metadata) dir.get(key);
 				if(data == null)
 					throw new NullPointerException();
-				if(Logger.shouldLog(Logger.DEBUG, this))
+				if(Logger.shouldLog(LogLevel.DEBUG, this))
 					Logger.debug(this, "Putting metadata for "+key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
@@ -500,11 +501,11 @@ public class Metadata implements Cloneable {
 					Logger.error(this, "Creating a subdirectory called \"\" - it will not be possible to access this through fproxy!", new Exception("error"));
 				}
 				HashMap<String, Object> hm = Metadata.forceMap(o);
-				if(Logger.shouldLog(Logger.DEBUG, this))
+				if(Logger.shouldLog(LogLevel.DEBUG, this))
 					Logger.debug(this, "Making metadata map for "+key);
 				Metadata subMap = mkRedirectionManifestWithMetadata(hm);
 				manifestEntries.put(key, subMap);
-				if(Logger.shouldLog(Logger.DEBUG, this))
+				if(Logger.shouldLog(LogLevel.DEBUG, this))
 					Logger.debug(this, "Putting metadata map for "+key);
 			}
 		}

@@ -45,6 +45,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
@@ -99,7 +100,7 @@ public class TextModeClientInterface implements Runnable {
     	try {
     		realRun();
     	} catch (IOException e) {
-    		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Caught "+e, e);
+    		if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Caught "+e, e);
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
     	} catch (Throwable t) {
@@ -216,7 +217,7 @@ public class TextModeClientInterface implements Runnable {
         boolean getCHKOnly = false;
         if(line == null) return true;
         String uline = line.toUpperCase();
-        if(Logger.shouldLog(Logger.MINOR, this))
+        if(Logger.shouldLog(LogLevel.MINOR, this))
         	Logger.minor(this, "Command: "+line);
         if(uline.startsWith("GET:")) {
             // Should have a key next
@@ -777,7 +778,7 @@ public class TextModeClientInterface implements Runnable {
             
             try{
             	n.setName(key);
-                if(Logger.shouldLog(Logger.MINOR, this))
+                if(Logger.shouldLog(LogLevel.MINOR, this))
                 	Logger.minor(this, "Setting node.name to "+key);
             }catch(Exception e){
             	Logger.error(this, "Error setting node's name", e);

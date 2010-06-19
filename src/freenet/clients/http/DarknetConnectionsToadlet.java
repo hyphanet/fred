@@ -15,6 +15,7 @@ import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.HTTPRequest;

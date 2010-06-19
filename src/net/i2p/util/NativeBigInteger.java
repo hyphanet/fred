@@ -19,6 +19,7 @@ import java.io.File;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.CPUInformation.AMDCPUInfo;
 import freenet.support.CPUInformation.CPUID;
 import freenet.support.CPUInformation.CPUInfo;

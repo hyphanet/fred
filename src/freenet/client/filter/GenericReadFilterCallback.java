@@ -18,6 +18,7 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.URIPreEncoder;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
@@ -106,7 +107,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		
 		URI uri;
 		URI resolved;
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		try {
 			if(logMINOR) Logger.minor(this, "Processing "+u);
 			uri = URIPreEncoder.encodeURI(u).normalize();
@@ -314,7 +315,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			
 			if(!noRelative)
 				uri = strippedBaseURI.relativize(uri);
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(Logger.shouldLog(LogLevel.MINOR, this))
 				Logger.minor(this, "Returning "+uri.toASCIIString()+" from "+path+" from baseURI="+baseURI+" stripped base uri="+strippedBaseURI.toString());
 			return uri.toASCIIString();
 		} catch (URISyntaxException e) {

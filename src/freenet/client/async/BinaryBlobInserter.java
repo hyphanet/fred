@@ -18,6 +18,7 @@ import freenet.node.LowLevelPutException;
 import freenet.node.RequestClient;
 import freenet.node.SimpleSendableInsert;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class BinaryBlobInserter implements ClientPutState {
@@ -36,7 +37,7 @@ public class BinaryBlobInserter implements ClientPutState {
 
 	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context, ObjectContainer container)
 	throws IOException, BinaryBlobFormatException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.ctx = ctx;
 		this.maxRetries = ctx.maxInsertRetries;
 		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
@@ -131,7 +132,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				fail(new InsertException(InsertException.CANCELLED), true, container, context);
 				return;
 			}
-			logMINOR = Logger.shouldLog(Logger.MINOR, BinaryBlobInserter.this);
+			logMINOR = Logger.shouldLog(LogLevel.MINOR, BinaryBlobInserter.this);
 			switch(e.code) {
 			case LowLevelPutException.COLLISION:
 				fail(new InsertException(InsertException.COLLISION), false, container, context);

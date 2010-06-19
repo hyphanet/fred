@@ -20,6 +20,7 @@ import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.client.filter.HTMLFilter.*;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.ArrayBucket;
 
 /**
@@ -116,7 +117,7 @@ public class ContentFilterTest extends TestCase {
 	public void testHTMLFilter() throws Exception {
 		new NodeL10n();
 		
-    	Logger.setupStdoutLogging(Logger.MINOR, "freenet.client.filter.Generic:DEBUG");
+    	Logger.setupStdoutLogging(LogLevel.MINOR, "freenet.client.filter.Generic:DEBUG");
 		
 		// General sanity checks
 		// is "relativization" working?

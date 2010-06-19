@@ -7,6 +7,7 @@ import freenet.clients.http.TranslationToadlet;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;

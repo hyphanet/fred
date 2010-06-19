@@ -10,6 +10,7 @@ import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /** A high level client request. A request (either fetch or put) started
  * by a Client. Has a suitable context and a URI; is fulfilled only when
@@ -141,7 +142,7 @@ public abstract class ClientRequester {
 		}
 
 		if (wasFinalized) {
-			if (Logger.globalGetThreshold() > Logger.MINOR)
+			if (Logger.globalGetThreshold().ordinal() < LogLevel.MINOR.ordinal())
 				Logger.error(this, "addBlock() but set finalized! on " + this);
 			else
 				Logger.error(this, "addBlock() but set finalized! on " + this, new Exception("error"));
@@ -160,7 +161,7 @@ public abstract class ClientRequester {
 		}
 
 		if (wasFinalized) {
-			if(Logger.globalGetThreshold() > Logger.MINOR)
+			if(Logger.globalGetThreshold().ordinal() < LogLevel.MINOR.ordinal())
 				Logger.error(this, "addBlocks() but set finalized! on "+this);
 			else
 				Logger.error(this, "addBlocks() but set finalized! on "+this, new Exception("error"));

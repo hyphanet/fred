@@ -14,6 +14,7 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -167,7 +168,7 @@ public class ClientGetMessage extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
 		}
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "max retries="+maxRetries);
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {

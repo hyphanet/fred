@@ -32,6 +32,7 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
@@ -54,7 +55,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}
@@ -467,7 +468,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * Called by RequestStarter to find a request to run.
 	 */
 	public ChosenBlock grabRequest() {
-		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		while(true) {
 			PersistentChosenRequest reqGroup = null;
 			synchronized(starterQueue) {
@@ -747,7 +748,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		int retryCount = req.getRetryCount();
 		if(logMINOR)
 			Logger.minor(this, "Maybe adding to starter queue: prio="+prio+" retry count="+retryCount);
-		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		synchronized(starterQueue) {
 			boolean betterThanSome = false;
 			int size = 0;

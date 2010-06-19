@@ -10,6 +10,7 @@ import freenet.keys.KeyVerifyException;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * LRU in memory store.

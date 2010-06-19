@@ -35,6 +35,7 @@ import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Replacement for {@link ServerSocket} that can handle multiple bind addresses
@@ -51,7 +52,7 @@ public class NetworkInterface implements Closeable {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
             @Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

@@ -16,6 +16,7 @@ import freenet.client.async.ManifestElement;
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.FileBucket;
@@ -68,7 +69,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
      */
     private HashMap<String, Object> makeBucketsByName(File thisdir, String prefix) throws MessageInvalidException {
     	
-    	if(Logger.shouldLog(Logger.MINOR, this))
+    	if(Logger.shouldLog(LogLevel.MINOR, this))
     		Logger.minor(this, "Listing directory: "+thisdir);
     	
     	HashMap<String, Object> ret = new HashMap<String, Object>();

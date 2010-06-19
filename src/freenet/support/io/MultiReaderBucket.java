@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import com.db4o.ObjectContainer;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 /**
@@ -39,7 +40,7 @@ public class MultiReaderBucket {
 			if (readers == null)
 				readers = new ArrayList<Bucket>(1);
 			readers.add(d);
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(Logger.shouldLog(LogLevel.MINOR, this))
 				Logger.minor(this, "getReaderBucket() returning "+d+" for "+this+" for "+bucket);
 			return d;
 		}
@@ -50,7 +51,7 @@ public class MultiReaderBucket {
 		private boolean freed;
 
 		public void free() {
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(Logger.shouldLog(LogLevel.MINOR, this))
 				Logger.minor(this, "ReaderBucket "+this+" for "+MultiReaderBucket.this+" free()ing for "+bucket);
 			synchronized(MultiReaderBucket.this) {
 				if(freed) return;

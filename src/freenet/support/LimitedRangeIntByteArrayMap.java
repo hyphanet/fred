@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger.LogLevel;
 import freenet.io.comm.AsyncMessageCallback;
 
 /**
@@ -24,7 +25,7 @@ public class LimitedRangeIntByteArrayMap {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

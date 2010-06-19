@@ -14,6 +14,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.ContainerSizeEstimator;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.ContainerSizeEstimator.ContainerSize;
 
 /**

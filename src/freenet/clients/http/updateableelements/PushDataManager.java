@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 
 import freenet.node.Ticker;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /** A manager class that manages all the pushing. All it's public method must be synchronized to maintain consistency. */
 public class PushDataManager {

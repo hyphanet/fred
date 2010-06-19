@@ -27,6 +27,7 @@ import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
 
 public class PacketThrottle {
@@ -37,7 +38,7 @@ public class PacketThrottle {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

@@ -13,6 +13,7 @@ import java.util.Stack;
 import net.i2p.util.NativeBigInteger;
 import freenet.node.FNPPacketMangler;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 public class DiffieHellman {

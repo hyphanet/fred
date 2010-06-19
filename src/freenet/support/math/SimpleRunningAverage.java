@@ -6,6 +6,7 @@ package freenet.support.math;
 import java.io.DataOutputStream;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Simple running average: linear mean of the last N reports.
@@ -19,7 +20,7 @@ public class SimpleRunningAverage implements RunningAverage {
     double total=0;
     int totalReports = 0;
     final double initValue;
-    private boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+    private boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 
     @Override
 	public final Object clone() {

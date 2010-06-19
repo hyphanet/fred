@@ -24,6 +24,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -74,10 +75,10 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
-        //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");
-        //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.FNP:MINOR,freenet.node.Packet:MINOR,freenet.io.comm:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR");
-        NodeStarter.globalTestInit(name, false, Logger.ERROR, "", true);
+        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
+        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");
+        //NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "freenet.node.FNP:MINOR,freenet.node.Packet:MINOR,freenet.io.comm:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR");
+        NodeStarter.globalTestInit(name, false, LogLevel.ERROR, "", true);
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource(3142);

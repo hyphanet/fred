@@ -21,6 +21,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
 
@@ -197,7 +198,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				if(!uri.equals(generatedURI))
 					Logger.error(this, "onGeneratedURI("+uri+ ',' +state+") but already set generatedURI to "+generatedURI);
 				else
-					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "onGeneratedURI() twice with same value: "+generatedURI+" -> "+uri);
+					if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "onGeneratedURI() twice with same value: "+generatedURI+" -> "+uri);
 			} else {
 				generatedURI = uri;
 			}
