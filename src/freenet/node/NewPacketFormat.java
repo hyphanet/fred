@@ -166,8 +166,8 @@ public class NewPacketFormat implements PacketFormat {
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
 		SentPacket sentPacket = new SentPacket();
-		int offset = 5 + HMAC_LENGTH; // Sequence number (4), HMAC, ACK count (1)
-		int minPacketSize = offset; //Header length without any acks
+		int offset = 4 + HMAC_LENGTH; // Sequence number (4), HMAC
+		int minPacketSize = offset + 1; //Header length without any acks
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
 		byte[] packet = new byte[maxPacketSize];
 
