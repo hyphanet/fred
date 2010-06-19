@@ -22,6 +22,7 @@ import freenet.client.async.DatabaseDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SendingToNetworkEvent;
+import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
@@ -75,6 +76,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private SimpleProgressMessage progressPending;
 	/** Have we received a SendingToNetworkEvent? */
 	private boolean sentToNetwork;
+	private CompatibilityMode compatMessage;
 
 	/**
 	 * Create one for a global-queued request not made by FCP.
@@ -514,8 +516,24 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(msg instanceof SimpleProgressMessage) {
 				oldProgress = progressPending;
 				progressPending = (SimpleProgressMessage)msg;
-			} else if(msg instanceof SendingToNetworkMessage)
+			} else if(msg instanceof SendingToNetworkMessage) {
 				sentToNetwork = true;
+			} else if(msg instanceof CompatibilityMode) {
+				CompatibilityMode compat = (CompatibilityMode)msg;
+				if(compatMessage != null) {
+					if(persistenceType == PERSIST_FOREVER) container.activate(compatMessage, 1);
+					compatMessage.merge(compat.min, compat.max);
+					if(persistenceType == PERSIST_FOREVER) container.store(compatMessage);
+				} else {
+					compatMessage = compat;
+					if(persistenceType == PERSIST_FOREVER) {
+						container.store(compatMessage);
+						container.store(this);
+					}
+				}
+				
+
+			}
 			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.store(this);
 				if(oldProgress != null) {
@@ -566,6 +584,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(allDataPending, 5);
 			handler.queue(allDataPending);
+		}
+		
+		if(compatMessage != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(compatMessage, 5);
+			handler.queue(compatMessage);
+			
 		}
 	}
 
@@ -655,6 +680,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				container.activate(progressPending, 5);
 				progressPending.removeFrom(container);
 			}
+			if(compatMessage != null) {
+				container.activate(compatMessage, 5);
+				compatMessage.removeFrom(container);
+			}
 		}
 		super.requestWasRemoved(container, context);
 	}
@@ -673,6 +702,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(!((verbosity & VERBOSITY_SENT_TO_NETWORK) == VERBOSITY_SENT_TO_NETWORK))
 				return;
 			progress = new SendingToNetworkMessage(identifier, global);
+		} else if(ce instanceof SplitfileCompatibilityModeEvent) {
+			SplitfileCompatibilityModeEvent event = (SplitfileCompatibilityModeEvent)ce;
+			progress = new CompatibilityMode(identifier, global, event.minCompatibilityMode, event.maxCompatibilityMode);
 		}
 		else return; // Don't know what to do with event
 		// container may be null...
@@ -900,6 +932,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER && progressPending != null)
 				progressPending.removeFrom(container);
 			this.progressPending = null;
+			if(persistenceType == PERSIST_FOREVER && compatMessage != null)
+				compatMessage.removeFrom(container);
+			compatMessage = null;
 			started = false;
 		}
 		if(persistenceType == PERSIST_FOREVER)

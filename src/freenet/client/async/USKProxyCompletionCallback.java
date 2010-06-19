@@ -89,4 +89,8 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		cb.onExpectedTopSize(size, compressed, blocksReq, blocksTotal, container, context);
 	}
 
+	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+		cb.onSplitfileCompatibilityMode(min, max, container, context);
+	}
+
 }

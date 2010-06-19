@@ -23,6 +23,7 @@ import freenet.client.FetchResult;
 import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
+import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.KnownUnsafeContentTypeException;
@@ -702,5 +703,9 @@ public class ClientGetter extends BaseClientGetter {
 		this.finalBlocksTotal = this.totalBlocks + blocksTotal;
 		if(persistent()) container.store(this);
 		notifyClients(container, context);
+	}
+
+	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max), container, context);
 	}
 }

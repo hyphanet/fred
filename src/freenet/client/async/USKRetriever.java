@@ -147,4 +147,8 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		// Ignore
 	}
 
+	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
+
 }

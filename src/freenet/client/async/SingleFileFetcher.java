@@ -1114,6 +1114,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
+
+		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
 		
 	}
 
@@ -1213,6 +1217,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
+		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 		
