@@ -49,6 +49,8 @@ public class MessageWrapper {
 		
 		//Copy start to end into dest
 		int realLength = Math.min((end - start), length);
+		realLength = Math.min(realLength, item.buf.length - start);
+
 		System.arraycopy(item.buf, start, dest, offset, realLength);
 		
 		addRangeToSet(start, start + realLength, sent);
