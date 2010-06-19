@@ -206,13 +206,13 @@ public abstract class Logger {
 	/** These indicate the verbosity levels for calls to log() * */
 
 	public enum LogLevel {
-		MAXIMAL, /** For being used to disable logging completely. Do not use as log level for actual log messages. */
-		ERROR,
-		WARNING,
-		NORMAL,
-		MINOR,
+		MINIMAL, /** For being used to enable ALL logging. Do not use as log level for actual log messages. */
 		DEBUG,
-		MINIMAL; /** For being used to enable ALL logging. Do not use as log level for actual log messages. */
+		MINOR,
+		NORMAL,
+		WARNING,
+		ERROR,
+		MAXIMAL; /** For being used to disable logging completely. Do not use as log level for actual log messages. */
 		
 		public boolean matchesThreshold(LogLevel threshold) {
 			return this.ordinal() >= threshold.ordinal();
