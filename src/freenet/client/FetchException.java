@@ -434,6 +434,8 @@ public class FetchException extends Exception {
 	public static final int CONTENT_VALIDATION_UNKNOWN_MIME = 32;
 	/** The content filter knows this data type is dangerous */
 	public static final int CONTENT_VALIDATION_BAD_MIME = 33;
+	/** The metadata specified a hash but the data didn't match it. */
+	public static final int CONTENT_HASH_FAILED = 34;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -462,6 +464,7 @@ public class FetchException extends Exception {
 		case TOO_BIG:
 		case TOO_BIG_METADATA:
 		case TOO_MANY_BLOCKS_PER_SEGMENT:
+		case CONTENT_HASH_FAILED:
 			return true;
 
 		// Low level errors, can be retried

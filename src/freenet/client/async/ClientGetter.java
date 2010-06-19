@@ -33,6 +33,7 @@ import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.crypt.HashResult;
+import freenet.crypt.MultiHashInputStream;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -286,6 +287,29 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(state, 1);
 			state.removeFrom(container, context);
 			container.activate(clientCallback, 1);
+		}
+		if(hashes != null) {
+			InputStream is = null;
+			try {
+				if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
+				is = result.asBucket().getInputStream();
+				MultiHashInputStream hasher = new MultiHashInputStream(is, HashResult.makeBitmask(hashes));
+				byte[] buf = new byte[32768];
+				while(hasher.read(buf) > 0);
+				hasher.close();
+				hasher = null;
+				is = null;
+				HashResult[] results = hasher.getResults();
+				if(!HashResult.strictEquals(results, hashes)) {
+					onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), state, container, context);
+					return;
+				}
+			} catch (IOException e) {
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+				return;
+			} finally {
+				Closer.close(is);
+			}
 		}
 		clientCallback.onSuccess(result, ClientGetter.this, container);
 	}
