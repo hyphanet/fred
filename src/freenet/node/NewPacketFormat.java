@@ -68,6 +68,8 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
+		offset += HMAC_LENGTH;
+
 		// TODO: Decrypt
 
 		//Process received acks
