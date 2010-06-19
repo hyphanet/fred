@@ -22,6 +22,7 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
+import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -206,6 +207,12 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(parent, 1);
 		}
 		long origSize = block.getData().size();
+		if(hashes != null) {
+			System.out.println("Computed hashes for "+this+" for "+block.desiredURI+" size "+origSize);
+			for(HashResult res : hashes) {
+				System.out.println(res.type.name()+" : "+HexUtil.bytesToHex(res.result));
+			}
+		}
 		Bucket bestCompressedData = output.data;
 		long bestCompressedDataSize = bestCompressedData.size();
 		Bucket data = bestCompressedData;
