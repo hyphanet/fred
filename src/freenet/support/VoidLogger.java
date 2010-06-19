@@ -58,7 +58,7 @@ public class VoidLogger extends Logger
 
 	@Override
 	public LogLevel getThreshold() {
-		return LogLevel.ERROR;
+		return LogLevel.MAXIMAL;
 	}
 
 	@Override
