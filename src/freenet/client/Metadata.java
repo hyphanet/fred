@@ -623,6 +623,9 @@ public class Metadata implements Cloneable {
 	 */
 	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, HashResult[] hashes) {
 		hashCode = super.hashCode();
+		if(hashes != null && hashes.length == 0) {
+			throw new IllegalArgumentException();
+		}
 		this.hashes = hashes;
 		if((docType == SIMPLE_REDIRECT) || (docType == ARCHIVE_MANIFEST)) {
 			documentType = docType;
