@@ -10,6 +10,7 @@ import com.db4o.query.Query;
 
 import freenet.client.InsertException;
 import freenet.crypt.HashResult;
+import freenet.crypt.MultiHashInputStream;
 import freenet.crypt.MultiHashOutputStream;
 import freenet.keys.CHKBlock;
 import freenet.keys.NodeCHK;
@@ -162,10 +163,10 @@ public class InsertCompressor implements CompressJob {
 					InputStream is = origData.getInputStream();
 					result = bucketFactory2.makeBucket(-1);
 					OutputStream os = result.getOutputStream();
-					MultiHashOutputStream hasher = null;
+					MultiHashInputStream hasher = null;
 					long maxOutputSize = bestCompressedDataSize;
 					if(first && generateHashes != 0) {
-						os = hasher = new MultiHashOutputStream(os, generateHashes);
+						is = hasher = new MultiHashInputStream(is, generateHashes);
 						maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
 					}
 					first = false;
