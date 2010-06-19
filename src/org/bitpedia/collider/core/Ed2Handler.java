@@ -18,6 +18,7 @@ public class Ed2Handler extends MessageDigest {
 
 	public Ed2Handler() {
 		super("ED2K");
+		analyzeInit();
 	}
 	
 	public void analyzeInit() {
@@ -104,6 +105,11 @@ public class Ed2Handler extends MessageDigest {
 	@Override
 	protected void engineUpdate(byte[] arg0, int arg1, int arg2) {
 		analyzeUpdate(arg0, arg1, arg2);
+	}
+	
+	@Override
+	protected int engineGetDigestLength() {
+		return 16;
 	}
 
 }
