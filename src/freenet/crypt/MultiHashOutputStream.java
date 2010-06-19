@@ -49,24 +49,19 @@ public class MultiHashOutputStream extends FilterOutputStream {
 	public void write(int arg0) throws java.io.IOException {
 		super.write(arg0);
 		for(Digester d : digesters)
-			d.digest.digest(new byte[] { (byte)arg0 });
+			d.digest.update(new byte[] { (byte)arg0 });
 	}
 
 	public void write(byte[] arg0) throws java.io.IOException {
 		super.write(arg0);
 		for(Digester d : digesters)
-			d.digest.digest(arg0);
+			d.digest.update(arg0);
 	}
 	
 	public void write(byte[] arg0, int arg1, int arg2) throws java.io.IOException {
 		super.write(arg0, arg1, arg2);
 		for(Digester d : digesters)
-			try {
-				d.digest.digest(arg0, arg1, arg2);
-			} catch (DigestException e) {
-				// Eh????
-				throw new Error(e);
-			}
+			d.digest.update(arg0, arg1, arg2);
 	}
 	
 	public HashResult[] getResults() {
