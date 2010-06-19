@@ -61,7 +61,7 @@ public class InsertContext implements Cloneable {
 	public static final long COMPAT_1250 = 2;
 	/** 1251/2/3: Basic even splitting, 1 extra check block if data blocks < 128, max 131 data blocks. */
 	public static final long COMPAT_1251 = 3;
-	/** 1254: Second stage of even splitting, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. */
+	/** 1254: Second stage of even splitting, new metadata, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. */
 	public static final long COMPAT_1254 = 4;
 
 	public InsertContext(
