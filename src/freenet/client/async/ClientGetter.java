@@ -201,6 +201,28 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent())
 			container.activate(uri, 5);
 		if(!closeBinaryBlobStream(container, context)) return;
+		if(hashes != null) {
+			InputStream is = null;
+			try {
+				if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
+				is = result.asBucket().getInputStream();
+				MultiHashInputStream hasher = new MultiHashInputStream(is, HashResult.makeBitmask(hashes));
+				byte[] buf = new byte[32768];
+				while(hasher.read(buf) > 0);
+				hasher.close();
+				is = null;
+				HashResult[] results = hasher.getResults();
+				if(!HashResult.strictEquals(results, hashes)) {
+					onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), state, container, context);
+					return;
+				}
+			} catch (IOException e) {
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+				return;
+			} finally {
+				Closer.close(is);
+			}
+		}
 		synchronized(this) {
 			finished = true;
 			currentState = null;
@@ -208,6 +230,7 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent()) {
 			container.store(this);
 		}
+		
 		// Rest of method does not need to be synchronized.
 		// Variables will be updated on exit of method, and the only thing that is
 		// set is the returnBucket and the result. Not locking not only prevents
@@ -287,28 +310,6 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(state, 1);
 			state.removeFrom(container, context);
 			container.activate(clientCallback, 1);
-		}
-		if(hashes != null) {
-			InputStream is = null;
-			try {
-				if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
-				is = result.asBucket().getInputStream();
-				MultiHashInputStream hasher = new MultiHashInputStream(is, HashResult.makeBitmask(hashes));
-				byte[] buf = new byte[32768];
-				while(hasher.read(buf) > 0);
-				hasher.close();
-				is = null;
-				HashResult[] results = hasher.getResults();
-				if(!HashResult.strictEquals(results, hashes)) {
-					onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), state, container, context);
-					return;
-				}
-			} catch (IOException e) {
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
-				return;
-			} finally {
-				Closer.close(is);
-			}
 		}
 		clientCallback.onSuccess(result, ClientGetter.this, container);
 	}
