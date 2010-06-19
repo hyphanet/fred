@@ -149,6 +149,7 @@
 			<!-- following a very temporary list of files to be build -->
 			<include name="freenet/**/*.java"/>
 			<include name="net/i2p/util/*.java"/>
+			<include name="org/**/*.java"/>
 			<exclude name="**/package-info.java"/>
 			<exclude name="${version.src}"/>
 		</javac>

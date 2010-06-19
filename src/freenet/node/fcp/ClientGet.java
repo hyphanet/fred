@@ -21,6 +21,7 @@ import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
+import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
@@ -78,6 +79,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	/** Have we received a SendingToNetworkEvent? */
 	private boolean sentToNetwork;
 	private CompatibilityMode compatMessage;
+	private ExpectedHashes expectedHashes;
 
 	/**
 	 * Create one for a global-queued request not made by FCP.
@@ -532,8 +534,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 						container.store(this);
 					}
 				}
-				
-
+			} else if(msg instanceof ExpectedHashes) {
+				if(expectedHashes != null) {
+					Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
+				} else {
+					this.expectedHashes = (ExpectedHashes)msg;
+					if(persistenceType == PERSIST_FOREVER) {
+						container.store(this);
+					}
+				}
 			}
 			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.store(this);
@@ -591,7 +600,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(compatMessage, 5);
 			handler.queue(compatMessage);
-			
+		}
+		
+		if(expectedHashes != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(expectedHashes, Integer.MAX_VALUE);
+			handler.queue(expectedHashes);
 		}
 	}
 
@@ -685,6 +699,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				container.activate(compatMessage, 5);
 				compatMessage.removeFrom(container);
 			}
+			if(expectedHashes != null) {
+				container.activate(expectedHashes, Integer.MAX_VALUE);
+				expectedHashes.removeFrom(container);
+			}
 		}
 		super.requestWasRemoved(container, context);
 	}
@@ -706,6 +724,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		} else if(ce instanceof SplitfileCompatibilityModeEvent) {
 			SplitfileCompatibilityModeEvent event = (SplitfileCompatibilityModeEvent)ce;
 			progress = new CompatibilityMode(identifier, global, event.minCompatibilityMode, event.maxCompatibilityMode);
+		} else if(ce instanceof ExpectedHashesEvent) {
+			ExpectedHashesEvent event = (ExpectedHashesEvent)ce;
+			progress = new ExpectedHashes(event, identifier, global);
 		}
 		else return; // Don't know what to do with event
 		// container may be null...
@@ -936,6 +957,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER && compatMessage != null)
 				compatMessage.removeFrom(container);
 			compatMessage = null;
+			if(persistenceType == PERSIST_FOREVER && expectedHashes != null)
+				expectedHashes.removeFrom(container);
+				expectedHashes = null;
 			started = false;
 		}
 		if(persistenceType == PERSIST_FOREVER)

@@ -25,6 +25,8 @@ import freenet.client.async.BaseManifestPutter;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.crypt.HashResult;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -90,6 +92,7 @@ public class Metadata implements Cloneable {
 //	static final short FLAGS_SPLIT_USE_LENGTHS = 64; FIXME not supported, reassign to something else if we need a new flag
 	static final short FLAGS_COMPRESSED = 128;
 	static final short FLAGS_TOP_SIZE = 256;
+	static final short FLAGS_HASHES = 512;
 
 	/** Container archive type
 	 * @see ARCHIVE_TYPE
@@ -143,6 +146,8 @@ public class Metadata implements Cloneable {
 	String targetName;
 
 	ClientMetadata clientMetadata;
+	private final HashResult[] hashes;
+	
 	
 	public final long topSize;
 	public final long topCompressedSize;
@@ -218,6 +223,7 @@ public class Metadata implements Cloneable {
 
 		boolean compressed = false;
 		boolean hasTopBlocks = false;
+		HashResult[] h = null;
 		if(haveFlags()) {
 			short flags = dis.readShort();
 			splitfile = (flags & FLAGS_SPLITFILE) == FLAGS_SPLITFILE;
@@ -227,8 +233,16 @@ public class Metadata implements Cloneable {
 			extraMetadata = (flags & FLAGS_EXTRA_METADATA) == FLAGS_EXTRA_METADATA;
 			fullKeys = (flags & FLAGS_FULL_KEYS) == FLAGS_FULL_KEYS;
 			compressed = (flags & FLAGS_COMPRESSED) == FLAGS_COMPRESSED;
+			if((flags & FLAGS_HASHES) == FLAGS_HASHES) {
+				if(version == 0)
+					throw new MetadataParseException("Version 0 does not support hashes");
+				h = HashResult.readHashes(dis);
+			}
 			hasTopBlocks = (flags & FLAGS_TOP_SIZE) == FLAGS_TOP_SIZE;
+			if(hasTopBlocks && version == 0)
+				throw new MetadataParseException("Version 0 does not support top block data");
 		}
+		hashes = h;
 		
 		if(hasTopBlocks) {
 			if(parsedVersion == 0)
@@ -410,6 +424,7 @@ public class Metadata implements Cloneable {
 	 */
 	private Metadata() {
 		hashCode = super.hashCode();
+		hashes = null;
 		// Should be followed by addRedirectionManifest
 		topSize = 0;
 		topCompressedSize = 0;
@@ -520,6 +535,7 @@ public class Metadata implements Cloneable {
 	 */
 	Metadata(HashMap<String, Object> dir, String prefix) {
 		hashCode = super.hashCode();
+		hashes = null;
 		// Simple manifest - contains actual redirects.
 		// Not archive manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
@@ -568,6 +584,7 @@ public class Metadata implements Cloneable {
 			targetName = arg;
 		} else
 			throw new IllegalArgumentException();
+		hashes = null;
 		topSize = 0;
 		topCompressedSize = 0;
 		topBlocksRequired = 0;
@@ -587,6 +604,7 @@ public class Metadata implements Cloneable {
 			targetName = name;
 		} else
 			throw new IllegalArgumentException();
+		hashes = null;
 		topSize = 0;
 		topCompressedSize = 0;
 		topBlocksRequired = 0;
@@ -605,6 +623,7 @@ public class Metadata implements Cloneable {
 	 */
 	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks) {
 		hashCode = super.hashCode();
+		hashes = null;
 		if((docType == SIMPLE_REDIRECT) || (docType == ARCHIVE_MANIFEST)) {
 			documentType = docType;
 			this.archiveType = archiveType;
@@ -638,8 +657,9 @@ public class Metadata implements Cloneable {
 	}
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
-			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks) {
+			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks) {
 		hashCode = super.hashCode();
+		this.hashes = hashes;
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
 		else {
@@ -669,7 +689,7 @@ public class Metadata implements Cloneable {
 		topCompressedSize = origCompressedDataSize;
 		topBlocksRequired = requiredBlocks;
 		topBlocksTotal = totalBlocks;
-		if(topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0)
+		if(topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0 || hashes != null)
 			parsedVersion = 1;
 		if(deductBlocksFromSegments != 0)
 			parsedVersion = 1;
@@ -961,11 +981,14 @@ public class Metadata implements Cloneable {
 			if(extraMetadata) flags |= FLAGS_EXTRA_METADATA;
 			if(fullKeys) flags |= FLAGS_FULL_KEYS;
 			if(compressionCodec != null) flags |= FLAGS_COMPRESSED;
+			if(hashes != null) flags |= FLAGS_HASHES;
 			if(topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0) {
 				assert(parsedVersion >= 1);
 				flags |= FLAGS_TOP_SIZE;
 			}
 			dos.writeShort(flags);
+			if(hashes != null)
+				HashResult.write(hashes, dos);
 		}
 		
 		if(topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0) {
@@ -1317,6 +1340,10 @@ public class Metadata implements Cloneable {
 	
 	public boolean hasTopData() {
 		return topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0;
+	}
+
+	public HashResult[] getHashes() {
+		return hashes;
 	}
 
 }

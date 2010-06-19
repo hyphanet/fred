@@ -27,14 +27,29 @@ public class LZMACompressor implements Compressor {
 	// Copied from EncoderThread. See below re licensing.
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		Bucket output;
-		output = bf.makeBucket(maxWriteLength);
-		if(Logger.shouldLog(LogLevel.MINOR, this))
-			Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
+		InputStream is = null;
+		OutputStream os = null;
+		try {
+			output = bf.makeBucket(maxWriteLength);
+			is = data.getInputStream();
+			os = output.getOutputStream();
+			if(Logger.shouldLog(LogLevel.MINOR, this))
+				Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
+			compress(is, os, maxReadLength, maxWriteLength);
+			is.close();
+			os.close();
+		} finally {
+			Closer.close(is);
+			Closer.close(os);
+		}
+		return output;
+	}
+	
+	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
-		try {
-		cis = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
-		cos = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
+		cis = new CountedInputStream(new BufferedInputStream(is));
+		cos = new CountedOutputStream(new BufferedOutputStream(os));
 		Encoder encoder = new Encoder();
         encoder.SetEndMarkerMode( true );
         // Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
@@ -44,14 +59,8 @@ public class LZMACompressor implements Compressor {
         // 5d 00 00 10 00
         encoder.Code( cis, cos, -1, -1, null );
 		if(Logger.shouldLog(LogLevel.MINOR, this))
-			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+cis.count()+" written "+cos.written());
-		cis.close();
-		cos.close();
-		} finally {
-			Closer.close(cis);
-			Closer.close(cos);
-		}
-		return output;
+			Logger.minor(this, "Read "+cis.count()+" written "+cos.written());
+		return cos.written();
 	}
 
 	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {

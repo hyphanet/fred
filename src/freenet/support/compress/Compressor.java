@@ -4,6 +4,8 @@
 package freenet.support.compress;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -132,6 +134,14 @@ public interface Compressor {
 			return compressor.compress(data, bf, maxReadLength, maxWriteLength);
 		}
 
+		public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+			if(compressor == null) {
+				// DB4O VOODOO! See below.
+				if(name != null) return getOfficial().compress(is, os, maxReadLength, maxWriteLength);
+			}
+			return compressor.compress(is, os, maxReadLength, maxWriteLength);
+		}
+
 		public Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength, long maxEstimateSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
 			if(compressor == null) {
 				// DB4O VOODOO! See below.
@@ -192,6 +202,18 @@ public interface Compressor {
 	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength. 
 	 */
 	public abstract Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
+
+	/**
+	 * Compress the data.
+	 * @param input The InputStream to read from.
+	 * @param output The OutputStream to write to.
+	 * @param maxReadLength The maximum number of bytes to read from the input bucket.
+	 * @param maxWriteLength The maximum number of bytes to write to the output bucket. If this is exceeded, throw a CompressionOutputSizeException.
+	 * @return The compressed data.
+	 * @throws IOException If an error occurs reading or writing data.
+	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength. 
+	 */
+	public abstract long compress(InputStream input, OutputStream output, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
 
 	/**
 	 * Decompress data.

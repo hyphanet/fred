@@ -23,6 +23,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.crypt.HashResult;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
@@ -393,6 +394,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 				if(persistent)
 					container.deactivate(metaSnoop, 1);
+			}
+			HashResult[] hashes = metadata.getHashes();
+			if(hashes != null) {
+				rcb.onHashes(hashes, container, context);
 			}
 			if(metadata.hasTopData()) {
 				if(metaStrings.size() == 0) {
@@ -1118,6 +1123,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
+
+		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
 		
 	}
 
@@ -1221,6 +1230,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
+		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 		
