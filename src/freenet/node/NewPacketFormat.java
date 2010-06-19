@@ -56,8 +56,8 @@ public class NewPacketFormat implements PacketFormat {
 		//TODO: Decrypt hash first
 		byte[] packetHash = new byte[HMAC_LENGTH];
 		for (int i = 0; i < packetHash.length; i++) {
-			packetHash[i] = buf[4 + i];
-			buf[4 + i] = 0;
+			packetHash[i] = buf[i];
+			buf[i] = 0;
 		}
 
 		MessageDigest md = SHA256.getMessageDigest();
@@ -169,7 +169,7 @@ public class NewPacketFormat implements PacketFormat {
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
 		SentPacket sentPacket = new SentPacket();
-		int offset = 4 + HMAC_LENGTH; // Sequence number (4), HMAC
+		int offset = HMAC_LENGTH + 4; // HMAC, Sequence number (4)
 		int minPacketSize = offset + 1; //Header length without any acks
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
 		byte[] packet = new byte[maxPacketSize];
@@ -217,10 +217,10 @@ public class NewPacketFormat implements PacketFormat {
 
 		//Add sequence number
 		long sequenceNumber = nextSequenceNumber++;
-		data[0] = (byte) (sequenceNumber >>> 24);
-		data[1] = (byte) (sequenceNumber >>> 16);
-		data[2] = (byte) (sequenceNumber >>> 8);
-		data[3] = (byte) (sequenceNumber);
+		data[HMAC_LENGTH] = (byte) (sequenceNumber >>> 24);
+		data[HMAC_LENGTH + 1] = (byte) (sequenceNumber >>> 16);
+		data[HMAC_LENGTH + 2] = (byte) (sequenceNumber >>> 8);
+		data[HMAC_LENGTH + 3] = (byte) (sequenceNumber);
 
 		//TODO: Encrypt
 
@@ -229,7 +229,7 @@ public class NewPacketFormat implements PacketFormat {
 		MessageDigest md = SHA256.getMessageDigest();
 		byte[] hash = md.digest(data);
 
-		System.arraycopy(hash, 0, data, 4, HMAC_LENGTH);
+		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
 
 		try {
 	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
