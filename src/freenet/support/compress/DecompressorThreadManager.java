@@ -9,7 +9,6 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.LinkedList;
 
-import freenet.support.Logger;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
@@ -20,6 +19,8 @@ public class DecompressorThreadManager {
 	InputStream input;
 	PipedOutputStream output = new PipedOutputStream();
 	final long maxLen;
+	private boolean finished = false;
+	private Exception error = null;
 
 	public DecompressorThreadManager(InputStream input, long maxLen) {
 		threads = new LinkedList<DecompressorThread>();
@@ -27,26 +28,56 @@ public class DecompressorThreadManager {
 		this.input = input;
 	}
 
-	public void addDecompressor(Compressor compressor)  throws IOException {
-		threads.add(new DecompressorThread(compressor, input, output, maxLen));
+	public synchronized void addDecompressor(Compressor compressor)  throws IOException {
+		DecompressorThread thread = new DecompressorThread(compressor, this, input, output, maxLen);
+		threads.add(thread);
 		input = new PipedInputStream(output);
 		output = new PipedOutputStream();
 	}
 
-	public InputStream execute() {
-		while(!threads.isEmpty()){
-			DecompressorThread thread = threads.remove();
-			thread.start();
+	public synchronized InputStream execute() {
+		if(threads.isEmpty()) {
+			onFinish();
+			return input;
 		}
 		try {
-			output.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
+			while(!threads.isEmpty()){
+				DecompressorThread threadRunnable = threads.remove();
+				new Thread(threadRunnable, "DecompressorThread").start();
+			}
+			output.close();			
+		} catch(Exception e) {
+			onFailure(e);
+			onFinish();
+		}
+		finally {
 			Closer.close(output);
 		}
 		return input;
+		
+	}
+
+	public synchronized void onFailure(Exception e) {
+		error = e;
+	}
+
+	public synchronized void onFinish() {
+		finished = true;
+		notifyAll();
+	}
+
+	public synchronized void waitFinished() {
+		while(!finished) {
+			try {
+				wait();
+			} catch(InterruptedException e) {
+				//Do nothing
+			}
+		}
+	}
+
+	public synchronized Exception getError() {
+		return error;
 	}
 	/**
 	 * Represents a thread which invokes a decompressor upon a
@@ -54,18 +85,20 @@ public class DecompressorThreadManager {
 	 * @author sajack
 	 *
 	 */
-	class DecompressorThread extends Thread {
+	class DecompressorThread implements Runnable {
 
 		final Compressor compressor;
 		final InputStream input;
 		final PipedOutputStream output;
 		final long maxLen;
-
-		public DecompressorThread(Compressor compressor, InputStream input, PipedOutputStream output, long maxLen) {
+		final DecompressorThreadManager manager;
+		
+		public DecompressorThread(Compressor compressor, DecompressorThreadManager manager, InputStream input, PipedOutputStream output, long maxLen) {
 			this.compressor = compressor;
 			this.input = input;
 			this.output = output;
 			this.maxLen = maxLen;
+			this.manager = manager;
 		}
 
 		public void run() {
@@ -73,20 +106,15 @@ public class DecompressorThreadManager {
 				CountedInputStream cin = new CountedInputStream(input);
 				CountedOutputStream cout = new CountedOutputStream(output);
 				compressor.decompress(cin, cout, maxLen, maxLen * 4);
-				Logger.minor(this, "The decompressor read in "+cin.read()+" and decompressed "+cout.written());
 				input.close();
 				output.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (CompressionOutputSizeException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (Exception e) {
+				manager.onFailure(e);
 			} finally {
 				Closer.close(input);
 				Closer.close(output);
+				manager.onFinish();
 			}
 		}
-
 	}
 }

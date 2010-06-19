@@ -220,6 +220,14 @@ public class ClientGetter extends BaseClientGetter {
 		Bucket data = result.asBucket();
 		OutputStream output = null;
 		InputStream input = null;
+		try {
+			input = data.getInputStream();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+		DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, maxLen);
 		// Decompress
 		if(decompressors != null) {
 			Logger.minor(this, "decompressing...");
@@ -244,9 +252,6 @@ public class ClientGetter extends BaseClientGetter {
 				}
 				int count = 0;
 				output = null;
-				input = data.getInputStream();
-				long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-				DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, maxLen);
 				while(!decompressors.isEmpty()) {
 					Compressor c = decompressors.remove(decompressors.size()-1);
 					if(logMINOR)
@@ -336,6 +341,12 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(state, 1);
 			state.removeFrom(container, context);
 			container.activate(clientCallback, 1);
+		}
+
+		decompressorManager.waitFinished();
+		if(decompressorManager.getError() != null) {
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, decompressorManager.getError()), state, container, context);
+			return;
 		}
 		clientCallback.onSuccess(result, ClientGetter.this, container);
 	}
