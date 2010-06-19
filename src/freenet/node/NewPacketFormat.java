@@ -102,14 +102,14 @@ public class NewPacketFormat implements PacketFormat {
 			boolean shortMessage = (buf[offset] & 0x80) != 0;
 			boolean isFragmented = (buf[offset] & 0x40) != 0;
 			boolean firstFragment = (buf[offset] & 0x20) != 0;
-			int messageID = ((buf[offset] & 0x1F) << 8) | buf[offset + 1];
+			int messageID = ((buf[offset] & 0x1F) << 8) | (buf[offset + 1] & 0xFF);
 			offset += 2;
 
 			int fragmentLength;
 			if(shortMessage) {
 				fragmentLength = buf[offset++];
 			} else {
-				fragmentLength = (buf[offset] << 8) | buf[offset + 1];
+				fragmentLength = ((buf[offset] & 0xFF) << 8) | (buf[offset + 1] & 0xFF);
 				offset += 2;
 			}
 
