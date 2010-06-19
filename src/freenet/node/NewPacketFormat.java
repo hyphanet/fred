@@ -56,8 +56,8 @@ public class NewPacketFormat implements PacketFormat {
 		//TODO: Decrypt hash first
 		byte[] packetHash = new byte[HMAC_LENGTH];
 		for (int i = 0; i < packetHash.length; i++) {
-			packetHash[i] = buf[i];
-			buf[i] = 0;
+			packetHash[i] = buf[offset + i];
+			buf[offset + i] = 0;
 		}
 
 		MessageDigest md = SHA256.getMessageDigest();
