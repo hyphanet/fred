@@ -13,9 +13,9 @@ import com.db4o.ObjectContainer;
 
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;

@@ -10,9 +10,9 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.FileUtil;
 

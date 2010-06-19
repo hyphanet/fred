@@ -8,7 +8,6 @@ import java.net.UnknownHostException;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.ClientMetadata;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientPutCallback;
@@ -19,9 +18,9 @@ import freenet.io.comm.PeerParseException;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class NodeARKInserter implements ClientPutCallback, RequestClient {

@@ -2,11 +2,10 @@ package freenet.crypt;
 
 import java.math.BigInteger;
 
+import net.i2p.util.NativeBigInteger;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-
-import net.i2p.util.NativeBigInteger;
 
 public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 

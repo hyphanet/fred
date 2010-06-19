@@ -15,8 +15,8 @@ import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.NullObject;
+import freenet.support.Logger.LogLevel;
 
 /**
  * An FCP client.

@@ -8,7 +8,6 @@ import java.io.PrintStream;
 import java.net.Socket;
 
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * Testnet StatusUploader.

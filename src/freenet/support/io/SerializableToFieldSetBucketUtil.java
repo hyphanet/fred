@@ -5,8 +5,8 @@ package freenet.support.io;
 
 import freenet.crypt.RandomSource;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class SerializableToFieldSetBucketUtil {

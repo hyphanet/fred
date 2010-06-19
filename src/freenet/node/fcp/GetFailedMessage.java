@@ -13,8 +13,8 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 
 public class GetFailedMessage extends FCPMessage {
 

@@ -30,10 +30,10 @@ import freenet.node.SeedServerTestPeerNode;
 import freenet.node.SeedServerTestPeerNode.FATE;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 
 /**

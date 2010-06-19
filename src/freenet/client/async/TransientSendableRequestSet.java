@@ -6,7 +6,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * Since we don't need to worry about activation, we can simply use a HashSet.

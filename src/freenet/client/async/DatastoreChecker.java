@@ -13,7 +13,6 @@ import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
-import freenet.node.SendableRequest;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;

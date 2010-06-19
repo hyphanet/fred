@@ -9,14 +9,14 @@ import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.client.async.TransientChosenBlock;
 import freenet.keys.Key;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.RandomGrabArrayItem;
 import freenet.support.RandomGrabArrayItemExclusionList;
 import freenet.support.TokenBucket;
+import freenet.support.Logger.LogLevel;
 import freenet.support.math.RunningAverage;
-import freenet.support.LogThresholdCallback;
 
 /**
  * Starts requests.

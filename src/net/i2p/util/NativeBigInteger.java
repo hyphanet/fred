@@ -8,18 +8,17 @@ package net.i2p.util;
  *
  */
 
-import java.math.BigInteger;
-import java.util.Random;
-import java.net.URL;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.FileNotFoundException;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.net.URL;
+import java.util.Random;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.CPUInformation.AMDCPUInfo;
 import freenet.support.CPUInformation.CPUID;
 import freenet.support.CPUInformation.CPUInfo;

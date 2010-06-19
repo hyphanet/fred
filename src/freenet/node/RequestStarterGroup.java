@@ -11,11 +11,11 @@ import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LogLevel;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 public class RequestStarterGroup {

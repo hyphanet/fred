@@ -29,7 +29,6 @@ import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.StatsNotAvailableException;
 import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
-import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
 

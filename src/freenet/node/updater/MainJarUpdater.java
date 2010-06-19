@@ -3,7 +3,6 @@ package freenet.node.updater;
 import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 public class MainJarUpdater extends NodeUpdater {
 

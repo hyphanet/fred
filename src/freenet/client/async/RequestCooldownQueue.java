@@ -4,17 +4,17 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
 import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.LogThresholdCallback;
 
 /**
  * Queue of keys which have been recently requested, which we have unregistered for a fixed period.

@@ -19,7 +19,6 @@ import freenet.store.BlockMetadata;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * An SSK is a Signed Subspace Key.

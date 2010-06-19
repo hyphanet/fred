@@ -24,7 +24,6 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.pluginmanager.PluginManager.PluginProgress;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 	final HighLevelSimpleClient hlsc;

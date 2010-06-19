@@ -1,9 +1,6 @@
 package freenet.support;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map;
 
 import freenet.node.NodeStats;
 import freenet.node.PrioRunnable;

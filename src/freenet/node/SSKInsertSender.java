@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.Arrays;
 import java.util.HashSet;
 
 import freenet.crypt.DSAPublicKey;
@@ -20,9 +19,9 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**

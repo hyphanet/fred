@@ -7,7 +7,6 @@ import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.Message;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /** A queued byte[], maybe including a Message, and a callback, which may be null.
  * Note that we always create the byte[] on construction, as almost everywhere

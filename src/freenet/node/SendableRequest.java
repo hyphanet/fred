@@ -10,9 +10,9 @@ import freenet.client.async.ClientRequester;
 import freenet.client.async.PersistentChosenBlock;
 import freenet.client.async.PersistentChosenRequest;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayItem;
+import freenet.support.Logger.LogLevel;
 
 /**
  * A low-level request which can be sent immediately. These are registered

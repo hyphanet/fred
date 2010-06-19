@@ -5,11 +5,11 @@ package freenet.client.async;
 
 import java.util.LinkedList;
 import java.util.List;
+
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
 import freenet.node.BaseSendableGet;
-import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 

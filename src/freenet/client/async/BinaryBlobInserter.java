@@ -2,8 +2,8 @@ package freenet.client.async;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.db4o.ObjectContainer;
 

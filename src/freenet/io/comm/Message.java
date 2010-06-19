@@ -31,11 +31,11 @@ import java.util.List;
 
 import freenet.support.ByteBufferInputStream;
 import freenet.support.Fields;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.Serializer;
 import freenet.support.ShortBuffer;
+import freenet.support.Logger.LogLevel;
 
 /**
  * A Message which can be read from and written to a DatagramPacket

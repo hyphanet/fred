@@ -11,8 +11,8 @@ import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
+import freenet.support.Logger.LogLevel;
 
 public class FProxyFetchTracker implements Runnable {
 

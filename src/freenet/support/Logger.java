@@ -1,5 +1,11 @@
 package freenet.support;
 
+import static freenet.support.Logger.LogLevel.DEBUG;
+import static freenet.support.Logger.LogLevel.ERROR;
+import static freenet.support.Logger.LogLevel.MINOR;
+import static freenet.support.Logger.LogLevel.NORMAL;
+import static freenet.support.Logger.LogLevel.WARNING;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,9 +16,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.regex.PatternSyntaxException;
 
-import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.LoggerHook.InvalidThresholdException;
-import static freenet.support.Logger.LogLevel.*;
 import freenet.support.io.Closer;
 
 /**

@@ -4,8 +4,8 @@
 package freenet.support.math;
 
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Exponential decay "running average".

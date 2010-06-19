@@ -12,7 +12,6 @@ import java.math.BigInteger;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 @SuppressWarnings("serial")
 public abstract class CryptoKey implements CryptoElement, Serializable {

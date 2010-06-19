@@ -22,8 +22,8 @@ import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 /**

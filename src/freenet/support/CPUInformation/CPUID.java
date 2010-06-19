@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.net.URL;
 
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * @author Iakin

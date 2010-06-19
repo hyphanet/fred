@@ -24,7 +24,6 @@ import javax.net.ssl.SSLServerSocket;
 import freenet.crypt.SSL;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * An SSL extension to the {@link NetworkInterface} 

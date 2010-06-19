@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import freenet.pluginmanager.PluginInfoWrapper;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Vector;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.BaseL10n;
@@ -13,15 +13,15 @@ import freenet.l10n.NodeL10n;
 import freenet.l10n.PluginL10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.FredPluginBaseL10n;
+import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet.KeyIterator;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.BucketTools;
-import java.util.Vector;
 
 /**
  * A toadlet dedicated to translations ... and easing the work of translators

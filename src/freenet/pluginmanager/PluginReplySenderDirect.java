@@ -5,7 +5,6 @@ package freenet.pluginmanager;
 
 import freenet.node.Node;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 

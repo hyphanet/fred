@@ -6,10 +6,9 @@ package freenet.crypt;
 import java.math.BigInteger;
 import java.util.Random;
 
+import net.i2p.util.NativeBigInteger;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-
-import net.i2p.util.NativeBigInteger;
 
 /**
  * Implements the Digital Signature Algorithm (DSA) described in FIPS-186

@@ -22,9 +22,9 @@ import java.util.Random;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SizeUtil;
 import freenet.support.StringValidityChecker;
+import freenet.support.Logger.LogLevel;
 
 final public class FileUtil {
 	

@@ -24,7 +24,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * @author ian

@@ -9,7 +9,6 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.keys.ClientKey;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**

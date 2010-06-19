@@ -3,14 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.l10n;
 
-import freenet.clients.http.TranslationToadlet;
-import freenet.support.HTMLEncoder;
-import freenet.support.HTMLNode;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
-import freenet.support.SimpleFieldSet;
-import freenet.support.io.Closer;
-import freenet.support.io.FileUtil;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -19,6 +11,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.MissingResourceException;
+
+import freenet.clients.http.TranslationToadlet;
+import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /**
  * This is the core of all the localization stuff. This method can get

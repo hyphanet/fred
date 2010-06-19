@@ -26,10 +26,10 @@ import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.FileUtil;
 
 /**

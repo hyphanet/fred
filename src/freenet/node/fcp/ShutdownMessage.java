@@ -6,7 +6,6 @@ package freenet.node.fcp;
 import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
-import freenet.node.fcp.FCPMessage;
 import freenet.support.SimpleFieldSet;
 
 public class ShutdownMessage extends FCPMessage{

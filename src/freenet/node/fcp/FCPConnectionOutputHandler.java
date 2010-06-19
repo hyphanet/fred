@@ -11,8 +11,8 @@ import java.util.LinkedList;
 import com.db4o.ObjectContainer;
 
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
+import freenet.support.Logger.LogLevel;
 
 public class FCPConnectionOutputHandler implements Runnable {
 

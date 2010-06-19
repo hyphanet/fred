@@ -43,10 +43,10 @@ import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.SortedLongSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**

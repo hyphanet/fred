@@ -5,13 +5,13 @@ package freenet.node.fcp;
 
 import java.io.File;
 import java.net.MalformedURLException;
+
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 
 /**

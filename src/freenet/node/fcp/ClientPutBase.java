@@ -4,7 +4,8 @@ import java.net.MalformedURLException;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.*;
+import freenet.client.InsertContext;
+import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
@@ -21,8 +22,8 @@ import freenet.keys.InsertableClientSSK;
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**

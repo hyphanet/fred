@@ -13,7 +13,6 @@ import freenet.clients.http.updateableelements.BaseUpdateableElement;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Base64;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 /** A toadlet that provides the current data of pushed elements. It requires the requestId and the elementId parameters. */

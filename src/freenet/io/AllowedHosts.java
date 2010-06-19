@@ -22,7 +22,6 @@ import java.util.StringTokenizer;
 
 import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /** Implementation of allowedHosts */
 public class AllowedHosts {

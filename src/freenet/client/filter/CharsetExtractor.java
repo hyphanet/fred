@@ -5,8 +5,6 @@ package freenet.client.filter;
 
 import java.io.IOException;
 
-import freenet.support.api.Bucket;
-
 /**
  * For a specific text/-based MIME type, extracts the charset if
  * possible.

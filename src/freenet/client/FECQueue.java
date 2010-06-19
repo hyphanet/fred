@@ -21,9 +21,9 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**

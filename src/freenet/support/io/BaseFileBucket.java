@@ -13,10 +13,10 @@ import java.util.Vector;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.support.Fields;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
