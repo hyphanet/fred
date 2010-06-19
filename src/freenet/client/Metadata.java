@@ -659,8 +659,6 @@ public class Metadata implements Cloneable {
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
 			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks) {
 		hashCode = super.hashCode();
-		if(hashes != null)
-			throw new IllegalArgumentException("Compatibility mode specified and hashes passed in anyway?!");
 		this.hashes = hashes;
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
@@ -691,7 +689,7 @@ public class Metadata implements Cloneable {
 		topCompressedSize = origCompressedDataSize;
 		topBlocksRequired = requiredBlocks;
 		topBlocksTotal = totalBlocks;
-		if(topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0)
+		if(topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0 || hashes != null)
 			parsedVersion = 1;
 		if(deductBlocksFromSegments != 0)
 			parsedVersion = 1;
