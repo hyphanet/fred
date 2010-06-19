@@ -493,15 +493,19 @@ class SingleFileInserter implements ClientPutState {
 			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent, wantHashes);
 		} else {
 			if(logMINOR) Logger.minor(this, "Not compressing "+origData+" size = "+origSize+" block size = "+blockSize);
-			// Need to get the hashes anyway
-			NullOutputStream nos = new NullOutputStream();
-			MultiHashOutputStream hasher = new MultiHashOutputStream(nos, wantHashes);
-			try {
-				BucketTools.copyTo(data, hasher, data.size());
-			} catch (IOException e) {
-				throw new InsertException(InsertException.BUCKET_ERROR, "I/O error generating hashes", null);
+			HashResult[] hashes = null;
+			if(wantHashes != 0) {
+				// Need to get the hashes anyway
+				NullOutputStream nos = new NullOutputStream();
+				MultiHashOutputStream hasher = new MultiHashOutputStream(nos, wantHashes);
+				try {
+					BucketTools.copyTo(data, hasher, data.size());
+				} catch (IOException e) {
+					throw new InsertException(InsertException.BUCKET_ERROR, "I/O error generating hashes", null);
+				}
+				hashes = hasher.getResults();
 			}
-			CompressionOutput output = new CompressionOutput(data, null, hasher.getResults());
+			CompressionOutput output = new CompressionOutput(data, null, hashes);
 			onCompressed(output, container, context);
 		}
 	}
