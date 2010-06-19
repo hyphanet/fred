@@ -58,6 +58,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	// Verbosity bitmasks
 	private static final int VERBOSITY_SPLITFILE_PROGRESS = 1;
 	private static final int VERBOSITY_SENT_TO_NETWORK = 2;
+	private static final int VERBOSITY_COMPATIBILITY_MODE = 4;
+	private static final int VERBOSITY_EXPECTED_HASHES = 8;
 
 	// Stuff waiting for reconnection
 	/** Did the request succeed? Valid if finished. */
@@ -514,13 +516,16 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	private void trySendProgress(FCPMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
+		int verbosityMask = 0;
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			FCPMessage oldProgress = null;
 			if(msg instanceof SimpleProgressMessage) {
 				oldProgress = progressPending;
 				progressPending = (SimpleProgressMessage)msg;
+				verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
 			} else if(msg instanceof SendingToNetworkMessage) {
 				sentToNetwork = true;
+				verbosityMask = ClientGet.VERBOSITY_SENT_TO_NETWORK;
 			} else if(msg instanceof CompatibilityMode) {
 				CompatibilityMode compat = (CompatibilityMode)msg;
 				if(compatMessage != null) {
@@ -534,6 +539,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 						container.store(this);
 					}
 				}
+				verbosityMask = ClientGet.VERBOSITY_COMPATIBILITY_MODE;
 			} else if(msg instanceof ExpectedHashes) {
 				if(expectedHashes != null) {
 					Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
@@ -543,7 +549,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 						container.store(this);
 					}
 				}
-			}
+				verbosityMask = ClientGet.VERBOSITY_EXPECTED_HASHES;
+			} else
+				verbosityMask = -1;
 			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.store(this);
 				if(oldProgress != null) {
@@ -551,6 +559,17 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					oldProgress.removeFrom(container);
 				}
 			}
+		} else {
+			if(msg instanceof SimpleProgressMessage)
+				verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
+			else if(msg instanceof SendingToNetworkMessage)
+				verbosityMask = ClientGet.VERBOSITY_SENT_TO_NETWORK;
+			else if(msg instanceof CompatibilityMode)
+				verbosityMask = ClientGet.VERBOSITY_COMPATIBILITY_MODE;
+			else if(msg instanceof ExpectedHashes)
+				verbosityMask = ClientGet.VERBOSITY_EXPECTED_HASHES;
+			else
+				verbosityMask = -1;
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(client, 1);
@@ -559,7 +578,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(handler != null)
 			handler.queue(msg);
 		else
-			client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS, container);
+			client.queueClientRequestMessage(msg, verbosityMask, container);
 		if(persistenceType == PERSIST_FOREVER && !client.isGlobalQueue)
 			container.deactivate(client, 1);
 	}
