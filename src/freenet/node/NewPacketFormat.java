@@ -50,6 +50,8 @@ public class NewPacketFormat implements PacketFormat {
 		buf = temp;
 		offset = 0;
 
+		int packetStart = offset;
+
 		//Check the hash
 		//TODO: Decrypt hash first
 		byte[] packetHash = new byte[HMAC_LENGTH];
@@ -156,7 +158,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		//Ack received packet
-		long sequenceNumber = (buf[offset] << 24) | (buf[offset + 1] << 16) | (buf[offset + 2] << 8) | buf[offset + 3];
+		long sequenceNumber = (buf[packetStart] << 24) | (buf[packetStart + 1] << 16) | (buf[packetStart + 2] << 8) | buf[packetStart + 3];
 		offset += 4;
 		synchronized(acks) {
 			acks.addLast(sequenceNumber);
