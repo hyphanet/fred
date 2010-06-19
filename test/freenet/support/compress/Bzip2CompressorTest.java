@@ -3,14 +3,19 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import junit.framework.TestCase;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
+import freenet.support.io.Closer;
+import freenet.support.io.NullBucket;
 
 /**
  * Test case for {@link freenet.support.compress.Bzip2Compressor} class.
@@ -87,8 +92,8 @@ public class Bzip2CompressorTest extends TestCase {
 		} catch (CompressionOutputSizeException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		}
-		
-		assertEquals(writtenBytes, originalUncompressedData.length);
+
+		assertEquals(originalUncompressedData.length, writtenBytes);
 		assertEquals(originalUncompressedData.length, outUncompressedData.length);
 		
         // check each byte is exactly as expected
@@ -113,7 +118,6 @@ public class Bzip2CompressorTest extends TestCase {
 	}
 
 	public void testDecompressException() {
-		
 		// build 5k array
 		byte[] uncompressedData = new byte[5 * 1024];
 		for(int i = 0; i < uncompressedData.length; i++) {
@@ -123,48 +127,50 @@ public class Bzip2CompressorTest extends TestCase {
 		byte[] compressedData = doCompress(uncompressedData);
 		
 		Bucket inBucket = new ArrayBucket(compressedData);
-		BucketFactory factory = new ArrayBucketFactory();
+		NullBucket outBucket = new NullBucket();
+		InputStream decompressorInput = null;
+		OutputStream decompressorOutput = null;
 
 		try {
-			Compressor.COMPRESSOR_TYPE.BZIP2.decompress(inBucket, factory, 4096 + 10, 4096 + 20, null);
+			decompressorInput = inBucket.getInputStream();
+			decompressorOutput = outBucket.getOutputStream();
+			Compressor.COMPRESSOR_TYPE.BZIP2.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
+			decompressorInput.close();
+			decompressorOutput.close();
 		} catch (IOException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
 			// expect this
+		} finally {
+			Closer.close(decompressorInput);
+			Closer.close(decompressorOutput);
+			inBucket.free();
+			outBucket.free();
 		}
 	}
 	
 	private byte[] doBucketDecompress(byte[] compressedData) {
-
-		Bucket inBucket = new ArrayBucket(compressedData);
-		BucketFactory factory = new ArrayBucketFactory();
-		Bucket outBucket = null;
+		ByteArrayInputStream decompressorInput = new ByteArrayInputStream(compressedData);
+		ByteArrayOutputStream decompressorOutput = new ByteArrayOutputStream();
 
 		try {
-			outBucket = Compressor.COMPRESSOR_TYPE.BZIP2.decompress(inBucket, factory, 32768, 32768 * 2, null);
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		} catch (CompressionOutputSizeException e) {
+			Compressor.COMPRESSOR_TYPE.BZIP2.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
+		} catch (Exception e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		}
 
-		InputStream in = null;
-
+		byte[] outBuf = decompressorOutput.toByteArray();
 		try {
-			in = outBucket.getInputStream();
-		} catch (IOException e1) {
-			fail("unexpected exception thrown : " + e1.getMessage());
-		}
-		long size = outBucket.size();
-		byte[] outBuf = new byte[(int) size];
-
-		try {
-			in.read(outBuf);
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
+			decompressorInput.close();
+			decompressorOutput.close();
+		} catch(IOException e) {
+			fail("unexpected exception thrown : "+ e.getMessage());
+		} finally {
+			Closer.close(decompressorInput);
+			Closer.close(decompressorOutput);
 		}
 
-		return outBuf;		
+		return outBuf;
 	}
 
 	private byte[] doCompress(byte[] uncompressedData) {

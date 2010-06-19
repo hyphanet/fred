@@ -96,6 +96,7 @@ public class Bzip2Compressor implements Compressor {
 		int bytes = 0;
 		try {
 			decompress(bais, baos, output.length, -1);
+			bytes = baos.size();
 		} catch (IOException e) {
 			// Impossible
 			throw new Error("Got IOException: " + e.getMessage(), e);

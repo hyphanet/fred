@@ -90,7 +90,8 @@ public class GzipCompressor implements Compressor {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream(output.length);
 		int bytes = 0;
 		try {
-			bytes = (int)decompress(bais, baos, output.length, -1);
+			decompress(bais, baos, output.length, -1);
+			bytes = baos.size();
 		} catch (IOException e) {
 			// Impossible
 			throw new Error("Got IOException: " + e.getMessage(), e);
