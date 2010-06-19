@@ -234,9 +234,13 @@ public class Metadata implements Cloneable {
 			fullKeys = (flags & FLAGS_FULL_KEYS) == FLAGS_FULL_KEYS;
 			compressed = (flags & FLAGS_COMPRESSED) == FLAGS_COMPRESSED;
 			if((flags & FLAGS_HASHES) == FLAGS_HASHES) {
+				if(version == 0)
+					throw new MetadataParseException("Version 0 does not support hashes");
 				h = HashResult.readHashes(dis);
 			}
 			hasTopBlocks = (flags & FLAGS_TOP_SIZE) == FLAGS_TOP_SIZE;
+			if(hasTopBlocks && version == 0)
+				throw new MetadataParseException("Version 0 does not support top block data");
 		}
 		hashes = h;
 		
