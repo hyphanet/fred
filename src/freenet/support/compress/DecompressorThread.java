@@ -24,6 +24,7 @@ class DecompressorThread implements Runnable {
 	final PipedOutputStream output;
 	final long maxLen;
 	final DecompressorThreadManager manager;
+	boolean isLast = false;
 	
 	public DecompressorThread(Compressor compressor, DecompressorThreadManager manager, InputStream input, PipedOutputStream output, long maxLen) {
 		this.compressor = compressor;
@@ -45,7 +46,11 @@ class DecompressorThread implements Runnable {
 		} finally {
 			Closer.close(input);
 			Closer.close(output);
-			manager.onFinish();
+			if(isLast) manager.onFinish();
 		}
+	}
+
+	public void setLast() {
+		isLast = true;
 	}
 }

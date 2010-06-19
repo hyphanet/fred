@@ -63,6 +63,7 @@ public class DecompressorThreadManager {
 		try {
 			while(!threads.isEmpty()){
 				DecompressorThread threadRunnable = threads.remove();
+				if(threads.isEmpty()) threadRunnable.setLast();
 				new Thread(threadRunnable, "DecompressorThread").start();
 			}
 			output.close();			
@@ -114,4 +115,5 @@ public class DecompressorThreadManager {
 	public synchronized Exception getError() {
 		return error;
 	}
+
 }
