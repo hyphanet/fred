@@ -212,7 +212,7 @@ public abstract class Logger {
 		NORMAL,
 		WARNING,
 		ERROR,
-		MAXIMAL; /** For being used to disable logging completely. Do not use as log level for actual log messages. */
+		NONE; /** For being used to disable logging completely. Do not use as log level for actual log messages. */
 		
 		public boolean matchesThreshold(LogLevel threshold) {
 			return this.ordinal() >= threshold.ordinal();
