@@ -73,7 +73,7 @@ public class NewPacketFormat implements PacketFormat {
 		// TODO: Decrypt
 
 		//Process received acks
-		int numAcks = buf[offset++];
+		int numAcks = buf[offset++] & 0xFF;
 		if(numAcks > 0) {
 			long firstAck = 0;
 			for (int i = 0; i < numAcks; i++) {
