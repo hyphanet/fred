@@ -113,8 +113,8 @@ public class NewPacketFormat implements PacketFormat {
 				offset += 2;
 			}
 
-			int messageLength = -1;
-			int fragmentOffset = -1;
+			int messageLength = fragmentLength;
+			int fragmentOffset = 0;
 			if(isFragmented) {
 				int value;
 				if(shortMessage) {
