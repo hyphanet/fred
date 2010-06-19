@@ -79,7 +79,7 @@ public class NewPacketFormat implements PacketFormat {
 			for (int i = 0; i < numAcks; i++) {
 				long ack = 0;
 				if(i == 0) {
-					firstAck = (buf[offset] << 24) | (buf[offset + 1] << 16) | (buf[offset + 2] << 8) | buf[offset + 3];
+					firstAck = ((buf[offset] & 0xFF) << 24) | ((buf[offset + 1] & 0xFF) << 16) | ((buf[offset + 2] & 0xFF) << 8) | (buf[offset + 3] & 0xFF);
 					offset += 4;
 				} else {
 					ack = buf[offset++];
