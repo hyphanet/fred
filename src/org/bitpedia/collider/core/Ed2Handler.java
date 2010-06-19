@@ -6,14 +6,13 @@
 package org.bitpedia.collider.core;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 public class Ed2Handler extends MessageDigest {
 	
 	private static final int EDSEG_SIZE = 1024*9500;
 	
-	private MessageDigest seg;   // the current 9,216,000 byte block
-	private MessageDigest top;   // the total file value
+	private Md4Handler seg;   // the current 9,216,000 byte block
+	private Md4Handler top;   // the total file value
 	private long nextPos;
 
 	public Ed2Handler() {
@@ -25,13 +24,11 @@ public class Ed2Handler extends MessageDigest {
 		
 		nextPos = 0;
 		
-		try {
-			seg = MessageDigest.getInstance("MD4");
-			top = MessageDigest.getInstance("MD4");
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error("MD4 not supported?!");
-		}
+		seg = new Md4Handler();
+		seg.analyzeInit();
 		
+		top = new Md4Handler();
+		top.analyzeInit();
 	}
 	
 	public void analyzeUpdate(byte[] input, int inputLen) {
@@ -47,17 +44,17 @@ public class Ed2Handler extends MessageDigest {
 		// now, close up any segment that's been completed
 		if((0 < nextPos) && (0 == (nextPos % EDSEG_SIZE))) {
 			// finish
-			byte[] innerDigest = seg.digest();
+			byte[] innerDigest = seg.analyzeFinal();
 			// feed it to the overall hash
-			top.update(innerDigest, 0, 16);
+			top.analyzeUpdate(innerDigest,16);
 			// reset the current segment
-			seg.reset();
+			seg.analyzeInit();
 		}
 
 	    // now, handle the new data
 		if ((nextPos/EDSEG_SIZE) == (nextPos+inputLen)/EDSEG_SIZE) {
 			// not finishing any segments, just keep feeding segment hash
-			seg.update(input, ofs, inputLen);
+			seg.analyzeUpdate(input, ofs, inputLen);
 			nextPos += inputLen;
 			return;
 		}
@@ -65,7 +62,7 @@ public class Ed2Handler extends MessageDigest {
 
 		// finish the current segment
 		int firstLen = EDSEG_SIZE - (int)(nextPos % EDSEG_SIZE);
-		seg.update(input, ofs, firstLen);
+		seg.analyzeUpdate(input, ofs, firstLen);
 		nextPos += firstLen;
 
 		// continue with passed-in info
@@ -76,15 +73,15 @@ public class Ed2Handler extends MessageDigest {
 		
 	    if(nextPos <= EDSEG_SIZE) {
 			// there was only one segment; return its hash
-	    	return seg.digest();
+	    	return seg.analyzeFinal();
 		}
 
 	    // finish the segment in process
-	    byte[] innerDigest = seg.digest();
+	    byte[] innerDigest = seg.analyzeFinal();
 	    // feed it to the overall hash
-		top.update(innerDigest, 0, 16);
+	    top.analyzeUpdate(innerDigest, 16);
 		
-	    return top.digest();
+	    return top.analyzeFinal();
 	}
 
 	@Override
