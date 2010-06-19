@@ -15,7 +15,6 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.node.BaseSendableGet;
-import freenet.node.Node;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
@@ -24,11 +23,11 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.RandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Base class for ClientRequestSchedulerCore and ClientRequestSchedulerNonPersistent, 

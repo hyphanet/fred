@@ -3,12 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import java.util.HashMap;
+
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
 import com.db4o.io.MemoryIoAdapter;
-import java.util.HashMap;
 
 /**
  * This is a PluginStore. Plugins can use that to store all kinds of primary

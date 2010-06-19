@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 public class RandomAccessFileWrapper implements RandomAccessThing {
 

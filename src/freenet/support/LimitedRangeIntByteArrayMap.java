@@ -3,9 +3,8 @@ package freenet.support;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger.LogLevel;
 import freenet.io.comm.AsyncMessageCallback;
+import freenet.support.Logger.LogLevel;
 
 /**
  * @author amphibian

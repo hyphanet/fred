@@ -11,7 +11,6 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 /** A toadlet that the client can use for push failover. It requires the requestId and originalRequestId parameter. */

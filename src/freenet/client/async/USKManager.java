@@ -16,7 +16,6 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.InsertException;
 import freenet.client.NullClientCallback;
 import freenet.clients.http.FProxyToadlet;
 import freenet.keys.FreenetURI;

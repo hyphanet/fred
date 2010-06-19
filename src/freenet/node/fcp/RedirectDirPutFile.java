@@ -7,8 +7,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class RedirectDirPutFile extends DirPutFile {

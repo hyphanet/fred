@@ -35,9 +35,9 @@ import freenet.keys.Key;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 

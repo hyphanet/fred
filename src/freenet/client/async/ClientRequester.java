@@ -8,7 +8,6 @@ import com.db4o.ObjectContainer;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 

@@ -34,7 +34,6 @@ import javax.net.ssl.SSLContext;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.Closer;

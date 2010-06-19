@@ -20,10 +20,10 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.store.BlockMetadata;
 import freenet.support.Fields;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.Logger.LogLevel;
 
 /**
  * @author amphibian

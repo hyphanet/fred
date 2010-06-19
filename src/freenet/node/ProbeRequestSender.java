@@ -13,8 +13,8 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**

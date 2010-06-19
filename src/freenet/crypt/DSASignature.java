@@ -8,9 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 
-import freenet.support.HexUtil;
-
 import net.i2p.util.NativeBigInteger;
+import freenet.support.HexUtil;
 
 
 public class DSASignature implements CryptoElement, java.io.Serializable {

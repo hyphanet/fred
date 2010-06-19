@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.zip.ZipFile;
 
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 /**

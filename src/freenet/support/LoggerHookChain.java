@@ -1,6 +1,6 @@
 package freenet.support;
 
-import static freenet.support.Logger.LogLevel.*;
+import static freenet.support.Logger.LogLevel.NORMAL;
 
 /**
  * A class that takes logging messages and distributes them to LoggerHooks.

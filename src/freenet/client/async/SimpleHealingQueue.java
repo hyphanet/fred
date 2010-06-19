@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 

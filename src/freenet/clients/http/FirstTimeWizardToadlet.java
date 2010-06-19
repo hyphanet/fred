@@ -26,8 +26,8 @@ import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SizeUtil;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.FileUtil;
 

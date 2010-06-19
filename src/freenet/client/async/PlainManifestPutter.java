@@ -9,7 +9,6 @@ import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * <P>plain/dumb manifest putter: every file item is a redirect (no containers at all)

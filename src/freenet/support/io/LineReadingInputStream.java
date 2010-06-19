@@ -3,10 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import freenet.support.HexUtil;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import freenet.support.HexUtil;
 
 /**
  * A FilterInputStream which provides readLine().

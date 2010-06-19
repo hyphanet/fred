@@ -10,7 +10,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * Updatable Subspace Key.

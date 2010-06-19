@@ -20,7 +20,6 @@ import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /** A pushed image, the progress is shown with the ImageCreatorToadlet */
 public class ImageElement extends BaseUpdateableElement {

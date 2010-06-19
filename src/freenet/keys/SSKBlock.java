@@ -6,9 +6,10 @@ package freenet.keys;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import net.i2p.util.NativeBigInteger;
+
 import com.db4o.ObjectContainer;
 
-import net.i2p.util.NativeBigInteger;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
@@ -16,7 +17,6 @@ import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * SSKBlock. Contains a full fetched key. Can do a node-level verification. Can 

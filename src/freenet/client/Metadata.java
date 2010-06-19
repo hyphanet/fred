@@ -20,10 +20,11 @@ import java.util.Map.Entry;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.async.BaseManifestPutter;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;

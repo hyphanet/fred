@@ -11,7 +11,6 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 /** This toadlet receives keepalives. It requires the requestId parameter. If the keepalive is failed, the request is already deleted. */

@@ -13,7 +13,6 @@ import freenet.clients.http.updateableelements.PushDataManager;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Base64;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 /** This toadlet provides notifications for clients. It will block until one is present. It requires the requestId parameter. */

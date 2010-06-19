@@ -5,9 +5,9 @@ package freenet.client.events;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.LogThresholdCallback;
 
 public class SplitfileProgressEvent implements ClientEvent {
 	private static volatile boolean logMINOR;

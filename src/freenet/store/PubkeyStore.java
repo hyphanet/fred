@@ -7,7 +7,6 @@ import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.PubkeyVerifyException;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 public class PubkeyStore extends StoreCallback<DSAPublicKey> {
 

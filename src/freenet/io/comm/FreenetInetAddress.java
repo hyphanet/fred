@@ -10,9 +10,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import freenet.io.AddressIdentifier;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.LogThresholdCallback;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.HostnameUtil;
 import freenet.support.transport.ip.IPUtil;

@@ -3,6 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
+import static freenet.config.Option.DataType.BOOLEAN;
+import static freenet.config.Option.DataType.NUMBER;
+import static freenet.config.Option.DataType.STRING;
+import static freenet.config.Option.DataType.STRING_ARRAY;
+
 
 /**
  * A config option.

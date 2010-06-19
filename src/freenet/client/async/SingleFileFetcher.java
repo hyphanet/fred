@@ -18,7 +18,6 @@ import freenet.client.ArchiveHandler;
 import freenet.client.ArchiveManager;
 import freenet.client.ArchiveRestartException;
 import freenet.client.ClientMetadata;
-import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;

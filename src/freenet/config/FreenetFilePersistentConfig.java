@@ -5,7 +5,6 @@ import java.io.IOException;
 
 import freenet.node.Ticker;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 
 public class FreenetFilePersistentConfig extends FilePersistentConfig {

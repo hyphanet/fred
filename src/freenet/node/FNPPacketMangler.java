@@ -48,12 +48,12 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**

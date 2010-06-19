@@ -7,7 +7,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 /**

@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**

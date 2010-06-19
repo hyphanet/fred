@@ -35,11 +35,11 @@ import freenet.node.Version;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 /** Base class for DarknetConnectionsToadlet and OpennetConnectionsToadlet */

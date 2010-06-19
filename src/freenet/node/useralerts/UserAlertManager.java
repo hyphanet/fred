@@ -20,7 +20,6 @@ import freenet.node.fcp.FCPConnectionHandler;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * Collection of UserAlert's.

@@ -12,6 +12,8 @@ import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertException;
@@ -25,15 +27,13 @@ import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
-
-import com.db4o.ObjectContainer;
 
 public class ClientPut extends ClientPutBase {
 

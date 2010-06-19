@@ -3,35 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
 import com.db4o.query.Query;
 
-import freenet.client.FetchContext;
-import freenet.crypt.RandomSource;
-import freenet.keys.ClientKey;
-import freenet.keys.Key;
-import freenet.node.BaseSendableGet;
-import freenet.node.KeysFetchingLocally;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
-import freenet.node.SendableGet;
-import freenet.node.SendableInsert;
-import freenet.node.SendableRequest;
-import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.PrioritizedSerialExecutor;
-import freenet.support.RandomGrabArray;
-import freenet.support.SectoredRandomGrabArrayWithInt;
-import freenet.support.SectoredRandomGrabArrayWithObject;
-import freenet.support.SortedVectorByNumber;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**

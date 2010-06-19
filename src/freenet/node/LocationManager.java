@@ -27,9 +27,9 @@ import freenet.io.comm.NotConnectedException;
 import freenet.node.PeerManager.LocationUIDPair;
 import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.ShortBuffer;
 import freenet.support.TimeSortedHashtable;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 

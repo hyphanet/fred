@@ -13,10 +13,10 @@ import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import com.db4o.ObjectContainer;
-
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarOutputStream;
+
+import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;

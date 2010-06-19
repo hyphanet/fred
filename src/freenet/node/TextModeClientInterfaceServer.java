@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
@@ -18,7 +19,6 @@ import freenet.crypt.SSL;
 import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;

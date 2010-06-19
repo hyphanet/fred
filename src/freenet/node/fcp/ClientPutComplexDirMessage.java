@@ -16,8 +16,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 

@@ -13,8 +13,8 @@ import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {

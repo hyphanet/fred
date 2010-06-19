@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Vector;
 
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /**
  * Holds the default MIME types.

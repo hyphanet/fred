@@ -27,10 +27,10 @@ import java.util.Vector;
 
 import freenet.node.PeerNode;
 import freenet.node.Ticker;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LogLevel;
 
 public class MessageCore {
 

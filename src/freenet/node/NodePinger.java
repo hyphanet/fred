@@ -5,9 +5,9 @@ package freenet.node;
 
 import java.util.Arrays;
 
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.LogThresholdCallback;
 
 /**
  * Track average round-trip time for each peer node, get a geometric mean.

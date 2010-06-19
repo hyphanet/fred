@@ -43,11 +43,11 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.node.Node;
 import freenet.node.NodeInitException;
-import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 
 /**

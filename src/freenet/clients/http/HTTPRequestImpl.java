@@ -25,9 +25,9 @@ import javax.naming.SizeLimitExceededException;
 
 import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;

@@ -19,13 +19,13 @@ import freenet.support.LimitedRangeIntByteArrayMap;
 import freenet.support.LimitedRangeIntByteArrayMapElement;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.ReceivedPacketNumbers;
 import freenet.support.TimeUtil;
 import freenet.support.UpdatableSortedLinkedListKilledException;
 import freenet.support.UpdatableSortedLinkedListWithForeignIndex;
 import freenet.support.WouldBlockException;
 import freenet.support.DoublyLinkedList.Item;
+import freenet.support.Logger.LogLevel;
 
 /**
  * @author amphibian

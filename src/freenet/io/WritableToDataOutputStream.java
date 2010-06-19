@@ -19,7 +19,8 @@
 
 package freenet.io;
 
-import java.io.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /**
  * @author ian

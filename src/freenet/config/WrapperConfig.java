@@ -15,7 +15,6 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.node.NodeInitException;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 

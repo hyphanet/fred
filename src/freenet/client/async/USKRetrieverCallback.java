@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import freenet.client.FetchResult;
 import freenet.keys.USK;
+import freenet.node.RequestStarter;
 
 /**
  * Interface implemented by USKRetriever clients.

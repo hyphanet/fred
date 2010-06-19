@@ -3,7 +3,6 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.TimeUtil;
 
 /**

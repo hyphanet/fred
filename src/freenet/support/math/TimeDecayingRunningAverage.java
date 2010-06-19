@@ -9,8 +9,8 @@ import java.io.IOException;
 
 import freenet.node.TimeSkewDetectorCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Time decaying running average.

@@ -19,9 +19,9 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.LogThresholdCallback;
 
 /**
  * All the keys at a given priority which we have received key offers from other nodes for.

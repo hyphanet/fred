@@ -16,9 +16,9 @@ import com.db4o.query.Query;
 import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.HexUtil;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.LogThresholdCallback;
 
 /**
  * Persistable implementation of CooldownQueue. Much simpler than RequestCooldownQueue,

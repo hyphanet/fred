@@ -4,7 +4,6 @@
 package freenet.support.math;
 
 import freenet.node.Location;
-
 import freenet.support.SimpleFieldSet;
 
 /**

@@ -14,8 +14,8 @@ import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 
 /**

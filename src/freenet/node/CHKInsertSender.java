@@ -21,8 +21,8 @@ import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, ByteCounter {

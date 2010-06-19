@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import freenet.l10n.NodeL10n;
-
 public abstract class LoggerHook extends Logger {
 
 	protected LogLevel threshold;

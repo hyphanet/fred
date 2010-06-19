@@ -1,16 +1,16 @@
 package freenet.pluginmanager;
 
-import com.db4o.ObjectContainer;
-import com.db4o.ObjectSet;
-import freenet.client.async.ClientContext;
-import freenet.client.async.DatabaseDisabledException;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.client.filter.FilterCallback;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.SessionManager;

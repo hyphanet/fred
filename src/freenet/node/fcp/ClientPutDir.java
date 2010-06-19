@@ -26,12 +26,11 @@ import freenet.client.async.SimpleManifestPutter;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
-import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class ClientPutDir extends ClientPutBase {

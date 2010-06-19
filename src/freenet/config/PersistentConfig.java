@@ -3,7 +3,6 @@ package freenet.config;
 import java.util.Iterator;
 
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 
 /**

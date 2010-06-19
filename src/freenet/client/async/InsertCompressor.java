@@ -7,9 +7,7 @@ import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
 import freenet.client.InsertException;
-import freenet.keys.CHKBlock;
 import freenet.keys.NodeCHK;
-import freenet.keys.SSKBlock;
 import freenet.node.PrioRunnable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;

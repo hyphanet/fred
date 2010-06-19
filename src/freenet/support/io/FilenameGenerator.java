@@ -2,14 +2,14 @@ package freenet.support.io;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.TimeUtil;
-import java.util.Random;
+import freenet.support.Logger.LogLevel;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FilenameGenerator {

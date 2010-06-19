@@ -4,7 +4,6 @@
 package freenet.client;
 
 import com.onionnetworks.fec.FECCode;
-import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.fec.PureCode;
 
 import freenet.support.LRUHashtable;

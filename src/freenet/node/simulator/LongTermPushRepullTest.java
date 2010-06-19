@@ -26,8 +26,8 @@ import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.PooledExecutor;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.FileUtil;
 

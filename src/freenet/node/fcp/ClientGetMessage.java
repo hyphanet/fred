@@ -14,8 +14,8 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 
 /**
  * ClientGet message.

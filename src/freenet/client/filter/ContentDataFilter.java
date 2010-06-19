@@ -8,8 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 
-import freenet.support.api.Bucket;
-
 /**
  * Data filter for a specific MIME type.
  */

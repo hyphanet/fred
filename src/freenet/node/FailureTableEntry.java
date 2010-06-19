@@ -4,13 +4,12 @@
 package freenet.node;
 
 import java.lang.ref.WeakReference;
-import java.util.Arrays;
 import java.util.HashSet;
 
 import freenet.keys.Key;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.LogThresholdCallback;
 
 class FailureTableEntry implements TimedOutNodesList {
 	

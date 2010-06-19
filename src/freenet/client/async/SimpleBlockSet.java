@@ -11,7 +11,6 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 
 /** 
  * Simple BlockSet implementation, keeps all keys in RAM.

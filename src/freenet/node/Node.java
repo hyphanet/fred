@@ -4,7 +4,14 @@
 /* Freenet 0.7 node. */
 package freenet.node;
 
-import java.text.DecimalFormat;
+import static freenet.node.stats.DataStoreKeyType.CHK;
+import static freenet.node.stats.DataStoreKeyType.PUB_KEY;
+import static freenet.node.stats.DataStoreKeyType.SSK;
+import static freenet.node.stats.DataStoreType.CACHE;
+import static freenet.node.stats.DataStoreType.CLIENT;
+import static freenet.node.stats.DataStoreType.SLASHDOT;
+import static freenet.node.stats.DataStoreType.STORE;
+
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -18,11 +25,12 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.DecimalFormat;
 import java.util.Calendar;
-import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
@@ -31,10 +39,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
 
-import freenet.node.stats.DataStoreInstanceType;
-import freenet.node.stats.DataStoreStats;
-import freenet.node.stats.NotAvailNodeStoreStats;
-import freenet.node.stats.StoreCallbackStats;
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -111,6 +115,10 @@ import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FeedMessage;
+import freenet.node.stats.DataStoreInstanceType;
+import freenet.node.stats.DataStoreStats;
+import freenet.node.stats.NotAvailNodeStoreStats;
+import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
@@ -123,6 +131,7 @@ import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginStore;
 import freenet.store.BerkeleyDBFreenetStore;
+import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
@@ -133,7 +142,6 @@ import freenet.store.SSKStore;
 import freenet.store.SlashdotStore;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
-import freenet.store.BlockMetadata;
 import freenet.store.FreenetStore.StoreType;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.Executor;
@@ -144,13 +152,13 @@ import freenet.support.HexUtil;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TokenBucket;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -161,11 +169,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
-
-import static freenet.node.stats.DataStoreKeyType.CHK;
-import static freenet.node.stats.DataStoreKeyType.PUB_KEY;
-import static freenet.node.stats.DataStoreKeyType.SSK;
-import static freenet.node.stats.DataStoreType.*;
 
 /**
  * @author amphibian
