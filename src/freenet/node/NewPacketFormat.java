@@ -75,6 +75,9 @@ public class NewPacketFormat implements PacketFormat {
 
 		// TODO: Decrypt
 
+		long sequenceNumber = (buf[offset] << 24) | (buf[offset + 1] << 16) | (buf[offset + 2] << 8) | buf[offset + 3];
+		offset += 4;
+
 		//Process received acks
 		int numAcks = buf[offset++] & 0xFF;
 		if(numAcks > 0) {
@@ -158,8 +161,6 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		//Ack received packet
-		long sequenceNumber = (buf[packetStart] << 24) | (buf[packetStart + 1] << 16) | (buf[packetStart + 2] << 8) | buf[packetStart + 3];
-		offset += 4;
 		synchronized(acks) {
 			acks.addLast(sequenceNumber);
 		}
