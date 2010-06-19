@@ -59,7 +59,8 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		MessageDigest md = SHA256.getMessageDigest();
-		byte[] hash = md.digest(buf);
+		md.update(buf, offset, length);
+		byte[] hash = md.digest();
 
 		for(int i = 0; i < packetHash.length; i++) {
 			if(packetHash[i] != hash[i]) {
