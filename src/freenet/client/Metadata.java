@@ -223,6 +223,7 @@ public class Metadata implements Cloneable {
 
 		boolean compressed = false;
 		boolean hasTopBlocks = false;
+		HashResult[] h = null;
 		if(haveFlags()) {
 			short flags = dis.readShort();
 			splitfile = (flags & FLAGS_SPLITFILE) == FLAGS_SPLITFILE;
@@ -233,10 +234,11 @@ public class Metadata implements Cloneable {
 			fullKeys = (flags & FLAGS_FULL_KEYS) == FLAGS_FULL_KEYS;
 			compressed = (flags & FLAGS_COMPRESSED) == FLAGS_COMPRESSED;
 			if((flags & FLAGS_HASHES) == FLAGS_HASHES) {
-				hashes = HashResult.readHashes(dis);
+				h = HashResult.readHashes(dis);
 			}
 			hasTopBlocks = (flags & FLAGS_TOP_SIZE) == FLAGS_TOP_SIZE;
 		}
+		hashes = h;
 		
 		if(hasTopBlocks) {
 			if(parsedVersion == 0)

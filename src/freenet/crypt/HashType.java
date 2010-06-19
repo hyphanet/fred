@@ -10,27 +10,30 @@ import org.bitpedia.collider.core.Ed2Handler;
 import org.bitpedia.util.TigerTree;
 
 public enum HashType {
-	SHA1(1),
-	MD5(2),
-	SHA256(4, "SHA-256"),
-	SHA384(8, "SHA-384"),
-	SHA512(16, "SHA-512"),
-	ED2K(32, null),
-	TTH(64, null);
+	SHA1(1, 20),
+	MD5(2, 16),
+	SHA256(4, "SHA-256", 32),
+	SHA384(8, "SHA-384", 48),
+	SHA512(16, "SHA-512", 64),
+	ED2K(32, null, 16),
+	TTH(64, null, 24);
 	
 	/** Bitmask for aggregation. */
 	public final int bitmask;
 	/** Name for MessageDigest purposes. Can contain dashes. */
 	public final String javaName;
+	public final int hashLength;
 	
-	HashType(int bitmask) {
+	HashType(int bitmask, int hashLength) {
 		this.bitmask = bitmask;
 		this.javaName = super.name();
+		this.hashLength = hashLength;
 	}
 	
-	HashType(int bitmask, String name) {
+	HashType(int bitmask, String name, int hashLength) {
 		this.bitmask = bitmask;
 		this.javaName = name;
+		this.hashLength = hashLength;
 	}
 	
 	public MessageDigest get() throws NoSuchAlgorithmException {
