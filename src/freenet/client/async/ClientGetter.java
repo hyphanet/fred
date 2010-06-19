@@ -297,7 +297,6 @@ public class ClientGetter extends BaseClientGetter {
 				byte[] buf = new byte[32768];
 				while(hasher.read(buf) > 0);
 				hasher.close();
-				hasher = null;
 				is = null;
 				HashResult[] results = hasher.getResults();
 				if(!HashResult.strictEquals(results, hashes)) {

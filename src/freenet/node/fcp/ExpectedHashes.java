@@ -24,9 +24,9 @@ public class ExpectedHashes extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		SimpleFieldSet values = new SimpleFieldSet(false);
-		fs.put("Hashes", values);
 		for(HashResult hash : hashes)
 			values.putOverwrite(hash.type.name(), HexUtil.bytesToHex(hash.result));
+		fs.put("Hashes", values);
 		fs.putOverwrite("Identifier", identifier);
 		fs.put("Global", global);
 		return fs;
