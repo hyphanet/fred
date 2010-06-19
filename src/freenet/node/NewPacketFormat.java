@@ -31,7 +31,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	private PeerNode pn;
 	private HashMap<Integer, MessageWrapper> started = new HashMap<Integer, MessageWrapper>();
-	private LinkedList<Long> acks = new LinkedList<Long>();
+	private final LinkedList<Long> acks = new LinkedList<Long>();
 	private long nextSequenceNumber = 0;
 	private HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
 	private int nextMessageID = 0;
