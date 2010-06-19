@@ -46,6 +46,7 @@ import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /**
  * A high level data request. Follows redirects, downloads splitfiles, etc. Similar to what you get from FCP,
@@ -218,18 +219,33 @@ public class ClientGetter extends BaseClientGetter {
 		// doing massive encrypted I/Os while holding a lock.
 
 		Bucket data = result.asBucket();
+		DecompressorThreadManager decompressorManager = null;
 		OutputStream output = null;
 		InputStream input = null;
+		Bucket finalResult;
+		try {
+			if(returnBucket == null) finalResult = context.getBucketFactory(persistent()).makeBucket(-1);
+			else {
+				if(persistent()) container.activate(returnBucket, 5);
+				finalResult = returnBucket;
+			}
+		} catch(IOException e) {
+			Logger.error(this, "Caught "+e, e);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+			return;
+		}
 		try {
 			input = data.getInputStream();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			output = finalResult.getOutputStream();
+		} catch (IOException e) {
+			Logger.error(this, "Caught "+e, e);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+			return;
 		}
 		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-		DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, maxLen);
 		// Decompress
 		if(decompressors != null) {
+			decompressorManager =  new DecompressorThreadManager(input, maxLen);
 			Logger.minor(this, "decompressing...");
 			try {
 				if(persistent()) {
@@ -251,7 +267,6 @@ public class ClientGetter extends BaseClientGetter {
 					container.activate(ctx, 1);
 				}
 				int count = 0;
-				output = null;
 				while(!decompressors.isEmpty()) {
 					Compressor c = decompressors.remove(decompressors.size()-1);
 					if(logMINOR)
@@ -269,7 +284,6 @@ public class ClientGetter extends BaseClientGetter {
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 			}
 		}
-		result = new FetchResult(result, data);
 
 		//Filter the data, if we are supposed to
 		if(ctx.filterData){
@@ -278,19 +292,13 @@ public class ClientGetter extends BaseClientGetter {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
 				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 				assert(data != returnBucket);
-				Bucket filteredResult;
-				if(returnBucket == null) filteredResult = context.getBucketFactory(persistent()).makeBucket(-1);
-				else {
-					if(persistent()) container.activate(returnBucket, 5);
-					filteredResult = returnBucket;
-				}
-				output = filteredResult.getOutputStream();
+				output = finalResult.getOutputStream();
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
 				output.close();
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
 				result.asBucket().free();
-				result = new FetchResult(new ClientMetadata(detectedMIMEType), filteredResult);
+				result = new FetchResult(new ClientMetadata(detectedMIMEType), finalResult);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
@@ -312,7 +320,20 @@ public class ClientGetter extends BaseClientGetter {
 		else {
 			if(logMINOR) Logger.minor(this, "Ignoring content filter.");
 		}
-		if(returnBucket == null) if(logMINOR) Logger.minor(this, "Returnbucket is null");
+
+		if(finalResult.size() == 0) {
+			if(logMINOR) Logger.minor(this, "The final result has not been written. Writing now.");
+			try {
+				FileUtil.copy(input, output, -1);
+				result = new FetchResult(result, finalResult);
+			}
+			catch(IOException e) {
+				Logger.error(this, "Caught "+e, e);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+				return;
+			}
+		}
+		/*if(returnBucket == null) if(logMINOR) Logger.minor(this, "Returnbucket is null");
 		if((returnBucket != null) && (data != returnBucket)) {
 			Bucket from = data;
 			Bucket to = returnBucket;
@@ -329,24 +350,27 @@ public class ClientGetter extends BaseClientGetter {
 					from.removeFrom(container);
 			} catch (IOException e) {
 				Logger.error(this, "Error copying from "+from+" to "+to+" : "+e.toString(), e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state /* not strictly to blame, but we're not ako ClientGetState... */, container, context);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state , container, context);
 				return;
 			}
 			result = new FetchResult(result, to);
 		} else {
 			if(returnBucket != null && logMINOR)
 				Logger.minor(this, "client.async returned data in returnBucket");
-		}
+		}*/
 		if(persistent()) {
 			container.activate(state, 1);
 			state.removeFrom(container, context);
 			container.activate(clientCallback, 1);
 		}
 
-		decompressorManager.waitFinished();
-		if(decompressorManager.getError() != null) {
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, decompressorManager.getError()), state, container, context);
-			return;
+		if(decompressorManager != null) {
+			if(logMINOR) Logger.minor(this, "Waiting for decompression to finalize");
+			decompressorManager.waitFinished();
+			if(decompressorManager.getError() != null) {
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, decompressorManager.getError()), state, container, context);
+				return;
+			}
 		}
 		clientCallback.onSuccess(result, ClientGetter.this, container);
 	}
