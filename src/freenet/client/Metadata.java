@@ -1342,4 +1342,8 @@ public class Metadata implements Cloneable {
 		return topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0;
 	}
 
+	public HashResult[] getHashes() {
+		return hashes;
+	}
+
 }

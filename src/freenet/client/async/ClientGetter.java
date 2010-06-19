@@ -21,6 +21,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.events.ExpectedFileSizeEvent;
+import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
@@ -31,6 +32,7 @@ import freenet.client.filter.MIMEType;
 import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.ContentFilter.FilterStatus;
+import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -87,6 +89,7 @@ public class ClientGetter extends BaseClientGetter {
 	private SnoopMetadata snoopMeta;
 	/** Callback to spy on the data at each stage of the request */
 	private SnoopBucket snoopBucket;
+	private HashResult[] hashes;
 
 	/**
 	 * Fetch a key.
@@ -706,5 +709,17 @@ public class ClientGetter extends BaseClientGetter {
 
 	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
 		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max), container, context);
+	}
+
+	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(this.hashes != null) {
+				Logger.error(this, "Two sets of hashes?!");
+				return;
+			}
+			this.hashes = hashes;
+		}
+		if(persistent()) container.store(this);
+		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
 	}
 }

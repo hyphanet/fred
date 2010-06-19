@@ -11,6 +11,7 @@ import freenet.client.ArchiveContext;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
@@ -149,6 +150,10 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
+	
+	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 

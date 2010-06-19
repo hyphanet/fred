@@ -5,6 +5,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 public class HashResult implements Comparable {
 
 	public final HashType type;
@@ -65,6 +67,13 @@ public class HashResult implements Comparable {
 		if(type.bitmask == h.type.bitmask) return 0;
 		if(type.bitmask > h.type.bitmask) return 1;
 		/* else if(type.bitmask < h.type.bitmask) */ return -1;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(type != HashType.valueOf(type.name()))
+			// db4o has copied it.
+			container.delete(type);
+		container.delete(this);
 	}
 
 }
