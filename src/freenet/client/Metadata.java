@@ -612,7 +612,7 @@ public class Metadata implements Cloneable {
 	}
 
 	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm) {
-		this(docType, archiveType, compressionCodec, uri, cm, 0, 0, 0, 0);
+		this(docType, archiveType, compressionCodec, uri, cm, 0, 0, 0, 0, null);
 	}
 	
 	/**
@@ -621,9 +621,9 @@ public class Metadata implements Cloneable {
 	 * @param uri The URI pointed to.
 	 * @param cm The client metadata, if any.
 	 */
-	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks) {
+	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, HashResult[] hashes) {
 		hashCode = super.hashCode();
-		hashes = null;
+		this.hashes = hashes;
 		if((docType == SIMPLE_REDIRECT) || (docType == ARCHIVE_MANIFEST)) {
 			documentType = docType;
 			this.archiveType = archiveType;
@@ -641,7 +641,7 @@ public class Metadata implements Cloneable {
 				fullKeys = true;
 		} else
 			throw new IllegalArgumentException();
-		if(origDataLength != 0 || origCompressedDataLength != 0 || reqBlocks != 0 || totalBlocks != 0) {
+		if(origDataLength != 0 || origCompressedDataLength != 0 || reqBlocks != 0 || totalBlocks != 0 || hashes != null) {
 			this.topSize = origDataLength;
 			this.topCompressedSize = origCompressedDataLength;
 			this.topBlocksRequired = reqBlocks;

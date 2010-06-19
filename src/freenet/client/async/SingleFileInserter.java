@@ -79,6 +79,7 @@ class SingleFileInserter implements ClientPutState {
 	private final boolean forSplitfile;
 	private final long origDataLength;
 	private final long origCompressedDataLength;
+	private final HashResult[] origHashes;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -108,7 +109,7 @@ class SingleFileInserter implements ClientPutState {
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InsertContext ctx, boolean dontCompress, 
 			boolean getCHKOnly, boolean reportMetadataOnly, Object token, ARCHIVE_TYPE archiveType,
-			boolean freeData, String targetFilename, boolean earlyEncode, boolean forSplitfile, boolean persistent, long origDataLength, long origCompressedDataLength) {
+			boolean freeData, String targetFilename, boolean earlyEncode, boolean forSplitfile, boolean persistent, long origDataLength, long origCompressedDataLength, HashResult[] origHashes) {
 		hashCode = super.hashCode();
 		this.earlyEncode = earlyEncode;
 		this.reportMetadataOnly = reportMetadataOnly;
@@ -126,6 +127,7 @@ class SingleFileInserter implements ClientPutState {
 		this.forSplitfile = forSplitfile;
 		this.origCompressedDataLength = origCompressedDataLength;
 		this.origDataLength = origDataLength;
+		this.origHashes = origHashes;
 		if(logMINOR) Logger.minor(this, "Created "+this+" persistent="+persistent+" freeData="+freeData);
 	}
 	
@@ -212,6 +214,9 @@ class SingleFileInserter implements ClientPutState {
 			for(HashResult res : hashes) {
 				System.out.println(res.type.name()+" : "+HexUtil.bytesToHex(res.result));
 			}
+		} else {
+			hashes = origHashes; // Inherit so it goes all the way to the top.
+			if(persistent) container.activate(hashes, Integer.MAX_VALUE);
 		}
 		Bucket bestCompressedData = output.data;
 		long bestCompressedDataSize = bestCompressedData.size();
@@ -522,9 +527,9 @@ class SingleFileInserter implements ClientPutState {
 			compressed = origCompressedDataLength;
 		}
 		if(archiveType != null)
-			meta = new Metadata(Metadata.ARCHIVE_MANIFEST, archiveType, null, uri, block.clientMetadata, data, compressed, req, total);
+			meta = new Metadata(Metadata.ARCHIVE_MANIFEST, archiveType, null, uri, block.clientMetadata, data, compressed, req, total, hashes);
 		else // redirect
-			meta = new Metadata(Metadata.SIMPLE_REDIRECT, archiveType, null, uri, block.clientMetadata, data, compressed, req, total);
+			meta = new Metadata(Metadata.SIMPLE_REDIRECT, archiveType, null, uri, block.clientMetadata, data, compressed, req, total, hashes);
 		if(targetFilename != null) {
 			HashMap<String, Object> hm = new HashMap<String, Object>();
 			hm.put(targetFilename, meta);
@@ -858,7 +863,7 @@ class SingleFileInserter implements ClientPutState {
 				m = null;
 			InsertBlock newBlock = new InsertBlock(metadataBucket, m, block.desiredURI);
 				synchronized(this) {
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength);
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes);
 					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
 					// Otherwise, wait until the data is fetchable (to improve persistence).
 					if(logMINOR)
