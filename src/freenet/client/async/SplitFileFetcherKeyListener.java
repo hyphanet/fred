@@ -19,6 +19,7 @@ import freenet.node.SendableGet;
 import freenet.support.BinaryBloomFilter;
 import freenet.support.CountingBloomFilter;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
@@ -118,7 +119,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			dis.readFully(segmentsFilterBuffer);
 			dis.close();
 		}
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Created "+this+" for "+fetcher);
 	}
 
@@ -188,7 +189,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		// Caller has already called probablyWantKey(), so don't do it again.
 		boolean found = false;
 		byte[] salted = localSaltKey(key);
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "handleBlock("+key+") on "+this+" for "+fetcher);
 		for(int i=0;i<segmentFilters.length;i++) {
@@ -306,10 +307,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		int segNo = segment.segNum;
 		segmentFilters[segNo].unsetAll();
 		Key[] removeKeys = segment.listKeys(container);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Removing segment from bloom filter: "+segment+" keys: "+removeKeys.length);
 		for(int i=0;i<removeKeys.length;i++) {
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(Logger.shouldLog(LogLevel.MINOR, this))
 				Logger.minor(this, "Removing key from bloom filter: "+removeKeys[i]);
 			byte[] salted = context.getChkFetchScheduler().saltKey(persistent, removeKeys[i]);
 			if(filter.checkFilter(salted)) {

@@ -16,7 +16,6 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.InsertException;
 import freenet.client.NullClientCallback;
 import freenet.clients.http.FProxyToadlet;
 import freenet.keys.FreenetURI;
@@ -28,6 +27,7 @@ import freenet.support.Executor;
 import freenet.support.LRUHashtable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NullBucket;
 
 /**
@@ -48,8 +48,8 @@ public class USKManager implements RequestClient {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}

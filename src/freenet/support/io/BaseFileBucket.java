@@ -13,9 +13,10 @@ import java.util.Vector;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.support.Fields;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
@@ -27,8 +28,8 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
             @Override
             public void shouldUpdate() {
-                logMINOR = Logger.shouldLog(Logger.MINOR, this);
-                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+                logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
             }
         });
     }

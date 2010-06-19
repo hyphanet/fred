@@ -23,14 +23,14 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
-import java.util.Stack;
 
 import freenet.clients.http.ToadletContextImpl;
 import freenet.l10n.NodeL10n;
@@ -39,6 +39,7 @@ import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
@@ -56,8 +57,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		if(cb == null) cb = new NullFilterCallback();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
 		BufferedInputStream bis = new BufferedInputStream(input, 4096);
 		BufferedOutputStream bos = new BufferedOutputStream(output, 4096);
@@ -84,9 +85,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	public String getCharset(byte[] input, int length, String parseCharset) throws DataFilterException, IOException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);		
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
-		if(length > getCharsetBufferSize() && Logger.shouldLog(Logger.MINOR, this)) {
+		if(length > getCharsetBufferSize() && Logger.shouldLog(LogLevel.MINOR, this)) {
 			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
 		}
 		ByteArrayInputStream strm = new ByteArrayInputStream(input, 0, length);
@@ -2482,7 +2483,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String s = w.toString();
 		if ((s == null) || (s.length() == 0))
 			return null;
-		//		Core.logger.log(SaferFilter.class, "Style now: " + s, Logger.DEBUG);
+		//		Core.logger.log(SaferFilter.class, "Style now: " + s, LogLevel.DEBUG);
 		if(logMINOR) Logger.minor(HTMLFilter.class, "Style finally: " + s);
 		return s;
 	}

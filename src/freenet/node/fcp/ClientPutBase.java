@@ -4,7 +4,8 @@ import java.net.MalformedURLException;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.*;
+import freenet.client.InsertContext;
+import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
@@ -22,6 +23,7 @@ import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
@@ -197,7 +199,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				if(!uri.equals(generatedURI))
 					Logger.error(this, "onGeneratedURI("+uri+ ',' +state+") but already set generatedURI to "+generatedURI);
 				else
-					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "onGeneratedURI() twice with same value: "+generatedURI+" -> "+uri);
+					if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "onGeneratedURI() twice with same value: "+generatedURI+" -> "+uri);
 			} else {
 				generatedURI = uri;
 			}

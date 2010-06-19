@@ -71,6 +71,7 @@ import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -94,7 +95,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

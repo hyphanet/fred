@@ -30,6 +30,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.FileUtil;
@@ -97,7 +98,7 @@ public class WelcomeToadlet extends Toadlet {
         String passwd = request.getPartAsString("formPassword", 32);
         boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
         if (noPassword) {
-            if (Logger.shouldLog(Logger.MINOR, this)) {
+            if (Logger.shouldLog(LogLevel.MINOR, this)) {
                 Logger.minor(this, "No password (" + passwd + " should be " + core.formPassword + ')');
             }
         }

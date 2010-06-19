@@ -26,7 +26,6 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
-import freenet.support.api.HTTPRequest;
 
 /**
  * Replacement for servlets. Just an easy to use HTTP interface, which is

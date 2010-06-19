@@ -2,10 +2,10 @@ package freenet.crypt;
 
 import java.math.BigInteger;
 
+import net.i2p.util.NativeBigInteger;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-
-import net.i2p.util.NativeBigInteger;
+import freenet.support.Logger.LogLevel;
 
 public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 
@@ -34,7 +34,7 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 		this.myExponent = myExponent;
 		this.myExponential = myExponential;
 		this.lastUsedTime = System.currentTimeMillis();
-		this.logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	}
 	
 	public void setSignature(DSASignature sig) {

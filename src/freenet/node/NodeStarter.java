@@ -21,6 +21,7 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.NativeThread;
 
@@ -94,6 +95,7 @@ public class NodeStarter implements WrapperListener {
 		java.security.Security.setProperty("networkaddress.cache.negative.ttl", "0");
 
 		try {
+			System.out.println("Creating config from "+configFilename);
 			cfg = FreenetFilePersistentConfig.constructFreenetFilePersistentConfig(configFilename);
 		} catch(IOException e) {
 			System.out.println("Error : " + e);
@@ -107,6 +109,7 @@ public class NodeStarter implements WrapperListener {
 		PooledExecutor executor = new PooledExecutor();
 
 		try {
+			System.out.println("Creating logger...");
 			logConfigHandler = new LoggingConfigHandler(loggingConfig, executor);
 		} catch(InvalidConfigValueException e) {
 			System.err.println("Error: could not set up logging: " + e.getMessage());
@@ -114,6 +117,7 @@ public class NodeStarter implements WrapperListener {
 			return Integer.valueOf(-2);
 		}
 
+		System.out.println("Starting executor...");
 		executor.start();
 
 		// Prevent timeouts for a while. The DiffieHellman init for example could take some time on a very slow system.
@@ -269,7 +273,7 @@ public class NodeStarter implements WrapperListener {
 	 * Not Node-specific; many nodes may be created later.
 	 * @param testName The name of the test instance.
 	 */
-	public static RandomSource globalTestInit(String testName, boolean enablePlug, int logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
+	public static RandomSource globalTestInit(String testName, boolean enablePlug, LogLevel logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
 
 		File dir = new File(testName);
 		if((!dir.mkdir()) && ((!dir.exists()) || (!dir.isDirectory()))) {

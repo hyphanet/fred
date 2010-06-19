@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
@@ -22,6 +21,7 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -421,7 +421,7 @@ public class TempBucketFactory implements BucketFactory {
 		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
-		this.logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
@@ -445,27 +445,27 @@ public class TempBucketFactory implements BucketFactory {
 	}
 	
 	public synchronized void setMaxRamUsed(long size) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		maxRamUsed = size;
 	}
 	
 	public synchronized long getMaxRamUsed() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		return maxRamUsed;
 	}
 	
 	public synchronized void setMaxRAMBucketSize(long size) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		maxRAMBucketSize = size;
 	}
 	
 	public synchronized long getMaxRAMBucketSize() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		return maxRAMBucketSize;
 	}
 	
 	public void setEncryption(boolean value) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		reallyEncrypt = value;
 	}
 	

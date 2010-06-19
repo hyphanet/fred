@@ -4,11 +4,11 @@
 package freenet.crypt;
 
 import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import freenet.support.HexUtil;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * Implements the HMAC Keyed Message Authentication function, as described

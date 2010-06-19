@@ -14,9 +14,10 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 public class AnnounceSender implements PrioRunnable, ByteCounter {
@@ -26,7 +27,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

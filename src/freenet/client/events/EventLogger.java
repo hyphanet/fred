@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Event handeling for clients.
@@ -15,10 +16,10 @@ import freenet.support.Logger;
  */
 public class EventLogger implements ClientEventListener {
 
-	final int logPrio;
+	final LogLevel logPrio;
 	final boolean removeWithProducer;
 	
-	public EventLogger(int prio, boolean removeWithProducer) {
+	public EventLogger(LogLevel prio, boolean removeWithProducer) {
 		logPrio = prio;
 		this.removeWithProducer = removeWithProducer;
 	}

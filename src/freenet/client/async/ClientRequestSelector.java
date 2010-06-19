@@ -24,6 +24,7 @@ import freenet.support.RandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
+import freenet.support.Logger.LogLevel;
 
 /** Chooses requests from both CRSCore and CRSNP */
 class ClientRequestSelector implements KeysFetchingLocally {
@@ -52,7 +53,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

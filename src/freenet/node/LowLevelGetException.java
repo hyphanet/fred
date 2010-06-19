@@ -3,8 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 public class LowLevelGetException extends Exception {
     private static volatile boolean logDEBUG;
@@ -14,7 +15,7 @@ public class LowLevelGetException extends Exception {
 
             @Override
             public void shouldUpdate() {
-                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+                logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
             }
         });
     }

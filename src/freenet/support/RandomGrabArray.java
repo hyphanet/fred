@@ -3,6 +3,7 @@ package freenet.support;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.support.Logger.LogLevel;
 
 /**
  * An array which supports very fast remove-and-return-a-random-element.
@@ -15,7 +16,7 @@ public class RandomGrabArray implements RemoveRandom {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

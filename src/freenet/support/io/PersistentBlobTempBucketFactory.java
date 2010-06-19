@@ -24,6 +24,7 @@ import freenet.client.async.DatabaseDisabledException;
 import freenet.node.Ticker;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 /**
@@ -47,7 +48,7 @@ public class PersistentBlobTempBucketFactory {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

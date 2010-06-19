@@ -8,6 +8,7 @@ import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class RedirectDirPutFile extends DirPutFile {
@@ -24,7 +25,7 @@ public class RedirectDirPutFile extends DirPutFile {
 		} catch (MalformedURLException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: "+e, identifier, global);
 		}
-        if(Logger.shouldLog(Logger.MINOR, this))
+        if(Logger.shouldLog(LogLevel.MINOR, this))
         	Logger.minor(this, "targetURI = "+targetURI);
 	}
 

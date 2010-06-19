@@ -24,6 +24,7 @@ import freenet.node.SendableRequest;
 import freenet.node.SendableRequestSender;
 import freenet.node.SupportsBulkCallFailure;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
@@ -105,11 +106,11 @@ public class PersistentChosenRequest {
 		sender = req.getSender(container, context);
 		if(!reqActive)
 			container.deactivate(req, 1);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	}
 
 	void onFinished(PersistentChosenBlock block, ClientContext context) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "onFinished() on "+this+" for "+block, new Exception("debug"));
 		synchronized(this) {

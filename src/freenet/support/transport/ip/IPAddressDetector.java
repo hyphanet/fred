@@ -13,6 +13,7 @@ import java.util.List;
 import freenet.io.AddressIdentifier;
 import freenet.node.NodeIPDetector;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * A class to autodetect our IP address(es)
@@ -75,7 +76,7 @@ public class IPAddressDetector implements Runnable {
 	 * Execute a checkpoint - detect our internet IP address and log it
 	 */
 	protected synchronized void checkpoint() {
-		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		List<InetAddress> addrs = new ArrayList<InetAddress>();
 
 		Enumeration<java.net.NetworkInterface> interfaces = null;
@@ -138,7 +139,7 @@ public class IPAddressDetector implements Runnable {
          * @return
          */
         protected InetAddress oldDetect() {
-		boolean shouldLog = Logger.shouldLog(Logger.DEBUG, this);
+		boolean shouldLog = Logger.shouldLog(LogLevel.DEBUG, this);
 		if (shouldLog)
 			Logger.debug(
 				this,
@@ -176,7 +177,7 @@ public class IPAddressDetector implements Runnable {
 	 */
 	protected void onGetAddresses(List<InetAddress> addrs) {
 		List<InetAddress> output = new ArrayList<InetAddress>();
-		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		if (logDEBUG)
 			Logger.debug(
 				this,

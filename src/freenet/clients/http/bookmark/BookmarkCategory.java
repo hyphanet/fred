@@ -1,7 +1,7 @@
 package freenet.clients.http.bookmark;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;

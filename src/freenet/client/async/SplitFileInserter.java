@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -16,12 +15,14 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.crypt.HashResult;
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
@@ -36,8 +37,8 @@ public class SplitFileInserter implements ClientPutState {
 
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -126,21 +127,26 @@ public class SplitFileInserter implements ClientPutState {
 			segmentSize = 128;
 			deductBlocksFromSegments = 0;
 		} else {
-			// Algorithm from evanbd, see bug #2931.
-			if(countDataBlocks > 520) {
-				segs = (int)Math.ceil(((double)countDataBlocks) / 128);
-			} else if(countDataBlocks > 393) {
-				//maxSegSize = 130;
-				segs = 4;
-			} else if(countDataBlocks > 266) {
-				//maxSegSize = 131;
-				segs = 3;
-			} else if(countDataBlocks > 136) {
-				//maxSegSize = 133;
-				segs = 2;
+			if(ctx.compatibilityMode == InsertContext.COMPAT_1251) {
+				// Max 131 blocks per segment.
+				segs = (int)Math.ceil(((double)countDataBlocks) / 131);
 			} else {
-				//maxSegSize = 136;
-				segs = 1;
+				// Algorithm from evanbd, see bug #2931.
+				if(countDataBlocks > 520) {
+					segs = (int)Math.ceil(((double)countDataBlocks) / 128);
+				} else if(countDataBlocks > 393) {
+					//maxSegSize = 130;
+					segs = 4;
+				} else if(countDataBlocks > 266) {
+					//maxSegSize = 131;
+					segs = 3;
+				} else if(countDataBlocks > 136) {
+					//maxSegSize = 133;
+					segs = 2;
+				} else {
+					//maxSegSize = 136;
+					segs = 1;
+				}
 			}
 			int segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
 			if(ctx.splitfileSegmentDataBlocks < segSize) {
@@ -149,6 +155,9 @@ public class SplitFileInserter implements ClientPutState {
 			}
 			segmentSize = segSize;
 			if(ctx.compatibilityMode == InsertContext.COMPAT_NONE || ctx.compatibilityMode >= InsertContext.COMPAT_1254) {
+				// Even with basic even segment splitting, it is possible for the last segment to be a lot smaller than the rest.
+				// So drop a single data block from each of the last [segmentSize-lastSegmentSize] segments instead.
+				// Hence all the segments are within 1 block of segmentSize.
 				int lastSegmentSize = countDataBlocks - (segmentSize * (segs - 1));
 				deductBlocksFromSegments = segmentSize - lastSegmentSize;
 			} else {

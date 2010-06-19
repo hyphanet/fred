@@ -15,6 +15,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 
@@ -47,7 +48,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		core = manager.node.clientCore;
 		this.revocationDNFCounter = 0;
 		this.blobFile = blobFile;
-		this.logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		ctxRevocation = core.makeClient((short)0, true).getFetchContext();
 		ctxRevocation.allowSplitfiles = false;
 		ctxRevocation.maxArchiveLevels = 1;
@@ -78,7 +79,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			return false;
 		}
 		boolean wasRunning = false;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		try {
 			ClientGetter cg = null;
 			ClientGetter toCancel = null;
@@ -192,7 +193,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	}
 	
 	void onFailure(FetchException e, ClientGetter state, File tmpBlobFile) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Revocation fetch failed: "+e);
 		int errorCode = e.getMode();
 		boolean completed = false;

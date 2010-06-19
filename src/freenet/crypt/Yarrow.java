@@ -25,6 +25,7 @@ import java.util.Properties;
 
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 
 /**
@@ -60,7 +61,7 @@ public class Yarrow extends RandomSource {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}
@@ -544,7 +545,7 @@ public class Yarrow extends RandomSource {
 			}
 			if(DEBUG)
 				//	    Core.logger.log(this,"Fast pool: "+fast_entropy+"\tSlow pool:
-				// "+slow_entropy, Logger.NORMAL);
+				// "+slow_entropy, LogLevel.NORMAL);
 				System.err.println("Fast pool: " + fast_entropy + "\tSlow pool: " + slow_entropy);
 		}
 		if(performedPoolReseed && (seedfile != null)) {

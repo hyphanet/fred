@@ -6,6 +6,7 @@ package freenet.support.io;
 import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class SerializableToFieldSetBucketUtil {
@@ -14,12 +15,12 @@ public class SerializableToFieldSetBucketUtil {
 	
 	public static Bucket create(SimpleFieldSet fs, RandomSource random, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		if(fs == null) {
-			if(Logger.shouldLog(Logger.MINOR, SerializableToFieldSetBucketUtil.class))
+			if(Logger.shouldLog(LogLevel.MINOR, SerializableToFieldSetBucketUtil.class))
 				Logger.minor(SerializableToFieldSetBucketUtil.class, "fs = null", new Exception("debug"));
 			return null;
 		}
 		String type = fs.get("Type");
-		if(Logger.shouldLog(Logger.MINOR, SerializableToFieldSetBucketUtil.class))
+		if(Logger.shouldLog(LogLevel.MINOR, SerializableToFieldSetBucketUtil.class))
 			Logger.minor(SerializableToFieldSetBucketUtil.class, "Creating: "+type);
 		if(type == null) {
 			throw new CannotCreateFromFieldSetException("No type");

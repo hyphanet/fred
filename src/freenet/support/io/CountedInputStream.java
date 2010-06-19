@@ -1,6 +1,8 @@
 package freenet.support.io;
 
-import java.io.*;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class CountedInputStream extends FilterInputStream {
 

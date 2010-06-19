@@ -2,10 +2,8 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
-import java.security.*;
-/*
-  Implements an SHA-1 digest using javax.crypto
-*/
+import java.security.DigestException;
+import java.security.MessageDigest;
 
 class JavaSHA1 implements Digest, Cloneable {
     

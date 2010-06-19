@@ -29,6 +29,7 @@ import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.TimeSortedHashtable;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
@@ -98,7 +99,7 @@ public class LocationManager implements ByteCounter {
         averageSwapTime = new BootstrappingDecayingRunningAverage(SEND_SWAP_INTERVAL, 0, Integer.MAX_VALUE, 20, null);
         timeLocSet = System.currentTimeMillis();
         
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
+        logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     }
 
     private double loc;

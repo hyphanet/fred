@@ -13,6 +13,7 @@ import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.util.Buffer;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
@@ -47,7 +48,7 @@ public abstract class FECCodec {
 	 * of check blocks, and the codec type. Normally for decoding.
 	 */
 	public static FECCodec getCodec(short splitfileType, int dataBlocks, int checkBlocks) {
-		if(Logger.shouldLog(Logger.MINOR, FECCodec.class))
+		if(Logger.shouldLog(LogLevel.MINOR, FECCodec.class))
 			Logger.minor(FECCodec.class, "getCodec: splitfileType="+splitfileType+" dataBlocks="+dataBlocks+" checkBlocks="+checkBlocks);
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
@@ -113,7 +114,7 @@ public abstract class FECCodec {
 
 	protected void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		loadFEC();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Doing decode: " + dataBlockStatus.length + " data blocks, " + checkBlockStatus.length + " check blocks, block length " + blockLength + " with " + this, new Exception("debug"));
 		if(dataBlockStatus.length + checkBlockStatus.length != n)
@@ -248,7 +249,7 @@ public abstract class FECCodec {
 		throws IOException {
 		if(bf == null) throw new NullPointerException();
 		loadFEC();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		//		Runtime.getRuntime().gc();
 //		Runtime.getRuntime().runFinalization();
 //		Runtime.getRuntime().gc();

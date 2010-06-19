@@ -4,7 +4,14 @@
 /* Freenet 0.7 node. */
 package freenet.node;
 
-import java.text.DecimalFormat;
+import static freenet.node.stats.DataStoreKeyType.CHK;
+import static freenet.node.stats.DataStoreKeyType.PUB_KEY;
+import static freenet.node.stats.DataStoreKeyType.SSK;
+import static freenet.node.stats.DataStoreType.CACHE;
+import static freenet.node.stats.DataStoreType.CLIENT;
+import static freenet.node.stats.DataStoreType.SLASHDOT;
+import static freenet.node.stats.DataStoreType.STORE;
+
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -18,11 +25,12 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.DecimalFormat;
 import java.util.Calendar;
-import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
@@ -31,10 +39,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
 
-import freenet.node.stats.DataStoreInstanceType;
-import freenet.node.stats.DataStoreStats;
-import freenet.node.stats.NotAvailNodeStoreStats;
-import freenet.node.stats.StoreCallbackStats;
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -111,6 +115,10 @@ import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FeedMessage;
+import freenet.node.stats.DataStoreInstanceType;
+import freenet.node.stats.DataStoreStats;
+import freenet.node.stats.NotAvailNodeStoreStats;
+import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
@@ -123,6 +131,7 @@ import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginStore;
 import freenet.store.BerkeleyDBFreenetStore;
+import freenet.store.BlockMetadata;
 import freenet.store.CHKStore;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
@@ -133,7 +142,6 @@ import freenet.store.SSKStore;
 import freenet.store.SlashdotStore;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
-import freenet.store.BlockMetadata;
 import freenet.store.FreenetStore.StoreType;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.Executor;
@@ -150,6 +158,7 @@ import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TokenBucket;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -160,11 +169,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
-
-import static freenet.node.stats.DataStoreKeyType.CHK;
-import static freenet.node.stats.DataStoreKeyType.PUB_KEY;
-import static freenet.node.stats.DataStoreKeyType.SSK;
-import static freenet.node.stats.DataStoreType.*;
 
 /**
  * @author amphibian
@@ -279,8 +283,8 @@ public class Node implements TimeSkewDetectorCallback {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -1537,7 +1541,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(db != null) {
 			db.commit();
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "COMMITTED");
 		}
 
 		// Must be created after darknetCrypto
@@ -1655,10 +1659,10 @@ public class Node implements TimeSkewDetectorCallback {
 				System.err.println("Forcing logging enabled (essential for testnet)");
 				logConfigHandler.forceEnableLogging();
 			}
-			int x = Logger.globalGetThreshold();
-			if(!((x == Logger.MINOR) || (x == Logger.DEBUG))) {
+			LogLevel x = Logger.globalGetThreshold();
+			if(!((x == LogLevel.MINOR) || (x == LogLevel.DEBUG))) {
 				System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
-				Logger.globalSetThreshold(Logger.MINOR);
+				Logger.globalSetThreshold(LogLevel.MINOR);
 			}
 			if(logConfigHandler.getMaxZippedLogFiles() < TESTNET_MIN_MAX_ZIPPED_LOGFILES) {
 				System.err.println("Forcing max zipped logfiles space to 256MB for testnet");
@@ -2572,7 +2576,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(db != null) {
 			db.commit();
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "COMMITTED");
 			try {
 				if(!clientCore.lateInitDatabase(nodeDBHandle, db))
 					failLateInitDatabase();
@@ -2789,7 +2793,7 @@ public class Node implements TimeSkewDetectorCallback {
 			e.printStackTrace();
 		}
 		// DUMP DATABASE CONTENTS
-		if(Logger.shouldLog(Logger.DEBUG, ClientRequestScheduler.class) && database != null) {
+		if(Logger.shouldLog(LogLevel.DEBUG, ClientRequestScheduler.class) && database != null) {
 		try {
 		System.err.println("DUMPING DATABASE CONTENTS:");
 		ObjectSet<Object> contents = database.queryByExample(new Object());
@@ -2910,7 +2914,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) throws IOException {
 		IoAdapter baseAdapter = dbConfig.io();
-		if(Logger.shouldLog(Logger.DEBUG, this))
+		if(Logger.shouldLog(LogLevel.DEBUG, this))
 			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
 		dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
 

@@ -3,6 +3,7 @@ package freenet.support;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Like RandomGrabArray, but there is an equal chance of any given client's requests being
@@ -15,7 +16,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

@@ -42,16 +42,17 @@ import freenet.node.Ticker;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.store.BlockMetadata;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
-import freenet.store.BlockMetadata;
 import freenet.support.BloomFilter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
@@ -121,8 +122,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback<T> callback, Random random, long maxKeys,
 	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, byte[] masterKey) throws IOException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 
 		this.baseDir = baseDir;
 		this.name = name;
@@ -368,6 +369,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		if (logMINOR)
 			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " (" + name + ")");
 
+		boolean rebuildBloom = false;
+		
 		try {
 			int retry = 0;
 			while (!configLock.readLock().tryLock(2, TimeUnit.SECONDS)) {
@@ -413,7 +416,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					// Overwrite old offset with same key
 					Entry entry = new Entry(routingKey, header, data, !isOldBlock, wrongStore);
 					writeEntry(entry, oldOffset);
-					onWrite();
+					rebuildBloom = onWrite();
 					if (oldEntry.generation != generation)
 						keyCount.incrementAndGet();
 					return true;
@@ -434,7 +437,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 								Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 							bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
 							writeEntry(entry, offset[i]);
-							onWrite();
+							rebuildBloom = onWrite();
 							keyCount.incrementAndGet();
 							return true;
 						} else if(((flag & Entry.ENTRY_WRONG_STORE) == Entry.ENTRY_WRONG_STORE)) {
@@ -475,7 +478,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 					bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
 					writeEntry(entry, offset[i]);
-					onWrite();
+					rebuildBloom = onWrite();
 					keyCount.incrementAndGet();
 					return true;
 				}
@@ -492,7 +495,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
 				oldEntry = readEntry(offset[0], null, false);
 				writeEntry(entry, offset[0]);
-				onWrite();
+				rebuildBloom = onWrite();
 				if (oldEntry.generation == generation)
 					bloomFilter.removeKey(oldEntry.getDigestedRoutingKey());
 				else
@@ -503,14 +506,23 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 		} finally {
 			configLock.readLock().unlock();
+			if(rebuildBloom)
+				rebuildBloom();
 		}
 	}
 
-	private void onWrite() {
-		if(writes.incrementAndGet() % (storeSize*2) == 0) {
+	private boolean onWrite() {
+		return (writes.incrementAndGet() % (storeSize*2) == 0);
+	}
+	
+	private void rebuildBloom() {
+		try {
+			configLock.writeLock().lock();
 			// Rebuild bloom filter.
 			flags |= FLAG_REBUILD_BLOOM;
 			checkBloom = false;
+		} finally {
+			configLock.writeLock().unlock();
 		}
 	}
 

@@ -18,7 +18,6 @@ import freenet.client.ArchiveHandler;
 import freenet.client.ArchiveManager;
 import freenet.client.ArchiveRestartException;
 import freenet.client.ClientMetadata;
-import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -33,6 +32,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -47,7 +47,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}
@@ -1114,6 +1114,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
+
+		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
 		
 	}
 
@@ -1213,6 +1217,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
+		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 		

@@ -2,13 +2,14 @@ package freenet.support.io;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
-import java.util.Random;
+import freenet.support.Logger.LogLevel;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FilenameGenerator {
@@ -72,7 +73,7 @@ public class FilenameGenerator {
 			String filename = prefix + Long.toHexString(randomFilename);
 			File ret = new File(tmpDir, filename);
 			if(!ret.exists()) {
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(Logger.shouldLog(LogLevel.MINOR, this))
 					Logger.minor(this, "Made random filename: "+ret, new Exception("debug"));
 				return randomFilename;
 			}

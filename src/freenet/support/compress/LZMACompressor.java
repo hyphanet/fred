@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import SevenZip.Compression.LZMA.Decoder;
 import SevenZip.Compression.LZMA.Encoder;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
@@ -27,7 +28,7 @@ public class LZMACompressor implements Compressor {
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		Bucket output;
 		output = bf.makeBucket(maxWriteLength);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
@@ -42,7 +43,7 @@ public class LZMACompressor implements Compressor {
         // enc.WriteCoderProperties( out );
         // 5d 00 00 10 00
         encoder.Code( cis, cos, -1, -1, null );
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+cis.count()+" written "+cos.written());
 		cis.close();
 		cos.close();
@@ -59,13 +60,13 @@ public class LZMACompressor implements Compressor {
 			output = preferred;
 		else
 			output = bf.makeBucket(maxLength);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
 		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
 		CountedOutputStream os = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
 		decompress(is, os, maxLength, maxCheckSizeLength);
 		os.close();
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count()+" written "+os.written());
 		return output;
 	}

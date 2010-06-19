@@ -13,6 +13,7 @@ import java.io.IOException;
 
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
@@ -141,7 +142,7 @@ public class FilePersistentConfig extends PersistentConfig {
 			throw new IllegalStateException("SHOULD NOT HAPPEN!!");
 
 		SimpleFieldSet fs = exportFieldSet();
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "fs = " + fs);
 		FileOutputStream fos = null;
 		try {

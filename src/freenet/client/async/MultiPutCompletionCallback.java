@@ -9,6 +9,7 @@ import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
@@ -19,7 +20,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}
@@ -240,7 +241,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			states = waitingFor.toArray(states);
 		}
-		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		for(int i=0;i<states.length;i++) {
 			if(persistent)
 				container.activate(states[i], 1);

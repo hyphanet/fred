@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
 
+import freenet.support.Logger.LogLevel;
+
 /**
  * This class contains static methods used for parsing boolean and unsigned
  * long fields in Freenet messages. Also some general utility methods for
@@ -700,11 +702,11 @@ public abstract class Fields {
 			String multiplier = s.substring(0, x + 1).trim();
 			if(multiplier.indexOf('.') > -1 || multiplier.indexOf('E') > -1) {
 				res *= Double.parseDouble(multiplier);
-				if(Logger.shouldLog(Logger.MINOR, Fields.class))
+				if(Logger.shouldLog(LogLevel.MINOR, Fields.class))
 					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as double: " + res);
 			} else {
 				res *= Long.parseLong(multiplier);
-				if(Logger.shouldLog(Logger.MINOR, Fields.class))
+				if(Logger.shouldLog(LogLevel.MINOR, Fields.class))
 					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as long: " + res);
 			}
 		} catch(ArithmeticException e) {

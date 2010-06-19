@@ -8,7 +8,6 @@ import java.net.UnknownHostException;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.ClientMetadata;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientPutCallback;
@@ -21,6 +20,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class NodeARKInserter implements ClientPutCallback, RequestClient {
@@ -43,7 +43,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		this.node = node;
 		this.crypto = crypto;
 		this.detector = detector;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(crypto.isOpennet) darknetOpennetString = "Opennet";
 		else darknetOpennetString = "Darknet";
 		this.enabled = enableARKs;
@@ -60,7 +60,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 	}
 	
 	public void update() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "update()");
 		if(!checkIPUpdated()) return;
 		// We'll broadcast the new physical.udp entry to our connected peers via a differential node reference

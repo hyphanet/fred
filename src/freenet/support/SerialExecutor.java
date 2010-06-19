@@ -4,6 +4,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import freenet.node.PrioRunnable;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 public class SerialExecutor implements Executor {
@@ -14,7 +15,7 @@ public class SerialExecutor implements Executor {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

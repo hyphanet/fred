@@ -17,6 +17,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClientImpl;
+import freenet.client.InsertContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.CHKBlock;
@@ -28,6 +29,7 @@ import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
@@ -45,7 +47,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}
@@ -195,6 +197,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
 
 		this.token = token2;
+		
+		long minCompatMode = -1;
+		long maxCompatMode = -1;
 
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
@@ -215,7 +220,29 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				blocksPerSegment = Fields.bytesToInt(params, 0);
 				checkBlocks = Fields.bytesToInt(params, 4);
 				deductBlocksFromSegments = 0;
+				int countDataBlocks = splitfileDataBlocks.length;
+				int countCheckBlocks = splitfileCheckBlocks.length;
+				if(countDataBlocks == countCheckBlocks) {
+					// No extra check blocks, so before 1251.
+					if(blocksPerSegment == 128) {
+						// Is the last segment small enough that we can't have used even splitting?
+						int segs = (int)Math.ceil(((double)countDataBlocks) / 128);
+						int segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+						if(segSize == 128) {
+							// Could be either
+							minCompatMode = InsertContext.COMPAT_1250_EXACT;
+							maxCompatMode = InsertContext.COMPAT_1250;
+						} else {
+							minCompatMode = maxCompatMode = InsertContext.COMPAT_1250_EXACT;
+						}
+					} else {
+						minCompatMode = maxCompatMode = InsertContext.COMPAT_1250_EXACT;
+					}
+				} else {
+					minCompatMode = maxCompatMode = InsertContext.COMPAT_1251;
+				}
 			} else {
+				minCompatMode = maxCompatMode = InsertContext.COMPAT_1254;
 				if(params.length < 10)
 					throw new MetadataParseException("Splitfile parameters too short for version 1");
 				short paramsType = Fields.bytesToShort(params, 0);
@@ -229,6 +256,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				} else
 					deductBlocksFromSegments = 0;
 			}
+			
+			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, container, context);
 
 			// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
 			// Work around a bug around build 1135.

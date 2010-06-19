@@ -25,6 +25,7 @@ import freenet.l10n.NodeL10n;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 
@@ -127,7 +128,7 @@ public class TestnetHandler implements Runnable {
 		
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			InputStream is = null;
 			OutputStream os = null;
 			try {

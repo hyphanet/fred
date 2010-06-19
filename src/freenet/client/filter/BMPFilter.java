@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -13,7 +12,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**

@@ -22,6 +22,7 @@ import freenet.node.PeerNode;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
@@ -49,13 +50,13 @@ public class RealNodeSecretPingTest {
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
 	
     public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
-        //Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
+        //Logger.setupStdoutLogging(LogLevel.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         System.out.println("SecretPing (CRAM) test using real nodes:");
         System.out.println();
         String wd = "realNodeSecretPingTest";
         new File(wd).mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(wd, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeSecretPingTest:normal,freenet.node.NetworkIDManager:normal", true);
+        NodeStarter.globalTestInit(wd, false, LogLevel.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeSecretPingTest:normal,freenet.node.NetworkIDManager:normal", true);
 
         DummyRandomSource random = new DummyRandomSource();
         //DiffieHellman.init(random);

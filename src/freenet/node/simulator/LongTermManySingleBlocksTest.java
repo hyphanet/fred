@@ -10,7 +10,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -38,6 +37,7 @@ import freenet.node.Version;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
@@ -201,7 +201,7 @@ public class LongTermManySingleBlocksTest {
 			
 			final File dir = new File("longterm-mhk-test-" + uid);
 			FileUtil.removeAll(dir);
-			RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, Logger.ERROR, "", false);
+			RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, LogLevel.ERROR, "", false);
 			File seednodes = new File("seednodes.fref");
 			if (!seednodes.exists() || seednodes.length() == 0 || !seednodes.canRead()) {
 				System.err.println("Unable to read seednodes.fref, it doesn't exist, or is empty");
@@ -218,7 +218,7 @@ public class LongTermManySingleBlocksTest {
 			node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, Node.DEFAULT_MAX_HTL,
 			        0, random, new PooledExecutor(), 1000, 4 * 1024 * 1024, true, true, true, true, true, true, true,
 			        12 * 1024, true, true, false, false, null);
-			Logger.getChain().setThreshold(Logger.ERROR);
+			Logger.getChain().setThreshold(LogLevel.ERROR);
 
 			// Start it
 			node.start(true);

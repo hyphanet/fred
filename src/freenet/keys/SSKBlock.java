@@ -6,9 +6,10 @@ package freenet.keys;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import net.i2p.util.NativeBigInteger;
+
 import com.db4o.ObjectContainer;
 
-import net.i2p.util.NativeBigInteger;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;

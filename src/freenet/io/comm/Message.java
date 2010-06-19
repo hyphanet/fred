@@ -31,10 +31,11 @@ import java.util.List;
 
 import freenet.support.ByteBufferInputStream;
 import freenet.support.Fields;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.Serializer;
 import freenet.support.ShortBuffer;
+import freenet.support.Logger.LogLevel;
 
 /**
  * A Message which can be read from and written to a DatagramPacket
@@ -51,8 +52,8 @@ public class Message {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}

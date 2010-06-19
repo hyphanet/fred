@@ -8,8 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.support.Logger;
-import freenet.support.api.BucketFactory;
-import freenet.support.io.PersistentFileTracker;
+import freenet.support.compress.Compressor;
 
 /** Context object for an insert operation, including both simple and multi-file inserts */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
@@ -59,10 +58,12 @@ public class InsertContext implements Cloneable {
 	public static final long COMPAT_1250_EXACT = 1;
 	/** 1250 or previous: Segments up to 128 data 128 check, check <= data. */
 	public static final long COMPAT_1250 = 2;
+	/** 1251/2/3: Basic even splitting, 1 extra check block if data blocks < 128, max 131 data blocks. */
+	public static final long COMPAT_1251 = 3;
 	/** 1254: Second stage of even splitting, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. */
-	public static final long COMPAT_1254 = 3;
+	public static final long COMPAT_1254 = 4;
 	/** Allow hashes, new format metadata */
-	public static final long COMPAT_HASHES = 4;
+	public static final long COMPAT_HASHES = 5;
 
 	public InsertContext(
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,

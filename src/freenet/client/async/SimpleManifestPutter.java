@@ -13,10 +13,10 @@ import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import com.db4o.ObjectContainer;
-
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarOutputStream;
+
+import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
@@ -32,6 +32,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
@@ -46,8 +47,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -129,7 +130,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		@Override
 		public void cancel(ObjectContainer container, ClientContext context) {
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(Logger.shouldLog(LogLevel.MINOR, this))
 				Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 			ClientPutState oldState = null;
 			synchronized(this) {
@@ -628,7 +629,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				putHandlersByName.put(name, subMap);
 				makePutHandlers(Metadata.forceMap(o), subMap, ZipPrefix+name+ '/', persistent);
-				if(Logger.shouldLog(Logger.DEBUG, this))
+				if(Logger.shouldLog(LogLevel.DEBUG, this))
 					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+((HashMap)o).size());
 			} else {
 				ManifestElement element = (ManifestElement) o;

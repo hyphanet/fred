@@ -17,6 +17,7 @@ import freenet.support.Logger;
 import freenet.support.LoggerHook;
 import freenet.support.LoggerHookChain;
 import freenet.support.FileLoggerHook.IntervalParseException;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
@@ -30,7 +31,7 @@ public class LoggingConfigHandler {
 		@Override
 		public String get() {
 			LoggerHookChain chain = Logger.getChain();
-			return LoggerHook.priorityOf(chain.getThreshold());
+			return chain.getThreshold().name();
 		}
 		@Override
 		public void set(String val) throws InvalidConfigValueException {
@@ -285,7 +286,7 @@ public class LoggingConfigHandler {
 			try {
 				hook = 
 					new FileLoggerHook(true, new File(logDir, LOG_PREFIX).getAbsolutePath(), 
-				    		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.DEBUG /* filtered by chain */, false, true, 
+				    		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", LogLevel.DEBUG /* filtered by chain */, false, true, 
 				    		maxZippedLogsSize /* 1GB of old compressed logfiles */, maxCachedLogLines);
 			} catch (IOException e) {
 				System.err.println("CANNOT START LOGGER: "+e.getMessage());

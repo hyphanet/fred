@@ -18,6 +18,7 @@ import freenet.io.WritableToDataOutputStream;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
@@ -152,7 +153,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 	    if(maxLength < 0)
 		    throw new IllegalArgumentException("maxlength="+maxLength);
         if(isCompressed) {
-        	if(Logger.shouldLog(Logger.MINOR, Key.class))
+        	if(Logger.shouldLog(LogLevel.MINOR, Key.class))
         		Logger.minor(Key.class, "Decompressing "+output.length+" bytes in decode with codec "+compressionAlgorithm);
             if(output.length < (shortLength ? 3 : 5)) throw new CHKDecodeException("No bytes to decompress");
             // Decompress

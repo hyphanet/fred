@@ -46,6 +46,7 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.SortedLongSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
@@ -197,8 +198,8 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			File fixSecondaryFile, long maxChkBlocks, boolean wipe, SemiOrderedShutdownHook storeShutdownHook,
 			File reconstructFile,
 			StoreCallback<T> callback, RandomSource random) throws IOException, DatabaseException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		
 		this.random = random;
 		this.environment = env;
@@ -1894,7 +1895,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			//			before we try to close it. Currently we just guess
 			//			This is nothing too problematic however since the worst thing that should
 			//			happen is that we miss the last few store()'s and get an exception.
-			logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Closing database "+this);
 			
 			synchronized (this) {

@@ -15,6 +15,7 @@ import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.CountedInputStream;
 
 /**
@@ -64,7 +65,7 @@ public class JPEGFilter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb, boolean deleteComments, boolean deleteExif)
 	throws DataFilterException, IOException {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		long length = input.available();
 		if(length < 6) {
 			throwError(l10n("tooShortTitle"), l10n("tooShort"));
@@ -401,7 +402,7 @@ public class JPEGFilter implements ContentDataFilter {
 		if(shortReason != null)
 			message += " - " + shortReason;
 		DataFilterException e = new DataFilterException(shortReason, shortReason, message);
-		if(Logger.shouldLog(Logger.NORMAL, this))
+		if(Logger.shouldLog(LogLevel.NORMAL, this))
 			Logger.normal(this, "Throwing "+e, e);
 		throw e;
 	}
