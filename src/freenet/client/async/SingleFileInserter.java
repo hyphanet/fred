@@ -79,7 +79,7 @@ class SingleFileInserter implements ClientPutState {
 	private final boolean forSplitfile;
 	private final long origDataLength;
 	private final long origCompressedDataLength;
-	private final HashResult[] origHashes;
+	private HashResult[] origHashes;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -862,8 +862,16 @@ class SingleFileInserter implements ClientPutState {
 			if(!(ctx.compatibilityMode == 0 || ctx.compatibilityMode >= InsertContext.COMPAT_1254))
 				m = null;
 			InsertBlock newBlock = new InsertBlock(metadataBucket, m, block.desiredURI);
+			if(persistent)
+				container.activate(SingleFileInserter.this, 1);
 				synchronized(this) {
 					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes);
+					if(origHashes != null) {
+						// It gets passed on, and the last one deletes it.
+						SingleFileInserter.this.origHashes = null;
+						if(persistent)
+							container.store(SingleFileInserter.this);
+					}
 					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
 					// Otherwise, wait until the data is fetchable (to improve persistence).
 					if(logMINOR)
