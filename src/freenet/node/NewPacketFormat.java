@@ -309,6 +309,8 @@ public class NewPacketFormat implements PacketFormat {
 		int dataLength = fragmentInfo[0];
 		int fragmentOffset = fragmentInfo[1];
 
+		if(dataLength == 0) return offset;
+
 		// Add messageID and flags
 		int messageID = wrapper.getMessageID();
 		if(messageID != (messageID & 0x7FFF)) {
