@@ -113,6 +113,20 @@ public class MessageWrapper {
 	public boolean isLongMessage() {
 		return isLongMessage;
 	}
+
+	public boolean isFragmented(int length) {
+		if(length > item.buf.length) {
+			//Can't send everything, so we have to fragment
+			return true;
+		}
+
+		if(sent.isEmpty() && acks.isEmpty()) {
+			//We haven't sent anything yet, so we can send it in one fragment
+			return false;
+		}
+
+		return true;
+	}
 	
 	private class RangeComparator implements Comparator<int[]> {
 
@@ -192,6 +206,10 @@ public class MessageWrapper {
 
 			set.addAll(toAdd);
 		}
+	}
+
+	public boolean isFirstFragment() {
+		return sent.isEmpty() && acks.isEmpty();
 	}
 
 }

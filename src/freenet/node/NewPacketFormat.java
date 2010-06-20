@@ -297,12 +297,17 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private int insertFragment(byte[] packet, int offset, int maxPacketSize, MessageWrapper wrapper, SentPacket sent) {
-		// Insert data
-		int[] added = wrapper.getData(packet, offset + (wrapper.isLongMessage() ? 5 : 2),
-		                maxPacketSize - offset);
+		boolean isFragmented = wrapper.isFragmented(maxPacketSize - offset - 7); //7 is the maximum header length
+		boolean firstFragment = wrapper.isFirstFragment();
 		
-		boolean isFragmented = added[0] != wrapper.getLength();
-		boolean firstFragment = added[1] == 0;
+		// Insert data
+		int dataOffset = offset
+		                + 2 //Message id + flags
+		                + (wrapper.isLongMessage() ? 2 : 1) //Fragment length
+		                + (isFragmented ? (wrapper.isLongMessage() ? 3 : 1) : 0); //Fragment offset or message length
+		int[] fragmentInfo = wrapper.getData(packet, dataOffset, maxPacketSize - dataOffset);
+		int dataLength = fragmentInfo[0];
+		int fragmentOffset = fragmentInfo[1];
 
 		// Add messageID and flags
 		int messageID = wrapper.getMessageID();
@@ -319,12 +324,12 @@ public class NewPacketFormat implements PacketFormat {
 		packet[offset++] = (byte) (messageID);
 
 		// Add fragment length, 2 bytes if long message
-		if(wrapper.isLongMessage()) packet[offset++] = (byte) (added[0] >>> 8);
-		packet[offset++] = (byte) (added[0]);
+		if(wrapper.isLongMessage()) packet[offset++] = (byte) (dataLength >>> 8);
+		packet[offset++] = (byte) (dataLength);
 
 		if(isFragmented) {
 			// If firstFragment is true, add total message length. Else, add fragment offset
-			int value = firstFragment ? wrapper.getLength() : added[1];
+			int value = firstFragment ? wrapper.getLength() : fragmentOffset;
 
 			if(wrapper.isLongMessage()) {
 				packet[offset++] = (byte) (value >>> 16);
@@ -333,8 +338,8 @@ public class NewPacketFormat implements PacketFormat {
 			packet[offset++] = (byte) (value);
 		}
 
-		offset += added[0];
-		sent.addFragment(wrapper, added[1], added[1] + added[0] - 1);
+		offset += dataLength;
+		sent.addFragment(wrapper, fragmentOffset, fragmentOffset + dataLength - 1);
 
 		return offset;
 	}
