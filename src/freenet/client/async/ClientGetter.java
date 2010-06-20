@@ -292,13 +292,11 @@ public class ClientGetter extends BaseClientGetter {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
 				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 				assert(data != returnBucket);
-				output = finalResult.getOutputStream();
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
 				output.close();
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
-				result.asBucket().free();
-				result = new FetchResult(new ClientMetadata(detectedMIMEType), finalResult);
+				result = new FetchResult(new ClientMetadata(detectedMIMEType), result.asBucket());
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
@@ -325,7 +323,6 @@ public class ClientGetter extends BaseClientGetter {
 			if(logMINOR) Logger.minor(this, "The final result has not been written. Writing now.");
 			try {
 				FileUtil.copy(input, output, -1);
-				result = new FetchResult(result, finalResult);
 			}
 			catch(IOException e) {
 				Logger.error(this, "Caught "+e, e);
@@ -333,31 +330,6 @@ public class ClientGetter extends BaseClientGetter {
 				return;
 			}
 		}
-		/*if(returnBucket == null) if(logMINOR) Logger.minor(this, "Returnbucket is null");
-		if((returnBucket != null) && (data != returnBucket)) {
-			Bucket from = data;
-			Bucket to = returnBucket;
-			try {
-				if(logMINOR)
-					Logger.minor(this, "Copying - returnBucket not respected by client.async");
-				if(persistent()) {
-					container.activate(from, 5);
-					container.activate(returnBucket, 5);
-				}
-				BucketTools.copy(from, to);
-				from.free();
-				if(persistent())
-					from.removeFrom(container);
-			} catch (IOException e) {
-				Logger.error(this, "Error copying from "+from+" to "+to+" : "+e.toString(), e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state , container, context);
-				return;
-			}
-			result = new FetchResult(result, to);
-		} else {
-			if(returnBucket != null && logMINOR)
-				Logger.minor(this, "client.async returned data in returnBucket");
-		}*/
 		if(persistent()) {
 			container.activate(state, 1);
 			state.removeFrom(container, context);
@@ -372,6 +344,9 @@ public class ClientGetter extends BaseClientGetter {
 				return;
 			}
 		}
+		result.asBucket().free();
+		result = new FetchResult(result, finalResult);
+
 		clientCallback.onSuccess(result, ClientGetter.this, container);
 	}
 
