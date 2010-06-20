@@ -47,6 +47,10 @@ public class MessageWrapper {
 	                }
                 }
 		
+		if(start >= item.buf.length) {
+			return new int[] {0, 0};
+		}
+
 		//Copy start to end into dest
 		int realLength = Math.min((end - start), length);
 		realLength = Math.min(realLength, item.buf.length - start);
