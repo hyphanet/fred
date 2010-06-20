@@ -123,6 +123,10 @@ public class NewPacketFormat implements PacketFormat {
 				fragmentLength = ((plaintext[offset] & 0xFF) << 8) | (plaintext[offset + 1] & 0xFF);
 				offset += 2;
 			}
+			if(fragmentLength < 0) {
+				Logger.warning(this, "Read fragment length < 0 from offset " + (shortMessage ? offset - 1 : offset - 2) + ". Probably a bug");
+				return;
+			}
 
 			int messageLength = fragmentLength;
 			int fragmentOffset = 0;
@@ -133,6 +137,10 @@ public class NewPacketFormat implements PacketFormat {
 				} else {
 					value = ((plaintext[offset] & 0xFF) << 16) | ((plaintext[offset + 1] & 0xFF) << 8) | (plaintext[offset + 2] & 0xFF);
 					offset += 3;
+				}
+				if(value < 0) {
+					Logger.warning(this, "Read value < 0 from offset " + (shortMessage ? offset - 1 : offset - 3) + ". Probably a bug");
+					return;
 				}
 
 				if(firstFragment) messageLength = value;
