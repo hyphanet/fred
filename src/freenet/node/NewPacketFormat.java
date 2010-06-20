@@ -72,7 +72,10 @@ public class NewPacketFormat implements PacketFormat {
 		System.arraycopy(buf, offset, plaintext, 0, (length - HMAC_LENGTH));
 		offset = 0;
 
-		long sequenceNumber = (plaintext[offset] << 24) | (plaintext[offset + 1] << 16) | (plaintext[offset + 2] << 8) | plaintext[offset + 3];
+		long sequenceNumber = ((plaintext[offset] & 0xFF) << 24)
+		                | ((plaintext[offset + 1] & 0xFF) << 16)
+				| ((plaintext[offset + 2] & 0xFF) << 8)
+				| (plaintext[offset + 3] & 0xFF);
 		offset += 4;
 
 		//Process received acks
