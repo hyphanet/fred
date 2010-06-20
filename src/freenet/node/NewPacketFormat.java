@@ -306,7 +306,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 		messageID = messageID & 0x7FFF; // Make sure the flag bits are 0
 
-		if(wrapper.isLongMessage()) messageID = messageID | 0x8000;
+		if(!wrapper.isLongMessage()) messageID = messageID | 0x8000;
 		if(isFragmented) messageID = messageID | 0x4000;
 		if(firstFragment) messageID = messageID | 0x2000;
 
