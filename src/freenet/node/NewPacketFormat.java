@@ -261,6 +261,8 @@ public class NewPacketFormat implements PacketFormat {
 			while (it.hasNext() && numAcks < 256) {
 				long ack = it.next();
 				if(numAcks == 0) {
+					if(logMINOR) Logger.minor(this, "First ack in packet to send is " + ack);
+
 					firstAck = ack;
 
 					packet[offset++] = (byte) (ack >>> 24);
