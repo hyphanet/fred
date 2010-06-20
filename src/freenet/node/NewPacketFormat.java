@@ -252,7 +252,7 @@ public class NewPacketFormat implements PacketFormat {
 	
 	private int insertAcks(byte[] packet, int offset) {
 		int numAcks = 0;
-		int numAcksOffset = offset;
+		int numAcksOffset = offset++;
 
 		// Insert acks
 		synchronized(acks) {
