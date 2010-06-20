@@ -85,7 +85,7 @@ public class NewPacketFormat implements PacketFormat {
 					firstAck = ((plaintext[offset] & 0xFF) << 24) | ((plaintext[offset + 1] & 0xFF) << 16) | ((plaintext[offset + 2] & 0xFF) << 8) | (plaintext[offset + 3] & 0xFF);
 					offset += 4;
 				} else {
-					ack = plaintext[offset++];
+					ack = plaintext[offset++] & 0xFF;
 				}
 
 				SentPacket sent = null;
