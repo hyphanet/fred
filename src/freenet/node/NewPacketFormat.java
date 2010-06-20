@@ -68,21 +68,24 @@ public class NewPacketFormat implements PacketFormat {
 		offset += HMAC_LENGTH;
 
 		// TODO: Decrypt
+		byte[] plaintext = new byte[length - HMAC_LENGTH];
+		System.arraycopy(buf, offset, plaintext, 0, (length - HMAC_LENGTH));
+		offset = 0;
 
-		long sequenceNumber = (buf[offset] << 24) | (buf[offset + 1] << 16) | (buf[offset + 2] << 8) | buf[offset + 3];
+		long sequenceNumber = (plaintext[offset] << 24) | (plaintext[offset + 1] << 16) | (plaintext[offset + 2] << 8) | plaintext[offset + 3];
 		offset += 4;
 
 		//Process received acks
-		int numAcks = buf[offset++] & 0xFF;
+		int numAcks = plaintext[offset++] & 0xFF;
 		if(numAcks > 0) {
 			long firstAck = 0;
 			for (int i = 0; i < numAcks; i++) {
 				long ack = 0;
 				if(i == 0) {
-					firstAck = ((buf[offset] & 0xFF) << 24) | ((buf[offset + 1] & 0xFF) << 16) | ((buf[offset + 2] & 0xFF) << 8) | (buf[offset + 3] & 0xFF);
+					firstAck = ((plaintext[offset] & 0xFF) << 24) | ((plaintext[offset + 1] & 0xFF) << 16) | ((plaintext[offset + 2] & 0xFF) << 8) | (plaintext[offset + 3] & 0xFF);
 					offset += 4;
 				} else {
-					ack = buf[offset++];
+					ack = plaintext[offset++];
 				}
 
 				SentPacket sent = null;
@@ -98,18 +101,18 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		//Handle received message fragments
-		while(offset < buf.length) { //FIXME: Wrong if offset doesn't start at 0
-			boolean shortMessage = (buf[offset] & 0x80) != 0;
-			boolean isFragmented = (buf[offset] & 0x40) != 0;
-			boolean firstFragment = (buf[offset] & 0x20) != 0;
-			int messageID = ((buf[offset] & 0x1F) << 8) | (buf[offset + 1] & 0xFF);
+		while(offset < plaintext.length) {
+			boolean shortMessage = (plaintext[offset] & 0x80) != 0;
+			boolean isFragmented = (plaintext[offset] & 0x40) != 0;
+			boolean firstFragment = (plaintext[offset] & 0x20) != 0;
+			int messageID = ((plaintext[offset] & 0x1F) << 8) | (plaintext[offset + 1] & 0xFF);
 			offset += 2;
 
 			int fragmentLength;
 			if(shortMessage) {
-				fragmentLength = buf[offset++];
+				fragmentLength = plaintext[offset++];
 			} else {
-				fragmentLength = ((buf[offset] & 0xFF) << 8) | (buf[offset + 1] & 0xFF);
+				fragmentLength = ((plaintext[offset] & 0xFF) << 8) | (plaintext[offset + 1] & 0xFF);
 				offset += 2;
 			}
 
@@ -118,9 +121,9 @@ public class NewPacketFormat implements PacketFormat {
 			if(isFragmented) {
 				int value;
 				if(shortMessage) {
-					value = buf[offset++];
+					value = plaintext[offset++];
 				} else {
-					value = (buf[offset] << 16) | (buf[offset + 1] << 8) | buf[offset + 2];
+					value = (plaintext[offset] << 16) | (plaintext[offset + 1] << 8) | plaintext[offset + 2];
 					offset += 3;
 				}
 
@@ -141,7 +144,7 @@ public class NewPacketFormat implements PacketFormat {
 				receiveMaps.put(messageID, recvMap);
 			}
 
-			System.arraycopy(buf, offset, recvBuf, fragmentOffset, fragmentLength);
+			System.arraycopy(plaintext, offset, recvBuf, fragmentOffset, fragmentLength);
 			recvMap.add(fragmentOffset, fragmentOffset + fragmentLength - 1);
 			offset += fragmentLength;
 
