@@ -143,6 +143,11 @@ public class MessageWrapper {
 		}
 
 		synchronized(set) {
+			if(set.size() == 0) {
+				set.add(new int[] {start, end});
+				return;
+			}
+
 			Iterator<int[]> it = set.iterator();
 			while (it.hasNext()) {
 				int[] range = it.next();
