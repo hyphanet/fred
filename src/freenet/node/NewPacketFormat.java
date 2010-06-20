@@ -194,6 +194,7 @@ public class NewPacketFormat implements PacketFormat {
 		byte[] packet = new byte[maxPacketSize];
 
 		offset = insertAcks(packet, offset);
+		int fragmentsStart = offset;
 
 		// Try to finish Messages that have been started
 		synchronized(started) {
@@ -257,8 +258,10 @@ public class NewPacketFormat implements PacketFormat {
 			return false;
                 }
 
-		synchronized(sentPackets) {
-			sentPackets.put(sequenceNumber, sentPacket);
+		if(offset != fragmentsStart) {
+			synchronized(sentPackets) {
+				sentPackets.put(sequenceNumber, sentPacket);
+			}
 		}
 		return true;
 	}
