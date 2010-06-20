@@ -14,6 +14,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
@@ -68,7 +69,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
         this.counter = 1;
         this.linearCounter = 1;
         this.uniqueCounter = 1;
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
+        logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     	updateBest();
     	if(target < 0.0 || target > 1.0)
     		throw new IllegalArgumentException();

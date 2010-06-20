@@ -7,10 +7,10 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
-import freenet.l10n.NodeL10n;
 
 /**
  * Simple Help Toadlet.  Provides an offline means of looking up some basic info, howtos, and FAQ

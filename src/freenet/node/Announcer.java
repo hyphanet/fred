@@ -28,6 +28,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.transport.ip.IPUtil;
 
@@ -72,7 +73,7 @@ public class Announcer {
 		this.node = om.node;
 		announcedToIdentities = new HashSet<ByteArrayWrapper>();
 		announcedToIPs = new HashSet<InetAddress>();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	}
 
 	protected void start() {
@@ -374,7 +375,7 @@ public class Announcer {
 		synchronized(this) {
 			if(!started) return;
 		}
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "maybeSendAnnouncement()");
 		long now = System.currentTimeMillis();

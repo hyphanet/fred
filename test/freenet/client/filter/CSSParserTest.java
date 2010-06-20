@@ -28,6 +28,7 @@ import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.Bucket;
@@ -724,7 +725,7 @@ public class CSSParserTest extends TestCase {
 	
 	public void setUp() throws InvalidThresholdException {
 		new NodeL10n();
-    	//Logger.setupStdoutLogging(Logger.MINOR, "freenet.client.filter:DEBUG");
+    	//Logger.setupStdoutLogging(LogLevel.MINOR, "freenet.client.filter:DEBUG");
     	ContentFilter.init();
     	cssMIMEType = ContentFilter.getMIMEType("text/css");
 	}

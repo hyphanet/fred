@@ -3,9 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
-import java.io.*;
 import java.util.Random;
+
+import net.i2p.util.NativeBigInteger;
 
 import com.db4o.ObjectContainer;
 
@@ -13,8 +16,6 @@ import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
-
-import net.i2p.util.NativeBigInteger;
 
 public class DSAPrivateKey extends CryptoKey {
 	private static final long serialVersionUID = -1;

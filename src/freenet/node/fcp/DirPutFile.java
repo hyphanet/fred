@@ -10,6 +10,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ManifestElement;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -69,7 +70,7 @@ abstract class DirPutFile {
 		String n = name;
 		int idx = n.lastIndexOf('/');
 		if(idx != -1) n = n.substring(idx+1);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Element name: "+name+" -> "+n);
 		return new ManifestElement(n, getData(), getMIMEType(), getData().size());
 	}

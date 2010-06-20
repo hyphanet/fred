@@ -16,9 +16,9 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.HashMap;
 
-import freenet.l10n.NodeL10n;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
@@ -26,7 +26,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
-		if (Logger.shouldLog(Logger.DEBUG, this))
+		if (Logger.shouldLog(LogLevel.DEBUG, this))
 			Logger.debug(
 				this,
 				"running "
@@ -59,9 +59,9 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	public String getCharset(byte [] input, int length, String charset) throws DataFilterException, IOException {
-		if(Logger.shouldLog(Logger.DEBUG, this))
+		if(Logger.shouldLog(LogLevel.DEBUG, this))
 			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
-		if(input.length > getCharsetBufferSize() && Logger.shouldLog(Logger.MINOR, this)) {
+		if(input.length > getCharsetBufferSize() && Logger.shouldLog(LogLevel.MINOR, this)) {
 			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
 		}
 		InputStream strm = new ByteArrayInputStream(input, 0, length);

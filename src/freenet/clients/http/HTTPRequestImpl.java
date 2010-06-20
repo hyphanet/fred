@@ -27,6 +27,7 @@ import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
@@ -169,7 +170,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 */
 	private void parseRequestParameters(String queryString, boolean doUrlDecoding, boolean asParts) {
 
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "queryString is "+queryString+", doUrlDecoding="+doUrlDecoding);
 		
 		// nothing to do if there was no query string in the URI
@@ -392,7 +393,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		OutputStream bbos = null;
 
 		try {
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			if(data == null)
 				return;
 			String ctype = this.headers.get("content-type");
@@ -483,7 +484,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 					}
 					else if(hdrname.equalsIgnoreCase("Content-Type")) {
 						contentType = lineparts[1].trim();
-						if(Logger.shouldLog(Logger.MINOR, this))
+						if(Logger.shouldLog(LogLevel.MINOR, this))
 							Logger.minor(this, "Parsed type: " + contentType);
 					}
 					else {

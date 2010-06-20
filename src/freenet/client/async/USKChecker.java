@@ -11,6 +11,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSKBlock;
 import freenet.node.LowLevelGetException;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Checks a single USK slot.
@@ -22,7 +23,7 @@ class USKChecker extends BaseSingleFileFetcher {
 
 	USKChecker(USKCheckerCallback cb, ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(key, maxRetries, ctx, parent, false);
-        if(Logger.shouldLog(Logger.MINOR, this))
+        if(Logger.shouldLog(LogLevel.MINOR, this))
         	Logger.minor(this, "Created USKChecker for "+key);
 		this.cb = cb;
 	}
@@ -42,7 +43,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			container.activate(this, 1);
 			container.activate(cb, 1);
 		}
-        if(Logger.shouldLog(Logger.MINOR, this))
+        if(Logger.shouldLog(LogLevel.MINOR, this))
         	Logger.minor(this, "onFailure: "+e+" for "+this);
 		// Firstly, can we retry?
 		boolean canRetry;

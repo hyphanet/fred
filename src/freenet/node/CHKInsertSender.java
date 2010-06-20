@@ -22,6 +22,7 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, ByteCounter {
@@ -185,7 +186,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.startTime = System.currentTimeMillis();
         this.backgroundTransfers = new Vector<BackgroundTransfer>();
         this.forkOnCacheable = forkOnCacheable;
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
+        logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     }
 
 	void start() {

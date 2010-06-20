@@ -19,10 +19,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.TreeSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 import java.util.jar.Attributes;
 import java.util.jar.JarException;
@@ -43,9 +43,8 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
-import freenet.l10n.BaseL10n.LANGUAGE;
-import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
+import freenet.l10n.BaseL10n.LANGUAGE;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -61,6 +60,7 @@ import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.SerialExecutor;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
@@ -103,8 +103,8 @@ public class PluginManager {
 	static final short PRIO = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
 
 	public PluginManager(Node node, int lastVersion) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		// config
 
 		toadletList = new HashMap<String, FredPlugin>();
@@ -722,6 +722,13 @@ public class PluginManager {
 	 *            The plugin specification
 	 */
 	public void removeCachedCopy(String pluginSpecification) {
+		if(pluginSpecification == null) {
+			// Will be null if the file for a given plugin can't be found, eg. if it has already been
+			// removed. Ignore it since the file isn't there anyway
+			Logger.warning(this, "Can't remove null from cache. Ignoring");
+			return;
+		}
+
 		int lastSlash = pluginSpecification.lastIndexOf('/');
 		String pluginFilename;
 		if(lastSlash == -1)

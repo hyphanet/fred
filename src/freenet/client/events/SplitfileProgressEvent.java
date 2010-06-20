@@ -5,8 +5,9 @@ package freenet.client.events;
 
 import com.db4o.ObjectContainer;
 
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 public class SplitfileProgressEvent implements ClientEvent {
 	private static volatile boolean logMINOR;
@@ -15,7 +16,7 @@ public class SplitfileProgressEvent implements ClientEvent {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}
@@ -47,12 +48,12 @@ public class SplitfileProgressEvent implements ClientEvent {
 		if((minSuccessfulBlocks == 0) && (succeedBlocks == 0))
 			minSuccessfulBlocks = 1;
 		if(minSuccessfulBlocks == 0) {
-			if(Logger.globalGetThreshold() > Logger.MINOR)
-				Logger.error(this, "minSuccessfulBlocks=0, succeedBlocks="+succeedBlocks+", totalBlocks="+totalBlocks+
-						", failedBlocks="+failedBlocks+", fatallyFailedBlocks="+fatallyFailedBlocks+", finalizedTotal="+finalizedTotal);
-			else
+			if(LogLevel.MINOR.matchesThreshold(Logger.globalGetThreshold()))
 				Logger.error(this, "minSuccessfulBlocks=0, succeedBlocks="+succeedBlocks+", totalBlocks="+totalBlocks+
 						", failedBlocks="+failedBlocks+", fatallyFailedBlocks="+fatallyFailedBlocks+", finalizedTotal="+finalizedTotal, new Exception("debug"));
+			else
+				Logger.error(this, "minSuccessfulBlocks=0, succeedBlocks="+succeedBlocks+", totalBlocks="+totalBlocks+
+						", failedBlocks="+failedBlocks+", fatallyFailedBlocks="+fatallyFailedBlocks+", finalizedTotal="+finalizedTotal);
 		} else {
 			sb.append((100*(succeedBlocks)/minSuccessfulBlocks));
 			sb.append('%');

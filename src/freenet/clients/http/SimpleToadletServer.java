@@ -39,6 +39,7 @@ import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
@@ -766,7 +767,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				return;
             if(conn == null)
                 continue; // timeout
-            if(Logger.shouldLog(Logger.MINOR, this))
+            if(Logger.shouldLog(LogLevel.MINOR, this))
                 Logger.minor(this, "Accepted connection");
             SocketHandler sh = new SocketHandler(conn);
             sh.start();
@@ -787,7 +788,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
 				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker);

@@ -73,6 +73,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WeakHashSet;
 import freenet.support.WouldBlockException;
+import freenet.support.Logger.LogLevel;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -372,7 +373,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}
@@ -1178,10 +1179,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Else DO NOT clear trackers, because hopefully it's a temporary connectivity glitch.
 			sendHandshakeTime = now;
 			countFailedRevocationTransfers = 0;
-			synchronized(this) {
-				timePrevDisconnect = timeLastDisconnect;
-				timeLastDisconnect = now;
-			}
+			timePrevDisconnect = timeLastDisconnect;
+			timeLastDisconnect = now;
 			if(dumpMessageQueue) {
 				messagesTellDisconnected = grabQueuedMessageItems();
 			}
@@ -1223,18 +1222,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return ret;
 	}
 
-	private boolean forceDisconnectCalled = false;
-
 	public void forceDisconnect(boolean purge) {
 		Logger.error(this, "Forcing disconnect on " + this, new Exception("debug"));
-		synchronized(this) {
-			forceDisconnectCalled = true;
-		}
 		disconnected(purge, true); // always dump trackers, maybe dump messages
-	}
-
-	boolean forceDisconnectCalled() {
-		return forceDisconnectCalled;
 	}
 
 	/**

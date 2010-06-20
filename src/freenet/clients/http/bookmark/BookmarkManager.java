@@ -10,10 +10,9 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 import com.db4o.ObjectContainer;
-
-import java.util.List;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
@@ -27,6 +26,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -165,7 +165,7 @@ public class BookmarkManager implements RequestClient {
 	}
 
 	public void addBookmark(String parentPath, Bookmark bookmark) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Adding bookmark " + bookmark + " to " + parentPath);
 		BookmarkCategory parent = getCategoryByPath(parentPath);
 		parent.addBookmark(bookmark);

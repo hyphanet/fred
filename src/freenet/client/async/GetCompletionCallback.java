@@ -10,6 +10,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.support.compress.Compressor;
+import freenet.crypt.HashResult;
 
 /**
  * Callback called when part of a get request completes - either with a 
@@ -34,4 +35,9 @@ public interface GetCompletionCallback {
 	
 	public void onFinalizedMetadata(ObjectContainer container);
 	
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context);
+	
+	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context);
+
+	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context);
 }

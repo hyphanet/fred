@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
 
+import freenet.support.Logger.LogLevel;
+
 /**
  * This class contains static methods used for parsing boolean and unsigned
  * long fields in Freenet messages. Also some general utility methods for
@@ -537,6 +539,20 @@ public abstract class Fields {
 		return x;
 	}
 
+	/**
+	 * Convert an array of bytes to a single int.
+	 */
+	public static short bytesToShort(byte[] buf, int offset) {
+		if(buf.length < 2)
+			throw new IllegalArgumentException();
+		short x = 0;
+		for(int j = 1; j >= 0; j--) {
+			short y = (short)(buf[j + offset] & 0xff);
+			x = (short)((x << 8) | y);
+		}
+		return x;
+	}
+
 	public static int[] bytesToInts(byte[] buf, int offset, int length) {
 		if(length % 4 != 0)
 			throw new IllegalArgumentException();
@@ -580,6 +596,15 @@ public abstract class Fields {
 	public static byte[] intToBytes(int x) {
 		byte[] buf = new byte[4];
 			for(int j = 0; j < 4; j++) {
+				buf[j] = (byte) x;
+				x >>>= 8;
+			}
+		return buf;
+	}
+
+	public static byte[] shortToBytes(short x) {
+		byte[] buf = new byte[2];
+			for(int j = 0; j < 2; j++) {
 				buf[j] = (byte) x;
 				x >>>= 8;
 			}
@@ -677,11 +702,11 @@ public abstract class Fields {
 			String multiplier = s.substring(0, x + 1).trim();
 			if(multiplier.indexOf('.') > -1 || multiplier.indexOf('E') > -1) {
 				res *= Double.parseDouble(multiplier);
-				if(Logger.shouldLog(Logger.MINOR, Fields.class))
+				if(Logger.shouldLog(LogLevel.MINOR, Fields.class))
 					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as double: " + res);
 			} else {
 				res *= Long.parseLong(multiplier);
-				if(Logger.shouldLog(Logger.MINOR, Fields.class))
+				if(Logger.shouldLog(LogLevel.MINOR, Fields.class))
 					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as long: " + res);
 			}
 		} catch(ArithmeticException e) {

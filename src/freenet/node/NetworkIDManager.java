@@ -20,6 +20,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.Logger.LogLevel;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TrivialRunningAverage;
@@ -73,7 +74,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	NetworkIDManager(final Node node) {
 		this.node=node;
 		this.MAX_HTL=node.maxHTL();
-		this.logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if (!disableSecretPinger) {
 			node.getTicker().queueTimedJob(new Runnable() {
 				public void run() {

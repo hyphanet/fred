@@ -20,11 +20,9 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Locale;
-import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.node.SemiOrderedShutdownHook;
@@ -277,7 +275,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 				System.err.println("Created log files");
 				startTime = gc.getTimeInMillis();
-		    	if(Logger.shouldLog(Logger.MINOR, this))
+		    	if(Logger.shouldLog(LogLevel.MINOR, this))
 		    		Logger.minor(this, "Start time: "+gc+" -> "+startTime);
 				lastTime = startTime;
 				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
@@ -324,15 +322,20 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							try {
 								if(thisTime < maxWait) {
 									list.wait(Math.min(500, (int)(Math.min(maxWait-thisTime, Integer.MAX_VALUE))));
-									if(listBytes < LIST_WRITE_THRESHOLD) // Don't write at all until the lower bytes threshold is exceeded, or the time threshold is.
+									thisTime = System.currentTimeMillis();
+									if(listBytes < LIST_WRITE_THRESHOLD) {
+										// Don't write at all until the lower bytes threshold is exceeded, or the time threshold is.
+										assert((listBytes == 0) == (list.peek() == null));
+										if(listBytes != 0 && maxWait == Long.MAX_VALUE)
+											maxWait = thisTime + flush;
 										continue;
+									}
 									// Do NOT use list.poll(timeout) because it uses a separate lock.
 									o = list.poll();
 								}
 							} catch (InterruptedException e) {
 								// Ignored.
 							}
-							thisTime = System.currentTimeMillis();
 							if(o == null) {
 								if(timeWaitingForSync == -1) {
 									timeWaitingForSync = thisTime;
@@ -507,7 +510,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		String filename,
 		String fmt,
 		String dfmt,
-		int threshold,
+		LogLevel threshold,
 		boolean assumeWorking,
 		boolean logOverwrite,
 		long maxOldLogfilesDiskUsage, int maxListSize)
@@ -539,7 +542,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 				olf.filename.delete();
 				oldLogFilesDiskSpaceUsage -= olf.size;
-		    	if(Logger.shouldLog(Logger.MINOR, this))
+		    	if(Logger.shouldLog(LogLevel.MINOR, this))
 		    		Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
 						" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
 			}
@@ -569,7 +572,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
         if(latestFile.exists())
         	FileUtil.renameTo(latestFile, previousFile);
         
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		for(int i=0;i<files.length;i++) {
 			File f = files[i];
 			String name = f.getName();
@@ -679,7 +682,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			this(filename,
 				fmt,
 				dfmt,
-				priorityOf(threshold),
+				LogLevel.valueOf(threshold),
 				assumeWorking,
 				logOverwrite,
 				maxOldLogFilesDiskUsage,
@@ -703,7 +706,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		OutputStream os,
 		String fmt,
 		String dfmt,
-		int threshold) {
+		LogLevel threshold) {
 		this(new PrintStream(os), fmt, dfmt, threshold, true);
 		logStream = os;
 	}
@@ -713,7 +716,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			String fmt,
 			String dfmt,
 			String threshold) throws InvalidThresholdException {
-			this(new PrintStream(os), fmt, dfmt, priorityOf(threshold), true);
+			this(new PrintStream(os), fmt, dfmt, LogLevel.valueOf(threshold), true);
 			logStream = os;
 		}
 
@@ -733,7 +736,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		PrintStream stream,
 		String fmt,
 		String dfmt,
-		int threshold,
+		LogLevel threshold,
 		boolean overwrite) {
 		this(fmt, dfmt, threshold, overwrite, -1, 10000);
 		logStream = stream;
@@ -741,9 +744,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 
 	public void start() {
 		if(redirectStdOut)
-			System.setOut(new PrintStream(new OutputStreamLogger(Logger.NORMAL, "Stdout: ")));
+			System.setOut(new PrintStream(new OutputStreamLogger(LogLevel.NORMAL, "Stdout: ")));
 		if(redirectStdErr)
-			System.setErr(new PrintStream(new OutputStreamLogger(Logger.ERROR, "Stderr: ")));
+			System.setErr(new PrintStream(new OutputStreamLogger(LogLevel.ERROR, "Stderr: ")));
 		WriterThread wt = new WriterThread();
 		wt.setDaemon(true);
 		CloserThread ct = new CloserThread();
@@ -756,7 +759,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		String baseFilename,
 		String fmt,
 		String dfmt,
-		int threshold,
+		LogLevel threshold,
 		boolean assumeWorking,
 		boolean logOverwrite,
 		long maxOldLogfilesDiskUsage, int maxListSize)
@@ -782,10 +785,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			boolean assumeWorking,
 			boolean logOverwrite,
 			long maxOldLogFilesDiskUsage, int maxListSize) throws IOException, InvalidThresholdException{
-		this(rotate,baseFilename,fmt,dfmt,priorityOf(threshold),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage,maxListSize);
+		this(rotate,baseFilename,fmt,dfmt,LogLevel.valueOf(threshold),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage,maxListSize);
 	}
 
-	private FileLoggerHook(String fmt, String dfmt, int threshold, boolean overwrite, long maxOldLogfilesDiskUsage, int maxListSize) {
+	private FileLoggerHook(String fmt, String dfmt, LogLevel threshold, boolean overwrite, long maxOldLogfilesDiskUsage, int maxListSize) {
 		super(threshold);
 		this.maxOldLogfilesDiskUsage = maxOldLogfilesDiskUsage;
 		this.logOverwrite = overwrite;
@@ -854,7 +857,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	@Override
-	public void log(Object o, Class<?> c, String msg, Throwable e, int priority) {
+	public void log(Object o, Class<?> c, String msg, Throwable e, LogLevel priority) {
 		if (!instanceShouldLog(priority, c))
 			return;
 
@@ -889,7 +892,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					sb.append(Thread.currentThread().getName());
 					break;
 				case PRIORITY :
-					sb.append(LoggerHook.priorityOf(priority));
+					sb.append(priority.name());
 					break;
 				case MESSAGE :
 					sb.append(msg);
@@ -932,32 +935,21 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	private static final int LINE_OVERHEAD = 60;
 	
 	public void logString(byte[] b) {
-		int noElementCount = 0;
 		synchronized (list) {
 			int sz = list.size();
 			if(!list.offer(b)) {
-				list.poll();
-				list.offer(b);
-			}
-			listBytes += (b.length + LINE_OVERHEAD); /* total guess */
+				byte[] ss = list.poll();
+				if(ss != null) listBytes -= ss.length + LINE_OVERHEAD;
+				if(list.offer(b))
+					listBytes += (b.length + LINE_OVERHEAD);
+			} else
+				listBytes += (b.length + LINE_OVERHEAD);
 			int x = 0;
 			if (listBytes > MAX_LIST_BYTES) {
 				while ((list.size() > (MAX_LIST_SIZE * 0.9F))
 					|| (listBytes > (MAX_LIST_BYTES * 0.9F))) {
 					byte[] ss;
-					try {
-						ss = list.poll();
-					} catch (NoSuchElementException e) {
-						// Yes I know this is impossible but it happens with 1.6 with heap profiling enabled
-						// This is a bug in sun/netbeans profiler around 2006 era
-						noElementCount++;
-						if(noElementCount > 1000) {
-							System.err.println("Lost log line because of constant NoSuchElementException's");
-							e.printStackTrace();
-							return;
-						}
-						continue;
-					}
+					ss = list.poll();
 					listBytes -= (ss.length + LINE_OVERHEAD);
 					x++;
 				}
@@ -969,10 +961,12 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						+ " bytes in memory\n";
 				byte[] buf = err.getBytes();
 				if(!list.offer(buf)) {
-					list.poll();
-					list.offer(buf);
-				}
-				listBytes += (buf.length + LINE_OVERHEAD);
+					byte[] ss = list.poll();
+					if(ss != null) listBytes -= ss.length + LINE_OVERHEAD;
+					if(list.offer(buf))
+						listBytes += (buf.length + LINE_OVERHEAD);
+				} else
+					listBytes += (buf.length + LINE_OVERHEAD);
 			}
 			if (sz == 0)
 				list.notifyAll();
@@ -1004,21 +998,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			default :
 				return 0;
 		}
-	}
-
-	@Override
-	public long minFlags() {
-		return 0;
-	}
-
-	@Override
-	public long notFlags() {
-		return INTERNAL;
-	}
-
-	@Override
-	public long anyFlags() {
-		return ((2 * ERROR) - 1) & ~(threshold - 1);
 	}
 
 	public void close() {
@@ -1055,7 +1034,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			Iterator<OldLogFile> i = logFiles.iterator();
 			while(i.hasNext()) {
 				OldLogFile olf = i.next();
-		    	boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		    	boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		    	if(logMINOR)
 		    		Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
 				if((time >= olf.start) && (time < olf.end)) {
@@ -1140,7 +1119,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 				olf.filename.delete();
 				oldLogFilesDiskSpaceUsage -= olf.size;
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(Logger.shouldLog(LogLevel.MINOR, this))
 					Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
 							" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
 			}

@@ -30,14 +30,15 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
+import freenet.store.KeyCollisionException;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.CannotCreateFromFieldSetException;
-import freenet.support.io.NativeThread;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class SplitFileInserterSegment extends SendableInsert implements FECCallback, Encodeable {
@@ -50,8 +51,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -1360,7 +1361,14 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						}, "Got URI");
 
 					}
-					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
+					if(req.localRequestOnly)
+						try {
+							core.node.store(b, false, req.canWriteClientCache, true, false);
+						} catch (KeyCollisionException e) {
+							throw new LowLevelPutException(LowLevelPutException.COLLISION);
+						}
+					else
+						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
@@ -1530,6 +1538,20 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				container.activate(blockInsertContext, 1);
 		}
 		boolean retval = blockInsertContext.canWriteClientCache;
+		if(deactivate)
+			container.deactivate(blockInsertContext, 1);
+		return retval;
+	}
+
+	@Override
+	public boolean localRequestOnly(ObjectContainer container) {
+		boolean deactivate = false;
+		if(persistent) {
+			deactivate = !container.ext().isActive(blockInsertContext);
+			if(deactivate)
+				container.activate(blockInsertContext, 1);
+		}
+		boolean retval = blockInsertContext.localRequestOnly;
 		if(deactivate)
 			container.deactivate(blockInsertContext, 1);
 		return retval;

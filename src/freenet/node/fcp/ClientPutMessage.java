@@ -17,7 +17,6 @@ import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.compress.Compressor;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.FileBucket;
@@ -77,6 +76,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final int extraInsertsSingleBlock;
 	final int extraInsertsSplitfileHeaderBlock;
 	final long compatibilityMode;
+	final boolean localRequestOnly;
 	
 	public static final short UPLOAD_FROM_DIRECT = 0;
 	public static final short UPLOAD_FROM_DISK = 1;
@@ -87,6 +87,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		identifier = fs.get("Identifier");
 		binaryBlob = fs.getBoolean("BinaryBlob", false);
 		global = Fields.stringToBool(fs.get("Global"), false);
+		localRequestOnly = fs.getBoolean("LocalRequestOnly", false);
 		compatibilityMode = fs.getLong("CompatibilityMode", 0);
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);

@@ -3,7 +3,13 @@ package freenet.node.fcp;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
+
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.keys.FreenetURI;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
@@ -11,15 +17,10 @@ import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.SerializableToFieldSetBucket;
-
-import com.db4o.ObjectContainer;
-
-import freenet.client.async.ClientContext;
-import freenet.client.async.DBJob;
-import freenet.client.async.DatabaseDisabledException;
 import freenet.support.io.NativeThread;
+import freenet.support.io.SerializableToFieldSetBucket;
 
 /**
  * A request process carried out by the node for an FCP client.
@@ -74,7 +75,7 @@ public abstract class ClientRequest {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

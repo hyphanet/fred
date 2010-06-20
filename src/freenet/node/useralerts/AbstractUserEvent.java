@@ -1,6 +1,5 @@
 package freenet.node.useralerts;
 
-import freenet.node.useralerts.UserEvent;
 import freenet.support.HTMLNode;
 
 public class AbstractUserEvent extends AbstractUserAlert implements UserEvent {

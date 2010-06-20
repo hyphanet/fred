@@ -39,6 +39,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.HTTPRequest;
 
 /** Base class for DarknetConnectionsToadlet and OpennetConnectionsToadlet */
@@ -458,7 +459,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected abstract String defaultRedirectLocation();
 
 	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		
 		if(!acceptRefPosts()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));

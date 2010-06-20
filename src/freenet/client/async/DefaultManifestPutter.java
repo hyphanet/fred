@@ -8,8 +8,6 @@ import java.util.Iterator;
 import java.util.Set;
 
 import freenet.client.InsertContext;
-import freenet.client.async.BaseManifestPutter;
-import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.ContainerSizeEstimator;

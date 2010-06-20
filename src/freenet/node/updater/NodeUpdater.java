@@ -31,6 +31,7 @@ import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.node.Version;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
@@ -63,7 +64,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	public abstract String jarName();
 
 	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, int current, int min, int max, String blobFilenamePrefix) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manager = manager;
 		this.node = manager.node;
 		this.URI = URI.setSuggestedEdition(Version.buildNumber() + 1);
@@ -102,7 +103,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(newKnownGood && !newSlotToo) return;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Found edition " + l);
 		int found;
@@ -245,7 +246,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	}
 
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		synchronized(this) {
 			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
@@ -354,7 +355,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	private static final int MAX_MANIFEST_SIZE = 1024*1024;
 
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(!isRunning)
 			return;
 		int errorCode = e.getMode();

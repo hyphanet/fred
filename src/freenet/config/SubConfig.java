@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -170,7 +171,7 @@ public class SubConfig implements Comparable<SubConfig> {
 	 */
 	public void finishedInitialization() {
 		hasInitialized = true;
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Finished initialization on "+this+" ("+prefix+')');
 	}
 
@@ -218,7 +219,7 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			entries = map.entrySet().toArray(entries);
 		}
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Prefix="+prefix);
 		for(int i=0;i<entries.length;i++) {

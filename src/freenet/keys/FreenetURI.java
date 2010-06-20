@@ -29,6 +29,7 @@ import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.FileUtil;
 
 /**
@@ -84,8 +85,8 @@ public class FreenetURI implements Cloneable {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -1075,7 +1076,7 @@ public class FreenetURI implements Cloneable {
 	}
 
 	public void objectOnDelete(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Deleting URI", new Exception("debug"));
+		if(Logger.shouldLog(LogLevel.DEBUG, this)) Logger.debug(this, "Deleting URI", new Exception("debug"));
 	}
 
 	/** Is this key a USK? */

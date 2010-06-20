@@ -25,6 +25,7 @@ import freenet.support.UpdatableSortedLinkedListKilledException;
 import freenet.support.UpdatableSortedLinkedListWithForeignIndex;
 import freenet.support.WouldBlockException;
 import freenet.support.DoublyLinkedList.Item;
+import freenet.support.Logger.LogLevel;
 
 /**
  * @author amphibian
@@ -40,7 +41,7 @@ public class PacketTracker {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}

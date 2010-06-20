@@ -20,6 +20,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
@@ -67,7 +68,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         byte[] pubKeyHash = key.getPubKeyHash();
         pubKey = node.getPubKey.getKey(pubKeyHash, false, false, null);
         canCommit = false;
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
+        logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
         this.forkOnCacheable = forkOnCacheable;
     }
     

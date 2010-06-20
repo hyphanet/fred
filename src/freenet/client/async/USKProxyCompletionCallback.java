@@ -9,6 +9,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.compress.Compressor;
@@ -86,6 +87,18 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		if(container != null && persistent)
 			container.activate(cb, 1);
 		cb.onFinalizedMetadata(container);
+	}
+
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+		cb.onExpectedTopSize(size, compressed, blocksReq, blocksTotal, container, context);
+	}
+
+	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+		cb.onSplitfileCompatibilityMode(min, max, container, context);
+	}
+
+	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
+		cb.onHashes(hashes, container, context);
 	}
 
 }

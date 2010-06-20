@@ -21,6 +21,7 @@ import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.node.Ticker;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -81,7 +82,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * @throws IOException If we are unable to read the directory, etc.
 	 */
 	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, boolean encrypt, long nodeDBHandle) throws IOException {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		blobFactory = new PersistentBlobTempBucketFactory(BLOB_SIZE, nodeDBHandle, new File(dir, "persistent-blob.tmp"));
 		this.strongPRNG = strongPRNG;
 		this.nodeDBHandle = nodeDBHandle;
@@ -149,7 +150,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 //		Iterator<File> i = originalFiles.iterator();
 //		while(i.hasNext()) {
 //			File f = (File) (i.next());
-//			if(Logger.shouldLog(Logger.MINOR, this))
+//			if(Logger.shouldLog(LogLevel.MINOR, this))
 //				Logger.minor(this, "Deleting old tempfile "+f);
 //			f.delete();
 //		}

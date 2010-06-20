@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.MultiReaderBucket;
 
@@ -57,7 +58,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	
 	@Override
 	void innerClose() {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "innerClose(): "+this+" : "+bucket);
 		if(bucket == null) {
 			// This still happens. It is clearly impossible as we check in the constructor and throw if it is null.

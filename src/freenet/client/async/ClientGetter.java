@@ -24,8 +24,10 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.events.ExpectedFileSizeEvent;
+import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
+import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.KnownUnsafeContentTypeException;
@@ -33,11 +35,12 @@ import freenet.client.filter.MIMEType;
 import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.ContentFilter.FilterStatus;
+import freenet.crypt.HashResult;
+import freenet.crypt.MultiHashInputStream;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
@@ -95,6 +98,7 @@ public class ClientGetter extends BaseClientGetter {
 	private SnoopMetadata snoopMeta;
 	/** Callback to spy on the data at each stage of the request */
 	private SnoopBucket snoopBucket;
+	private HashResult[] hashes;
 
 	/**
 	 * Fetch a key.
@@ -205,6 +209,28 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent())
 			container.activate(uri, 5);
 		if(!closeBinaryBlobStream(container, context)) return;
+		if(hashes != null) {
+			InputStream is = null;
+			try {
+				if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
+				is = result.asBucket().getInputStream();
+				MultiHashInputStream hasher = new MultiHashInputStream(is, HashResult.makeBitmask(hashes));
+				byte[] buf = new byte[32768];
+				while(hasher.read(buf) > 0);
+				hasher.close();
+				is = null;
+				HashResult[] results = hasher.getResults();
+				if(!HashResult.strictEquals(results, hashes)) {
+					onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), state, container, context);
+					return;
+				}
+			} catch (IOException e) {
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+				return;
+			} finally {
+				Closer.close(is);
+			}
+		}
 		synchronized(this) {
 			finished = true;
 			currentState = null;
@@ -212,6 +238,7 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent()) {
 			container.store(this);
 		}
+		
 		// Rest of method does not need to be synchronized.
 		// Variables will be updated on exit of method, and the only thing that is
 		// set is the returnBucket and the result. Not locking not only prevents
@@ -363,6 +390,8 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent())
 			container.activate(uri, 5);
 		ClientGetState oldState = null;
+		if(expectedSize > 0 && (e.expectedSize <= 0 || finalBlocksTotal != 0))
+			e.expectedSize = expectedSize;
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;
@@ -473,7 +502,15 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(ctx, 1);
 			container.activate(ctx.eventProducer, 1);
 		}
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
+		int total = this.totalBlocks;
+		int minSuccess = this.minSuccessBlocks;
+		boolean finalized = blockSetFinalized;
+		if(this.finalBlocksRequired != 0) {
+			total = finalBlocksTotal;
+			minSuccess = finalBlocksRequired;
+			finalized = true;
+		}
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, finalized), container, context);
 	}
 
 	/**
@@ -664,6 +701,7 @@ public class ClientGetter extends BaseClientGetter {
 	/** Called when we have some idea of the length of the final data */
 	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		if(finalizedMetadata) return;
+		if(finalBlocksRequired != 0) return;
 		expectedSize = size;
 		if(persistent()) {
 			container.store(this);
@@ -741,5 +779,34 @@ public class ClientGetter extends BaseClientGetter {
 		SnoopBucket old = snoopBucket;
 		snoopBucket = newSnoop;
 		return old;
+	}
+
+	private int finalBlocksRequired;
+	private int finalBlocksTotal;
+	
+	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+		if(finalBlocksRequired != 0 || finalBlocksTotal != 0) return;
+		System.out.println("New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
+		onExpectedSize(size, container, context);
+		this.finalBlocksRequired = this.minSuccessBlocks + blocksReq;
+		this.finalBlocksTotal = this.totalBlocks + blocksTotal;
+		if(persistent()) container.store(this);
+		notifyClients(container, context);
+	}
+
+	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max), container, context);
+	}
+
+	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(this.hashes != null) {
+				Logger.error(this, "Two sets of hashes?!");
+				return;
+			}
+			this.hashes = hashes;
+		}
+		if(persistent()) container.store(this);
+		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
 	}
 }

@@ -17,6 +17,7 @@ import freenet.client.async.ManifestElement;
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 
@@ -65,7 +66,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		SimpleFieldSet files = fs.subset("Files");
 		if(files == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Files section", identifier, global);
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		for(int i=0;;i++) {
 			SimpleFieldSet subset = files.subset(Integer.toString(i));
 			if(subset == null) break;

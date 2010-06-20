@@ -19,6 +19,7 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 /**
@@ -309,7 +310,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			if(size < min)
 				throw new IllegalStateException("???");
 			if((size >= min) && (size <= max)) {
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(Logger.shouldLog(LogLevel.MINOR, this))
 					Logger.minor(this, "Padded: "+max+" was: "+dataLength+" for "+getName());
 				return max;
 			}
@@ -396,7 +397,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Removing from database: "+this);
 		bucket.removeFrom(container);
 		container.delete(this);

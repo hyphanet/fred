@@ -24,6 +24,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.StringValidityChecker;
+import freenet.support.Logger.LogLevel;
 
 final public class FileUtil {
 	
@@ -207,7 +208,7 @@ final public class FileUtil {
 		DataInputStream dis = null;
 		FileOutputStream fos = null;
 		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
-		if(Logger.shouldLog(Logger.MINOR, FileUtil.class))
+		if(Logger.shouldLog(LogLevel.MINOR, FileUtil.class))
 			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
 		
 		try {

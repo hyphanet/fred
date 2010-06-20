@@ -1,6 +1,7 @@
 package freenet.support;
 
 import freenet.io.comm.IncomingPacketFilterException;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Thrown when we would have to block but have been told not to.
@@ -15,7 +16,7 @@ public class WouldBlockException extends IncomingPacketFilterException {
 
             @Override
             public void shouldUpdate() {
-                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+                logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
             }
         });
     }

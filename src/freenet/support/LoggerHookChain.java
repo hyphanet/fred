@@ -1,5 +1,7 @@
 package freenet.support;
 
+import static freenet.support.Logger.LogLevel.NORMAL;
+
 /**
  * A class that takes logging messages and distributes them to LoggerHooks.
  * It implements LoggerHook itself, so that instances can be chained (just
@@ -23,7 +25,7 @@ public class LoggerHookChain extends LoggerHook {
      * @param threshold   Suppress all log calls with lower priority then 
      *                     this.
      */
-    public LoggerHookChain(int threshold) {
+    public LoggerHookChain(LogLevel threshold) {
         super(threshold);
         hooks = new LoggerHook[0];
     }
@@ -39,7 +41,7 @@ public class LoggerHookChain extends LoggerHook {
      * @implements LoggerHook.log()
      */
     @Override
-	public synchronized void log(Object o, Class<?> c, String msg, Throwable e, int priority) {
+	public synchronized void log(Object o, Class<?> c, String msg, Throwable e, LogLevel priority) {
         LoggerHook[] myHooks = hooks;
         for(int i=0;i<myHooks.length;i++) {
             myHooks[i].log(o,c,msg,e,priority);
@@ -88,24 +90,6 @@ public class LoggerHookChain extends LoggerHook {
         return hooks;
     }
 
-    @Override
-	public long minFlags()
-    {
-    	return 0;
-    }
-
-    @Override
-	public long notFlags()
-    {
-    	return 0;
-    }
-
-    @Override
-	public long anyFlags()
-    {
-    	return ((2*ERROR)-1) & ~(threshold-1);
-    }
-
 	@Override
 	public void setDetailedThresholds(String details) throws InvalidThresholdException {
 		super.setDetailedThresholds(details);
@@ -115,7 +99,7 @@ public class LoggerHookChain extends LoggerHook {
 //			h[i].setDetailedThresholds(details);
 	}
 	@Override
-	public void setThreshold(int thresh) {
+	public void setThreshold(LogLevel thresh) {
 		super.setThreshold(thresh);
 		LoggerHook[] h = getHooks();
 		for (int i = 0; i < h.length; i++)

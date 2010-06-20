@@ -35,8 +35,10 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
+import freenet.store.KeyCollisionException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.BucketTools;
@@ -55,8 +57,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -531,7 +533,14 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					}, "Got URI");
 					
 				}
-				core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
+				if(req.localRequestOnly)
+					try {
+						core.node.store(b, false, req.canWriteClientCache, true, false);
+					} catch (KeyCollisionException e) {
+						throw new LowLevelPutException(LowLevelPutException.COLLISION);
+					}
+				else
+					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
 			} catch (LowLevelPutException e) {
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
@@ -774,6 +783,20 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				container.activate(ctx, 1);
 		}
 		boolean retval = ctx.canWriteClientCache;
+		if(deactivate)
+			container.deactivate(ctx, 1);
+		return retval;
+	}
+	
+	@Override
+	public boolean localRequestOnly(ObjectContainer container) {
+		boolean deactivate = false;
+		if(persistent) {
+			deactivate = !container.ext().isActive(ctx);
+			if(deactivate)
+				container.activate(ctx, 1);
+		}
+		boolean retval = ctx.localRequestOnly;
 		if(deactivate)
 			container.deactivate(ctx, 1);
 		return retval;

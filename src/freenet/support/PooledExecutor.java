@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import freenet.node.PrioRunnable;
 import freenet.node.Ticker;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
@@ -44,10 +45,10 @@ public class PooledExecutor implements Executor {
 		waitingThreadsCount = 0;
 	}
 	/** Maximum time a thread will wait for a job */
-	static final int TIMEOUT = 5 * 60 * 1000;
+	static final int TIMEOUT = 1 * 60 * 1000;
 
 	public void start() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	}
 
 	public void execute(Runnable job) {

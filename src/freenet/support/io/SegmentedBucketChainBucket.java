@@ -12,6 +12,7 @@ import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -82,7 +83,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				}
 				if(segment != null) {
 					container.activate(segment, 1);
-					if(Logger.shouldLog(Logger.MINOR, SegmentedBucketChainBucket.this)) 
+					if(Logger.shouldLog(LogLevel.MINOR, SegmentedBucketChainBucket.this)) 
 						Logger.minor(SegmentedBucketChainBucket.this, "Freeing segment "+segment);
 					segment.activateBuckets(container);
 					segment.free();
@@ -321,7 +322,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			@Override
 			public void close() throws IOException {
 				if(closed) return;
-				if(Logger.shouldLog(Logger.MINOR, this)) 
+				if(Logger.shouldLog(LogLevel.MINOR, this)) 
 					Logger.minor(this, "Closing "+this+" for "+SegmentedBucketChainBucket.this);
 				cur.close();
 				closed = true;
@@ -369,7 +370,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	private transient boolean runningSegStore;
 	
 	protected SegmentedChainBucketSegment makeSegment(int index, final SegmentedChainBucketSegment oldSeg) {
-		if(Logger.shouldLog(Logger.MINOR, this)) 
+		if(Logger.shouldLog(LogLevel.MINOR, this)) 
 			Logger.minor(this, "Make a segment for "+this+" index "+index+ "old "+oldSeg);
 		if(oldSeg != null) {
 			synchronized(this) {
@@ -514,7 +515,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				}
 				if(segment != null) {
 					container.activate(segment, 1);
-					if(Logger.shouldLog(Logger.MINOR, SegmentedBucketChainBucket.this)) 
+					if(Logger.shouldLog(LogLevel.MINOR, SegmentedBucketChainBucket.this)) 
 						Logger.minor(SegmentedBucketChainBucket.this, "Clearing segment "+segment);
 					segment.clear(container);
 					synchronized(this) {
@@ -564,7 +565,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	 * this bucket could be enormous.
 	 */
 	synchronized boolean removeContents(ObjectContainer container) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		while(segments.size() > 0) {
 			Logger.normal(this, "Freeing unfinished unstored bucket "+this+" segments left "+segments.size());
 			// Remove the first so the space is reused at the beginning not at the end.

@@ -40,6 +40,7 @@ import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 
 /**
@@ -98,7 +99,7 @@ public class NodeCrypto {
 		this.config = config;
 		random = node.random;
 		this.isOpennet = isOpennet;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		config.starting(this);
 
@@ -577,7 +578,7 @@ public class NodeCrypto {
 				tuple.portNumber = portNumber;
 				setupContainer.store(tuple);
 				setupContainer.commit();
-				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+				if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "COMMITTED");
 				System.err.println("Generated and stored database handle for node on port "+portNumber+": "+handle);
 				return handle;
 			}

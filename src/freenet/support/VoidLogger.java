@@ -11,23 +11,23 @@ public class VoidLogger extends Logger
 {
 
 	@Override
-	public void log(Object o, Class<?> source, String message, Throwable e, int priority) {
+	public void log(Object o, Class<?> source, String message, Throwable e, LogLevel priority) {
 	}
 
 	@Override
-	public void log(Object source, String message, int priority) {
+	public void log(Object source, String message, LogLevel priority) {
 	}
 
 	@Override
-	public void log(Object o, String message, Throwable e, int priority) {
+	public void log(Object o, String message, Throwable e, LogLevel priority) {
 	}
 
 	@Override
-	public void log(Class<?> c, String message, int priority) {
+	public void log(Class<?> c, String message, LogLevel priority) {
 	}
 
 	@Override
-	public void log(Class<?> c, String message, Throwable e, int priority) {
+	public void log(Class<?> c, String message, Throwable e, LogLevel priority) {
 	}
 
 	public long minFlags() {
@@ -43,22 +43,22 @@ public class VoidLogger extends Logger
 	}
 
 	@Override
-	public boolean instanceShouldLog(int priority, Class<?> c) {
+	public boolean instanceShouldLog(LogLevel priority, Class<?> c) {
 		return false;
 	}
 
 	@Override
-	public boolean instanceShouldLog(int prio, Object o) {
+	public boolean instanceShouldLog(LogLevel prio, Object o) {
 		return false;
 	}
 
 	@Override
-	public void setThreshold(int thresh) {
+	public void setThreshold(LogLevel thresh) {
 	}
 
 	@Override
-	public int getThreshold() {
-		return 0;
+	public LogLevel getThreshold() {
+		return LogLevel.NONE;
 	}
 
 	@Override

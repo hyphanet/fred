@@ -11,5 +11,5 @@ public abstract class BaseClientGetter extends ClientRequester implements
 	protected BaseClientGetter(short priorityClass, RequestClient client) {
 		super(priorityClass, client);
 	}
-	
+
 }

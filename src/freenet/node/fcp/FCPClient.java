@@ -16,6 +16,7 @@ import freenet.node.RequestClient;
 import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.Logger;
 import freenet.support.NullObject;
+import freenet.support.Logger.LogLevel;
 
 /**
  * An FCP client.
@@ -108,7 +109,7 @@ public class FCPClient {
 	 * acked yet, so it should be moved to the unacked-completed-requests set.
 	 */
 	public void finishedClientRequest(ClientRequest get, ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Finished client request", new Exception("debug"));
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		assert(get.persistenceType == persistenceType);
@@ -175,7 +176,7 @@ public class FCPClient {
 	public void register(ClientRequest cg, ObjectContainer container) throws IdentifierCollisionException {
 		assert(cg.persistenceType == persistenceType);
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Registering "+cg.getIdentifier());
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);
@@ -208,7 +209,7 @@ public class FCPClient {
 	public boolean removeByIdentifier(String identifier, boolean kill, FCPServer server, ObjectContainer container, ClientContext context) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		ClientRequest req;
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "removeByIdentifier("+identifier+ ',' +kill+ ')');
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);

@@ -20,6 +20,7 @@ import java.util.zip.CRC32;
 import freenet.l10n.NodeL10n;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
@@ -70,8 +71,8 @@ public class PNGFilter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs)
 			throws DataFilterException, IOException {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		InputStream is = null;
 		DataInputStream dis = null;
 		try {
@@ -281,7 +282,7 @@ public class PNGFilter implements ContentDataFilter {
 		try {
 			inputStream = inputBucket.getInputStream();
 			outputStream = outputBucket.getOutputStream();
-			Logger.setupStdoutLogging(Logger.MINOR, "");
+			Logger.setupStdoutLogging(LogLevel.MINOR, "");
 			ContentFilter.filter(inputStream, outputStream, "image/png",
 					new URI("http://127.0.0.1:8888/"), null, null, null);
 			inputStream.close();
@@ -307,7 +308,7 @@ public class PNGFilter implements ContentDataFilter {
 		if (shortReason != null)
 			message += " - " + shortReason;
 		DataFilterException e = new DataFilterException(shortReason, shortReason, message);
-		if (Logger.shouldLog(Logger.NORMAL, this))
+		if (Logger.shouldLog(LogLevel.NORMAL, this))
 			Logger.normal(this, "Throwing " + e, e);
 		throw e;
 	}

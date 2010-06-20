@@ -25,6 +25,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.crypt.HashResult;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
@@ -35,6 +36,7 @@ import freenet.keys.USK;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
@@ -52,7 +54,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}
@@ -370,6 +372,21 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 				if(persistent)
 					container.deactivate(metaSnoop, 1);
+			}
+			HashResult[] hashes = metadata.getHashes();
+			if(hashes != null) {
+				rcb.onHashes(hashes, container, context);
+			}
+			if(metadata.hasTopData()) {
+				if(metaStrings.size() == 0) {
+					if((metadata.topSize > ctx.maxOutputLength) ||
+							(metadata.topCompressedSize > ctx.maxTempLength)) {
+						// Just in case...
+						if(persistent) removeFrom(container, context);
+						throw new FetchException(FetchException.TOO_BIG, metadata.topSize, true, clientMetadata.getMIMEType());
+					}
+					rcb.onExpectedTopSize(metadata.topSize, metadata.topCompressedSize, metadata.topBlocksRequired, metadata.topBlocksTotal, container, context);
+				}
 			}
 			if(metadata.isSimpleManifest()) {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
@@ -1127,6 +1144,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		public void onFinalizedMetadata(ObjectContainer container) {
 			// Ignore
 		}
+
+		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
+		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
+		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
 		
 	}
 
@@ -1272,6 +1301,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onFinalizedMetadata(ObjectContainer container) {
+			// Ignore
+		}
+
+		public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
+		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
+		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 		
