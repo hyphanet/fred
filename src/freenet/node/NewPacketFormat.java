@@ -129,9 +129,9 @@ public class NewPacketFormat implements PacketFormat {
 			if(isFragmented) {
 				int value;
 				if(shortMessage) {
-					value = plaintext[offset++];
+					value = plaintext[offset++] & 0xFF;
 				} else {
-					value = (plaintext[offset] << 16) | (plaintext[offset + 1] << 8) | plaintext[offset + 2];
+					value = ((plaintext[offset] & 0xFF) << 16) | ((plaintext[offset + 1] & 0xFF) << 8) | (plaintext[offset + 2] & 0xFF);
 					offset += 3;
 				}
 
