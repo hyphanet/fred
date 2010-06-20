@@ -108,6 +108,11 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
+		if(offset == plaintext.length) {
+			//Ack only packet, so don't ack it
+			return;
+		}
+
 		//Handle received message fragments
 		while(offset < plaintext.length) {
 			boolean shortMessage = (plaintext[offset] & 0x80) != 0;
