@@ -144,7 +144,12 @@ public class NewPacketFormat implements PacketFormat {
 			if(recvBuf == null) {
 				if(!firstFragment) return; //For now we need the message length first
 
-				if(logMINOR) Logger.minor(this, "Creating buffer for messageID " + messageID + " of length " + messageLength);
+				if(messageLength < 0) {
+					Logger.warning(this, "Message length(" + messageLength + ") is negative. Probably a bug. Discarding packet");
+					return;
+				} else {
+					if(logMINOR) Logger.minor(this, "Creating buffer for messageID " + messageID + " of length " + messageLength);
+				}
 				recvBuf = new byte[messageLength];
 				recvMap = new SparseBitmap();
 
