@@ -85,7 +85,10 @@ public class NewPacketFormat implements PacketFormat {
 			for (int i = 0; i < numAcks; i++) {
 				long ack = 0;
 				if(i == 0) {
-					firstAck = ((plaintext[offset] & 0xFF) << 24) | ((plaintext[offset + 1] & 0xFF) << 16) | ((plaintext[offset + 2] & 0xFF) << 8) | (plaintext[offset + 3] & 0xFF);
+					firstAck = ((plaintext[offset] & 0xFF) << 24)
+					                | ((plaintext[offset + 1] & 0xFF) << 16)
+							| ((plaintext[offset + 2] & 0xFF) << 8)
+							| (plaintext[offset + 3] & 0xFF);
 					offset += 4;
 
 					if(logMINOR) Logger.minor(this, "First ack of received packet: " + firstAck);
