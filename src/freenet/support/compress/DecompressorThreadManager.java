@@ -72,11 +72,13 @@ public class DecompressorThreadManager {
 			return input;
 		}
 		try {
+			int count = 0;
 			while(!threads.isEmpty()){
 				if(getError() != null) throw getError();
 				DecompressorThread threadRunnable = threads.remove();
 				if(threads.isEmpty()) threadRunnable.setLast();
-				new Thread(threadRunnable, "DecompressorThread").start();
+				new Thread(threadRunnable, "DecompressorThread"+count).start();
+				count++;
 			}
 			output.close();			
 		} catch(Exception e) {
