@@ -328,6 +328,9 @@ public class ContentFilter {
 		if(handler.useMaybeCharset && maybeCharset != null && (maybeCharset.length() != 0))
 			return maybeCharset;
 		
+		if(charset != null)
+			return charset;
+		
 		// If it doesn't have a BOM, then it's *probably* safe to use as default.
 		
 		return handler.defaultCharset;
