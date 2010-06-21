@@ -34,6 +34,7 @@ class ReceivedPacket {
 				                | ((plaintext[offset + 1] & 0xFF) << 16)
 				                | ((plaintext[offset + 2] & 0xFF) << 8)
 				                | (plaintext[offset + 3] & 0xFF);
+				ack = firstAck;
 				offset += 4;
 			} else {
 				ack = firstAck + (plaintext[offset++] & 0xFF);
