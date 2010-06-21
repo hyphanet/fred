@@ -12,6 +12,7 @@ public class MessageWrapper {
 	private final MessageItem item;
 	private final boolean isLongMessage;
 	private final int messageID;
+	private volatile long lastReceivedAck = 0;
 	
 	//Sorted lists of non-overlapping ranges
 	private final SortedSet<int[]> acks = new TreeSet<int[]>(new RangeComparator());
@@ -34,6 +35,17 @@ public class MessageWrapper {
 	 *         index 1
 	 */
 	public int[] getData(byte[] dest, int offset, int length) {
+		if((System.currentTimeMillis() - lastReceivedAck) > 5000) {
+			synchronized(sent) {
+			synchronized(acks) {
+				sent.clear();
+				for(int[] range : acks) {
+					sent.add(range);
+				}
+			}
+			}
+		}
+
 		int start = 0;
 		int end = Integer.MAX_VALUE;
 		
@@ -83,6 +95,7 @@ public class MessageWrapper {
 	 * @param end the last byte to be marked
 	 */
 	public boolean ack(int start, int end) {
+		lastReceivedAck = System.currentTimeMillis();
 		addRangeToSet(start, end, acks);
 		if(acks.size() == 1) {
 			int[] range = acks.first();
