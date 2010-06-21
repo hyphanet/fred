@@ -92,6 +92,7 @@ class ReceivedPacket {
 			}
 			byte[] fragmentData = new byte[fragmentLength];
 			System.arraycopy(plaintext, offset, fragmentData, 0, fragmentLength);
+			offset += fragmentLength;
 
 			packet.fragments.add(new MessageFragment(shortMessage, isFragmented, firstFragment,
 			                messageID, fragmentLength, messageLength, fragmentOffset, fragmentData));
