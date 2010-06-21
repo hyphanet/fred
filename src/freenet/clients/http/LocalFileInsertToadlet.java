@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
@@ -59,6 +60,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 
 		boolean compress = Boolean.valueOf(request.getParam("compress"));
 		extra += "&compress=" + compress;
+		
+		final String compatibilityMode = request.getParam("compatibilityMode");
+		extra += "&compatibilityMode=" + compatibilityMode;
 
 		String path = request.getParam("path");
 		if (path.length() == 0) {
@@ -161,6 +165,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-dir", l10n("insert")});
 						if(furi != null)
 							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", furi.toASCIIString() });
+						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "compatibilityMode", compatibilityMode });
 						HTMLNode directoryCellNode = fileRow.addChild("td");
 						directoryCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentFile.getAbsolutePath(),false)+extra, currentFile.getName());
 					} else {
@@ -179,6 +184,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", l10n("insert")});
 						if(furi != null)
 							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", furi.toASCIIString() });
+						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "compatibilityMode", compatibilityMode });
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align", String.valueOf(currentFile.length()));
 					} else {

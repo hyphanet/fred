@@ -52,4 +52,11 @@ public class CompatibilityMode extends FCPMessage {
 		throw new UnsupportedOperationException();
 	}
 
+	public InsertContext.CompatibilityMode[] getModes() {
+		return new InsertContext.CompatibilityMode[] {
+				InsertContext.CompatibilityMode.values()[(int)min],
+				InsertContext.CompatibilityMode.values()[(int)max]
+		};
+	}
+
 }

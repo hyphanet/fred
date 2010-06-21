@@ -12,6 +12,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.InsertContext;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
@@ -895,6 +896,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			return progressPending.getFetchedBlocks();
 		} else
 			return 0;
+	}
+	
+	public InsertContext.CompatibilityMode[] getCompatibilityMode(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && compatMessage != null)
+			container.activate(compatMessage, 2);
+		if(compatMessage != null) {
+			return compatMessage.getModes();
+		} else
+			return new InsertContext.CompatibilityMode[] { InsertContext.CompatibilityMode.COMPAT_UNKNOWN, InsertContext.CompatibilityMode.COMPAT_UNKNOWN };
 	}
 
 	@Override
