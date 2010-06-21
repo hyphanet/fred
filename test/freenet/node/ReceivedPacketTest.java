@@ -25,4 +25,18 @@ public class ReceivedPacketTest extends TestCase {
 		assertEquals(r.getFragments().size(), 0);
 		assertFalse(r.getError());
 	}
+
+	public void testPacketWithAcks() {
+		//Sequence number 0 and ack for packet 0
+		byte[] packet = new byte[] {0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x05, 0x06};
+		ReceivedPacket r = ReceivedPacket.create(packet);
+
+		assertEquals(r.getSequenceNumber(), 0);
+		assertEquals(r.getAcks().size(), 3);
+		assertEquals(r.getAcks().get(0), Long.valueOf(0));
+		assertEquals(r.getAcks().get(1), Long.valueOf(5));
+		assertEquals(r.getAcks().get(2), Long.valueOf(6));
+		assertEquals(r.getFragments().size(), 0);
+		assertFalse(r.getError());
+	}
 }
