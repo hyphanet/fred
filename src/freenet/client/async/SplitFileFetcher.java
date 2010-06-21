@@ -237,7 +237,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 							minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
 						}
 					} else {
-						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250;
 					}
 				} else {
 					minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
