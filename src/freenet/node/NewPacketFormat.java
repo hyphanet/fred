@@ -44,8 +44,6 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
-		int packetStart = offset;
-
 		//Check the hash
 		//TODO: Decrypt hash first
 		byte[] packetHash = new byte[HMAC_LENGTH];
