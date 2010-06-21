@@ -24,6 +24,9 @@ public class Db4oBugs {
 			// But it seems to be our only realistic option. Hopefully we'll have backups soon.
 			// A Db4oException will be caught and the database will be killed.
 			throw new Db4oException(e);
+		} catch (IllegalArgumentException e) {
+			// This happens too, on corrupted databases. :|
+			throw new Db4oException(e);
 		}
 	}
 
