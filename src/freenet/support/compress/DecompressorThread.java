@@ -8,8 +8,6 @@ import java.io.InputStream;
 import java.io.PipedOutputStream;
 
 import freenet.support.io.Closer;
-import freenet.support.io.CountedInputStream;
-import freenet.support.io.CountedOutputStream;
 
 /**
  * Represents a thread which invokes a decompressor upon a
@@ -37,9 +35,7 @@ class DecompressorThread implements Runnable {
 	public void run() {
 		try {
 			if(manager.getError() == null) {
-				CountedInputStream cin = new CountedInputStream(input);
-				CountedOutputStream cout = new CountedOutputStream(output);
-				compressor.decompress(cin, cout, maxLen, maxLen * 4);
+				compressor.decompress(input, output, maxLen, maxLen * 4);
 				input.close();
 				output.close();
 				if(isLast) manager.onFinish();
