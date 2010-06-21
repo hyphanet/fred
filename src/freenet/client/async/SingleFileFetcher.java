@@ -398,12 +398,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent)
 					container.deactivate(metaSnoop, 1);
 			}
-			if(metadata.hasTopData()) {
-				HashResult[] hashes = metadata.getHashes();
-				if(hashes != null) {
-					rcb.onHashes(hashes, container, context);
-				}
-				if(metaStrings.size() == 0) {
+			if(metaStrings.size() == 0) {
+				if(metadata.hasTopData()) {
 					if((metadata.topSize > ctx.maxOutputLength) ||
 							(metadata.topCompressedSize > ctx.maxTempLength)) {
 						// Just in case...
@@ -411,6 +407,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						throw new FetchException(FetchException.TOO_BIG, metadata.topSize, true, clientMetadata.getMIMEType());
 					}
 					rcb.onExpectedTopSize(metadata.topSize, metadata.topCompressedSize, metadata.topBlocksRequired, metadata.topBlocksTotal, container, context);
+				}
+				HashResult[] hashes = metadata.getHashes();
+				if(hashes != null) {
+					rcb.onHashes(hashes, container, context);
 				}
 			}
 			if(metadata.isSimpleManifest()) {
