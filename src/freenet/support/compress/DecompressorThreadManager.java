@@ -11,8 +11,8 @@ import java.util.LinkedList;
 
 import freenet.support.io.Closer;
 
-/** Creates and manages decompressor threads. This class
- * is given all decompressors which should be applied to an
+/** Creates and manages decompressor threads. This class is 
+ * given all decompressors which should be applied to an
  * InputStream via addDecompressor. The decompressors will be
  * strung together and executed when the execute method is called.
  * This class also stores any errors which may arise.
@@ -28,9 +28,8 @@ public class DecompressorThreadManager {
 	private Exception error = null;
 
 	/** Creates a new DecompressorThreadManager
-	 * 
 	 * @param input The stream that will be decompressed, if compressed
-	 * @param maxLen, the maximum number of bytes to extract
+	 * @param maxLen The maximum number of bytes to extract
 	 */
 	public DecompressorThreadManager(InputStream input, long maxLen) throws IOException {
 		threads = new LinkedList<DecompressorThread>();
@@ -44,7 +43,6 @@ public class DecompressorThreadManager {
 	}
 
 	/**Queues a decompressor to be ran against the input stream
-	 * 
 	 * @param compressor The object whose decompress method will be executed
 	 * @throws IOException
 	 */
@@ -62,7 +60,6 @@ public class DecompressorThreadManager {
 
 	/** Creates and executes a new thread for each decompressor,
 	 * chaining the output of the previous to the next.
-	 * 
 	 * @return An InputStream from which uncompressed data may be read from
 	 */
 	public synchronized InputStream execute() throws Exception{
@@ -93,7 +90,6 @@ public class DecompressorThreadManager {
 
 	/** Informs the manager that a nonrecoverable exception has occured in the
 	 * decompression threads
-	 * 
 	 * @param e The thrown exception
 	 */
 	public synchronized void onFailure(Exception e) {
@@ -102,16 +98,13 @@ public class DecompressorThreadManager {
 	}
 
 	/** Marks that the decompression of the stream has finished and wakes
-	 * threads blocking on completion
-	 */
+	 * threads blocking on completion */
 	public synchronized void onFinish() {
 		finished = true;
 		notifyAll();
 	}
 
-	/** Blocks until all threads have finished executing and cleaning up.
-	 * 
-	 */
+	/** Blocks until all threads have finished executing and cleaning up.*/
 	public synchronized void waitFinished() {
 		while(!finished) {
 			try {
@@ -122,8 +115,7 @@ public class DecompressorThreadManager {
 		}
 	}
 
-	/**
-	 * 
+	/** Returns an exception which was thrown during decompression
 	 * @return Returns an exception which was caught during the decompression
 	 */
 	public synchronized Exception getError() {
