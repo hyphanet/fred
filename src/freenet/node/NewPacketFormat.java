@@ -70,128 +70,44 @@ public class NewPacketFormat implements PacketFormat {
 		System.arraycopy(buf, offset, plaintext, 0, (length - HMAC_LENGTH));
 		offset = 0;
 
-		long sequenceNumber = ((plaintext[offset] & 0xFF) << 24)
-		                | ((plaintext[offset + 1] & 0xFF) << 16)
-				| ((plaintext[offset + 2] & 0xFF) << 8)
-				| (plaintext[offset + 3] & 0xFF);
-		offset += 4;
-
-		//Process received acks
-		int numAcks = plaintext[offset++] & 0xFF;
-		if(numAcks > 0) {
-			long firstAck = 0;
-			for (int i = 0; i < numAcks; i++) {
-				long ack = 0;
-				if(i == 0) {
-					firstAck = ((plaintext[offset] & 0xFF) << 24)
-					                | ((plaintext[offset + 1] & 0xFF) << 16)
-							| ((plaintext[offset + 2] & 0xFF) << 8)
-							| (plaintext[offset + 3] & 0xFF);
-					offset += 4;
-
-					if(logMINOR) Logger.minor(this, "First ack of received packet: " + firstAck);
-				} else {
-					ack = plaintext[offset++] & 0xFF;
-				}
-
-				SentPacket sent = null;
-				synchronized(sentPackets) {
-					sent = sentPackets.remove(firstAck + ack);
-				}
-				if(sent == null) {
-					if(logMINOR) Logger.minor(this, "Received ack for unknown packet. Already acked?");
-				} else {
+		ReceivedPacket packet = ReceivedPacket.create(plaintext);
+		for(long ack : packet.acks) {
+			synchronized(sentPackets) {
+				SentPacket sent = sentPackets.get(ack);
+				if(sent != null) {
 					sent.acked();
 				}
 			}
 		}
 
-		if(offset == plaintext.length) {
-			//Ack only packet, so don't ack it
-			return;
-		}
-
-		boolean dontAck = false;
-		//Handle received message fragments
-		while(offset < plaintext.length) {
-			boolean shortMessage = (plaintext[offset] & 0x80) != 0;
-			boolean isFragmented = (plaintext[offset] & 0x40) != 0;
-			boolean firstFragment = (plaintext[offset] & 0x20) != 0;
-			int messageID = ((plaintext[offset] & 0x1F) << 8) | (plaintext[offset + 1] & 0xFF);
-			offset += 2;
-
-			int fragmentLength;
-			if(shortMessage) {
-				fragmentLength = plaintext[offset++];
-			} else {
-				fragmentLength = ((plaintext[offset] & 0xFF) << 8) | (plaintext[offset + 1] & 0xFF);
-				offset += 2;
-			}
-			if(fragmentLength < 0) {
-				Logger.warning(this, "Read fragment length < 0 from offset " + (shortMessage ? offset - 1 : offset - 2) + ". Probably a bug");
-				return;
-			}
-
-			int messageLength = fragmentLength;
-			int fragmentOffset = 0;
-			if(isFragmented) {
-				int value;
-				if(shortMessage) {
-					value = plaintext[offset++] & 0xFF;
-				} else {
-					value = ((plaintext[offset] & 0xFF) << 16) | ((plaintext[offset + 1] & 0xFF) << 8) | (plaintext[offset + 2] & 0xFF);
-					offset += 3;
-				}
-				if(value < 0) {
-					Logger.warning(this, "Read value < 0 from offset " + (shortMessage ? offset - 1 : offset - 3) + ". Probably a bug");
-					return;
-				}
-
-				if(firstFragment) messageLength = value;
-				else fragmentOffset = value;
-			}
-
-			byte[] recvBuf = receiveBuffers.get(messageID);
-			SparseBitmap recvMap = receiveMaps.get(messageID);
-			if(recvBuf == null) {
-				if(!firstFragment) {
+		boolean dontAck = packet.error;
+		for(MessageFragment fragment : packet.fragments) {
+			byte[] recvBuffer = receiveBuffers.get(fragment.messageID);
+			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
+			if(recvBuffer == null) {
+				if(!fragment.firstFragment) {
 					dontAck = true;
-					return; //For now we need the message length first
+					continue;
 				}
-
-				if(messageLength < 0) {
-					Logger.warning(this, "Message length(" + messageLength + ") is negative. Probably a bug. Discarding packet");
-					return;
-				} else {
-					if(logMINOR) Logger.minor(this, "Creating buffer for messageID " + messageID + " of length " + messageLength);
-				}
-				recvBuf = new byte[messageLength];
+				recvBuffer = new byte[fragment.messageLength];
 				recvMap = new SparseBitmap();
-
-				receiveBuffers.put(messageID, recvBuf);
-				receiveMaps.put(messageID, recvMap);
 			}
 
-			System.arraycopy(plaintext, offset, recvBuf, fragmentOffset, fragmentLength);
-			recvMap.add(fragmentOffset, fragmentOffset + fragmentLength - 1);
-			offset += fragmentLength;
-
-			if(recvMap.contains(0, recvBuf.length - 1)) {
-				//TODO: If the other side resends a packet after we have gotten all the data, we will
-				//never ack the resent packet
-				receiveBuffers.remove(messageID);
-				receiveMaps.remove(messageID);
-				processFullyReceived(recvBuf);
+			System.arraycopy(fragment.fragmentData, 0, recvBuffer, fragment.fragmentOffset,
+			                fragment.fragmentLength);
+			recvMap.add(fragment.fragmentOffset, fragment.fragmentOffset + fragment.fragmentLength - 1);
+			if(recvMap.contains(0, recvBuffer.length - 1)) {
+				receiveBuffers.remove(fragment.messageID);
+				receiveMaps.remove(fragment.messageID);
+				processFullyReceived(recvBuffer);
 			}
 		}
 
 		if(!dontAck) {
-			//Ack received packet
 			synchronized(acks) {
-				acks.addLast(sequenceNumber);
-			}
+				acks.add(packet.sequenceNumber);
+                        }
 		}
-
 	}
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
@@ -407,6 +323,141 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				}
 			}
+		}
+	}
+
+	private static class ReceivedPacket {
+		private long sequenceNumber;
+		private final LinkedList<Long> acks = new LinkedList<Long>();
+		private final LinkedList<MessageFragment> fragments = new LinkedList<MessageFragment>();
+		private boolean error;
+
+		private ReceivedPacket() {
+
+		}
+
+		public static ReceivedPacket create(byte[] plaintext) {
+			ReceivedPacket packet = new ReceivedPacket();
+			int offset = 0;
+
+			packet.addSequenceNumber(((plaintext[offset] & 0xFF) << 24)
+			                | ((plaintext[offset] & 0xFF) << 16)
+			                | ((plaintext[offset] & 0xFF) << 8)
+			                | (plaintext[offset] & 0xFF));
+			offset += 4;
+
+			//Process received acks
+			int numAcks = plaintext[offset++] & 0xFF;
+			long firstAck = 0;
+			for(int i = 0; i < numAcks; i++) {
+				long ack = 0;
+				if(i == 0) {
+					firstAck = ((plaintext[offset] & 0xFF) << 24)
+					                | ((plaintext[offset + 1] & 0xFF) << 16)
+					                | ((plaintext[offset + 2] & 0xFF) << 8)
+					                | (plaintext[offset + 3] & 0xFF);
+					offset += 4;
+				} else {
+					ack = firstAck + (plaintext[offset++] & 0xFF);
+				}
+				packet.addAck(ack);
+			}
+
+			//Handle received message fragments
+			while(offset < plaintext.length) {
+				boolean shortMessage = (plaintext[offset] & 0x80) != 0;
+				boolean isFragmented = (plaintext[offset] & 0x40) != 0;
+				boolean firstFragment = (plaintext[offset] & 0x20) != 0;
+				int messageID = ((plaintext[offset] & 0x1F) << 8)
+				                | (plaintext[offset + 1] & 0xFF);
+				offset += 4;
+
+				int fragmentLength;
+				if(shortMessage) {
+					fragmentLength = plaintext[offset++];
+				} else {
+					fragmentLength = ((plaintext[offset] & 0xFF) << 8)
+					                | (plaintext[offset + 1] & 0xFF);
+					offset += 2;
+				}
+				if(fragmentLength < 0) {
+					//Probably means that offset is wrong, so continuing isn't a good idea
+					Logger.warning(ReceivedPacket.class, "Read negative fragment length from offset "
+					                + (shortMessage ? offset - 1 : offset - 2)
+							+ ". Probably a bug");
+					offset = -1;
+					packet.setError();
+					break;
+				}
+
+				int messageLength = -1;
+				int fragmentOffset = 0;
+				if(isFragmented) {
+					int value;
+					if(shortMessage) {
+						value = plaintext[offset++] & 0xFF;
+					} else {
+						value = ((plaintext[offset] & 0xFF) << 16)
+						                | ((plaintext[offset + 1] & 0xFF) << 8)
+								| (plaintext[offset + 2] & 0xFF);
+						offset += 3;
+					}
+					if(value < 0) {
+						Logger.warning(ReceivedPacket.class, "Read negative value from offset "
+						                + (shortMessage ? offset - 1 : offset - 3)
+								+ ". Probably a bug");
+						packet.setError();
+					}
+					if(firstFragment) messageLength = value;
+					else fragmentOffset = value;
+				}
+				byte[] fragmentData = new byte[fragmentLength];
+				System.arraycopy(plaintext, offset, fragmentData, 0, fragmentLength);
+
+				packet.addFragment(new MessageFragment(shortMessage, isFragmented, firstFragment,
+				                messageID, fragmentLength, messageLength, fragmentOffset, fragmentData));
+			}
+
+			return packet;
+		}
+
+		private void addSequenceNumber(long sequenceNumber) {
+			this.sequenceNumber = sequenceNumber;
+		}
+
+		private void addAck(long ack) {
+		       acks.add(ack);
+		}
+
+		private void addFragment(MessageFragment fragment) {
+			fragments.add(fragment);
+		}
+
+		private void setError() {
+			error = true;
+		}
+	}
+
+	private static class MessageFragment {
+		boolean shortMessage;
+		boolean isFragmented;
+		boolean firstFragment;
+		int messageID;
+		int fragmentLength;
+		int messageLength;
+		int fragmentOffset;
+		byte[] fragmentData;
+
+		public MessageFragment(boolean shortMessage, boolean isFragmented, boolean firstFragment, int messageID,
+		                int fragmentLength, int messageLength, int fragmentOffset, byte[] fragmentData) {
+			this.shortMessage = shortMessage;
+			this.isFragmented = isFragmented;
+			this.firstFragment = firstFragment;
+			this.messageID = messageID;
+			this.fragmentLength = fragmentLength;
+			this.messageLength = messageLength;
+			this.fragmentOffset = fragmentOffset;
+			this.fragmentData = fragmentData;
 		}
 	}
 
