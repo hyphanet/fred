@@ -328,7 +328,7 @@ public class SplitFileInserter implements ClientPutState {
 				if(i > dataBlocks) i = dataBlocks;
 				if(data > (i-j)) {
 					// Last segment.
-					assert(i == segmentSize-1);
+					assert(segNo == segCount-1);
 					data = i-j;
 					check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, cmode);
 				}
