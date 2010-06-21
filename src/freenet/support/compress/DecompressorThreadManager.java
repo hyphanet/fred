@@ -32,10 +32,15 @@ public class DecompressorThreadManager {
 	 * @param input The stream that will be decompressed, if compressed
 	 * @param maxLen, the maximum number of bytes to extract
 	 */
-	public DecompressorThreadManager(InputStream input, long maxLen) {
+	public DecompressorThreadManager(InputStream input, long maxLen) throws IOException {
 		threads = new LinkedList<DecompressorThread>();
 		this.maxLen = maxLen;
 		this.input = input;
+		if(input == null) {
+			IOException e = new IOException("Input stream may not be null");
+			onFailure(e);
+			throw e;
+		}
 	}
 
 	/**Queues a decompressor to be ran against the input stream
@@ -43,7 +48,12 @@ public class DecompressorThreadManager {
 	 * @param compressor The object whose decompress method will be executed
 	 * @throws IOException
 	 */
-	public synchronized void addDecompressor(Compressor compressor)  throws IOException {
+	public synchronized void addDecompressor(Compressor compressor) throws IOException {
+		if(compressor == null) {
+			IOException e = new IOException("Compressor may not be null");
+			onFailure(e);
+			throw e;
+		}
 		DecompressorThread thread = new DecompressorThread(compressor, this, input, output, maxLen);
 		threads.add(thread);
 		input = new PipedInputStream(output);
@@ -55,13 +65,15 @@ public class DecompressorThreadManager {
 	 * 
 	 * @return An InputStream from which uncompressed data may be read from
 	 */
-	public synchronized InputStream execute() {
+	public synchronized InputStream execute() throws Exception{
+		if(getError() != null) throw getError();
 		if(threads.isEmpty()) {
 			onFinish();
 			return input;
 		}
 		try {
 			while(!threads.isEmpty()){
+				if(getError() != null) throw getError();
 				DecompressorThread threadRunnable = threads.remove();
 				if(threads.isEmpty()) threadRunnable.setLast();
 				new Thread(threadRunnable, "DecompressorThread").start();
@@ -69,7 +81,6 @@ public class DecompressorThreadManager {
 			output.close();			
 		} catch(Exception e) {
 			onFailure(e);
-			onFinish();
 		}
 		finally {
 			Closer.close(output);
@@ -85,6 +96,7 @@ public class DecompressorThreadManager {
 	 */
 	public synchronized void onFailure(Exception e) {
 		error = e;
+		onFinish();
 	}
 
 	/** Marks that the decompression of the stream has finished and wakes

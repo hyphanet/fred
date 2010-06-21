@@ -36,17 +36,19 @@ class DecompressorThread implements Runnable {
 
 	public void run() {
 		try {
-			CountedInputStream cin = new CountedInputStream(input);
-			CountedOutputStream cout = new CountedOutputStream(output);
-			compressor.decompress(cin, cout, maxLen, maxLen * 4);
-			input.close();
-			output.close();
+			if(manager.getError() == null) {
+				CountedInputStream cin = new CountedInputStream(input);
+				CountedOutputStream cout = new CountedOutputStream(output);
+				compressor.decompress(cin, cout, maxLen, maxLen * 4);
+				input.close();
+				output.close();
+				if(isLast) manager.onFinish();
+			}
 		} catch (Exception e) {
 			manager.onFailure(e);
 		} finally {
 			Closer.close(input);
 			Closer.close(output);
-			if(isLast) manager.onFinish();
 		}
 	}
 
