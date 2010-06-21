@@ -89,6 +89,8 @@ class ReceivedPacket {
 				}
 				if(firstFragment) messageLength = value;
 				else fragmentOffset = value;
+			} else {
+				messageLength = fragmentLength;
 			}
 			byte[] fragmentData = new byte[fragmentLength];
 			System.arraycopy(plaintext, offset, fragmentData, 0, fragmentLength);
