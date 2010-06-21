@@ -245,8 +245,9 @@ public class ClientGetter extends BaseClientGetter {
 			OutputStream output = null;
 			try {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
-				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
+				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 				assert(result.asBucket() != returnBucket);
+				
 				Bucket filteredResult;
 				if(returnBucket == null) filteredResult = context.getBucketFactory(persistent()).makeBucket(-1);
 				else {
