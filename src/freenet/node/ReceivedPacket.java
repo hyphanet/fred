@@ -49,7 +49,7 @@ class ReceivedPacket {
 			boolean firstFragment = (plaintext[offset] & 0x20) != 0;
 			int messageID = ((plaintext[offset] & 0x1F) << 8)
 			                | (plaintext[offset + 1] & 0xFF);
-			offset += 4;
+			offset += 2;
 
 			int fragmentLength;
 			if(shortMessage) {
