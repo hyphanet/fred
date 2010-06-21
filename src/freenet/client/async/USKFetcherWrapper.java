@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -87,7 +88,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Ignore
 	}
 
-	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 

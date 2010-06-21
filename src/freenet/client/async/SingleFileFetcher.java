@@ -24,6 +24,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
 import freenet.keys.BaseClientKey;
@@ -1150,7 +1151,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
@@ -1260,7 +1261,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 

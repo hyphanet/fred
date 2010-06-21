@@ -66,7 +66,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, long compatibilityMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, InsertContext.CompatibilityMode compatibilityMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -78,7 +78,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.forkOnCacheable = forkOnCacheable;
 		ctx.extraInsertsSingleBlock = extraInsertsSingleBlock;
 		ctx.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeader;
-		ctx.compatibilityMode = compatibilityMode;
+		ctx.setCompatibilityMode(compatibilityMode);
 		ctx.localRequestOnly = localRequestOnly;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);

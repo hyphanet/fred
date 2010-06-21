@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 
 /**
@@ -34,7 +35,7 @@ public interface GetCompletionCallback {
 	
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context);
 	
-	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context);
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context);
 
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context);
 }

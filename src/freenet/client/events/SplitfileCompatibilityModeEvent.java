@@ -1,5 +1,7 @@
 package freenet.client.events;
 
+import freenet.client.InsertContext.CompatibilityMode;
+
 public class SplitfileCompatibilityModeEvent implements ClientEvent {
 
 	public final long minCompatibilityMode;
@@ -18,9 +20,9 @@ public class SplitfileCompatibilityModeEvent implements ClientEvent {
 			return "CompatibilityMode between "+minCompatibilityMode+" and "+maxCompatibilityMode;
 	}
 	
-	public SplitfileCompatibilityModeEvent(long min, long max) {
-		this.minCompatibilityMode = min;
-		this.maxCompatibilityMode = max;
+	public SplitfileCompatibilityModeEvent(CompatibilityMode min, CompatibilityMode max) {
+		this.minCompatibilityMode = min.ordinal();
+		this.maxCompatibilityMode = max.ordinal();
 	}
 	
 }

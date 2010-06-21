@@ -16,6 +16,7 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.crypt.HashResult;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.support.Executor;
@@ -122,12 +123,13 @@ public class SplitFileInserter implements ClientPutState {
 		// Segment size cannot be greater than ctx.splitfileSegmentDataBlocks.
 		// But IT CAN BE SMALLER!
 		int segs;
-		if(ctx.compatibilityMode == InsertContext.COMPAT_1250_EXACT) {
+		CompatibilityMode cmode = ctx.getCompatibilityMode();
+		if(cmode == CompatibilityMode.COMPAT_1250_EXACT) {
 			segs = countDataBlocks / 128 + (countDataBlocks % 128 == 0 ? 0 : 1);
 			segmentSize = 128;
 			deductBlocksFromSegments = 0;
 		} else {
-			if(ctx.compatibilityMode == InsertContext.COMPAT_1251) {
+			if(cmode == CompatibilityMode.COMPAT_1251) {
 				// Max 131 blocks per segment.
 				segs = (int)Math.ceil(((double)countDataBlocks) / 131);
 			} else {
@@ -154,7 +156,7 @@ public class SplitFileInserter implements ClientPutState {
 				segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
 			}
 			segmentSize = segSize;
-			if(ctx.compatibilityMode == InsertContext.COMPAT_NONE || ctx.compatibilityMode >= InsertContext.COMPAT_1254) {
+			if(cmode == CompatibilityMode.COMPAT_NONE || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) {
 				// Even with basic even segment splitting, it is possible for the last segment to be a lot smaller than the rest.
 				// So drop a single data block from each of the last [segmentSize-lastSegmentSize] segments instead.
 				// Hence all the segments are within 1 block of segmentSize.
@@ -168,7 +170,7 @@ public class SplitFileInserter implements ClientPutState {
 		if(splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT)
 			checkSegmentSize = 0;
 		else
-			checkSegmentSize = FECCodec.getCheckBlocks(splitfileAlgorithm, segmentSize, ctx.compatibilityMode);
+			checkSegmentSize = FECCodec.getCheckBlocks(splitfileAlgorithm, segmentSize, cmode);
 		
 		this.persistent = persistent;
 		if(persistent) {
@@ -311,23 +313,24 @@ public class SplitFileInserter implements ClientPutState {
 
 		ArrayList<SplitFileInserterSegment> segs = new ArrayList<SplitFileInserterSegment>();
 
+		CompatibilityMode cmode = ctx.getCompatibilityMode();
 		// First split the data up
 		if(segCount == 1) {
 			// Single segment
-			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, ctx.compatibilityMode), origDataBlocks, ctx, getCHKOnly, 0, container);
+			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, cmode), origDataBlocks, ctx, getCHKOnly, 0, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
 			int segNo = 0;
 			int data = segmentSize;
-			int check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, ctx.compatibilityMode);
+			int check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, cmode);
 			for(int i=segmentSize;;) {
 				if(i > dataBlocks) i = dataBlocks;
 				if(data > (i-j)) {
 					// Last segment.
 					assert(i == segmentSize-1);
 					data = i-j;
-					check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, ctx.compatibilityMode);
+					check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, cmode);
 				}
 				Bucket[] seg = new Bucket[i-j];
 				System.arraycopy(origDataBlocks, j, seg, 0, data);

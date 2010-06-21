@@ -20,6 +20,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.ExpectedMIMEEvent;
@@ -731,7 +732,7 @@ public class ClientGetter extends BaseClientGetter {
 		notifyClients(container, context);
 	}
 
-	public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
 		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max), container, context);
 	}
 

@@ -2,6 +2,7 @@ package freenet.node.fcp;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.InsertContext;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
@@ -27,8 +28,10 @@ public class CompatibilityMode extends FCPMessage {
 	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
-		fs.put("Min", min);
-		fs.put("Max", max);
+		fs.putOverwrite("Min", InsertContext.CompatibilityMode.values()[(int)min].name());
+		fs.putOverwrite("Max", InsertContext.CompatibilityMode.values()[(int)max].name());
+		fs.put("Min.Number", min);
+		fs.put("Max.Number", max);
 		fs.putOverwrite("Identifier", identifier);
 		fs.put("Global", global);
 		return fs;
