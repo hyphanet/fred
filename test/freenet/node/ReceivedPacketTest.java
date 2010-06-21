@@ -9,7 +9,7 @@ public class ReceivedPacketTest extends TestCase {
 		byte[] packet = new byte[] {
 		                0x00, 0x00, 0x00, 0x00, //Sequence number 0
 		                0x00}; // 0 acks
-		ReceivedPacket r = ReceivedPacket.create(packet);
+		NPFPacket r = NPFPacket.create(packet);
 
 		assertTrue(r.getSequenceNumber() == 0);
 		assertTrue(r.getAcks().size() == 0);
@@ -22,7 +22,7 @@ public class ReceivedPacketTest extends TestCase {
 		                0x00, 0x00, 0x00, 0x00, //Sequence number 0
 		                0x01, //1 ack
 		                0x00, 0x00, 0x00, 0x00}; //Ack for packet 0
-		ReceivedPacket r = ReceivedPacket.create(packet);
+		NPFPacket r = NPFPacket.create(packet);
 
 		assertEquals(r.getSequenceNumber(), 0);
 		assertEquals(r.getAcks().size(), 1);
@@ -37,7 +37,7 @@ public class ReceivedPacketTest extends TestCase {
 		                0x03, //3 acks
 		                0x00, 0x00, 0x00, 0x05, //Ack for packet 5
 		                0x05, 0x06}; //Acks for packets 10 and 11
-		ReceivedPacket r = ReceivedPacket.create(packet);
+		NPFPacket r = NPFPacket.create(packet);
 
 		assertEquals(r.getSequenceNumber(), 0);
 		assertEquals(r.getAcks().size(), 3);
@@ -55,7 +55,7 @@ public class ReceivedPacketTest extends TestCase {
 		                (byte)0xA0, 0x00, //Flags (short and first fragment) and messageID 0
 		                0x08, //Fragment length
 		                0x01, 0x23, 0x45, 0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}; //Data
-		ReceivedPacket r = ReceivedPacket.create(packet);
+		NPFPacket r = NPFPacket.create(packet);
 
 		assertTrue(r.getSequenceNumber() == 0);
 		assertTrue(r.getAcks().size() == 0);

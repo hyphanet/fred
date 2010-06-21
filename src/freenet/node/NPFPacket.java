@@ -4,18 +4,18 @@ import java.util.LinkedList;
 
 import freenet.support.Logger;
 
-class ReceivedPacket {
+class NPFPacket {
 	private long sequenceNumber;
 	private final LinkedList<Long> acks = new LinkedList<Long>();
 	private final LinkedList<MessageFragment> fragments = new LinkedList<MessageFragment>();
 	private boolean error;
 
-	private ReceivedPacket() {
+	private NPFPacket() {
 
 	}
 
-	public static ReceivedPacket create(byte[] plaintext) {
-		ReceivedPacket packet = new ReceivedPacket();
+	public static NPFPacket create(byte[] plaintext) {
+		NPFPacket packet = new NPFPacket();
 		int offset = 0;
 
 		packet.sequenceNumber = ((plaintext[offset] & 0xFF) << 24)
@@ -61,7 +61,7 @@ class ReceivedPacket {
 			}
 			if(fragmentLength < 0) {
 				//Probably means that offset is wrong, so continuing isn't a good idea
-				Logger.warning(ReceivedPacket.class, "Read negative fragment length from offset "
+				Logger.warning(NPFPacket.class, "Read negative fragment length from offset "
 				                + (shortMessage ? offset - 1 : offset - 2)
 						+ ". Probably a bug");
 				offset = -1;
@@ -82,7 +82,7 @@ class ReceivedPacket {
 					offset += 3;
 				}
 				if(value < 0) {
-					Logger.warning(ReceivedPacket.class, "Read negative value from offset "
+					Logger.warning(NPFPacket.class, "Read negative value from offset "
 					                + (shortMessage ? offset - 1 : offset - 3)
 							+ ". Probably a bug");
 					packet.error = true;

@@ -70,7 +70,7 @@ public class NewPacketFormat implements PacketFormat {
 		System.arraycopy(buf, offset, plaintext, 0, (length - HMAC_LENGTH));
 		offset = 0;
 
-		ReceivedPacket packet = ReceivedPacket.create(plaintext);
+		NPFPacket packet = NPFPacket.create(plaintext);
 		for(long ack : packet.getAcks()) {
 			synchronized(sentPackets) {
 				SentPacket sent = sentPackets.get(ack);
