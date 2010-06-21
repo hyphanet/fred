@@ -129,6 +129,10 @@ public class MessageWrapper {
 			return false;
 		}
 
+		if((sent.size() == 1) && (sent.first()[0] == 0) && (sent.first()[1] >= item.buf.length)) {
+			//It can be sent in one go, and we have already sent everything
+			return false;
+		}
 		return true;
 	}
 	
