@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.List;
 
@@ -17,7 +20,12 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
+import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
+import freenet.support.compress.DecompressorThreadManager;
+import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -68,6 +76,56 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	public void onSuccess(FetchResult result, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Success on "+this+" from "+state+" : length "+result.size()+" mime type "+result.getMimeType());
+		Bucket data = result.asBucket();
+		DecompressorThreadManager decompressorManager = null;
+		OutputStream output = null;
+		InputStream input = null;
+		Bucket finalResult = null;
+		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+		try {
+			finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
+			input = data.getInputStream();
+			output = finalResult.getOutputStream();
+		} catch (IOException e) {
+			Logger.error(this, "Caught "+e, e);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+			return;
+		} catch(Throwable t) {
+			Logger.error(this, "Caught "+t, t);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			return;
+		}
+		// Decompress
+		if(decompressors != null) {
+			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Decompressing...");
+			try {
+				decompressorManager =  new DecompressorThreadManager(input, maxLen);
+				if(persistent()) {
+					container.activate(decompressors, 5);
+					container.activate(ctx, 1);
+				}
+				while(!decompressors.isEmpty()) {
+					Compressor c = decompressors.remove(decompressors.size()-1);
+					decompressorManager.addDecompressor(c);
+				}
+				input = decompressorManager.execute();
+				FileUtil.copy(input, output, -1);
+				input.close();
+				output.close();
+				result = new FetchResult(result, finalResult);
+			} catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
+				System.err.println("Failing above attempted fetch...");
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t, t);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			} finally {
+				result.asBucket().free();
+				Closer.close(input);
+				Closer.close(output);
+			}
+		}
 		cb.onFound(origUSK, state.getToken(), result);
 		context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 	}
