@@ -141,7 +141,7 @@ public abstract class ClientRequester {
 		}
 
 		if (wasFinalized) {
-			if (LogLevel.MINOR.matchesThreshold(Logger.globalGetThreshold()))
+			if (LogLevel.MINOR.matchesThreshold(Logger.globalGetThresholdNew()))
 				Logger.error(this, "addBlock() but set finalized! on " + this, new Exception("error"));
 			else
 				Logger.error(this, "addBlock() but set finalized! on " + this);
@@ -160,7 +160,7 @@ public abstract class ClientRequester {
 		}
 
 		if (wasFinalized) {
-			if (LogLevel.MINOR.matchesThreshold(Logger.globalGetThreshold()))
+			if (LogLevel.MINOR.matchesThreshold(Logger.globalGetThresholdNew()))
 				Logger.error(this, "addBlocks() but set finalized! on "+this, new Exception("error"));
 			else
 				Logger.error(this, "addBlocks() but set finalized! on "+this);

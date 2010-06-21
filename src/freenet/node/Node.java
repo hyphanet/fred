@@ -1659,7 +1659,7 @@ public class Node implements TimeSkewDetectorCallback {
 				System.err.println("Forcing logging enabled (essential for testnet)");
 				logConfigHandler.forceEnableLogging();
 			}
-			LogLevel x = Logger.globalGetThreshold();
+			LogLevel x = Logger.globalGetThresholdNew();
 			if(!((x == LogLevel.MINOR) || (x == LogLevel.DEBUG))) {
 				System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
 				Logger.globalSetThreshold(LogLevel.MINOR);

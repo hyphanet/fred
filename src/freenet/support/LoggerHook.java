@@ -113,7 +113,7 @@ public abstract class LoggerHook extends Logger {
 	}
 
 	@Override
-	public LogLevel getThreshold() {
+	public LogLevel getThresholdNew() {
 		return threshold;
 	}
 

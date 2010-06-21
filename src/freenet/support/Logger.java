@@ -258,6 +258,11 @@ public abstract class Logger {
 		fh.start();
 		return fh;
 	}
+	
+	@Deprecated
+	public synchronized static FileLoggerHook setupStdoutLogging(int level, String detail) throws InvalidThresholdException {
+		return setupStdoutLogging(LogLevel.fromOrdinal(level), detail);
+	}
 
 	/** Create a LoggerHookChain and set the global logger to be it. */
 	public synchronized static void setupChain() {
@@ -485,6 +490,11 @@ public abstract class Logger {
 	 *            The new threshhold
 	 */
 	public abstract void setThreshold(LogLevel thresh);
+	
+	@Deprecated
+	public void setThreshold(int thresh) {
+		setThreshold(LogLevel.fromOrdinal(thresh));
+	}
 
 	/**
 	 * Changes the priority threshold.
@@ -498,7 +508,12 @@ public abstract class Logger {
 	/**
 	 * @return The currently used logging threshold
 	 */
-	public abstract LogLevel getThreshold();
+	public abstract LogLevel getThresholdNew();
+	
+	@Deprecated
+	public int getThreshold() {
+		return getThresholdNew().ordinal();
+	}
 
 	/** Set the detailed list of thresholds. This allows to specify that
 	 * we are interested in debug level logging for one class but are only
@@ -602,10 +617,20 @@ public abstract class Logger {
 	public synchronized static void globalSetThreshold(LogLevel i) {
 		logger.setThreshold(i);
 	}
+	
+	@Deprecated
+	public synchronized static void globalSetThreshold(int i) {
+		logger.setThreshold(LogLevel.fromOrdinal(i));
+	}
 
 	/** What is the current global logging threshold? */
-	public synchronized static LogLevel globalGetThreshold() {
-		return logger.getThreshold();
+	public synchronized static LogLevel globalGetThresholdNew() {
+		return logger.getThresholdNew();
+	}
+	
+	@Deprecated
+	public synchronized static int globalGetThreshold() {
+		return globalGetThresholdNew().ordinal();
 	}
 
 	/** Remove a logger hook from the global logger hook chain. */
