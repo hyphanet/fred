@@ -5,7 +5,6 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -43,7 +42,6 @@ import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import freenet.support.io.FileUtil;
 
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
@@ -995,26 +993,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			InputStream input = null;
 			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 			if(decompressors != null) {
+				if(logMINOR) Logger.minor(this, "decompressing...");
 				try {
 					if(persistent()) {
 						container.activate(decompressors, 5);
 						container.activate(returnBucket, 5);
 						container.activate(ctx, 1);
-						if(ctx == null) {
-							Logger.error(this, "Fetch context is null");
-							if(!container.ext().isActive(ctx)) {
-								Logger.error(this, "Fetch context is null and splitfile is not activated", new Exception("error"));
-								container.activate(this, 1);
-								container.activate(decompressors, 5);
-								container.activate(returnBucket, 5);
-								container.activate(ctx, 1);
-							} else {
-								Logger.error(this, "Fetch context is null and splitfile IS activated", new Exception("error"));
-							}
-						}
-						container.activate(ctx, 1);
 					}
-					int count = 0;
 					input = data.getInputStream();
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, maxLen);
 					while(!decompressors.isEmpty()) {
@@ -1022,14 +1007,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						if(logMINOR)
 							Logger.minor(this, "Decompressing with "+c);
 						decompressorManager.addDecompressor(c);
-						count++;
 					}
 					input = decompressorManager.execute();
 					if(returnBucket != null) data = returnBucket;
 					else data = context.getBucketFactory(persistent()).makeBucket(maxLen);
 					BucketTools.copyFrom(data, input, -1);
 					input.close();
-					result = new FetchResult(result, data);
 				} catch (OutOfMemoryError e) {
 					OOMHandler.handleOOM(e);
 					System.err.println("Failing above attempted fetch...");
@@ -1039,6 +1022,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 				} finally {
 					Closer.close(input);
+					result.asBucket().free();
 				}
 			}
 
@@ -1058,7 +1042,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent)
 					container.activate(actx, 1);
 				ah.activateForExecution(container);
-				ah.extractPersistentOffThread(result.asBucket(), true, actx, element, callback, container, context);
+				ah.extractPersistentOffThread(data, true, actx, element, callback, container, context);
 				if(!wasActive)
 					container.deactivate(SingleFileFetcher.this, 1);
 				if(state != null)
@@ -1172,27 +1156,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 			InputStream input = null;
 			if(decompressors != null) {
-				Logger.minor(this, "decompressing...");
+				if(logMINOR) Logger.minor(this, "Decompressing...");
 				try {
 					if(persistent()) {
 						container.activate(decompressors, 5);
 						container.activate(returnBucket, 5);
 						container.activate(ctx, 1);
-						if(ctx == null) {
-							Logger.error(this, "Fetch context is null");
-							if(!container.ext().isActive(ctx)) {
-								Logger.error(this, "Fetch context is null and splitfile is not activated", new Exception("error"));
-								container.activate(this, 1);
-								container.activate(decompressors, 5);
-								container.activate(returnBucket, 5);
-								container.activate(ctx, 1);
-							} else {
-								Logger.error(this, "Fetch context is null and splitfile IS activated", new Exception("error"));
-							}
-						}
-						container.activate(ctx, 1);
 					}
-					int count = 0;
 					input = data.getInputStream();
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, maxLen);
 					while(!decompressors.isEmpty()) {
@@ -1200,14 +1170,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						if(logMINOR)
 							Logger.minor(this, "Decompressing with "+c);
 						decompressorManager.addDecompressor(c);
-						count++;
 					}
 					input = decompressorManager.execute();
 					if(returnBucket != null) data = returnBucket;
 					else data = context.getBucketFactory(persistent()).makeBucket(maxLen);
 					BucketTools.copyFrom(data, input, -1);
 					input.close();
-					result.asBucket().free();
 					result = new FetchResult(result, data);
 				} catch (OutOfMemoryError e) {
 					OOMHandler.handleOOM(e);
@@ -1216,6 +1184,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
 					onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				} finally {
+					Closer.close(input);
+					result.asBucket().free();
 				}
 			}
 			boolean wasActive = true;
@@ -1226,7 +1197,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			try {
 				parent.onTransition(state, SingleFileFetcher.this, container);
-				Metadata meta = Metadata.construct(result.asBucket());
+				Metadata meta = Metadata.construct(data);
 				removeMetadata(container);
 				synchronized(SingleFileFetcher.this) {
 					metadata = meta;
@@ -1242,9 +1213,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Bucket error?
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 			} finally {
-				result.asBucket().free();
+				data.free();
 				if(persistent)
-					result.asBucket().removeFrom(container);
+					data.removeFrom(container);
 			}
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);

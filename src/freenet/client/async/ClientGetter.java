@@ -8,8 +8,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.HashSet;
@@ -44,10 +42,8 @@ import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
-import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
-import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -249,57 +245,36 @@ public class ClientGetter extends BaseClientGetter {
 		DecompressorThreadManager decompressorManager = null;
 		OutputStream output = null;
 		InputStream input = null;
-		Bucket finalResult;
+		Bucket finalResult = null;
+		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 		try {
-			if(returnBucket == null) finalResult = context.getBucketFactory(persistent()).makeBucket(-1);
+			if(returnBucket == null) finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
 			else {
 				if(persistent()) container.activate(returnBucket, 5);
 				finalResult = returnBucket;
 			}
+			input = data.getInputStream();
+			output = finalResult.getOutputStream();
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
 			return;
 		}
-		try {
-			input = data.getInputStream();
-			output = finalResult.getOutputStream();
-		} catch (IOException e) {
-			Logger.error(this, "Caught "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
-			return;
-		}
-		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+
 		// Decompress
 		if(decompressors != null) {
-			decompressorManager =  new DecompressorThreadManager(input, maxLen);
-			Logger.minor(this, "decompressing...");
 			try {
+				decompressorManager =  new DecompressorThreadManager(input, maxLen);
+				if(logMINOR) Logger.minor(this, "Decompressing...");
 				if(persistent()) {
 					container.activate(decompressors, 5);
-					container.activate(returnBucket, 5);
-					container.activate(ctx, 1);
-					if(ctx == null) {
-						Logger.error(this, "Fetch context is null");
-						if(!container.ext().isActive(ctx)) {
-							Logger.error(this, "Fetch context is null and splitfile is not activated", new Exception("error"));
-							container.activate(this, 1);
-							container.activate(decompressors, 5);
-							container.activate(returnBucket, 5);
-							container.activate(ctx, 1);
-						} else {
-							Logger.error(this, "Fetch context is null and splitfile IS activated", new Exception("error"));
-						}
-					}
 					container.activate(ctx, 1);
 				}
-				int count = 0;
 				while(!decompressors.isEmpty()) {
 					Compressor c = decompressors.remove(decompressors.size()-1);
 					if(logMINOR)
 						Logger.minor(this, "Decompressing with "+c);
 					decompressorManager.addDecompressor(c);
-					count++;
 				}
 				input = decompressorManager.execute();
 			} catch (OutOfMemoryError e) {
@@ -323,7 +298,7 @@ public class ClientGetter extends BaseClientGetter {
 				input.close();
 				output.close();
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
-				result = new FetchResult(new ClientMetadata(detectedMIMEType), result.asBucket());
+				result = new FetchResult(new ClientMetadata(detectedMIMEType), finalResult);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
@@ -340,6 +315,7 @@ public class ClientGetter extends BaseClientGetter {
 			} finally {
 				Closer.close(input);
 				Closer.close(output);
+				data.free();
 			}
 		}
 		else {
@@ -350,11 +326,16 @@ public class ClientGetter extends BaseClientGetter {
 			if(logMINOR) Logger.minor(this, "The final result has not been written. Writing now.");
 			try {
 				FileUtil.copy(input, output, -1);
-			}
-			catch(IOException e) {
+				input.close();
+				output.close();
+			} catch(IOException e) {
 				Logger.error(this, "Caught "+e, e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
 				return;
+			} finally {
+				Closer.close(input);
+				Closer.close(output);
+				result.asBucket().free();
 			}
 		}
 		if(persistent()) {
@@ -371,7 +352,6 @@ public class ClientGetter extends BaseClientGetter {
 				return;
 			}
 		}
-		result.asBucket().free();
 		result = new FetchResult(result, finalResult);
 
 		clientCallback.onSuccess(result, ClientGetter.this, container);
