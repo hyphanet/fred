@@ -22,7 +22,7 @@ public class CompatibilityMode extends FCPMessage {
 	
 	void merge(long min, long max) {
 		if(min > this.min) this.min = min;
-		if(max < this.max || this.max < 0) this.max = max;
+		if(max < this.max || this.max == 0) this.max = max;
 	}
 	
 	@Override

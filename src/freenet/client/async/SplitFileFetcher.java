@@ -199,8 +199,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 		this.token = token2;
 		
-		CompatibilityMode minCompatMode = null;
-		CompatibilityMode maxCompatMode = null;
+		CompatibilityMode minCompatMode = CompatibilityMode.COMPAT_NONE;
+		CompatibilityMode maxCompatMode = CompatibilityMode.COMPAT_NONE;
 
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
