@@ -119,7 +119,7 @@ public class MessageWrapper {
 	}
 
 	public boolean isFragmented(int length) {
-		if(length > item.buf.length) {
+		if(length < item.buf.length) {
 			//Can't send everything, so we have to fragment
 			return true;
 		}
