@@ -1,11 +1,5 @@
 package freenet.support;
 
-import static freenet.support.Logger.LogLevel.DEBUG;
-import static freenet.support.Logger.LogLevel.ERROR;
-import static freenet.support.Logger.LogLevel.MINOR;
-import static freenet.support.Logger.LogLevel.NORMAL;
-import static freenet.support.Logger.LogLevel.WARNING;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,7 +23,7 @@ public abstract class Logger {
 		private static boolean getPIDEnabled = false;
 		private static boolean getPPIDEnabled = false;
 		private static boolean logToFileEnabled = false;
-		private static LogLevel logToFileVerbosity = DEBUG;
+		private static LogLevel logToFileVerbosity = LogLevel.DEBUG;
 		private static boolean logToStdOutEnabled = false;
 		private static boolean procSelfStatEnabled = false;
 	
@@ -217,7 +211,35 @@ public abstract class Logger {
 		public boolean matchesThreshold(LogLevel threshold) {
 			return this.ordinal() >= threshold.ordinal();
 		}
+		
+		@Deprecated
+		public static LogLevel fromOrdinal(int ordinal) {
+			for(LogLevel level : LogLevel.values()) {
+				if(level.ordinal() == ordinal)
+					return level;
+			}
+			
+			throw new RuntimeException("Invalid ordinal: " + ordinal);
+		}
 	}
+
+	@Deprecated
+	public static final int ERROR = LogLevel.ERROR.ordinal();
+
+	@Deprecated
+	public static final int WARNING = LogLevel.WARNING.ordinal();
+
+	@Deprecated
+	public static final int NORMAL = LogLevel.NORMAL.ordinal();
+
+	@Deprecated
+	public static final int MINOR = LogLevel.MINOR.ordinal();
+
+	@Deprecated
+	public static final int DEBUG = LogLevel.DEBUG.ordinal();
+
+	@Deprecated
+	public static final int INTERNAL = LogLevel.NONE.ordinal();
 	
 	/**
 	 * Single global LoggerHook.
@@ -236,6 +258,11 @@ public abstract class Logger {
 		fh.start();
 		return fh;
 	}
+	
+	@Deprecated
+	public synchronized static FileLoggerHook setupStdoutLogging(int level, String detail) throws InvalidThresholdException {
+		return setupStdoutLogging(LogLevel.fromOrdinal(level), detail);
+	}
 
 	/** Create a LoggerHookChain and set the global logger to be it. */
 	public synchronized static void setupChain() {
@@ -245,75 +272,80 @@ public abstract class Logger {
 	// These methods log messages at various priorities using the global logger.
 	
 	public synchronized static void debug(Class<?> c, String s) {
-		logger.log(c, s, DEBUG);
+		logger.log(c, s, LogLevel.DEBUG);
 	}
 
 	public synchronized static void debug(Class<?> c, String s, Throwable t) {
-		logger.log(c, s, t, DEBUG);
+		logger.log(c, s, t, LogLevel.DEBUG);
 	}
 	
 	public synchronized static void debug(Object o, String s) {
-		logger.log(o, s, DEBUG);
+		logger.log(o, s, LogLevel.DEBUG);
 	}
 
 	public synchronized static void debug(Object o, String s, Throwable t) {
-		logger.log(o, s, t, DEBUG);
+		logger.log(o, s, t, LogLevel.DEBUG);
 	}
 
 	public synchronized static void error(Class<?> c, String s) {
-		logger.log(c, s, ERROR);
+		logger.log(c, s, LogLevel.ERROR);
 	}
 
 	public synchronized static void error(Object o, String s) {
-		logger.log(o, s, ERROR);
+		logger.log(o, s, LogLevel.ERROR);
 	}
 
 	public synchronized static void error(Object o, String s, Throwable e) {
-		logger.log(o, s, e, ERROR);
+		logger.log(o, s, e, LogLevel.ERROR);
 	}
 
 	public synchronized static void minor(Class<?> c, String s) {
-		logger.log(c, s, MINOR);
+		logger.log(c, s, LogLevel.MINOR);
 	}
 
 	public synchronized static void minor(Object o, String s) {
-		logger.log(o, s, MINOR);
+		logger.log(o, s, LogLevel.MINOR);
 	}
 
 	public synchronized static void minor(Object o, String s, Throwable t) {
-		logger.log(o, s, t, MINOR);
+		logger.log(o, s, t, LogLevel.MINOR);
 	}
 
 	public synchronized static void minor(Class<?> class1, String string, Throwable t) {
-		logger.log(class1, string, t, MINOR);
+		logger.log(class1, string, t, LogLevel.MINOR);
 	}
 
 	public synchronized static void normal(Object o, String s) {
-		logger.log(o, s, NORMAL);
+		logger.log(o, s, LogLevel.NORMAL);
 	}
 
 	public synchronized static void normal(Object o, String s, Throwable t) {
-		logger.log(o, s, t, NORMAL);
+		logger.log(o, s, t, LogLevel.NORMAL);
 	}
 
 	public synchronized static void normal(Class<?> c, String s) {
-		logger.log(c, s, NORMAL);
+		logger.log(c, s, LogLevel.NORMAL);
 	}
 
 	public synchronized static void warning(Class<?> c, String s) {
-		logger.log(c, s, WARNING);
+		logger.log(c, s, LogLevel.WARNING);
 	}
 
 	public synchronized static void warning(Object o, String s) {
-		logger.log(o, s, WARNING);
+		logger.log(o, s, LogLevel.WARNING);
 	}
 
 	public synchronized static void warning(Object o, String s, Throwable e) {
-		logger.log(o, s, e, WARNING);
+		logger.log(o, s, e, LogLevel.WARNING);
 	}
 
 	public synchronized static void logStatic(Object o, String s, LogLevel prio) {
 		logger.log(o, s, prio);
+	}
+	
+	@Deprecated
+	public synchronized static void logStatic(Object o, String s, int prio) {
+		logStatic(o, s, LogLevel.fromOrdinal(prio));
 	}
 
 	/**
@@ -337,6 +369,16 @@ public abstract class Logger {
 			String message,
 			Throwable e,
 			LogLevel priority);
+	
+	@Deprecated
+	public void log(
+			Object o,
+			Class<?> source,
+			String message,
+			Throwable e,
+			int priority) {
+		log(o, source, message, e, LogLevel.fromOrdinal(priority));
+	}
 
 	/**
 	 * Log a message.
@@ -346,6 +388,11 @@ public abstract class Logger {
 	 *                 LogLevel.NORMAL, LogLevel.MINOR, or LogLevel.DEBUG.
 	 **/
 	public abstract void log(Object source, String message, LogLevel priority);
+	
+	@Deprecated
+	public void log(Object source, String message, int priority) {
+		log(source, message, LogLevel.fromOrdinal(priority));
+	}
 
 	/** 
 	 * Log a message with an exception.
@@ -358,6 +405,13 @@ public abstract class Logger {
 	 */
 	public abstract void log(Object o, String message, Throwable e, 
 			LogLevel priority);
+	
+	@Deprecated
+	public void log(Object o, String message, Throwable e, 
+			int priority) {
+		log(o, message, e, LogLevel.fromOrdinal(priority));
+	}
+	
 	/**
 	 * Log a message from static code.
 	 * @param c        The class where this message was generated.
@@ -366,6 +420,11 @@ public abstract class Logger {
 	 *                 LogLevel.NORMAL, LogLevel.MINOR, or LogLevel.DEBUG.
 	 */
 	public abstract void log(Class<?> c, String message, LogLevel priority);
+	
+	@Deprecated
+	public void log(Class<?> c, String message, int priority) {
+		log(c, message, LogLevel.fromOrdinal(priority));
+	}
 
 	/**
 	 * Log a message from static code.
@@ -378,14 +437,30 @@ public abstract class Logger {
 	public abstract void log(Class<?> c, String message, Throwable e,
 			LogLevel priority);
 
+	@Deprecated
+	public void log(Class<?> c, String message, Throwable e,
+			int priority) {
+		log(c, message, e, LogLevel.fromOrdinal(priority));
+	}
+
 	/** Should this specific Logger object log a message concerning the 
 	 * given class with the given priority. */
 	public abstract boolean instanceShouldLog(LogLevel priority, Class<?> c);
+	
+	@Deprecated
+	public boolean instanceShouldLog(int priority, Class<?> c) {
+		return instanceShouldLog(LogLevel.fromOrdinal(priority), c);
+	}
 
 	/** Would a message concerning an object of the given class be logged
 	 * at the given priority by the global logger? */
 	public static boolean shouldLog(LogLevel priority, Class<?> c) {
 		return logger.instanceShouldLog(priority, c);
+	}
+	
+	@Deprecated
+	public static boolean shouldLog(int priority, Class<?> c) {
+		return shouldLog(LogLevel.fromOrdinal(priority), c);
 	}
 
 	/** Would a message concerning the given object be logged
@@ -393,10 +468,20 @@ public abstract class Logger {
 	public static boolean shouldLog(LogLevel priority, Object o) {
 		return shouldLog(priority, o.getClass());
 	}
+	
+	@Deprecated
+	public static boolean shouldLog(int priority, Object o) {
+		return shouldLog(LogLevel.fromOrdinal(priority), o);
+	}
 
 	/** Should this specific Logger object log a message concerning the 
 	 * given object with the given priority. */
 	public abstract boolean instanceShouldLog(LogLevel prio, Object o);
+	
+	@Deprecated
+	public boolean instanceShouldLog(int prio, Object o)  {
+		return instanceShouldLog(LogLevel.fromOrdinal(prio), o);
+	}
 
 	/**
 	 * Changes the priority threshold.
@@ -405,6 +490,11 @@ public abstract class Logger {
 	 *            The new threshhold
 	 */
 	public abstract void setThreshold(LogLevel thresh);
+	
+	@Deprecated
+	public void setThreshold(int thresh) {
+		setThreshold(LogLevel.fromOrdinal(thresh));
+	}
 
 	/**
 	 * Changes the priority threshold.
@@ -418,7 +508,12 @@ public abstract class Logger {
 	/**
 	 * @return The currently used logging threshold
 	 */
-	public abstract LogLevel getThreshold();
+	public abstract LogLevel getThresholdNew();
+	
+	@Deprecated
+	public int getThreshold() {
+		return getThresholdNew().ordinal();
+	}
 
 	/** Set the detailed list of thresholds. This allows to specify that
 	 * we are interested in debug level logging for one class but are only
@@ -469,7 +564,7 @@ public abstract class Logger {
 					Field logMINOR_Field = clazz.getDeclaredField("logMINOR");
 					if ((logMINOR_Field.getModifiers() & Modifier.STATIC) != 0) {
 						logMINOR_Field.setAccessible(true);
-						logMINOR_Field.set(null, shouldLog(MINOR, clazz));
+						logMINOR_Field.set(null, shouldLog(LogLevel.MINOR, clazz));
 					}
 					done = true;
 				} catch (SecurityException e) {
@@ -482,7 +577,7 @@ public abstract class Logger {
 					Field logDEBUG_Field = clazz.getDeclaredField("logDEBUG");
 					if ((logDEBUG_Field.getModifiers() & Modifier.STATIC) != 0) {
 						logDEBUG_Field.setAccessible(true);
-						logDEBUG_Field.set(null, shouldLog(DEBUG, clazz));
+						logDEBUG_Field.set(null, shouldLog(LogLevel.DEBUG, clazz));
 					}
 					done = true;
 				} catch (SecurityException e) {
@@ -522,10 +617,20 @@ public abstract class Logger {
 	public synchronized static void globalSetThreshold(LogLevel i) {
 		logger.setThreshold(i);
 	}
+	
+	@Deprecated
+	public synchronized static void globalSetThreshold(int i) {
+		logger.setThreshold(LogLevel.fromOrdinal(i));
+	}
 
 	/** What is the current global logging threshold? */
-	public synchronized static LogLevel globalGetThreshold() {
-		return logger.getThreshold();
+	public synchronized static LogLevel globalGetThresholdNew() {
+		return logger.getThresholdNew();
+	}
+	
+	@Deprecated
+	public synchronized static int globalGetThreshold() {
+		return globalGetThresholdNew().ordinal();
 	}
 
 	/** Remove a logger hook from the global logger hook chain. */

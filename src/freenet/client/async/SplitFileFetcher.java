@@ -20,6 +20,7 @@ import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.keys.NodeCHK;
@@ -196,8 +197,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 		this.token = token2;
 		
-		long minCompatMode = -1;
-		long maxCompatMode = -1;
+		CompatibilityMode minCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
+		CompatibilityMode maxCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
 
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
@@ -228,19 +229,19 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 						int segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
 						if(segSize == 128) {
 							// Could be either
-							minCompatMode = InsertContext.COMPAT_1250_EXACT;
-							maxCompatMode = InsertContext.COMPAT_1250;
+							minCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
+							maxCompatMode = CompatibilityMode.COMPAT_1250;
 						} else {
-							minCompatMode = maxCompatMode = InsertContext.COMPAT_1250_EXACT;
+							minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
 						}
 					} else {
-						minCompatMode = maxCompatMode = InsertContext.COMPAT_1250_EXACT;
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250;
 					}
 				} else {
-					minCompatMode = maxCompatMode = InsertContext.COMPAT_1251;
+					minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
 				}
 			} else {
-				minCompatMode = maxCompatMode = InsertContext.COMPAT_1254;
+				minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1254;
 				if(params.length < 10)
 					throw new MetadataParseException("Splitfile parameters too short for version 1");
 				short paramsType = Fields.bytesToShort(params, 0);

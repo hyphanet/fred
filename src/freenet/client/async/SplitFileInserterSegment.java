@@ -301,7 +301,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			Logger.normal(this, "Not encoded because no check blocks");
 			encoded = false;
 			FECCodec splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm,
-					dataBlockCount, ctx.compatibilityMode);
+					dataBlockCount, ctx.getCompatibilityMode());
 			int checkBlocksCount =splitfileAlgo.countCheckBlocks();
 			this.checkURIs = new ClientCHK[checkBlocksCount];
 			this.checkBlocks = new Bucket[checkBlocksCount];

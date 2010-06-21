@@ -13,6 +13,7 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.crypt.HashResult;
@@ -210,9 +211,11 @@ class SingleFileInserter implements ClientPutState {
 		}
 		long origSize = block.getData().size();
 		if(hashes != null) {
-			System.out.println("Computed hashes for "+this+" for "+block.desiredURI+" size "+origSize);
-			for(HashResult res : hashes) {
-				System.out.println(res.type.name()+" : "+HexUtil.bytesToHex(res.result));
+			if(logDEBUG) {
+				Logger.debug(this, "Computed hashes for "+this+" for "+block.desiredURI+" size "+origSize);
+				for(HashResult res : hashes) {
+					Logger.debug(this, res.type.name()+" : "+HexUtil.bytesToHex(res.result));
+				}
 			}
 		} else {
 			hashes = origHashes; // Inherit so it goes all the way to the top.
@@ -388,7 +391,8 @@ class SingleFileInserter implements ClientPutState {
 		} else {
 			if(persistent)
 				container.activate(ctx, 1);
-			boolean allowSizes = (ctx.compatibilityMode == 0 || ctx.compatibilityMode >= InsertContext.COMPAT_1254);
+			CompatibilityMode cmode = ctx.getCompatibilityMode();
+			boolean allowSizes = (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
 			if(metadata) allowSizes = false;
 			SplitHandler sh = new SplitHandler(origSize, compressedDataSize, allowSizes);
 			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, hashes, origDataLength, origCompressedDataLength);
@@ -469,7 +473,8 @@ class SingleFileInserter implements ClientPutState {
 		
 		// We always want SHA256, even for small files.
 		long wantHashes = 0;
-		if((ctx.compatibilityMode == 0 || ctx.compatibilityMode >= InsertContext.COMPAT_1254) && (!metadata)) {
+		CompatibilityMode cmode = ctx.getCompatibilityMode();
+		if((cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) && (!metadata)) {
 			// We verify this. We want it for *all* files.
 			wantHashes |= HashType.SHA256.bitmask;
 			// FIXME: If the user requests it, calculate the others for small files.
@@ -863,7 +868,8 @@ class SingleFileInserter implements ClientPutState {
 				return;
 			}
 			ClientMetadata m = meta.getClientMetadata();
-			if(!(ctx.compatibilityMode == 0 || ctx.compatibilityMode >= InsertContext.COMPAT_1254))
+			CompatibilityMode cmode = ctx.getCompatibilityMode();
+			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()))
 				m = null;
 			InsertBlock newBlock = new InsertBlock(metadataBucket, m, block.desiredURI);
 			if(persistent)

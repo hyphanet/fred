@@ -34,7 +34,10 @@ public class SecurityLevels {
 		LOW, // turn off every performance impacting security measure
 		NORMAL, // normal setting, darknet/opennet hybrid
 		HIGH, // darknet only, normal settings otherwise
-		MAXIMUM, // paranoid - darknet only, turn off FOAF etc etc
+		MAXIMUM; // paranoid - darknet only, turn off FOAF etc etc
+		
+		public static final NETWORK_THREAT_LEVEL[] OPENNET_VALUES = new NETWORK_THREAT_LEVEL[] { LOW, NORMAL };
+		public static final NETWORK_THREAT_LEVEL[] DARKNET_VALUES = new NETWORK_THREAT_LEVEL[] { HIGH, MAXIMUM };
 	}
 	
 	public enum FRIENDS_THREAT_LEVEL {

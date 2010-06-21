@@ -57,7 +57,7 @@ public class VoidLogger extends Logger
 	}
 
 	@Override
-	public LogLevel getThreshold() {
+	public LogLevel getThresholdNew() {
 		return LogLevel.NONE;
 	}
 

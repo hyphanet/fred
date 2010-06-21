@@ -2,6 +2,7 @@ package freenet.node.fcp;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.InsertContext;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
@@ -21,14 +22,16 @@ public class CompatibilityMode extends FCPMessage {
 	
 	void merge(long min, long max) {
 		if(min > this.min) this.min = min;
-		if(max < this.max || this.max < 0) this.max = max;
+		if(max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
 	}
 	
 	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
-		fs.put("Min", min);
-		fs.put("Max", max);
+		fs.putOverwrite("Min", InsertContext.CompatibilityMode.values()[(int)min].name());
+		fs.putOverwrite("Max", InsertContext.CompatibilityMode.values()[(int)max].name());
+		fs.put("Min.Number", min);
+		fs.put("Max.Number", max);
 		fs.putOverwrite("Identifier", identifier);
 		fs.put("Global", global);
 		return fs;
@@ -47,6 +50,13 @@ public class CompatibilityMode extends FCPMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new UnsupportedOperationException();
+	}
+
+	public InsertContext.CompatibilityMode[] getModes() {
+		return new InsertContext.CompatibilityMode[] {
+				InsertContext.CompatibilityMode.values()[(int)min],
+				InsertContext.CompatibilityMode.values()[(int)max]
+		};
 	}
 
 }

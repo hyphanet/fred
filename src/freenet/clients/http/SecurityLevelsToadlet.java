@@ -497,17 +497,22 @@ public class SecurityLevelsToadlet extends Toadlet {
 		formNode.addChild("div", "class", "configprefix", l10nSec("networkThreatLevelShort"));
 		HTMLNode ul = formNode.addChild("ul", "class", "config");
 		HTMLNode seclevelGroup = ul.addChild("li");
-		seclevelGroup.addChild("#", l10nSec("networkThreatLevel"));
+		seclevelGroup.addChild("#", l10nSec("networkThreatLevel.opennetIntro"));
 
 		NETWORK_THREAT_LEVEL networkLevel = node.securityLevels.getNetworkThreatLevel();
 
+		HTMLNode p = seclevelGroup.addChild("p");
+		p.addChild("b", l10nSec("networkThreatLevel.opennetLabel"));
+		p.addChild("#", ": "+l10nSec("networkThreatLevel.opennetExplain"));
+		HTMLNode div = seclevelGroup.addChild("div", "class", "opennetDiv");
+		
 		String controlName = "security-levels.networkThreatLevel";
-		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.values()) {
+		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.OPENNET_VALUES) {
 			HTMLNode input;
 			if(level == networkLevel) {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
+				input = div.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
 			} else {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
+				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
 			}
 			input.addChild("b", l10nSec("networkThreatLevel.name."+level));
 			input.addChild("#", ": ");
@@ -515,6 +520,26 @@ public class SecurityLevelsToadlet extends Toadlet {
 			HTMLNode inner = input.addChild("p").addChild("i");
 			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 		}
+
+		p = seclevelGroup.addChild("p");
+		p.addChild("b", l10nSec("networkThreatLevel.darknetLabel"));
+		p.addChild("#", ": "+l10nSec("networkThreatLevel.darknetExplain"));
+		div = seclevelGroup.addChild("div", "class", "darknetDiv");
+		
+		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.DARKNET_VALUES) {
+			HTMLNode input;
+			if(level == networkLevel) {
+				input = div.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
+			} else {
+				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
+			}
+			input.addChild("b", l10nSec("networkThreatLevel.name."+level));
+			input.addChild("#", ": ");
+			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			HTMLNode inner = input.addChild("p").addChild("i");
+			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+		}
+		seclevelGroup.addChild("p").addChild("b", l10nSec("networkThreatLevel.opennetFriendsWarning"));
 
 		// Friends security level
 		formNode.addChild("div", "class", "configprefix", l10nSec("friendsThreatLevelShort"));
@@ -579,7 +604,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 					addPasswordChangeForm(inner);
 				} else {
 					// Add password form
-					HTMLNode p = inner.addChild("p");
+					p = inner.addChild("p");
 					p.addChild("label", "for", "passwordBox", l10nSec("setPassword"));
 					p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
 				}

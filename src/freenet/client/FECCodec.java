@@ -12,6 +12,7 @@ import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.util.Buffer;
 
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
@@ -62,7 +63,7 @@ public abstract class FECCodec {
 	 * Get a codec where we know only the number of data blocks and the codec
 	 * type. Normally for encoding.
 	 */
-	public static FECCodec getCodec(short splitfileType, int dataBlocks, long compatibilityMode) {
+	public static FECCodec getCodec(short splitfileType, int dataBlocks, CompatibilityMode compatibilityMode) {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
@@ -73,7 +74,7 @@ public abstract class FECCodec {
 			return null;
 	}
 	
-	private static int standardOnionCheckBlocks(int dataBlocks, long compatibilityMode) {
+	private static int standardOnionCheckBlocks(int dataBlocks, CompatibilityMode compatibilityMode) {
 		/**
 		 * ALCHEMY: What we do know is that redundancy by FEC is much more efficient than 
 		 * redundancy by simply duplicating blocks, for obvious reasons (see e.g. Wuala). But
@@ -91,7 +92,7 @@ public abstract class FECCodec {
 		// Keep it within 256 blocks.
 		if(dataBlocks < 256 && dataBlocks + checkBlocks > 256)
 			checkBlocks = 256 - dataBlocks;
-		if(compatibilityMode == InsertContext.COMPAT_1250 || compatibilityMode == InsertContext.COMPAT_1250_EXACT) {
+		if(compatibilityMode == InsertContext.CompatibilityMode.COMPAT_1250 || compatibilityMode == InsertContext.CompatibilityMode.COMPAT_1250_EXACT) {
 			// Pre-1250, redundancy was always 100% or less.
 			// Builds of that period using the native FEC (ext #26) will segfault sometimes on >100% redundancy.
 			// So limit check blocks to data blocks.
@@ -100,7 +101,7 @@ public abstract class FECCodec {
 		return checkBlocks;
 	}
 
-	public static int getCheckBlocks(short splitfileType, int dataBlocks, long compatibilityMode) {
+	public static int getCheckBlocks(short splitfileType, int dataBlocks, CompatibilityMode compatibilityMode) {
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
 			return standardOnionCheckBlocks(dataBlocks, compatibilityMode);
 		} else

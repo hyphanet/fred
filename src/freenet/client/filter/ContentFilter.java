@@ -74,12 +74,16 @@ public class ContentFilter {
 				l10n("imageBMPWriteAdvice"), false, null, null, false));	
 
 
+		// ICO needs filtering.
+		// Format is not the same as BMP iirc.
+		// DoS: http://www.kb.cert.org/vuls/id/290961
+		// Remote code exec: http://www.microsoft.com/technet/security/bulletin/ms09-062.mspx
 		
-		// ICO - probably safe - FIXME check this out, write filters
-		register(new MIMEType("image/x-icon", "ico", new String[] { "image/vnd.microsoft.icon", "image/ico", "application/ico"}, 
-				new String[0], true, false, null, null, false, false, false, false, false, false,
-				l10n("imageIcoReadAdvice"),
-				l10n("imageIcoWriteAdvice"), false, null, null, false));
+//		// ICO - probably safe - FIXME check this out, write filters
+//		register(new MIMEType("image/x-icon", "ico", new String[] { "image/vnd.microsoft.icon", "image/ico", "application/ico"}, 
+//				new String[0], true, false, null, null, false, false, false, false, false, false,
+//				l10n("imageIcoReadAdvice"),
+//				l10n("imageIcoWriteAdvice"), false, null, null, false));
 		
 		// PDF - very dangerous - FIXME ideally we would have a filter, this is such a common format...
 		register(new MIMEType("application/pdf", "pdf", new String[] { "application/x-pdf" }, new String[0],
@@ -327,6 +331,9 @@ public class ContentFilter {
 		// If no BOM, use the charset from the referring document.
 		if(handler.useMaybeCharset && maybeCharset != null && (maybeCharset.length() != 0))
 			return maybeCharset;
+		
+		if(charset != null)
+			return charset;
 		
 		// If it doesn't have a BOM, then it's *probably* safe to use as default.
 		

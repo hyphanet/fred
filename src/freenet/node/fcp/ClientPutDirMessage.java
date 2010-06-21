@@ -6,6 +6,7 @@ package freenet.node.fcp;
 import java.net.MalformedURLException;
 
 import freenet.client.HighLevelSimpleClientImpl;
+import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -52,14 +53,31 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	public boolean forkOnCacheable;
 	final int extraInsertsSingleBlock;
 	final int extraInsertsSplitfileHeaderBlock;
-	final long compatibilityMode;
+	final InsertContext.CompatibilityMode compatibilityMode;
 	final boolean localRequestOnly;
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
 		global = Fields.stringToBool(fs.get("Global"), false);
 		defaultName = fs.get("DefaultName");
-		compatibilityMode = fs.getLong("CompatibilityMode", 0);
+		String s = fs.get("CompatibilityMode");
+		InsertContext.CompatibilityMode cmode = null;
+		if(s == null)
+			cmode = InsertContext.CompatibilityMode.COMPAT_CURRENT;
+		else {
+			try {
+				cmode = InsertContext.CompatibilityMode.valueOf(s);
+			} catch (IllegalArgumentException e) {
+				try {
+					cmode = InsertContext.CompatibilityMode.values()[Integer.parseInt(s)];
+				} catch (NumberFormatException e1) {
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid CompatibilityMode (not a name and not a number)", identifier, global);
+				} catch (ArrayIndexOutOfBoundsException e1) {
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid CompatibilityMode (not a valid number)", identifier, global);
+				}
+			}
+		}
+		compatibilityMode = cmode;
 		localRequestOnly = fs.getBoolean("LocalRequestOnly", false);
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);

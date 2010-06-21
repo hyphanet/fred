@@ -1,6 +1,5 @@
 package freenet.support;
 
-import static freenet.support.Logger.LogLevel.NORMAL;
 
 /**
  * A class that takes logging messages and distributes them to LoggerHooks.
@@ -17,7 +16,7 @@ public class LoggerHookChain extends LoggerHook {
      * Create a logger. Threshhold set to NORMAL.
      */
     public LoggerHookChain() {
-        this(NORMAL);
+        this(LogLevel.NORMAL);
     }
 
     /**

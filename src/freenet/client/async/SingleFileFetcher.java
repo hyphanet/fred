@@ -24,7 +24,9 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
+import freenet.crypt.MultiHashInputStream;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
@@ -371,12 +373,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent)
 					container.deactivate(metaSnoop, 1);
 			}
-			HashResult[] hashes = metadata.getHashes();
-			if(hashes != null) {
-				rcb.onHashes(hashes, container, context);
-			}
-			if(metadata.hasTopData()) {
-				if(metaStrings.size() == 0) {
+			if(metaStrings.size() == 0) {
+				if(metadata.hasTopData()) {
 					if((metadata.topSize > ctx.maxOutputLength) ||
 							(metadata.topCompressedSize > ctx.maxTempLength)) {
 						// Just in case...
@@ -384,6 +382,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						throw new FetchException(FetchException.TOO_BIG, metadata.topSize, true, clientMetadata.getMIMEType());
 					}
 					rcb.onExpectedTopSize(metadata.topSize, metadata.topCompressedSize, metadata.topBlocksRequired, metadata.topBlocksTotal, container, context);
+				}
+				HashResult[] hashes = metadata.getHashes();
+				if(hashes != null) {
+					rcb.onHashes(hashes, container, context);
 				}
 			}
 			if(metadata.isSimpleManifest()) {
@@ -980,6 +982,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		private final ArchiveExtractCallback callback;
 		/** For activation we need to know whether we are persistent even though the parent may not have been activated yet */
 		private final boolean persistent;
+		private HashResult[] hashes;
 		
 		ArchiveFetcherCallback(boolean wasFetchingFinalData, String element, ArchiveExtractCallback cb) {
 			this.wasFetchingFinalData = wasFetchingFinalData;
@@ -1048,11 +1051,35 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(state != null)
 					state.removeFrom(container, context);
 				container.delete(this);
+				for(HashResult res : hashes)
+					res.removeFrom(container);
 			}
 		}
 
 		private void innerSuccess(Bucket data, ObjectContainer container, ClientContext context) {
 			try {
+				if(hashes != null) {
+					InputStream is = null;
+					try {
+						if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
+						is = data.getInputStream();
+						MultiHashInputStream hasher = new MultiHashInputStream(is, HashResult.makeBitmask(hashes));
+						byte[] buf = new byte[32768];
+						while(hasher.read(buf) > 0);
+						hasher.close();
+						is = null;
+						HashResult[] results = hasher.getResults();
+						if(!HashResult.strictEquals(results, hashes)) {
+							onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), SingleFileFetcher.this, container, context);
+							return;
+						}
+					} catch (IOException e) {
+						onFailure(new FetchException(FetchException.BUCKET_ERROR, e), SingleFileFetcher.this, container, context);
+						return;
+					} finally {
+						Closer.close(is);
+					}
+				}
 				ah.extractToCache(data, actx, element, callback, context.archiveManager, container, context);
 			} catch (ArchiveFailureException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
@@ -1084,6 +1111,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					state.removeFrom(container, context);
 				container.delete(this);
 				callback.removeFrom(container);
+				for(HashResult res : hashes)
+					res.removeFrom(container);
 			}
 		}
 
@@ -1133,12 +1162,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
 		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
-			// Ignore
+			this.hashes = hashes;
+			if(persistent) container.store(this);
 		}
 		
 	}
@@ -1279,7 +1309,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(long min, long max, ObjectContainer container, ClientContext context) {
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 

@@ -30,7 +30,7 @@ public class LoggingConfigHandler {
 		@Override
 		public String get() {
 			LoggerHookChain chain = Logger.getChain();
-			return chain.getThreshold().name();
+			return chain.getThresholdNew().name();
 		}
 		@Override
 		public void set(String val) throws InvalidConfigValueException {
