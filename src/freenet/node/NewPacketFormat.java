@@ -111,6 +111,7 @@ public class NewPacketFormat implements PacketFormat {
 			return;
 		}
 
+		boolean dontAck = false;
 		//Handle received message fragments
 		while(offset < plaintext.length) {
 			boolean shortMessage = (plaintext[offset] & 0x80) != 0;
@@ -153,7 +154,10 @@ public class NewPacketFormat implements PacketFormat {
 			byte[] recvBuf = receiveBuffers.get(messageID);
 			SparseBitmap recvMap = receiveMaps.get(messageID);
 			if(recvBuf == null) {
-				if(!firstFragment) return; //For now we need the message length first
+				if(!firstFragment) {
+					dontAck = true;
+					return; //For now we need the message length first
+				}
 
 				if(messageLength < 0) {
 					Logger.warning(this, "Message length(" + messageLength + ") is negative. Probably a bug. Discarding packet");
@@ -181,9 +185,11 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		//Ack received packet
-		synchronized(acks) {
-			acks.addLast(sequenceNumber);
+		if(!dontAck) {
+			//Ack received packet
+			synchronized(acks) {
+				acks.addLast(sequenceNumber);
+			}
 		}
 
 	}
