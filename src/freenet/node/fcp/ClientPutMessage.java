@@ -92,7 +92,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		String s = fs.get("CompatibilityMode");
 		InsertContext.CompatibilityMode cmode = null;
 		if(s == null)
-			cmode = InsertContext.CompatibilityMode.COMPAT_NONE;
+			cmode = InsertContext.CompatibilityMode.COMPAT_CURRENT;
 		else {
 			try {
 				cmode = InsertContext.CompatibilityMode.valueOf(s);

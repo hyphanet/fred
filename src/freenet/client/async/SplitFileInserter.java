@@ -156,7 +156,7 @@ public class SplitFileInserter implements ClientPutState {
 				segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
 			}
 			segmentSize = segSize;
-			if(cmode == CompatibilityMode.COMPAT_NONE || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) {
+			if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) {
 				// Even with basic even segment splitting, it is possible for the last segment to be a lot smaller than the rest.
 				// So drop a single data block from each of the last [segmentSize-lastSegmentSize] segments instead.
 				// Hence all the segments are within 1 block of segmentSize.

@@ -392,7 +392,7 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent)
 				container.activate(ctx, 1);
 			CompatibilityMode cmode = ctx.getCompatibilityMode();
-			boolean allowSizes = (cmode == CompatibilityMode.COMPAT_NONE || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
+			boolean allowSizes = (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
 			if(metadata) allowSizes = false;
 			SplitHandler sh = new SplitHandler(origSize, compressedDataSize, allowSizes);
 			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, hashes, origDataLength, origCompressedDataLength);
@@ -474,7 +474,7 @@ class SingleFileInserter implements ClientPutState {
 		// We always want SHA256, even for small files.
 		long wantHashes = 0;
 		CompatibilityMode cmode = ctx.getCompatibilityMode();
-		if((cmode == CompatibilityMode.COMPAT_NONE || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) && (!metadata)) {
+		if((cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) && (!metadata)) {
 			// We verify this. We want it for *all* files.
 			wantHashes |= HashType.SHA256.bitmask;
 			// FIXME: If the user requests it, calculate the others for small files.
@@ -869,7 +869,7 @@ class SingleFileInserter implements ClientPutState {
 			}
 			ClientMetadata m = meta.getClientMetadata();
 			CompatibilityMode cmode = ctx.getCompatibilityMode();
-			if(!(cmode == CompatibilityMode.COMPAT_NONE || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()))
+			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()))
 				m = null;
 			InsertBlock newBlock = new InsertBlock(metadataBucket, m, block.desiredURI);
 			if(persistent)
