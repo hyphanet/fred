@@ -155,6 +155,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         
         MessageDigest md256 = SHA256.getMessageDigest();
         // First pad it
+        int dataLength = finalData.length;
         if(finalData.length != 32768) {
             // Hash the data
             if(finalData.length != 0)
@@ -178,8 +179,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         header[0] = (byte)(KeyBlock.HASH_SHA256 >> 8);
         header[1] = (byte)(KeyBlock.HASH_SHA256 & 0xff);
         System.arraycopy(plainIV, 0, header, 2, plainIV.length);
-        header[plainIV.length+2] = (byte)(finalData.length >> 8);
-        header[plainIV.length+3] = (byte)(finalData.length & 0xff);
+        header[plainIV.length+2] = (byte)(dataLength >> 8);
+        header[plainIV.length+3] = (byte)(dataLength & 0xff);
         // GRRR, java 1.4 does not have any symmetric crypto
         // despite exposing asymmetric and hashes!
         
