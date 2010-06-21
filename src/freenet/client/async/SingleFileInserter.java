@@ -210,9 +210,11 @@ class SingleFileInserter implements ClientPutState {
 		}
 		long origSize = block.getData().size();
 		if(hashes != null) {
-			System.out.println("Computed hashes for "+this+" for "+block.desiredURI+" size "+origSize);
-			for(HashResult res : hashes) {
-				System.out.println(res.type.name()+" : "+HexUtil.bytesToHex(res.result));
+			if(logDEBUG) {
+				Logger.debug(this, "Computed hashes for "+this+" for "+block.desiredURI+" size "+origSize);
+				for(HashResult res : hashes) {
+					Logger.debug(this, res.type.name()+" : "+HexUtil.bytesToHex(res.result));
+				}
 			}
 		} else {
 			hashes = origHashes; // Inherit so it goes all the way to the top.
