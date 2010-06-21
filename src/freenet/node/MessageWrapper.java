@@ -69,7 +69,7 @@ public class MessageWrapper {
 
 		System.arraycopy(item.buf, start, dest, offset, realLength);
 		
-		addRangeToSet(start, start + realLength, sent);
+		addRangeToSet(start, start + realLength - 1, sent);
 		return new int[] {realLength, start};
 	}
 
