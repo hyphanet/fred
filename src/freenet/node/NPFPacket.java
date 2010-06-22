@@ -155,6 +155,7 @@ class NPFPacket {
 			}
 
 			System.arraycopy(fragment.fragmentData, 0, buf, offset, fragment.fragmentLength);
+			offset += fragment.fragmentLength;
 		}
 
 		return offset;
