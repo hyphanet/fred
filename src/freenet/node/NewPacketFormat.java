@@ -143,7 +143,9 @@ public class NewPacketFormat implements PacketFormat {
 			Iterator<MessageWrapper> it = started.values().iterator();
 			while(it.hasNext() && packet.getLength() < maxPacketSize) {
 				MessageWrapper wrapper = it.next();
-				packet.addMessageFragment(wrapper.getMessageFragment(maxPacketSize - packet.getLength()));
+				MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+				if(frag == null) continue;
+				packet.addMessageFragment(frag);
 			}
 		}
 
@@ -164,7 +166,9 @@ public class NewPacketFormat implements PacketFormat {
 			}
 
 			MessageWrapper wrapper = new MessageWrapper(item, messageID);
-			packet.addMessageFragment(wrapper.getMessageFragment(maxPacketSize - packet.getLength()));
+			MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+			if(frag == null) continue;
+			packet.addMessageFragment(frag);
 
 			synchronized(started) {
 				started.put(messageID, wrapper);
