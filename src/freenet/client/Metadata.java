@@ -100,6 +100,8 @@ public class Metadata implements Cloneable {
 	// If parsed version = 1 and splitfile is set and hashes exist, we create the splitfile key from the hashes.
 	// This flag overrides this behaviour and reads a key anyway.
 	static final short FLAGS_SPECIFY_SPLITFILE_KEY = 1024;
+	// We can specify a hash just for this layer as well as hashes for the final content in a multi-layer splitfile.
+	static final short FLAGS_HASH_THIS_LAYER = 2048;
 
 	/** Container archive type
 	 * @see ARCHIVE_TYPE
@@ -148,6 +150,8 @@ public class Metadata implements Cloneable {
 	byte[] splitfileSingleCryptoKey;
 	// If false, the splitfile key can be computed from the hashes. If true, it must be specified.
 	private boolean specifySplitfileKey;
+	/** As opposed to hashes of the final content. */
+	byte[] hashThisLayerOnly;
 
 	// Manifests
 	/** Manifest entries by name */
@@ -255,6 +259,10 @@ public class Metadata implements Cloneable {
 			if(hasTopBlocks && version == 0)
 				throw new MetadataParseException("Version 0 does not support top block data");
 			specifySplitfileKey = (flags & FLAGS_SPECIFY_SPLITFILE_KEY) == FLAGS_SPECIFY_SPLITFILE_KEY;
+			if((flags & FLAGS_HASH_THIS_LAYER) == FLAGS_HASH_THIS_LAYER) {
+				hashThisLayerOnly = new byte[32];
+				dis.readFully(hashThisLayerOnly);
+			}
 		}
 		hashes = h;
 		
@@ -288,6 +296,8 @@ public class Metadata implements Cloneable {
 					dis.readFully(key);
 					splitfileSingleCryptoKey = key;
 				} else {
+					if(hashThisLayerOnly != null)
+						splitfileSingleCryptoKey = getCryptoKey(hashThisLayerOnly);
 					splitfileSingleCryptoKey = getCryptoKey(hashes);
 				}
 			}
@@ -471,6 +481,10 @@ public class Metadata implements Cloneable {
 		if(hashes == null || hashes.length == 0 || !HashResult.contains(hashes, HashType.SHA256))
 			throw new IllegalArgumentException("No hashes in getCryptoKey - need hashes to generate splitfile key!");
 		byte[] hash = HashResult.get(hashes, HashType.SHA256);
+		return getCryptoKey(hash);
+	}
+	
+	public static byte[] getCryptoKey(byte[] hash) {
 		// This is exactly the same algorithm used by e.g. JFK for generating multiple session keys from a single generated value.
 		// The only difference is we use a constant of more than one byte's length here, to avoid having to keep a registry.
 		MessageDigest md = SHA256.getMessageDigest();
@@ -722,9 +736,12 @@ public class Metadata implements Cloneable {
 	}
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
-			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey) {
+			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey) {
 		hashCode = super.hashCode();
 		this.hashes = hashes;
+		this.hashThisLayerOnly = hashThisLayerOnly;
+		if(hashThisLayerOnly != null)
+			if(hashThisLayerOnly.length != 32) throw new IllegalArgumentException();
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
 		else {
@@ -1055,9 +1072,14 @@ public class Metadata implements Cloneable {
 				flags |= FLAGS_TOP_SIZE;
 			}
 			if(specifySplitfileKey) flags |= FLAGS_SPECIFY_SPLITFILE_KEY;
+			if(hashThisLayerOnly != null) flags |= FLAGS_HASH_THIS_LAYER;
 			dos.writeShort(flags);
 			if(hashes != null)
 				HashResult.write(hashes, dos);
+			if(hashThisLayerOnly != null) {
+				assert(hashThisLayerOnly.length == 32);
+				dos.write(hashThisLayerOnly);
+			}
 		}
 		
 		if(topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0) {
