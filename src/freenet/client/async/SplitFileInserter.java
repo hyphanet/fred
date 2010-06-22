@@ -184,6 +184,10 @@ public class SplitFileInserter implements ClientPutState {
 		byte cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
 		this.splitfileCryptoAlgorithm = cryptoAlgorithm;
 		if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) {
+			if(persistent) {
+				// array elements are treated as part of the parent object, but the hashes themselves may not be activated?
+				for(HashResult res : hashes) container.activate(res, Integer.MAX_VALUE);
+			}
 			this.splitfileCryptoKey = Metadata.getCryptoKey(hashes);
 		}
 		segments = splitIntoSegments(segmentSize, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put, cryptoAlgorithm, splitfileCryptoKey);
