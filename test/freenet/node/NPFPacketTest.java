@@ -7,8 +7,8 @@ import junit.framework.TestCase;
 public class NPFPacketTest extends TestCase {
 	public void testEmptyPacket() {
 		byte[] packet = new byte[] {
-		                0x00, 0x00, 0x00, 0x00, //Sequence number 0
-		                0x00}; // 0 acks
+		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
+		                (byte)0x00}; // 0 acks
 		NPFPacket r = NPFPacket.create(packet);
 
 		assertTrue(r.getSequenceNumber() == 0);
@@ -19,9 +19,9 @@ public class NPFPacketTest extends TestCase {
 
 	public void testPacketWithAck() {
 		byte[] packet = new byte[] {
-		                0x00, 0x00, 0x00, 0x00, //Sequence number 0
-		                0x01, //1 ack
-		                0x00, 0x00, 0x00, 0x00}; //Ack for packet 0
+		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
+		                (byte)0x01, //1 ack
+		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00}; //Ack for packet 0
 		NPFPacket r = NPFPacket.create(packet);
 
 		assertEquals(r.getSequenceNumber(), 0);
@@ -33,10 +33,10 @@ public class NPFPacketTest extends TestCase {
 
 	public void testPacketWithAcks() {
 		byte[] packet = new byte[] {
-		                0x00, 0x00, 0x00, 0x00, //Sequence number 0
-		                0x03, //3 acks
-		                0x00, 0x00, 0x00, 0x05, //Ack for packet 5
-		                0x05, 0x06}; //Acks for packets 10 and 11
+		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
+		                (byte)0x03, //3 acks
+		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x05, //Ack for packet 5
+		                (byte)0x05, (byte)0x06}; //Acks for packets 10 and 11
 		NPFPacket r = NPFPacket.create(packet);
 
 		assertEquals(r.getSequenceNumber(), 0);
@@ -50,11 +50,11 @@ public class NPFPacketTest extends TestCase {
 
 	public void testPacketWithFragment() {
 		byte[] packet = new byte[] {
-		                0x00, 0x00, 0x00, 0x00, //Sequence number 0
-		                0x00, // 0 acks
-		                (byte)0xA0, 0x00, //Flags (short and first fragment) and messageID 0
-		                0x08, //Fragment length
-		                0x01, 0x23, 0x45, 0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}; //Data
+		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
+		                (byte)0x00, // 0 acks
+		                (byte)0xA0, (byte)0x00, //Flags (short and first fragment) and messageID 0
+		                (byte)0x08, //Fragment length
+		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}; //Data
 		NPFPacket r = NPFPacket.create(packet);
 
 		assertTrue(r.getSequenceNumber() == 0);
@@ -69,21 +69,21 @@ public class NPFPacketTest extends TestCase {
 		assertTrue(frag.fragmentLength == 8);
 		assertTrue(frag.fragmentOffset == 0);
 		assertTrue(frag.messageLength == 8);
-		assertTrue(Arrays.equals(frag.fragmentData,
-				new byte[] {0x01, 0x23, 0x45, 0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}));
+		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { (byte)0x01, (byte)0x23, (byte)0x45,
+		                (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF }));
 
 		assertFalse(r.getError());
 	}
 
 	public void testPacketWithFragments() {
-		byte[] packet = new byte[] { 0x00, 0x00, 0x00, 0x00, // Sequence number 0
-		                0x00, // 0 acks
-		                (byte) 0xA0, 0x00, // Flags (short and first fragment) and messageID 0
-		                0x08, // Fragment length
-		                0x01, 0x23, 0x45, 0x67, (byte) 0x89, (byte) 0xAB, (byte) 0xCD, (byte) 0xEF, // Data
-		                (byte) 0xA0, 0x00, // Flags (short and first fragment) and messageID 0
-		                0x08, // Fragment length
-		                0x01, 0x23, 0x45, 0x67, (byte) 0x89, (byte) 0xAB, (byte) 0xCD, (byte) 0xEF }; // Data
+		byte[] packet = new byte[] { (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, // Sequence number 0
+		                (byte)0x00, // 0 acks
+		                (byte)0xA0, (byte)0x00, // Flags (short and first fragment) and messageID 0
+		                (byte)0x08, // Fragment length
+		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF, // Data
+		                (byte)0xA0, (byte)0x00, // Flags (short and first fragment) and messageID 0
+		                (byte)0x08, // Fragment length
+		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF }; // Data
 		NPFPacket r = NPFPacket.create(packet);
 
 		assertTrue(r.getSequenceNumber() == 0);
@@ -99,8 +99,8 @@ public class NPFPacketTest extends TestCase {
 		assertTrue(frag.fragmentLength == 8);
 		assertTrue(frag.fragmentOffset == 0);
 		assertTrue(frag.messageLength == 8);
-		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { 0x01, 0x23, 0x45, 0x67, (byte) 0x89,
-		                (byte) 0xAB, (byte) 0xCD, (byte) 0xEF }));
+		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89,
+		                (byte)0xAB, (byte)0xCD, (byte)0xEF }));
 
 		// Check second fragment
 		frag = r.getFragments().get(1);
@@ -111,8 +111,8 @@ public class NPFPacketTest extends TestCase {
 		assertTrue(frag.fragmentLength == 8);
 		assertTrue(frag.fragmentOffset == 0);
 		assertTrue(frag.messageLength == 8);
-		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { 0x01, 0x23, 0x45, 0x67, (byte) 0x89,
-		                (byte) 0xAB, (byte) 0xCD, (byte) 0xEF }));
+		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89,
+		                (byte)0xAB, (byte)0xCD, (byte)0xEF }));
 
 		assertFalse(r.getError());
 	}
@@ -121,8 +121,8 @@ public class NPFPacketTest extends TestCase {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(0);
 
-		byte[] correctData = new byte[] {0x00, 0x00, 0x00, 0x00, //Sequence number (0)
-		                0x00}; //Number of acks (0)
+		byte[] correctData = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number (0)
+		                (byte)0x00}; //Number of acks (0)
 
 		checkPacket(p, correctData);
 	}
@@ -134,10 +134,10 @@ public class NPFPacketTest extends TestCase {
 		p.addAck(5);
 		p.addAck(10);
 
-		byte[] correctData = new byte[] {0x00, 0x00, 0x00, 0x00,
-		                0x03,
-				0x00, 0x00, 0x00, 0x00,
-				0x05, 0x0A};
+		byte[] correctData = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+		                (byte)0x03,
+				(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+				(byte)0x05, (byte)0x0A};
 
 		checkPacket(p, correctData);
 	}
@@ -146,13 +146,13 @@ public class NPFPacketTest extends TestCase {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(100);
 		p.addMessageFragment(new MessageFragment(true, false, true, 0, 8, 8, 0,
-		                new byte[] {0x01, 0x23, 0x45, 0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}));
+		                new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}));
 
-		byte[] correctData = new byte[] {0x00, 0x00, 0x00, 0x64, //Sequence number (100)
-		                0x00,
-				(byte)0xA0, 0x00, //Flags + messageID
-				0x08, //Fragment length
-				0x01, 0x23, 0x45, 0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};
+		byte[] correctData = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x64, //Sequence number (100)
+		                (byte)0x00,
+				(byte)0xA0, (byte)0x00, //Flags + messageID
+				(byte)0x08, //Fragment length
+				(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};
 
 		checkPacket(p, correctData);
 	}
