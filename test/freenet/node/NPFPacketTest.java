@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
-public class ReceivedPacketTest extends TestCase {
+public class NPFPacketTest extends TestCase {
 	public void testEmptyPacket() {
 		byte[] packet = new byte[] {
 		                0x00, 0x00, 0x00, 0x00, //Sequence number 0
