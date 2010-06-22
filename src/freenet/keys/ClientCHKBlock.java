@@ -18,7 +18,9 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.node.Node;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.InvalidCompressionCodecException;
@@ -40,6 +42,17 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         return super.toString()+",key="+key;
     }
     
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
     /**
      * Construct from data retrieved, and a key.
      * Do not do full decode. Verify what can be verified without doing
@@ -106,9 +119,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         byte[] dkey = key.cryptoKey;
         // If the block is encoded normally, dkey == key.cryptoKey
         if(!java.util.Arrays.equals(md256.digest(dbuf), key.cryptoKey)) {
-        	Logger.error(this, "Found nonstandard block encoding");
-//        	SHA256.returnMessageDigest(md256);
-//            throw new CHKDecodeException("Check failed: decrypt key == H(data)");
+        	// This happens when handling post-1254 splitfiles.
+        	if(logMINOR) Logger.minor(this, "Found non-convergent block encoding");
         }
         // Check: IV == hash of decryption key
         byte[] predIV = md256.digest(dkey);
