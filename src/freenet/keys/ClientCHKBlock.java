@@ -128,6 +128,24 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     }
 
     /**
+     * Encode a splitfile block.
+     * @param data The data to encode. Must be exactly DATA_LENGTH bytes.
+     * @param cryptoKey The encryption key. Can be null in which case this is equivalent to a normal block
+     * encode.
+     */
+    static public ClientCHKBlock encodeSplitfileBlock(byte[] data, byte[] cryptoKey) throws CHKEncodeException {
+    	if(data.length != CHKBlock.DATA_LENGTH) throw new IllegalArgumentException();
+    	if(cryptoKey != null && cryptoKey.length != 32) throw new IllegalArgumentException();
+        MessageDigest md256 = SHA256.getMessageDigest();
+        // No need to pad
+        if(cryptoKey == null) {
+        	cryptoKey = md256.digest(data);
+        	md256.reset();
+        }
+        return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1);
+    }
+    
+    /**
      * Encode a Bucket of data to a CHKBlock.
      * @param sourceData The bucket of data to encode. Can be arbitrarily large.
      * @param asMetadata Is this a metadata key?
