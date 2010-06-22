@@ -276,9 +276,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
 			segmentCount = (splitfileDataBlocks.length / blocksPerSegment) +
 				(splitfileDataBlocks.length % blocksPerSegment == 0 ? 0 : 1);
-			if(segmentCount > 1 && ((blocksPerSegment != 128 /* old limit */) || (checkBlocksPerSegment != HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT))) {
-				System.out.println("Decoding unusual splitfile: Total data blocks "+splitfileDataBlocks.length+" total check blocks "+splitfileCheckBlocks.length+" data blocks per segment "+blocksPerSegment+" check blocks per segment "+checkBlocksPerSegment+" segments "+segmentCount);
-			}
 				
 			// Onion, 128/192.
 			// Will be segmented.
