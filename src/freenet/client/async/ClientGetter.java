@@ -740,7 +740,9 @@ public class ClientGetter extends BaseClientGetter {
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(this.hashes != null) {
-				Logger.error(this, "Two sets of hashes?!");
+				if(persistent()) container.activate(this.hashes, Integer.MAX_VALUE);
+				if(!HashResult.strictEquals(hashes, this.hashes))
+					Logger.error(this, "Two sets of hashes?!");
 				return;
 			}
 			this.hashes = hashes;
