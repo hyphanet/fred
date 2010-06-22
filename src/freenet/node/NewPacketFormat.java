@@ -167,7 +167,7 @@ public class NewPacketFormat implements PacketFormat {
 
 			MessageWrapper wrapper = new MessageWrapper(item, messageID);
 			MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-			if(frag == null) continue;
+			if(frag == null) break;
 			packet.addMessageFragment(frag);
 
 			synchronized(started) {
