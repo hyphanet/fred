@@ -248,7 +248,7 @@ public class NewPacketFormat implements PacketFormat {
 				int[] range = rangeIt.next();
 				if(wrapper.ack(range[0], range[1])) {
 					synchronized(started) {
-						started.remove(wrapper);
+						started.remove(wrapper.getMessageID());
 					}
 				}
 			}
