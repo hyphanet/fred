@@ -1555,6 +1555,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(persistent)
 			container.deactivate(seg, 1);
 		if(fatal != null) {
+			if(persistent)
+				container.activate(errors, 1);
+			errors.inc(fatal.mode);
+			if(persistent)
+				errors.storeTo(container);
 			this.onFatalFailure(fatal, blockNum, null, container, context);
 			return false;
 		} else if(data == null) {
@@ -1588,13 +1593,30 @@ public class SplitFileFetcherSegment implements FECCallback {
 		} catch (KeyDecodeException e1) {
 			if(logMINOR)
 				Logger.minor(this, "Decode failure: "+e1, e1);
+			// All other callers to onFatalFailure increment the error counter in SplitFileFetcherSubSegment.
+			// Therefore we must do so here.
+			if(persistent)
+				container.activate(errors, 1);
+			errors.inc(FetchException.BLOCK_DECODE_ERROR);
+			if(persistent)
+				errors.storeTo(container);
 			this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), blockNum, null, container, context);
 			return null;
 		} catch (TooBigException e) {
+			if(persistent)
+				container.activate(errors, 1);
+			errors.inc(FetchException.TOO_BIG);
+			if(persistent)
+				errors.storeTo(container);
 			this.onFatalFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), blockNum, null, container, context);
 			return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
+			if(persistent)
+				container.activate(errors, 1);
+			errors.inc(FetchException.BUCKET_ERROR);
+			if(persistent)
+				errors.storeTo(container);
 			this.onFatalFailure(new FetchException(FetchException.BUCKET_ERROR, e), blockNum, null, container, context);
 			return null;
 		}
