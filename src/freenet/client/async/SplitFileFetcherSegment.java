@@ -873,8 +873,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent)
 			container.store(this);
-		if(allFailed)
+		if(allFailed) {
+			if(persistent) container.activate(errors, Integer.MAX_VALUE);
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, false);
+		}
 		else if(seg != null) {
 			if(seg.possiblyRemoveFromParent(container, context))
 				seg.kill(container, context, true, true);
