@@ -148,9 +148,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 	insertKey = InsertableClientSSK.create(testKey);
                 	fetchKey = ClientKSK.create(testKey);
                 	
-                	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
+                	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
                 } else {
-                	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
+                	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
                 	insertKey = fetchKey = block.getClientKey();
                 	testKey = insertKey.getURI();
                 }

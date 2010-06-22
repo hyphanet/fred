@@ -121,7 +121,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             String dataString = baseString + i;
             byte[] data = dataString.getBytes("UTF-8");
             ClientCHKBlock block;
-            block = ClientCHKBlock.encode(data, false, false, (short)-1, 0, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
+            block = ClientCHKBlock.encode(data, false, false, (short)-1, 0, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, false);
             ClientCHK chk = block.getClientKey();
             byte[] encData = block.getData();
             byte[] encHeaders = block.getHeaders();

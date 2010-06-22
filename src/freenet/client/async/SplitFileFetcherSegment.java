@@ -21,6 +21,7 @@ import freenet.client.FetchException;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.CHKVerifyException;
@@ -108,6 +109,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private boolean scheduled;
 	private final boolean persistent;
 	final int segNum;
+	final boolean pre1254;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -126,7 +128,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	private transient FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254) throws MetadataParseException, FetchException {
 		this.segNum = segNum;
 		this.hashCode = super.hashCode();
 		this.persistent = fetcher.persistent;
@@ -165,6 +167,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(dataKeys[i] == null) throw new NullPointerException("Null: data block "+i);
 		for(int i=0;i<checkKeys.length;i++)
 			if(checkKeys[i] == null) throw new NullPointerException("Null: check block "+i);
+		this.pre1254 = pre1254;
 	}
 
 	public synchronized boolean isFinished(ObjectContainer container) {
@@ -489,6 +492,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.activate(parentFetcher, 1);
 			container.activate(parent, 1);
 			container.activate(context, 1);
+			container.activate(blockFetchContext, 1);
 		}
 		if(codec == null)
 			codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
@@ -777,7 +781,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				try {
 					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
 					ClientCHKBlock block =
-						ClientCHKBlock.encode(data, false, true, (short)-1, data.size(), COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
+						ClientCHKBlock.encode(data, false, true, (short)-1, data.size(), COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, pre1254);
 					getter.addKeyToBinaryBlob(block, container, context);
 				} catch (CHKEncodeException e) {
 					Logger.error(this, "Failed to encode (collecting binary blob) "+(check?"check":"data")+" block "+i+": "+e, e);

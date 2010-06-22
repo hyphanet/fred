@@ -89,7 +89,7 @@ public class GzipCompressor implements Compressor {
 		}
 	}
 
-	private long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
+	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		GZIPInputStream gis = new GZIPInputStream(is);
 		long written = 0;
 		byte[] buffer = new byte[4096];

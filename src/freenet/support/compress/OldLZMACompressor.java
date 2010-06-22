@@ -72,11 +72,11 @@ public class OldLZMACompressor implements Compressor {
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
 		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
-		CountedOutputStream os = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
+		BufferedOutputStream os = new BufferedOutputStream(output.getOutputStream());
 		decompress(is, os, maxLength, maxCheckSizeLength);
 		os.close();
 		if(Logger.shouldLog(LogLevel.MINOR, this))
-			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count()+" written "+os.written());
+			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count());
 		return output;
 	}
 
@@ -98,10 +98,12 @@ public class OldLZMACompressor implements Compressor {
         props[4] = 0x00;
     }
 
-	private void decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
+	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		Decoder decoder = new Decoder();
 		decoder.SetDecoderProperties(props);
-		decoder.Code(is, os, maxLength);
+		CountedOutputStream cos = new CountedOutputStream(os);
+		decoder.Code(is, cos, maxLength);
+		return cos.written();
 	}
 
 	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {

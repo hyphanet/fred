@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import java.io.IOException;
-
 /**
  * @author amphibian (Matthew Toseland)
  * Thrown when an archive operation fails.
@@ -19,7 +17,7 @@ public class ArchiveFailureException extends Exception {
 		super(message);
 	}
 
-	public ArchiveFailureException(String message, IOException e) {
+	public ArchiveFailureException(String message, Exception e) {
 		super(message);
 		initCause(e);
 	}

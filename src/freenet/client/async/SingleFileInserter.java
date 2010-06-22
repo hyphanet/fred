@@ -474,7 +474,8 @@ class SingleFileInserter implements ClientPutState {
 		// We always want SHA256, even for small files.
 		long wantHashes = 0;
 		CompatibilityMode cmode = ctx.getCompatibilityMode();
-		if((cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) && (!metadata)) {
+		boolean atLeast1254 = (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
+		if(atLeast1254 && (!metadata)) {
 			// We verify this. We want it for *all* files.
 			wantHashes |= HashType.SHA256.bitmask;
 			// FIXME: If the user requests it, calculate the others for small files.
@@ -495,7 +496,7 @@ class SingleFileInserter implements ClientPutState {
 		}
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
-			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent, wantHashes);
+			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent, wantHashes, !atLeast1254);
 		} else {
 			if(logMINOR) Logger.minor(this, "Not compressing "+origData+" size = "+origSize+" block size = "+blockSize);
 			HashResult[] hashes = null;

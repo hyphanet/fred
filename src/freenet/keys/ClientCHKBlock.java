@@ -157,12 +157,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @throws IOException If there is an error reading from the Bucket.
      * @throws InvalidCompressionCodecException 
      */
-    static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor) throws CHKEncodeException, IOException {
+    static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor, boolean pre1254) throws CHKEncodeException, IOException {
         byte[] finalData = null;
         byte[] data;
         short compressionAlgorithm = -1;
         try {
-			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false, compressorDescriptor);
+			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false, compressorDescriptor, pre1254);
 			finalData = comp.compressedData;
 			compressionAlgorithm = comp.compressionAlgorithm;
 		} catch (KeyEncodeException e2) {
@@ -249,9 +249,9 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @param compressorDescriptor 
      * @throws InvalidCompressionCodecException 
      */
-    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength, String compressorDescriptor) throws CHKEncodeException, InvalidCompressionCodecException {
+    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength, String compressorDescriptor, boolean pre1254) throws CHKEncodeException, InvalidCompressionCodecException {
     	try {
-			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor);
+			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor, pre1254);
 		} catch (IOException e) {
 			// Can't happen
 			throw new Error(e);
