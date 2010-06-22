@@ -1406,7 +1406,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	protected ClientCHKBlock encodeBucket(Bucket copyBucket, String compressorDescriptor) throws CHKEncodeException, IOException {
-		return ClientCHKBlock.encode(copyBucket, false, true, (short)-1, CHKBlock.DATA_LENGTH, compressorDescriptor);
+		byte[] buf = BucketTools.toByteArray(copyBucket);
+		assert(buf.length == CHKBlock.DATA_LENGTH); // All new splitfile inserts insert only complete blocks even at the end.
+		return ClientCHKBlock.encodeSplitfileBlock(buf, null);
 	}
 
 	@Override
