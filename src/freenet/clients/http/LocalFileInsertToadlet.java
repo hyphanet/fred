@@ -100,7 +100,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 		
 		HTMLNode pageNode;
 
-		if (currentPath.exists() && currentPath.isDirectory() && currentPath.canRead()) {
+		if (thisPath.exists() && thisPath.isDirectory() && thisPath.canRead()) {
 			// Known safe at this point
 			currentPath = thisPath;
 
