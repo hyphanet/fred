@@ -265,18 +265,12 @@ public class ClientGetter extends BaseClientGetter {
 		// Decompress
 		if(decompressors != null) {
 			try {
-				decompressorManager =  new DecompressorThreadManager(input, maxLen);
-				if(logMINOR) Logger.minor(this, "Decompressing...");
 				if(persistent()) {
 					container.activate(decompressors, 5);
 					container.activate(ctx, 1);
 				}
-				while(!decompressors.isEmpty()) {
-					Compressor c = decompressors.remove(decompressors.size()-1);
-					if(logMINOR)
-						Logger.minor(this, "Decompressing with "+c);
-					decompressorManager.addDecompressor(c);
-				}
+				if(logMINOR) Logger.minor(this, "Decompressing...");
+				decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
 				input = decompressorManager.execute();
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);

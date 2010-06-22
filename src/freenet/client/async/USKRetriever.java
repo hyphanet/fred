@@ -100,15 +100,11 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		if(decompressors != null) {
 			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Decompressing...");
 			try {
-				decompressorManager =  new DecompressorThreadManager(input, maxLen);
 				if(persistent()) {
 					container.activate(decompressors, 5);
 					container.activate(ctx, 1);
 				}
-				while(!decompressors.isEmpty()) {
-					Compressor c = decompressors.remove(decompressors.size()-1);
-					decompressorManager.addDecompressor(c);
-				}
+				decompressorManager = new DecompressorThreadManager(input, decompressors, maxLen);
 				input = decompressorManager.execute();
 				FileUtil.copy(input, output, -1);
 				input.close();

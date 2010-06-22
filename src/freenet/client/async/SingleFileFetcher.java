@@ -1004,13 +1004,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						container.activate(ctx, 1);
 					}
 					input = data.getInputStream();
-					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, maxLen);
-					while(!decompressors.isEmpty()) {
-						Compressor c = decompressors.remove(decompressors.size()-1);
-						if(logMINOR)
-							Logger.minor(this, "Decompressing with "+c);
-						decompressorManager.addDecompressor(c);
-					}
+					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
 					input = decompressorManager.execute();
 					if(returnBucket != null) data = returnBucket;
 					else data = context.getBucketFactory(persistent()).makeBucket(maxLen);
@@ -1194,13 +1188,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						container.activate(ctx, 1);
 					}
 					input = data.getInputStream();
-					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, maxLen);
-					while(!decompressors.isEmpty()) {
-						Compressor c = decompressors.remove(decompressors.size()-1);
-						if(logMINOR)
-							Logger.minor(this, "Decompressing with "+c);
-						decompressorManager.addDecompressor(c);
-					}
+					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
 					input = decompressorManager.execute();
 					if(returnBucket != null) data = returnBucket;
 					else data = context.getBucketFactory(persistent()).makeBucket(maxLen);

@@ -8,7 +8,10 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.LinkedList;
+import java.util.List;
 
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 
 /** Creates and manages decompressor threads. This class is 
@@ -28,34 +31,26 @@ public class DecompressorThreadManager {
 	private Exception error = null;
 
 	/** Creates a new DecompressorThreadManager
-	 * @param input The stream that will be decompressed, if compressed
+	 * @param inputStream The stream that will be decompressed, if compressed
 	 * @param maxLen The maximum number of bytes to extract
 	 */
-	public DecompressorThreadManager(InputStream input, long maxLen) throws IOException {
+	public DecompressorThreadManager(InputStream inputStream, List<? extends Compressor> decompressors, long maxLen) throws IOException {
 		threads = new LinkedList<DecompressorThread>();
 		this.maxLen = maxLen;
-		this.input = input;
-		if(input == null) {
+		if(inputStream == null) {
 			IOException e = new IOException("Input stream may not be null");
 			onFailure(e);
 			throw e;
 		}
-	}
-
-	/**Queues a decompressor to be ran against the input stream
-	 * @param compressor The object whose decompress method will be executed
-	 * @throws IOException
-	 */
-	public synchronized void addDecompressor(Compressor compressor) throws IOException {
-		if(compressor == null) {
-			IOException e = new IOException("Compressor may not be null");
-			onFailure(e);
-			throw e;
+		input = inputStream;
+		while(!decompressors.isEmpty()) {
+			Compressor compressor = decompressors.remove(decompressors.size()-1);
+			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Decompressing with "+compressor);
+			DecompressorThread thread = new DecompressorThread(compressor, this, input, output, maxLen);
+			threads.add(thread);
+			input = new PipedInputStream(output);
+			output = new PipedOutputStream();
 		}
-		DecompressorThread thread = new DecompressorThread(compressor, this, input, output, maxLen);
-		threads.add(thread);
-		input = new PipedInputStream(output);
-		output = new PipedOutputStream();
 	}
 
 	/** Creates and executes a new thread for each decompressor,
