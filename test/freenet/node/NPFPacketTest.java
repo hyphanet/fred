@@ -116,4 +116,19 @@ public class NPFPacketTest extends TestCase {
 
 		assertFalse(r.getError());
 	}
+
+	public void testSendEmptyPacket() {
+		NPFPacket p = new NPFPacket();
+		p.setSequenceNumber(0);
+		byte[] data = new byte[p.getLength()];
+		p.toBytes(data, 0);
+
+		byte[] correctData = new byte[] {0x00, 0x00, 0x00, 0x00, //Sequence number (0)
+		                0x00}; //Number of acks (0)
+
+		assertEquals(data.length, correctData.length);
+		for(int i = 0; i < data.length; i++) {
+			assertEquals(data[i], correctData[i]);
+		}
+	}
 }
