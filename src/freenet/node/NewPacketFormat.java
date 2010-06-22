@@ -91,6 +91,8 @@ public class NewPacketFormat implements PacketFormat {
 				}
 				recvBuffer = new byte[fragment.messageLength];
 				recvMap = new SparseBitmap();
+				receiveBuffers.put(fragment.messageID, recvBuffer);
+				receiveMaps.put(fragment.messageID, recvMap);
 			}
 
 			System.arraycopy(fragment.fragmentData, 0, recvBuffer, fragment.fragmentOffset,
