@@ -163,7 +163,11 @@ public class NPFPacketTest extends TestCase {
 
 		assertEquals(data.length, correctData.length);
 		for(int i = 0; i < data.length; i++) {
-			assertEquals(data[i], correctData[i]);
+			if(data[i] != correctData[i]) {
+				fail("Different values at index " + i + ": Expected 0x"
+				                + Integer.toHexString(correctData[i] & 0xFF) + ", but was 0x"
+						+ Integer.toHexString(data[i] & 0xFF));
+			}
 		}
 	}
 }
