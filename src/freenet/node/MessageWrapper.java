@@ -239,6 +239,8 @@ public class MessageWrapper {
 	}
 
 	public MessageFragment getMessageFragment(int maxLength) {
+		if(maxLength <= 9) return null; //Won't fit more than a few bytes in the best case anyway
+
 		if((System.currentTimeMillis() - lastReceivedAck) > 5000) {
 			//TODO: Resend in a more intelligent way
 			synchronized(sent) {
