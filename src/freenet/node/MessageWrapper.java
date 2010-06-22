@@ -238,4 +238,48 @@ public class MessageWrapper {
 		return sent.isEmpty() && acks.isEmpty();
 	}
 
+	public MessageFragment getMessageFragment(int maxLength) {
+		if((System.currentTimeMillis() - lastReceivedAck) > 5000) {
+			//TODO: Resend in a more intelligent way
+			synchronized(sent) {
+			synchronized(acks) {
+				sent.clear();
+				for(int[] range : acks) {
+					sent.add(range);
+				}
+			}
+			}
+		}
+
+		int start = 0;
+		int end = Integer.MAX_VALUE;
+
+		synchronized(sent) {
+	                for(int[] range : sent) {
+				if(range[0] == start) {
+					start = range[1] + 1;
+				} else if (range[0] - start > 0) {
+					end = range[0] - 1;
+				}
+			}
+		}
+
+		if(start >= item.buf.length) {
+			return null;
+		}
+
+		//Copy start to end into dest
+		int fragmentLength = Math.min((end - start), (maxLength - 9));
+		fragmentLength = Math.min(fragmentLength, item.buf.length - start);
+
+		byte[] fragmentData = new byte[fragmentLength];
+		System.arraycopy(item.buf, start, fragmentData, 0, fragmentLength);
+
+		addRangeToSet(start, start + fragmentLength - 1, sent);
+
+		boolean isFragmented = !((start == 0) && (end >= (item.buf.length - 1)));
+		return new MessageFragment(!isLongMessage, isFragmented, start == 0, messageID, fragmentLength,
+		                item.buf.length, start, fragmentData);
+        }
+
 }

@@ -113,26 +113,45 @@ public class NewPacketFormat implements PacketFormat {
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
 		SentPacket sentPacket = new SentPacket();
-		int offset = HMAC_LENGTH + 4; // HMAC, Sequence number (4)
-		int minPacketSize = offset + 1; //Header length without any acks
+		int packetSize = 0;
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
-		byte[] packet = new byte[maxPacketSize];
+		NPFPacket packet = new NPFPacket();
+		packet.setSequenceNumber(nextSequenceNumber++);
 
-		offset = insertAcks(packet, offset);
-		int fragmentsStart = offset;
-
-		// Try to finish Messages that have been started
-		synchronized(started) {
-			Iterator<MessageWrapper> it = started.values().iterator();
-			while (it.hasNext() && (offset + MIN_MESSAGE_FRAGMENT_SIZE < maxPacketSize)) {
-				MessageWrapper wrapper = it.next();
-				offset = insertFragment(packet, offset, maxPacketSize, wrapper, sentPacket);
+		int numAcks = 0;
+		synchronized(acks) {
+			long firstAck = 0;
+			Iterator<Long> it = acks.iterator();
+			while (it.hasNext() && numAcks < 256 && packetSize < maxPacketSize) {
+				long ack = it.next();
+				if(numAcks == 0) {
+					firstAck = ack;
+				} else {
+					// Check that it can be compressed
+					long compressedAck = ack - firstAck;
+					if((compressedAck < 0) || (compressedAck > 255)) {
+						continue;
+					}
+				}
+				packetSize = packet.addAck(ack);
+				++numAcks;
+				it.remove();
 			}
 		}
 
-		// Add messages from message queue
+		//Try to finish messages that have been started
+		synchronized(started) {
+			Iterator<MessageWrapper> it = started.values().iterator();
+			while(it.hasNext() && packetSize < maxPacketSize) {
+				MessageWrapper wrapper = it.next();
+				packetSize = packet.addMessageFragment(
+				                wrapper.getMessageFragment(maxPacketSize - packetSize));
+			}
+		}
+
+		//Add messages from the message queue
 		PeerMessageQueue messageQueue = pn.getMessageQueue();
-		while (offset + MIN_MESSAGE_FRAGMENT_SIZE < maxPacketSize) {
+		while (packetSize < maxPacketSize) {
 			MessageItem item = null;
 			synchronized(messageQueue) {
 				item = messageQueue.grabQueuedMessageItem();
@@ -145,27 +164,18 @@ public class NewPacketFormat implements PacketFormat {
 				messageQueue.pushfrontPrioritizedMessageItem(item);
 				break;
 			}
-			MessageWrapper wrapper = new MessageWrapper(item, messageID);
 
-			offset = insertFragment(packet, offset, maxPacketSize, wrapper, sentPacket);
+			MessageWrapper wrapper = new MessageWrapper(item, messageID);
+			packetSize = packet.addMessageFragment(
+			                wrapper.getMessageFragment(maxPacketSize - packetSize));
+
 			synchronized(started) {
 				started.put(messageID, wrapper);
 			}
 		}
 
-		if(offset == minPacketSize) {
-			return false;
-		}
-
-		byte[] data = new byte[offset];
-		System.arraycopy(packet, 0, data, 0, data.length);
-
-		//Add sequence number
-		long sequenceNumber = nextSequenceNumber++;
-		data[HMAC_LENGTH] = (byte) (sequenceNumber >>> 24);
-		data[HMAC_LENGTH + 1] = (byte) (sequenceNumber >>> 16);
-		data[HMAC_LENGTH + 2] = (byte) (sequenceNumber >>> 8);
-		data[HMAC_LENGTH + 3] = (byte) (sequenceNumber);
+		byte[] data = new byte[packetSize + HMAC_LENGTH];
+		packet.toBytes(data, HMAC_LENGTH);
 
 		//TODO: Encrypt
 
@@ -183,103 +193,10 @@ public class NewPacketFormat implements PacketFormat {
 			return false;
                 }
 
-		if(offset != fragmentsStart) {
-			synchronized(sentPackets) {
-				sentPackets.put(sequenceNumber, sentPacket);
-			}
+		synchronized(sentPackets) {
+			sentPackets.put(packet.getSequenceNumber(), sentPacket);
 		}
 		return true;
-	}
-	
-	private int insertAcks(byte[] packet, int offset) {
-		int numAcks = 0;
-		int numAcksOffset = offset++;
-
-		// Insert acks
-		synchronized(acks) {
-			long firstAck = 0;
-			Iterator<Long> it = acks.iterator();
-			while (it.hasNext() && numAcks < 256) {
-				long ack = it.next();
-				if(numAcks == 0) {
-					if(logMINOR) Logger.minor(this, "First ack in packet to send is " + ack);
-
-					firstAck = ack;
-
-					packet[offset++] = (byte) (ack >>> 24);
-					packet[offset++] = (byte) (ack >>> 16);
-					packet[offset++] = (byte) (ack >>> 8);
-					packet[offset++] = (byte) (ack);
-				} else {
-					// Compress if possible
-					long compressedAck = ack - firstAck;
-					if((compressedAck < 0) || (compressedAck > 255)) {
-						// TODO: If less that 0, we could replace firstAck
-						continue;
-					}
-
-					packet[offset++] = (byte) (compressedAck);
-				}
-				if(logMINOR) Logger.minor(this, "Adding ack for packet " + ack);
-
-				++numAcks;
-				it.remove();
-			}
-		}
-		
-		packet[numAcksOffset] = (byte) numAcks;
-
-		return offset;
-	}
-
-	private int insertFragment(byte[] packet, int offset, int maxPacketSize, MessageWrapper wrapper, SentPacket sent) {
-		boolean isFragmented = wrapper.isFragmented(maxPacketSize - offset - 7); //7 is the maximum header length
-		boolean firstFragment = wrapper.isFirstFragment();
-		
-		// Insert data
-		int dataOffset = offset
-		                + 2 //Message id + flags
-		                + (wrapper.isLongMessage() ? 2 : 1) //Fragment length
-		                + (isFragmented ? (wrapper.isLongMessage() ? 3 : 1) : 0); //Fragment offset or message length
-		int[] fragmentInfo = wrapper.getData(packet, dataOffset, maxPacketSize - dataOffset);
-		int dataLength = fragmentInfo[0];
-		int fragmentOffset = fragmentInfo[1];
-
-		if(dataLength == 0) return offset;
-
-		// Add messageID and flags
-		int messageID = wrapper.getMessageID();
-		if(messageID != (messageID & 0x7FFF)) {
-			Logger.error(this, "MessageID was " + messageID + ", masked is: " + (messageID & 0x7FFF));
-		}
-		messageID = messageID & 0x7FFF; // Make sure the flag bits are 0
-
-		if(!wrapper.isLongMessage()) messageID = messageID | 0x8000;
-		if(isFragmented) messageID = messageID | 0x4000;
-		if(firstFragment) messageID = messageID | 0x2000;
-
-		packet[offset++] = (byte) (messageID >>> 8);
-		packet[offset++] = (byte) (messageID);
-
-		// Add fragment length, 2 bytes if long message
-		if(wrapper.isLongMessage()) packet[offset++] = (byte) (dataLength >>> 8);
-		packet[offset++] = (byte) (dataLength);
-
-		if(isFragmented) {
-			// If firstFragment is true, add total message length. Else, add fragment offset
-			int value = firstFragment ? wrapper.getLength() : fragmentOffset;
-
-			if(wrapper.isLongMessage()) {
-				packet[offset++] = (byte) (value >>> 16);
-				packet[offset++] = (byte) (value >>> 8);
-			}
-			packet[offset++] = (byte) (value);
-		}
-
-		offset += dataLength;
-		sent.addFragment(wrapper, fragmentOffset, fragmentOffset + dataLength - 1);
-
-		return offset;
 	}
 
 	private int getMessageID() {
