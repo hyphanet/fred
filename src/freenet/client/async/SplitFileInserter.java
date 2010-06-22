@@ -19,6 +19,7 @@ import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
+import freenet.keys.Key;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -76,7 +77,7 @@ public class SplitFileInserter implements ClientPutState {
 	// these objects into sets etc when we need to.
 
 	private final int hashCode;
-
+	
 	@Override
 	public int hashCode() {
 		return hashCode;
@@ -178,7 +179,8 @@ public class SplitFileInserter implements ClientPutState {
 		}
 
 		// Create segments
-		segments = splitIntoSegments(segmentSize, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put);
+		byte cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		segments = splitIntoSegments(segmentSize, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put, cryptoAlgorithm);
 		if(persistent) {
 			// Deactivate all buckets, and let dataBuckets be GC'ed
 			for(int i=0;i<dataBuckets.length;i++) {
@@ -308,7 +310,7 @@ public class SplitFileInserter implements ClientPutState {
 	 * Group the blocks into segments.
 	 * @param deductBlocksFromSegments 
 	 */
-	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, int segCount, int deductBlocksFromSegments, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter) {
+	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, int segCount, int deductBlocksFromSegments, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter, byte cryptoAlgorithm) {
 		int dataBlocks = origDataBlocks.length;
 
 		ArrayList<SplitFileInserterSegment> segs = new ArrayList<SplitFileInserterSegment>();
@@ -317,7 +319,7 @@ public class SplitFileInserter implements ClientPutState {
 		// First split the data up
 		if(segCount == 1) {
 			// Single segment
-			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, cmode), origDataBlocks, ctx, getCHKOnly, 0, container);
+			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, cmode), origDataBlocks, ctx, getCHKOnly, 0, cryptoAlgorithm, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
@@ -337,7 +339,7 @@ public class SplitFileInserter implements ClientPutState {
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, check, seg, ctx, getCHKOnly, segNo, container);
+				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, check, seg, ctx, getCHKOnly, segNo, cryptoAlgorithm, container);
 				segs.add(s);
 				
 				if(deductBlocksFromSegments != 0)

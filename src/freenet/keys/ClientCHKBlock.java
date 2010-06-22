@@ -133,7 +133,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @param cryptoKey The encryption key. Can be null in which case this is equivalent to a normal block
      * encode.
      */
-    static public ClientCHKBlock encodeSplitfileBlock(byte[] data, byte[] cryptoKey) throws CHKEncodeException {
+    static public ClientCHKBlock encodeSplitfileBlock(byte[] data, byte[] cryptoKey, byte cryptoAlgorithm) throws CHKEncodeException {
     	if(data.length != CHKBlock.DATA_LENGTH) throw new IllegalArgumentException();
     	if(cryptoKey != null && cryptoKey.length != 32) throw new IllegalArgumentException();
         MessageDigest md256 = SHA256.getMessageDigest();
@@ -142,7 +142,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         	cryptoKey = md256.digest(data);
         	md256.reset();
         }
-        return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1);
+        return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm);
     }
     
     /**
@@ -192,10 +192,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // Now make the header
         byte[] encKey = md256.digest(data);
         md256.reset();
-        return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm);
+        return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, Key.ALGO_AES_PCFB_256_SHA256);
     }
     
-    public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm) {
+    public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
+    	if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
+    		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
         byte[] header;
         ClientCHK key;
         // IV = E(H(crypto key))
@@ -229,7 +231,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         SHA256.returnMessageDigest(md256);
         
         // Now convert it into a ClientCHK
-        key = new ClientCHK(finalHash, encKey, asMetadata, Key.ALGO_AES_PCFB_256_SHA256, compressionAlgorithm);
+        key = new ClientCHK(finalHash, encKey, asMetadata, cryptoAlgorithm, compressionAlgorithm);
         
         try {
             return new ClientCHKBlock(data, header, key, false);
