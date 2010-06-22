@@ -157,6 +157,40 @@ public class NPFPacketTest extends TestCase {
 		checkPacket(p, correctData);
 	}
 
+	public void testSendCompletePacket() {
+		NPFPacket p = new NPFPacket();
+		p.setSequenceNumber(4278190080L);
+		p.addAck(1000000);
+		p.addAck(1000010);
+		p.addAck(1000255);
+		p.addMessageFragment(new MessageFragment(true, false, true, 0, 8, 8, 0,
+		                new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}));
+		p.addMessageFragment(new MessageFragment(false, true, false, 8191, 14, 1024, 256, new byte[] {
+		                (byte)0xfd, (byte)0x47, (byte)0xc2, (byte)0x30,
+		                (byte)0x41, (byte)0x53, (byte)0x57, (byte)0x56,
+		                (byte)0x0e, (byte)0x56, (byte)0x69, (byte)0xf5,
+		                (byte)0x00, (byte)0x0d}));
+
+		byte[] correctData = new byte[] {(byte)0xFF, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number
+		                (byte)0x03, //Number of ack
+		                (byte)0x00, (byte)0x0F, (byte)0x42, (byte)0x40, //First ack
+		                (byte)0x0A, (byte)0xFF, //Acks
+		                //First fragment
+		                (byte)0xA0, (byte)0x00, //Message id + flags
+		                (byte)0x08, //Fragment length
+		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF,
+		                //Second fragment
+		                (byte)0x5F, (byte)0xFF,
+		                (byte)0x00, (byte)0x0e, //Fragment length
+		                (byte)0x00, (byte)0x01, (byte)0x00, //Fragment offset
+		                (byte)0xfd, (byte)0x47, (byte)0xc2, (byte)0x30,
+		                (byte)0x41, (byte)0x53, (byte)0x57, (byte)0x56,
+		                (byte)0x0e, (byte)0x56, (byte)0x69, (byte)0xf5,
+		                (byte)0x00, (byte)0x0d};
+
+		checkPacket(p, correctData);
+	}
+
 	private void checkPacket(NPFPacket packet, byte[] correctData) {
 		byte[] data = new byte[packet.getLength()];
 		packet.toBytes(data, 0);
