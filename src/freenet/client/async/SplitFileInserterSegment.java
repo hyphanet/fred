@@ -1321,16 +1321,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return 0;
 	}
 
-	class MySendableRequestSender implements SendableRequestSender {
+	static class MySendableRequestSender implements SendableRequestSender {
 		private final String compressorDescriptor;
-		MySendableRequestSender(String compressorDescriptor2) {
+		/** May be deactivated, not safe to just use. */
+		private final SplitFileInserterSegment seg;
+		MySendableRequestSender(String compressorDescriptor2, SplitFileInserterSegment seg) {
 			compressorDescriptor = compressorDescriptor2;
+			this.seg = seg;
 		}
 		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
 				// Ignore keyNum, key, since we're only sending one block.
 				try {
 					BlockItem block = (BlockItem) req.token;
-					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: "+SplitFileInserterSegment.this+" block number "+block.blockNum);
+					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number "+block.blockNum);
 					ClientCHKBlock b;
 					try {
 						b = encodeBucket(block.copyBucket, compressorDescriptor);
@@ -1344,7 +1347,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						block.copyBucket.free();
 					}
 					if (b==null) {
-						Logger.error(this, "Asked to send empty block on "+SplitFileInserterSegment.this, new Exception("error"));
+						Logger.error(this, "Asked to send empty block", new Exception("error"));
 						return false;
 					}
 					final ClientCHK key = b.getClientKey();
@@ -1355,7 +1358,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						context.mainExecutor.execute(new Runnable() {
 
 							public void run() {
-								onEncode(num, key, null, context);
+								seg.onEncode(num, key, null, context);
 							}
 
 						}, "Got URI");
@@ -1371,10 +1374,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
-					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
+					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed for "+e);
 					return true;
 				}
-				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded: "+SplitFileInserterSegment.this);
+				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded");
 				req.onInsertSuccess(context);
 				return true;
 			}
@@ -1395,7 +1398,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if (deactivateParentCtx)
 				container.activate(parent.ctx, 1);
 		}
-		result = new MySendableRequestSender(parent.ctx.compressorDescriptor);
+		result = new MySendableRequestSender(parent.ctx.compressorDescriptor, this);
 		if(persistent) {
 			if (deactivateParent)
 				container.deactivate(parent, 1);
