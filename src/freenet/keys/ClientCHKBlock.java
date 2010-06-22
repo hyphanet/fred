@@ -18,6 +18,7 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.node.Node;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.InvalidCompressionCodecException;
@@ -102,10 +103,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         pcfb.blockDecipher(dbuf, 0, dbuf.length);
         // Check: Decryption key == hash of data (not including header)
         MessageDigest md256 = SHA256.getMessageDigest();
-        byte[] dkey = md256.digest(dbuf);
-        if(!java.util.Arrays.equals(dkey, key.cryptoKey)) {
-        	SHA256.returnMessageDigest(md256);
-            throw new CHKDecodeException("Check failed: decrypt key == H(data)");
+        byte[] dkey = key.cryptoKey;
+        // If the block is encoded normally, dkey == key.cryptoKey
+        if(!java.util.Arrays.equals(md256.digest(dbuf), key.cryptoKey)) {
+        	Logger.error(this, "Found nonstandard block encoding");
+//        	SHA256.returnMessageDigest(md256);
+//            throw new CHKDecodeException("Check failed: decrypt key == H(data)");
         }
         // Check: IV == hash of decryption key
         byte[] predIV = md256.digest(dkey);
