@@ -26,7 +26,7 @@ public interface Compressor {
 		// They will be tried in order: put the less resource consuming first
 		GZIP("GZIP", new GzipCompressor(), (short) 0),
 		BZIP2("BZIP2", new Bzip2Compressor(), (short) 1),
-		LZMA("LZMA", new LZMACompressor(), (short)2);
+		LZMA("LZMA", new OldLZMACompressor(), (short)2);
 
 		public final String name;
 		public final Compressor compressor;

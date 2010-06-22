@@ -22,7 +22,7 @@ import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class LZMACompressor implements Compressor {
+public class OldLZMACompressor implements Compressor {
 
 	// Copied from EncoderThread. See below re licensing.
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
