@@ -127,6 +127,36 @@ public class NPFPacketTest extends TestCase {
 		checkPacket(p, correctData);
 	}
 
+	public void testSendPacketWithAcks() {
+		NPFPacket p = new NPFPacket();
+		p.setSequenceNumber(0);
+		p.addAck(0);
+		p.addAck(5);
+		p.addAck(10);
+
+		byte[] correctData = new byte[] {0x00, 0x00, 0x00, 0x00,
+		                0x03,
+				0x00, 0x00, 0x00, 0x00,
+				0x05, 0x0A};
+
+		checkPacket(p, correctData);
+	}
+
+	public void testSendPacketWithFragment() {
+		NPFPacket p = new NPFPacket();
+		p.setSequenceNumber(100);
+		p.addMessageFragment(new MessageFragment(true, false, true, 0, 8, 8, 0,
+		                new byte[] {0x01, 0x23, 0x45, 0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}));
+
+		byte[] correctData = new byte[] {0x00, 0x00, 0x00, 0x64, //Sequence number (100)
+		                0x00,
+				(byte)0xA0, 0x00, //Flags + messageID
+				0x08, //Fragment length
+				0x01, 0x23, 0x45, 0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};
+
+		checkPacket(p, correctData);
+	}
+
 	private void checkPacket(NPFPacket packet, byte[] correctData) {
 		byte[] data = new byte[packet.getLength()];
 		packet.toBytes(data, 0);
