@@ -184,6 +184,8 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
+		if(packet.getLength() == 5) return false;
+
 		byte[] data = new byte[packet.getLength() + HMAC_LENGTH];
 		packet.toBytes(data, HMAC_LENGTH);
 
