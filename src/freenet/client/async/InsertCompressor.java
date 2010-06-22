@@ -109,7 +109,7 @@ public class InsertCompressor implements CompressJob {
 			scheduled = true;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Compressing "+this+" : origData.size="+origData.size()+" for "+inserter+" origData="+origData);
+			Logger.minor(this, "Compressing "+this+" : origData.size="+origData.size()+" for "+inserter+" origData="+origData+" hashes="+generateHashes);
 		ctx.rc.enqueueNewJob(this);
 	}
 
@@ -168,6 +168,7 @@ public class InsertCompressor implements CompressJob {
 					MultiHashInputStream hasher = null;
 					long maxOutputSize = bestCompressedDataSize;
 					if(first && generateHashes != 0) {
+						if(logMINOR) Logger.minor(this, "Generating hashes: "+generateHashes);
 						is = hasher = new MultiHashInputStream(is, generateHashes);
 						maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
 					}
