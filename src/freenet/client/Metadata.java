@@ -468,6 +468,8 @@ public class Metadata implements Cloneable {
 	}
 	
 	public static byte[] getCryptoKey(HashResult[] hashes) {
+		if(hashes == null || hashes.length == 0 || !HashResult.contains(hashes, HashType.SHA256))
+			throw new IllegalArgumentException("No hashes in getCryptoKey - need hashes to generate splitfile key!");
 		byte[] hash = HashResult.get(hashes, HashType.SHA256);
 		// This is exactly the same algorithm used by e.g. JFK for generating multiple session keys from a single generated value.
 		// The only difference is we use a constant of more than one byte's length here, to avoid having to keep a registry.
