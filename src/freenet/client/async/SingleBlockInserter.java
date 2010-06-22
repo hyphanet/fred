@@ -259,6 +259,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			errors.inc(InsertException.INTERNAL_ERROR);
 		}
 		if(persistent)
+			errors.storeTo(container);
+		if(persistent)
 			container.activate(ctx, 1);
 		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND || e.code == LowLevelPutException.ROUTE_REALLY_NOT_FOUND) {
 			consecutiveRNFs++;

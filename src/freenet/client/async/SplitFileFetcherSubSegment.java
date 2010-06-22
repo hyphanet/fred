@@ -303,6 +303,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		for(int i=0;i<fetchExceptions.length;i++)
 			segment.errors.inc(fetchExceptions[i].getMode());
+		if(persistent)
+			segment.errors.storeTo(container);
 		int nonFatalExceptions = items.length - countFatal;
 		int[] blockNumbers = new int[nonFatalExceptions];
 		if(countFatal > 0) {
@@ -384,6 +386,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			forceFatal = true;
 		}
 		segment.errors.inc(e.getMode());
+		if(persistent)
+			segment.errors.storeTo(container);
 		if(e.isFatal() && token == null) {
 			segment.fail(e, container, context, false);
 		} else if(e.isFatal() || forceFatal) {
