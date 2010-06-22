@@ -151,7 +151,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		//Add messages from the message queue
 		PeerMessageQueue messageQueue = pn.getMessageQueue();
-		while (packet.getLength() < maxPacketSize) {
+		while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
 			MessageItem item = null;
 			synchronized(messageQueue) {
 				item = messageQueue.grabQueuedMessageItem();
