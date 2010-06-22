@@ -125,11 +125,11 @@ class NPFPacket {
 
 		//Add fragments
 		for(MessageFragment fragment : fragments) {
+			buf[offset] = (byte) ((fragment.messageID >>> 8) & 0x1F);
+			buf[offset + 1] = (byte) (fragment.messageID);
 			if(fragment.shortMessage) buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x80);
 			if(fragment.isFragmented) buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x40);
 			if(fragment.firstFragment) buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x20);
-			buf[offset] = (byte) ((fragment.messageID >>> 8) & 0x1F);
-			buf[offset + 1] = (byte) (fragment.messageID);
 			offset += 2;
 
 			if(fragment.shortMessage) {
