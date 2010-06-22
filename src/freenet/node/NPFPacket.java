@@ -50,7 +50,7 @@ class NPFPacket {
 
 			int fragmentLength;
 			if(shortMessage) {
-				fragmentLength = plaintext[offset++];
+				fragmentLength = plaintext[offset++] & 0xFF;
 			} else {
 				fragmentLength = ((plaintext[offset] & 0xFF) << 8)
 				                | (plaintext[offset + 1] & 0xFF);
