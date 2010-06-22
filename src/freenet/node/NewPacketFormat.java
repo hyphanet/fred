@@ -80,12 +80,17 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		boolean dontAck = packet.getError() || (packet.getFragments().size() == 0);
+		boolean dontAck = false;
+		if(packet.getError() || (packet.getFragments().size() == 0)) {
+			Logger.minor(this, "Not acking because " + (packet.getError() ? "error" : "no fragments"));
+			dontAck = true;
+		}
 		for(MessageFragment fragment : packet.getFragments()) {
 			byte[] recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
 				if(!fragment.firstFragment) {
+					if(!dontAck) Logger.minor(this, "Not acking because missing first fragment");
 					dontAck = true;
 					continue;
 				}
