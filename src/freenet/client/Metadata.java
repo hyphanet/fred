@@ -298,7 +298,8 @@ public class Metadata implements Cloneable {
 				} else {
 					if(hashThisLayerOnly != null)
 						splitfileSingleCryptoKey = getCryptoKey(hashThisLayerOnly);
-					splitfileSingleCryptoKey = getCryptoKey(hashes);
+					else
+						splitfileSingleCryptoKey = getCryptoKey(hashes);
 				}
 			}
 			
