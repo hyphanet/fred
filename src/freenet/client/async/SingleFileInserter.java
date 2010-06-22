@@ -222,6 +222,11 @@ class SingleFileInserter implements ClientPutState {
 					Logger.debug(this, res.type.name()+" : "+HexUtil.bytesToHex(res.result));
 				}
 			}
+			
+			// So it is passed on.
+			origHashes = hashes;
+			if(persistent)
+				container.store(this);
 		} else {
 			hashes = origHashes; // Inherit so it goes all the way to the top.
 			if(persistent) container.activate(hashes, Integer.MAX_VALUE);
