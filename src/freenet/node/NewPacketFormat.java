@@ -146,6 +146,7 @@ public class NewPacketFormat implements PacketFormat {
 				MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
 				if(frag == null) continue;
 				packet.addMessageFragment(frag);
+				sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
 			}
 		}
 
@@ -169,6 +170,7 @@ public class NewPacketFormat implements PacketFormat {
 			MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
 			if(frag == null) break;
 			packet.addMessageFragment(frag);
+			sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
 
 			synchronized(started) {
 				started.put(messageID, wrapper);
@@ -223,9 +225,9 @@ public class NewPacketFormat implements PacketFormat {
 		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
 		LinkedList<int[]> ranges = new LinkedList<int[]>();
 
-		public void addFragment(MessageWrapper source, int start, int end) {
+		public void addFragment(MessageWrapper source, int start, int length) {
 			messages.add(source);
-			ranges.add(new int[] { start, end });
+			ranges.add(new int[] { start, start + length - 1 });
 		}
 
 		public void acked() {
