@@ -139,8 +139,6 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor) throws CHKEncodeException, IOException {
         byte[] finalData = null;
         byte[] data;
-        byte[] header;
-        ClientCHK key;
         short compressionAlgorithm = -1;
         try {
 			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false, compressorDescriptor);
@@ -173,6 +171,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // Now make the header
         byte[] encKey = md256.digest(data);
         md256.reset();
+        return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm);
+    }
+    
+    public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm) {
+        byte[] header;
+        ClientCHK key;
         // IV = E(H(crypto key))
         byte[] plainIV = md256.digest(encKey);
         header = new byte[plainIV.length+2+2];
