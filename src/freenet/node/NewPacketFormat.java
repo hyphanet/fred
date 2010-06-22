@@ -80,7 +80,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		boolean dontAck = packet.getError();
+		boolean dontAck = packet.getError() || (packet.getFragments().size() == 0);
 		for(MessageFragment fragment : packet.getFragments()) {
 			byte[] recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
