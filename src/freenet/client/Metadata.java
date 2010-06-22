@@ -10,7 +10,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -27,6 +29,8 @@ import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.crypt.HashResult;
+import freenet.crypt.HashType;
+import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -93,6 +97,9 @@ public class Metadata implements Cloneable {
 	static final short FLAGS_COMPRESSED = 128;
 	static final short FLAGS_TOP_SIZE = 256;
 	static final short FLAGS_HASHES = 512;
+	// If parsed version = 1 and splitfile is set and hashes exist, we create the splitfile key from the hashes.
+	// This flag overrides this behaviour and reads a key anyway.
+	static final short FLAGS_SPECIFY_SPLITFILE_KEY = 1024;
 
 	/** Container archive type
 	 * @see ARCHIVE_TYPE
@@ -136,6 +143,11 @@ public class Metadata implements Cloneable {
 	int splitfileCheckBlocks;
 	ClientCHK[] splitfileDataKeys;
 	ClientCHK[] splitfileCheckKeys;
+	/** Used if splitfile single crypto key is enabled */
+	byte splitfileSingleCryptoAlgorithm;
+	byte[] splitfileSingleCryptoKey;
+	// If false, the splitfile key can be computed from the hashes. If true, it must be specified.
+	private boolean specifySplitfileKey;
 
 	// Manifests
 	/** Manifest entries by name */
@@ -224,6 +236,7 @@ public class Metadata implements Cloneable {
 		boolean compressed = false;
 		boolean hasTopBlocks = false;
 		HashResult[] h = null;
+		boolean specifySplitfileKey = false;
 		if(haveFlags()) {
 			short flags = dis.readShort();
 			splitfile = (flags & FLAGS_SPLITFILE) == FLAGS_SPLITFILE;
@@ -241,6 +254,7 @@ public class Metadata implements Cloneable {
 			hasTopBlocks = (flags & FLAGS_TOP_SIZE) == FLAGS_TOP_SIZE;
 			if(hasTopBlocks && version == 0)
 				throw new MetadataParseException("Version 0 does not support top block data");
+			specifySplitfileKey = (flags & FLAGS_SPECIFY_SPLITFILE_KEY) == FLAGS_SPECIFY_SPLITFILE_KEY;
 		}
 		hashes = h;
 		
@@ -266,6 +280,18 @@ public class Metadata implements Cloneable {
 		}
 
 		if(splitfile) {
+			if(parsedVersion >= 1) {
+				// Splitfile single crypto key.
+				splitfileSingleCryptoAlgorithm = dis.readByte();
+				if(specifySplitfileKey || hashes == null || hashes.length == 0 || !HashResult.contains(hashes, HashType.SHA256)) {
+					byte[] key = new byte[32];
+					dis.readFully(key);
+					splitfileSingleCryptoKey = key;
+				} else {
+					splitfileSingleCryptoKey = getCryptoKey(hashes);
+				}
+			}
+			
 			if(logMINOR) Logger.minor(this, "Splitfile");
 			dataLength = dis.readLong();
 			if(dataLength < -1)
@@ -367,12 +393,25 @@ public class Metadata implements Cloneable {
 
 			splitfileDataKeys = new ClientCHK[splitfileBlocks];
 			splitfileCheckKeys = new ClientCHK[splitfileCheckBlocks];
-			for(int i=0;i<splitfileDataKeys.length;i++)
-				if((splitfileDataKeys[i] = readCHK(dis)) == null)
-					throw new MetadataParseException("Null data key "+i);
-			for(int i=0;i<splitfileCheckKeys.length;i++)
-				if((splitfileCheckKeys[i] = readCHK(dis)) == null)
-					throw new MetadataParseException("Null check key: "+i);
+			if(splitfileSingleCryptoKey == null) {
+				for(int i=0;i<splitfileDataKeys.length;i++)
+					if((splitfileDataKeys[i] = readCHK(dis)) == null)
+						throw new MetadataParseException("Null data key "+i);
+				for(int i=0;i<splitfileCheckKeys.length;i++)
+					if((splitfileCheckKeys[i] = readCHK(dis)) == null)
+						throw new MetadataParseException("Null check key: "+i);
+			} else {
+				for(int i=0;i<splitfileDataKeys.length;i++) {
+					byte[] rkey = new byte[32];
+					dis.readFully(rkey);
+					splitfileDataKeys[i] = new ClientCHK(rkey, splitfileSingleCryptoKey, false, splitfileSingleCryptoAlgorithm, (short)-1);
+				}
+				for(int i=0;i<splitfileCheckKeys.length;i++) {
+					byte[] rkey = new byte[32];
+					dis.readFully(rkey);
+					splitfileCheckKeys[i] = new ClientCHK(rkey, splitfileSingleCryptoKey, false, splitfileSingleCryptoAlgorithm, (short)-1);
+				}
+			}
 		}
 
 		if(documentType == SIMPLE_MANIFEST) {
@@ -417,6 +456,27 @@ public class Metadata implements Cloneable {
 			targetName = new String(buf, "UTF-8");
 			if(logMINOR) Logger.minor(this, "Archive and/or internal redirect: "+targetName+" ("+len+ ')');
 		}
+	}
+
+	private static final byte[] SPLITKEY;
+	static {
+		try {
+			SPLITKEY = "SPLITKEY".getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
+	}
+	
+	public static byte[] getCryptoKey(HashResult[] hashes) {
+		byte[] hash = HashResult.get(hashes, HashType.SHA256);
+		// This is exactly the same algorithm used by e.g. JFK for generating multiple session keys from a single generated value.
+		// The only difference is we use a constant of more than one byte's length here, to avoid having to keep a registry.
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(hash);
+		md.update(SPLITKEY);
+		byte[] buf = md.digest();
+		SHA256.returnMessageDigest(md);
+		return buf;
 	}
 
 	/**
@@ -660,7 +720,7 @@ public class Metadata implements Cloneable {
 	}
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
-			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks) {
+			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey) {
 		hashCode = super.hashCode();
 		this.hashes = hashes;
 		if(isMetadata)
@@ -694,7 +754,7 @@ public class Metadata implements Cloneable {
 		topBlocksTotal = totalBlocks;
 		if(topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0 || hashes != null)
 			parsedVersion = 1;
-		if(deductBlocksFromSegments != 0)
+		if(deductBlocksFromSegments != 0 || splitfileCryptoKey != null)
 			parsedVersion = 1;
 		if(parsedVersion == 0) {
 			splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
@@ -708,6 +768,9 @@ public class Metadata implements Cloneable {
 			else
 				b = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
 			System.arraycopy(b, 0, splitfileParams, 2, b.length);
+			this.splitfileSingleCryptoAlgorithm = splitfileCryptoAlgorithm;
+			this.splitfileSingleCryptoKey = splitfileCryptoKey;
+			if(splitfileCryptoKey == null) throw new IllegalArgumentException("Splitfile with parsed version 1 must have a crypto key");
 		}
 	}
 
@@ -989,6 +1052,7 @@ public class Metadata implements Cloneable {
 				assert(parsedVersion >= 1);
 				flags |= FLAGS_TOP_SIZE;
 			}
+			if(specifySplitfileKey) flags |= FLAGS_SPECIFY_SPLITFILE_KEY;
 			dos.writeShort(flags);
 			if(hashes != null)
 				HashResult.write(hashes, dos);
@@ -1007,6 +1071,15 @@ public class Metadata implements Cloneable {
 		}
 
 		if(splitfile) {
+			
+			if(parsedVersion >= 1) {
+				// Splitfile single crypto key.
+				dos.writeByte(splitfileSingleCryptoAlgorithm);
+				if(specifySplitfileKey || hashes == null || hashes.length == 0 || !HashResult.contains(hashes, HashType.SHA256)) {
+					dos.write(splitfileSingleCryptoKey);
+				}
+			}
+			
 			dos.writeLong(dataLength);
 		}
 
@@ -1048,10 +1121,17 @@ public class Metadata implements Cloneable {
 
 			dos.writeInt(splitfileBlocks);
 			dos.writeInt(splitfileCheckBlocks);
-			for(int i=0;i<splitfileBlocks;i++)
-				writeCHK(dos, splitfileDataKeys[i]);
-			for(int i=0;i<splitfileCheckBlocks;i++)
-				writeCHK(dos, splitfileCheckKeys[i]);
+			if(splitfileSingleCryptoKey == null) {
+				for(int i=0;i<splitfileBlocks;i++)
+					writeCHK(dos, splitfileDataKeys[i]);
+				for(int i=0;i<splitfileCheckBlocks;i++)
+					writeCHK(dos, splitfileCheckKeys[i]);
+			} else {
+				for(int i=0;i<splitfileBlocks;i++)
+					dos.write(splitfileDataKeys[i].getRoutingKey());
+				for(int i=0;i<splitfileCheckBlocks;i++)
+					dos.write(splitfileCheckKeys[i].getRoutingKey());
+			}
 		}
 
 		if(documentType == SIMPLE_MANIFEST) {

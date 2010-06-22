@@ -115,11 +115,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	private FECJob encodeJob;
 	
 	private byte cryptoAlgorithm;
-
+	private final byte[] cryptoKey;
 
 	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, BaseClientPutter putter,
 			short splitfileAlgo, int checkBlockCount, Bucket[] origDataBlocks,
-			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, byte cryptoAlgorithm, ObjectContainer container) {
+			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, byte cryptoAlgorithm, byte[] cryptoKey, ObjectContainer container) {
 		super(persistent);
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
@@ -146,6 +146,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		maxRetries = blockInsertContext.maxInsertRetries;
 		this.putter = putter;
 		this.cryptoAlgorithm = cryptoAlgorithm;
+		this.cryptoKey = cryptoKey;
 	}
 
 	/**
@@ -158,6 +159,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			boolean getCHKOnly, int segNo, ClientContext context, ObjectContainer container) throws ResumeException {
 		super(persistent);
 		this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		this.cryptoKey = null;
 		this.parent = parent;
 		this.splitfileAlgo = splitfileAlgorithm;
 		this.getCHKOnly = getCHKOnly;
@@ -517,7 +519,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						deactivate = !container.ext().isActive(dataBlocks[i]);
 						if(deactivate) container.activate(dataBlocks[i], 1);
 					}
-					ClientCHK key = encodeBucket(dataBlocks[i], compressorDescriptor, cryptoAlgorithm).getClientKey();
+					ClientCHK key = encodeBucket(dataBlocks[i], compressorDescriptor, cryptoAlgorithm, cryptoKey).getClientKey();
 					if(deactivate) container.deactivate(dataBlocks[i], 1);
 					onEncode(i, key, container, context);
 				} catch (CHKEncodeException e) {
@@ -538,7 +540,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							deactivate = !container.ext().isActive(checkBlocks[i]);
 							if(deactivate) container.activate(checkBlocks[i], 1);
 						}
-						ClientCHK key = encodeBucket(checkBlocks[i], compressorDescriptor, cryptoAlgorithm).getClientKey();
+						ClientCHK key = encodeBucket(checkBlocks[i], compressorDescriptor, cryptoAlgorithm, cryptoKey).getClientKey();
 						if(deactivate) container.deactivate(checkBlocks[i], 1);
 						onEncode(i+dataBlocks.length, key, container, context);
 					} catch (CHKEncodeException e) {
@@ -904,7 +906,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if(deactivateBucket)
 				container.deactivate(sourceData, 1);
 		}
-		return new BlockItem(this, blockNum, data, persistent, cryptoAlgorithm);
+		return new BlockItem(this, blockNum, data, persistent, cryptoAlgorithm, cryptoKey);
 	}
 
 	private int hashCodeForBlock(int blockNum) {
@@ -922,14 +924,16 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		private final SplitFileInserterSegment parent;
 		private final int blockNum;
 		final byte cryptoAlgorithm;
+		public byte[] cryptoKey;
 
-		BlockItem(SplitFileInserterSegment parent, int blockNum, Bucket bucket, boolean persistent, byte cryptoAlgorithm) throws IOException {
+		BlockItem(SplitFileInserterSegment parent, int blockNum, Bucket bucket, boolean persistent, byte cryptoAlgorithm, byte[] cryptoKey) throws IOException {
 			this.parent = parent;
 			this.blockNum = blockNum;
 			this.copyBucket = bucket;
 			this.hashCode = parent.hashCodeForBlock(blockNum);
 			this.persistent = persistent;
 			this.cryptoAlgorithm = cryptoAlgorithm;
+			this.cryptoKey = cryptoKey;
 		}
 
 		public void dump() {
@@ -1352,7 +1356,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number "+block.blockNum);
 					ClientCHKBlock b;
 					try {
-						b = encodeBucket(block.copyBucket, compressorDescriptor, block.cryptoAlgorithm);
+						b = encodeBucket(block.copyBucket, compressorDescriptor, block.cryptoAlgorithm, block.cryptoKey);
 					} catch (CHKEncodeException e) {
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
 					} catch (MalformedURLException e) {
@@ -1424,10 +1428,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return result;
 	}
 
-	protected static ClientCHKBlock encodeBucket(Bucket copyBucket, String compressorDescriptor, byte cryptoAlgorithm) throws CHKEncodeException, IOException {
+	protected static ClientCHKBlock encodeBucket(Bucket copyBucket, String compressorDescriptor, byte cryptoAlgorithm, byte[] cryptoKey) throws CHKEncodeException, IOException {
 		byte[] buf = BucketTools.toByteArray(copyBucket);
 		assert(buf.length == CHKBlock.DATA_LENGTH); // All new splitfile inserts insert only complete blocks even at the end.
-		return ClientCHKBlock.encodeSplitfileBlock(buf, null, cryptoAlgorithm);
+		return ClientCHKBlock.encodeSplitfileBlock(buf, cryptoKey, cryptoAlgorithm);
 	}
 
 	@Override

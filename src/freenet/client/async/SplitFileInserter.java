@@ -69,6 +69,8 @@ public class SplitFileInserter implements ClientPutState {
 	private final long decompressedLength;
 	final boolean persistent;
 	final HashResult[] hashes;
+	private byte splitfileCryptoAlgorithm;
+	private byte[] splitfileCryptoKey;
 	
 	public final long topSize;
 	public final long topCompressedSize;
@@ -180,7 +182,11 @@ public class SplitFileInserter implements ClientPutState {
 
 		// Create segments
 		byte cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
-		segments = splitIntoSegments(segmentSize, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put, cryptoAlgorithm);
+		this.splitfileCryptoAlgorithm = cryptoAlgorithm;
+		if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) {
+			this.splitfileCryptoKey = Metadata.getCryptoKey(hashes);
+		}
+		segments = splitIntoSegments(segmentSize, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put, cryptoAlgorithm, splitfileCryptoKey);
 		if(persistent) {
 			// Deactivate all buckets, and let dataBuckets be GC'ed
 			for(int i=0;i<dataBuckets.length;i++) {
@@ -310,7 +316,7 @@ public class SplitFileInserter implements ClientPutState {
 	 * Group the blocks into segments.
 	 * @param deductBlocksFromSegments 
 	 */
-	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, int segCount, int deductBlocksFromSegments, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter, byte cryptoAlgorithm) {
+	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, int segCount, int deductBlocksFromSegments, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter, byte cryptoAlgorithm, byte[] splitfileCryptoKey) {
 		int dataBlocks = origDataBlocks.length;
 
 		ArrayList<SplitFileInserterSegment> segs = new ArrayList<SplitFileInserterSegment>();
@@ -319,7 +325,7 @@ public class SplitFileInserter implements ClientPutState {
 		// First split the data up
 		if(segCount == 1) {
 			// Single segment
-			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, cmode), origDataBlocks, ctx, getCHKOnly, 0, cryptoAlgorithm, container);
+			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, cmode), origDataBlocks, ctx, getCHKOnly, 0, cryptoAlgorithm, splitfileCryptoKey, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
@@ -339,7 +345,7 @@ public class SplitFileInserter implements ClientPutState {
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, check, seg, ctx, getCHKOnly, segNo, cryptoAlgorithm, container);
+				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, check, seg, ctx, getCHKOnly, segNo, cryptoAlgorithm, splitfileCryptoKey, container);
 				segs.add(s);
 				
 				if(deductBlocksFromSegments != 0)
@@ -503,7 +509,7 @@ public class SplitFileInserter implements ClientPutState {
 					data = topSize;
 					compressed = topCompressedSize;
 				}
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, data, compressed, req, total);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, data, compressed, req, total, splitfileCryptoAlgorithm, splitfileCryptoKey);
 			}
 			haveSentMetadata = true;
 		}

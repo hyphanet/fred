@@ -475,17 +475,17 @@ class SingleFileInserter implements ClientPutState {
 		long wantHashes = 0;
 		CompatibilityMode cmode = ctx.getCompatibilityMode();
 		boolean atLeast1254 = (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
-		if(atLeast1254 && (!metadata)) {
+		if(atLeast1254) {
 			// We verify this. We want it for *all* files.
 			wantHashes |= HashType.SHA256.bitmask;
 			// FIXME: If the user requests it, calculate the others for small files.
 			// FIXME maybe the thresholds should be configurable.
-			if(data.size() >= 1024*1024) {
+			if(data.size() >= 1024*1024 && !metadata) {
 				// SHA1 is common and MD5 is cheap.
 				wantHashes |= HashType.SHA1.bitmask;
 				wantHashes |= HashType.MD5.bitmask;
 			}
-			if(data.size() >= 4*1024*1024) {
+			if(data.size() >= 4*1024*1024 && !metadata) {
 				// Useful for cross-network, and cheap.
 				wantHashes |= HashType.ED2K.bitmask;
 				// Very widely supported for cross-network.
