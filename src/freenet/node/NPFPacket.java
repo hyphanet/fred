@@ -3,8 +3,19 @@ package freenet.node;
 import java.util.LinkedList;
 
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 class NPFPacket {
+	private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+
 	private long sequenceNumber;
 	private final LinkedList<Long> acks = new LinkedList<Long>();
 	private final LinkedList<MessageFragment> fragments = new LinkedList<MessageFragment>();
@@ -90,6 +101,11 @@ class NPFPacket {
 				messageLength = fragmentLength;
 			}
 			byte[] fragmentData = new byte[fragmentLength];
+			if((offset + fragmentLength) > plaintext.length) {
+				if(logMINOR) Logger.minor(NPFPacket.class, "Fragment doesn't fit in the received packet");
+				packet.error = true;
+				break;
+			}
 			System.arraycopy(plaintext, offset, fragmentData, 0, fragmentLength);
 			offset += fragmentLength;
 
