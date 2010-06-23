@@ -450,7 +450,7 @@ public class ClientGetter extends BaseClientGetter {
 			minSuccess = finalBlocksRequired;
 			finalized = true;
 		}
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, finalized), container, context);
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, 0, finalized), container, context);
 	}
 
 	/**

@@ -553,7 +553,7 @@ class SingleFileInserter implements ClientPutState {
 				if(!wasActive)
 					container.activate(parent, 1);
 			}
-			req = parent.minSuccessBlocks;
+			req = parent.getMinSuccessFetchBlocks();
 			total = parent.totalBlocks;
 			if(!wasActive) container.deactivate(parent, 1);
 			data = origDataLength;

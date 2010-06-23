@@ -56,7 +56,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** SimpleFieldSet containing progress information from last startup.
 	 * Will be progressively cleared during startup. */
 	private SimpleFieldSet oldProgress;
-
+	
 	/**
 	 * @param client The object to call back when we complete, or don't.
 	 * @param data The data to insert. This will not be freed by ClientPutter, the callback must do that. However,
@@ -398,11 +398,47 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
 	}
 
+	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
+	protected int minSuccessFetchBlocks;
+	
+	public int getMinSuccessFetchBlocks() {
+		return minSuccessFetchBlocks;
+	}
+	
+	public void addBlock(ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks++;
+		}
+		super.addBlock(container);
+	}
+	
+	public void addBlocks(int num, ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks+=num;
+		}
+		super.addBlocks(num, container);
+	}
+	
+	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
+	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks += blocks;
+		}
+		super.addMustSucceedBlocks(blocks, container);
+	}
+
+	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
+	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
+	 * the requestor must fetch. */
+	public void addRedundantBlocks(int blocks, ObjectContainer container) {
+		super.addMustSucceedBlocks(blocks, container);
+	}
+
 	@Override
 	public void notifyClients(ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(ctx, 2);
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized), container, context);
 	}
 
 	/** Notify listening clients that an insert has been sent to the network. */

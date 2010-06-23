@@ -140,7 +140,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		dataConsecutiveRNFs = new int[origDataBlocks.length];
 		checkConsecutiveRNFs = new int[checkBlockCount];
 		blocks = new ArrayList<Integer>();
-		putter.addMustSucceedBlocks(dataURIs.length + checkURIs.length, container);
+		putter.addMustSucceedBlocks(dataURIs.length, container);
+		putter.addRedundantBlocks(checkURIs.length, container);
 		this.segNo = segNo;
 		if(persistent) container.activate(blockInsertContext, 1);
 		maxRetries = blockInsertContext.maxInsertRetries;
@@ -386,7 +387,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					throw new ResumeException("Missing data block " + i
 							+ " and need to reconstruct check blocks");
 		}
-		putter.addMustSucceedBlocks(dataURIs.length + checkURIs.length, container);
+		putter.addMustSucceedBlocks(dataURIs.length, container);
+		putter.addRedundantBlocks(checkURIs.length, container);
 	}
 
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {

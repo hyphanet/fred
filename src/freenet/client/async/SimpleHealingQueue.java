@@ -150,4 +150,9 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		super.cancel();
 	}
 
+	@Override
+	public int getMinSuccessFetchBlocks() {
+		return 0;
+	}
+
 }

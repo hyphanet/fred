@@ -350,7 +350,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(SimpleManifestPutter.this, 1);
 			}
 		}
-
+		
+		/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
+		protected int minSuccessFetchBlocks;
+		
 		@Override
 		public void addBlock(ObjectContainer container) {
 			if(persistent) {
@@ -359,6 +362,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.addBlock(container);
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
+			synchronized(this) {
+				minSuccessFetchBlocks++;
+			}
+			super.addBlock(container);
 		}
 
 		@Override
@@ -368,6 +375,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.addBlocks(num, container);
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
+			synchronized(this) {
+				minSuccessFetchBlocks+=num;
+			}
+			super.addBlock(container);
 		}
 
 		@Override
@@ -377,6 +388,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.completedBlock(dontNotify, container, context);
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
+			super.completedBlock(dontNotify, container, context);
 		}
 
 		@Override
@@ -386,6 +398,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.failedBlock(container, context);
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
+			super.failedBlock(container, context);
 		}
 
 		@Override
@@ -395,6 +408,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.fatallyFailedBlock(container, context);
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
+			super.fatallyFailedBlock(container, context);
 		}
 
 		@Override
@@ -404,6 +418,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.addMustSucceedBlocks(blocks, container);
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
+			synchronized(this) {
+				minSuccessFetchBlocks += blocks;
+			}
+			super.addMustSucceedBlocks(blocks, container);
 		}
 
 		@Override
@@ -414,7 +432,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
-
+		
+		public synchronized int getMinSuccessFetchBlocks() {
+			return minSuccessFetchBlocks;
+		}
+		
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
@@ -1467,15 +1489,51 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// Ignore
 	}
 
+	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
+	protected int minSuccessFetchBlocks;
+	
+	public void addBlock(ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks++;
+		}
+		super.addBlock(container);
+	}
+	
+	public void addBlocks(int num, ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks+=num;
+		}
+		super.addBlocks(num, container);
+	}
+	
+	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
+	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks += blocks;
+		}
+		super.addMustSucceedBlocks(blocks, container);
+	}
+
+	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
+	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
+	 * the requestor must fetch. */
+	public void addRedundantBlocks(int blocks, ObjectContainer container) {
+		super.addMustSucceedBlocks(blocks, container);
+	}
+
 	@Override
 	public void notifyClients(ObjectContainer container, ClientContext context) {
 		if(persistent()) {
 			container.activate(ctx, 1);
 			container.activate(ctx.eventProducer, 1);
 		}
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized), container, context);
 	}
 
+	public int getMinSuccessFetchBlocks() {
+		return minSuccessFetchBlocks;
+	}
+	
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			this.metadataBlockSetFinalized = true;

@@ -209,6 +209,14 @@ public abstract class ClientRequester {
 		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
+	/** Insertors should override this. The method is duplicated rather than calling addMustSucceedBlocks to avoid confusing consequences when addMustSucceedBlocks does other things. */
+	public synchronized void addRedundantBlocks(int blocks, ObjectContainer container) {
+		totalBlocks += blocks;
+		minSuccessBlocks += blocks;
+		if(persistent()) container.store(this);
+		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
+	}
+	
 	/** Notify clients, usually via a SplitfileProgressEvent, of the current progress. */
 	public abstract void notifyClients(ObjectContainer container, ClientContext context);
 	
