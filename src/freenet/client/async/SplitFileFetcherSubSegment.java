@@ -181,11 +181,34 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 					Logger.minor(this, "No blocks to remove");
 				return null;
 			}
+			int x = 0;
 			for(int i=0;i<10;i++) {
 				Integer ret;
-				int x;
 				if(blockNums.size() == 0) return null;
 				x = context.random.nextInt(blockNums.size());
+				ret = blockNums.get(x);
+				int num = ret;
+				Key key = segment.getBlockNodeKey(num, container);
+				if(key == null) {
+					if(segment.isFinishing(container) || segment.isFinished(container)) return null;
+					if(segment.haveBlock(num, container))
+						Logger.error(this, "Already have block "+ret+" but was in blockNums on "+this);
+					else
+						Logger.error(this, "Key is null for block "+ret+" for "+this);
+					continue;
+				}
+				if(keys.hasKey(key)) {
+					continue;
+				}
+				if(logMINOR)
+					Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
+				return new MySendableRequestItem(num);
+			}
+			// Exhaustive search starting at a random slot.
+			for(int i=0;i<blockNums.size();i++) {
+				x++;
+				if(x == blockNums.size()) x = 0;
+				Integer ret;
 				ret = blockNums.get(x);
 				int num = ret;
 				Key key = segment.getBlockNodeKey(num, container);
