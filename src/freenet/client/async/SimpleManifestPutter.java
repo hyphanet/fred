@@ -180,7 +180,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 				if(putHandlersWaitingForMetadata.contains(this)) {
 					putHandlersWaitingForMetadata.remove(this);
-					container.ext().store(putHandlersWaitingForMetadata, 2);
+					if(persistent) container.ext().store(putHandlersWaitingForMetadata, 2);
 					Logger.error(this, "PutHandler was in waitingForMetadata in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
 
@@ -190,7 +190,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 				if(waitingForBlockSets.contains(this)) {
 					waitingForBlockSets.remove(this);
-					container.store(waitingForBlockSets);
+					if(persistent) container.store(waitingForBlockSets);
 					Logger.error(this, "PutHandler was in waitingForBlockSets in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
 				if(persistent) {
@@ -200,7 +200,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 				if(putHandlersWaitingForFetchable.contains(this)) {
 					putHandlersWaitingForFetchable.remove(this);
-					container.ext().store(putHandlersWaitingForFetchable, 2);
+					if(persistent) container.ext().store(putHandlersWaitingForFetchable, 2);
 					// Not getting an onFetchable is not unusual, just ignore it.
 					if(logMINOR) Logger.minor(this, "PutHandler was in waitingForFetchable in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
