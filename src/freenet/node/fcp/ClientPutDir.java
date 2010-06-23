@@ -73,7 +73,7 @@ public class ClientPutDir extends ClientPutBase {
 //		this.manifestElements = new HashMap<String, Object>();
 //		this.manifestElements.putAll(manifestElements);
 		this.defaultName = message.defaultName;
-		makePutter();
+		makePutter(server.core.clientContext);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -95,7 +95,7 @@ public class ClientPutDir extends ClientPutBase {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
 		this.defaultName = defaultName;
-		makePutter();
+		makePutter(server.core.clientContext);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -112,7 +112,7 @@ public class ClientPutDir extends ClientPutBase {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manifestElements = elements;
 		this.defaultName = defaultName;
-		makePutter();
+		makePutter(server.core.clientContext);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -167,12 +167,12 @@ public class ClientPutDir extends ClientPutBase {
 		return map;
 	}
 	
-	private void makePutter() {
+	private void makePutter(ClientContext context) {
 		SimpleManifestPutter p;
 			p = new SimpleManifestPutter(this, 
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
 					lowLevelClient,
-					earlyEncode);
+					earlyEncode, context);
 		putter = p;
 	}
 
@@ -248,7 +248,7 @@ public class ClientPutDir extends ClientPutBase {
 				p = new SimpleManifestPutter(this, 
 						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, 
 						lowLevelClient,
-						earlyEncode);
+						earlyEncode, server.core.clientContext);
 		putter = p;
 		numberOfFiles = fileCount;
 		totalSize = size;
@@ -383,7 +383,7 @@ public class ClientPutDir extends ClientPutBase {
 	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
 		setVarsRestart(container);
-		makePutter();
+		makePutter(context);
 		start(container, context);
 		return true;
 	}

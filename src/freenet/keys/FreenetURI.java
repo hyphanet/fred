@@ -381,10 +381,12 @@ public class FreenetURI implements Cloneable {
 		// sv is *backwards*
 		// this makes for more efficient handling
 
-		if(isSSK || isUSK || isKSK) {
+		// SSK@ = create a random SSK
+		if(sv.isEmpty() && (isUSK || isKSK))
+			throw new MalformedURLException("No docname for " + keyType);
+		
+		if((isSSK || isUSK || isKSK) && !sv.isEmpty()) {
 
-			if(sv.isEmpty())
-				throw new MalformedURLException("No docname for " + keyType);
 			docName = sv.remove(sv.size() - 1);
 			if(isUSK) {
 				if(sv.isEmpty())

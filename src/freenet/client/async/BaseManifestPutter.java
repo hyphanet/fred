@@ -24,6 +24,7 @@ import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -945,8 +946,13 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys) {
+			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, ClientContext context) {
 		super(prioClass, clientContext);
+		if("SSK".equals(target.getKeyType()) && target.getDocName() == null && target.getRoutingKey() == null) {
+			// SSK@ = use a random SSK.
+	    	InsertableClientSSK key = InsertableClientSSK.createRandom(context.random, "");
+	    	target = key.getInsertURI();
+		}
 		if(client.persistent())
 			this.targetURI = target.clone();
 		else

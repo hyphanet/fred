@@ -143,7 +143,7 @@ public class ClientPut extends ClientPutBase {
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata, 
 				lowLevelClient,
-				null, targetFilename, binaryBlob);
+				null, targetFilename, binaryBlob, server.core.clientContext);
 	}
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
@@ -252,7 +252,7 @@ public class ClientPut extends ClientPutBase {
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata,
 				lowLevelClient,
-				null, targetFilename, binaryBlob);
+				null, targetFilename, binaryBlob, server.core.clientContext);
 	}
 	
 	/**
@@ -340,7 +340,7 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, uri, cm, ctx, 
 				priorityClass, getCHKOnly, isMetadata,
 				lowLevelClient,
-				oldProgress, targetFilename, binaryBlob);
+				oldProgress, targetFilename, binaryBlob, server.core.clientContext);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage(container);
 			client.queueClientRequestMessage(msg, 0, container);

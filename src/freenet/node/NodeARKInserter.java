@@ -158,7 +158,7 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		inserter = new ClientPutter(this, b, uri,
 					null, // Modern ARKs easily fit inside 1KB so should be pure SSKs => no MIME type; this improves fetchability considerably
 					node.clientCore.makeClient((short)0, true).getInsertContext(true),
-					RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, null, false);
+					RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, null, false, node.clientCore.clientContext);
 		
 		try {
 			

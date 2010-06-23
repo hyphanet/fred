@@ -16,6 +16,7 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -73,14 +74,20 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass, boolean getCHKOnly,
-			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
+			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob, ClientContext context) {
 		super(priorityClass, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
 		this.getCHKOnly = getCHKOnly;
 		this.client = client;
 		this.data = data;
-		this.targetURI = targetURI;
+		if("SSK".equals(targetURI.getKeyType()) && targetURI.getDocName() == null && targetURI.getRoutingKey() == null) {
+			// SSK@ = use a random SSK.
+	    	InsertableClientSSK key = InsertableClientSSK.createRandom(context.random, "");
+	    	this.targetURI = key.getInsertURI();
+		} else {
+			this.targetURI = targetURI;
+		}
 		this.ctx = ctx;
 		this.finished = false;
 		this.cancelled = false;
