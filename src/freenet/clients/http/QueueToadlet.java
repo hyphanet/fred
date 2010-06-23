@@ -933,8 +933,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				contentNode.addChild(core.alerts.createSummary());
 			HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", NodeL10n.getBase().getString("QueueToadlet.globalQueueIsEmpty"), contentNode, "queue-empty", true);
 			infoboxContent.addChild("#", NodeL10n.getBase().getString("QueueToadlet.noTaskOnGlobalQueue"));
-			if(uploads)
-				contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
 			if(!uploads)
 				contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
 			return pageNode;
@@ -1078,9 +1076,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		/* add file insert box */
-		if(uploads)
-		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));
 
 		/* navigation bar */
 		InfoboxNode infobox = pageMaker.getInfobox("navbar", NodeL10n.getBase().getString("QueueToadlet.requestNavigation"), null, false);
@@ -1478,51 +1473,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			keyCell.addChild("span", "class", "key_unknown", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 		}
 		return keyCell;
-	}
-	
-	private HTMLNode createInsertBox(PageMaker pageMaker, ToadletContext ctx, boolean isAdvancedModeEnabled) {
-		/* the insert file box */
-		InfoboxNode infobox = pageMaker.getInfobox(NodeL10n.getBase().getString("QueueToadlet.insertFile"), "insert-queue", true);
-		HTMLNode insertBox = infobox.outer;
-		HTMLNode insertContent = infobox.content;
-		HTMLNode insertForm = ctx.addFormChild(insertContent, path(), "queueInsertForm");
-		insertForm.addChild("#", (NodeL10n.getBase().getString("QueueToadlet.insertAs") + ' '));
-		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "chk", "checked" });
-		insertForm.addChild("#", " CHK \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "ksk" });
-		insertForm.addChild("#", " KSK/SSK/USK \u00a0");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", "KSK@" });
-		if(isAdvancedModeEnabled) {
-			insertForm.addChild("#", " \u00a0 ");
-			insertForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "compress", "checked" });
-			insertForm.addChild("#", ' ' + NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel") + " \u00a0 ");
-		} else {
-			insertForm.addChild("input", new String[] { "type", "value" }, new String[] { "hidden", "true" });
-		}
-		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "reset", NodeL10n.getBase().getString("QueueToadlet.insertFileResetForm") });
-		if(ctx.isAllowedFullAccess()) {
-			insertForm.addChild("br");
-			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
-			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
-			insertForm.addChild("br");
-		}
-		if(isAdvancedModeEnabled) {
-			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.compatModeLabel")+": ");
-			HTMLNode select = insertForm.addChild("select", "name", "compatibilityMode");
-			for(CompatibilityMode mode : InsertContext.CompatibilityMode.values()) {
-				if(mode == CompatibilityMode.COMPAT_UNKNOWN) continue;
-				// FIXME l10n???
-				HTMLNode option = select.addChild("option", "value", mode.name(), mode.detail);
-				if(mode == CompatibilityMode.COMPAT_CURRENT)
-					option.addAttribute("selected", "");
-			}
-		}
-		insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileLabel") + ": ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
-		insertForm.addChild("#", " \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", NodeL10n.getBase().getString("QueueToadlet.insertFileInsertFileLabel") });
-		insertForm.addChild("#", " \u00a0 ");
-		return insertBox;
 	}
 	
 	private HTMLNode createBulkDownloadForm(ToadletContext ctx, PageMaker pageMaker) {
@@ -1947,12 +1897,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
 	}
 
+	static final String PATH_UPLOADS = "/uploads/";
+	static final String PATH_DOWNLOADS = "/downloads/";
+	
 	@Override
 	public String path() {
 		if(uploads)
-			return "/uploads/";
+			return PATH_UPLOADS;
 		else
-			return "/downloads/";
+			return PATH_DOWNLOADS;
 	}
 
 	private class GetCompletedEvent extends StoringUserEvent<GetCompletedEvent> {
