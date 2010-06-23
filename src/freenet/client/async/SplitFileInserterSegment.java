@@ -1302,7 +1302,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				// Check whether it is already running
 				if(!persistent) {
 					if(keys.hasTransientInsert(this, new FakeBlockItem(num)))
-						return null;
+						continue;
 				}
 
 				try {
