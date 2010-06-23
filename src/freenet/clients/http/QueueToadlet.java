@@ -394,7 +394,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final boolean compress = request.getPartAsString("compress", 128).length() > 0;
 				final String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 				final String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
-				final CompatibilityMode cmode = CompatibilityMode.valueOf(compatibilityMode);
+				final CompatibilityMode cmode;
+				if(compatibilityMode == "")
+					cmode = CompatibilityMode.COMPAT_CURRENT;
+				else
+					cmode = CompatibilityMode.valueOf(compatibilityMode);
 				final String fnam;
 				if(insertURI.getKeyType().equals("CHK"))
 					fnam = file.getFilename();
@@ -482,7 +486,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final String key = request.getPartAsString("key", 128);
 				final boolean compress = request.isPartSet("compress");
 				final String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
-				final CompatibilityMode cmode = CompatibilityMode.valueOf(compatibilityMode);
+				final CompatibilityMode cmode;
+				if(compatibilityMode.equals(""))
+					cmode = CompatibilityMode.COMPAT_CURRENT;
+				else
+					cmode = CompatibilityMode.valueOf(compatibilityMode);
 				if(key != null) {
 					try {
 						furi = new FreenetURI(key);
@@ -494,7 +502,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					furi = new FreenetURI("CHK@");
 				}
 				final String target;
-				if(!furi.getKeyType().equals("CHK"))
+				if(furi.getDocName() != null)
 					target = null;
 				else
 					target = file.getName();
