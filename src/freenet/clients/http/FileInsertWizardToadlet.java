@@ -8,6 +8,7 @@ import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
+import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
@@ -69,12 +70,17 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		HTMLNode insertBox = infobox.outer;
 		HTMLNode insertContent = infobox.content;
 		insertContent.addChild("p", l10n("insertIntro"));
+		NETWORK_THREAT_LEVEL seclevel = core.node.securityLevels.getNetworkThreatLevel();
 		HTMLNode insertForm = ctx.addFormChild(insertContent, QueueToadlet.PATH_UPLOADS, "queueInsertForm");
-		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "CHK@", "checked" });
+		HTMLNode input = insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "CHK@" });
+		if(seclevel == NETWORK_THREAT_LEVEL.LOW)
+			input.addAttribute("checked", "checked");
 		insertForm.addChild("b", l10n("insertCanonicalTitle"));
 		insertForm.addChild("#", ": "+l10n("insertCanonical"));
 		insertForm.addChild("br");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "SSK@" });
+		input = insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "SSK@" });
+		if(seclevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+			input.addAttribute("checked", "checked");
 		insertForm.addChild("b", l10n("insertRandomTitle"));
 		insertForm.addChild("#", ": "+l10n("insertRandom"));
 		if(isAdvancedModeEnabled) {
