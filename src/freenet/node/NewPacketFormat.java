@@ -71,6 +71,7 @@ public class NewPacketFormat implements PacketFormat {
 		offset = 0;
 
 		NPFPacket packet = NPFPacket.create(plaintext);
+		if(packet.getAcks().size() > 0) pn.getThrottle().notifyOfPacketAcknowledged();
 		for(long ack : packet.getAcks()) {
 			synchronized(sentPackets) {
 				SentPacket sent = sentPackets.get(ack);
