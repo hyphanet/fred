@@ -161,9 +161,13 @@ public class ClientPut extends ClientPutBase {
 			if(message.fileHash != null) {
 				try {
 					salt = handler.connectionIdentifier + '-' + message.identifier + '-';
-					saltedHash = Base64.decode(message.fileHash);
+					saltedHash = Base64.decodeStandard(message.fileHash);
 				} catch (IllegalBase64Exception e) {
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Can't base64 decode " + ClientPutBase.FILE_HASH, identifier, global);
+					try {
+						saltedHash = Base64.decode(message.fileHash);
+					} catch (IllegalBase64Exception e1) {
+						throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Can't base64 decode " + ClientPutBase.FILE_HASH, identifier, global);
+					}
 				}
 			} else if(!handler.allowDDAFrom(message.origFilename, false))
 				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global);		
