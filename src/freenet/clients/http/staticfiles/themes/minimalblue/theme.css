@@ -559,9 +559,13 @@ span.peer_idle_old {
 div#statusbar-container {
 	background-color: #035196;
 	font-size: 1em;
-	margin-bottom: 25px;
-	border-bottom: 1px solid black;
+	margin-bottom: 0px;
 	border-top: 1px solid black;
+	position:fixed;
+	bottom:0;
+	left:0;
+	right:0;
+	z-index:18;
 }
 
 div#statusbar {
