@@ -137,13 +137,18 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
 	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
-		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, retryCount, context, container);
-		if(isInsertScheduler && req instanceof SendableGet) {
-			IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
-			req.internalError(e, sched, container, context, req.persistent());
-			throw e;
+		// If a block is already running it will return null. Try to find a valid block in that case.
+		for(int i=0;i<5;i++) {
+			SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, retryCount, context, container);
+			if(isInsertScheduler && req instanceof SendableGet) {
+				IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
+				req.internalError(e, sched, container, context, req.persistent());
+				throw e;
+			}
+			ChosenBlock block = maybeMakeChosenRequest(req, container, context);
+			if(block != null) return block;
 		}
-		return maybeMakeChosenRequest(req, container, context);
+		return null;
 	}
 	
 	private int ctr;
