@@ -121,7 +121,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			container.activate(client, 1);
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
-			Logger.minor(this, "Starting "+this);
+			Logger.minor(this, "Starting "+this+" for "+targetURI);
 		try {
 			this.targetURI.checkInsertURI();
 			// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
