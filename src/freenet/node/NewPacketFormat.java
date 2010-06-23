@@ -154,12 +154,14 @@ public class NewPacketFormat implements PacketFormat {
 				if(frag == null) continue;
 				packet.addMessageFragment(frag);
 				sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
+				break;
 			}
 		}
 
 		//Add messages from the message queue
 		PeerMessageQueue messageQueue = pn.getMessageQueue();
 		while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
+			if(packet.getFragments().size() != 0) break;
 			MessageItem item = null;
 			synchronized(messageQueue) {
 				item = messageQueue.grabQueuedMessageItem();
