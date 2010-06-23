@@ -67,7 +67,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
 			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, InsertContext.CompatibilityMode compatibilityMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
-		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, clientToken, global, container);
+		super(checkEmptySSK(uri, server.core.clientContext), identifier, verbosity, charset, handler, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
@@ -81,7 +81,17 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.setCompatibilityMode(compatibilityMode);
 		ctx.localRequestOnly = localRequestOnly;
 		this.earlyEncode = earlyEncode;
-		publicURI = getPublicURI(uri);
+		publicURI = getPublicURI(this.uri);
+	}
+
+	static FreenetURI checkEmptySSK(FreenetURI uri, ClientContext context) {
+		if("SSK".equals(uri.getKeyType()) && uri.getDocName() == null && uri.getRoutingKey() == null) {
+			// SSK@ = use a random SSK.
+	    	InsertableClientSSK key = InsertableClientSSK.createRandom(context.random, "");
+	    	return key.getInsertURI();
+		} else {
+			return uri;
+		}
 	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset,
@@ -101,12 +111,12 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.localRequestOnly = localRequestOnly;
 		ctx.setCompatibilityMode(compatMode);
 		this.earlyEncode = earlyEncode;
-		publicURI = getPublicURI(uri);
+		publicURI = getPublicURI(this.uri);
 	}
 
 	public ClientPutBase(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws MalformedURLException {
 		super(fs, client2);
-		publicURI = getPublicURI(uri);
+		publicURI = getPublicURI(this.uri);
 		getCHKOnly = Fields.stringToBool(fs.get("CHKOnly"), false);
 		boolean dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
