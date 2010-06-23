@@ -28,7 +28,7 @@ public class PlainManifestPutter extends BaseManifestPutter {
 
 	public PlainManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
 			RequestClient clientContext, boolean earlyEncode) {
-		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode);
+		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, target.isSSK() || target.isKSK() || target.isUSK());
 	}
 
 	@Override

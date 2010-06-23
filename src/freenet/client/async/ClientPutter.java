@@ -122,6 +122,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			Logger.minor(this, "Starting "+this);
 		try {
 			this.targetURI.checkInsertURI();
+			// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
+			// randomised keys. This substantially improves security by making it impossible to identify blocks
+			// even if you know the content. In the user interface, we will offer the option of inserting as a
+			// random SSK to take advantage of this.
+			boolean randomiseSplitfileKeys = targetURI.isSSK() || targetURI.isKSK() || targetURI.isUSK();
 
 			if(data == null)
 				throw new InsertException(InsertException.BUCKET_ERROR, "No data to insert", null);
@@ -151,7 +156,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						if(meta != null) meta = persistent() ? meta.clone() : meta;
 						currentState =
 							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, 
-									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null);
+									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, randomiseSplitfileKeys);
 					} else
 						currentState =
 							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx, context, container);
