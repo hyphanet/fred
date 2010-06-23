@@ -461,6 +461,11 @@ div#statusbar-container {
 	padding: 5px;
 	font-size: 1.2em;
 	border: 1px solid black;
+	position:fixed;
+	bottom:0;
+	right:0;
+	left:0;
+	z-index:18;
 }
 
 div#statusbar {

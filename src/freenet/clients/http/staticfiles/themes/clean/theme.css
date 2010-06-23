@@ -687,12 +687,17 @@ div#statusbar-container {
 	margin-left: 0;
 	margin-right: 0;
 	margin-top: 5px;
-	margin-bottom: 5px;
+	margin-bottom: 0px;
 	border-bottom: 1px solid #d0d0d0;
-	padding: 3px;
+	padding: 3px 3px 0px 3px;
 	background-color: #d8d8d8;
 	border-top: 1px solid #d0d0d0;
 	border-bottom: 1px solid #d0d0d0;
+	position:fixed;
+	bottom:0;
+	left:0;
+	right:0;
+	z-index:18;
 }
 
 div#statusbar {
