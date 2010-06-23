@@ -43,6 +43,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.NullBucket;
 
 /**
  * A high level data request. Follows redirects, downloads splitfiles, etc. Similar to what you get from FCP,
@@ -159,7 +160,7 @@ public class ClientGetter extends BaseClientGetter {
 				}
 				currentState = SingleFileFetcher.create(this, this,
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						filtering ? null : returnBucket, true, container, context);
+						(filtering || returnBucket == null || returnBucket instanceof NullBucket) ? null : returnBucket, true, container, context);
 			}
 			if(cancelled) cancel();
 			// schedule() may deactivate stuff, so store it now.
