@@ -140,9 +140,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				// Preserve the key
 				
 				FreenetURI insertURI;
-				String keyType = request.getPartAsString("keytype", 3);
-				if ("chk".equals(keyType)) {
+				String keyType = request.getPartAsString("keytype", 10);
+				if ("CHK@".equals(keyType)) {
 					insertURI = new FreenetURI("CHK@");
+				} else if("SSK@".equals(keyType)) {
+					insertURI = new FreenetURI("SSK@");
 				} else {
 					try {
 						String u = request.getPartAsString("key", 128);
@@ -369,8 +371,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			} else if (request.getPartAsString("insert", 128).length() > 0) {
 				final FreenetURI insertURI;
 				String keyType = request.getPartAsString("keytype", 3);
-				if ("chk".equals(keyType)) {
+				if ("CHK@".equals(keyType)) {
 					insertURI = new FreenetURI("CHK@");
+				} else if("SSK@".equals(keyType)) {
+					insertURI = new FreenetURI("SSK@");
 				} else {
 					try {
 						String u = request.getPartAsString("key", 128);
