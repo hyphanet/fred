@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.support.Logger;
 
 public class MessageWrapper {
@@ -102,7 +103,13 @@ public class MessageWrapper {
 			int[] range = acks.first();
 			if(range[0] == 0 && (range[1] == (item.buf.length - 1))) {
 				//TODO: Add overhead
+				//TODO: This should be called when the packet is *sent* not acked
 				item.onSent(item.buf.length);
+				if(item.cb != null) {
+					for(AsyncMessageCallback cb : item.cb) {
+						cb.acknowledged();
+					}
+				}
 				alreadyAcked = true;
 				return true;
 			}
