@@ -59,6 +59,13 @@ class NPFPacket {
 			                | (plaintext[offset + 1] & 0xFF);
 			offset += 2;
 
+			if(!isFragmented && !firstFragment) {
+				Logger.warning(NPFPacket.class, "Received unfragmented message, but the fragment wasn't"
+				                + " the first");
+				packet.error = true;
+				break;
+			}
+
 			int fragmentLength;
 			if(shortMessage) {
 				fragmentLength = plaintext[offset++] & 0xFF;
