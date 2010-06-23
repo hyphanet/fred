@@ -88,6 +88,7 @@ public class MessageWrapper {
 		addRangeToSet(start, end, sent);
 	}
 
+	private boolean alreadyAcked = false;
 	/**
 	 * Mark the given range as received.
 	 *
@@ -97,11 +98,12 @@ public class MessageWrapper {
 	public boolean ack(int start, int end) {
 		lastReceivedAck = System.currentTimeMillis();
 		addRangeToSet(start, end, acks);
-		if(acks.size() == 1) {
+		if(acks.size() == 1 && !alreadyAcked) {
 			int[] range = acks.first();
 			if(range[0] == 0 && (range[1] == (item.buf.length - 1))) {
 				//TODO: Add overhead
 				item.onSent(item.buf.length);
+				alreadyAcked = true;
 				return true;
 			}
 		}
