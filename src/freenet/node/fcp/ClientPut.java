@@ -252,7 +252,7 @@ public class ClientPut extends ClientPutBase {
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata,
 				lowLevelClient,
-				null, targetFilename, binaryBlob, server.core.clientContext);
+				null, uri.isCHK() ? targetFilename : null, binaryBlob, server.core.clientContext);
 	}
 	
 	/**
