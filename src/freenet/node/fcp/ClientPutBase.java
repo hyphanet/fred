@@ -66,8 +66,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, InsertContext.CompatibilityMode compatibilityMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
-		super(checkEmptySSK(uri, server.core.clientContext), identifier, verbosity, charset, handler, priorityClass, persistenceType, clientToken, global, container);
+			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, InsertContext.CompatibilityMode compatibilityMode, String filename, FCPServer server, ObjectContainer container) throws MalformedURLException {
+		super(checkEmptySSK(uri, filename, server.core.clientContext), identifier, verbosity, charset, handler, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
@@ -84,11 +84,11 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		publicURI = getPublicURI(this.uri);
 	}
 
-	static FreenetURI checkEmptySSK(FreenetURI uri, ClientContext context) {
+	static FreenetURI checkEmptySSK(FreenetURI uri, String filename, ClientContext context) {
 		if("SSK".equals(uri.getKeyType()) && uri.getDocName() == null && uri.getRoutingKey() == null) {
 			// SSK@ = use a random SSK.
 	    	InsertableClientSSK key = InsertableClientSSK.createRandom(context.random, "");
-	    	return key.getInsertURI();
+	    	return key.getInsertURI().setDocName(filename);
 		} else {
 			return uri;
 		}

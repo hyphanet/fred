@@ -948,11 +948,6 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
 			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, ClientContext context) {
 		super(prioClass, clientContext);
-		if("SSK".equals(target.getKeyType()) && target.getDocName() == null && target.getRoutingKey() == null) {
-			// SSK@ = use a random SSK.
-	    	InsertableClientSSK key = InsertableClientSSK.createRandom(context.random, "");
-	    	target = key.getInsertURI();
-		}
 		if(client.persistent())
 			this.targetURI = target.clone();
 		else

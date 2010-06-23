@@ -81,13 +81,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.getCHKOnly = getCHKOnly;
 		this.client = client;
 		this.data = data;
-		if("SSK".equals(targetURI.getKeyType()) && targetURI.getDocName() == null && targetURI.getRoutingKey() == null) {
-			// SSK@ = use a random SSK.
-	    	InsertableClientSSK key = InsertableClientSSK.createRandom(context.random, "");
-	    	this.targetURI = key.getInsertURI();
-		} else {
-			this.targetURI = targetURI;
-		}
+		this.targetURI = targetURI;
 		this.ctx = ctx;
 		this.finished = false;
 		this.cancelled = false;

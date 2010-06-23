@@ -550,11 +550,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, ClientContext context) {
 		super(prioClass, clientContext);
 		this.defaultName = defaultName;
-		if("SSK".equals(target.getKeyType()) && target.getDocName() == null && target.getRoutingKey() == null) {
-			// SSK@ = use a random SSK.
-	    	InsertableClientSSK key = InsertableClientSSK.createRandom(context.random, "");
-	    	target = key.getInsertURI();
-		}
 
 		if(client.persistent())
 			this.targetURI = target.clone();

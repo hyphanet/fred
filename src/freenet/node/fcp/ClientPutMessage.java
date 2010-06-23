@@ -234,7 +234,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		if(fnam != null && fnam.length() == 0) {
 			fnam = null; // Deliberate override to tell us not to create one.
 		}
-		if(uri.getKeyType().equals("CHK"))
+		if(uri.getRoutingKey() == null && !uri.isKSK())
 			targetFilename = fnam;
 		else
 			targetFilename = null;
