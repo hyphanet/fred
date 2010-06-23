@@ -240,7 +240,6 @@ public class Metadata implements Cloneable {
 		boolean compressed = false;
 		boolean hasTopBlocks = false;
 		HashResult[] h = null;
-		boolean specifySplitfileKey = false;
 		if(haveFlags()) {
 			short flags = dis.readShort();
 			splitfile = (flags & FLAGS_SPLITFILE) == FLAGS_SPLITFILE;
@@ -737,7 +736,7 @@ public class Metadata implements Cloneable {
 	}
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
-			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey) {
+			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey) {
 		hashCode = super.hashCode();
 		this.hashes = hashes;
 		this.hashThisLayerOnly = hashThisLayerOnly;
@@ -790,6 +789,7 @@ public class Metadata implements Cloneable {
 			System.arraycopy(b, 0, splitfileParams, 2, b.length);
 			this.splitfileSingleCryptoAlgorithm = splitfileCryptoAlgorithm;
 			this.splitfileSingleCryptoKey = splitfileCryptoKey;
+			this.specifySplitfileKey = specifySplitfileKey;
 			if(splitfileCryptoKey == null) throw new IllegalArgumentException("Splitfile with parsed version 1 must have a crypto key");
 		}
 	}
