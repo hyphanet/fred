@@ -139,7 +139,7 @@ public class ClientPut extends ClientPutBase {
 		this.data = tempData;
 		this.clientMetadata = cm;
 
-		putter = new ClientPutter(this, data, uri, cm, 
+		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata, 
 				lowLevelClient,
@@ -248,7 +248,7 @@ public class ClientPut extends ClientPutBase {
 		}
 		
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
-		putter = new ClientPutter(this, data, uri, cm, 
+		putter = new ClientPutter(this, data, this.uri, cm, 
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata,
 				lowLevelClient,
@@ -337,7 +337,7 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 		SimpleFieldSet oldProgress = fs.subset("progress");
 		if(finished) oldProgress = null; // Not useful any more
-		putter = new ClientPutter(this, data, uri, cm, ctx, 
+		putter = new ClientPutter(this, data, this.uri, cm, ctx, 
 				priorityClass, getCHKOnly, isMetadata,
 				lowLevelClient,
 				oldProgress, targetFilename, binaryBlob, server.core.clientContext);
