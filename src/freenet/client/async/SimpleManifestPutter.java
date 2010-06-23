@@ -547,7 +547,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
-			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, ClientContext context) {
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
 		super(prioClass, clientContext);
 		this.defaultName = defaultName;
 
@@ -555,11 +555,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			this.targetURI = target.clone();
 		else
 			this.targetURI = target;
-		// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
-		// randomised keys. This substantially improves security by making it impossible to identify blocks
-		// even if you know the content. In the user interface, we will offer the option of inserting as a
-		// random SSK to take advantage of this.
-		this.randomiseSplitfileKeys = targetURI.isSSK() || targetURI.isKSK() || targetURI.isUSK();
+		this.randomiseSplitfileKeys = ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container);
 		this.cb = cb;
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly;

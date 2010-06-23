@@ -12,6 +12,7 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
@@ -127,7 +128,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			// randomised keys. This substantially improves security by making it impossible to identify blocks
 			// even if you know the content. In the user interface, we will offer the option of inserting as a
 			// random SSK to take advantage of this.
-			boolean randomiseSplitfileKeys = targetURI.isSSK() || targetURI.isKSK() || targetURI.isUSK();
+			boolean randomiseSplitfileKeys = randomiseSplitfileKeys(targetURI, ctx, persistent(), container);
 
 			if(data == null)
 				throw new InsertException(InsertException.BUCKET_ERROR, "No data to insert", null);
@@ -240,6 +241,27 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Started "+this);
 		return true;
+	}
+
+	public static boolean randomiseSplitfileKeys(FreenetURI targetURI, InsertContext ctx, boolean persistent, ObjectContainer container) {
+		// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
+		// randomised keys. This substantially improves security by making it impossible to identify blocks
+		// even if you know the content. In the user interface, we will offer the option of inserting as a
+		// random SSK to take advantage of this.
+		boolean randomiseSplitfileKeys = targetURI.isSSK() || targetURI.isKSK() || targetURI.isUSK();
+		if(randomiseSplitfileKeys) {
+			boolean ctxActive = true;
+			if(persistent) {
+				ctxActive = container.ext().isActive(ctx);
+				container.activate(ctx, 1);
+			}
+			CompatibilityMode cmode = ctx.getCompatibilityMode();
+			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()))
+				randomiseSplitfileKeys = false;
+			if(!ctxActive)
+				container.deactivate(ctx, 1);
+		}
+		return randomiseSplitfileKeys;
 	}
 
 	/** Called when the insert succeeds. */
