@@ -51,7 +51,7 @@ public class InsertContext implements Cloneable {
 	// FIXME DB4O: This should really be an enum. However, db4o has a tendency to copy enum's,
 	// which wastes space (often unrecoverably), confuses programmers, creates wierd bugs and breaks == comparison.
 	
-	public enum CompatibilityMode {
+	public static enum CompatibilityMode {
 		/** We do not know. */
 		COMPAT_UNKNOWN("Unknown"),
 		/** No compatibility issues, use the most efficient metadata possible. */
