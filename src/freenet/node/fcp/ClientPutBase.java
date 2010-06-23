@@ -94,10 +94,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		}
 	}
 
-	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset,
+	public ClientPutBase(FreenetURI uri, String identifier, String filename, int verbosity, String charset,
 			FCPConnectionHandler handler, FCPClient client, short priorityClass, short persistenceType, String clientToken,
 			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
-		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistenceType, clientToken, global, container);
+		super(checkEmptySSK(uri, filename, server.core.clientContext), identifier, verbosity, charset, handler, client, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;

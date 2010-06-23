@@ -90,7 +90,7 @@ public class ClientPutDir extends ClientPutBase {
 	 * @throws InsertException 
 	*/
 	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, FCPServer server, ObjectContainer container) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
-		super(uri, identifier, verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
+		super(uri, identifier, "site", verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
 		wasDiskPut = true;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
@@ -107,7 +107,7 @@ public class ClientPutDir extends ClientPutBase {
 	}
 
 	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, HashMap<String, Object> elements, String defaultName, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
-		super(uri, identifier, verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
+		super(uri, identifier, "site", verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
 		wasDiskPut = false;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manifestElements = elements;

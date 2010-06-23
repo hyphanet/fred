@@ -105,7 +105,7 @@ public class ClientPut extends ClientPutBase {
 			String charset, short priorityClass, short persistenceType, String clientToken,
 			boolean getCHKOnly, boolean dontCompress, int maxRetries, short uploadFromType, File origFilename,
 			String contentType, Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, InsertContext.CompatibilityMode compatMode, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {
-		super(uri, identifier, verbosity, charset, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, compatMode, server, container);
+		super(uri, identifier, targetFilename, verbosity, charset, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, compatMode, server, container);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!server.core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
