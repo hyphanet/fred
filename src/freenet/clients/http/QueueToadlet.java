@@ -158,10 +158,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				}
 				
+				String overrideSplitfileKey = request.getPartAsString("overrideSplitfileKey", 65);
+
 				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
 				boolean compress = request.getPartAsString("compress", 128).length() > 0;
 				String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
-				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString() + "&compress=" + compress+"&compatibilityMode="+compatibilityMode);
+				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString() + "&compress=" + compress+"&compatibilityMode="+compatibilityMode+"&overrideSplitfileKey="+overrideSplitfileKey);
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			}			
@@ -1677,7 +1679,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				compatCell.addChild("#", compat[0].detail+" - "+compat[1].detail); // FIXME l10n
 			byte[] overrideCryptoKey = get.getOverriddenSplitfileCryptoKey(container);
 			if(overrideCryptoKey != null)
-				compatCell.addChild(" - "+l10n("overriddenCryptoKeyInCompatCell")+": "+HexUtil.bytesToHex(overrideCryptoKey));
+				compatCell.addChild("#", " - "+l10n("overriddenCryptoKeyInCompatCell")+": "+HexUtil.bytesToHex(overrideCryptoKey));
 		}
 		return compatCell;
 	}
