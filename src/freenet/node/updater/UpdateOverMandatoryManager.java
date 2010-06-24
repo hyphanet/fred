@@ -1155,6 +1155,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 		};
 		FileBucket bucket = new FileBucket(blob, true, false, false, false, false);
+		// We are inserting a binary blob so we don't need to worry about CompatibilityMode etc.
 		ClientPutter putter = new ClientPutter(callback, bucket,
 			FreenetURI.EMPTY_CHK_URI, null, updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS).getInsertContext(true),
 			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, null, true, updateManager.node.clientCore.clientContext, null);
