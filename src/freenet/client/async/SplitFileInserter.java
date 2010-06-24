@@ -528,6 +528,7 @@ public class SplitFileInserter implements ClientPutState {
 					compressed = topCompressedSize;
 				}
 				if(persistent) container.activate(hashes, Integer.MAX_VALUE);
+				if(persistent) container.activate(compressionCodec, Integer.MAX_VALUE);
 				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, hashThisLayerOnly, data, compressed, req, total, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata);
 			}
 			haveSentMetadata = true;
