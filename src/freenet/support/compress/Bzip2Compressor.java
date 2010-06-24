@@ -3,6 +3,7 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -111,7 +112,7 @@ public class Bzip2Compressor implements Compressor {
 	}
 
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
-		CBZip2InputStream bz2is = new CBZip2InputStream(is);
+		CBZip2InputStream bz2is = new CBZip2InputStream(new BufferedInputStream(is));
 		long written = 0;
 		byte[] buffer = new byte[4096];
 		while(true) {

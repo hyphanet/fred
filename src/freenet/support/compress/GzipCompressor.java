@@ -1,5 +1,6 @@
 package freenet.support.compress;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -90,7 +91,7 @@ public class GzipCompressor implements Compressor {
 	}
 
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
-		GZIPInputStream gis = new GZIPInputStream(is);
+		GZIPInputStream gis = new GZIPInputStream(new BufferedInputStream(is));
 		long written = 0;
 		byte[] buffer = new byte[4096];
 		while(true) {
