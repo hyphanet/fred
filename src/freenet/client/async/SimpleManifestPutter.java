@@ -65,7 +65,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block =
 				new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, randomiseSplitfileKeys);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, forceCryptoKey);
 			metadata = null;
 			containerHandle = null;
 		}
@@ -565,7 +565,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private ArrayList<PutHandler> elementsToPutInArchive;
 	private boolean fetchable;
 	private final boolean earlyEncode;
-	final boolean randomiseSplitfileKeys;
+	final byte[] forceCryptoKey;
 
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
@@ -577,7 +577,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			this.targetURI = target.clone();
 		else
 			this.targetURI = target;
-		this.randomiseSplitfileKeys = ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container);
+		boolean randomiseSplitfileKeys = ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container);
+		if(randomiseSplitfileKeys) {
+			forceCryptoKey = new byte[32];
+			context.random.nextBytes(forceCryptoKey);
+		} else {
+			forceCryptoKey = null;
+		}
 		this.cb = cb;
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly;
@@ -867,7 +873,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		boolean isMetadata = true;
 		boolean insertAsArchiveManifest = false;
 		ARCHIVE_TYPE archiveType = null;
+		byte[] ckey = null;
 		if(!(elementsToPutInArchive.isEmpty())) {
+			// If it's just metadata don't random-encrypt it.
+			ckey = forceCryptoKey;
 			// There is an archive to insert.
 			// We want to include the metadata.
 			// We have the metadata, fortunately enough, because everything has been resolve()d.
@@ -905,7 +914,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.
 			metadataInserter =
-				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, randomiseSplitfileKeys);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, ckey);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
@@ -1046,8 +1055,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Bucket b = m.toBucket(context.getBucketFactory(persistent()));
 
 				InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
+				// Don't random-encrypt the metadata.
 				SingleFileInserter metadataInserter =
-					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, randomiseSplitfileKeys);
+					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, null);
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
