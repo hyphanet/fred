@@ -101,6 +101,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	
 	private NodeClientCore core;
 	final FCPServer fcp;
+	private FileInsertWizardToadlet fiw;
+	
+	void setFIW(FileInsertWizardToadlet fiw) {
+		this.fiw = fiw;
+	}
 	
 	private boolean isReversed = false;
 	
@@ -144,8 +149,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				String keyType = request.getPartAsString("keytype", 10);
 				if ("CHK@".equals(keyType)) {
 					insertURI = new FreenetURI("CHK@");
+					if(fiw != null)
+						fiw.reportCanonicalInsert();
 				} else if("SSK@".equals(keyType)) {
 					insertURI = new FreenetURI("SSK@");
+					if(fiw != null)
+						fiw.reportRandomInsert();
 				} else {
 					try {
 						String u = request.getPartAsString("key", 128);
@@ -376,8 +385,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				String keyType = request.getPartAsString("keytype", 3);
 				if ("CHK@".equals(keyType)) {
 					insertURI = new FreenetURI("CHK@");
+					if(fiw != null)
+						fiw.reportCanonicalInsert();
 				} else if("SSK@".equals(keyType)) {
 					insertURI = new FreenetURI("SSK@");
+					if(fiw != null)
+						fiw.reportRandomInsert();
 				} else {
 					try {
 						String u = request.getPartAsString("key", 128);

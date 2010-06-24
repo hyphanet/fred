@@ -1035,6 +1035,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		FileInsertWizardToadlet fiw = new FileInsertWizardToadlet(client, core);
 		server.register(fiw, "FProxyToadlet.categoryQueue", FileInsertWizardToadlet.PATH, true, "FProxyToadlet.uploadFileWizardTitle", "FProxyToadlet.uploadFileWizard", false, fiw);
+		uploadToadlet.setFIW(fiw);
 		
 		SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
 		server.register(symlinkToadlet, null, "/sl/", true, false);
