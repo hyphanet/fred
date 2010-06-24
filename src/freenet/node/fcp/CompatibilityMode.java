@@ -1,9 +1,13 @@
 package freenet.node.fcp;
 
+import java.util.Arrays;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.InsertContext;
 import freenet.node.Node;
+import freenet.support.HexUtil;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class CompatibilityMode extends FCPMessage {
@@ -12,17 +16,25 @@ public class CompatibilityMode extends FCPMessage {
 	long min;
 	long max;
 	final boolean global;
+	byte[] cryptoKey;
 	
-	CompatibilityMode(String id, boolean global, long min, long max) {
+	CompatibilityMode(String id, boolean global, long min, long max, byte[] cryptoKey) {
 		this.identifier = id;
 		this.global = global;
 		this.min = min;
 		this.max = max;
+		this.cryptoKey = cryptoKey;
 	}
 	
-	void merge(long min, long max) {
+	void merge(long min, long max, byte[] cryptoKey) {
 		if(min > this.min) this.min = min;
 		if(max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
+		if(this.cryptoKey == null) {
+			this.cryptoKey = cryptoKey;
+		} else if(!Arrays.equals(this.cryptoKey, cryptoKey)) {
+			Logger.error(this, "Two different crypto keys!");
+			this.cryptoKey = null;
+		}
 	}
 	
 	@Override
@@ -34,6 +46,8 @@ public class CompatibilityMode extends FCPMessage {
 		fs.put("Max.Number", max);
 		fs.putOverwrite("Identifier", identifier);
 		fs.put("Global", global);
+		if(cryptoKey != null)
+			fs.putOverwrite("SplitfileCryptoKey", HexUtil.bytesToHex(cryptoKey));
 		return fs;
 	}
 	

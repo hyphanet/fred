@@ -258,7 +258,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					deductBlocksFromSegments = 0;
 			}
 			
-			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, container, context);
+			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), container, context);
 
 			// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
 			// Work around a bug around build 1135.

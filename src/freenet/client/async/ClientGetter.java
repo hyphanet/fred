@@ -734,8 +734,8 @@ public class ClientGetter extends BaseClientGetter {
 		notifyClients(container, context);
 	}
 
-	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
-		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max), container, context);
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, ObjectContainer container, ClientContext context) {
+		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max, customSplitfileKey), container, context);
 	}
 
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {

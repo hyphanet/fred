@@ -531,7 +531,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				CompatibilityMode compat = (CompatibilityMode)msg;
 				if(compatMessage != null) {
 					if(persistenceType == PERSIST_FOREVER) container.activate(compatMessage, 1);
-					compatMessage.merge(compat.min, compat.max);
+					compatMessage.merge(compat.min, compat.max, compat.cryptoKey);
 					if(persistenceType == PERSIST_FOREVER) container.store(compatMessage);
 				} else {
 					compatMessage = compat;
@@ -743,7 +743,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			progress = new SendingToNetworkMessage(identifier, global);
 		} else if(ce instanceof SplitfileCompatibilityModeEvent) {
 			SplitfileCompatibilityModeEvent event = (SplitfileCompatibilityModeEvent)ce;
-			progress = new CompatibilityMode(identifier, global, event.minCompatibilityMode, event.maxCompatibilityMode);
+			progress = new CompatibilityMode(identifier, global, event.minCompatibilityMode, event.maxCompatibilityMode, event.splitfileCryptoKey);
 		} else if(ce instanceof ExpectedHashesEvent) {
 			ExpectedHashesEvent event = (ExpectedHashesEvent)ce;
 			progress = new ExpectedHashes(event, identifier, global);

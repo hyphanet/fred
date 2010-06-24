@@ -35,7 +35,7 @@ public interface GetCompletionCallback {
 	
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context);
 	
-	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context);
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, ObjectContainer container, ClientContext context);
 
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context);
 }

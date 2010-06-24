@@ -1454,4 +1454,12 @@ public class Metadata implements Cloneable {
 		return hashes;
 	}
 
+	/** If there is a custom (not computed from hashes) splitfile key, return it.
+	 * Else return null. */
+	public byte[] getCustomSplitfileKey() {
+		if(specifySplitfileKey)
+			return splitfileSingleCryptoKey;
+		return null;
+	}
+
 }

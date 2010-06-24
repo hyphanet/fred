@@ -1152,7 +1152,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
@@ -1160,7 +1160,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.hashes = hashes;
 			if(persistent) container.store(this);
 		}
-		
+
 	}
 
 	class MultiLevelMetadataCallback implements GetCompletionCallback {
@@ -1262,7 +1262,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
