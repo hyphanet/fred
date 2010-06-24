@@ -56,6 +56,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** SimpleFieldSet containing progress information from last startup.
 	 * Will be progressively cleared during startup. */
 	private SimpleFieldSet oldProgress;
+	private final byte[] overrideSplitfileCrypto;
 	
 	/**
 	 * @param client The object to call back when we complete, or don't.
@@ -75,7 +76,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass, boolean getCHKOnly,
-			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob, ClientContext context) {
+			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto) {
 		super(priorityClass, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
@@ -89,6 +90,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.oldProgress = stored;
 		this.targetFilename = targetFilename;
 		this.binaryBlob = binaryBlob;
+		this.overrideSplitfileCrypto = overrideSplitfileCrypto;
 	}
 
 	/** Start the insert.
@@ -153,7 +155,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				}
 				cancel = this.cancelled;
 				byte[] cryptoKey = null;
-				if(randomiseSplitfileKeys) {
+				if(overrideSplitfileCrypto != null) {
+					cryptoKey = overrideSplitfileCrypto;
+				} else if(randomiseSplitfileKeys) {
 					cryptoKey = new byte[32];
 					context.random.nextBytes(cryptoKey);
 				}

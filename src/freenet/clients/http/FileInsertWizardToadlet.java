@@ -114,6 +114,8 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 				if(mode == CompatibilityMode.COMPAT_CURRENT)
 					option.addAttribute("selected", "");
 			}
+			insertForm.addChild("#", l10n("splitfileCryptoKeyLabel")+": ");
+			insertForm.addChild("input", new String[] { "type", "name", "maxlength" }, new String[] { "text", "overrideSplitfileKey", "64" });
 		}
 		insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileLabel") + ": ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
