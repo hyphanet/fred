@@ -41,4 +41,12 @@ public class SparseBitmapTest extends TestCase {
 			assertTrue(s.contains(i));
 		}
 	}
+
+	public void testClear() {
+		SparseBitmap s = new SparseBitmap();
+		s.add(0, 2);
+		assertTrue(s.contains(1));
+		s.clear();
+		assertFalse(s.contains(1));
+	}
 }
