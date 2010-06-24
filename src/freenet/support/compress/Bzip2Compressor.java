@@ -45,10 +45,11 @@ public class Bzip2Compressor implements Compressor {
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		if(maxReadLength <= 0)
 			throw new IllegalArgumentException();
+		BufferedInputStream bis = new BufferedInputStream(is, 32768);
 		CBZip2OutputStream bz2os = null;
 		try {
 			CountedOutputStream cos = new CountedOutputStream(new NoCloseProxyOutputStream(os));
-			bz2os = new CBZip2OutputStream(new BufferedOutputStream(cos));
+			bz2os = new CBZip2OutputStream(new BufferedOutputStream(cos, 32768));
 			// FIXME add finish() to CBZip2OutputStream and use it to avoid having to use NoCloseProxyOutputStream.
 			// Requires changes to freenet-ext.jar.
 			long read = 0;
@@ -57,7 +58,7 @@ public class Bzip2Compressor implements Compressor {
 			byte[] buffer = new byte[32768];
 			while(true) {
 				int l = (int) Math.min(buffer.length, maxReadLength - read);
-				int x = l == 0 ? -1 : is.read(buffer, 0, buffer.length);
+				int x = l == 0 ? -1 : bis.read(buffer, 0, buffer.length);
 				if(x <= -1) break;
 				if(x == 0) throw new IOException("Returned zero from read()");
 				bz2os.write(buffer, 0, x);
