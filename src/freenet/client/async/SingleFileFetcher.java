@@ -405,6 +405,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							(metadata.topCompressedSize > ctx.maxTempLength)) {
 						// Just in case...
 						if(persistent) removeFrom(container, context);
+						if(metadata.isSimpleRedirect()) clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 						throw new FetchException(FetchException.TOO_BIG, metadata.topSize, true, clientMetadata.getMIMEType());
 					}
 					rcb.onExpectedTopSize(metadata.topSize, metadata.topCompressedSize, metadata.topBlocksRequired, metadata.topBlocksTotal, container, context);
