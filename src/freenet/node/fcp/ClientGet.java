@@ -906,6 +906,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		} else
 			return new InsertContext.CompatibilityMode[] { InsertContext.CompatibilityMode.COMPAT_UNKNOWN, InsertContext.CompatibilityMode.COMPAT_UNKNOWN };
 	}
+	
+	public byte[] getOverriddenSplitfileCryptoKey(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && compatMessage != null)
+			container.activate(compatMessage, 2);
+		if(compatMessage != null) {
+			return compatMessage.cryptoKey;
+		} else
+			return null;
+	}
 
 	@Override
 	public String getFailureReason(boolean longDescription, ObjectContainer container) {

@@ -60,6 +60,7 @@ import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.node.useralerts.StoringUserEvent;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.MutableBoolean;
@@ -1662,6 +1663,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				compatCell.addChild("#", compat[0].detail); // FIXME l10n
 			else
 				compatCell.addChild("#", compat[0].detail+" - "+compat[1].detail); // FIXME l10n
+			byte[] overrideCryptoKey = get.getOverriddenSplitfileCryptoKey(container);
+			if(overrideCryptoKey != null)
+				compatCell.addChild(" - "+l10n("overriddenCryptoKeyInCompatCell")+": "+HexUtil.bytesToHex(overrideCryptoKey));
 		}
 		return compatCell;
 	}
