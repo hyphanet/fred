@@ -195,4 +195,8 @@ class NPFPacket {
 	public LinkedList<Long> getAcks() {
 		return acks;
         }
+
+	public int getLength() {
+		return length;
+	}
 }

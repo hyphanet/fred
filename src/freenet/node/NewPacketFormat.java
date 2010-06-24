@@ -113,7 +113,6 @@ public class NewPacketFormat implements PacketFormat {
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
 		SentPacket sentPacket = new SentPacket();
-		int packetSize = 0;
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
 		NPFPacket packet = new NPFPacket();
 		packet.setSequenceNumber(nextSequenceNumber++);
@@ -122,7 +121,7 @@ public class NewPacketFormat implements PacketFormat {
 		synchronized(acks) {
 			long firstAck = 0;
 			Iterator<Long> it = acks.iterator();
-			while (it.hasNext() && numAcks < 256 && packetSize < maxPacketSize) {
+			while (it.hasNext() && numAcks < 256 && packet.getLength() < maxPacketSize) {
 				long ack = it.next();
 				if(numAcks == 0) {
 					firstAck = ack;
@@ -133,7 +132,7 @@ public class NewPacketFormat implements PacketFormat {
 						continue;
 					}
 				}
-				packetSize = packet.addAck(ack);
+				packet.addAck(ack);
 				++numAcks;
 				it.remove();
 			}
@@ -142,16 +141,15 @@ public class NewPacketFormat implements PacketFormat {
 		//Try to finish messages that have been started
 		synchronized(started) {
 			Iterator<MessageWrapper> it = started.values().iterator();
-			while(it.hasNext() && packetSize < maxPacketSize) {
+			while(it.hasNext() && packet.getLength() < maxPacketSize) {
 				MessageWrapper wrapper = it.next();
-				packetSize = packet.addMessageFragment(
-				                wrapper.getMessageFragment(maxPacketSize - packetSize));
+				packet.addMessageFragment(wrapper.getMessageFragment(maxPacketSize - packet.getLength()));
 			}
 		}
 
 		//Add messages from the message queue
 		PeerMessageQueue messageQueue = pn.getMessageQueue();
-		while (packetSize < maxPacketSize) {
+		while (packet.getLength() < maxPacketSize) {
 			MessageItem item = null;
 			synchronized(messageQueue) {
 				item = messageQueue.grabQueuedMessageItem();
@@ -166,15 +164,14 @@ public class NewPacketFormat implements PacketFormat {
 			}
 
 			MessageWrapper wrapper = new MessageWrapper(item, messageID);
-			packetSize = packet.addMessageFragment(
-			                wrapper.getMessageFragment(maxPacketSize - packetSize));
+			packet.addMessageFragment(wrapper.getMessageFragment(maxPacketSize - packet.getLength()));
 
 			synchronized(started) {
 				started.put(messageID, wrapper);
 			}
 		}
 
-		byte[] data = new byte[packetSize + HMAC_LENGTH];
+		byte[] data = new byte[packet.getLength() + HMAC_LENGTH];
 		packet.toBytes(data, HMAC_LENGTH);
 
 		//TODO: Encrypt
