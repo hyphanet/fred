@@ -5,6 +5,9 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Random;
+
+import org.spaceroots.mantissa.random.MersenneTwister;
 
 import com.db4o.ObjectContainer;
 
@@ -21,6 +24,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.keys.Key;
 import freenet.support.Executor;
+import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -76,6 +80,10 @@ public class SplitFileInserter implements ClientPutState {
 	
 	public final long topSize;
 	public final long topCompressedSize;
+	
+	// Cross-segment splitfile redundancy
+	private final int crossCheckBlocks;
+	private final SplitFileInserterCrossSegment[] crossSegments;
 
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -173,10 +181,20 @@ public class SplitFileInserter implements ClientPutState {
 			}
 		}
 		
+		int crossCheckBlocks = 0;
+		
+		// Cross-segment splitfile redundancy becomes useful at 20 segments.
+		if(segs >= 20 && (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal())) {
+			// The optimal number of cross-check blocks per segment (and per cross-segment since there are the same number of cross-segments as segments) is 3.
+			crossCheckBlocks = 3;
+		}
+		
+		this.crossCheckBlocks = crossCheckBlocks;
+		
 		if(splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT)
 			checkSegmentSize = 0;
 		else
-			checkSegmentSize = FECCodec.getCheckBlocks(splitfileAlgorithm, segmentSize, cmode);
+			checkSegmentSize = FECCodec.getCheckBlocks(splitfileAlgorithm, segmentSize + crossCheckBlocks, cmode);
 		
 		this.persistent = persistent;
 		if(persistent) {
@@ -202,7 +220,7 @@ public class SplitFileInserter implements ClientPutState {
 			specifySplitfileKeyInMetadata = false;
 		} else
 			specifySplitfileKeyInMetadata = false;
-		segments = splitIntoSegments(segmentSize, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put, cryptoAlgorithm, splitfileCryptoKey);
+		segments = splitIntoSegments(segmentSize, crossCheckBlocks, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put, cryptoAlgorithm, splitfileCryptoKey);
 		if(persistent) {
 			// Deactivate all buckets, and let dataBuckets be GC'ed
 			for(int i=0;i<dataBuckets.length;i++) {
@@ -214,6 +232,37 @@ public class SplitFileInserter implements ClientPutState {
 			}
 		}
 		dataBuckets = null;
+		
+		if(crossCheckBlocks != 0) {
+			byte[] seed = Metadata.getCrossSegmentSeed(hashes, hashThisLayerOnly);
+			System.out.println("Cross-segment seed: "+HexUtil.bytesToHex(seed));
+			Random random = new MersenneTwister(seed);
+			// Cross segment redundancy: Allocate the blocks.
+			crossSegments = new SplitFileInserterCrossSegment[segs];
+			int segLen = segmentSize;
+			for(int i=0;i<crossSegments.length;i++) {
+				System.out.println("Allocating blocks for cross segment "+i);
+				if(segments.length - i == deductBlocksFromSegments) {
+					segLen--;
+				}
+
+				SplitFileInserterCrossSegment seg = new SplitFileInserterCrossSegment(persistent, segLen, crossCheckBlocks, put, splitfileAlgorithm);
+				crossSegments[i] = seg;
+				for(int j=0;j<segLen;j++) {
+					// Allocate random data blocks
+					allocateCrossDataBlock(seg, random);
+				}
+				for(int j=0;j<crossCheckBlocks;j++) {
+					// Allocate check blocks
+					allocateCrossCheckBlock(seg, random);
+				}
+				if(persistent) seg.storeTo(container);
+			}
+		} else {
+			crossSegments = null;
+		}
+		
+		
 		int count = 0;
 		for(int i=0;i<segments.length;i++)
 			count += segments[i].countCheckBlocks();
@@ -226,6 +275,54 @@ public class SplitFileInserter implements ClientPutState {
 				container.deactivate(segments[i], 1);
 			}
 		}
+	}
+
+	private void allocateCrossDataBlock(SplitFileInserterCrossSegment segment, Random random) {
+		int x = 0;
+		for(int i=0;i<10;i++) {
+			x = random.nextInt(segments.length);
+			SplitFileInserterSegment seg = segments[x];
+			int blockNum = seg.allocateCrossDataBlock(segment);
+			if(blockNum >= 0) {
+				segment.addDataBlock(seg, blockNum);
+				return;
+			}
+		}
+		for(int i=0;i<segments.length;i++) {
+			x++;
+			if(x == segments.length) x = 0;
+			SplitFileInserterSegment seg = segments[x];
+			int blockNum = seg.allocateCrossDataBlock(segment);
+			if(blockNum >= 0) {
+				segment.addDataBlock(seg, blockNum);
+				return;
+			}
+		}
+		throw new IllegalStateException("Unable to allocate cross data block!");
+	}
+
+	private void allocateCrossCheckBlock(SplitFileInserterCrossSegment segment, Random random) {
+		int x = 0;
+		for(int i=0;i<10;i++) {
+			x = random.nextInt(segments.length);
+			SplitFileInserterSegment seg = segments[x];
+			int blockNum = seg.allocateCrossCheckBlock(segment);
+			if(blockNum >= 0) {
+				segment.addDataBlock(seg, seg.realDataBlocks() + blockNum);
+				return;
+			}
+		}
+		for(int i=0;i<segments.length;i++) {
+			x++;
+			if(x == segments.length) x = 0;
+			SplitFileInserterSegment seg = segments[x];
+			int blockNum = seg.allocateCrossCheckBlock(segment);
+			if(blockNum >= 0) {
+				segment.addDataBlock(seg, seg.realDataBlocks() + blockNum);
+				return;
+			}
+		}
+		throw new IllegalStateException("Unable to allocate cross data block!");
 	}
 
 	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, ARCHIVE_TYPE archiveType, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
@@ -246,6 +343,8 @@ public class SplitFileInserter implements ClientPutState {
 		this.hashThisLayerOnly = null;
 		this.deductBlocksFromSegments = 0;
 		this.specifySplitfileKeyInMetadata = false;
+		this.crossCheckBlocks = 0;
+		this.crossSegments = null;
 		context.jobRunner.setCommitThisTransaction();
 		// Don't read finished, wait for the segmentFinished()'s.
 		String length = fs.get("DataLength");
@@ -334,7 +433,7 @@ public class SplitFileInserter implements ClientPutState {
 	 * Group the blocks into segments.
 	 * @param deductBlocksFromSegments 
 	 */
-	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, int segCount, int deductBlocksFromSegments, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter, byte cryptoAlgorithm, byte[] splitfileCryptoKey) {
+	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, int crossCheckBlocks, int segCount, int deductBlocksFromSegments, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter, byte cryptoAlgorithm, byte[] splitfileCryptoKey) {
 		int dataBlocks = origDataBlocks.length;
 
 		ArrayList<SplitFileInserterSegment> segs = new ArrayList<SplitFileInserterSegment>();
@@ -343,27 +442,27 @@ public class SplitFileInserter implements ClientPutState {
 		// First split the data up
 		if(segCount == 1) {
 			// Single segment
-			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, cmode), origDataBlocks, ctx, getCHKOnly, 0, cryptoAlgorithm, splitfileCryptoKey, container);
+			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, crossCheckBlocks, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length + crossCheckBlocks, cmode), origDataBlocks, ctx, getCHKOnly, 0, cryptoAlgorithm, splitfileCryptoKey, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
 			int segNo = 0;
 			int data = segmentSize;
-			int check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, cmode);
+			int check = FECCodec.getCheckBlocks(splitfileAlgorithm, data + crossCheckBlocks, cmode);
 			for(int i=segmentSize;;) {
 				if(i > dataBlocks) i = dataBlocks;
 				if(data > (i-j)) {
 					// Last segment.
 					assert(segNo == segCount-1);
 					data = i-j;
-					check = FECCodec.getCheckBlocks(splitfileAlgorithm, data, cmode);
+					check = FECCodec.getCheckBlocks(splitfileAlgorithm, data + crossCheckBlocks, cmode);
 				}
 				Bucket[] seg = new Bucket[i-j];
 				System.arraycopy(origDataBlocks, j, seg, 0, data);
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, check, seg, ctx, getCHKOnly, segNo, cryptoAlgorithm, splitfileCryptoKey, container);
+				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, crossCheckBlocks, check, seg, ctx, getCHKOnly, segNo, cryptoAlgorithm, splitfileCryptoKey, container);
 				segs.add(s);
 				
 				if(deductBlocksFromSegments != 0)
@@ -387,6 +486,15 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public void start(ObjectContainer container, final ClientContext context) throws InsertException {
+		if(crossCheckBlocks != 0) {
+			for(SplitFileInserterCrossSegment seg : crossSegments) {
+				if(persistent)
+					container.activate(seg, 1);
+				seg.start(container, context);
+				if(persistent)
+					container.deactivate(seg, 1);
+			}
+		}
 		for(int i=0;i<segments.length;i++) {
 			if(persistent)
 				container.activate(segments[i], 1);
@@ -467,7 +575,7 @@ public class SplitFileInserter implements ClientPutState {
 		context.jobRunner.setCommitThisTransaction();
 		boolean missingURIs;
 		Metadata m = null;
-		ClientCHK[] dataURIs = new ClientCHK[countDataBlocks];
+		ClientCHK[] dataURIs = new ClientCHK[countDataBlocks + crossCheckBlocks * segments.length];
 		ClientCHK[] checkURIs = new ClientCHK[countCheckBlocks];
 		synchronized(this) {
 			int dpos = 0;
@@ -529,7 +637,7 @@ public class SplitFileInserter implements ClientPutState {
 				}
 				if(persistent) container.activate(hashes, Integer.MAX_VALUE);
 				if(persistent) container.activate(compressionCodec, Integer.MAX_VALUE);
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, hashThisLayerOnly, data, compressed, req, total, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, hashThisLayerOnly, data, compressed, req, total, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata, crossCheckBlocks);
 			}
 			haveSentMetadata = true;
 		}
@@ -590,11 +698,14 @@ public class SplitFileInserter implements ClientPutState {
 				if(persistent && segments[i] != segment)
 					container.activate(segments[i], 1);
 				if(!segments[i].isFinished()) {
-					if(logMINOR) Logger.minor(this, "Segment not finished: "+i+": "+segments[i]);
+					if(logMINOR) Logger.minor(this, "Segment not finished: "+i+": "+segments[i]+" for "+this);
 					allGone = false;
 					if(persistent && segments[i] != segment)
 						container.deactivate(segments[i], 1);
 					break;
+				}
+				if(!segments[i].hasURIs()) {
+					Logger.error(this, "Segment finished but hasURIs() is false: "+segments[i]+" for "+this);
 				}
 				if(persistent && segments[i] != segment)
 					container.deactivate(segments[i], 1);

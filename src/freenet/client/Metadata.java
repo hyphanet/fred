@@ -54,6 +54,7 @@ public class Metadata implements Cloneable {
 
 	public static final short SPLITFILE_PARAMS_SIMPLE_SEGMENT = 0;
 	public static final short SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS = 1;
+	public static final short SPLITFILE_PARAMS_CROSS_SEGMENT = 2;
 	
 	// URI at which this Metadata has been/will be inserted.
 	FreenetURI resolvedURI;
@@ -141,6 +142,7 @@ public class Metadata implements Cloneable {
 
 	/** Splitfile parameters */
 	byte[] splitfileParams;
+	/** This includes cross-check blocks. */
 	int splitfileBlocks;
 	int splitfileCheckBlocks;
 	ClientCHK[] splitfileDataKeys;
@@ -477,6 +479,15 @@ public class Metadata implements Cloneable {
 		}
 	}
 	
+	private static final byte[] CROSS_SEGMENT_SEED;
+	static {
+		try {
+			CROSS_SEGMENT_SEED = "CROSS_SEGMENT_SEED".getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
+	}
+	
 	public static byte[] getCryptoKey(HashResult[] hashes) {
 		if(hashes == null || hashes.length == 0 || !HashResult.contains(hashes, HashType.SHA256))
 			throw new IllegalArgumentException("No hashes in getCryptoKey - need hashes to generate splitfile key!");
@@ -490,6 +501,27 @@ public class Metadata implements Cloneable {
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(hash);
 		md.update(SPLITKEY);
+		byte[] buf = md.digest();
+		SHA256.returnMessageDigest(md);
+		return buf;
+	}
+
+	public static byte[] getCrossSegmentSeed(HashResult[] hashes, byte[] hashThisLayerOnly) {
+		byte[] hash = hashThisLayerOnly;
+		if(hash == null) {
+			if(hashes == null || hashes.length == 0 || !HashResult.contains(hashes, HashType.SHA256))
+				throw new IllegalArgumentException("No hashes in getCryptoKey - need hashes to generate splitfile key!");
+			hash = HashResult.get(hashes, HashType.SHA256);
+		}
+		return getCrossSegmentSeed(hash);
+	}
+	
+	public static byte[] getCrossSegmentSeed(byte[] hash) {
+		// This is exactly the same algorithm used by e.g. JFK for generating multiple session keys from a single generated value.
+		// The only difference is we use a constant of more than one byte's length here, to avoid having to keep a registry.
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(hash);
+		md.update(CROSS_SEGMENT_SEED);
 		byte[] buf = md.digest();
 		SHA256.returnMessageDigest(md);
 		return buf;
@@ -736,7 +768,7 @@ public class Metadata implements Cloneable {
 	}
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
-			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey) {
+			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey, int crossSegmentBlocks) {
 		hashCode = super.hashCode();
 		this.hashes = hashes;
 		this.hashThisLayerOnly = hashThisLayerOnly;
@@ -779,10 +811,25 @@ public class Metadata implements Cloneable {
 			splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
 		} else {
 			boolean deductBlocks = (deductBlocksFromSegments != 0);
-			splitfileParams = new byte[deductBlocks ? 14 : 10];
-			byte[] b = Fields.shortToBytes(deductBlocks ? SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS : SPLITFILE_PARAMS_SIMPLE_SEGMENT);
+			short mode;
+			int len = 10;
+			if(crossSegmentBlocks == 0) {
+				if(deductBlocks) {
+					mode = SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS;
+					len += 4;
+				} else {
+					mode = SPLITFILE_PARAMS_SIMPLE_SEGMENT;
+				}
+			} else {
+				mode = SPLITFILE_PARAMS_CROSS_SEGMENT;
+				len += 8;
+			}
+			splitfileParams = new byte[len];
+			byte[] b = Fields.shortToBytes(mode);
 			System.arraycopy(b, 0, splitfileParams, 0, 2);
-			if(deductBlocks)
+			if(mode == SPLITFILE_PARAMS_CROSS_SEGMENT)
+				b = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize, deductBlocksFromSegments, crossSegmentBlocks } );
+			else if(mode == SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS)
 				b = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize, deductBlocksFromSegments } );
 			else
 				b = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
@@ -1460,6 +1507,10 @@ public class Metadata implements Cloneable {
 		if(specifySplitfileKey)
 			return splitfileSingleCryptoKey;
 		return null;
+	}
+
+	public byte[] getHashThisLayerOnly() {
+		return hashThisLayerOnly;
 	}
 
 }
