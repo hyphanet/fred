@@ -454,16 +454,19 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 							SplitFileFetcherSegment s = segments[i];
 							long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
 							bytesWritten += s.writeDecodedDataTo(os, max);
-							s.freeDecodedData(container);
 						}
 						os.close();
 					} catch(IOException e) {
-						Closer.close(os);
 						Logger.error(this, "Failed to extract split file segments", e);
 						/* Handle exceptions by dying as violently as possible. As the main thread of
 						execution will be in the process of reading data from this thread, we need to generally
 						cause mayhem over there to make it stop. */
 						throw new RuntimeException(e);
+					} finally {
+						Closer.close(os);
+						for(SplitFileFetcherSegment s : segments) {
+							s.freeDecodedData(container);
+						}
 					}
 				}
 			}.start();
