@@ -31,8 +31,8 @@ public class DatastoreChecker implements PrioRunnable {
 	// 2, 5 gives 40% etc.
 	// In normal operation KILL_BLOCKS should be 0 !!!!
 	// FIXME FIXME FIXME FIXME FIXME FIXME!!!
-	static final int KILL_BLOCKS = 2;
-	static final int RESET_COUNTER = 5;
+	static final int KILL_BLOCKS = 55;
+	static final int RESET_COUNTER = 100;
 	
 	private static volatile boolean logMINOR;
 
