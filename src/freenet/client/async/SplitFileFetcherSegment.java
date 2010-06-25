@@ -6,6 +6,7 @@ package freenet.client.async;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -1794,17 +1795,44 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		removeFrom(container, context);
 	}
-
-	public int allocateCrossDataBlock(SplitFileFetcherCrossSegment seg) {
-		if(crossDataBlocksAllocated == realDataBlocks()) return -1;
-		crossSegmentsByBlock[crossDataBlocksAllocated] = seg;
-		return crossDataBlocksAllocated++;
+	
+	public int allocateCrossDataBlock(SplitFileFetcherCrossSegment seg, Random random) {
+		int size = realDataBlocks();
+		if(crossDataBlocksAllocated == size) return -1;
+		int x = 0;
+		for(int i=0;i<10;i++) {
+			x = random.nextInt(size);
+			if(crossSegmentsByBlock[x] == null) {
+				crossSegmentsByBlock[x] = seg;
+				crossDataBlocksAllocated++;
+				return x;
+			}
+		}
+		for(int i=0;i<size;i++) {
+			x++;
+			if(x == size) x = 0;
+			if(crossSegmentsByBlock[x] == null) {
+				crossSegmentsByBlock[x] = seg;
+				crossDataBlocksAllocated++;
+				return x;
+			}
+		}
+		throw new IllegalStateException("Unable to allocate cross data block even though have not used all slots up???");
 	}
 
-	public int allocateCrossCheckBlock(SplitFileFetcherCrossSegment seg) {
+	public int allocateCrossCheckBlock(SplitFileFetcherCrossSegment seg, Random random) {
 		if(crossCheckBlocksAllocated == crossCheckBlocks) return -1;
-		crossSegmentsByBlock[realDataBlocks() + crossCheckBlocksAllocated] = seg;
-		return crossCheckBlocksAllocated++;
+		int x = dataBuckets.length - random.nextInt(crossCheckBlocks);
+		for(int i=0;i<crossCheckBlocks;i++) {
+			x++;
+			if(x == dataBuckets.length) x = dataBuckets.length - crossCheckBlocks;
+			if(crossSegmentsByBlock[x] == null) {
+				crossSegmentsByBlock[x] = seg;
+				crossCheckBlocksAllocated++;
+				return x;
+			}
+		}
+		throw new IllegalStateException("Unable to allocate cross check block even though have not used all slots up???");
 	}
 	
 	public final int realDataBlocks() {

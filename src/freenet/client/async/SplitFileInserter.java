@@ -282,7 +282,7 @@ public class SplitFileInserter implements ClientPutState {
 		for(int i=0;i<10;i++) {
 			x = random.nextInt(segments.length);
 			SplitFileInserterSegment seg = segments[x];
-			int blockNum = seg.allocateCrossDataBlock(segment);
+			int blockNum = seg.allocateCrossDataBlock(segment, random);
 			if(blockNum >= 0) {
 				segment.addDataBlock(seg, blockNum);
 				return;
@@ -292,7 +292,7 @@ public class SplitFileInserter implements ClientPutState {
 			x++;
 			if(x == segments.length) x = 0;
 			SplitFileInserterSegment seg = segments[x];
-			int blockNum = seg.allocateCrossDataBlock(segment);
+			int blockNum = seg.allocateCrossDataBlock(segment, random);
 			if(blockNum >= 0) {
 				segment.addDataBlock(seg, blockNum);
 				return;
@@ -306,7 +306,7 @@ public class SplitFileInserter implements ClientPutState {
 		for(int i=0;i<10;i++) {
 			x = random.nextInt(segments.length);
 			SplitFileInserterSegment seg = segments[x];
-			int blockNum = seg.allocateCrossCheckBlock(segment);
+			int blockNum = seg.allocateCrossCheckBlock(segment, random);
 			if(blockNum >= 0) {
 				segment.addDataBlock(seg, seg.realDataBlocks() + blockNum);
 				return;
@@ -316,7 +316,7 @@ public class SplitFileInserter implements ClientPutState {
 			x++;
 			if(x == segments.length) x = 0;
 			SplitFileInserterSegment seg = segments[x];
-			int blockNum = seg.allocateCrossCheckBlock(segment);
+			int blockNum = seg.allocateCrossCheckBlock(segment, random);
 			if(blockNum >= 0) {
 				segment.addDataBlock(seg, seg.realDataBlocks() + blockNum);
 				return;

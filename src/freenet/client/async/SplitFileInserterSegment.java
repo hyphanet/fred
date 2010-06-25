@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import com.db4o.ObjectContainer;
 
@@ -1756,16 +1757,43 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		onEncode(((BlockItem)token).blockNum, (ClientCHK)key, container, context);
 	}
 
-	public int allocateCrossDataBlock(SplitFileInserterCrossSegment seg) {
-		if(crossDataBlocksAllocated == realDataBlocks()) return -1;
-		crossSegmentsByBlock[crossDataBlocksAllocated] = seg;
-		return crossDataBlocksAllocated++;
+	public int allocateCrossDataBlock(SplitFileInserterCrossSegment seg, Random random) {
+		int size = realDataBlocks();
+		if(crossDataBlocksAllocated == size) return -1;
+		int x = 0;
+		for(int i=0;i<10;i++) {
+			x = random.nextInt(size);
+			if(crossSegmentsByBlock[x] == null) {
+				crossSegmentsByBlock[x] = seg;
+				crossDataBlocksAllocated++;
+				return x;
+			}
+		}
+		for(int i=0;i<size;i++) {
+			x++;
+			if(x == size) x = 0;
+			if(crossSegmentsByBlock[x] == null) {
+				crossSegmentsByBlock[x] = seg;
+				crossDataBlocksAllocated++;
+				return x;
+			}
+		}
+		throw new IllegalStateException("Unable to allocate cross data block even though have not used all slots up???");
 	}
 
-	public int allocateCrossCheckBlock(SplitFileInserterCrossSegment seg) {
+	public int allocateCrossCheckBlock(SplitFileInserterCrossSegment seg, Random random) {
 		if(crossCheckBlocksAllocated == crossCheckBlocks) return -1;
-		crossSegmentsByBlock[realDataBlocks() + crossCheckBlocksAllocated] = seg;
-		return crossCheckBlocksAllocated++;
+		int x = dataBlocks.length - random.nextInt(crossCheckBlocks);
+		for(int i=0;i<crossCheckBlocks;i++) {
+			x++;
+			if(x == dataBlocks.length) x = dataBlocks.length - crossCheckBlocks;
+			if(crossSegmentsByBlock[x] == null) {
+				crossSegmentsByBlock[x] = seg;
+				crossCheckBlocksAllocated++;
+				return x;
+			}
+		}
+		throw new IllegalStateException("Unable to allocate cross check block even though have not used all slots up???");
 	}
 	
 	public final int realDataBlocks() {
