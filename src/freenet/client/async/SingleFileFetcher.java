@@ -5,6 +5,8 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -44,6 +46,7 @@ import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
@@ -316,14 +319,34 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			result.asBucket().free();
 			if(persistent) result.asBucket().removeFrom(container);
 		} else {
-			InputStream input = null;
 			try {
-				input = result.asBucket().getInputStream();
-			} catch (IOException e) {
+			PipedInputStream data = new PipedInputStream();
+			final Bucket resultBucket = result.asBucket();
+			final InputStream input = result.asBucket().getInputStream();
+			final PipedOutputStream output = new PipedOutputStream(data);
+			new Thread() {
+				public void run() {
+					try {
+						FileUtil.copy(input, output , -1);
+						output.close();
+						input.close();
+					} catch(IOException e) {
+						Closer.close(output);
+						Closer.close(input);
+						resultBucket.free();
+						Logger.error(this, "Failed to extract the data bucket form "+this, e);
+						/* Handle exceptions by dying as violently as possible. As the main thread of
+						execution will be in the process of reading data from this thread, we need to generally
+						cause mayhem over there to make it stop. */
+						throw new RuntimeException(e);
+					}
+				}
+			}.start();
+			rcb.onSuccess(data, result.getMetadata(), decompressors, this, container, context);
+			} catch(IOException e) {
+				Logger.error(this, "Failed to extract data bucket");
 				rcb.onFailure(new FetchException(FetchException.BUCKET_ERROR), this, container, context);
-				return;
 			}
-			rcb.onSuccess(input, result.getMetadata(), decompressors, this, container, context);
 		}
 	}
 
