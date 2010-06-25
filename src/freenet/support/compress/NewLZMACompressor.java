@@ -68,6 +68,7 @@ public class NewLZMACompressor implements Compressor {
         encoder.SetDictionarySize( dictionarySize );
         encoder.WriteCoderProperties(os);
         encoder.Code( cis, cos, maxReadLength, maxWriteLength, null );
+        cos.flush();
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Read "+cis.count()+" written "+cos.written());
 		return cos.written();
@@ -105,6 +106,7 @@ public class NewLZMACompressor implements Compressor {
 		Decoder decoder = new Decoder();
 		if(!decoder.SetDecoderProperties(props)) throw new InvalidCompressedDataException("Invalid properties");
 		decoder.Code(is, cos, maxLength);
+		//cos.flush();
 		return cos.written();
 	}
 

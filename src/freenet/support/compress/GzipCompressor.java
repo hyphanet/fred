@@ -116,7 +116,10 @@ public class GzipCompressor implements Compressor {
 				}
 				throw new CompressionOutputSizeException();
 			}
-			if(x <= -1) return written;
+			if(x <= -1) {
+				os.flush();
+				return written;
+			}
 			if(x == 0) throw new IOException("Returned zero from read()");
 			os.write(buffer, 0, x);
 			written += x;
