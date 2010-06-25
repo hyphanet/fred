@@ -12,6 +12,7 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
+import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -74,18 +75,16 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		}
 	}
 
-	public void onSuccess(FetchResult result, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(LogLevel.MINOR, this))
-			Logger.minor(this, "Success on "+this+" from "+state+" : length "+result.size()+" mime type "+result.getMimeType());
-		Bucket data = result.asBucket();
+			Logger.minor(this, "Success on "+this+" from "+state+" :"+" mime type "+clientMetadata.getMIMEType());
 		DecompressorThreadManager decompressorManager = null;
+		FetchResult result = null;
 		OutputStream output = null;
-		InputStream input = null;
 		Bucket finalResult = null;
 		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 		try {
 			finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
-			input = data.getInputStream();
 			output = finalResult.getOutputStream();
 		} catch (IOException e) {
 			Logger.error(this, "Caught "+e, e);
@@ -118,7 +117,6 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 			} finally {
-				result.asBucket().free();
 				Closer.close(input);
 				Closer.close(output);
 			}

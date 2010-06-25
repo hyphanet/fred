@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -198,25 +199,24 @@ public class ClientGetter extends BaseClientGetter {
 
 	/**
 	 * Called when the request succeeds.
-	 * @param result The final data.
 	 * @param state The ClientGetState which retrieved the data.
 	 */
-	public void onSuccess(FetchResult result, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
 		if(persistent())
 			container.activate(uri, 5);
 		if(!closeBinaryBlobStream(container, context)) return;
+		input = new BufferedInputStream(input);
 		if(hashes != null) {
-			InputStream is = null;
+			
 			try {
 				if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
-				is = result.asBucket().getInputStream();
-				MultiHashInputStream hasher = new MultiHashInputStream(is, HashResult.makeBitmask(hashes));
+				MultiHashInputStream hasher = new MultiHashInputStream(input, HashResult.makeBitmask(hashes));
 				byte[] buf = new byte[32768];
+				input.mark(32768);
 				while(hasher.read(buf) > 0);
-				hasher.close();
-				is = null;
+				input.reset();
 				HashResult[] results = hasher.getResults();
 				if(!HashResult.strictEquals(results, hashes)) {
 					onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), state, container, context);
@@ -225,8 +225,6 @@ public class ClientGetter extends BaseClientGetter {
 			} catch (IOException e) {
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
 				return;
-			} finally {
-				Closer.close(is);
 			}
 		}
 		synchronized(this) {
@@ -243,10 +241,9 @@ public class ClientGetter extends BaseClientGetter {
 		// nested locking resulting in deadlocks, it also prevents long locks due to
 		// doing massive encrypted I/Os while holding a lock.
 
-		Bucket data = result.asBucket();
+		FetchResult result = null;
 		DecompressorThreadManager decompressorManager = null;
 		OutputStream output = null;
-		InputStream input = null;
 		Bucket finalResult = null;
 		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 		try {
@@ -255,7 +252,6 @@ public class ClientGetter extends BaseClientGetter {
 				if(persistent()) container.activate(returnBucket, 5);
 				finalResult = returnBucket;
 			}
-			input = data.getInputStream();
 			output = finalResult.getOutputStream();
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
@@ -289,16 +285,7 @@ public class ClientGetter extends BaseClientGetter {
 			try {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
 				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
-				assert(result.asBucket() != returnBucket);
 				
-				Bucket filteredResult;
-				if(returnBucket == null) filteredResult = context.getBucketFactory(persistent()).makeBucket(-1);
-				else {
-					if(persistent()) container.activate(returnBucket, 5);
-					filteredResult = returnBucket;
-				}
-				input = result.asBucket().getInputStream();
-				output = filteredResult.getOutputStream();
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
 				output.close();
@@ -320,7 +307,6 @@ public class ClientGetter extends BaseClientGetter {
 			} finally {
 				Closer.close(input);
 				Closer.close(output);
-				data.free();
 			}
 		}
 		else {
@@ -340,7 +326,6 @@ public class ClientGetter extends BaseClientGetter {
 			} finally {
 				Closer.close(input);
 				Closer.close(output);
-				result.asBucket().free();
 			}
 		}
 		if(persistent()) {

@@ -5,7 +5,9 @@ package freenet.client.async;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +17,6 @@ import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
-import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.Metadata;
@@ -32,6 +33,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
+import freenet.support.io.Closer;
 
 /**
  * Fetch a splitfile, decompress it if need be, and return it to the GetCompletionCallback.
@@ -414,12 +416,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 	}
 
-	/** Return the final status of the fetch. Throws an exception, or returns a
-	 * Bucket containing the fetched data.
+	/** Return the final status of the fetch. Throws an exception, or returns an
+	 * InputStream from which the fetched data may be read.
 	 * @throws FetchException If the fetch failed for some reason.
 	 */
-	private Bucket finalStatus(ObjectContainer container, ClientContext context) throws FetchException {
-		long finalLength = 0;
+	private InputStream finalStatus(final ObjectContainer container, ClientContext context) throws FetchException {
+		long length = 0;
 		for(int i=0;i<segments.length;i++) {
 			SplitFileFetcherSegment s = segments[i];
 			if(persistent)
@@ -430,50 +432,45 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			s.throwError(container);
 			// If still here, it succeeded
 			long sz = s.decodedLength(container);
-			finalLength += sz;
+			length += sz;
 			if(logMINOR)
-				Logger.minor(this, "Segment "+i+" decoded length "+sz+" total length now "+finalLength+" for "+s.dataBuckets.length+" blocks which should be "+(s.dataBuckets.length * NodeCHK.BLOCK_SIZE));
+				Logger.minor(this, "Segment "+i+" decoded length "+sz+" total length now "+length+" for "+s.dataBuckets.length+" blocks which should be "+(s.dataBuckets.length * NodeCHK.BLOCK_SIZE));
 			// Healing is done by Segment
 		}
-		if(finalLength > overrideLength) {
-			if(finalLength - overrideLength > CHKBlock.DATA_LENGTH)
-				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+finalLength+" but length is "+finalLength);
-			finalLength = overrideLength;
+		if(length > overrideLength) {
+			if(length - overrideLength > CHKBlock.DATA_LENGTH)
+				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+length+" but length is "+length);
+			length = overrideLength;
 		}
-
-		long bytesWritten = 0;
-		OutputStream os = null;
-		Bucket output;
-		if(persistent) {
-			container.activate(decompressors, 5);
-			if(returnBucket != null)
-				container.activate(returnBucket, 5);
-		}
+		final long finalLength = length;
+		PipedInputStream is = new PipedInputStream();
 		try {
-			output = context.getBucketFactory(parent.persistent()).makeBucket(finalLength);
-			os = output.getOutputStream();
-			for(int i=0;i<segments.length;i++) {
-				SplitFileFetcherSegment s = segments[i];
-				long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
-				bytesWritten += s.writeDecodedDataTo(os, max);
-				s.freeDecodedData(container);
-			}
+			final PipedOutputStream os = new PipedOutputStream(is);
+			new Thread() {
+				public void run() {
+					long bytesWritten = 0;
+					try {
+						for(int i=0;i<segments.length;i++) {
+							SplitFileFetcherSegment s = segments[i];
+							long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
+							bytesWritten += s.writeDecodedDataTo(os, max);
+							s.freeDecodedData(container);
+						}
+						os.close();
+					} catch(IOException e) {
+						Closer.close(os);
+						Logger.error(this, "Failed to extract split file segments", e);
+						/* Handle exceptions by dying as violently as possible. As the main thread of
+						execution will be in the process of reading data from this thread, we need to generally
+						cause mayhem over there to make it stop. */
+						throw new RuntimeException(e);
+					}
+				}
+			}.start();
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, e);
-		} finally {
-			if(os != null) {
-				try {
-					os.close();
-				} catch (IOException e) {
-					// If it fails to close it may return corrupt data.
-					throw new FetchException(FetchException.BUCKET_ERROR, e);
-				}
-			}
 		}
-		if(finalLength != output.size()) {
-			Logger.error(this, "Final length is supposed to be "+finalLength+" but only written "+output.size());
-		}
-		return output;
+		return is;
 	}
 
 	public void segmentFinished(SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
@@ -517,7 +514,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 		context.getChkFetchScheduler().removePendingKeys(this, true);
 		boolean cbWasActive = true;
-		Bucket data = null;
+		InputStream data = null;
 		try {
 			synchronized(this) {
 				if(otherFailure != null) {
@@ -537,7 +534,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		 catch (FetchException e) {
 				cb.onFailure(e, this, container, context);
 		 }
-		cb.onSuccess(new FetchResult(clientMetadata, data), decompressors, this, container, context);
+		cb.onSuccess(data, clientMetadata, decompressors, this, container, context);
 		if(!cbWasActive)
 			container.deactivate(cb, 1);
 	}
