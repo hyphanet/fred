@@ -383,7 +383,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private static final short ON_SUCCESS_ALL_FAILED = 2;
 	private static final short ON_SUCCESS_DECODE_NOW = 4;
 	
-	public void onSuccess(Bucket data, int blockNo, ClientKeyBlock block, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment sub) {
+	public boolean onSuccess(Bucket data, int blockNo, ClientKeyBlock block, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment sub) {
 		if(persistent)
 			container.activate(this, 1);
 		if(data == null) throw new NullPointerException();
@@ -399,8 +399,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		short result = onSuccessInner(data, blockNo, container, context);
-		if(result == (short)-1) return;
+		if(result == (short)-1) return false;
 		finishOnSuccess(result, container, context);
+		return true;
 	}
 
 	private void finishOnSuccess(short result, ObjectContainer container, ClientContext context) {
@@ -442,11 +443,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(persistent) {
 			for(int i=0;i<dataBuckets.length;i++) {
 				container.activate(dataBuckets[i], 1);
-				if(crossCheckBlocks != 0 && dataBuckets[i].getData() == null) {
-					// Use flag to indicate that it the block needed to be decoded.
-					dataBuckets[i].flag = true;
-					dataBuckets[i].storeTo(container);
-				}
 			}
 		}
 		if(persistent) {
@@ -457,6 +453,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		for(int i=0;i<dataBuckets.length;i++) {
 			if(dataBuckets[i].getData() != null) {
 				data++;
+			} else if(crossCheckBlocks != 0) {
+				// Use flag to indicate that it the block needed to be decoded.
+				dataBuckets[i].flag = true;
+				if(persistent) dataBuckets[i].storeTo(container);
 			}
 		}
 		if(data == dataBuckets.length) {
@@ -560,7 +560,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 					else
 						dataBuckets[i].data.storeTo(container);
 					container.store(dataBuckets[i]);
-					if(crossCheckBlocks != 0 && dataBuckets[i].flag) {
+				}
+			}
+			if(crossCheckBlocks != 0) {
+				for(int i=0;i<dataBuckets.length;i++) {
+					if(dataBuckets[i].flag) {
 						// New block. Might allow a cross-segment decode.
 						crossSegmentsByBlock[i].onFetched(this, i, container, context);
 					}
@@ -1803,7 +1807,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return crossCheckBlocksAllocated++;
 	}
 	
-	private final int realDataBlocks() {
+	public final int realDataBlocks() {
 		return dataBuckets.length - crossCheckBlocks;
 	}
 

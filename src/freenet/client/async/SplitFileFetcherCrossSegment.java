@@ -150,20 +150,20 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				Bucket segData = seg.getBlockBucket(blockNumbers[i], container);
 				if(segData != data) {
 					// Either we have a db4o bug, or it was downloaded independantly.
-					if(persistent) {
-						if(container.ext().getID(segData) == container.ext().getID(data)) {
-							Logger.error(this, "SAME ID BUG FOUND IN CROSS SEGMENT DECODE: "+segData+" has same ID as "+data);
-							// Do nothing.
-						} else {
-							// Downloaded independantly (or race condition). Ditch the new block.
-							data.free();
-							if(persistent) data.removeFrom(container);
-						}
+					if(persistent && container.ext().getID(segData) == container.ext().getID(data)) {
+						Logger.error(this, "SAME ID BUG FOUND IN CROSS SEGMENT DECODE: "+segData+" has same ID as "+data);
+						// Do nothing.
+					} else {
+						// Downloaded independantly (or race condition). Ditch the new block.
+						data.free();
+						if(persistent) data.removeFrom(container);
 					}
 				}
 			} else {
 				// Yay we decoded a block. Tell the segment.
-				seg.onSuccess(data, blockNumbers[i], null, container, context, null);
+				blocksFound[i] = true;
+				if(seg.onSuccess(data, blockNumbers[i], null, container, context, null))
+					System.out.println("Cross-segment decoded a block.");
 			}
 			if(!active) container.deactivate(seg, 1);
 			dataBlocks[i].setData(null);
@@ -196,20 +196,19 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				Bucket segData = seg.getBlockBucket(blockNumbers[i], container);
 				if(segData != data) {
 					// Either we have a db4o bug, or it was downloaded independantly.
-					if(persistent) {
-						if(container.ext().getID(segData) == container.ext().getID(data)) {
-							Logger.error(this, "SAME ID BUG FOUND IN CROSS SEGMENT DECODE: "+segData+" has same ID as "+data);
-							// Do nothing.
-						} else {
-							// Downloaded independantly (or race condition). Ditch the new block.
-							data.free();
-							if(persistent) data.removeFrom(container);
-						}
+					if(persistent && container.ext().getID(segData) == container.ext().getID(data)) {
+						Logger.error(this, "SAME ID BUG FOUND IN CROSS SEGMENT DECODE: "+segData+" has same ID as "+data);
+						// Do nothing.
+					} else {
+						// Downloaded independantly (or race condition). Ditch the new block.
+						data.free();
+						if(persistent) data.removeFrom(container);
 					}
 				}
 			} else {
 				// Yay we decoded a block. Tell the segment.
-				seg.onSuccess(data, blockNumbers[i], null, container, context, null);
+				if(seg.onSuccess(data, blockNumbers[i], null, container, context, null))
+					System.out.println("Cross segment encoded a block.");
 			}
 			if(!active) container.deactivate(seg, 1);
 			checkBlocks[i].setData(null);

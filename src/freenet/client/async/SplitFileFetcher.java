@@ -179,12 +179,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(splitfileDataBlocks[i] == null) throw new MetadataParseException("Null: data block "+i+" of "+splitfileDataBlocks.length);
 		for(int i=0;i<splitfileCheckBlocks.length;i++)
 			if(splitfileCheckBlocks[i] == null) throw new MetadataParseException("Null: check block "+i+" of "+splitfileCheckBlocks.length);
-		long finalLength = 1L * splitfileDataBlocks.length * CHKBlock.DATA_LENGTH;
-		if(finalLength > overrideLength) {
-			if(finalLength - overrideLength > CHKBlock.DATA_LENGTH)
-				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+finalLength+" but length is "+finalLength);
-			finalLength = overrideLength;
-		}
 		long eventualLength = Math.max(overrideLength, metadata.uncompressedDataLength());
 		boolean wasActive = true;
 		if(persistent) {
@@ -255,7 +249,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(params.length < 10)
 					throw new MetadataParseException("Splitfile parameters too short for version 1");
 				short paramsType = Fields.bytesToShort(params, 0);
-				if(paramsType == Metadata.SPLITFILE_PARAMS_SIMPLE_SEGMENT || paramsType == Metadata.SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS) {
+				if(paramsType == Metadata.SPLITFILE_PARAMS_SIMPLE_SEGMENT || paramsType == Metadata.SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS || paramsType == Metadata.SPLITFILE_PARAMS_CROSS_SEGMENT) {
 					blocksPerSegment = Fields.bytesToInt(params, 2);
 					checkBlocks = Fields.bytesToInt(params, 6);
 				} else
@@ -285,7 +279,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if((blocksPerSegment > fetchContext.maxDataBlocksPerSegment)
 					|| (checkBlocksPerSegment > fetchContext.maxCheckBlocksPerSegment))
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
-			segmentCount = (splitfileDataBlocks.length / blocksPerSegment) +
+			segmentCount = (splitfileDataBlocks.length / (blocksPerSegment + crossCheckBlocks)) +
 				(splitfileDataBlocks.length % blocksPerSegment == 0 ? 0 : 1);
 				
 			// Onion, 128/192.
@@ -299,6 +293,13 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		segments = new SplitFileFetcherSegment[segmentCount]; // initially null on all entries
 
 		this.crossCheckBlocks = crossCheckBlocks;
+		
+		long finalLength = 1L * (splitfileDataBlocks.length - segmentCount * crossCheckBlocks) * CHKBlock.DATA_LENGTH;
+		if(finalLength > overrideLength) {
+			if(finalLength - overrideLength > CHKBlock.DATA_LENGTH)
+				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+finalLength+" but length is "+finalLength);
+			finalLength = overrideLength;
+		}
 		
 		// Setup bloom parameters.
 		if(persistent) {
@@ -381,7 +382,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			int checkBlocksPtr = 0;
 			for(int i=0;i<segments.length;i++) {
 				// Create a segment. Give it its keys.
-				int copyDataBlocks = Math.min(splitfileDataBlocks.length - dataBlocksPtr, blocksPerSegment);
+				int copyDataBlocks = Math.min(splitfileDataBlocks.length - dataBlocksPtr, blocksPerSegment + crossCheckBlocks);
 				int copyCheckBlocks = Math.min(splitfileCheckBlocks.length - checkBlocksPtr, checkBlocksPerSegment);
 				if(segments.length - i <= deductBlocksFromSegments && i != segments.length-1) {
 					copyDataBlocks--;
@@ -427,10 +428,15 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			Random random = new MersenneTwister(Metadata.getCrossSegmentSeed(metadata.getHashes(), metadata.getHashThisLayerOnly()));
 			// Cross segment redundancy: Allocate the blocks.
 			crossSegments = new SplitFileFetcherCrossSegment[segments.length];
+			int segLen = blocksPerSegment;
 			for(int i=0;i<crossSegments.length;i++) {
-				SplitFileFetcherCrossSegment seg = new SplitFileFetcherCrossSegment(persistent, blocksPerSegment, crossCheckBlocks, parent, metadata.getSplitfileType());
+				System.out.println("Allocating blocks (on fetch) for cross segment "+i);
+				if(segments.length - i == deductBlocksFromSegments) {
+					segLen--;
+				}
+				SplitFileFetcherCrossSegment seg = new SplitFileFetcherCrossSegment(persistent, segLen, crossCheckBlocks, parent, metadata.getSplitfileType());
 				crossSegments[i] = seg;
-				for(int j=0;j<segments.length;j++) {
+				for(int j=0;j<segLen;j++) {
 					// Allocate random data blocks
 					allocateCrossDataBlock(seg, random);
 				}
@@ -482,7 +488,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			SplitFileFetcherSegment seg = segments[x];
 			int blockNum = seg.allocateCrossCheckBlock(segment);
 			if(blockNum >= 0) {
-				segment.addDataBlock(seg, blockNum);
+				segment.addDataBlock(seg, seg.realDataBlocks() + blockNum);
 				return;
 			}
 		}
@@ -490,9 +496,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			x++;
 			if(x == segments.length) x = 0;
 			SplitFileFetcherSegment seg = segments[x];
-			int blockNum = seg.allocateCrossDataBlock(segment);
+			int blockNum = seg.allocateCrossCheckBlock(segment);
 			if(blockNum >= 0) {
-				segment.addDataBlock(seg, blockNum);
+				segment.addDataBlock(seg, seg.realDataBlocks() + blockNum);
 				return;
 			}
 		}
