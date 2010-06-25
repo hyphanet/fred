@@ -19,6 +19,7 @@ import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
+import freenet.keys.Key;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -68,6 +69,10 @@ public class SplitFileInserter implements ClientPutState {
 	private final long decompressedLength;
 	final boolean persistent;
 	final HashResult[] hashes;
+	final byte[] hashThisLayerOnly;
+	private byte splitfileCryptoAlgorithm;
+	private byte[] splitfileCryptoKey;
+	private final boolean specifySplitfileKeyInMetadata;
 	
 	public final long topSize;
 	public final long topCompressedSize;
@@ -76,13 +81,13 @@ public class SplitFileInserter implements ClientPutState {
 	// these objects into sets etc when we need to.
 
 	private final int hashCode;
-
+	
 	@Override
 	public int hashCode() {
 		return hashCode;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context, HashResult[] hashes, long origTopSize, long origTopCompressedSize) throws InsertException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context, HashResult[] hashes, byte[] hashThisLayerOnly, long origTopSize, long origTopCompressedSize, byte[] splitfileKey) throws InsertException {
 		hashCode = super.hashCode();
 		if(put == null) throw new NullPointerException();
 		this.parent = put;
@@ -100,6 +105,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.hashes = hashes;
 		this.topSize = origTopSize;
 		this.topCompressedSize = origTopCompressedSize;
+		this.hashThisLayerOnly = hashThisLayerOnly;
 		Bucket[] dataBuckets;
 		context.jobRunner.setCommitThisTransaction();
 		try {
@@ -178,7 +184,25 @@ public class SplitFileInserter implements ClientPutState {
 		}
 
 		// Create segments
-		segments = splitIntoSegments(segmentSize, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put);
+		byte cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		this.splitfileCryptoAlgorithm = cryptoAlgorithm;
+		if(splitfileKey != null) {
+			this.splitfileCryptoKey = splitfileKey;
+			specifySplitfileKeyInMetadata = true;
+		} else if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) {
+			if(hashThisLayerOnly != null) {
+				this.splitfileCryptoKey = Metadata.getCryptoKey(hashThisLayerOnly);
+			} else {
+				if(persistent) {
+					// array elements are treated as part of the parent object, but the hashes themselves may not be activated?
+					for(HashResult res : hashes) container.activate(res, Integer.MAX_VALUE);
+				}
+				this.splitfileCryptoKey = Metadata.getCryptoKey(hashes);
+			}
+			specifySplitfileKeyInMetadata = false;
+		} else
+			specifySplitfileKeyInMetadata = false;
+		segments = splitIntoSegments(segmentSize, segs, deductBlocksFromSegments, dataBuckets, context.mainExecutor, container, context, persistent, put, cryptoAlgorithm, splitfileCryptoKey);
 		if(persistent) {
 			// Deactivate all buckets, and let dataBuckets be GC'ed
 			for(int i=0;i<dataBuckets.length;i++) {
@@ -219,7 +243,9 @@ public class SplitFileInserter implements ClientPutState {
 		this.ctx = ctx;
 		this.persistent = parent.persistent();
 		this.hashes = null;
+		this.hashThisLayerOnly = null;
 		this.deductBlocksFromSegments = 0;
+		this.specifySplitfileKeyInMetadata = false;
 		context.jobRunner.setCommitThisTransaction();
 		// Don't read finished, wait for the segmentFinished()'s.
 		String length = fs.get("DataLength");
@@ -308,7 +334,7 @@ public class SplitFileInserter implements ClientPutState {
 	 * Group the blocks into segments.
 	 * @param deductBlocksFromSegments 
 	 */
-	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, int segCount, int deductBlocksFromSegments, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter) {
+	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, int segCount, int deductBlocksFromSegments, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter, byte cryptoAlgorithm, byte[] splitfileCryptoKey) {
 		int dataBlocks = origDataBlocks.length;
 
 		ArrayList<SplitFileInserterSegment> segs = new ArrayList<SplitFileInserterSegment>();
@@ -317,7 +343,7 @@ public class SplitFileInserter implements ClientPutState {
 		// First split the data up
 		if(segCount == 1) {
 			// Single segment
-			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, cmode), origDataBlocks, ctx, getCHKOnly, 0, container);
+			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length, cmode), origDataBlocks, ctx, getCHKOnly, 0, cryptoAlgorithm, splitfileCryptoKey, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
@@ -337,7 +363,7 @@ public class SplitFileInserter implements ClientPutState {
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, check, seg, ctx, getCHKOnly, segNo, container);
+				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, check, seg, ctx, getCHKOnly, segNo, cryptoAlgorithm, splitfileCryptoKey, container);
 				segs.add(s);
 				
 				if(deductBlocksFromSegments != 0)
@@ -495,13 +521,15 @@ public class SplitFileInserter implements ClientPutState {
 						if(!wasActive)
 							container.activate(parent, 1);
 					}
-					req = parent.minSuccessBlocks;
+					req = parent.getMinSuccessFetchBlocks();
 					total = parent.totalBlocks;
 					if(!wasActive) container.deactivate(parent, 1);
 					data = topSize;
 					compressed = topCompressedSize;
 				}
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, data, compressed, req, total);
+				if(persistent) container.activate(hashes, Integer.MAX_VALUE);
+				if(persistent) container.activate(compressionCodec, Integer.MAX_VALUE);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, hashThisLayerOnly, data, compressed, req, total, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata);
 			}
 			haveSentMetadata = true;
 		}

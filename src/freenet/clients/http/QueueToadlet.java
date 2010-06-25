@@ -60,6 +60,7 @@ import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.node.useralerts.StoringUserEvent;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.MutableBoolean;
@@ -100,6 +101,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	
 	private NodeClientCore core;
 	final FCPServer fcp;
+	private FileInsertWizardToadlet fiw;
+	
+	void setFIW(FileInsertWizardToadlet fiw) {
+		this.fiw = fiw;
+	}
 	
 	private boolean isReversed = false;
 	
@@ -140,9 +146,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				// Preserve the key
 				
 				FreenetURI insertURI;
-				String keyType = request.getPartAsString("keytype", 3);
-				if ("chk".equals(keyType)) {
+				String keyType = request.getPartAsString("keytype", 10);
+				if ("CHK@".equals(keyType)) {
 					insertURI = new FreenetURI("CHK@");
+					if(fiw != null)
+						fiw.reportCanonicalInsert();
+				} else if("SSK@".equals(keyType)) {
+					insertURI = new FreenetURI("SSK@");
+					if(fiw != null)
+						fiw.reportRandomInsert();
 				} else {
 					try {
 						String u = request.getPartAsString("key", 128);
@@ -155,10 +167,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				}
 				
+				String overrideSplitfileKey = request.getPartAsString("overrideSplitfileKey", 65);
+
 				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
 				boolean compress = request.getPartAsString("compress", 128).length() > 0;
 				String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
-				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString() + "&compress=" + compress+"&compatibilityMode="+compatibilityMode);
+				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString() + "&compress=" + compress+"&compatibilityMode="+compatibilityMode+"&overrideSplitfileKey="+overrideSplitfileKey);
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			}			
@@ -368,9 +382,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				// FIXME factor out the next 3 items, they are very messy!
 			} else if (request.getPartAsString("insert", 128).length() > 0) {
 				final FreenetURI insertURI;
-				String keyType = request.getPartAsString("keytype", 3);
-				if ("chk".equals(keyType)) {
+				String keyType = request.getPartAsString("keytype", 10);
+				if ("CHK@".equals(keyType)) {
 					insertURI = new FreenetURI("CHK@");
+					if(fiw != null)
+						fiw.reportCanonicalInsert();
+				} else if("SSK@".equals(keyType)) {
+					insertURI = new FreenetURI("SSK@");
+					if(fiw != null)
+						fiw.reportRandomInsert();
 				} else {
 					try {
 						String u = request.getPartAsString("key", 128);
@@ -390,7 +410,17 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final boolean compress = request.getPartAsString("compress", 128).length() > 0;
 				final String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 				final String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
-				final CompatibilityMode cmode = CompatibilityMode.valueOf(compatibilityMode);
+				final CompatibilityMode cmode;
+				if(compatibilityMode == "")
+					cmode = CompatibilityMode.COMPAT_CURRENT;
+				else
+					cmode = CompatibilityMode.valueOf(compatibilityMode);
+				String s = request.getPartAsString("overrideSplitfileKey", 65);
+				final byte[] overrideSplitfileKey;
+				if(s != null && !s.equals(""))
+					overrideSplitfileKey = HexUtil.hexToBytes(s);
+				else
+					overrideSplitfileKey = null;
 				final String fnam;
 				if(insertURI.getKeyType().equals("CHK"))
 					fnam = file.getFilename();
@@ -407,7 +437,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							try {
 							final ClientPut clientPut;
 							try {
-								clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, cmode, fcp, container);
+								clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, cmode, overrideSplitfileKey, fcp, container);
 								if(clientPut != null)
 									try {
 										fcp.startBlocking(clientPut, container, context);
@@ -478,7 +508,17 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final String key = request.getPartAsString("key", 128);
 				final boolean compress = request.isPartSet("compress");
 				final String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
-				final CompatibilityMode cmode = CompatibilityMode.valueOf(compatibilityMode);
+				final CompatibilityMode cmode;
+				if(compatibilityMode.equals(""))
+					cmode = CompatibilityMode.COMPAT_CURRENT;
+				else
+					cmode = CompatibilityMode.valueOf(compatibilityMode);
+				String s = request.getPartAsString("overrideSplitfileKey", 65);
+				final byte[] overrideSplitfileKey;
+				if(s != null && !s.equals(""))
+					overrideSplitfileKey = HexUtil.hexToBytes(s);
+				else
+					overrideSplitfileKey = null;
 				if(key != null) {
 					try {
 						furi = new FreenetURI(key);
@@ -490,7 +530,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					furi = new FreenetURI("CHK@");
 				}
 				final String target;
-				if(!furi.getKeyType().equals("CHK"))
+				if(furi.getDocName() != null)
 					target = null;
 				else
 					target = file.getName();
@@ -502,7 +542,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							final ClientPut clientPut;
 							try {
 							try {
-								clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, target, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, cmode, fcp, container);
+								clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, target, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, cmode, overrideSplitfileKey, fcp, container);
 								if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 								if(clientPut != null)
 									try {
@@ -933,8 +973,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				contentNode.addChild(core.alerts.createSummary());
 			HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", NodeL10n.getBase().getString("QueueToadlet.globalQueueIsEmpty"), contentNode, "queue-empty", true);
 			infoboxContent.addChild("#", NodeL10n.getBase().getString("QueueToadlet.noTaskOnGlobalQueue"));
-			if(uploads)
-				contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
 			if(!uploads)
 				contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
 			return pageNode;
@@ -1078,9 +1116,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		/* add file insert box */
-		if(uploads)
-		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));
 
 		/* navigation bar */
 		InfoboxNode infobox = pageMaker.getInfobox("navbar", NodeL10n.getBase().getString("QueueToadlet.requestNavigation"), null, false);
@@ -1480,51 +1515,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return keyCell;
 	}
 	
-	private HTMLNode createInsertBox(PageMaker pageMaker, ToadletContext ctx, boolean isAdvancedModeEnabled) {
-		/* the insert file box */
-		InfoboxNode infobox = pageMaker.getInfobox(NodeL10n.getBase().getString("QueueToadlet.insertFile"), "insert-queue", true);
-		HTMLNode insertBox = infobox.outer;
-		HTMLNode insertContent = infobox.content;
-		HTMLNode insertForm = ctx.addFormChild(insertContent, path(), "queueInsertForm");
-		insertForm.addChild("#", (NodeL10n.getBase().getString("QueueToadlet.insertAs") + ' '));
-		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "chk", "checked" });
-		insertForm.addChild("#", " CHK \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "ksk" });
-		insertForm.addChild("#", " KSK/SSK/USK \u00a0");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", "KSK@" });
-		if(isAdvancedModeEnabled) {
-			insertForm.addChild("#", " \u00a0 ");
-			insertForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "compress", "checked" });
-			insertForm.addChild("#", ' ' + NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel") + " \u00a0 ");
-		} else {
-			insertForm.addChild("input", new String[] { "type", "value" }, new String[] { "hidden", "true" });
-		}
-		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "reset", NodeL10n.getBase().getString("QueueToadlet.insertFileResetForm") });
-		if(ctx.isAllowedFullAccess()) {
-			insertForm.addChild("br");
-			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
-			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
-			insertForm.addChild("br");
-		}
-		if(isAdvancedModeEnabled) {
-			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.compatModeLabel")+": ");
-			HTMLNode select = insertForm.addChild("select", "name", "compatibilityMode");
-			for(CompatibilityMode mode : InsertContext.CompatibilityMode.values()) {
-				if(mode == CompatibilityMode.COMPAT_UNKNOWN) continue;
-				// FIXME l10n???
-				HTMLNode option = select.addChild("option", "value", mode.name(), mode.detail);
-				if(mode == CompatibilityMode.COMPAT_CURRENT)
-					option.addAttribute("selected", "");
-			}
-		}
-		insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileLabel") + ": ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
-		insertForm.addChild("#", " \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", NodeL10n.getBase().getString("QueueToadlet.insertFileInsertFileLabel") });
-		insertForm.addChild("#", " \u00a0 ");
-		return insertBox;
-	}
-	
 	private HTMLNode createBulkDownloadForm(ToadletContext ctx, PageMaker pageMaker) {
 		InfoboxNode infobox = pageMaker.getInfobox(NodeL10n.getBase().getString("QueueToadlet.downloadFiles"), "grouped-downloads", true);
 		HTMLNode downloadBox = infobox.outer;
@@ -1700,6 +1690,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				compatCell.addChild("#", compat[0].detail); // FIXME l10n
 			else
 				compatCell.addChild("#", compat[0].detail+" - "+compat[1].detail); // FIXME l10n
+			byte[] overrideCryptoKey = get.getOverriddenSplitfileCryptoKey(container);
+			if(overrideCryptoKey != null)
+				compatCell.addChild("#", " - "+l10n("overriddenCryptoKeyInCompatCell")+": "+HexUtil.bytesToHex(overrideCryptoKey));
 		}
 		return compatCell;
 	}
@@ -1947,12 +1940,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
 	}
 
+	static final String PATH_UPLOADS = "/uploads/";
+	static final String PATH_DOWNLOADS = "/downloads/";
+	
 	@Override
 	public String path() {
 		if(uploads)
-			return "/uploads/";
+			return PATH_UPLOADS;
 		else
-			return "/downloads/";
+			return PATH_DOWNLOADS;
 	}
 
 	private class GetCompletedEvent extends StoringUserEvent<GetCompletedEvent> {

@@ -47,6 +47,7 @@ import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NullBucket;
 
 /**
  * A high level data request. Follows redirects, downloads splitfiles, etc. Similar to what you get from FCP,
@@ -163,7 +164,7 @@ public class ClientGetter extends BaseClientGetter {
 				}
 				currentState = SingleFileFetcher.create(this, this,
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						filtering ? null : returnBucket, true, container, context);
+						(filtering || returnBucket == null || returnBucket instanceof NullBucket) ? null : returnBucket, true, container, context);
 			}
 			if(cancelled) cancel();
 			// schedule() may deactivate stuff, so store it now.
@@ -287,8 +288,17 @@ public class ClientGetter extends BaseClientGetter {
 			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
 			try {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
-				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
-				assert(data != returnBucket);
+				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
+				assert(result.asBucket() != returnBucket);
+				
+				Bucket filteredResult;
+				if(returnBucket == null) filteredResult = context.getBucketFactory(persistent()).makeBucket(-1);
+				else {
+					if(persistent()) container.activate(returnBucket, 5);
+					filteredResult = returnBucket;
+				}
+				input = result.asBucket().getInputStream();
+				output = filteredResult.getOutputStream();
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
 				output.close();
@@ -485,7 +495,7 @@ public class ClientGetter extends BaseClientGetter {
 			minSuccess = finalBlocksRequired;
 			finalized = true;
 		}
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, finalized), container, context);
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(total, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, minSuccess, 0, finalized), container, context);
 	}
 
 	/**
@@ -769,14 +779,16 @@ public class ClientGetter extends BaseClientGetter {
 		notifyClients(container, context);
 	}
 
-	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
-		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max), container, context);
+	public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] customSplitfileKey, ObjectContainer container, ClientContext context) {
+		ctx.eventProducer.produceEvent(new SplitfileCompatibilityModeEvent(min, max, customSplitfileKey), container, context);
 	}
 
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(this.hashes != null) {
-				Logger.error(this, "Two sets of hashes?!");
+				if(persistent()) container.activate(this.hashes, Integer.MAX_VALUE);
+				if(!HashResult.strictEquals(hashes, this.hashes))
+					Logger.error(this, "Two sets of hashes?!");
 				return;
 			}
 			this.hashes = hashes;

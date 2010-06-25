@@ -52,6 +52,7 @@ public class InsertCompressor implements CompressJob {
 	private transient boolean scheduled;
 	private static volatile boolean logMINOR;
 	private final long generateHashes;
+	private final boolean pre1254;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -63,7 +64,7 @@ public class InsertCompressor implements CompressJob {
 		});
 	}
 	
-	public InsertCompressor(long nodeDBHandle2, SingleFileInserter inserter2, Bucket origData2, int minSize2, BucketFactory bf, boolean persistent, long generateHashes) {
+	public InsertCompressor(long nodeDBHandle2, SingleFileInserter inserter2, Bucket origData2, int minSize2, BucketFactory bf, boolean persistent, long generateHashes, boolean pre1254) {
 		this.nodeDBHandle = nodeDBHandle2;
 		this.inserter = inserter2;
 		this.origData = origData2;
@@ -72,6 +73,7 @@ public class InsertCompressor implements CompressJob {
 		this.persistent = persistent;
 		this.compressorDescriptor = inserter.ctx.compressorDescriptor;
 		this.generateHashes = generateHashes;
+		this.pre1254 = pre1254;
 	}
 
 	public void init(ObjectContainer container, final ClientContext ctx) {
@@ -107,7 +109,7 @@ public class InsertCompressor implements CompressJob {
 			scheduled = true;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Compressing "+this+" : origData.size="+origData.size()+" for "+inserter+" origData="+origData);
+			Logger.minor(this, "Compressing "+this+" : origData.size="+origData.size()+" for "+inserter+" origData="+origData+" hashes="+generateHashes);
 		ctx.rc.enqueueNewJob(this);
 	}
 
@@ -125,7 +127,7 @@ public class InsertCompressor implements CompressJob {
 		// Stop when run out of algorithms, or the compressed data fits in a single block.
 		try {
 			BucketChainBucketFactory bucketFactory2 = new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, 1024);
-			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor);
+			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor, pre1254);
 			boolean first = true;
 			for (final COMPRESSOR_TYPE comp : comps) {
 				boolean shouldFreeOnFinally = true;
@@ -166,6 +168,7 @@ public class InsertCompressor implements CompressJob {
 					MultiHashInputStream hasher = null;
 					long maxOutputSize = bestCompressedDataSize;
 					if(first && generateHashes != 0) {
+						if(logMINOR) Logger.minor(this, "Generating hashes: "+generateHashes);
 						is = hasher = new MultiHashInputStream(is, generateHashes);
 						maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
 					}
@@ -307,10 +310,10 @@ public class InsertCompressor implements CompressJob {
 	 * @return
 	 */
 	public static InsertCompressor start(ObjectContainer container, ClientContext context, SingleFileInserter inserter, 
-			Bucket origData, int minSize, BucketFactory bf, boolean persistent, long generateHashes) {
+			Bucket origData, int minSize, BucketFactory bf, boolean persistent, long generateHashes, boolean pre1254) {
 		if(persistent != (container != null))
 			throw new IllegalStateException("Starting compression, persistent="+persistent+" but container="+container);
-		InsertCompressor compressor = new InsertCompressor(context.nodeDBHandle, inserter, origData, minSize, bf, persistent, generateHashes);
+		InsertCompressor compressor = new InsertCompressor(context.nodeDBHandle, inserter, origData, minSize, bf, persistent, generateHashes, pre1254);
 		if(persistent)
 			container.store(compressor);
 		compressor.init(container, context);

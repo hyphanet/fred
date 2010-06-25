@@ -485,6 +485,8 @@ public class FetchException extends Exception {
 		
 		//The ContentFilter failed to validate the data. Retrying won't fix this.
 			case CONTENT_VALIDATION_FAILED:
+			case CONTENT_VALIDATION_UNKNOWN_MIME:
+			case CONTENT_VALIDATION_BAD_MIME:
 				return true;
 
 		// Wierd ones

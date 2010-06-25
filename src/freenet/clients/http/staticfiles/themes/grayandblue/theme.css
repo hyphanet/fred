@@ -549,7 +549,12 @@ div#statusbar-container {
 	text-align: center;
 	border: 1px dotted #676767;
 	background-color: #eee;
-	margin: 10px;
+	margin: 10px 10px 0px 10px;
+	position:fixed;
+	bottom:0;
+	right:0;
+	left:0;
+	z-index:18;
 }
 
 div#statusbar div.infobox-header {

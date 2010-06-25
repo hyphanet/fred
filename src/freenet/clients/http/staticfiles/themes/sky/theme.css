@@ -692,6 +692,11 @@ div#statusbar-container {
 	padding-bottom: 0;
 	border-top: 1px solid #d0d0f0;
 	background-color: #eaf2ff;
+	position:fixed;
+	bottom:0;
+	right:0;
+	left:0;
+	z-index:18;
 }
 
 div#statusbar {

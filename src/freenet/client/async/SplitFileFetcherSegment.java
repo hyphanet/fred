@@ -21,6 +21,7 @@ import freenet.client.FetchException;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.CHKVerifyException;
@@ -108,6 +109,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private boolean scheduled;
 	private final boolean persistent;
 	final int segNum;
+	final boolean pre1254;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -126,7 +128,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	private transient FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254) throws MetadataParseException, FetchException {
 		this.segNum = segNum;
 		this.hashCode = super.hashCode();
 		this.persistent = fetcher.persistent;
@@ -165,6 +167,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(dataKeys[i] == null) throw new NullPointerException("Null: data block "+i);
 		for(int i=0;i<checkKeys.length;i++)
 			if(checkKeys[i] == null) throw new NullPointerException("Null: check block "+i);
+		this.pre1254 = pre1254;
 	}
 
 	public synchronized boolean isFinished(ObjectContainer container) {
@@ -489,6 +492,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.activate(parentFetcher, 1);
 			container.activate(parent, 1);
 			container.activate(context, 1);
+			container.activate(blockFetchContext, 1);
 		}
 		if(codec == null)
 			codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
@@ -777,7 +781,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				try {
 					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
 					ClientCHKBlock block =
-						ClientCHKBlock.encode(data, false, true, (short)-1, data.size(), COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
+						ClientCHKBlock.encode(data, false, true, (short)-1, data.size(), COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, pre1254);
 					getter.addKeyToBinaryBlob(block, container, context);
 				} catch (CHKEncodeException e) {
 					Logger.error(this, "Failed to encode (collecting binary blob) "+(check?"check":"data")+" block "+i+": "+e, e);
@@ -869,8 +873,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent)
 			container.store(this);
-		if(allFailed)
+		if(allFailed) {
+			if(persistent) container.activate(errors, Integer.MAX_VALUE);
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, false);
+		}
 		else if(seg != null) {
 			if(seg.possiblyRemoveFromParent(container, context))
 				seg.kill(container, context, true, true);
@@ -1549,6 +1555,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(persistent)
 			container.deactivate(seg, 1);
 		if(fatal != null) {
+			if(persistent)
+				container.activate(errors, 1);
+			errors.inc(fatal.mode);
+			if(persistent)
+				errors.storeTo(container);
 			this.onFatalFailure(fatal, blockNum, null, container, context);
 			return false;
 		} else if(data == null) {
@@ -1582,13 +1593,30 @@ public class SplitFileFetcherSegment implements FECCallback {
 		} catch (KeyDecodeException e1) {
 			if(logMINOR)
 				Logger.minor(this, "Decode failure: "+e1, e1);
+			// All other callers to onFatalFailure increment the error counter in SplitFileFetcherSubSegment.
+			// Therefore we must do so here.
+			if(persistent)
+				container.activate(errors, 1);
+			errors.inc(FetchException.BLOCK_DECODE_ERROR);
+			if(persistent)
+				errors.storeTo(container);
 			this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), blockNum, null, container, context);
 			return null;
 		} catch (TooBigException e) {
+			if(persistent)
+				container.activate(errors, 1);
+			errors.inc(FetchException.TOO_BIG);
+			if(persistent)
+				errors.storeTo(container);
 			this.onFatalFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), blockNum, null, container, context);
 			return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
+			if(persistent)
+				container.activate(errors, 1);
+			errors.inc(FetchException.BUCKET_ERROR);
+			if(persistent)
+				errors.storeTo(container);
 			this.onFatalFailure(new FetchException(FetchException.BUCKET_ERROR, e), blockNum, null, container, context);
 			return null;
 		}

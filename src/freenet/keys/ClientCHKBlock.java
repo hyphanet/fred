@@ -18,6 +18,9 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.node.Node;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.InvalidCompressionCodecException;
@@ -39,6 +42,17 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         return super.toString()+",key="+key;
     }
     
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
     /**
      * Construct from data retrieved, and a key.
      * Do not do full decode. Verify what can be verified without doing
@@ -102,10 +116,11 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         pcfb.blockDecipher(dbuf, 0, dbuf.length);
         // Check: Decryption key == hash of data (not including header)
         MessageDigest md256 = SHA256.getMessageDigest();
-        byte[] dkey = md256.digest(dbuf);
-        if(!java.util.Arrays.equals(dkey, key.cryptoKey)) {
-        	SHA256.returnMessageDigest(md256);
-            throw new CHKDecodeException("Check failed: decrypt key == H(data)");
+        byte[] dkey = key.cryptoKey;
+        // If the block is encoded normally, dkey == key.cryptoKey
+        if(!java.util.Arrays.equals(md256.digest(dbuf), key.cryptoKey)) {
+        	// This happens when handling post-1254 splitfiles.
+        	if(logMINOR) Logger.minor(this, "Found non-convergent block encoding");
         }
         // Check: IV == hash of decryption key
         byte[] predIV = md256.digest(dkey);
@@ -125,6 +140,24 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
     }
 
     /**
+     * Encode a splitfile block.
+     * @param data The data to encode. Must be exactly DATA_LENGTH bytes.
+     * @param cryptoKey The encryption key. Can be null in which case this is equivalent to a normal block
+     * encode.
+     */
+    static public ClientCHKBlock encodeSplitfileBlock(byte[] data, byte[] cryptoKey, byte cryptoAlgorithm) throws CHKEncodeException {
+    	if(data.length != CHKBlock.DATA_LENGTH) throw new IllegalArgumentException();
+    	if(cryptoKey != null && cryptoKey.length != 32) throw new IllegalArgumentException();
+        MessageDigest md256 = SHA256.getMessageDigest();
+        // No need to pad
+        if(cryptoKey == null) {
+        	cryptoKey = md256.digest(data);
+        	md256.reset();
+        }
+        return innerEncode(data, CHKBlock.DATA_LENGTH, md256, cryptoKey, false, (short)-1, cryptoAlgorithm);
+    }
+    
+    /**
      * Encode a Bucket of data to a CHKBlock.
      * @param sourceData The bucket of data to encode. Can be arbitrarily large.
      * @param asMetadata Is this a metadata key?
@@ -136,14 +169,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @throws IOException If there is an error reading from the Bucket.
      * @throws InvalidCompressionCodecException 
      */
-    static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor) throws CHKEncodeException, IOException {
+    static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor, boolean pre1254) throws CHKEncodeException, IOException {
         byte[] finalData = null;
         byte[] data;
-        byte[] header;
-        ClientCHK key;
         short compressionAlgorithm = -1;
         try {
-			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false, compressorDescriptor);
+			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false, compressorDescriptor, pre1254);
 			finalData = comp.compressedData;
 			compressionAlgorithm = comp.compressionAlgorithm;
 		} catch (KeyEncodeException e2) {
@@ -155,6 +186,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         
         MessageDigest md256 = SHA256.getMessageDigest();
         // First pad it
+        int dataLength = finalData.length;
         if(finalData.length != 32768) {
             // Hash the data
             if(finalData.length != 0)
@@ -172,14 +204,22 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // Now make the header
         byte[] encKey = md256.digest(data);
         md256.reset();
+        return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, Key.ALGO_AES_PCFB_256_SHA256);
+    }
+    
+    public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
+    	if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
+    		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
+        byte[] header;
+        ClientCHK key;
         // IV = E(H(crypto key))
         byte[] plainIV = md256.digest(encKey);
         header = new byte[plainIV.length+2+2];
         header[0] = (byte)(KeyBlock.HASH_SHA256 >> 8);
         header[1] = (byte)(KeyBlock.HASH_SHA256 & 0xff);
         System.arraycopy(plainIV, 0, header, 2, plainIV.length);
-        header[plainIV.length+2] = (byte)(finalData.length >> 8);
-        header[plainIV.length+3] = (byte)(finalData.length & 0xff);
+        header[plainIV.length+2] = (byte)(dataLength >> 8);
+        header[plainIV.length+3] = (byte)(dataLength & 0xff);
         // GRRR, java 1.4 does not have any symmetric crypto
         // despite exposing asymmetric and hashes!
         
@@ -203,7 +243,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         SHA256.returnMessageDigest(md256);
         
         // Now convert it into a ClientCHK
-        key = new ClientCHK(finalHash, encKey, asMetadata, Key.ALGO_AES_PCFB_256_SHA256, compressionAlgorithm);
+        key = new ClientCHK(finalHash, encKey, asMetadata, cryptoAlgorithm, compressionAlgorithm);
         
         try {
             return new ClientCHKBlock(data, header, key, false);
@@ -223,9 +263,9 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @param compressorDescriptor 
      * @throws InvalidCompressionCodecException 
      */
-    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength, String compressorDescriptor) throws CHKEncodeException, InvalidCompressionCodecException {
+    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength, String compressorDescriptor, boolean pre1254) throws CHKEncodeException, InvalidCompressionCodecException {
     	try {
-			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor);
+			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor, pre1254);
 		} catch (IOException e) {
 			// Can't happen
 			throw new Error(e);

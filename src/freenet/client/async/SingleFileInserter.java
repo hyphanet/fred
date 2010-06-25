@@ -81,6 +81,8 @@ class SingleFileInserter implements ClientPutState {
 	private final long origDataLength;
 	private final long origCompressedDataLength;
 	private HashResult[] origHashes;
+	/** If true, use random crypto keys for CHKs. */
+	private final byte[] forceCryptoKey;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -110,7 +112,7 @@ class SingleFileInserter implements ClientPutState {
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InsertContext ctx, boolean dontCompress, 
 			boolean getCHKOnly, boolean reportMetadataOnly, Object token, ARCHIVE_TYPE archiveType,
-			boolean freeData, String targetFilename, boolean earlyEncode, boolean forSplitfile, boolean persistent, long origDataLength, long origCompressedDataLength, HashResult[] origHashes) {
+			boolean freeData, String targetFilename, boolean earlyEncode, boolean forSplitfile, boolean persistent, long origDataLength, long origCompressedDataLength, HashResult[] origHashes, byte[] forceCryptoKey) {
 		hashCode = super.hashCode();
 		this.earlyEncode = earlyEncode;
 		this.reportMetadataOnly = reportMetadataOnly;
@@ -129,6 +131,7 @@ class SingleFileInserter implements ClientPutState {
 		this.origCompressedDataLength = origCompressedDataLength;
 		this.origDataLength = origDataLength;
 		this.origHashes = origHashes;
+		this.forceCryptoKey = forceCryptoKey;
 		if(logMINOR) Logger.minor(this, "Created "+this+" persistent="+persistent+" freeData="+freeData);
 	}
 	
@@ -210,6 +213,11 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(parent, 1);
 		}
 		long origSize = block.getData().size();
+		byte[] hashThisLayerOnly = null;
+		if(hashes != null && metadata) {
+			hashThisLayerOnly = HashResult.get(hashes, HashType.SHA256);
+			hashes = null; // Inherit origHashes
+		}
 		if(hashes != null) {
 			if(logDEBUG) {
 				Logger.debug(this, "Computed hashes for "+this+" for "+block.desiredURI+" size "+origSize);
@@ -217,6 +225,11 @@ class SingleFileInserter implements ClientPutState {
 					Logger.debug(this, res.type.name()+" : "+HexUtil.bytesToHex(res.result));
 				}
 			}
+			
+			// So it is passed on.
+			origHashes = hashes;
+			if(persistent)
+				container.store(this);
 		} else {
 			hashes = origHashes; // Inherit so it goes all the way to the top.
 			if(persistent) container.activate(hashes, Integer.MAX_VALUE);
@@ -375,7 +388,7 @@ class SingleFileInserter implements ClientPutState {
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
-			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, hashes, origDataLength, origCompressedDataLength);
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, hashes, hashThisLayerOnly, origDataLength, origCompressedDataLength, forceCryptoKey);
 			if(logMINOR)
 				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+this);
 			cb.onTransition(this, sfi, container);
@@ -395,7 +408,7 @@ class SingleFileInserter implements ClientPutState {
 			boolean allowSizes = (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
 			if(metadata) allowSizes = false;
 			SplitHandler sh = new SplitHandler(origSize, compressedDataSize, allowSizes);
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, hashes, origDataLength, origCompressedDataLength);
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, hashes, hashThisLayerOnly, origDataLength, origCompressedDataLength, forceCryptoKey);
 			sh.sfi = sfi;
 			if(logMINOR)
 				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+sh+" for "+this);
@@ -474,17 +487,18 @@ class SingleFileInserter implements ClientPutState {
 		// We always want SHA256, even for small files.
 		long wantHashes = 0;
 		CompatibilityMode cmode = ctx.getCompatibilityMode();
-		if((cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) && (!metadata)) {
+		boolean atLeast1254 = (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
+		if(atLeast1254) {
 			// We verify this. We want it for *all* files.
 			wantHashes |= HashType.SHA256.bitmask;
 			// FIXME: If the user requests it, calculate the others for small files.
 			// FIXME maybe the thresholds should be configurable.
-			if(data.size() >= 1024*1024) {
+			if(data.size() >= 1024*1024 && !metadata) {
 				// SHA1 is common and MD5 is cheap.
 				wantHashes |= HashType.SHA1.bitmask;
 				wantHashes |= HashType.MD5.bitmask;
 			}
-			if(data.size() >= 4*1024*1024) {
+			if(data.size() >= 4*1024*1024 && !metadata) {
 				// Useful for cross-network, and cheap.
 				wantHashes |= HashType.ED2K.bitmask;
 				// Very widely supported for cross-network.
@@ -495,7 +509,7 @@ class SingleFileInserter implements ClientPutState {
 		}
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
-			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent, wantHashes);
+			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent, wantHashes, !atLeast1254);
 		} else {
 			if(logMINOR) Logger.minor(this, "Not compressing "+origData+" size = "+origSize+" block size = "+blockSize);
 			HashResult[] hashes = null;
@@ -529,7 +543,7 @@ class SingleFileInserter implements ClientPutState {
 				if(!wasActive)
 					container.activate(parent, 1);
 			}
-			req = parent.minSuccessBlocks;
+			req = parent.getMinSuccessFetchBlocks();
 			total = parent.totalBlocks;
 			if(!wasActive) container.deactivate(parent, 1);
 			data = origDataLength;
@@ -875,7 +889,8 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent)
 				container.activate(SingleFileInserter.this, 1);
 				synchronized(this) {
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes);
+					// Only the bottom layer in a multi-level splitfile pyramid has randomised keys. The rest are unpredictable anyway, and this ensures we only need to supply one key when reinserting.
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes, null);
 					if(origHashes != null) {
 						// It gets passed on, and the last one deletes it.
 						SingleFileInserter.this.origHashes = null;

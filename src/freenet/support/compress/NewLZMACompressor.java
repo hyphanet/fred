@@ -7,6 +7,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,7 +23,11 @@ import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class LZMACompressor implements Compressor {
+public class NewLZMACompressor implements Compressor {
+	
+    // Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
+    // Next one up is 2MB = -5 = 26M compress, 3M decompress.
+	static final int MAX_DICTIONARY_SIZE = 1<<20;
 
 	// Copied from EncoderThread. See below re licensing.
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
@@ -48,43 +53,60 @@ public class LZMACompressor implements Compressor {
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException {
 		CountedInputStream cis = null;
 		CountedOutputStream cos = null;
-		cis = new CountedInputStream(new BufferedInputStream(is));
-		cos = new CountedOutputStream(new BufferedOutputStream(os));
+		cis = new CountedInputStream(new BufferedInputStream(is, 32768));
+		cos = new CountedOutputStream(new BufferedOutputStream(os, 32768));
 		Encoder encoder = new Encoder();
         encoder.SetEndMarkerMode( true );
-        // Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
-        // Next one up is 2MB = -5 = 26M compress, 3M decompress.
-        encoder.SetDictionarySize( 1 << 20 );
-        // enc.WriteCoderProperties( out );
-        // 5d 00 00 10 00
-        encoder.Code( cis, cos, -1, -1, null );
+        int dictionarySize = 1;
+        if(maxReadLength == Long.MAX_VALUE || maxReadLength < 0) {
+        	dictionarySize = MAX_DICTIONARY_SIZE;
+        	Logger.error(this, "No indication of size, having to use maximum dictionary size", new Exception("debug"));
+        } else {
+        	while(dictionarySize < maxReadLength && dictionarySize < MAX_DICTIONARY_SIZE)
+        		dictionarySize <<= 1;
+        }
+        encoder.SetDictionarySize( dictionarySize );
+        encoder.WriteCoderProperties(os);
+        encoder.Code( cis, cos, maxReadLength, maxWriteLength, null );
+        cos.flush();
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Read "+cis.count()+" written "+cos.written());
 		return cos.written();
 	}
 
-	// Copied from DecoderThread
-	// LICENSING: DecoderThread is LGPL 2.1/CPL according to comments.
-	
-    static final int propSize = 5;
-    
-    static final byte[] props = new byte[propSize];
-
-    static {
-        // enc.SetEndMarkerMode( true );
-        // enc.SetDictionarySize( 1 << 20 );
-        props[0] = 0x5d;
-        props[1] = 0x00;
-        props[2] = 0x00;
-        props[3] = 0x10;
-        props[4] = 0x00;
-    }
+	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
+		Bucket output;
+		if(preferred != null)
+			output = preferred;
+		else
+			output = bf.makeBucket(maxLength);
+		if(Logger.shouldLog(LogLevel.MINOR, this))
+			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
+		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream(), 32768));
+		BufferedOutputStream os = new BufferedOutputStream(output.getOutputStream(), 32768);
+		decompress(is, os, maxLength, maxCheckSizeLength);
+		os.close();
+		if(Logger.shouldLog(LogLevel.MINOR, this))
+			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count());
+		return output;
+	}
 
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
+		byte[] props = new byte[5];
+		DataInputStream dis = new DataInputStream(is);
+		dis.readFully(props);
 		CountedOutputStream cos = new CountedOutputStream(os);
+		
+		int dictionarySize = 0;
+		for (int i = 0; i < 4; i++)
+			dictionarySize += ((int)(props[1 + i]) & 0xFF) << (i * 8);
+		
+		if(dictionarySize < 0) throw new InvalidCompressedDataException("Invalid dictionary size");
+		if(dictionarySize > MAX_DICTIONARY_SIZE) throw new TooBigDictionaryException();
 		Decoder decoder = new Decoder();
-		decoder.SetDecoderProperties(props);
+		if(!decoder.SetDecoderProperties(props)) throw new InvalidCompressedDataException("Invalid properties");
 		decoder.Code(is, cos, maxLength);
+		//cos.flush();
 		return cos.written();
 	}
 

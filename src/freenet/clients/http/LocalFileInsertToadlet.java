@@ -63,6 +63,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 		
 		final String compatibilityMode = request.getParam("compatibilityMode");
 		extra += "&compatibilityMode=" + compatibilityMode;
+		
+		final String overrideSplitfileKey = request.getParam("overrideSplitfileKey");
+		extra += "&overrideSplitfileKey=" + overrideSplitfileKey;
 
 		String path = request.getParam("path");
 		if (path.length() == 0) {
@@ -100,7 +103,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 		
 		HTMLNode pageNode;
 
-		if (currentPath.exists() && currentPath.isDirectory() && currentPath.canRead()) {
+		if (thisPath.exists() && thisPath.isDirectory() && thisPath.canRead()) {
 			// Known safe at this point
 			currentPath = thisPath;
 

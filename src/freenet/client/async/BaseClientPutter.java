@@ -22,4 +22,5 @@ public abstract class BaseClientPutter extends ClientRequester {
 
 	public abstract void onTransition(ClientPutState from, ClientPutState to, ObjectContainer container);
 
+	public abstract int getMinSuccessFetchBlocks();
 }

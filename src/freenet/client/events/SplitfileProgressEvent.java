@@ -27,17 +27,19 @@ public class SplitfileProgressEvent implements ClientEvent {
 	public final int succeedBlocks;
 	public final int failedBlocks;
 	public final int fatallyFailedBlocks;
+	public final int minSuccessFetchBlocks;
 	public int minSuccessfulBlocks;
 	public final boolean finalizedTotal;
 	
 	public SplitfileProgressEvent(int totalBlocks, int succeedBlocks, int failedBlocks, 
-			int fatallyFailedBlocks, int minSuccessfulBlocks, boolean finalizedTotal) {
+			int fatallyFailedBlocks, int minSuccessfulBlocks, int minSuccessFetchBlocks, boolean finalizedTotal) {
 		this.totalBlocks = totalBlocks;
 		this.succeedBlocks = succeedBlocks;
 		this.failedBlocks = failedBlocks;
 		this.fatallyFailedBlocks = fatallyFailedBlocks;
 		this.minSuccessfulBlocks = minSuccessfulBlocks;
 		this.finalizedTotal = finalizedTotal;
+		this.minSuccessFetchBlocks = minSuccessFetchBlocks;
 		if(logMINOR)
 			Logger.minor(this, "Created SplitfileProgressEvent: total="+totalBlocks+" succeed="+succeedBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" min success="+minSuccessfulBlocks+" finalized="+finalizedTotal);
 	}
@@ -68,6 +70,8 @@ public class SplitfileProgressEvent implements ClientEvent {
 		sb.append(fatallyFailedBlocks);
 		sb.append(", total ");
 		sb.append(totalBlocks);
+		sb.append(", minSuccessFetch ");
+		sb.append(minSuccessFetchBlocks);
 		sb.append(") ");
 		sb.append(finalizedTotal ? " (finalized total)" : "");
 		return sb.toString();

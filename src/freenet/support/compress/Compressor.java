@@ -26,7 +26,8 @@ public interface Compressor {
 		// They will be tried in order: put the less resource consuming first
 		GZIP("GZIP", new GzipCompressor(), (short) 0),
 		BZIP2("BZIP2", new Bzip2Compressor(), (short) 1),
-		LZMA("LZMA", new LZMACompressor(), (short)2);
+		LZMA_OLD("LZMA_OLD", new OldLZMACompressor(), (short)2),
+		LZMA_NEW("LZMA_NEW", new NewLZMACompressor(), (short)3);
 
 		public final String name;
 		public final Compressor compressor;
@@ -92,10 +93,19 @@ public interface Compressor {
 		 * @return
 		 * @throws InvalidCompressionCodecException 
 		 */
-		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor) throws InvalidCompressionCodecException {
+		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor, boolean pre1254) throws InvalidCompressionCodecException {
 			COMPRESSOR_TYPE[] result = getCompressorsArrayNoDefault(compressordescriptor);
-			if (result == null)
-				return COMPRESSOR_TYPE.values();
+			if (result == null) {
+				COMPRESSOR_TYPE[] val = COMPRESSOR_TYPE.values();
+				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[val.length-1];
+				int x = 0;
+				for(int i=0;i<val.length;i++) {
+					if((val[i] == LZMA_OLD) && !pre1254) continue;
+					if((val[i] == LZMA_NEW) && pre1254) continue;
+					ret[x++] = val[i];
+				}
+				result = ret;
+			}
 			return result;
 		}
 
@@ -165,7 +175,9 @@ public interface Compressor {
 		private Compressor getOfficial() {
 			if(name.equals("GZIP")) return GZIP;
 			if(name.equals("BZIP2")) return BZIP2;
-			if(name.equals("LZMA")) return LZMA;
+			if(name.equals("LZMA_OLD")) return LZMA_OLD;
+			if(name.equals("LZMA_NEW")) return LZMA_NEW;
+			if(name.equals("LZMA")) return LZMA_NEW;
 			return null;
 		}
 
@@ -182,7 +194,7 @@ public interface Compressor {
 		}
 
 		public boolean isOfficial() {
-			return this == GZIP || this == BZIP2 || this == LZMA;
+			return this == GZIP || this == BZIP2 || this == LZMA_OLD || this == LZMA_NEW;
 		}
 
 		public static int countCompressors() {

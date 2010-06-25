@@ -6,6 +6,8 @@ package freenet.client;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,12 +26,15 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
+import freenet.support.ExceptionWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.Compressor;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
@@ -251,7 +256,7 @@ public class ArchiveManager {
 	 * present (check the call stack). Maybe we should get rid of the ObjectContainer?
 	 * OTOH maybe extracting inline on the database thread for small containers would be useful?
 	 */
-	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, final Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
@@ -288,21 +293,58 @@ public class ArchiveManager {
 		else if(logMINOR)
 			Logger.minor(this, "Container size (possibly compressed): "+archiveSize+" for "+data);
 
-
 		InputStream is = null;
 		try {
+			final ExceptionWrapper wrapper;
 			if((ctype == null) || (ARCHIVE_TYPE.ZIP == archiveType)) {
 				if(logMINOR) Logger.minor(this, "No compression");
 				is = data.getInputStream();
+				wrapper = null;
 			} else if(ctype == COMPRESSOR_TYPE.BZIP2) {
 				if(logMINOR) Logger.minor(this, "dealing with BZIP2");
 				is = new CBZip2InputStream(data.getInputStream());
+				wrapper = null;
 			} else if(ctype == COMPRESSOR_TYPE.GZIP) {
 				if(logMINOR) Logger.minor(this, "dealing with GZIP");
 				is = new GZIPInputStream(data.getInputStream());
-			} else if(ctype == COMPRESSOR_TYPE.LZMA) {
+				wrapper = null;
+			} else if(ctype == COMPRESSOR_TYPE.LZMA_NEW) {
+				// LZMA internally uses pipe streams, so we may as well do it here.
+				// In fact we need to for LZMA_NEW, because of the properties bytes.
+				PipedInputStream pis = new PipedInputStream();
+				final PipedOutputStream pos = new PipedOutputStream();
+				pis.connect(pos);
+				wrapper = new ExceptionWrapper();
+				context.mainExecutor.execute(new Runnable() {
+
+					public void run() {
+						try {
+							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(data.getInputStream(), pos, data.size(), expectedSize);
+						} catch (IOException e) {
+							Logger.error(this, "Failed to decompress archive: "+e, e);
+							wrapper.set(e);
+						} catch (CompressionOutputSizeException e) {
+							Logger.error(this, "Failed to decompress archive: "+e, e);
+							wrapper.set(e);
+						} finally {
+							try {
+								pos.close();
+							} catch (IOException e) {
+								Logger.error(this, "Failed to close PipedOutputStream: "+e, e);
+							}
+						}
+					}
+					
+				});
+				is = pis;
+			} else if(ctype == COMPRESSOR_TYPE.LZMA_OLD) {
 				if(logMINOR) Logger.minor(this, "dealing with LZMA");
 				is = new LzmaInputStream(data.getInputStream());
+				wrapper = null;
+			} else if(ctype != null) {
+				throw new ArchiveFailureException("Unknown or unsupported compression algorithm " + archiveType);
+			} else {
+				wrapper = null;
 			}
 
 			if(ARCHIVE_TYPE.ZIP == archiveType)
@@ -311,6 +353,10 @@ public class ArchiveManager {
 				handleTARArchive(ctx, key, is, element, callback, gotElement, throwAtExit, container, context);
 		else
 				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
+			if(wrapper != null) {
+				Exception e = wrapper.get();
+				if(e != null) throw new ArchiveFailureException("An exception occured decompressing: "+e.getMessage(), e);
+			}
 		} catch (IOException ioe) {
 			throw new ArchiveFailureException("An IOE occured: "+ioe.getMessage(), ioe);
 		}finally {
@@ -676,6 +722,4 @@ outerZIP:		while(true) {
 		return false;
 	}
 	
-
-
 }

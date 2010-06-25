@@ -12,10 +12,12 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -54,7 +56,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** SimpleFieldSet containing progress information from last startup.
 	 * Will be progressively cleared during startup. */
 	private SimpleFieldSet oldProgress;
-
+	private final byte[] overrideSplitfileCrypto;
+	
 	/**
 	 * @param client The object to call back when we complete, or don't.
 	 * @param data The data to insert. This will not be freed by ClientPutter, the callback must do that. However,
@@ -73,7 +76,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass, boolean getCHKOnly,
-			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
+			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto) {
 		super(priorityClass, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
@@ -87,6 +90,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.oldProgress = stored;
 		this.targetFilename = targetFilename;
 		this.binaryBlob = binaryBlob;
+		this.overrideSplitfileCrypto = overrideSplitfileCrypto;
 	}
 
 	/** Start the insert.
@@ -119,9 +123,14 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			container.activate(client, 1);
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
-			Logger.minor(this, "Starting "+this);
+			Logger.minor(this, "Starting "+this+" for "+targetURI);
 		try {
 			this.targetURI.checkInsertURI();
+			// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
+			// randomised keys. This substantially improves security by making it impossible to identify blocks
+			// even if you know the content. In the user interface, we will offer the option of inserting as a
+			// random SSK to take advantage of this.
+			boolean randomiseSplitfileKeys = randomiseSplitfileKeys(targetURI, ctx, persistent(), container);
 
 			if(data == null)
 				throw new InsertException(InsertException.BUCKET_ERROR, "No data to insert", null);
@@ -145,13 +154,20 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 					return false;
 				}
 				cancel = this.cancelled;
+				byte[] cryptoKey = null;
+				if(overrideSplitfileCrypto != null) {
+					cryptoKey = overrideSplitfileCrypto;
+				} else if(randomiseSplitfileKeys) {
+					cryptoKey = new byte[32];
+					context.random.nextBytes(cryptoKey);
+				}
 				if(!cancel) {
 					if(!binaryBlob) {
 						ClientMetadata meta = cm;
 						if(meta != null) meta = persistent() ? meta.clone() : meta;
 						currentState =
 							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, 
-									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null);
+									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, cryptoKey);
 					} else
 						currentState =
 							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx, context, container);
@@ -234,6 +250,27 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Started "+this);
 		return true;
+	}
+
+	public static boolean randomiseSplitfileKeys(FreenetURI targetURI, InsertContext ctx, boolean persistent, ObjectContainer container) {
+		// If the top level key is an SSK, all CHK blocks and particularly splitfiles below it should have
+		// randomised keys. This substantially improves security by making it impossible to identify blocks
+		// even if you know the content. In the user interface, we will offer the option of inserting as a
+		// random SSK to take advantage of this.
+		boolean randomiseSplitfileKeys = targetURI.isSSK() || targetURI.isKSK() || targetURI.isUSK();
+		if(randomiseSplitfileKeys) {
+			boolean ctxActive = true;
+			if(persistent) {
+				ctxActive = container.ext().isActive(ctx);
+				container.activate(ctx, 1);
+			}
+			CompatibilityMode cmode = ctx.getCompatibilityMode();
+			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()))
+				randomiseSplitfileKeys = false;
+			if(!ctxActive)
+				container.deactivate(ctx, 1);
+		}
+		return randomiseSplitfileKeys;
 	}
 
 	/** Called when the insert succeeds. */
@@ -370,11 +407,47 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
 	}
 
+	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
+	protected int minSuccessFetchBlocks;
+	
+	public int getMinSuccessFetchBlocks() {
+		return minSuccessFetchBlocks;
+	}
+	
+	public void addBlock(ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks++;
+		}
+		super.addBlock(container);
+	}
+	
+	public void addBlocks(int num, ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks+=num;
+		}
+		super.addBlocks(num, container);
+	}
+	
+	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
+	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks += blocks;
+		}
+		super.addMustSucceedBlocks(blocks, container);
+	}
+
+	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
+	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
+	 * the requestor must fetch. */
+	public void addRedundantBlocks(int blocks, ObjectContainer container) {
+		super.addMustSucceedBlocks(blocks, container);
+	}
+
 	@Override
 	public void notifyClients(ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(ctx, 2);
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.minSuccessFetchBlocks, this.blockSetFinalized), container, context);
 	}
 
 	/** Notify listening clients that an insert has been sent to the network. */

@@ -132,25 +132,27 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			}
 			if(req != null) {
 				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.getPriority());
-				// Wait
-				long delay = throttle.getDelay();
-				if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
-				long sleepUntil = cycleTime + delay;
-				if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
-					inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
-					outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
+				if(!req.localRequestOnly) {
+					// Wait
+					long delay = throttle.getDelay();
+					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
+					long sleepUntil = cycleTime + delay;
+					if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
+						inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
+						outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
+					}
+					long now;
+					do {
+						now = System.currentTimeMillis();
+						if(now < sleepUntil)
+							try {
+								Thread.sleep(sleepUntil - now);
+								if(logMINOR) Logger.minor(this, "Slept: "+(sleepUntil-now)+"ms");
+							} catch (InterruptedException e) {
+								// Ignore
+							}
+					} while(now < sleepUntil);
 				}
-				long now;
-				do {
-					now = System.currentTimeMillis();
-					if(now < sleepUntil)
-						try {
-							Thread.sleep(sleepUntil - now);
-							if(logMINOR) Logger.minor(this, "Slept: "+(sleepUntil-now)+"ms");
-						} catch (InterruptedException e) {
-							// Ignore
-						}
-				} while(now < sleepUntil);
 				String reason;
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
 					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false)) != null) {
@@ -171,7 +173,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					req = sched.grabRequest();
 					if(req == null) {
 						try {
-							wait(100*1000); // as close to indefinite as I'm comfortable with! Toad
+							wait(1*1000); // this can happen when most but not all stuff is already running but there is still stuff to fetch, so don't wait *too* long.
+							// FIXME increase when we can be *sure* there is nothing left in the queue (especially for transient requests).
 						} catch (InterruptedException e) {
 							// Ignore
 						}

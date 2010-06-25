@@ -106,4 +106,18 @@ public class HashResult implements Comparable {
 		return true;
 	}
 
+	public static boolean contains(HashResult[] hashes, HashType type) {
+		for(HashResult res : hashes)
+			if(res.type == type || type.name().equals(res.type.name()))
+				return true;
+		return false;
+	}
+
+	public static byte[] get(HashResult[] hashes, HashType type) {
+		for(HashResult res : hashes)
+			if(res.type == type || type.name().equals(res.type.name()))
+				return res.result;
+		return null;
+	}
+
 }

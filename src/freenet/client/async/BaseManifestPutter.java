@@ -24,6 +24,7 @@ import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -69,7 +70,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 		private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, boolean getCHKOnly) {
 			super(bmp, parent, name, null, containerPutHandlers, null);
-			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode);
+			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode, forceCryptoKey);
 		}
 
 		@Override
@@ -139,7 +140,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 		private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, boolean getCHKOnly, HashSet<PutHandler> runningMap) {
 			super(bmp, parent, name, null, runningMap, null);
-			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode);
+			this.origSFI = new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode, forceCryptoKey);
 		}
 
 		@Override
@@ -217,7 +218,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, Bucket data, ClientMetadata cm2, boolean getCHKOnly2) {
 			super(bmp, parent, name, cm2, runningPutHandlers, null);
 			InsertBlock block = new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
-			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly2, true, null, null, false, null, earlyEncode, false, persistent(), 0, 0, null);
+			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly2, true, null, null, false, null, earlyEncode, false, persistent(), 0, 0, null, forceCryptoKey);
 		}
 
 		@Override
@@ -330,11 +331,13 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	// these MPH are usually created on demand, so they are outside (main)constructor →needs db4o update
 	private final class MetaPutHandler extends PutHandler {
 
+		// Metadata is not put with a cryptokey. It is derived from other stuff that is already encrypted with random keys.
+		
 		// final metadata
 		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, InsertBlock insertBlock, boolean getCHKOnly, ObjectContainer container) {
 			super(smp, parent, null, null, null, container);
 			// Treat as splitfile for purposes of determining number of reinserts.
-			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, false, getCHKOnly, false, null, null, true, null, earlyEncode, true, persistent(), 0, 0, null);
+			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, false, getCHKOnly, false, null, null, true, null, earlyEncode, true, persistent(), 0, 0, null, null);
 			if(logMINOR) Logger.minor(this, "Inserting root metadata: "+origSFI);
 		}
 
@@ -345,7 +348,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			metadata = toResolve;
 			// Treat as splitfile for purposes of determining number of reinserts.
 			InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
-			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, toResolve, null, true, null, earlyEncode, true, persistent(), 0, 0, null);
+			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, toResolve, null, true, null, earlyEncode, true, persistent(), 0, 0, null, null);
 			if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+origSFI+" for "+toResolve);
 		}
 
@@ -721,6 +724,9 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			throw new UnsupportedOperationException();
 		}
 
+		/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
+		protected int minSuccessFetchBlocks;
+		
 		@Override
 		public void addBlock(ObjectContainer container) {
 			if(persistent) {
@@ -729,6 +735,10 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			BaseManifestPutter.this.addBlock(container);
 			if(persistent)
 				container.deactivate(BaseManifestPutter.this, 1);
+			synchronized(this) {
+				minSuccessFetchBlocks++;
+			}
+			super.addBlock(container);
 		}
 
 		@Override
@@ -738,6 +748,10 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			BaseManifestPutter.this.addBlocks(num, container);
 			if(persistent)
 				container.deactivate(BaseManifestPutter.this, 1);
+			synchronized(this) {
+				minSuccessFetchBlocks+=num;
+			}
+			super.addBlocks(num, container);
 		}
 
 		@Override
@@ -747,6 +761,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			BaseManifestPutter.this.completedBlock(dontNotify, container, context);
 			if(persistent)
 				container.deactivate(BaseManifestPutter.this, 1);
+			super.completedBlock(dontNotify, container, context);
 		}
 
 		@Override
@@ -756,6 +771,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			BaseManifestPutter.this.failedBlock(container, context);
 			if(persistent)
 				container.deactivate(BaseManifestPutter.this, 1);
+			super.failedBlock(container, context);
 		}
 
 		@Override
@@ -765,6 +781,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			BaseManifestPutter.this.fatallyFailedBlock(container, context);
 			if(persistent)
 				container.deactivate(BaseManifestPutter.this, 1);
+			super.fatallyFailedBlock(container, context);
 		}
 
 		@Override
@@ -774,8 +791,26 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			BaseManifestPutter.this.addMustSucceedBlocks(blocks, container);
 			if(persistent)
 				container.deactivate(BaseManifestPutter.this, 1);
+			synchronized(this) {
+				minSuccessFetchBlocks += blocks;
+			}
+			super.addMustSucceedBlocks(blocks, container);
 		}
-
+		
+		@Override
+		public synchronized void addRedundantBlocks(int blocks, ObjectContainer container) {
+			if(persistent)
+				container.activate(BaseManifestPutter.this, 1);
+			BaseManifestPutter.this.addRedundantBlocks(blocks, container);
+			if(persistent)
+				container.deactivate(BaseManifestPutter.this, 1);
+			super.addRedundantBlocks(blocks, container);
+		}
+		
+		public synchronized int getMinSuccessFetchBlocks() {
+			return minSuccessFetchBlocks;
+		}
+		
 		@Override
 		public void notifyClients(ObjectContainer container, ClientContext context) {
 			if(persistent)
@@ -941,10 +976,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	private boolean hasResolvedBase; // if this is true, the final block is ready for insert
 	private boolean fetchable;
 	private final boolean earlyEncode;
+	final byte[] forceCryptoKey;
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode) {
+			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, ClientContext context) {
 		super(prioClass, clientContext);
 		if(client.persistent())
 			this.targetURI = target.clone();
@@ -954,6 +990,12 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly2;
 		this.earlyEncode = earlyEncode;
+		if(randomiseCryptoKeys) {
+			forceCryptoKey = new byte[32];
+			context.random.nextBytes(forceCryptoKey);
+		} else {
+			forceCryptoKey = null;
+		}
 		runningPutHandlers = new HashSet<PutHandler>();
 		putHandlersWaitingForMetadata = new HashSet<PutHandler>();
 		putHandlersWaitingForFetchable = new HashSet<PutHandler>();
@@ -1478,15 +1520,51 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		fail(new InsertException(InsertException.CANCELLED), container, context);
 	}
 
+	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
+	protected int minSuccessFetchBlocks;
+	
+	public void addBlock(ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks++;
+		}
+		super.addBlock(container);
+	}
+	
+	public void addBlocks(int num, ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks+=num;
+		}
+		super.addBlocks(num, container);
+	}
+	
+	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
+	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
+		synchronized(this) {
+			minSuccessFetchBlocks += blocks;
+		}
+		super.addMustSucceedBlocks(blocks, container);
+	}
+
+	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
+	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
+	 * the requestor must fetch. */
+	public void addRedundantBlocks(int blocks, ObjectContainer container) {
+		super.addMustSucceedBlocks(blocks, container);
+	}
+
 	@Override
 	public void notifyClients(ObjectContainer container, ClientContext context) {
 		if(persistent()) {
 			container.activate(ctx, 1);
 			container.activate(ctx.eventProducer, 1);
 		}
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, minSuccessFetchBlocks, this.blockSetFinalized), container, context);
 	}
 
+	public int getMinSuccessFetchBlocks() {
+		return minSuccessFetchBlocks;
+	}
+	
 	@Override
 	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
 		if(persistent())

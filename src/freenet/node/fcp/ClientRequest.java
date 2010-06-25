@@ -11,6 +11,7 @@ import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.support.Fields;
@@ -131,6 +132,7 @@ public abstract class ClientRequest {
 		if(hash == 0) hash = 1;
 		hashCode = hash;
 		this.uri = uri2;
+		
 		this.identifier = identifier2;
 		if(global)
 			this.verbosity = Integer.MAX_VALUE;

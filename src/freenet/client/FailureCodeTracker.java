@@ -228,4 +228,9 @@ public class FailureCodeTracker {
 		tracker.merge(this);
 		return tracker;
 	}
+
+	public void storeTo(ObjectContainer container) {
+		// Must store to at least depth 2 because of map.
+		container.ext().store(this, 5);
+	}
 }

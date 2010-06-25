@@ -5,6 +5,8 @@ package freenet.client.async;
 
 import java.util.HashMap;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
@@ -27,8 +29,8 @@ public class PlainManifestPutter extends BaseManifestPutter {
 	}
 
 	public PlainManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
-			RequestClient clientContext, boolean earlyEncode) {
-		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode);
+			RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
+		super(clientCallback, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container), context);
 	}
 
 	@Override

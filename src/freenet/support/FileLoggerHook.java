@@ -682,7 +682,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			this(filename,
 				fmt,
 				dfmt,
-				LogLevel.valueOf(threshold),
+				LogLevel.valueOf(threshold.toUpperCase()),
 				assumeWorking,
 				logOverwrite,
 				maxOldLogFilesDiskUsage,
@@ -716,7 +716,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			String fmt,
 			String dfmt,
 			String threshold) throws InvalidThresholdException {
-			this(new PrintStream(os), fmt, dfmt, LogLevel.valueOf(threshold), true);
+			this(new PrintStream(os), fmt, dfmt, LogLevel.valueOf(threshold.toUpperCase()), true);
 			logStream = os;
 		}
 
@@ -785,7 +785,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			boolean assumeWorking,
 			boolean logOverwrite,
 			long maxOldLogFilesDiskUsage, int maxListSize) throws IOException, InvalidThresholdException{
-		this(rotate,baseFilename,fmt,dfmt,LogLevel.valueOf(threshold),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage,maxListSize);
+		this(rotate,baseFilename,fmt,dfmt,LogLevel.valueOf(threshold.toUpperCase()),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage,maxListSize);
 	}
 
 	private FileLoggerHook(String fmt, String dfmt, LogLevel threshold, boolean overwrite, long maxOldLogfilesDiskUsage, int maxListSize) {

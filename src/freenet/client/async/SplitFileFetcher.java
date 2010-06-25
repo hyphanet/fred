@@ -256,7 +256,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					deductBlocksFromSegments = 0;
 			}
 			
-			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, container, context);
+			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), container, context);
 
 			// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
 			// Work around a bug around build 1135.
@@ -274,9 +274,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
 			segmentCount = (splitfileDataBlocks.length / blocksPerSegment) +
 				(splitfileDataBlocks.length % blocksPerSegment == 0 ? 0 : 1);
-			if(segmentCount > 1 && ((blocksPerSegment != 128 /* old limit */) || (checkBlocksPerSegment != HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT))) {
-				System.out.println("Decoding unusual splitfile: Total data blocks "+splitfileDataBlocks.length+" total check blocks "+splitfileCheckBlocks.length+" data blocks per segment "+blocksPerSegment+" check blocks per segment "+checkBlocksPerSegment+" segments "+segmentCount);
-			}
 				
 			// Onion, 128/192.
 			// Will be segmented.
@@ -338,6 +335,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(persistent)
 			container.store(this);
 
+		boolean pre1254 = !(minCompatMode == CompatibilityMode.COMPAT_CURRENT || minCompatMode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
+		
 		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
 		if(segmentCount == 1) {
 			// splitfile* will be overwritten, this is bad
@@ -348,7 +347,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(splitfileCheckBlocks.length > 0)
 				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
 			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks,
-					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, true);
+					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, true, pre1254);
 			for(int i=0;i<newSplitfileDataBlocks.length;i++) {
 				if(logMINOR) Logger.minor(this, "Added data block "+i+" : "+newSplitfileDataBlocks[i].getNodeKey(false));
 				tempListener.addKey(newSplitfileDataBlocks[i].getNodeKey(true), 0, context);
@@ -382,7 +381,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(copyCheckBlocks > 0)
 					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
 				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext,
-						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, i == segments.length-1);
+						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, i == segments.length-1, pre1254);
 				for(int j=0;j<dataBlocks.length;j++)
 					tempListener.addKey(dataBlocks[j].getNodeKey(true), i, context);
 				for(int j=0;j<checkBlocks.length;j++)

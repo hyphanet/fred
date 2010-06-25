@@ -379,6 +379,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							(metadata.topCompressedSize > ctx.maxTempLength)) {
 						// Just in case...
 						if(persistent) removeFrom(container, context);
+						if(metadata.isSimpleRedirect() || metadata.isSplitfile()) clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 						throw new FetchException(FetchException.TOO_BIG, metadata.topSize, true, clientMetadata.getMIMEType());
 					}
 					rcb.onExpectedTopSize(metadata.topSize, metadata.topCompressedSize, metadata.topBlocksRequired, metadata.topBlocksTotal, container, context);
@@ -1156,7 +1157,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
@@ -1164,7 +1165,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.hashes = hashes;
 			if(persistent) container.store(this);
 		}
-		
+
 	}
 
 	class MultiLevelMetadataCallback implements GetCompletionCallback {
@@ -1297,7 +1298,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, ObjectContainer container, ClientContext context) {
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
