@@ -290,7 +290,7 @@ public class ClientGetter extends BaseClientGetter {
 				input.close();
 				output.close();
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
-				result = new FetchResult(new ClientMetadata(detectedMIMEType), finalResult);
+				clientMetadata = new ClientMetadata(detectedMIMEType);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
@@ -310,11 +310,7 @@ public class ClientGetter extends BaseClientGetter {
 			}
 		}
 		else {
-			if(logMINOR) Logger.minor(this, "Ignoring content filter.");
-		}
-
-		if(finalResult.size() == 0) {
-			if(logMINOR) Logger.minor(this, "The final result has not been written. Writing now.");
+			if(logMINOR) Logger.minor(this, "Ignoring content filter. The final result has not been written. Writing now.");
 			try {
 				FileUtil.copy(input, output, -1);
 				input.close();
@@ -342,7 +338,7 @@ public class ClientGetter extends BaseClientGetter {
 				return;
 			}
 		}
-		result = new FetchResult(result, finalResult);
+		result = new FetchResult(clientMetadata, finalResult);
 
 		clientCallback.onSuccess(result, ClientGetter.this, container);
 	}
