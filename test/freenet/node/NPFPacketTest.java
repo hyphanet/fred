@@ -11,9 +11,9 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x00}; // 0 acks
 		NPFPacket r = NPFPacket.create(packet);
 
-		assertTrue(r.getSequenceNumber() == 0);
-		assertTrue(r.getAcks().size() == 0);
-		assertTrue(r.getFragments().size() == 0);
+		assertEquals(r.getSequenceNumber(), 0);
+		assertEquals(r.getAcks().size(), 0);
+		assertEquals(r.getFragments().size(), 0);
 		assertFalse(r.getError());
 	}
 
@@ -57,18 +57,18 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}; //Data
 		NPFPacket r = NPFPacket.create(packet);
 
-		assertTrue(r.getSequenceNumber() == 0);
-		assertTrue(r.getAcks().size() == 0);
-		assertTrue(r.getFragments().size() == 1);
+		assertEquals(r.getSequenceNumber(), 0);
+		assertEquals(r.getAcks().size(), 0);
+		assertEquals(r.getFragments().size(), 1);
 
 		MessageFragment frag = r.getFragments().getFirst();
 		assertTrue(frag.shortMessage);
 		assertFalse(frag.isFragmented);
 		assertTrue(frag.firstFragment);
-		assertTrue(frag.messageID == 0);
-		assertTrue(frag.fragmentLength == 8);
-		assertTrue(frag.fragmentOffset == 0);
-		assertTrue(frag.messageLength == 8);
+		assertEquals(frag.messageID, 0);
+		assertEquals(frag.fragmentLength, 8);
+		assertEquals(frag.fragmentOffset, 0);
+		assertEquals(frag.messageLength, 8);
 		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { (byte)0x01, (byte)0x23, (byte)0x45,
 		                (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF }));
 
@@ -86,19 +86,19 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF }; // Data
 		NPFPacket r = NPFPacket.create(packet);
 
-		assertTrue(r.getSequenceNumber() == 0);
-		assertTrue(r.getAcks().size() == 0);
-		assertTrue(r.getFragments().size() == 2);
+		assertEquals(r.getSequenceNumber(), 0);
+		assertEquals(r.getAcks().size(), 0);
+		assertEquals(r.getFragments().size(), 2);
 
 		// Check first fragment
 		MessageFragment frag = r.getFragments().get(0);
 		assertTrue(frag.shortMessage);
 		assertFalse(frag.isFragmented);
 		assertTrue(frag.firstFragment);
-		assertTrue(frag.messageID == 0);
-		assertTrue(frag.fragmentLength == 8);
-		assertTrue(frag.fragmentOffset == 0);
-		assertTrue(frag.messageLength == 8);
+		assertEquals(frag.messageID, 0);
+		assertEquals(frag.fragmentLength, 8);
+		assertEquals(frag.fragmentOffset, 0);
+		assertEquals(frag.messageLength, 8);
 		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89,
 		                (byte)0xAB, (byte)0xCD, (byte)0xEF }));
 
@@ -107,10 +107,10 @@ public class NPFPacketTest extends TestCase {
 		assertTrue(frag.shortMessage);
 		assertFalse(frag.isFragmented);
 		assertTrue(frag.firstFragment);
-		assertTrue(frag.messageID == 0);
-		assertTrue(frag.fragmentLength == 8);
-		assertTrue(frag.fragmentOffset == 0);
-		assertTrue(frag.messageLength == 8);
+		assertEquals(frag.messageID, 0);
+		assertEquals(frag.fragmentLength, 8);
+		assertEquals(frag.fragmentOffset, 0);
+		assertEquals(frag.messageLength, 8);
 		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89,
 		                (byte)0xAB, (byte)0xCD, (byte)0xEF }));
 
