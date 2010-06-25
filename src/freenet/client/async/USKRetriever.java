@@ -79,7 +79,6 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Success on "+this+" from "+state+" :"+" mime type "+clientMetadata.getMIMEType());
 		DecompressorThreadManager decompressorManager = null;
-		FetchResult result = null;
 		OutputStream output = null;
 		Bucket finalResult = null;
 		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
@@ -105,10 +104,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 				}
 				decompressorManager = new DecompressorThreadManager(input, decompressors, maxLen);
 				input = decompressorManager.execute();
-				FileUtil.copy(input, output, -1);
-				input.close();
-				output.close();
-				result = new FetchResult(result, finalResult);
+
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
@@ -116,11 +112,21 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
-			} finally {
-				Closer.close(input);
-				Closer.close(output);
 			}
 		}
+		try {
+			FileUtil.copy(input, output, -1);
+			input.close();
+			output.close();
+		} catch(IOException e) {
+			Logger.error(this, "Caught "+e, e);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+		} finally {
+			Closer.close(input);
+			Closer.close(output);
+		}
+		FetchResult result = new FetchResult(clientMetadata, finalResult);
+
 		cb.onFound(origUSK, state.getToken(), result);
 		context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 	}
