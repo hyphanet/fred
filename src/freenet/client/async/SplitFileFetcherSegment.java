@@ -1733,40 +1733,23 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public void freeDecodedData(ObjectContainer container) {
-		if(persistent)
-			container.activate(decodedData, 1);
-		decodedData.free();
-		if(persistent)
-			decodedData.removeFrom(container);
-		decodedData = null;
-		if(persistent)
-			container.store(this);
-	}
-
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "removing "+this);
-		if(decodedData != null)
-			freeDecodedData(container);
-		removeSubSegments(container, context, true);
-		container.delete(subSegments);
-		for(int i=0;i<dataKeys.length;i++) {
-			if(dataKeys[i] != null) dataKeys[i].removeFrom(container);
-			dataKeys[i] = null;
-		}
-		for(int i=0;i<checkKeys.length;i++) {
-			if(checkKeys[i] != null) checkKeys[i].removeFrom(container);
-			checkKeys[i] = null;
+		if(decodedData != null) {
+			if(persistent)
+				container.activate(decodedData, 1);
+			decodedData.free();
+			if(persistent)
+				decodedData.removeFrom(container);
+			decodedData = null;
 		}
 		for(int i=0;i<dataBuckets.length;i++) {
 			MinimalSplitfileBlock block = dataBuckets[i];
 			if(block == null) continue;
 			if(block.data != null) {
-				if(crossCheckBlocks == 0)
-					Logger.error(this, "Data block "+i+" still present in removeFrom()! on "+this);
-				// We only free the data blocks at the last minute if cross-segment is enabled.
+				// We only free the data blocks at the last minute.
 				block.data.free();
 			}
 			block.removeFrom(container);
+			dataBuckets[i] = null;
 		}
 		for(int i=0;i<checkBuckets.length;i++) {
 			MinimalSplitfileBlock block = checkBuckets[i];
@@ -1776,6 +1759,24 @@ public class SplitFileFetcherSegment implements FECCallback {
 				block.data.free();
 			}
 			block.removeFrom(container);
+			checkBuckets[i] = null;
+		}
+		if(persistent)
+			container.store(this);
+	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "removing "+this);
+		freeDecodedData(container);
+		removeSubSegments(container, context, true);
+		container.delete(subSegments);
+		for(int i=0;i<dataKeys.length;i++) {
+			if(dataKeys[i] != null) dataKeys[i].removeFrom(container);
+			dataKeys[i] = null;
+		}
+		for(int i=0;i<checkKeys.length;i++) {
+			if(checkKeys[i] != null) checkKeys[i].removeFrom(container);
+			checkKeys[i] = null;
 		}
 		container.activate(errors, 1);
 		errors.removeFrom(container);
