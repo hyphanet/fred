@@ -615,6 +615,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			for(int i=0;i<dataBuckets.length;i++) {
 				if(dataBuckets[i].flag) {
 					// New block. Might allow a cross-segment decode.
+					if(persistent) container.activate(crossSegmentsByBlock[i], 1);
 					crossSegmentsByBlock[i].onFetched(this, i, container, context);
 				}
 			}
