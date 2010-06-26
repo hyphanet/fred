@@ -248,6 +248,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(logMINOR) Logger.minor(this, "Copying data from block "+i);
 				SplitfileBlock status = dataBuckets[i];
 				if(status == null) throw new NullPointerException();
+				boolean blockActive = true;
+				if(persistent) {
+					blockActive = container.ext().isActive(status);
+					if(!blockActive)
+						container.activate(status, Integer.MAX_VALUE);
+				}
 				Bucket data = status.getData();
 				if(data == null) 
 					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
@@ -263,6 +269,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(i != dataBuckets.length-crossCheckBlocks-1 && copied != 32768)
 					Logger.error(this, "Copied only "+copied+" bytes from "+data+" (bucket "+i+")");
 				if(logMINOR) Logger.minor(this, "Copied "+copied+" bytes from bucket "+i);
+				if(!blockActive) container.deactivate(status, 1);
 			}
 			if(logMINOR) Logger.minor(this, "Copied data ("+totalCopied+")");
 			return totalCopied;
