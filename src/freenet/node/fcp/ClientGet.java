@@ -531,7 +531,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				CompatibilityMode compat = (CompatibilityMode)msg;
 				if(compatMessage != null) {
 					if(persistenceType == PERSIST_FOREVER) container.activate(compatMessage, 1);
-					compatMessage.merge(compat.min, compat.max, compat.cryptoKey, compat.dontCompress, compat.bottomLayer);
+					compatMessage.merge(compat.min, compat.max, compat.cryptoKey, compat.dontCompress, compat.definitive);
 					if(persistenceType == PERSIST_FOREVER) container.store(compatMessage);
 				} else {
 					compatMessage = compat;

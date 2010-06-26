@@ -18,26 +18,26 @@ public class CompatibilityMode extends FCPMessage {
 	final boolean global;
 	byte[] cryptoKey;
 	boolean dontCompress;
-	boolean bottomLayer;
+	boolean definitive;
 	
-	CompatibilityMode(String id, boolean global, long min, long max, byte[] cryptoKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway) {
+	CompatibilityMode(String id, boolean global, long min, long max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
 		this.identifier = id;
 		this.global = global;
 		this.min = min;
 		this.max = max;
 		this.cryptoKey = cryptoKey;
 		this.dontCompress = dontCompress;
-		this.bottomLayer = bottomLayer || definitiveAnyway;
+		this.definitive = definitive;
 	}
 	
-	void merge(long min, long max, byte[] cryptoKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway) {
-		if(bottomLayer || definitiveAnyway) bottomLayer = true;
+	void merge(long min, long max, byte[] cryptoKey, boolean dontCompress, boolean definitive) {
+		if(definitive) definitive = true;
 		if(!dontCompress) this.dontCompress = true;
-		if(min > this.min && !bottomLayer) this.min = min;
-		if((!bottomLayer) && max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
-		if(this.cryptoKey == null && !bottomLayer) {
+		if(min > this.min && !definitive) this.min = min;
+		if((!definitive) && max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
+		if(this.cryptoKey == null && !definitive) {
 			this.cryptoKey = cryptoKey;
-		} else if(this.cryptoKey == null && cryptoKey != null && bottomLayer) {
+		} else if(this.cryptoKey == null && cryptoKey != null && definitive) {
 			Logger.error(this, "Setting crypto key after bottom/definitive layer!");
 		} else if(!Arrays.equals(this.cryptoKey, cryptoKey)) {
 			Logger.error(this, "Two different crypto keys!");
@@ -57,7 +57,7 @@ public class CompatibilityMode extends FCPMessage {
 		if(cryptoKey != null)
 			fs.putOverwrite("SplitfileCryptoKey", HexUtil.bytesToHex(cryptoKey));
 		fs.put("DontCompress", dontCompress);
-		fs.put("BottomLayer", bottomLayer);
+		fs.put("Definitive", definitive);
 		return fs;
 	}
 	
