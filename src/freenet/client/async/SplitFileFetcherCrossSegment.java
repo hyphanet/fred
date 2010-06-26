@@ -176,8 +176,9 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				finishedEncoding = true;
 			}
 		}
-		if(bye) removeFrom(container, context);
-		else {
+		if(bye) {
+			if(persistent) removeFrom(container, context);
+		} else {
 			// Try an encode now.
 			decodeOrEncode(null, container, context);
 		}
@@ -230,7 +231,11 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			finishedEncoding = true;
 			bye = shouldRemove;
 		}
-		if(bye) removeFrom(container, context);
+		if(persistent) {
+			if(bye) removeFrom(container, context);
+			else
+				container.store(this);
+		}
 	}
 
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
