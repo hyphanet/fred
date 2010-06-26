@@ -17,16 +17,26 @@ public class CompatibilityMode extends FCPMessage {
 	long max;
 	final boolean global;
 	byte[] cryptoKey;
+	boolean compressed;
+	boolean bottomLayer;
 	
-	CompatibilityMode(String id, boolean global, long min, long max, byte[] cryptoKey) {
+	CompatibilityMode(String id, boolean global, long min, long max, byte[] cryptoKey, boolean compressed, boolean bottomLayer) {
 		this.identifier = id;
 		this.global = global;
 		this.min = min;
 		this.max = max;
 		this.cryptoKey = cryptoKey;
+		this.compressed = compressed;
+		this.bottomLayer = bottomLayer;
 	}
 	
-	void merge(long min, long max, byte[] cryptoKey) {
+	void merge(long min, long max, byte[] cryptoKey, boolean compressed, boolean bottomLayer) {
+		if(this.bottomLayer) {
+			Logger.error(this, "Bottom layer twice in CompatibilityMode");
+			return;
+		}
+		this.bottomLayer = bottomLayer;
+		if(compressed) this.compressed = true;
 		if(min > this.min) this.min = min;
 		if(max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
 		if(this.cryptoKey == null) {
@@ -48,6 +58,8 @@ public class CompatibilityMode extends FCPMessage {
 		fs.put("Global", global);
 		if(cryptoKey != null)
 			fs.putOverwrite("SplitfileCryptoKey", HexUtil.bytesToHex(cryptoKey));
+		fs.put("Compressed", compressed);
+		fs.put("BottomLayer", bottomLayer);
 		return fs;
 	}
 	

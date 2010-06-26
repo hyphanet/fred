@@ -1152,8 +1152,20 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, ObjectContainer container, ClientContext context) {
-			// Ignore
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, ObjectContainer container, ClientContext context) {
+			boolean wasActive = true;
+			boolean cbWasActive = true;
+			if(persistent) {
+				wasActive = container.ext().isActive(SingleFileFetcher.this);
+				container.activate(SingleFileFetcher.this, 1);
+				cbWasActive = container.ext().isActive(rcb);
+				container.activate(rcb, 1);
+			}
+			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, compressed, false, container, context);
+			if(!wasActive)
+				container.deactivate(SingleFileFetcher.this, 1);
+			if(!cbWasActive)
+				container.deactivate(rcb, 1);
 		}
 
 		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
@@ -1262,8 +1274,20 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, ObjectContainer container, ClientContext context) {
-			// Ignore
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, ObjectContainer container, ClientContext context) {
+			boolean wasActive = true;
+			boolean cbWasActive = true;
+			if(persistent) {
+				wasActive = container.ext().isActive(SingleFileFetcher.this);
+				container.activate(SingleFileFetcher.this, 1);
+				cbWasActive = container.ext().isActive(rcb);
+				container.activate(rcb, 1);
+			}
+			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, compressed, false, container, context);
+			if(!wasActive)
+				container.deactivate(SingleFileFetcher.this, 1);
+			if(!cbWasActive)
+				container.deactivate(rcb, 1);
 		}
 
 		public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
