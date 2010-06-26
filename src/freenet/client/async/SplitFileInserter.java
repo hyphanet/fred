@@ -621,12 +621,18 @@ public class SplitFileInserter implements ClientPutState {
 				int total = 0;
 				long data = 0;
 				long compressed = 0;
+				boolean topDontCompress = false;
+				short topCompatibilityMode = 0;
 				if(allowTopBlocks) {
 					boolean wasActive = true;
+					boolean ctxWasActive = true;
 					if(persistent) {
 						wasActive = container.ext().isActive(parent);
 						if(!wasActive)
 							container.activate(parent, 1);
+						ctxWasActive = container.ext().isActive(ctx);
+						if(!ctxWasActive)
+							container.activate(ctx, 1);
 					}
 					req = parent.getMinSuccessFetchBlocks();
 					total = parent.totalBlocks;
@@ -636,7 +642,7 @@ public class SplitFileInserter implements ClientPutState {
 				}
 				if(persistent) container.activate(hashes, Integer.MAX_VALUE);
 				if(persistent) container.activate(compressionCodec, Integer.MAX_VALUE);
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, hashThisLayerOnly, data, compressed, req, total, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata, crossCheckBlocks);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, hashThisLayerOnly, data, compressed, req, total, topDontCompress, topCompatibilityMode, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata, crossCheckBlocks);
 			}
 			haveSentMetadata = true;
 		}

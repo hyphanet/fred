@@ -538,23 +538,32 @@ class SingleFileInserter implements ClientPutState {
 		int total = 0;
 		long data = 0;
 		long compressed = 0;
+		boolean topDontCompress = false;
+		short topCompatibilityMode = 0;
 		if(allowTopBlocks) {
 			boolean wasActive = true;
+			boolean ctxWasActive = true;
 			if(persistent) {
 				wasActive = container.ext().isActive(parent);
 				if(!wasActive)
 					container.activate(parent, 1);
+				ctxWasActive = container.ext().isActive(ctx);
+				if(!ctxWasActive)
+					container.activate(ctx, 1);
 			}
 			req = parent.getMinSuccessFetchBlocks();
 			total = parent.totalBlocks;
 			if(!wasActive) container.deactivate(parent, 1);
+			topDontCompress = ctx.dontCompress;
+			topCompatibilityMode = (short) ctx.getCompatibilityCode();
+			if(!ctxWasActive) container.deactivate(ctx, 1);
 			data = origDataLength;
 			compressed = origCompressedDataLength;
 		}
 		if(archiveType != null)
-			meta = new Metadata(Metadata.ARCHIVE_MANIFEST, archiveType, null, uri, block.clientMetadata, data, compressed, req, total, hashes);
+			meta = new Metadata(Metadata.ARCHIVE_MANIFEST, archiveType, null, uri, block.clientMetadata, data, compressed, req, total, topDontCompress, topCompatibilityMode, hashes);
 		else // redirect
-			meta = new Metadata(Metadata.SIMPLE_REDIRECT, archiveType, null, uri, block.clientMetadata, data, compressed, req, total, hashes);
+			meta = new Metadata(Metadata.SIMPLE_REDIRECT, archiveType, null, uri, block.clientMetadata, data, compressed, req, total, topDontCompress, topCompatibilityMode, hashes);
 		if(targetFilename != null) {
 			HashMap<String, Object> hm = new HashMap<String, Object>();
 			hm.put(targetFilename, meta);

@@ -141,7 +141,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
 			FetchContext newCtx, boolean deleteFetchContext, List<? extends Compressor> decompressors2, ClientMetadata clientMetadata,
-			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container, ClientContext context) throws FetchException, MetadataParseException {
+			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, boolean topDontCompress, short topCompatibilityMode, ObjectContainer container, ClientContext context) throws FetchException, MetadataParseException {
 		this.persistent = parent2.persistent();
 		this.deleteFetchContext = deleteFetchContext;
 		if(logMINOR)
@@ -264,7 +264,17 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					deductBlocksFromSegments = 0;
 			}
 			
-			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), !decompressors.isEmpty(), true, container, context);
+			boolean compressed = !decompressors.isEmpty();
+			if(topCompatibilityMode != 0) {
+				// If we have top compatibility mode, then we can give a definitive answer immediately, with the splitfile key, with dontcompress, etc etc.
+				if(minCompatMode == CompatibilityMode.COMPAT_UNKNOWN ||
+						!(minCompatMode.ordinal() > topCompatibilityMode || maxCompatMode.ordinal() < topCompatibilityMode)) {
+					minCompatMode = maxCompatMode = CompatibilityMode.values()[topCompatibilityMode];
+					compressed = !topDontCompress;
+				} else
+					throw new FetchException(FetchException.INVALID_METADATA, "Top compatibility mode is incompatible with detected compatibility mode");
+			}
+			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), compressed, true, topCompatibilityMode != 0, container, context);
 
 			// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
 			// Work around a bug around build 1135.

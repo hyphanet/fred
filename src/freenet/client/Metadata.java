@@ -28,6 +28,7 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 import freenet.crypt.HashType;
 import freenet.crypt.SHA256;
@@ -171,6 +172,8 @@ public class Metadata implements Cloneable {
 	public final long topCompressedSize;
 	public final int topBlocksRequired;
 	public final int topBlocksTotal;
+	public final boolean topDontCompress;
+	public final short topCompatibilityMode;
 
 	@Override
 	public Object clone() {
@@ -274,11 +277,15 @@ public class Metadata implements Cloneable {
 			topCompressedSize = dis.readLong();
 			topBlocksRequired = dis.readInt();
 			topBlocksTotal = dis.readInt();
+			topDontCompress = dis.readBoolean();
+			topCompatibilityMode = dis.readShort();
 		} else {
 			topSize = 0;
 			topCompressedSize = 0;
 			topBlocksRequired = 0;
 			topBlocksTotal = 0;
+			topDontCompress = false;
+			topCompatibilityMode = (short)InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal();
 		}
 
 		if(documentType == ARCHIVE_MANIFEST) {
@@ -538,6 +545,8 @@ public class Metadata implements Cloneable {
 		topCompressedSize = 0;
 		topBlocksRequired = 0;
 		topBlocksTotal = 0;
+		topDontCompress = false;
+		topCompatibilityMode = 0;
 	}
 
 	/**
@@ -670,6 +679,8 @@ public class Metadata implements Cloneable {
 		topCompressedSize = 0;
 		topBlocksRequired = 0;
 		topBlocksTotal = 0;
+		topDontCompress = false;
+		topCompatibilityMode = 0;
 	}
 
 	/**
@@ -697,6 +708,8 @@ public class Metadata implements Cloneable {
 		topCompressedSize = 0;
 		topBlocksRequired = 0;
 		topBlocksTotal = 0;
+		topDontCompress = false;
+		topCompatibilityMode = 0;
 	}
 
 	/**
@@ -717,10 +730,12 @@ public class Metadata implements Cloneable {
 		topCompressedSize = 0;
 		topBlocksRequired = 0;
 		topBlocksTotal = 0;
+		topDontCompress = false;
+		topCompatibilityMode = 0;
 	}
 
 	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm) {
-		this(docType, archiveType, compressionCodec, uri, cm, 0, 0, 0, 0, null);
+		this(docType, archiveType, compressionCodec, uri, cm, 0, 0, 0, 0, false, (short)0, null);
 	}
 	
 	/**
@@ -729,7 +744,7 @@ public class Metadata implements Cloneable {
 	 * @param uri The URI pointed to.
 	 * @param cm The client metadata, if any.
 	 */
-	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, HashResult[] hashes) {
+	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm, long origDataLength, long origCompressedDataLength, int reqBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, HashResult[] hashes) {
 		hashCode = super.hashCode();
 		if(hashes != null && hashes.length == 0) {
 			throw new IllegalArgumentException();
@@ -757,18 +772,22 @@ public class Metadata implements Cloneable {
 			this.topCompressedSize = origCompressedDataLength;
 			this.topBlocksRequired = reqBlocks;
 			this.topBlocksTotal = totalBlocks;
+			this.topDontCompress = topDontCompress;
+			this.topCompatibilityMode = topCompatibilityMode;
 			parsedVersion = 1;
 		} else {
 			this.topSize = 0;
 			this.topCompressedSize = 0;
 			this.topBlocksRequired = 0;
 			this.topBlocksTotal = 0;
+			this.topDontCompress = false;
+			this.topCompatibilityMode = 0;
 			parsedVersion = 0;
 		}
 	}
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
-			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey, int crossSegmentBlocks) {
+			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey, int crossSegmentBlocks) {
 		hashCode = super.hashCode();
 		this.hashes = hashes;
 		this.hashThisLayerOnly = hashThisLayerOnly;
@@ -803,7 +822,9 @@ public class Metadata implements Cloneable {
 		topCompressedSize = origCompressedDataSize;
 		topBlocksRequired = requiredBlocks;
 		topBlocksTotal = totalBlocks;
-		if(topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0 || hashes != null)
+		this.topDontCompress = topDontCompress;
+		this.topCompatibilityMode = topCompatibilityMode;
+		if(topSize != 0 || topCompressedSize != 0 || topBlocksRequired != 0 || topBlocksTotal != 0 || hashes != null || topCompatibilityMode != 0)
 			parsedVersion = 1;
 		if(deductBlocksFromSegments != 0 || splitfileCryptoKey != null)
 			parsedVersion = 1;
@@ -1130,11 +1151,13 @@ public class Metadata implements Cloneable {
 			}
 		}
 		
-		if(topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0) {
+		if(topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0 || topCompatibilityMode != 0) {
 			dos.writeLong(topSize);
 			dos.writeLong(topCompressedSize);
 			dos.writeInt(topBlocksRequired);
 			dos.writeInt(topBlocksTotal);
+			dos.writeBoolean(topDontCompress);
+			dos.writeShort(topCompatibilityMode);
 		}
 
 		if(documentType == ARCHIVE_MANIFEST) {
@@ -1519,6 +1542,18 @@ public class Metadata implements Cloneable {
 
 	public byte getSplitfileCryptoAlgorithm() {
 		return splitfileSingleCryptoAlgorithm;
+	}
+
+	public CompatibilityMode getTopCompatibilityMode() {
+		return InsertContext.CompatibilityMode.values()[this.topCompatibilityMode];
+	}
+
+	public boolean getTopDontCompress() {
+		return topDontCompress;
+	}
+
+	public short getTopCompatibilityCode() {
+		return topCompatibilityMode;
 	}
 
 }

@@ -87,6 +87,10 @@ public class InsertContext implements Cloneable {
 		return CompatibilityMode.values()[(int)compatibilityMode];
 	}
 	
+	public long getCompatibilityCode() {
+		return compatibilityMode;
+	}
+
 	public void setCompatibilityMode(CompatibilityMode mode) {
 		if(mode == CompatibilityMode.COMPAT_CURRENT)
 			mode = CompatibilityMode.latest();
