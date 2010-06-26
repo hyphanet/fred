@@ -256,6 +256,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					copy = Long.MAX_VALUE;
 				else
 					copy = truncateLength - totalCopied;
+				if(copy > CHKBlock.DATA_LENGTH) copy = CHKBlock.DATA_LENGTH;
 				long copied = BucketTools.copyTo(data, os, copy);
 				totalCopied += copy;
 				if(i != dataBuckets.length-crossCheckBlocks-1 && copied != 32768)
