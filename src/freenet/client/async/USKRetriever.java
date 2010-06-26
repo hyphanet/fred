@@ -109,15 +109,20 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+				return;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				return;
 			}
 		}
 		try {
 			FileUtil.copy(input, output, -1);
 			input.close();
 			output.close();
+			FetchResult result = new FetchResult(clientMetadata, finalResult);
+			cb.onFound(origUSK, state.getToken(), result);
+			context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
@@ -125,10 +130,6 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			Closer.close(input);
 			Closer.close(output);
 		}
-		FetchResult result = new FetchResult(clientMetadata, finalResult);
-
-		cb.onFound(origUSK, state.getToken(), result);
-		context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 	}
 
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {

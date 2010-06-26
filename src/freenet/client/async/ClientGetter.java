@@ -271,9 +271,11 @@ public class ClientGetter extends BaseClientGetter {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+				return;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				return;
 			}
 		}
 
