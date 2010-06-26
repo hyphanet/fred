@@ -266,7 +266,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				container.activate(ctx, 1);
 			}
 			CompatibilityMode cmode = ctx.getCompatibilityMode();
-			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()))
+			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()))
 				randomiseSplitfileKeys = false;
 			if(!ctxActive)
 				container.deactivate(ctx, 1);

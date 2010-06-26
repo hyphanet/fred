@@ -246,7 +246,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
 				}
 			} else {
-				minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1254;
+				minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
 				if(params.length < 10)
 					throw new MetadataParseException("Splitfile parameters too short for version 1");
 				short paramsType = Fields.bytesToShort(params, 0);
@@ -362,7 +362,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(persistent)
 			container.store(this);
 
-		boolean pre1254 = !(minCompatMode == CompatibilityMode.COMPAT_CURRENT || minCompatMode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
+		boolean pre1254 = !(minCompatMode == CompatibilityMode.COMPAT_CURRENT || minCompatMode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 		
 		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
 		if(segmentCount == 1) {

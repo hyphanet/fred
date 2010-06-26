@@ -170,7 +170,7 @@ public class SplitFileInserter implements ClientPutState {
 				segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
 			}
 			segmentSize = segSize;
-			if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) {
+			if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()) {
 				// Even with basic even segment splitting, it is possible for the last segment to be a lot smaller than the rest.
 				// So drop a single data block from each of the last [segmentSize-lastSegmentSize] segments instead.
 				// Hence all the segments are within 1 block of segmentSize.
@@ -184,7 +184,7 @@ public class SplitFileInserter implements ClientPutState {
 		int crossCheckBlocks = 0;
 		
 		// Cross-segment splitfile redundancy becomes useful at 20 segments.
-		if(segs >= 20 && (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal())) {
+		if(segs >= 20 && (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal())) {
 			// The optimal number of cross-check blocks per segment (and per cross-segment since there are the same number of cross-segments as segments) is 3.
 			crossCheckBlocks = 3;
 		}
@@ -206,7 +206,7 @@ public class SplitFileInserter implements ClientPutState {
 		if(splitfileKey != null) {
 			this.splitfileCryptoKey = splitfileKey;
 			specifySplitfileKeyInMetadata = true;
-		} else if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) {
+		} else if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()) {
 			if(hashThisLayerOnly != null) {
 				this.splitfileCryptoKey = Metadata.getCryptoKey(hashThisLayerOnly);
 			} else {
