@@ -77,6 +77,7 @@ public class OldLZMACompressor implements Compressor {
 		os.close();
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count());
+		is.close();
 		return output;
 	}
 
