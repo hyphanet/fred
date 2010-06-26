@@ -733,10 +733,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Bucket data = dataBuckets[i].getData();
 				if(data == null) {
 					Logger.error(this, "Data bucket "+i+" has null contents in onEncodedSegment on "+this+" for block "+dataBuckets[i]);
-					if(!container.ext().isStored(dataBuckets[i]))
-						Logger.error(this, "Splitfile block appears not to be stored");
-					else if(!container.ext().isActive(dataBuckets[i]))
-						Logger.error(this, "Splitfile block appears not to be active");
+					if(persistent) {
+						if(!container.ext().isStored(dataBuckets[i]))
+							Logger.error(this, "Splitfile block appears not to be stored");
+						else if(!container.ext().isActive(dataBuckets[i]))
+							Logger.error(this, "Splitfile block appears not to be active");
+					}
 					continue;
 				}
 				
@@ -780,10 +782,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Bucket data = checkBuckets[i].getData();
 				if(data == null) {
 					Logger.error(this, "Check bucket "+i+" has null contents in onEncodedSegment on "+this+" for block "+checkBuckets[i]);
-					if(!container.ext().isStored(dataBuckets[i]))
-						Logger.error(this, "Splitfile block appears not to be stored");
-					else if(!container.ext().isActive(dataBuckets[i]))
-						Logger.error(this, "Splitfile block appears not to be active");
+					if(persistent) {
+						if(!container.ext().isStored(dataBuckets[i]))
+							Logger.error(this, "Splitfile block appears not to be stored");
+						else if(!container.ext().isActive(dataBuckets[i]))
+							Logger.error(this, "Splitfile block appears not to be active");
+					}
 					continue;
 				}
 				try {
