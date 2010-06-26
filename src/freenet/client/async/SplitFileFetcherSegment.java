@@ -1822,7 +1822,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	public int allocateCrossCheckBlock(SplitFileFetcherCrossSegment seg, Random random) {
 		if(crossCheckBlocksAllocated == crossCheckBlocks) return -1;
-		int x = dataBuckets.length - random.nextInt(crossCheckBlocks);
+		int x = dataBuckets.length - (1 + random.nextInt(crossCheckBlocks));
 		for(int i=0;i<crossCheckBlocks;i++) {
 			x++;
 			if(x == dataBuckets.length) x = dataBuckets.length - crossCheckBlocks;

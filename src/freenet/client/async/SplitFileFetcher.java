@@ -488,7 +488,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			SplitFileFetcherSegment seg = segments[x];
 			int blockNum = seg.allocateCrossCheckBlock(segment, random);
 			if(blockNum >= 0) {
-				segment.addDataBlock(seg, seg.realDataBlocks() + blockNum);
+				segment.addDataBlock(seg, blockNum);
 				return;
 			}
 		}
@@ -498,7 +498,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			SplitFileFetcherSegment seg = segments[x];
 			int blockNum = seg.allocateCrossCheckBlock(segment, random);
 			if(blockNum >= 0) {
-				segment.addDataBlock(seg, seg.realDataBlocks() + blockNum);
+				segment.addDataBlock(seg, blockNum);
 				return;
 			}
 		}

@@ -1783,7 +1783,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	public int allocateCrossCheckBlock(SplitFileInserterCrossSegment seg, Random random) {
 		if(crossCheckBlocksAllocated == crossCheckBlocks) return -1;
-		int x = dataBlocks.length - random.nextInt(crossCheckBlocks);
+		int x = dataBlocks.length - (1 + random.nextInt(crossCheckBlocks));
 		for(int i=0;i<crossCheckBlocks;i++) {
 			x++;
 			if(x == dataBlocks.length) x = dataBlocks.length - crossCheckBlocks;

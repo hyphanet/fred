@@ -308,7 +308,7 @@ public class SplitFileInserter implements ClientPutState {
 			SplitFileInserterSegment seg = segments[x];
 			int blockNum = seg.allocateCrossCheckBlock(segment, random);
 			if(blockNum >= 0) {
-				segment.addDataBlock(seg, seg.realDataBlocks() + blockNum);
+				segment.addDataBlock(seg, blockNum);
 				return;
 			}
 		}
@@ -318,7 +318,7 @@ public class SplitFileInserter implements ClientPutState {
 			SplitFileInserterSegment seg = segments[x];
 			int blockNum = seg.allocateCrossCheckBlock(segment, random);
 			if(blockNum >= 0) {
-				segment.addDataBlock(seg, seg.realDataBlocks() + blockNum);
+				segment.addDataBlock(seg, blockNum);
 				return;
 			}
 		}
