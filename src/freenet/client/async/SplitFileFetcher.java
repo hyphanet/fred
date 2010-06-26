@@ -280,7 +280,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					|| (checkBlocksPerSegment > fetchContext.maxCheckBlocksPerSegment))
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
 			segmentCount = (splitfileDataBlocks.length / (blocksPerSegment + crossCheckBlocks)) +
-				(splitfileDataBlocks.length % blocksPerSegment == 0 ? 0 : 1);
+				(splitfileDataBlocks.length % (blocksPerSegment + crossCheckBlocks) == 0 ? 0 : 1);
 				
 			// Onion, 128/192.
 			// Will be segmented.
