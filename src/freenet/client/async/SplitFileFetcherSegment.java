@@ -747,19 +747,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 					heal = true;
 				if(heal) {
 					queueHeal(data, container, context);
-					if(crossCheckBlocks == 0)
-						dataBuckets[i].data = null; // So that it doesn't remove the data
-				} else {
-					if(crossCheckBlocks == 0)
-						dataBuckets[i].data.free();
-				}
-				if(crossCheckBlocks == 0) {
-					if(persistent)
-						dataBuckets[i].removeFrom(container);
-					dataBuckets[i] = null;
-					if(persistent && dataKeys[i] != null)
-						dataKeys[i].removeFrom(container);
-					dataKeys[i] = null;
 				}
 			}
 			for(int i=0;i<checkBuckets.length;i++) {
@@ -1121,23 +1108,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Logger.error(this, "Failing with "+e+" but already started decode", e);
 				return;
 			}
-			if(crossCheckBlocks == 0) {
-				for(int i=0;i<dataBuckets.length;i++) {
-					MinimalSplitfileBlock b = dataBuckets[i];
-					if(persistent)
-						container.activate(b, 2);
-					if(b != null) {
-						Bucket d = b.getData();
-						if(d != null) d.free();
-					}
-					if(persistent)
-						b.removeFrom(container);
-					dataBuckets[i] = null;
-					if(persistent && dataKeys[i] != null)
-						dataKeys[i].removeFrom(container);
-					dataKeys[i] = null;
-				}
-			}
 			for(int i=0;i<checkBuckets.length;i++) {
 				MinimalSplitfileBlock b = checkBuckets[i];
 				if(persistent)
@@ -1154,6 +1124,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				checkKeys[i] = null;
 			}
 		}
+		encoderFinished(container, context);
 		removeSubSegments(container, context, false);
 		if(persistent) {
 			container.store(this);
