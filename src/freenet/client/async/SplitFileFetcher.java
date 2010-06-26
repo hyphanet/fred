@@ -533,14 +533,13 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(persistent)
 				container.store(this);
 			data = finalStatus(container, context);
+			cb.onSuccess(data, clientMetadata, decompressors, this, container, context);
 		}
-		 catch (FetchException e) {
-				cb.onFailure(e, this, container, context);
-				return;
-		 }
-		cb.onSuccess(data, clientMetadata, decompressors, this, container, context);
-		if(!cbWasActive)
-			container.deactivate(cb, 1);
+		catch (FetchException e) {
+			cb.onFailure(e, this, container, context);
+		} finally {
+			if(!cbWasActive) container.deactivate(cb, 1);
+		}
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException {
