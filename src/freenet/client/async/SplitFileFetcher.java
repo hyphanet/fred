@@ -405,7 +405,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(persistent) {
 					container.store(segments[i]);
 					segments[i].deactivateKeys(container);
-					container.deactivate(segments[i], 1);
 					for(int x=dataBlocksPtr;x<dataBlocksPtr+copyDataBlocks;x++)
 						splitfileDataBlocks[x] = null;
 					for(int x=checkBlocksPtr;x<checkBlocksPtr+copyCheckBlocks;x++)
@@ -448,6 +447,11 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			}
 		} else {
 			crossSegments = null;
+		}
+		
+		if(persistent) {
+			for(SplitFileFetcherSegment seg : segments)
+				container.deactivate(seg, 1);
 		}
 
 		try {
