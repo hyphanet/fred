@@ -575,7 +575,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
 		if(persistent) {
-			container.activate(parentFetcher, 1);
 			container.activate(parent, 1);
 			container.activate(context, 1);
 			container.activate(blockFetchContext, 1);
@@ -648,13 +647,15 @@ public class SplitFileFetcherSegment implements FECCallback {
 				return;
 			}
 		}
-		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob())
+		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob()) {
+			if(persistent) container.activate(parentFetcher, 1);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
+			if(persistent) container.deactivate(parentFetcher, 1);
+		}
 		// Leave active before queueing
 
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			if(persistent) {
-				container.deactivate(parentFetcher, 1);
 				container.deactivate(parent, 1);
 				container.deactivate(context, 1);
 			}
@@ -695,7 +696,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(persistent), this, false, parent.getPriorityClass(), persistent),
 				context.fecQueue, container);
 		if(persistent) {
-			container.deactivate(parentFetcher, 1);
 			container.deactivate(parent, 1);
 			container.deactivate(context, 1);
 		}
