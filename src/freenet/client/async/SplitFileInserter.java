@@ -245,7 +245,7 @@ public class SplitFileInserter implements ClientPutState {
 					segLen--;
 				}
 
-				SplitFileInserterCrossSegment seg = new SplitFileInserterCrossSegment(persistent, segLen, crossCheckBlocks, put, splitfileAlgorithm);
+				SplitFileInserterCrossSegment seg = new SplitFileInserterCrossSegment(persistent, segLen, crossCheckBlocks, put, splitfileAlgorithm, this, i);
 				crossSegments[i] = seg;
 				for(int j=0;j<segLen;j++) {
 					// Allocate random data blocks
@@ -874,6 +874,14 @@ public class SplitFileInserter implements ClientPutState {
 		System.out.println("Parent: "+parent);
 		parent.dump(container);
 		container.deactivate(parent, 1);
+	}
+
+	public void clearCrossSegment(int segNum, SplitFileInserterCrossSegment segment, ObjectContainer container) {
+		synchronized(this) {
+			assert(crossSegments[segNum] == segment);
+			crossSegments[segNum] = null;
+		}
+		if(persistent) container.store(this);
 	}
 
 }
