@@ -400,8 +400,23 @@ public class SplitFileFetcherSegment implements FECCallback {
 //			block = encode(data, blockNo);
 //		}
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this+" data="+dataBuckets.length+" check="+checkBuckets.length);
-		if(parent instanceof ClientGetter)
-			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
+		if(parent instanceof ClientGetter) {
+			try {
+				if(block == null) {
+					byte[] buf = BucketTools.toByteArray(data);
+					assert(buf.length == CHKBlock.DATA_LENGTH); // All new splitfile inserts insert only complete blocks even at the end.
+					block = ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
+				}
+				((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
+			} catch (IOException e) {
+				// block is null only on a cross-decode so there will be enough data for decoding anyway, so don't fail.
+				Logger.error(this, "Unable to re-encode block for binary blob: "+e, e);
+			} catch (CHKEncodeException e) {
+				// block is null only on a cross-decode so there will be enough data for decoding anyway, so don't fail.
+				Logger.error(this, "Unable to re-encode block for binary blob: "+e, e);
+			}
+			
+		}
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		short result = onSuccessInner(data, blockNo, container, context);
 		if(result == (short)-1) return false;
