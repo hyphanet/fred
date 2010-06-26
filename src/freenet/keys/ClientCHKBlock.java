@@ -165,11 +165,13 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @param alreadyCompressedCodec If !dontCompress, and this is >=0, then the
      * data is already compressed, and this is the algorithm.
      * @param compressorDescriptor 
+     * @param cryptoAlgorithm 
+     * @param cryptoKey 
      * @throws CHKEncodeException
      * @throws IOException If there is an error reading from the Bucket.
      * @throws InvalidCompressionCodecException 
      */
-    static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor, boolean pre1254) throws CHKEncodeException, IOException {
+    static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor, boolean pre1254, byte[] cryptoKey, byte cryptoAlgorithm) throws CHKEncodeException, IOException {
         byte[] finalData = null;
         byte[] data;
         short compressionAlgorithm = -1;
@@ -202,12 +204,17 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         	data = finalData;
         }
         // Now make the header
-        byte[] encKey = md256.digest(data);
+        byte[] encKey;
+        if(cryptoKey != null)
+        	encKey = cryptoKey;
+        else
+        	encKey = md256.digest(data);
         md256.reset();
-        return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, Key.ALGO_AES_PCFB_256_SHA256);
+        return innerEncode(data, dataLength, md256, encKey, asMetadata, compressionAlgorithm, cryptoAlgorithm);
     }
     
     public static ClientCHKBlock innerEncode(byte[] data, int dataLength, MessageDigest md256, byte[] encKey, boolean asMetadata, short compressionAlgorithm, byte cryptoAlgorithm) {
+    	if(cryptoAlgorithm == 0) cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
     	if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
     		throw new IllegalArgumentException("Unsupported crypto algorithm "+cryptoAlgorithm);
         byte[] header;
@@ -265,7 +272,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      */
     static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength, String compressorDescriptor, boolean pre1254) throws CHKEncodeException, InvalidCompressionCodecException {
     	try {
-			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor, pre1254);
+			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor, pre1254, null, Key.ALGO_AES_PCFB_256_SHA256);
 		} catch (IOException e) {
 			// Can't happen
 			throw new Error(e);

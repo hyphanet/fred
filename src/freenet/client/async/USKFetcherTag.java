@@ -168,6 +168,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				context.jobRunner.queue(new DBJob() {
 
 					public boolean run(ObjectContainer container, ClientContext context) {
+						container.activate(USKFetcherTag.this, 1);
 						container.activate(callback, 1);
 						callback.onFailure(container, context);
 						container.deactivate(callback, 1);

@@ -11,6 +11,7 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 
 	public final int number;
 	Bucket data;
+	boolean flag;
 	
 	public MinimalSplitfileBlock(int n) {
 		this.number = n;

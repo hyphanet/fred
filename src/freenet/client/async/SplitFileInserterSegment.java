@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import com.db4o.ObjectContainer;
 
@@ -116,18 +117,40 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	
 	private byte cryptoAlgorithm;
 	private final byte[] cryptoKey;
+	
+	// Cross-segment redundancy
+	
+	private final int crossCheckBlocks;
+	
+	// Only used in initial allocation
+	private transient int crossDataBlocksAllocated;
+	private transient int crossCheckBlocksAllocated;
+	
+	private final SplitFileInserterCrossSegment[] crossSegmentsByBlock;
+	
+	/** When this reaches crossCheckBlocks, we can encode the check blocks. */
+	private int encodedCrossCheckBlocks;
 
 	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, BaseClientPutter putter,
-			short splitfileAlgo, int checkBlockCount, Bucket[] origDataBlocks,
+			short splitfileAlgo, int crossCheckBlocks, int checkBlockCount, Bucket[] origDataBlocks,
 			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, byte cryptoAlgorithm, byte[] cryptoKey, ObjectContainer container) {
 		super(persistent);
+		this.crossCheckBlocks = crossCheckBlocks;
+		this.crossSegmentsByBlock = new SplitFileInserterCrossSegment[origDataBlocks.length + crossCheckBlocks];
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
 		this.persistent = persistent;
 		this.errors = new FailureCodeTracker(true);
 		this.blockInsertContext = blockInsertContext;
 		this.splitfileAlgo = splitfileAlgo;
-		this.dataBlocks = origDataBlocks;
+		if(crossCheckBlocks != 0) {
+			// Cross check blocks count as data blocks for most purposes.
+			this.dataBlocks = new Bucket[origDataBlocks.length + crossCheckBlocks];
+			System.arraycopy(origDataBlocks, 0, dataBlocks, 0, origDataBlocks.length);
+			origDataBlocks = dataBlocks;
+		} else {
+			this.dataBlocks = origDataBlocks;
+		}
 		checkBlocks = new Bucket[checkBlockCount];
 		checkURIs = new ClientCHK[checkBlockCount];
 		dataURIs = new ClientCHK[origDataBlocks.length];
@@ -161,6 +184,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		super(persistent);
 		this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
 		this.cryptoKey = null;
+		this.crossCheckBlocks = 0;
+		this.crossSegmentsByBlock = null;
 		this.parent = parent;
 		this.splitfileAlgo = splitfileAlgorithm;
 		this.getCHKOnly = getCHKOnly;
@@ -392,6 +417,16 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
+		if(crossCheckBlocks != 0) {
+			// FIXME
+			// This simplifies matters significantly, but it reduces performance.
+			// We should really have a separate startEncode, and ensure that if we
+			// are scheduled before we have all the cross check blocks we just don't select them.
+			// See onEncodedCrossCheckBlock().
+			if(encodedCrossCheckBlocks != crossCheckBlocks)
+				return;
+			System.out.println("Starting segment "+segNo);
+		}
 		// Always called by parent, so don't activate or deactivate parent.
 		if(persistent) {
 			container.activate(parent, 1);
@@ -779,6 +814,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return checkURIs;
 	}
 
+	/** Note that this includes cross-check blocks. */
 	public ClientCHK[] getDataCHKs() {
 		return dataURIs;
 	}
@@ -1719,6 +1755,77 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	@Override
 	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
 		onEncode(((BlockItem)token).blockNum, (ClientCHK)key, container, context);
+	}
+
+	public int allocateCrossDataBlock(SplitFileInserterCrossSegment seg, Random random) {
+		int size = realDataBlocks();
+		if(crossDataBlocksAllocated == size) return -1;
+		int x = 0;
+		for(int i=0;i<10;i++) {
+			x = random.nextInt(size);
+			if(crossSegmentsByBlock[x] == null) {
+				crossSegmentsByBlock[x] = seg;
+				crossDataBlocksAllocated++;
+				return x;
+			}
+		}
+		for(int i=0;i<size;i++) {
+			x++;
+			if(x == size) x = 0;
+			if(crossSegmentsByBlock[x] == null) {
+				crossSegmentsByBlock[x] = seg;
+				crossDataBlocksAllocated++;
+				return x;
+			}
+		}
+		throw new IllegalStateException("Unable to allocate cross data block even though have not used all slots up???");
+	}
+
+	public int allocateCrossCheckBlock(SplitFileInserterCrossSegment seg, Random random) {
+		if(crossCheckBlocksAllocated == crossCheckBlocks) return -1;
+		int x = dataBlocks.length - (1 + random.nextInt(crossCheckBlocks));
+		for(int i=0;i<crossCheckBlocks;i++) {
+			x++;
+			if(x == dataBlocks.length) x = dataBlocks.length - crossCheckBlocks;
+			if(crossSegmentsByBlock[x] == null) {
+				crossSegmentsByBlock[x] = seg;
+				crossCheckBlocksAllocated++;
+				return x;
+			}
+		}
+		throw new IllegalStateException("Unable to allocate cross check block even though have not used all slots up???");
+	}
+	
+	public final int realDataBlocks() {
+		return dataBlocks.length - crossCheckBlocks;
+	}
+
+	public void onEncodedCrossCheckBlock(int blockNum, Bucket data, ObjectContainer container, ClientContext context) {
+		boolean gotAll = false;
+		synchronized(this) {
+			if(dataBlocks[blockNum] != null) {
+				Logger.error(this, "Cross-check block already encoded??? "+blockNum+" on "+this);
+				data.free();
+				return;
+			}
+			dataBlocks[blockNum] = data;
+			++encodedCrossCheckBlocks;
+			if(encodedCrossCheckBlocks == crossCheckBlocks)
+				gotAll = true;
+			else
+				System.out.println("Segment "+segNo+" has "+encodedCrossCheckBlocks+" encoded of "+crossCheckBlocks+", still waiting...");
+		}
+		if(persistent) {
+			data.storeTo(container);
+			container.store(this);
+		}
+		if(gotAll) {
+			try {
+				start(container, context);
+			} catch (InsertException e) {
+				fail(e, container, context);
+			}
+		}
 	}
 
 }

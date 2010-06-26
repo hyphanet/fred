@@ -70,6 +70,13 @@ public class InsertContext implements Cloneable {
 		CompatibilityMode(String detail) {
 			this.detail = detail;
 		}
+
+		// Inserts should be converted to a specific compatibility mode as soon as possible, to avoid
+		// problems when an insert is restarted on a newer build with a newer default compat mode.
+		public static CompatibilityMode latest() {
+			CompatibilityMode[] values = values();
+			return values[values.length-1];
+		}
 	}
 	
 	/** Backward compatibility support for network level metadata. 
@@ -80,7 +87,13 @@ public class InsertContext implements Cloneable {
 		return CompatibilityMode.values()[(int)compatibilityMode];
 	}
 	
+	public long getCompatibilityCode() {
+		return compatibilityMode;
+	}
+
 	public void setCompatibilityMode(CompatibilityMode mode) {
+		if(mode == CompatibilityMode.COMPAT_CURRENT)
+			mode = CompatibilityMode.latest();
 		this.compatibilityMode = mode.ordinal();
 	}
 
@@ -99,6 +112,8 @@ public class InsertContext implements Cloneable {
 		this.compressorDescriptor = compressorDescriptor;
 		this.extraInsertsSingleBlock = extraInsertsSingleBlock;
 		this.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeaderBlock;
+		if(compatibilityMode == CompatibilityMode.COMPAT_CURRENT)
+			compatibilityMode = CompatibilityMode.latest();
 		this.compatibilityMode = compatibilityMode.ordinal();
 		this.localRequestOnly = localRequestOnly;
 	}
