@@ -1742,7 +1742,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				// We only free the data blocks at the last minute.
 				block.data.free();
 			}
-			block.removeFrom(container);
+			if(persistent) block.removeFrom(container);
 			dataBuckets[i] = null;
 		}
 		for(int i=0;i<checkBuckets.length;i++) {
@@ -1752,7 +1752,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Logger.error(this, "Check block "+i+" still present in removeFrom()! on "+this);
 				block.data.free();
 			}
-			block.removeFrom(container);
+			if(persistent) block.removeFrom(container);
 			checkBuckets[i] = null;
 		}
 		if(persistent)
