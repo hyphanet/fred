@@ -105,8 +105,6 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				decodeCheck[i-dataBlocks] = wrapper;
 		}
 		if(!(needsDecode || needsEncode)) {
-			// This is actually fairly normal...
-			Logger.error(this, "Didn't need to decode cross-segment, all blocks found already on "+this);
 			return;
 		}
 		FECQueue queue = context.fecQueue;
