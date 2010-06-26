@@ -20,27 +20,25 @@ public class CompatibilityMode extends FCPMessage {
 	boolean compressed;
 	boolean bottomLayer;
 	
-	CompatibilityMode(String id, boolean global, long min, long max, byte[] cryptoKey, boolean compressed, boolean bottomLayer) {
+	CompatibilityMode(String id, boolean global, long min, long max, byte[] cryptoKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway) {
 		this.identifier = id;
 		this.global = global;
 		this.min = min;
 		this.max = max;
 		this.cryptoKey = cryptoKey;
 		this.compressed = compressed;
-		this.bottomLayer = bottomLayer;
+		this.bottomLayer = bottomLayer || definitiveAnyway;
 	}
 	
-	void merge(long min, long max, byte[] cryptoKey, boolean compressed, boolean bottomLayer) {
-		if(this.bottomLayer) {
-			Logger.error(this, "Bottom layer twice in CompatibilityMode");
-			return;
-		}
-		this.bottomLayer = bottomLayer;
+	void merge(long min, long max, byte[] cryptoKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway) {
+		if(bottomLayer || definitiveAnyway) bottomLayer = true;
 		if(compressed) this.compressed = true;
-		if(min > this.min) this.min = min;
-		if(max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
-		if(this.cryptoKey == null) {
+		if(min > this.min && !bottomLayer) this.min = min;
+		if((!bottomLayer) && max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
+		if(this.cryptoKey == null && !bottomLayer) {
 			this.cryptoKey = cryptoKey;
+		} else if(this.cryptoKey == null && cryptoKey != null && bottomLayer) {
+			Logger.error(this, "Setting crypto key after bottom/definitive layer!");
 		} else if(!Arrays.equals(this.cryptoKey, cryptoKey)) {
 			Logger.error(this, "Two different crypto keys!");
 			this.cryptoKey = null;
@@ -58,7 +56,7 @@ public class CompatibilityMode extends FCPMessage {
 		fs.put("Global", global);
 		if(cryptoKey != null)
 			fs.putOverwrite("SplitfileCryptoKey", HexUtil.bytesToHex(cryptoKey));
-		fs.put("Compressed", compressed);
+		fs.put("DontCompress", !compressed);
 		fs.put("BottomLayer", bottomLayer);
 		return fs;
 	}
