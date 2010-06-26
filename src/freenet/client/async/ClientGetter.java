@@ -247,11 +247,12 @@ public class ClientGetter extends BaseClientGetter {
 		Bucket finalResult = null;
 		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 		try {
-			if(returnBucket == null) finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
-			else {
-				if(persistent()) container.activate(returnBucket, 5);
-				finalResult = returnBucket;
+			if(persistent()) {
+				container.activate(returnBucket, 5);
+				container.activate(ctx, 1);
 			}
+			if(returnBucket == null) finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
+			else finalResult = returnBucket;
 			output = finalResult.getOutputStream();
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
@@ -262,10 +263,7 @@ public class ClientGetter extends BaseClientGetter {
 		// Decompress
 		if(decompressors != null) {
 			try {
-				if(persistent()) {
-					container.activate(decompressors, 5);
-					container.activate(ctx, 1);
-				}
+				if(persistent()) container.activate(decompressors, 5);
 				if(logMINOR) Logger.minor(this, "Decompressing...");
 				decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
 				input = decompressorManager.execute();
@@ -330,6 +328,8 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(clientCallback, 1);
 		}
 
+		result = new FetchResult(clientMetadata, finalResult);
+
 		if(decompressorManager != null) {
 			if(logMINOR) Logger.minor(this, "Waiting for decompression to finalize");
 			decompressorManager.waitFinished();
@@ -338,7 +338,6 @@ public class ClientGetter extends BaseClientGetter {
 				return;
 			}
 		}
-		result = new FetchResult(clientMetadata, finalResult);
 
 		clientCallback.onSuccess(result, ClientGetter.this, container);
 	}
