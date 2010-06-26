@@ -225,18 +225,46 @@ public class SplitFileFetcherSegment implements FECCallback {
 	/** Decoded length? 
 	 * @param container */
 	public long decodedLength(ObjectContainer container) {
-		if(persistent)
-			container.activate(decodedData, 1);
-		return decodedData.size();
+		if(decodedData != null) {
+			if(persistent)
+				container.activate(decodedData, 1);
+			return decodedData.size();
+		} else
+			return (this.dataBuckets.length - crossCheckBlocks) * CHKBlock.DATA_LENGTH;
 	}
 
 	/** Write the decoded segment's data to an OutputStream */
-	public long writeDecodedDataTo(OutputStream os, long truncateLength) throws IOException {
-		long len = decodedData.size();
-		if((truncateLength >= 0) && (truncateLength < len))
-			len = truncateLength;
-		BucketTools.copyTo(decodedData, os, Math.min(truncateLength, decodedData.size()));
-		return len;
+	public long writeDecodedDataTo(OutputStream os, long truncateLength, ObjectContainer container) throws IOException {
+		if(decodedData != null) {
+			long len = decodedData.size();
+			if((truncateLength >= 0) && (truncateLength < len))
+				len = truncateLength;
+			BucketTools.copyTo(decodedData, os, Math.min(truncateLength, decodedData.size()));
+			return len;
+		} else {
+			long totalCopied = 0;
+			for(int i=0;i<dataBuckets.length-crossCheckBlocks;i++) {
+				if(logMINOR) Logger.minor(this, "Copying data from block "+i);
+				SplitfileBlock status = dataBuckets[i];
+				if(status == null) throw new NullPointerException();
+				Bucket data = status.getData();
+				if(data == null) 
+					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
+				if(persistent) container.activate(data, 1);
+				long copy;
+				if(truncateLength < 0)
+					copy = Long.MAX_VALUE;
+				else
+					copy = truncateLength - totalCopied;
+				long copied = BucketTools.copyTo(data, os, copy);
+				totalCopied += copy;
+				if(i != dataBuckets.length-crossCheckBlocks-1 && copied != 32768)
+					Logger.error(this, "Copied only "+copied+" bytes from "+data+" (bucket "+i+")");
+				if(logMINOR) Logger.minor(this, "Copied "+copied+" bytes from bucket "+i);
+			}
+			if(logMINOR) Logger.minor(this, "Copied data ("+totalCopied+")");
+			return totalCopied;
+		}
 	}
 
 	/** How many blocks have failed due to running out of retries? */
@@ -554,110 +582,71 @@ public class SplitFileFetcherSegment implements FECCallback {
 			codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
 		// Because we use SplitfileBlock, we DON'T have to copy here.
 		// See FECCallback comments for explanation.
-		try {
-			if(persistent) {
-				for(int i=0;i<dataBuckets.length;i++) {
-					// The FECCodec won't set them.
-					// But they should be active.
-					if(dataBlockStatus[i] != dataBuckets[i]) {
-						long theirID = container.ext().getID(dataBlockStatus[i]);
-						long ourID = container.ext().getID(dataBuckets[i]);
-						if(theirID == ourID) {
-							Logger.error(this, "DB4O BUG DETECTED IN DECODED SEGMENT!: our block: "+dataBuckets[i]+" block from decode "+dataBlockStatus[i]+" both have ID "+ourID+" = "+theirID);
-							dataBuckets[i] = (MinimalSplitfileBlock) dataBlockStatus[i];
-						}
-					}
-					if(logMINOR)
-						Logger.minor(this, "Data block "+i+" is "+dataBuckets[i]);
-					if(!container.ext().isStored(dataBuckets[i]))
-						Logger.error(this, "Data block "+i+" is not stored!");
-					else if(!container.ext().isActive(dataBuckets[i]))
-						Logger.error(this, "Data block "+i+" is inactive! : "+dataBuckets[i]);
-					if(dataBuckets[i] == null)
-						Logger.error(this, "Data block "+i+" is null!");
-					else if(dataBuckets[i].data == null)
-						Logger.error(this, "Data block "+i+" has null data!");
-					else
-						dataBuckets[i].data.storeTo(container);
-					container.store(dataBuckets[i]);
-				}
-			}
-			if(crossCheckBlocks != 0) {
-				for(int i=0;i<dataBuckets.length;i++) {
-					if(dataBuckets[i].flag) {
-						// New block. Might allow a cross-segment decode.
-						crossSegmentsByBlock[i].onFetched(this, i, container, context);
+		if(persistent) {
+			for(int i=0;i<dataBuckets.length;i++) {
+				// The FECCodec won't set them.
+				// But they should be active.
+				if(dataBlockStatus[i] != dataBuckets[i]) {
+					long theirID = container.ext().getID(dataBlockStatus[i]);
+					long ourID = container.ext().getID(dataBuckets[i]);
+					if(theirID == ourID) {
+						Logger.error(this, "DB4O BUG DETECTED IN DECODED SEGMENT!: our block: "+dataBuckets[i]+" block from decode "+dataBlockStatus[i]+" both have ID "+ourID+" = "+theirID);
+						dataBuckets[i] = (MinimalSplitfileBlock) dataBlockStatus[i];
 					}
 				}
+				if(logMINOR)
+					Logger.minor(this, "Data block "+i+" is "+dataBuckets[i]);
+				if(!container.ext().isStored(dataBuckets[i]))
+					Logger.error(this, "Data block "+i+" is not stored!");
+				else if(!container.ext().isActive(dataBuckets[i]))
+					Logger.error(this, "Data block "+i+" is inactive! : "+dataBuckets[i]);
+				if(dataBuckets[i] == null)
+					Logger.error(this, "Data block "+i+" is null!");
+				else if(dataBuckets[i].data == null)
+					Logger.error(this, "Data block "+i+" has null data!");
+				else
+					dataBuckets[i].data.storeTo(container);
+				container.store(dataBuckets[i]);
 			}
-			if(isCollectingBinaryBlob()) {
-				for(int i=0;i<dataBuckets.length;i++) {
-					Bucket data = dataBlockStatus[i].getData();
-					if(data == null) 
-						throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
-					try {
-						maybeAddToBinaryBlob(data, i, false, container, context);
-					} catch (FetchException e) {
-						fail(e, container, context, false);
-						return;
-					}
+		}
+		if(crossCheckBlocks != 0) {
+			for(int i=0;i<dataBuckets.length;i++) {
+				if(dataBuckets[i].flag) {
+					// New block. Might allow a cross-segment decode.
+					crossSegmentsByBlock[i].onFetched(this, i, container, context);
 				}
 			}
-			decodedData = context.getBucketFactory(persistent).makeBucket(maxBlockLength * dataBuckets.length);
-			if(logMINOR) Logger.minor(this, "Copying data from "+dataBuckets.length+" data blocks");
-			OutputStream os = decodedData.getOutputStream();
-			long osSize = 0;
-			for(int i=0;i<dataBuckets.length-crossCheckBlocks;i++) {
-				if(logMINOR) Logger.minor(this, "Copying data from block "+i);
-				SplitfileBlock status = dataBuckets[i];
-				if(status == null) throw new NullPointerException();
-				Bucket data = status.getData();
+		}
+		if(isCollectingBinaryBlob()) {
+			for(int i=0;i<dataBuckets.length;i++) {
+				Bucket data = dataBlockStatus[i].getData();
 				if(data == null) 
 					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
-				if(persistent) container.activate(data, 1);
-				long copied = BucketTools.copyTo(data, os, Long.MAX_VALUE);
-				osSize += copied;
-				if(i != dataBuckets.length-crossCheckBlocks-1 && copied != 32768)
-					Logger.error(this, "Copied only "+copied+" bytes from "+data+" (bucket "+i+")");
-				if(logMINOR) Logger.minor(this, "Copied "+copied+" bytes from bucket "+i);
-			}
-			if(logMINOR) Logger.minor(this, "Copied data ("+osSize+")");
-			os.close();
-			// Must set finished BEFORE calling parentFetcher.
-			// Otherwise a race is possible that might result in it not seeing our finishing.
-			finished = true;
-			if(persistent) container.store(this);
-			if(persistent) {
-				boolean fin;
-				synchronized(this) {
-					fin = fetcherFinished;
-				}
-				if(fin) {
-					encoderFinished(container, context);
+				try {
+					maybeAddToBinaryBlob(data, i, false, container, context);
+				} catch (FetchException e) {
+					fail(e, container, context, false);
 					return;
 				}
 			}
-			if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob())
-				parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
-			// Leave active before queueing
-		} catch (IOException e) {
-			Logger.normal(this, "Caught bucket error?: "+e, e);
+		}
+		// Must set finished BEFORE calling parentFetcher.
+		// Otherwise a race is possible that might result in it not seeing our finishing.
+		finished = true;
+		if(persistent) container.store(this);
+		if(persistent) {
 			boolean fin;
 			synchronized(this) {
-				finished = true;
-				failureException = new FetchException(FetchException.BUCKET_ERROR);
 				fin = fetcherFinished;
 			}
-			if(persistent && fin) {
+			if(fin) {
 				encoderFinished(container, context);
 				return;
 			}
-			if(persistent) container.store(this);
-			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
-			if(persistent)
-				encoderFinished(container, context);
-			return;
 		}
+		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob())
+			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
+		// Leave active before queueing
 
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			if(persistent) {

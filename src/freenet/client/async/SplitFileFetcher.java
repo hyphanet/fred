@@ -561,7 +561,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			for(int i=0;i<segments.length;i++) {
 				SplitFileFetcherSegment s = segments[i];
 				long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
-				bytesWritten += s.writeDecodedDataTo(os, max);
+				bytesWritten += s.writeDecodedDataTo(os, max, container);
 				s.freeDecodedData(container);
 			}
 		} catch (IOException e) {
