@@ -13,6 +13,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
+import freenet.client.FECCodec;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -322,6 +323,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				// Create a segment. Give it its keys.
 				int copyDataBlocks = Math.min(splitfileDataBlocks.length - dataBlocksPtr, blocksPerSegment);
 				int copyCheckBlocks = Math.min(splitfileCheckBlocks.length - checkBlocksPtr, checkBlocksPerSegment);
+				if(i == segments.length - 1 && copyDataBlocks < blocksPerSegment) {
+					// Check blocks on last segment could be higher than on previous segments because of the +1 if <128.
+					copyCheckBlocks = splitfileCheckBlocks.length - checkBlocksPtr;
+				}
 				ClientCHK[] dataBlocks = new ClientCHK[copyDataBlocks];
 				ClientCHK[] checkBlocks = new ClientCHK[copyCheckBlocks];
 				if(copyDataBlocks > 0)
