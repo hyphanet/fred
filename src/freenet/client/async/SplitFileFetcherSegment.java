@@ -1727,6 +1727,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public void freeDecodedData(ObjectContainer container) {
+		synchronized(this) {
+			if(!encoderFinished) return;
+		}
 		if(decodedData != null) {
 			if(persistent)
 				container.activate(decodedData, 1);
@@ -1799,15 +1802,18 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 	
 	private void encoderFinished(ObjectContainer container, ClientContext context) {
+		boolean finish = false;
 		synchronized(this) {
 			encoderFinished = true;
-			if(!fetcherFinished) {
-				container.store(this);
-				if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
-				return;
-			}
+			finish = fetcherFinished;
 		}
-		removeFrom(container, context);
+		if(!finish) {
+			freeDecodedData(container);
+			container.store(this);
+			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+		} else {
+			removeFrom(container, context);
+		}
 	}
 	
 	public int allocateCrossDataBlock(SplitFileFetcherCrossSegment seg, Random random) {
