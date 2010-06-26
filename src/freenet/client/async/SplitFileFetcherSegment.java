@@ -122,6 +122,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	// After the fetcher has finished with the segment, *and* we have encoded and started healing inserts,
 	// we can removeFrom(). Note that encodes are queued to the database.
 	private boolean fetcherFinished = false;
+	private boolean fetcherHalfFinished = false;
 	private boolean encoderFinished = false;
 	
 	/** The number of cross-check blocks at the end of the data blocks. These count
@@ -1729,6 +1730,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	public void freeDecodedData(ObjectContainer container) {
 		synchronized(this) {
 			if(!encoderFinished) return;
+			if(!fetcherHalfFinished) return;
 		}
 		if(decodedData != null) {
 			if(persistent)
@@ -1784,6 +1786,17 @@ public class SplitFileFetcherSegment implements FECCallback {
 		container.delete(this);
 	}
 
+	/** Free the data blocks but only if the encoder has finished with them. */
+	public void fetcherHalfFinished(ObjectContainer container) {
+		synchronized(this) {
+			fetcherHalfFinished = true;
+			if(!encoderFinished) return;
+		}
+		freeDecodedData(container);
+		if(persistent) container.store(this);
+		if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+	}
+	
 	public void fetcherFinished(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			fetcherFinished = true;
@@ -1798,21 +1811,23 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 		}
-		removeFrom(container, context);
+		if(persistent) removeFrom(container, context);
 	}
 	
 	private void encoderFinished(ObjectContainer container, ClientContext context) {
 		boolean finish = false;
+		boolean half = false;
 		synchronized(this) {
 			encoderFinished = true;
 			finish = fetcherFinished;
+			half = fetcherHalfFinished;
 		}
-		if(!finish) {
+		if((!finish) && half) {
 			freeDecodedData(container);
-			container.store(this);
+			if(persistent) container.store(this);
 			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
 		} else {
-			removeFrom(container, context);
+			if(persistent) removeFrom(container, context);
 		}
 	}
 	
