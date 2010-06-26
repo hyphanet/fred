@@ -39,7 +39,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		this.maxRunning = maxRunning;
 	}
 
-	public boolean innerQueue(Bucket data, ClientContext context) {
+	public boolean innerQueue(Bucket data, byte[] cryptoKey, byte cryptoAlgorithm, ClientContext context) {
 		SingleBlockInserter sbi;
 		int ctr;
 		synchronized(this) {
@@ -48,7 +48,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			try {
 				sbi = new SingleBlockInserter(this, data, (short)-1,
 							FreenetURI.EMPTY_CHK_URI, ctx, this, false,
-							CHKBlock.DATA_LENGTH, ctr, false, false, false, data, null, context, false, true, 0);
+							CHKBlock.DATA_LENGTH, ctr, false, false, false, data, null, context, false, true, 0, cryptoAlgorithm, cryptoKey);
 			} catch (Throwable e) {
 				Logger.error(this, "Caught trying to insert healing block: "+e, e);
 				return false;
@@ -66,8 +66,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		}
 	}
 
-	public void queue(Bucket data, ClientContext context) {
-		if(!innerQueue(data, context))
+	public void queue(Bucket data, byte[] cryptoKey, byte cryptoAlgorithm, ClientContext context) {
+		if(!innerQueue(data, cryptoKey, cryptoAlgorithm, context))
 			data.free();
 	}
 

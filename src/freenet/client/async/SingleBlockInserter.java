@@ -85,6 +85,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	private boolean freeData;
 	private int completedInserts;
 	final int extraInserts;
+	final byte[] cryptoKey;
+	final byte cryptoAlgorithm;
 	
 	/**
 	 * Create a SingleBlockInserter.
@@ -106,7 +108,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	 * @param persistent
 	 * @param freeData
 	 */
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts) {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
 		super(persistent);
 		assert(persistent == parent.persistent());
 		this.consecutiveRNFs = 0;
@@ -133,6 +135,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.notifyClients(container, context);
 		}
 		this.extraInserts = extraInserts;
+		this.cryptoAlgorithm = cryptoAlgorithm;
+		this.cryptoKey = cryptoKey;
 	}
 
 	protected ClientKeyBlock innerEncode(RandomSource random, ObjectContainer container) throws InsertException {
@@ -144,7 +148,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		CompatibilityMode cmode = ctx.getCompatibilityMode();
 		boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
 		try {
-			return innerEncode(random, uri, sourceData, isMetadata, compressionCodec, sourceLength, ctx.compressorDescriptor, pre1254);
+			return innerEncode(random, uri, sourceData, isMetadata, compressionCodec, sourceLength, ctx.compressorDescriptor, pre1254, cryptoAlgorithm, cryptoKey);
 		} catch (KeyEncodeException e) {
 			Logger.error(SingleBlockInserter.class, "Caught "+e, e);
 			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
@@ -159,10 +163,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			
 	}
 	
-	protected static ClientKeyBlock innerEncode(RandomSource random, FreenetURI uri, Bucket sourceData, boolean isMetadata, short compressionCodec, int sourceLength, String compressorDescriptor, boolean pre1254) throws InsertException, CHKEncodeException, IOException, SSKEncodeException, MalformedURLException, InvalidCompressionCodecException {
+	protected static ClientKeyBlock innerEncode(RandomSource random, FreenetURI uri, Bucket sourceData, boolean isMetadata, short compressionCodec, int sourceLength, String compressorDescriptor, boolean pre1254, byte cryptoAlgorithm, byte[] cryptoKey) throws InsertException, CHKEncodeException, IOException, SSKEncodeException, MalformedURLException, InvalidCompressionCodecException {
 		String uriType = uri.getKeyType();
 		if(uriType.equals("CHK")) {
-			return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, compressorDescriptor, pre1254);
+			return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, compressorDescriptor, pre1254, cryptoKey, cryptoAlgorithm);
 		} else if(uriType.equals("SSK") || uriType.equals("KSK")) {
 			InsertableClientSSK ik = InsertableClientSSK.create(uri);
 			return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, random, compressorDescriptor, pre1254);
@@ -497,7 +501,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			BlockItem block = (BlockItem) req.token;
 			try {
 				try {
-					b = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength, compressorDescriptor, block.pre1254);
+					b = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength, compressorDescriptor, block.pre1254, block.cryptoAlgorithm, block.cryptoKey);
 				} catch (CHKEncodeException e) {
 					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
 				} catch (SSKEncodeException e) {
@@ -682,7 +686,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
 			if(!ctxActive)
 				container.deactivate(ctx, 1);
-			return new BlockItem(this, data, isMetadata, compressionCodec, sourceLength, u, hashCode(), persistent, pre1254);
+			return new BlockItem(this, data, isMetadata, compressionCodec, sourceLength, u, hashCode(), persistent, pre1254, cryptoAlgorithm, cryptoKey);
 		} catch (IOException e) {
 			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 			return null;
@@ -699,6 +703,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	private static class BlockItem implements SendableRequestItem {
 		
+		public byte cryptoAlgorithm;
+		public byte[] cryptoKey;
 		public final boolean pre1254;
 		private final boolean persistent;
 		private final Bucket copyBucket;
@@ -710,7 +716,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		/** STRICTLY for purposes of equals() !!! */
 		private final SingleBlockInserter parent;
 		
-		BlockItem(SingleBlockInserter parent, Bucket bucket, boolean meta, short codec, int srclen, FreenetURI u, int hashCode, boolean persistent, boolean pre1254) throws IOException {
+		BlockItem(SingleBlockInserter parent, Bucket bucket, boolean meta, short codec, int srclen, FreenetURI u, int hashCode, boolean persistent, boolean pre1254, byte cryptoAlgorithm, byte[] cryptoKey) throws IOException {
 			this.parent = parent;
 			this.copyBucket = bucket;
 			this.isMetadata = meta;
@@ -720,6 +726,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			this.hashCode = hashCode;
 			this.persistent = persistent;
 			this.pre1254 = pre1254;
+			this.cryptoAlgorithm = cryptoAlgorithm;
+			this.cryptoKey = cryptoKey;
 		}
 		
 		public void dump() {

@@ -364,7 +364,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(splitfileCheckBlocks.length > 0)
 				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
 			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks,
-					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, true, pre1254, crossCheckBlocks);
+					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, true, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
 			for(int i=0;i<newSplitfileDataBlocks.length;i++) {
 				if(logMINOR) Logger.minor(this, "Added data block "+i+" : "+newSplitfileDataBlocks[i].getNodeKey(false));
 				tempListener.addKey(newSplitfileDataBlocks[i].getNodeKey(true), 0, context);
@@ -402,7 +402,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(copyCheckBlocks > 0)
 					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
 				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext,
-						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, i == segments.length-1, pre1254, crossCheckBlocks);
+						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, i == segments.length-1, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
 				for(int j=0;j<dataBlocks.length;j++)
 					tempListener.addKey(dataBlocks[j].getNodeKey(true), i, context);
 				for(int j=0;j<checkBlocks.length;j++)

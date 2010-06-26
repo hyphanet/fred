@@ -111,6 +111,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private final boolean persistent;
 	final int segNum;
 	final boolean pre1254;
+	final byte[] forceCryptoKey;
+	final byte cryptoAlgorithm;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -140,7 +142,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	private transient FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254, int crossCheckBlocks) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254, int crossCheckBlocks, byte cryptoAlgorithm, byte[] forceCryptoKey) throws MetadataParseException, FetchException {
 		this.crossCheckBlocks = crossCheckBlocks;
 		this.crossSegmentsByBlock = new SplitFileFetcherCrossSegment[splitfileDataKeys.length];
 		this.segNum = segNum;
@@ -182,6 +184,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		for(int i=0;i<checkKeys.length;i++)
 			if(checkKeys[i] == null) throw new NullPointerException("Null: check block "+i);
 		this.pre1254 = pre1254;
+		this.cryptoAlgorithm = cryptoAlgorithm;
+		this.forceCryptoKey = forceCryptoKey;
 	}
 
 	public synchronized boolean isFinished(ObjectContainer container) {
@@ -830,7 +834,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				try {
 					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
 					ClientCHKBlock block =
-						ClientCHKBlock.encode(data, false, true, (short)-1, data.size(), COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, pre1254);
+						ClientCHKBlock.encode(data, false, true, (short)-1, data.size(), COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, pre1254, forceCryptoKey, cryptoAlgorithm);
 					getter.addKeyToBinaryBlob(block, container, context);
 				} catch (CHKEncodeException e) {
 					Logger.error(this, "Failed to encode (collecting binary blob) "+(check?"check":"data")+" block "+i+": "+e, e);
@@ -867,7 +871,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 		}
 		if(logMINOR) Logger.minor(this, "Queueing healing insert for "+data+" on "+this);
-		context.healingQueue.queue(data, context);
+		context.healingQueue.queue(data, forceCryptoKey, cryptoAlgorithm, context);
 	}
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal 

@@ -1508,9 +1508,17 @@ public class Metadata implements Cloneable {
 			return splitfileSingleCryptoKey;
 		return null;
 	}
+	
+	public byte[] getSplitfileCryptoKey() {
+		return splitfileSingleCryptoKey;
+	}
 
 	public byte[] getHashThisLayerOnly() {
 		return hashThisLayerOnly;
+	}
+
+	public byte getSplitfileCryptoAlgorithm() {
+		return splitfileSingleCryptoAlgorithm;
 	}
 
 }
