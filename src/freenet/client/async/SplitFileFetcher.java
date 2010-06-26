@@ -869,6 +869,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			container.activate(segment, 1);
 			segment.fetcherFinished(container, context);
 		}
+		for(int i=0;i<crossSegments.length;i++) {
+			SplitFileFetcherCrossSegment segment = crossSegments[i];
+			crossSegments[i] = null;
+			container.activate(segment, 1);
+			segment.removeFrom(container, context);
+		}
 		container.activate(mainBloomFile, 5);
 		container.activate(altBloomFile, 5);
 		if(mainBloomFile != null && !mainBloomFile.delete() && mainBloomFile.exists())

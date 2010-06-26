@@ -231,6 +231,10 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 		container.store(this);
 	}
 
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.delete(this);
+	}
+
 	
 
 }
