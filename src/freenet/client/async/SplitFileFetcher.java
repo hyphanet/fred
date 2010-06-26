@@ -16,6 +16,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
+import freenet.client.FECCodec;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -384,11 +385,15 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				// Create a segment. Give it its keys.
 				int copyDataBlocks = Math.min(splitfileDataBlocks.length - dataBlocksPtr, blocksPerSegment + crossCheckBlocks);
 				int copyCheckBlocks = Math.min(splitfileCheckBlocks.length - checkBlocksPtr, checkBlocksPerSegment);
+				if(i == segments.length - 1 && copyDataBlocks < (blocksPerSegment + crossCheckBlocks) && deductBlocksFromSegments == 0) {
+					// Last segment is truncated. Recalculate FEC.
+					copyCheckBlocks = FECCodec.getCheckBlocks(splitfileType, copyDataBlocks, minCompatMode);
+				}
 				if(segments.length - i <= deductBlocksFromSegments && i != segments.length-1) {
 					copyDataBlocks--;
 					// Don't change check blocks.
 				}
-				if(deductBlocksFromSegments != 0)
+				//if(deductBlocksFromSegments != 0)
 					System.err.println("REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
 				ClientCHK[] dataBlocks = new ClientCHK[copyDataBlocks];
 				ClientCHK[] checkBlocks = new ClientCHK[copyCheckBlocks];
