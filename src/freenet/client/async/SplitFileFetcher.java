@@ -264,17 +264,17 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					deductBlocksFromSegments = 0;
 			}
 			
-			boolean compressed = !decompressors.isEmpty();
+			boolean dontCompress = decompressors.isEmpty();
 			if(topCompatibilityMode != 0) {
 				// If we have top compatibility mode, then we can give a definitive answer immediately, with the splitfile key, with dontcompress, etc etc.
 				if(minCompatMode == CompatibilityMode.COMPAT_UNKNOWN ||
 						!(minCompatMode.ordinal() > topCompatibilityMode || maxCompatMode.ordinal() < topCompatibilityMode)) {
 					minCompatMode = maxCompatMode = CompatibilityMode.values()[topCompatibilityMode];
-					compressed = !topDontCompress;
+					dontCompress = topDontCompress;
 				} else
 					throw new FetchException(FetchException.INVALID_METADATA, "Top compatibility mode is incompatible with detected compatibility mode");
 			}
-			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), compressed, true, topCompatibilityMode != 0, container, context);
+			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), dontCompress, true, topCompatibilityMode != 0, container, context);
 
 			// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
 			// Work around a bug around build 1135.

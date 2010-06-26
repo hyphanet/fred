@@ -1163,7 +1163,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			boolean cbWasActive = true;
 			if(persistent) {
@@ -1172,7 +1172,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				cbWasActive = container.ext().isActive(rcb);
 				container.activate(rcb, 1);
 			}
-			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, compressed, false, false, container, context);
+			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, false, false, container, context);
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
 			if(!cbWasActive)
@@ -1285,7 +1285,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
+		public void onSplitfileCompatibilityMode(CompatibilityMode min, CompatibilityMode max, byte[] splitfileKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			boolean cbWasActive = true;
 			if(persistent) {
@@ -1294,7 +1294,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				cbWasActive = container.ext().isActive(rcb);
 				container.activate(rcb, 1);
 			}
-			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, compressed, false, definitiveAnyway, container, context);
+			rcb.onSplitfileCompatibilityMode(min, max, splitfileKey, dontCompress, false, definitiveAnyway, container, context);
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
 			if(!cbWasActive)

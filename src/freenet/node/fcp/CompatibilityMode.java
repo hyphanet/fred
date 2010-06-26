@@ -17,22 +17,22 @@ public class CompatibilityMode extends FCPMessage {
 	long max;
 	final boolean global;
 	byte[] cryptoKey;
-	boolean compressed;
+	boolean dontCompress;
 	boolean bottomLayer;
 	
-	CompatibilityMode(String id, boolean global, long min, long max, byte[] cryptoKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway) {
+	CompatibilityMode(String id, boolean global, long min, long max, byte[] cryptoKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway) {
 		this.identifier = id;
 		this.global = global;
 		this.min = min;
 		this.max = max;
 		this.cryptoKey = cryptoKey;
-		this.compressed = compressed;
+		this.dontCompress = dontCompress;
 		this.bottomLayer = bottomLayer || definitiveAnyway;
 	}
 	
-	void merge(long min, long max, byte[] cryptoKey, boolean compressed, boolean bottomLayer, boolean definitiveAnyway) {
+	void merge(long min, long max, byte[] cryptoKey, boolean dontCompress, boolean bottomLayer, boolean definitiveAnyway) {
 		if(bottomLayer || definitiveAnyway) bottomLayer = true;
-		if(compressed) this.compressed = true;
+		if(!dontCompress) this.dontCompress = true;
 		if(min > this.min && !bottomLayer) this.min = min;
 		if((!bottomLayer) && max < this.max || this.max == InsertContext.CompatibilityMode.COMPAT_UNKNOWN.ordinal()) this.max = max;
 		if(this.cryptoKey == null && !bottomLayer) {
@@ -56,7 +56,7 @@ public class CompatibilityMode extends FCPMessage {
 		fs.put("Global", global);
 		if(cryptoKey != null)
 			fs.putOverwrite("SplitfileCryptoKey", HexUtil.bytesToHex(cryptoKey));
-		fs.put("DontCompress", !compressed);
+		fs.put("DontCompress", dontCompress);
 		fs.put("BottomLayer", bottomLayer);
 		return fs;
 	}
