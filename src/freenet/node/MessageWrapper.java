@@ -282,6 +282,7 @@ public class MessageWrapper {
 		}
 
 		//Copy start to end into dest
+		if(item.buf.length - start < 0) return null;
 		int fragmentLength = Math.min((end - start), (maxLength - 9));
 		fragmentLength = Math.min(fragmentLength, item.buf.length - start);
 
