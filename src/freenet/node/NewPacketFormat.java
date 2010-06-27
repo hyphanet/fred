@@ -97,6 +97,10 @@ public class NewPacketFormat implements PacketFormat {
 
 			System.arraycopy(fragment.fragmentData, 0, recvBuffer, fragment.fragmentOffset,
 			                fragment.fragmentLength);
+			if(fragment.fragmentLength == 0) {
+				Logger.warning(this, "Received fragment of length 0");
+				continue;
+			}
 			recvMap.add(fragment.fragmentOffset, fragment.fragmentOffset + fragment.fragmentLength - 1);
 			if(recvMap.contains(0, recvBuffer.length - 1)) {
 				receiveBuffers.remove(fragment.messageID);
