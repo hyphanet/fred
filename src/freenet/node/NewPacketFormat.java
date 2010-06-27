@@ -278,6 +278,12 @@ public class NewPacketFormat implements PacketFormat {
 			while(msgIt.hasNext()) {
 				MessageWrapper wrapper = msgIt.next();
 				int[] range = rangeIt.next();
+
+				if(range[1] - range[0] < 0) {
+					Logger.minor(this, "Would ack negative range");
+					continue;
+				}
+
 				if(wrapper.ack(range[0], range[1])) {
 					synchronized(started) {
 						started.remove(wrapper.getMessageID());
