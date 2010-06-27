@@ -13,7 +13,6 @@ public class MessageWrapper {
 	private final MessageItem item;
 	private final boolean isLongMessage;
 	private final int messageID;
-	private volatile long lastReceivedAck = 0;
 	
 	//Sorted lists of non-overlapping ranges
 	private final SortedSet<int[]> acks = new TreeSet<int[]>(new RangeComparator());
@@ -36,17 +35,6 @@ public class MessageWrapper {
 	 *         index 1
 	 */
 	public int[] getData(byte[] dest, int offset, int length) {
-		if((System.currentTimeMillis() - lastReceivedAck) > 5000) {
-			synchronized(sent) {
-			synchronized(acks) {
-				sent.clear();
-				for(int[] range : acks) {
-					sent.add(range);
-				}
-			}
-			}
-		}
-
 		int start = 0;
 		int end = Integer.MAX_VALUE;
 		
@@ -97,7 +85,6 @@ public class MessageWrapper {
 	 * @param end the last byte to be marked
 	 */
 	public boolean ack(int start, int end) {
-		lastReceivedAck = System.currentTimeMillis();
 		addRangeToSet(start, end, acks);
 		if(acks.size() == 1 && !alreadyAcked) {
 			int[] range = acks.first();
@@ -123,9 +110,16 @@ public class MessageWrapper {
 	 * @param start the first byte to be marked
 	 * @param end the last byte to be marked
 	 */
-	public void lost(int start, int end) {
-		removeRangeFromSet(start, end, sent);
-		removeRangeFromSet(start, end, acks);
+	public void lost() {
+		Logger.minor(this, "Resetting sent ranges for message id " + messageID);
+		synchronized(sent) {
+		synchronized(acks) {
+			sent.clear();
+			for(int[] range : acks) {
+				sent.add(range);
+			}
+		}
+		}
 	}
 
 	public int getMessageID() {
@@ -251,18 +245,6 @@ public class MessageWrapper {
 
 	public MessageFragment getMessageFragment(int maxLength) {
 		if(maxLength <= 9) return null; //Won't fit more than a few bytes in the best case anyway
-
-		if((System.currentTimeMillis() - lastReceivedAck) > 5000) {
-			//TODO: Resend in a more intelligent way
-			synchronized(sent) {
-			synchronized(acks) {
-				sent.clear();
-				for(int[] range : acks) {
-					sent.add(range);
-				}
-			}
-			}
-		}
 
 		int start = 0;
 		int end = Integer.MAX_VALUE;

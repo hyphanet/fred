@@ -68,7 +68,7 @@ public class NewPacketFormat implements PacketFormat {
 		if(packet.getAcks().size() > 0) pn.getThrottle().notifyOfPacketAcknowledged();
 		for(long ack : packet.getAcks()) {
 			synchronized(sentPackets) {
-				SentPacket sent = sentPackets.get(ack);
+				SentPacket sent = sentPackets.remove(ack);
 				if(sent != null) {
 					sent.acked();
 				}
@@ -113,6 +113,15 @@ public class NewPacketFormat implements PacketFormat {
 			synchronized(acks) {
 				acks.add(packet.getSequenceNumber());
                         }
+		}
+
+		synchronized(sentPackets) {
+			if(sentPackets.size() > 100) {
+				for(SentPacket sent : sentPackets.values()) {
+					sent.lost();
+				}
+				sentPackets.clear();
+			}
 		}
 	}
 
@@ -289,6 +298,16 @@ public class NewPacketFormat implements PacketFormat {
 						started.remove(wrapper.getMessageID());
 					}
 				}
+			}
+		}
+
+		public void lost() {
+			Iterator<MessageWrapper> msgIt = messages.iterator();
+			Iterator<int[]> rangeIt = ranges.iterator();
+
+			while(msgIt.hasNext()) {
+				MessageWrapper wrapper = msgIt.next();
+				wrapper.lost();
 			}
 		}
 	}
