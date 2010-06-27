@@ -288,7 +288,7 @@ public class MessageWrapper {
 
 		addRangeToSet(start, start + fragmentLength - 1, sent);
 
-		boolean isFragmented = !((start == 0) && (end >= (item.buf.length - 1)));
+		boolean isFragmented = !((start == 0) && (fragmentLength == item.buf.length - 1));
 		return new MessageFragment(!isLongMessage, isFragmented, start == 0, messageID, fragmentLength,
 		                item.buf.length, start, fragmentData);
         }
