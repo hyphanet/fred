@@ -196,6 +196,8 @@ public class MessageWrapper {
 					return;
 				}
 			}
+
+			set.add(new int[] {start, end});
 		}
 	}
 
