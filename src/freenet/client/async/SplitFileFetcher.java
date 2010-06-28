@@ -393,15 +393,27 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			int checkBlocksPtr = 0;
 			for(int i=0;i<segments.length;i++) {
 				// Create a segment. Give it its keys.
-				int copyDataBlocks = Math.min(splitfileDataBlocks.length - dataBlocksPtr, blocksPerSegment + crossCheckBlocks);
-				int copyCheckBlocks = Math.min(splitfileCheckBlocks.length - checkBlocksPtr, checkBlocksPerSegment);
-				if(i == segments.length - 1 && copyDataBlocks < (blocksPerSegment + crossCheckBlocks) && deductBlocksFromSegments == 0) {
-					// Last segment is truncated. Recalculate FEC.
-					copyCheckBlocks = FECCodec.getCheckBlocks(splitfileType, copyDataBlocks, minCompatMode);
-				}
-				if(segments.length - i <= deductBlocksFromSegments && i != segments.length-1) {
+				int copyDataBlocks = blocksPerSegment + crossCheckBlocks;
+				int copyCheckBlocks = checkBlocksPerSegment;
+				if(i == segments.length - 1) {
+					// Always accept the remainder as the last segment, but do basic sanity checking.
+					// In practice this can be affected by various things: 1) On old splitfiles before full even 
+					// segment splitting with deductBlocksFromSegments (i.e. pre-1255), the last segment could be
+					// significantly smaller than the rest; 2) On 1251-1253, with partial even segment splitting,
+					// up to 131 data blocks per segment, cutting the check blocks if necessary, and with an extra
+					// check block if possible, the last segment could have *more* check blocks than the rest. 
+					copyDataBlocks = splitfileDataBlocks.length - dataBlocksPtr;
+					copyCheckBlocks = splitfileCheckBlocks.length - checkBlocksPtr;
+					if(copyCheckBlocks <= 0 || copyDataBlocks <= 0)
+						throw new FetchException(FetchException.INVALID_METADATA, "Last segment has bogus block count: total data blocks "+splitfileDataBlocks.length+" total check blocks "+splitfileCheckBlocks.length+" segment size "+blocksPerSegment+" data "+checkBlocksPerSegment+" check "+crossCheckBlocks+" cross check blocks, deduct "+deductBlocksFromSegments+", segments "+segments.length);
+					if((copyDataBlocks > fetchContext.maxDataBlocksPerSegment)
+							|| (copyCheckBlocks > fetchContext.maxCheckBlocksPerSegment))
+						throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
+				} else if(segments.length - i <= deductBlocksFromSegments) {
+					// Deduct one data block from each of the last deductBlocksFromSegments segments.
+					// This ensures no segment is more than 1 block larger than any other.
+					// We do not shrink the check blocks.
 					copyDataBlocks--;
-					// Don't change check blocks.
 				}
 				//if(deductBlocksFromSegments != 0)
 					System.err.println("REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
