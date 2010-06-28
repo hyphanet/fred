@@ -55,8 +55,11 @@ public class SplitFileInserter implements ClientPutState {
 	final long dataLength;
 	final COMPRESSOR_TYPE compressionCodec;
 	final short splitfileAlgorithm;
+	/** The number of data blocks in a typical segment. Does not include cross-check blocks. */
 	final int segmentSize;
+	/** The number of check blocks in a typical segment. Does not include cross-check blocks. */
 	final int deductBlocksFromSegments;
+	/** The number of cross-check blocks in any segment, or in any cross-segment. */
 	final int checkSegmentSize;
 	final SplitFileInserterSegment[] segments;
 	final boolean getCHKOnly;

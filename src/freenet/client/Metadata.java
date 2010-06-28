@@ -786,6 +786,51 @@ public class Metadata implements Cloneable {
 		}
 	}
 
+	/**
+	 * Create metadata for a splitfile.
+	 * @param algo The splitfile FEC algorithm.
+	 * @param dataURIs The data URIs, including cross-check blocks for each segment.
+	 * @param checkURIs The check URIs.
+	 * @param segmentSize The number of data blocks in a typical segment. Does not include cross-check blocks.
+	 * @param checkSegmentSize The number of check blocks in a typical segment. Does not include cross-check blocks.
+	 * @param deductBlocksFromSegments If this is set, the last few segments will lose a data block, so that all
+	 * the segments are the same size to within 1 block. In older splitfiles, the last segment could be 
+	 * significantly smaller, and this impacted on retrievability.
+	 * @param cm The client metadata i.e. MIME type. 
+	 * @param dataLength The size of the data that this specific splitfile encodes (as opposed to the final data), 
+	 * after compression if necessary.
+	 * @param archiveType The archive type, if the splitfile is a container.
+	 * @param compressionCodec The compression codec used to compress the data.
+	 * @param decompressedLength The length of this specific splitfile's data after it has been decompressed.
+	 * @param isMetadata If true, the splitfile is multi-level metadata i.e. it encodes a bucket full of metadata.
+	 * This usually happens for really big splitfiles, which can be a pyramid of one block with metadata for a 
+	 * splitfile full of metadata, that metadata then encodes another splitfile full of metadata, etc. Hence we 
+	 * can support very large files.
+	 * @param hashes Various hashes of <b>the final data</b>. There should always be at least an SHA256 hash, 
+	 * unless we are inserting with an old compatibility mode.
+	 * @param hashThisLayerOnly Hash of the data in this layer (before compression). Separate from hashes of the 
+	 * final data. Not currently verified. 
+	 * @param origDataSize The size of the final/original data.
+	 * @param origCompressedDataSize The size of the final/original data after it was compressed.
+	 * @param requiredBlocks The number of blocks required on fetch to reconstruct the final data. Hence as soon
+	 * as we have the top splitfile metadata (i.e. hopefully in the top block), we can show an accurate progress
+	 * bar.
+	 * @param totalBlocks The total number of blocks inserted during the whole insert for the final/original data.
+	 * @param topDontCompress Whether dontCompress was enabled. This allows us to figure out reinsert settings 
+	 * more quickly.
+	 * @param topCompatibilityMode The compatibility mode applying to the insert. This allows us to figure out
+	 * reinsert settings more quickly.
+	 * @param splitfileCryptoAlgorithm The block level crypto algorithm for all the blocks in the splitfile.
+	 * @param splitfileCryptoKey The single encryption key used by all blocks in the splitfile. Older splitfiles
+	 * don't have this so have to specify the full keys; newer splitfiles just specify the 32 byte routing key
+	 * for each data or check key. 
+	 * @param specifySplitfileKey If false, the splitfile crypto key has been automatically computed from the 
+	 * final or this-layer data hash. If true, it has been specified explicitly, either because it is randomly
+	 * generated (this significantly improves security against mobile attacker source tracing and is the default
+	 * for splitfiles under SSKs), or because a file is being reinserted. 
+	 * @param crossSegmentBlocks The number of cross-check blocks. If this is specified, we are using 
+	 * cross-segment redundancy. This greatly improves reliability on files over 80MB, see bug #3370.
+	 */
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, int deductBlocksFromSegments,
 			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata, HashResult[] hashes, byte[] hashThisLayerOnly, long origDataSize, long origCompressedDataSize, int requiredBlocks, int totalBlocks, boolean topDontCompress, short topCompatibilityMode, byte splitfileCryptoAlgorithm, byte[] splitfileCryptoKey, boolean specifySplitfileKey, int crossSegmentBlocks) {
 		hashCode = super.hashCode();
