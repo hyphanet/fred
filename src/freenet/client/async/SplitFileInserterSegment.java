@@ -26,6 +26,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelPutException;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
@@ -1429,7 +1430,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							throw new LowLevelPutException(LowLevelPutException.COLLISION);
 						}
 					else
-						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, false, false);
+						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed for "+e);

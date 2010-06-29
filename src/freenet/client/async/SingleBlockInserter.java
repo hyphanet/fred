@@ -30,6 +30,7 @@ import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKEncodeException;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelPutException;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
@@ -550,7 +551,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						throw new LowLevelPutException(LowLevelPutException.COLLISION);
 					}
 				else
-					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, false, false);
+					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT);
 			} catch (LowLevelPutException e) {
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
