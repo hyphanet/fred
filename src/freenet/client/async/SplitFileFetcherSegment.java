@@ -1799,6 +1799,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	public void fetcherFinished(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			fetcherFinished = true;
+			fetcherHalfFinished = true;
 			if(!encoderFinished) {
 				if(!startedDecode) {
 					encoderFinished = true;
