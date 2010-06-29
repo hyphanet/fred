@@ -892,7 +892,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	public void fail(InsertException e, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Failing but already finished on "+this);
+				Logger.error(this, "Failing but already finished on "+this, new Exception("error"));
 				return;
 			}
 			finished = true;
