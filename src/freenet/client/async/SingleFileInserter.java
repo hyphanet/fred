@@ -253,6 +253,7 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent) container.store(block);
 		} else {
 			data = block.getData();
+			bestCompressedDataSize = origSize;
 		}
 
 		int blockSize;
@@ -282,7 +283,7 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(ctx, 1);
 				container.activate(ctx.eventProducer, 1);
 			}
-			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.metadataID, origSize, data.size()), container, context);
+			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.metadataID, origSize, bestCompressedDataSize), container, context);
 			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this+" data = "+data);
 		}
 		
