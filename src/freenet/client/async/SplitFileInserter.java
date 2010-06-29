@@ -468,7 +468,7 @@ public class SplitFileInserter implements ClientPutState {
 				segs.add(s);
 				
 				if(deductBlocksFromSegments != 0)
-					System.err.println("INSERTING: Segment "+segNo+" of "+segCount+" : "+data+" data blocks "+check+" check blocks");
+					if(logMINOR) Logger.minor(this, "INSERTING: Segment "+segNo+" of "+segCount+" : "+data+" data blocks "+check+" check blocks");
 
 				segNo++;
 				if(i == dataBlocks) break;
