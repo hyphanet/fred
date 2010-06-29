@@ -215,7 +215,10 @@ public class SplitFileInserter implements ClientPutState {
 			} else {
 				if(persistent) {
 					// array elements are treated as part of the parent object, but the hashes themselves may not be activated?
-					for(HashResult res : hashes) container.activate(res, Integer.MAX_VALUE);
+					for(HashResult res : hashes) {
+						if(res == null) throw new NullPointerException();
+						container.activate(res, Integer.MAX_VALUE);
+					}
 				}
 				this.splitfileCryptoKey = Metadata.getCryptoKey(hashes);
 			}
@@ -644,8 +647,12 @@ public class SplitFileInserter implements ClientPutState {
 					compressed = topCompressedSize;
 				}
 				if(persistent) container.activate(hashes, Integer.MAX_VALUE);
+				HashResult[] h;
+				if(persistent) h = HashResult.copy(hashes);
+				else h = hashes;
 				if(persistent) container.activate(compressionCodec, Integer.MAX_VALUE);
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, hashThisLayerOnly, data, compressed, req, total, topDontCompress, topCompatibilityMode, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata, crossCheckBlocks);
+				if(persistent) container.activate(archiveType, Integer.MAX_VALUE);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, h, hashThisLayerOnly, data, compressed, req, total, topDontCompress, topCompatibilityMode, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata, crossCheckBlocks);
 			}
 			haveSentMetadata = true;
 		}
@@ -848,6 +855,11 @@ public class SplitFileInserter implements ClientPutState {
 		for(SplitFileInserterSegment segment : segments) {
 			container.activate(segment, 1);
 			segment.removeFrom(container, context);
+		}
+		if(hashes != null) {
+			for(HashResult res : hashes) {
+				res.removeFrom(container);
+			}
 		}
 		container.delete(this);
 	}

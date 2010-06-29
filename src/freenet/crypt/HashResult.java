@@ -20,6 +20,13 @@ public class HashResult implements Comparable {
 		assert(bs.length == type.hashLength);
 	}
 
+	public HashResult(HashResult res) {
+		this.type = res.type.canonicalType();
+		// FIXME should we copy the byte[] ???
+		// Not necessary for copying for db4o anyway.
+		this.result = res.result;
+	}
+
 	public static HashResult[] readHashes(DataInputStream dis) throws IOException {
 		int bitmask = dis.readInt();
 		int count = 0;
@@ -118,6 +125,19 @@ public class HashResult implements Comparable {
 			if(res.type == type || type.name().equals(res.type.name()))
 				return res.result;
 		return null;
+	}
+
+	public static HashResult[] copy(HashResult[] hashes) {
+		if(hashes == null) return null;
+		HashResult[] out = new HashResult[hashes.length];
+		for(int i=0;i<hashes.length;i++) {
+			out[i] = hashes[i].clone();
+		}
+		return out;
+	}
+	
+	public HashResult clone() {
+		return new HashResult(this);
 	}
 
 }

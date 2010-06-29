@@ -320,6 +320,7 @@ class SingleFileInserter implements ClientPutState {
 					block.nullData();
 					block.removeFrom(container);
 					block = null;
+					// Deleting origHashes is fine, we are done with them.
 					removeFrom(container, context);
 				}
 				return;
@@ -341,6 +342,10 @@ class SingleFileInserter implements ClientPutState {
 				dataPutter.schedule(container, context);
 				if(!isUSK)
 					cb.onBlockSetFinished(this, container, context);
+				synchronized(this) {
+					// Don't delete them because they are being passed on.
+					origHashes = null;
+				}
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token, persistent);
@@ -374,6 +379,7 @@ class SingleFileInserter implements ClientPutState {
 				metaPutter.schedule(container, context);
 				if(!isUSK)
 					cb.onBlockSetFinished(this, container, context);
+				// Deleting origHashes is fine, we are done with them.
 			}
 			started = true;
 			if(persistent) {
@@ -404,6 +410,10 @@ class SingleFileInserter implements ClientPutState {
 			}
 			block.nullData();
 			block.nullMetadata();
+			synchronized(this) {
+				// Don't delete them because they are being passed on.
+				origHashes = null;
+			}
 			if(persistent) removeFrom(container, context);
 		} else {
 			if(persistent)
@@ -428,6 +438,7 @@ class SingleFileInserter implements ClientPutState {
 			started = true;
 			if(persistent)
 				container.store(this);
+			// SplitHandler will need this.origHashes.
 		}
 		if(persistent) {
 			if(!parentWasActive)
