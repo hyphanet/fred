@@ -1392,8 +1392,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				// Ignore keyNum, key, since we're only sending one block.
 			final int num;
 			final ClientCHK key;
+			BlockItem block = (BlockItem) req.token;
 				try {
-					BlockItem block = (BlockItem) req.token;
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number "+block.blockNum);
 					ClientCHKBlock b;
 					try {
@@ -1442,9 +1442,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				if(req.localRequestOnly) {
 					// Must run on-thread or we will have exploding threads.
 					// Plus must run before onInsertSuccess().
-					seg.onEncode(num, key, null, context);
+					if(!block.persistent)
+						seg.onEncode(num, key, null, context);
 					req.onInsertSuccess(context);
-				} else {
+				} else if(!block.persistent) {
 					// Must run after onEncode.
 					context.mainExecutor.execute(new Runnable() {
 
@@ -1453,6 +1454,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						}
 
 					}, "Succeeded");
+				} else {
+					req.onInsertSuccess(context);
 				}
 				return true;
 			}
