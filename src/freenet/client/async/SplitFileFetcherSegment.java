@@ -44,6 +44,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.MultiReaderBucket;
 
 /**
  * A single segment within a SplitFileFetcher.
@@ -756,7 +757,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(dataRetries[i] > 0)
 					heal = true;
 				if(heal) {
-					queueHeal(data, container, context);
+					Bucket wrapper = queueHeal(data, container, context);
+					if(wrapper != data) {
+						assert(!persistent);
+						dataBuckets[i].setData(wrapper);
+					}
 				}
 			}
 			for(int i=0;i<checkBuckets.length;i++) {
@@ -797,6 +802,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(checkRetries[i] > 0)
 					heal = true;
 				if(heal) {
+					Bucket wrapper = queueHeal(data, container, context);
+					if(wrapper != data) {
+						assert(!persistent);
+						wrapper.free();
+					}
+
 					queueHeal(data, container, context);
 					checkBuckets[i].data = null;
 				} else {
@@ -854,16 +865,17 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	/**
-	 * Queue the data for a healing insert. The data will be freed when it the healing insert completes,
-	 * or immediately if a healing insert isn't queued. If we are persistent, copies the data.
-	 * @param data
-	 * @param container
-	 * @param context
+	 * Queue the data for a healing insert. If the data is persistent, we copy it; the caller must free the 
+	 * original data when it is finished with it, the healing queue will free the copied data. If the data is 
+	 * not persistent, we create a MultiReaderBucket wrapper, so that the data will be freed when both the caller
+	 * and the healing queue are finished with it; the caller must accept the returned bucket, and free it when it
+	 * is finished with it. 
 	 */
-	private void queueHeal(Bucket data, ObjectContainer container, ClientContext context) {
+	private Bucket queueHeal(Bucket data, ObjectContainer container, ClientContext context) {
+		Bucket copy;
 		if(persistent) {
 			try {
-				Bucket copy = context.tempBucketFactory.makeBucket(data.size());
+				copy = context.tempBucketFactory.makeBucket(data.size());
 				BucketTools.copy(data, copy);
 				data.free();
 				if(persistent)
@@ -871,14 +883,16 @@ public class SplitFileFetcherSegment implements FECCallback {
 				data = copy;
 			} catch (IOException e) {
 				Logger.normal(this, "Failed to copy data for healing: "+e, e);
-				data.free();
-				if(persistent)
-					data.removeFrom(container);
-				return;
+				return data;
 			}
+		} else {
+			MultiReaderBucket wrapper = new MultiReaderBucket(data);
+			copy = wrapper.getReaderBucket();
+			data = wrapper.getReaderBucket();
 		}
 		if(logMINOR) Logger.minor(this, "Queueing healing insert for "+data+" on "+this);
-		context.healingQueue.queue(data, forceCryptoKey, cryptoAlgorithm, context);
+		context.healingQueue.queue(copy, forceCryptoKey, cryptoAlgorithm, context);
+		return data;
 	}
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal 
