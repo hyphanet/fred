@@ -283,7 +283,8 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(ctx, 1);
 				container.activate(ctx.eventProducer, 1);
 			}
-			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.metadataID, origSize, bestCompressedDataSize), container, context);
+			short codecID = bestCodec == null ? -1 : bestCodec.metadataID;
+			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(codecID, origSize, bestCompressedDataSize), container, context);
 			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this+" data = "+data);
 		}
 		
