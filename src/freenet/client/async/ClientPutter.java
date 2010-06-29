@@ -261,8 +261,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(randomiseSplitfileKeys) {
 			boolean ctxActive = true;
 			if(persistent) {
-				ctxActive = container.ext().isActive(ctx);
-				container.activate(ctx, 1);
+				ctxActive = container.ext().isActive(ctx) || !container.ext().isStored(ctx);
+				if(ctxActive) container.activate(ctx, 1);
 			}
 			CompatibilityMode cmode = ctx.getCompatibilityMode();
 			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()))
