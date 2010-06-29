@@ -1388,8 +1388,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			compressorDescriptor = compressorDescriptor2;
 			this.seg = seg;
 		}
-		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
+		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, final ChosenBlock req) {
 				// Ignore keyNum, key, since we're only sending one block.
+			final int num;
+			final ClientCHK key;
 				try {
 					BlockItem block = (BlockItem) req.token;
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number "+block.blockNum);
@@ -1409,11 +1411,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						Logger.error(this, "Asked to send empty block", new Exception("error"));
 						return false;
 					}
-					final ClientCHK key = b.getClientKey();
-					final int num = block.blockNum;
+					key = b.getClientKey();
+					num = block.blockNum;
 					if(block.persistent) {
 						req.setGeneratedKey(key);
-					} else {
+					} else if(!req.localRequestOnly) {
 						context.mainExecutor.execute(new Runnable() {
 
 							public void run() {
@@ -1437,7 +1439,21 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					return true;
 				}
 				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded");
-				req.onInsertSuccess(context);
+				if(req.localRequestOnly) {
+					// Must run on-thread or we will have exploding threads.
+					// Plus must run before onInsertSuccess().
+					seg.onEncode(num, key, null, context);
+					req.onInsertSuccess(context);
+				} else {
+					// Must run after onEncode.
+					context.mainExecutor.execute(new Runnable() {
+
+						public void run() {
+							req.onInsertSuccess(context);
+						}
+
+					}, "Succeeded");
+				}
 				return true;
 			}
 
