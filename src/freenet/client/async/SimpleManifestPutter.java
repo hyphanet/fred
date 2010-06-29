@@ -624,6 +624,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			for (int i = 0; i < running.length; i++) {
 				if(logMINOR) Logger.minor(this, "Starting "+running[i]);
 				running[i].start(container, context);
+				synchronized(this) {
+					// It might have failed to start.
+					if(finished) return;
+				}
 				if(persistent && !container.ext().isActive(this))
 					container.activate(this, 1);
 				if (logMINOR)
