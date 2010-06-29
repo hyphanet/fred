@@ -332,6 +332,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			} else {
 				// Resolve now to speed up the insert.
 				try {
+					if(persistent)
+						container.activate(m, Integer.MAX_VALUE);
 					byte[] buf = m.writeToByteArray();
 					if(buf.length > Metadata.MAX_SIZE_IN_MANIFEST)
 						throw new MetadataUnresolvedException(new Metadata[] { m }, "Too big");
