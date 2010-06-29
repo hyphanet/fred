@@ -225,9 +225,11 @@ public class ClientGetter extends BaseClientGetter {
 				Closer.close(is);
 			}
 		}
+		String mimeType;
 		synchronized(this) {
 			finished = true;
 			currentState = null;
+			mimeType = expectedMIME = result.getMimeType();
 		}
 		if(persistent()) {
 			container.store(this);
@@ -245,7 +247,7 @@ public class ClientGetter extends BaseClientGetter {
 			InputStream input = null;
 			OutputStream output = null;
 			try {
-				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
+				if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
 				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 				assert(result.asBucket() != returnBucket);
 				
