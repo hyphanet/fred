@@ -10,10 +10,12 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 public class OggFilter implements ContentDataFilter{
 	static final byte[] magicNumber = new byte[] {0x4f, 0x67, 0x67, 0x53};
+	HashMap<Integer, OggBitstreamFilter> streamFilters = new HashMap<Integer, OggBitstreamFilter>();
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
@@ -27,8 +29,17 @@ public class OggFilter implements ContentDataFilter{
 				if(in.readByte() != magicNumber[3]) continue;
 
 				OggPage page = new OggPage(in);
-				if(page.headerValid()) {
+				OggBitstreamFilter filter = null;
+				if(streamFilters.containsKey(page.getSerial())) {
+					filter = streamFilters.get(page.getSerial());
+				} else {
+					filter = OggBitstreamFilter.getBitstreamFilter(page);
+					streamFilters.put(page.getSerial(), filter);
+				}
+				if(filter == null) continue;
+				if(page.headerValid() && filter.isValid(page)) {
 					output.write(magicNumber);
+					filter.parse(page);
 					page.write(output);
 				}
 			} catch(EOFException e) {
@@ -92,6 +103,20 @@ class OggPage {
 		out.write(segments);
 		out.write(segmentTable);
 		out.write(payload);
+	}
+
+	int getSerial() {
+		ByteBuffer bb = ByteBuffer.wrap(bitStreamSerial);
+		return bb.getInt();
+	}
+
+	int getPageNumber() {
+		ByteBuffer bb = ByteBuffer.wrap(pageSequenceNumber);
+		return bb.getInt();
+	}
+
+	byte[] getPayload() {
+		return payload;
 	}
 
 	static private int byteToUnsigned(byte input) {
