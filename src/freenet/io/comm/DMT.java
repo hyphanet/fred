@@ -131,6 +131,8 @@ public class DMT {
 	public static final String NODE_IDENTITY = "nodeIdentity";
 	public static final String UPTIME_PERCENT_48H = "uptimePercent48H";
 	public static final String ENABLE_INSERT_FORK_WHEN_CACHEABLE = "enableInsertForkWhenCacheable";
+	public static final String PREFER_INSERT = "preferInsert";
+	public static final String IGNORE_LOW_BACKOFF = "ignoreLowBackoff";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=0;
@@ -1552,5 +1554,27 @@ public class DMT {
 		Message msg = new Message(FNPSubInsertForkControl);
 		msg.set(ENABLE_INSERT_FORK_WHEN_CACHEABLE, enableInsertForkWhenCacheable);
 		return msg;
+	}
+	
+	public static final MessageType FNPSubInsertPreferInsert = new MessageType("FNPSubInsertPreferInsert", PRIORITY_HIGH) {{
+		addField(PREFER_INSERT, Boolean.class);
+	}};
+	
+	public static final Message createFNPSubInsertPreferInsert(boolean preferInsert) {
+		Message msg = new Message(FNPSubInsertPreferInsert);
+		msg.set(PREFER_INSERT, preferInsert);
+		return msg;
+		
+	}
+	
+	public static final MessageType FNPSubInsertIgnoreLowBackoff = new MessageType("FNPSubInsertIgnoreLowBackoff", PRIORITY_HIGH) {{
+		addField(IGNORE_LOW_BACKOFF, Boolean.class);
+	}};
+	
+	public static final Message createFNPSubInsertIgnoreLowBackoff(boolean ignoreLowBackoff) {
+		Message msg = new Message(FNPSubInsertIgnoreLowBackoff);
+		msg.set(IGNORE_LOW_BACKOFF, ignoreLowBackoff);
+		return msg;
+		
 	}
 }

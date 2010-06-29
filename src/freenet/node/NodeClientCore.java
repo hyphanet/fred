@@ -1184,16 +1184,16 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * @param canWriteClientCache
 	 * @throws LowLevelPutException
 	 */
-	public void realPut(KeyBlock block, boolean canWriteClientCache, boolean forkOnCacheable) throws LowLevelPutException {
+	public void realPut(KeyBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) throws LowLevelPutException {
 		if(block instanceof CHKBlock)
-			realPutCHK((CHKBlock) block, canWriteClientCache, forkOnCacheable);
+			realPutCHK((CHKBlock) block, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 		else if(block instanceof SSKBlock)
-			realPutSSK((SSKBlock) block, canWriteClientCache, forkOnCacheable);
+			realPutSSK((SSKBlock) block, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 		else
 			throw new IllegalArgumentException("Unknown put type " + block.getClass());
 	}
 
-	public void realPutCHK(CHKBlock block, boolean canWriteClientCache, boolean forkOnCacheable) throws LowLevelPutException {
+	public void realPutCHK(CHKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) throws LowLevelPutException {
 		byte[] data = block.getData();
 		byte[] headers = block.getHeaders();
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
@@ -1207,7 +1207,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			long startTime = System.currentTimeMillis();
 			is = node.makeInsertSender(block.getKey(),
-				node.maxHTL(), uid, null, headers, prb, false, canWriteClientCache, forkOnCacheable);
+				node.maxHTL(), uid, null, headers, prb, false, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 			boolean hasReceivedRejectedOverload = false;
 			// Wait for status
 			while(true) {
@@ -1315,7 +1315,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
-	public void realPutSSK(SSKBlock block, boolean canWriteClientCache, boolean forkOnCacheable) throws LowLevelPutException {
+	public void realPutSSK(SSKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) throws LowLevelPutException {
 		SSKInsertSender is;
 		long uid = random.nextLong();
 		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL);
@@ -1330,7 +1330,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			if(altBlock != null && !altBlock.equals(block))
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			is = node.makeInsertSender(block,
-				node.maxHTL(), uid, null, false, canWriteClientCache, false, forkOnCacheable);
+				node.maxHTL(), uid, null, false, canWriteClientCache, false, forkOnCacheable, preferInsert, ignoreLowBackoff);
 			boolean hasReceivedRejectedOverload = false;
 			// Wait for status
 			while(true) {

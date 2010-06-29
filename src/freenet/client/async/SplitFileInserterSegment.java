@@ -1429,7 +1429,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							throw new LowLevelPutException(LowLevelPutException.COLLISION);
 						}
 					else
-						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
+						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, false, false);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed for "+e);

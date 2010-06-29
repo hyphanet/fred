@@ -132,7 +132,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             Logger.minor(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
             // Insert it.
 			try {
-				randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE);
+				randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false);
 				Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 				Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
 			} catch (freenet.node.LowLevelPutException putEx) {

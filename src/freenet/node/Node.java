@@ -721,6 +721,12 @@ public class Node implements TimeSkewDetectorCallback {
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)18;
 	private short maxHTL;
+	/** Should inserts ignore low backoff times by default? */
+	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
+	/** Definition of "low backoff times" for above. */
+	public static int LOW_BACKOFF = 30*1000;
+	/** Should inserts be fairly blatently prioritised on accept by default? */
+	public static boolean PREFER_INSERT_DEFAULT = false;
 	/** Should inserts fork when the HTL reaches cacheability? */
 	public static boolean FORK_ON_CACHEABLE_DEFAULT = true;
 	public final IOStatisticCollector collector;
@@ -4333,12 +4339,14 @@ public class Node implements TimeSkewDetectorCallback {
 	 * CHKInsertSender running.
 	 * @param source The node that sent the InsertRequest, or null
 	 * if it originated locally.
+	 * @param ignoreLowBackoff 
+	 * @param preferInsert 
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
-			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable) {
+			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		CHKInsertSender is = null;
-		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable);
+		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 		is.start();
 		// CHKInsertSender adds itself to insertSenders
 		return is;
@@ -4354,9 +4362,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * SSKInsertSender running.
 	 * @param source The node that sent the InsertRequest, or null
 	 * if it originated locally.
+	 * @param ignoreLowBackoff 
+	 * @param preferInsert 
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
-			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable) {
+			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
 		NodeSSK key = block.getKey();
 		if(key.getPubKey() == null) {
 			throw new IllegalArgumentException("No pub key when inserting");
@@ -4365,7 +4375,7 @@ public class Node implements TimeSkewDetectorCallback {
 		getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), false, canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		SSKInsertSender is = null;
-		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, forkOnCacheable);
+		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 		is.start();
 		return is;
 	}

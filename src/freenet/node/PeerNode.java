@@ -2805,12 +2805,26 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return hashCode;
 	}
 
+	public boolean isRoutingBackedOff(int ignoreBackoffUnder) {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(now < routingBackedOffUntil) {
+				if(routingBackedOffUntil - now >= ignoreBackoffUnder) return true;
+			}
+			if(now < transferBackedOffUntil) {
+				if(transferBackedOffUntil - now >= ignoreBackoffUnder) return true;
+			}
+			return false;
+		}
+	}
+	
 	public boolean isRoutingBackedOff() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			return now < routingBackedOffUntil || now < transferBackedOffUntil;
 		}
 	}
+	
 	long routingBackedOffUntil = -1;
 	/** Initial nominal routing backoff length */
 	static final int INITIAL_ROUTING_BACKOFF_LENGTH = 1000;  // 1 second

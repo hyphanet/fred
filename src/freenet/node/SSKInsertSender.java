@@ -62,6 +62,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private static boolean logMINOR;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
     private final boolean forkOnCacheable;
+    private final boolean preferInsert;
+    private final boolean ignoreLowBackoff;
     private InsertTag forkedRequestTag;
     
     private int status = -1;
@@ -80,7 +82,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     /** Could not get off the node at all! */
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
-    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable) {
+    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
     	logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     	this.fromStore = fromStore;
     	this.node = node;
@@ -101,6 +103,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	this.block = block;
     	startTime = System.currentTimeMillis();
     	this.forkOnCacheable = forkOnCacheable;
+    	this.preferInsert = preferInsert;
+    	this.ignoreLowBackoff = ignoreLowBackoff;
     }
 
     void start() {
@@ -186,7 +190,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             // Route it
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0);
             
             if(next == null) {
                 // Backtrack
@@ -199,6 +203,12 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             Message request = DMT.createFNPSSKInsertRequestNew(uid, htl, myKey);
             if(forkOnCacheable != Node.FORK_ON_CACHEABLE_DEFAULT) {
             	request.addSubMessage(DMT.createFNPSubInsertForkControl(forkOnCacheable));
+            }
+            if(ignoreLowBackoff != Node.IGNORE_LOW_BACKOFF_DEFAULT) {
+            	request.addSubMessage(DMT.createFNPSubInsertIgnoreLowBackoff(ignoreLowBackoff));
+            }
+            if(preferInsert != Node.PREFER_INSERT_DEFAULT) {
+            	request.addSubMessage(DMT.createFNPSubInsertPreferInsert(preferInsert));
             }
             
             // Wait for ack or reject... will come before even a locally generated DataReply

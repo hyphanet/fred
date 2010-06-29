@@ -165,7 +165,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 				try {
 					insertAttempts++;
-					randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE);
+					randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false);
 					Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 					insertSuccesses++;
 				} catch (freenet.node.LowLevelPutException putEx) {

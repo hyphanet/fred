@@ -556,7 +556,7 @@ public class NodeStats implements Persistable {
 	static final double MIN_OVERHEAD = 0.01;
 	
 	/* return reject reason as string if should reject, otherwise return null */
-	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore) {
+	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert) {
 		if(logMINOR) dumpByteCostAverages();
 		
 		int threadCount = getActiveThreadCount();
@@ -609,7 +609,7 @@ public class NodeStats implements Persistable {
 				}
 			} else if(pingTime > subMaxPingTime) {
 				double x = ((pingTime - subMaxPingTime)) / (maxPingTime - subMaxPingTime);
-				if(hardRandom.nextDouble() < x) {
+				if(randomLessThan(x, preferInsert)) {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">SUB_MAX_PING_TIME", isLocal);
 					return ">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
@@ -627,7 +627,7 @@ public class NodeStats implements Persistable {
 				}
 			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
 				double x = ((bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
-				if(hardRandom.nextDouble() < x) {
+				if(randomLessThan(x, preferInsert)) {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">SUB_MAX_THROTTLE_DELAY", isLocal);
 					return ">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
@@ -660,6 +660,11 @@ public class NodeStats implements Persistable {
 		if(!isLocal) {
 			// If not local, is already locked.
 			// So we need to decrement the relevant value, to counteract this and restore the SSK:CHK balance.
+			
+			// FIXME this is really a hack.
+			// We should track the number of requests of each type we've accepted recently, and if there is not
+			// enough space for 1 of each type, accept according to a target ratio.
+			// This would be 1/1/1/1 initially, but if preferInsert is set, maybe 1/1/2/2 or 1/1/3/3.
 			if(isOfferReply) {
 				if(isSSK) numSSKOfferReplies--;
 				else numCHKOfferReplies--;
@@ -684,6 +689,12 @@ public class NodeStats implements Persistable {
 		if(hasInStore) {
 			limit += 10;
 			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
+		}
+		
+		if(preferInsert) {
+			// Allow some extra inserts.
+			numRemoteCHKInserts--;
+			numRemoteSSKInserts--;
 		}
 		
 		double bandwidthLiabilityOutput;
@@ -939,6 +950,22 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 	
+	/** @return True if we should reject the request.
+	 * @param x The threshold. We should reject the request unless a random number is greater than this threshold.
+	 * @param preferInsert If true, we allow 3 chances to pass the threshold.
+	 */
+	private boolean randomLessThan(double x, boolean preferInsert) {
+		if(preferInsert) {
+			// Three chances.
+			for(int i=0;i<3;i++)
+				if(hardRandom.nextDouble() >= x) return false;
+			return true;
+		} else {
+			// One chance
+		}
+		return hardRandom.nextDouble() < x;
+	}
+
 	private void rejected(String reason, boolean isLocal) {
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
 		else this.localPreemptiveRejectReasons.inc(reason);

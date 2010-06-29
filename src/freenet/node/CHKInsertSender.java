@@ -172,7 +172,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	
 	CHKInsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore,
-            boolean canWriteClientCache, boolean forkOnCacheable) {
+            boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
         this.origUID = uid;
@@ -186,6 +186,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.startTime = System.currentTimeMillis();
         this.backgroundTransfers = new Vector<BackgroundTransfer>();
         this.forkOnCacheable = forkOnCacheable;
+        this.preferInsert = preferInsert;
+        this.ignoreLowBackoff = ignoreLowBackoff;
         logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     }
 
@@ -216,6 +218,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     final long startTime;
     private boolean sentRequest;
     private final boolean forkOnCacheable;
+    private final boolean preferInsert;
+    private final boolean ignoreLowBackoff;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
 
     
@@ -343,7 +347,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             // Route it
             // Can backtrack, so only route to nodes closer than we are to target.
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0);
 			
             if(next == null) {
                 // Backtrack
@@ -359,6 +363,12 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             req = DMT.createFNPInsertRequest(uid, htl, myKey);
             if(forkOnCacheable != Node.FORK_ON_CACHEABLE_DEFAULT) {
             	req.addSubMessage(DMT.createFNPSubInsertForkControl(forkOnCacheable));
+            }
+            if(ignoreLowBackoff != Node.IGNORE_LOW_BACKOFF_DEFAULT) {
+            	req.addSubMessage(DMT.createFNPSubInsertIgnoreLowBackoff(ignoreLowBackoff));
+            }
+            if(preferInsert != Node.PREFER_INSERT_DEFAULT) {
+            	req.addSubMessage(DMT.createFNPSubInsertPreferInsert(preferInsert));
             }
             
             // Wait for ack or reject... will come before even a locally generated DataReply

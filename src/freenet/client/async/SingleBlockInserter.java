@@ -550,7 +550,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						throw new LowLevelPutException(LowLevelPutException.COLLISION);
 					}
 				else
-					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
+					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, false, false);
 			} catch (LowLevelPutException e) {
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
