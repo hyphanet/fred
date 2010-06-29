@@ -1102,7 +1102,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				else {
 					ph.clearMetadata(container);
 					if(persistent())
-						container.activate(meta, 100);
+						container.activate(meta, Integer.MAX_VALUE);
 					if(logMINOR)
 						Logger.minor(this, "Putting "+name);
 					namesToByteArrays.put(name, meta);
