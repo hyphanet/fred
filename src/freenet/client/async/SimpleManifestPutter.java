@@ -1266,15 +1266,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(value instanceof PutHandler) {
 				PutHandler handler = (PutHandler) value;
 				container.activate(handler, 1);
-				if(runningPutHandlers.remove(handler))
+				if(runningPutHandlers != null && runningPutHandlers.remove(handler))
 					container.ext().store(runningPutHandlers, 2);
-				if(putHandlersWaitingForMetadata.remove(handler))
+				if(putHandlersWaitingForMetadata != null && putHandlersWaitingForMetadata.remove(handler))
 					container.ext().store(putHandlersWaitingForMetadata, 2);
-				if(waitingForBlockSets.remove(handler))
+				if(waitingForBlockSets != null && waitingForBlockSets.remove(handler))
 					container.ext().store(waitingForBlockSets, 2);
-				if(putHandlersWaitingForFetchable.remove(handler))
+				if(putHandlersWaitingForMetadata != null && putHandlersWaitingForFetchable.remove(handler))
 					container.ext().store(putHandlersWaitingForFetchable, 2);
-				if(elementsToPutInArchive.remove(handler))
+				if(elementsToPutInArchive != null && elementsToPutInArchive.remove(handler))
 					container.ext().store(elementsToPutInArchive, 2);
 				handler.removeFrom(container, context);
 			} else {
