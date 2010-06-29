@@ -1809,6 +1809,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			freeDecodedData(container);
 			if(persistent) container.store(this);
 			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+		} else {
+			if(persistent) container.store(this);
 		}
 	}
 	
