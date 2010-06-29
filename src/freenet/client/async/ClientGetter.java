@@ -248,6 +248,7 @@ public class ClientGetter extends BaseClientGetter {
 			OutputStream output = null;
 			try {
 				if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
+				// Send XHTML as HTML because we can't use web-pushing on XHTML.
 				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 				assert(result.asBucket() != returnBucket);
 				
