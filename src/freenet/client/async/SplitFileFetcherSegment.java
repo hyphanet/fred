@@ -1769,13 +1769,17 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	/** Free the data blocks but only if the encoder has finished with them. */
 	public void fetcherHalfFinished(ObjectContainer container) {
+		boolean finish = false;
 		synchronized(this) {
 			fetcherHalfFinished = true;
-			if(!encoderFinished) return;
+			finish = encoderFinished;
 		}
-		freeDecodedData(container);
+		if(finish) freeDecodedData(container);
+		else {
+			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+		}
 		if(persistent) container.store(this);
-		if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+		
 	}
 	
 	public void fetcherFinished(ObjectContainer container, ClientContext context) {
