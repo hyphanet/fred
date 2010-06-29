@@ -428,6 +428,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		@Override
+		public void addRedundantBlocks(int blocks, ObjectContainer container) {
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
+			SimpleManifestPutter.this.addRedundantBlocks(blocks, container);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
+			super.addMustSucceedBlocks(blocks, container);
+		}
+		
+		@Override
 		public void notifyClients(ObjectContainer container, ClientContext context) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
