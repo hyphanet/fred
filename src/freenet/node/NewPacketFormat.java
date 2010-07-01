@@ -45,7 +45,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
-		boolean hashResult = false;
+		NPFPacket packet = null;
 		for(int i = 0; i < 2; i++) {
 			SessionKey s;
 			if(i == 0) {
@@ -54,22 +54,14 @@ public class NewPacketFormat implements PacketFormat {
 				s = pn.getUnverifiedKeyTracker();
 			}
 			if(s == null) continue;
-			hashResult = checkHMAC(buf, offset, length, s);
-			if(hashResult) break;
+			packet = tryDecipherPacket(buf, offset, length, s);
+			if(packet != null) break;
 		}
-		if(!hashResult) {
-			Logger.warning(this, "Hash didn't match for received packet, dropping");
+		if(packet == null) {
+			Logger.warning(this, "Could not decrypt received packet");
 			return;
 		}
 
-		offset += HMAC_LENGTH;
-
-		// TODO: Decrypt
-		byte[] plaintext = new byte[length - HMAC_LENGTH];
-		System.arraycopy(buf, offset, plaintext, 0, (length - HMAC_LENGTH));
-		offset = 0;
-
-		NPFPacket packet = NPFPacket.create(plaintext);
 		if(packet.getAcks().size() > 0) pn.getThrottle().notifyOfPacketAcknowledged();
 		for(long ack : packet.getAcks()) {
 			synchronized(sentPackets) {
@@ -117,7 +109,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 	}
 
-	private boolean checkHMAC(byte[] buf, int offset, int length, SessionKey sessionKey) {
+	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
 		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
 		hashCipher.blockDecipher(buf, offset, HMAC_LENGTH);
 
@@ -128,10 +120,17 @@ public class NewPacketFormat implements PacketFormat {
 
 		for(int i = 0; i < HMAC_LENGTH; i++) {
 			if(buf[offset + i] != hash[i]) {
-				return false;
+				return null;
 			}
 		}
-		return true;
+
+		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher);
+		payloadCipher.blockDecipher(buf, offset + HMAC_LENGTH, length - HMAC_LENGTH);
+
+		byte[] payload = new byte[length - HMAC_LENGTH];
+		System.arraycopy(buf, offset + HMAC_LENGTH, payload, 0, length - HMAC_LENGTH);
+
+		return NPFPacket.create(payload);
 	}
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
@@ -208,17 +207,19 @@ public class NewPacketFormat implements PacketFormat {
 		byte[] data = new byte[packet.getLength() + HMAC_LENGTH];
 		packet.toBytes(data, HMAC_LENGTH);
 
-		//TODO: Encrypt
-
-		//Add hash
-		MessageDigest md = SHA256.getMessageDigest();
-		byte[] hash = md.digest(data);
-
 		SessionKey sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
 			return false;
 		}
+
+		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher);
+		payloadCipher.blockEncipher(data, HMAC_LENGTH, packet.getLength());
+
+		//Add hash
+		MessageDigest md = SHA256.getMessageDigest();
+		byte[] hash = md.digest(data);
+
 		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
 		hashCipher.blockEncipher(hash, 0, HMAC_LENGTH);
 
