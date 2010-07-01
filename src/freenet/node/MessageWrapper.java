@@ -160,7 +160,7 @@ public class MessageWrapper {
 	private class RangeComparator implements Comparator<int[]> {
 
 		public int compare(int[] o1, int[] o2) {
-			return o2[0] - o1[0];
+			return o1[0] - o2[0];
 		}
 
 	}
