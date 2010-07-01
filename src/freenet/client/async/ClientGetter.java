@@ -529,7 +529,13 @@ public class ClientGetter extends BaseClientGetter {
 	 * @return True if we successfully restarted, false if we can't restart.
 	 * @throws FetchException If something went wrong.
 	 */
-	public boolean restart(FreenetURI redirect, ObjectContainer container, ClientContext context) throws FetchException {
+	public boolean restart(FreenetURI redirect, boolean filterData, ObjectContainer container, ClientContext context) throws FetchException {
+		if(persistent()) {
+			container.activate(ctx, 1);
+			container.activate(ctx.filterData, 1);
+		}
+		ctx.filterData = filterData;
+		if(persistent()) container.store(ctx);
 		return start(true, redirect, container, context);
 	}
 

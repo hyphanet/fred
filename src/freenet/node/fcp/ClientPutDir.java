@@ -380,7 +380,7 @@ public class ClientPutDir extends ClientPutBase {
 	}
 
 	@Override
-	public boolean restart(ObjectContainer container, ClientContext context) {
+	public boolean restart(boolean filterData, ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
 		setVarsRestart(container);
 		makePutter(container, context);

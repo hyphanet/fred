@@ -247,9 +247,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			} else if(request.isPartSet("restart_request") && (request.getPartAsString("restart_request", 32).length() > 0)) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
+				boolean filterData = request.isPartSet("filterData");
 				if(logMINOR) Logger.minor(this, "Restarting "+identifier);
 				try {
-					fcp.restartBlocking(identifier);
+					fcp.restartBlocking(identifier, filterData);
 				} catch (DatabaseDisabledException e) {
 					sendPersistenceDisabledError(ctx);
 					return;
@@ -1438,6 +1439,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode retryForm = ctx.addFormChild(deleteNode, path(), "queueRestartForm-" + identifier.hashCode());
 			String restartName = NodeL10n.getBase().getString(clientRequest instanceof ClientGet && ((ClientGet)clientRequest).hasPermRedirect() ? "QueueToadlet.follow" : "QueueToadlet.restart");
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
+			retryForm.addChild("#", l10n("filterData"));
+			HTMLNode input = retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] {"checkbox", "filterData", "filterData" });
+			if(clientRequest instanceof ClientGet) {
+				boolean filter = (((ClientGet)clientRequest).filterData(container));
+				if(filter)
+					input.addAttribute("checked", "checked");
+			}
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", restartName });
 		}
 		
