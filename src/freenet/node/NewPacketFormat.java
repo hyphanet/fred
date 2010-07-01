@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
+import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
@@ -44,23 +45,21 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
-		//Check the hash
-		//TODO: Decrypt hash first
-		byte[] packetHash = new byte[HMAC_LENGTH];
-		for (int i = 0; i < packetHash.length; i++) {
-			packetHash[i] = buf[offset + i];
-			buf[offset + i] = 0;
-		}
-
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(buf, offset, length);
-		byte[] hash = md.digest();
-
-		for(int i = 0; i < packetHash.length; i++) {
-			if(packetHash[i] != hash[i]) {
-				Logger.warning(this, "Wrong hash for received packet. Discarding");
-				return;
+		boolean hashResult = false;
+		for(int i = 0; i < 2; i++) {
+			SessionKey s;
+			if(i == 0) {
+				s = pn.getCurrentKeyTracker();
+			} else {
+				s = pn.getUnverifiedKeyTracker();
 			}
+			if(s == null) continue;
+			hashResult = checkHMAC(buf, offset, length, s);
+			if(hashResult) break;
+		}
+		if(!hashResult) {
+			Logger.warning(this, "Hash didn't match for received packet, dropping");
+			return;
 		}
 
 		offset += HMAC_LENGTH;
@@ -116,6 +115,23 @@ public class NewPacketFormat implements PacketFormat {
 				acks.add(packet.getSequenceNumber());
                         }
 		}
+	}
+
+	private boolean checkHMAC(byte[] buf, int offset, int length, SessionKey sessionKey) {
+		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
+		hashCipher.blockDecipher(buf, offset, HMAC_LENGTH);
+
+		//Check the hash
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(buf, offset + HMAC_LENGTH, length - HMAC_LENGTH);
+		byte[] hash = md.digest();
+
+		for(int i = 0; i < HMAC_LENGTH; i++) {
+			if(buf[offset + i] != hash[i]) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
@@ -195,9 +211,16 @@ public class NewPacketFormat implements PacketFormat {
 		//TODO: Encrypt
 
 		//Add hash
-		//TODO: Encrypt this to make a HMAC
 		MessageDigest md = SHA256.getMessageDigest();
 		byte[] hash = md.digest(data);
+
+		SessionKey sessionKey = pn.getCurrentKeyTracker();
+		if(sessionKey == null) {
+			Logger.warning(this, "No key for encrypting hash");
+			return false;
+		}
+		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
+		hashCipher.blockEncipher(hash, 0, HMAC_LENGTH);
 
 		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
 
