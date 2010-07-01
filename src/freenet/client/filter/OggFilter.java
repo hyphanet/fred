@@ -5,7 +5,6 @@
 package freenet.client.filter;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,9 +37,8 @@ public class OggFilter implements ContentDataFilter{
 				}
 				if(filter == null) continue;
 				if(page.headerValid() && filter.isValid(page)) {
-					output.write(magicNumber);
 					filter.parse(page);
-					page.write(output);
+					output.write(page.array());
 				}
 			} catch(EOFException e) {
 				break;
@@ -92,17 +90,19 @@ class OggPage {
 		return true;
 	}
 
-	void write(OutputStream output) throws IOException {
-		DataOutputStream out = new DataOutputStream(output);
-		out.write(version);
-		out.write(headerType);
-		out.write(granuelPosition);
-		out.write(bitStreamSerial);
-		out.write(pageSequenceNumber);
-		out.write(checksum);
-		out.write(segments);
-		out.write(segmentTable);
-		out.write(payload);
+	byte[] array() {
+		ByteBuffer bb = ByteBuffer.allocate(27+byteToUnsigned(segments)+payload.length);
+		bb.put(OggFilter.magicNumber);
+		bb.put(version);
+		bb.put(headerType);
+		bb.put(granuelPosition);
+		bb.put(bitStreamSerial);
+		bb.put(pageSequenceNumber);
+		bb.put(checksum);
+		bb.put(segments);
+		bb.put(segmentTable);
+		bb.put(payload);
+		return bb.array();
 	}
 
 	int getSerial() {
