@@ -56,9 +56,4 @@ public enum HashType {
 			freenet.crypt.SHA256.returnMessageDigest(md);
 		} // Else no pooling.
 	}
-
-	public HashType canonicalType() {
-		// Workaround for db4o enum copying.
-		return valueOf(name());
-	}
 }

@@ -21,7 +21,7 @@ public class HashResult implements Comparable {
 	}
 
 	public HashResult(HashResult res) {
-		this.type = res.type.canonicalType();
+		this.type = res.type;
 		// FIXME should we copy the byte[] ???
 		// Not necessary for copying for db4o anyway.
 		this.result = res.result;
@@ -79,9 +79,8 @@ public class HashResult implements Comparable {
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		if(type != HashType.valueOf(type.name()))
-			// db4o has copied it.
-			container.delete(type);
+		// HashType is an enum, so we don't need to worry about it.
+		// Db4o does the right thing with them.
 		container.delete(this);
 	}
 
