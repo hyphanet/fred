@@ -224,6 +224,7 @@ public class NewPacketFormat implements PacketFormat {
 		SessionKey sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
+			sentPacket.lost();
 			return false;
 		}
 
@@ -244,6 +245,7 @@ public class NewPacketFormat implements PacketFormat {
 	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
                 } catch (LocalAddressException e) {
 	                Logger.error(this, "Caught exception while sending packet", e);
+			sentPacket.lost();
 			return false;
                 }
 
