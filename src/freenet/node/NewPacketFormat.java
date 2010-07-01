@@ -200,7 +200,7 @@ public class NewPacketFormat implements PacketFormat {
 
 			int messageID = getMessageID();
 			if(messageID == -1) {
-				if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
+				Logger.warning(this, "No availiable message ID, requeuing and sending packet");
 				messageQueue.pushfrontPrioritizedMessageItem(item);
 				break;
 			}
