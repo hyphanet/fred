@@ -46,8 +46,8 @@ public class NewPacketFormat implements PacketFormat {
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
 		NPFPacket packet = null;
+		SessionKey s = null;
 		for(int i = 0; i < 2; i++) {
-			SessionKey s;
 			if(i == 0) {
 				s = pn.getCurrentKeyTracker();
 			} else {
@@ -61,6 +61,9 @@ public class NewPacketFormat implements PacketFormat {
 			Logger.warning(this, "Could not decrypt received packet");
 			return;
 		}
+
+		pn.receivedPacket(false, true);
+		pn.verified(s);
 
 		if(packet.getAcks().size() > 0) pn.getThrottle().notifyOfPacketAcknowledged();
 		for(long ack : packet.getAcks()) {
