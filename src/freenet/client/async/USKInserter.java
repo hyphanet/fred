@@ -394,17 +394,19 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		scheduleInsert(container, context);
 	}
 
-	public synchronized void onCancelled(ObjectContainer container, ClientContext context) {
-		if(fetcher != null) {
-			if(persistent) {
-				container.activate(fetcher, 1);
-				container.activate(fetcher.ctx, 1);
-				fetcher.ctx.removeFrom(container);
-				fetcher.removeFrom(container, context);
+	public void onCancelled(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(fetcher != null) {
+				if(persistent) {
+					container.activate(fetcher, 1);
+					container.activate(fetcher.ctx, 1);
+					fetcher.ctx.removeFrom(container);
+					fetcher.removeFrom(container, context);
+				}
+				fetcher = null;
 			}
-			fetcher = null;
+			if(finished) return;
 		}
-		if(finished) return;
 		Logger.error(this, "Unexpected onCancelled()", new Exception("error"));
 		cancel(container, context);
 	}
