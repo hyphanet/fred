@@ -88,7 +88,10 @@ public class MessageWrapper {
 		addRangeToSet(start, end, acks);
 		if(acks.size() == 1) {
 			int[] range = acks.first();
-			if(range[0] == 0 && (range[1] == (item.buf.length - 1))) {
+			if(range[0] == 0 && (range[1] >= (item.buf.length - 1))) {
+				if(range[1] > (item.buf.length - 1)) {
+					Logger.warning(this, "Ack range is bigger than message", new Exception());
+				}
 				if(!alreadyAcked) {
 					//TODO: Add overhead
 					//TODO: This should be called when the packet is *sent* not acked
