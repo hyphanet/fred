@@ -37,8 +37,7 @@ public class OggFilter implements ContentDataFilter{
 					streamFilters.put(page.getSerial(), filter);
 				}
 				if(filter == null) continue;
-				if(page.headerValid() && filter.isValid(page)) {
-					filter.parse(page);
+				if(page.headerValid() && filter.parse(page)) {
 					output.write(page.array());
 				}
 			} catch(EOFException e) {

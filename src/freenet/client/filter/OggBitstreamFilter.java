@@ -16,9 +16,7 @@ public abstract class OggBitstreamFilter {
 		lastPageSequenceNumber = page.getPageNumber();
 	}
 
-	abstract boolean isValid(OggPage page);
-
-	abstract void parse(OggPage page) throws IOException;
+	abstract boolean parse(OggPage page) throws IOException;
 
 	public static OggBitstreamFilter getBitstreamFilter(OggPage page) {
 		for(int i = 0; i <= VORBIS_MAGIC_NUMBER.length; i++) {
