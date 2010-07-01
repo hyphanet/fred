@@ -9,7 +9,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 public class VorbisBitstreamFilter extends OggBitstreamFilter {
-	enum State {UNINITIALIZED, IDENTIFICATION_FOUND};
+	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND, SETUP_FOUND};
 	static final byte[] magicNumber = new byte[] {0x76, 0x6f, 0x72, 0x62, 0x69, 0x73};
 	State currentState = State.UNINITIALIZED;
 	boolean isValidStream = true;
@@ -21,18 +21,21 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 	@Override
 	boolean parse(OggPage page) throws IOException {
 		if(!isValidStream) return false;
+		boolean pageModified = false;
+		DataInputStream input = new DataInputStream(new ByteArrayInputStream(page.payload));
 		switch(currentState) {
 		case UNINITIALIZED:
-			//The first page must be an identification header
-			if(page.payload[0] != 1) isValidStream=false;
-			for(int i=0; i<magicNumber.length;i++) {
-				if(page.payload[i+1]!=magicNumber[i]){
-					isValidStream=false;
-					break;
-				}
+			//The first header must be an identification header
+
+			/*The header packets begin with the header type and the magic number
+			 * Validate both.
+			 */
+			byte[] magicHeader = new byte[1+magicNumber.length];
+			input.readFully(magicHeader);
+			if(magicHeader[0] != 1) isValidStream = false;
+			for(int i=0; i < magicNumber.length; i++) {
+				if(magicHeader[i+1] != magicNumber[i]) isValidStream=false;
 			}
-			DataInputStream input = new DataInputStream(new ByteArrayInputStream(page.payload));
-			input.skipBytes(7);
 			//Assemble identification header
 			int vorbis_version = input.readInt();
 			byte audio_channels = input.readByte();
@@ -50,6 +53,16 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 			if(!framing_flag) isValidStream = false;
 			currentState = State.IDENTIFICATION_FOUND;
 			input.close();
+			break;
+		case IDENTIFICATION_FOUND:
+			//We should now be dealing with a comment header
+			currentState=State.COMMENT_FOUND;
+			break;
+		case COMMENT_FOUND:
+			//We should now be dealing with a setup header
+			currentState=State.SETUP_FOUND;
+			break;
+		case SETUP_FOUND:
 			break;
 		}
 		return isValidStream;
