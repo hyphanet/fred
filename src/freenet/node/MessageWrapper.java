@@ -180,7 +180,7 @@ public class MessageWrapper {
 			Iterator<int[]> it = set.iterator();
 			while (it.hasNext()) {
 				int[] range = it.next();
-				if(range[0] >= start && range[1] <= end) {
+				if(range[0] <= start && range[1] >= end) {
 					// Equal or inside
 					return;
 				} else if((range[0] <= start && range[1] >= start)
