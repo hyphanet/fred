@@ -10,6 +10,7 @@ import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -202,7 +203,13 @@ public interface Compressor {
 		}
 
 		public boolean isOfficial() {
-			return this == GZIP || this == BZIP2 || this == LZMA || this == LZMA_NEW;
+			if(!(this == GZIP || this == BZIP2 || this == LZMA || this == LZMA_NEW)) {
+				Logger.error(this, "Unofficial COMPESSOR_TYPE, isn't this impossible?");
+				// Initially I had thought db4o was copying the enum values, but testing shows this doesn't happen.
+				// So this is definitely an error.
+				return false;
+			}
+			return true;
 		}
 
 		public static int countCompressors() {
