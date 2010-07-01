@@ -1239,8 +1239,10 @@ class SingleFileInserter implements ClientPutState {
 		// ctx is passed in, creator is responsible for removing it
 		// cb removes itself
 		if(origHashes != null)
-			for(HashResult h : origHashes)
+			for(HashResult h : origHashes) {
+				container.activate(h, Integer.MAX_VALUE);
 				h.removeFrom(container);
+			}
 		container.delete(this);
 	}
 	

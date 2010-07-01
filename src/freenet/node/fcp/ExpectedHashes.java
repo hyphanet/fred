@@ -39,8 +39,10 @@ public class ExpectedHashes extends FCPMessage {
 
 	@Override
 	public void removeFrom(ObjectContainer container) {
-		for(HashResult res : hashes)
+		for(HashResult res : hashes) {
+			container.activate(res, Integer.MAX_VALUE);
 			res.removeFrom(container);
+		}
 		container.delete(this);
 	}
 

@@ -858,6 +858,7 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		if(hashes != null) {
 			for(HashResult res : hashes) {
+				container.activate(res, Integer.MAX_VALUE);
 				res.removeFrom(container);
 			}
 		}

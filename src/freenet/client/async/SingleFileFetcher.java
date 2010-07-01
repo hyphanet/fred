@@ -1052,8 +1052,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(state != null)
 					state.removeFrom(container, context);
 				container.delete(this);
-				for(HashResult res : hashes)
+				for(HashResult res : hashes) {
+					container.activate(res, Integer.MAX_VALUE);
 					res.removeFrom(container);
+				}
 			}
 		}
 
@@ -1112,8 +1114,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					state.removeFrom(container, context);
 				container.delete(this);
 				callback.removeFrom(container);
-				for(HashResult res : hashes)
+				for(HashResult res : hashes) {
+					container.activate(res, Integer.MAX_VALUE);
 					res.removeFrom(container);
+				}
 			}
 		}
 
