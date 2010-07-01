@@ -232,7 +232,8 @@ public class NewPacketFormat implements PacketFormat {
 
 		//Add hash
 		MessageDigest md = SHA256.getMessageDigest();
-		byte[] hash = md.digest(data);
+		md.update(data, HMAC_LENGTH, packet.getLength());
+		byte[] hash = md.digest();
 
 		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
 		hashCipher.blockEncipher(hash, 0, HMAC_LENGTH);
