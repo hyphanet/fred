@@ -52,10 +52,14 @@ public class InsertException extends Exception {
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = msg;
 		mode = m;
-		if(logMINOR)
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+msg, this);
 		errorCodes = null;
 		this.uri = expectedURI;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
+		else if(logMINOR)
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+msg, this);
 	}
 	
 	public InsertException(int m, FreenetURI expectedURI) {
@@ -68,6 +72,12 @@ public class InsertException extends Exception {
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 		errorCodes = null;
 		this.uri = expectedURI;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
+		else if(logMINOR)
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 	}
 
 	public InsertException(int mode, Throwable e, FreenetURI expectedURI) {
@@ -81,6 +91,12 @@ public class InsertException extends Exception {
 		errorCodes = null;
 		initCause(e);
 		this.uri = expectedURI;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
+		else if(logMINOR)
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 	}
 
 	public InsertException(int mode, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
@@ -93,6 +109,12 @@ public class InsertException extends Exception {
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 		this.errorCodes = errorCodes;
 		this.uri = expectedURI;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
+		else if(logMINOR)
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 	}
 
 	public InsertException(int mode) {
@@ -103,6 +125,12 @@ public class InsertException extends Exception {
 		this.mode = mode;
 		this.errorCodes = null;
 		this.uri = null;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
+		else if(logMINOR)
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 	}
 
 	public InsertException(InsertException e) {
@@ -142,6 +170,8 @@ public class InsertException extends Exception {
 	public static final int META_STRINGS_NOT_SUPPORTED = 11;
 	/** Invalid binary blob data supplied so cannot insert it */
 	public static final int BINARY_BLOB_FORMAT_ERROR = 12;
+	/** An internal error occurred and there is junk left in the database */
+	public static final int INTERNAL_ERROR_REMOVING_FROM_DATABASE = 13;
 	
 	/** Get the (localised) short name of this failure mode. */
 	public static String getMessage(int mode) {
@@ -177,6 +207,7 @@ public class InsertException extends Exception {
 			return true;
 		case BUCKET_ERROR: // maybe
 		case INTERNAL_ERROR: // maybe
+		case INTERNAL_ERROR_REMOVING_FROM_DATABASE: // maybe
 		case REJECTED_OVERLOAD:
 		case TOO_MANY_RETRIES_IN_BLOCKS:
 		case ROUTE_NOT_FOUND:

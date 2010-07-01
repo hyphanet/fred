@@ -75,6 +75,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -92,6 +94,8 @@ public class FetchException extends Exception {
 		this.expectedMimeType = expectedMimeType;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -109,6 +113,8 @@ public class FetchException extends Exception {
 		this.expectedMimeType = expectedMimeType;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -123,6 +129,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -137,6 +145,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -151,6 +161,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR)
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -167,6 +179,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -183,6 +197,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -201,6 +217,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -216,6 +234,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -231,6 +251,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -246,6 +268,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -261,6 +285,8 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -278,6 +304,8 @@ public class FetchException extends Exception {
 		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -297,6 +325,8 @@ public class FetchException extends Exception {
 		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -315,6 +345,8 @@ public class FetchException extends Exception {
 		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
+		else if(mode == INTERNAL_ERROR_REMOVING_FROM_DATABASE)
+			Logger.error(this, "Internal error (cruft left in downloads database): "+this);
 		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
@@ -436,6 +468,8 @@ public class FetchException extends Exception {
 	public static final int CONTENT_VALIDATION_BAD_MIME = 33;
 	/** The metadata specified a hash but the data didn't match it. */
 	public static final int CONTENT_HASH_FAILED = 34;
+	/** An internal error occurred and there is junk left in the database */
+	public static final int INTERNAL_ERROR_REMOVING_FROM_DATABASE = 35;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -480,6 +514,7 @@ public class FetchException extends Exception {
 			
 		case BUCKET_ERROR:
 		case INTERNAL_ERROR:
+		case INTERNAL_ERROR_REMOVING_FROM_DATABASE:
 			// No point retrying.
 			return true;
 		
