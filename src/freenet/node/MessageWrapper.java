@@ -183,9 +183,9 @@ public class MessageWrapper {
 				if(range[0] <= start && range[1] >= end) {
 					// Equal or inside
 					return;
-				} else if((range[0] <= start && range[1] >= start)
-				                || (range[0] <= end && range[1] >= end)) {
-					// Overlapping
+				} else if((range[0] <= start && range[1] >= (start - 1))
+				                || (range[0] <= (end + 1) && range[1] >= end)) {
+					// Overlapping or adjacent
 					it.remove();
 
 					int[] newRange = new int[2];
