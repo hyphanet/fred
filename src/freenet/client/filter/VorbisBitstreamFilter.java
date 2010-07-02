@@ -7,12 +7,16 @@ package freenet.client.filter;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.LinkedList;
+
+import freenet.support.io.CountedInputStream;
 
 public class VorbisBitstreamFilter extends OggBitstreamFilter {
 	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND, SETUP_FOUND};
 	static final byte[] magicNumber = new byte[] {0x76, 0x6f, 0x72, 0x62, 0x69, 0x73};
 	State currentState = State.UNINITIALIZED;
 	boolean isValidStream = true;
+	LinkedList<Long> VorbisPacketBoundaries = new LinkedList<Long>();
 
 	VorbisBitstreamFilter(OggPage page) {
 		super(page);
@@ -21,8 +25,10 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 	@Override
 	boolean parse(OggPage page) throws IOException {
 		if(!isValidStream) return false;
+		//Assemble the Vorbis packets
 		boolean pageModified = false;
-		DataInputStream input = new DataInputStream(new ByteArrayInputStream(page.payload));
+		CountedInputStream cin = new CountedInputStream(new ByteArrayInputStream(page.payload));
+		DataInputStream input = new DataInputStream(cin);
 		switch(currentState) {
 		case UNINITIALIZED:
 			//The first header must be an identification header
@@ -52,6 +58,7 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 			if((blocksize&0xf0 >>> 4) > (blocksize&0x0f)) isValidStream = false;
 			if(!framing_flag) isValidStream = false;
 			currentState = State.IDENTIFICATION_FOUND;
+			VorbisPacketBoundaries.push(cin.count());
 			input.close();
 			break;
 		case IDENTIFICATION_FOUND:
