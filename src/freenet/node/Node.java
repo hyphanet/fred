@@ -46,6 +46,7 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
+import com.db4o.config.GlobalOnlyConfigException;
 import com.db4o.defragment.AvailableClassFilter;
 import com.db4o.defragment.BTreeIDMapping;
 import com.db4o.defragment.Defragment;
@@ -2936,7 +2937,15 @@ public class Node implements TimeSkewDetectorCallback {
 		IoAdapter baseAdapter = dbConfig.io();
 		if(Logger.shouldLog(LogLevel.DEBUG, this))
 			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
-		dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+		try {
+			dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+		} catch (GlobalOnlyConfigException e) {
+			// Fouled up after encrypting/decrypting.
+			System.err.println("Caught "+e+" opening encrypted database.");
+			e.printStackTrace();
+			WrapperManager.restart();
+			throw e;
+		}
 
 		maybeDefragmentDatabase(dbConfig, dbFileCrypt);
 
