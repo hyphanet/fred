@@ -396,6 +396,26 @@ public class TempBucketFactory implements BucketFactory {
 			throw new UnsupportedOperationException();
 		}
 		
+		public boolean objectCanNew(ObjectContainer container) {
+			Logger.error(this, "Not storing TempBucket in database", new Exception("error"));
+			throw new IllegalStateException();
+		}
+		
+		public boolean objectCanUpdate(ObjectContainer container) {
+			Logger.error(this, "Trying to store a TempBucket!", new Exception("error"));
+			throw new IllegalStateException();
+		}
+		
+		public boolean objectCanActivate(ObjectContainer container) {
+			Logger.error(this, "Trying to store a TempBucket!", new Exception("error"));
+			throw new IllegalStateException();
+		}
+		
+		public boolean objectCanDeactivate(ObjectContainer container) {
+			Logger.error(this, "Trying to store a TempBucket!", new Exception("error"));
+			throw new IllegalStateException();
+		}
+		
 		private WeakReference<TempBucket> weakRef = new WeakReference<TempBucket>(this);
 
 		public WeakReference<TempBucket> getReference() {
