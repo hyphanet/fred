@@ -2957,7 +2957,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Open it first, because defrag will throw if it needs to upgrade the file.
 		
 		ObjectContainer database = Db4o.openFile(dbConfig, databaseFile.toString());
-		database.close();
+		while(!database.close());
 		
 		if(!databaseFile.exists()) return;
 		long length = databaseFile.length();
