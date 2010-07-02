@@ -2950,11 +2950,33 @@ public class Node implements TimeSkewDetectorCallback {
 
 		File tmpFile = new File(databaseFile.getPath()+".map");
 		FileUtil.secureDelete(tmpFile, random);
+		
+		
 
 		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
 		config.storedClassFilter(new AvailableClassFilter());
 		config.db4oConfig(dbConfig);
-		Defragment.defrag(config);
+		try {
+			Defragment.defrag(config);
+		} catch (IOException e) {
+			if(backupFile.exists()) {
+				System.err.println("Defrag failed. Trying to preserve original database file.");
+				FileUtil.secureDelete(databaseFile, random);
+				if(!backupFile.renameTo(databaseFile)) {
+					System.err.println("Unable to rename backup file back to database file!");
+					throw e;
+				}
+			}
+		} catch (Db4oException e) {
+			if(backupFile.exists()) {
+				System.err.println("Defrag failed. Trying to preserve original database file.");
+				FileUtil.secureDelete(databaseFile, random);
+				if(!backupFile.renameTo(databaseFile)) {
+					System.err.println("Unable to rename backup file back to database file!");
+					throw e;
+				}
+			}
+		}
 		System.err.println("Finalising defragmentation...");
 		FileUtil.secureDelete(tmpFile, random);
 		FileUtil.secureDelete(backupFile, random);
