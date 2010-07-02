@@ -237,6 +237,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	/** Write the decoded segment's data to an OutputStream */
 	public long writeDecodedDataTo(OutputStream os, long truncateLength, ObjectContainer container) throws IOException {
+		if(logMINOR)
+			Logger.minor(this, "Writing decoded data on "+this);
 		if(decodedData != null) {
 			if(persistent) container.activate(decodedData, Integer.MAX_VALUE);
 			long len = decodedData.size();
@@ -258,7 +260,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 				Bucket data = status.getData();
 				if(data == null) 
-					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
+					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in writeDecodedData");
 				if(persistent) container.activate(data, 1);
 				long copy;
 				if(truncateLength < 0)
@@ -633,7 +635,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			for(int i=0;i<dataBuckets.length;i++) {
 				Bucket data = dataBlockStatus[i].getData();
 				if(data == null) 
-					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
+					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
 				try {
 					maybeAddToBinaryBlob(data, i, false, container, context);
 				} catch (FetchException e) {
