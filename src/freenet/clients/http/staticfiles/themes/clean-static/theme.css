@@ -10,3 +10,7 @@
 div#navbar ul li ul.subnavlist {
 	display: block;
 }
+
+#content {
+	padding-bottom:2em;
+}

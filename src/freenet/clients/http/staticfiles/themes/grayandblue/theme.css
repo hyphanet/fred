@@ -226,7 +226,7 @@ li.alert-summary-text-minor {
 
 #content {
 	margin: 5px 5px 5px 0;
-	padding: 0;
+	padding: 0 0 2em 0;
 	position: absolute;
 	left: 177px;
 	right: 5px;
