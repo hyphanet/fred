@@ -106,7 +106,7 @@ public interface HTTPRequest {
 	 * 
 	 * @param name
 	 *            the name of the parameter to get
-	 * @return an array of all paramter values that might include empty values
+	 * @return an array of all parameter values that might include empty values
 	 */
 	public String[] getMultipleParam(String name);
 
@@ -135,7 +135,7 @@ public interface HTTPRequest {
 	 * Get a request part as a String. Parts are passed in through attached
 	 * data in a POST in multipart/form-data encoding; parameters are 
 	 * passed in through the URI.
-	 * Returns an emtpy String if the length limit is exceeded and therefore is deprecated.
+	 * Returns an empty String if the length limit is exceeded and therefore is deprecated.
 	 */
 	@Deprecated
 	public String getPartAsString(String name, int maxlength);
@@ -149,7 +149,7 @@ public interface HTTPRequest {
 
 	/**
 	 * Get a request part as bytes.
-	 * Returns an emtpy array if the length limit is exceeded and therefore is deprecated.
+	 * Returns an empty array if the length limit is exceeded and therefore is deprecated.
 	 */
 	@Deprecated
 	public byte[] getPartAsBytes(String name, int maxlength);

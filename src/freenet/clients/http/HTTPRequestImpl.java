@@ -178,7 +178,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 			return;
 		}
 
-		// iterate over all tokens in the query string (seperated by &)
+		// iterate over all tokens in the query string (separated by &)
 		StringTokenizer tokenizer = new StringTokenizer(queryString, "&");
 		while (tokenizer.hasMoreTokens()) {
 			String nameValueToken = tokenizer.nextToken();
