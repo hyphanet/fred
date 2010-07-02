@@ -237,6 +237,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	/** Write the decoded segment's data to an OutputStream */
 	public long writeDecodedDataTo(OutputStream os, long truncateLength, ObjectContainer container) throws IOException {
+		if(logMINOR)
+			Logger.minor(this, "Writing decoded data on "+this);
 		if(decodedData != null) {
 			if(persistent) container.activate(decodedData, Integer.MAX_VALUE);
 			long len = decodedData.size();
