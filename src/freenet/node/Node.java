@@ -2977,7 +2977,8 @@ public class Node implements TimeSkewDetectorCallback {
 				System.err.println("Defrag failed. Trying to preserve original database file.");
 				FileUtil.secureDelete(databaseFile, random);
 				if(!backupFile.renameTo(databaseFile)) {
-					System.err.println("Unable to rename backup file back to database file!");
+					System.err.println("Unable to rename backup file back to database file! Restarting on the assumption that it didn't get closed...");
+					WrapperManager.restart();
 					throw e;
 				}
 			}
@@ -2986,7 +2987,8 @@ public class Node implements TimeSkewDetectorCallback {
 				System.err.println("Defrag failed. Trying to preserve original database file.");
 				FileUtil.secureDelete(databaseFile, random);
 				if(!backupFile.renameTo(databaseFile)) {
-					System.err.println("Unable to rename backup file back to database file!");
+					System.err.println("Unable to rename backup file back to database file! Restarting on the assumption that it didn't get closed...");
+					WrapperManager.restart();
 					throw e;
 				}
 			}
