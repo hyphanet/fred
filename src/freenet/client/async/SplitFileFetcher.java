@@ -553,7 +553,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			long sz = s.decodedLength(container);
 			finalLength += sz;
 			if(logMINOR)
-				Logger.minor(this, "Segment "+i+" decoded length "+sz+" total length now "+finalLength+" for "+s.dataBuckets.length+" blocks which should be "+(s.dataBuckets.length * NodeCHK.BLOCK_SIZE));
+				Logger.minor(this, "Segment "+i+" decoded length "+sz+" total length now "+finalLength+" for "+s.dataBuckets.length+" blocks which should be "+(s.dataBuckets.length * NodeCHK.BLOCK_SIZE)+" for "+this);
 			// Healing is done by Segment
 		}
 		if(finalLength > overrideLength) {
