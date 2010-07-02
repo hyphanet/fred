@@ -2667,6 +2667,20 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("Query activation depth: "+dbConfig.activationDepth());
 		ObjectContainer database;
 
+		File dbFileBackup = new File(dbFile.getPath()+".tmp");
+		File dbFileCryptBackup = new File(dbFileCrypt.getPath()+".tmp");
+		
+		if(dbFileBackup.exists() && !dbFile.exists()) {
+			if(!dbFileBackup.renameTo(dbFile)) {
+				throw new IOException("Database backup file "+dbFileBackup+" exists but cannot be renamed to "+dbFile+". Not loading database, please fix permissions problems!");
+			}
+		}
+		if(dbFileCryptBackup.exists() && !dbFileCrypt.exists()) {
+			if(!dbFileCryptBackup.renameTo(dbFileCrypt)) {
+				throw new IOException("Database backup file "+dbFileCryptBackup+" exists but cannot be renamed to "+dbFileCrypt+". Not loading database, please fix permissions problems!");
+			}
+		}
+		
 		try {
 			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 				databaseKey = new byte[32];
