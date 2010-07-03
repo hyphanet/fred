@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.TreeSet;
 
-public class SparseBitmap {
+public class SparseBitmap implements Iterable<int[]> {
 	private final TreeSet<Range> ranges;
 
 	public SparseBitmap() {
@@ -94,6 +94,31 @@ public class SparseBitmap {
 		}
 
 		ranges.addAll(toAdd);
+	}
+
+	public Iterator<int[]> iterator() {
+		return new SparseBitmapIterator();
+	}
+
+	private class SparseBitmapIterator implements Iterator<int[]> {
+		Iterator<Range> it;
+
+		public SparseBitmapIterator() {
+			it = ranges.iterator();
+		}
+
+		public boolean hasNext() {
+			return it.hasNext();
+		}
+
+		public int[] next() {
+			Range r = it.next();
+			return new int[] {r.start, r.end};
+		}
+
+		public void remove() {
+			it.remove();
+		}
 	}
 
 	private static class Range {
