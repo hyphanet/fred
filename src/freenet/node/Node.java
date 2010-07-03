@@ -2787,7 +2787,9 @@ public class Node implements TimeSkewDetectorCallback {
 				synchronized(this) {
 					databaseEncrypted = true;
 				}
-			} else if(dbFileCrypt.exists() && !dbFile.exists()) {
+			} else if((dbFileCrypt.exists() && !dbFile.exists()) || 
+					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.NORMAL) ||
+					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH && databaseKey != null)) {
 				// Open encrypted, regardless of seclevel.
 				if(databaseKey == null) {
 					// Try with no password
