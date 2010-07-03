@@ -217,7 +217,7 @@ public class FreenetURI implements Cloneable {
 	
 	boolean noCacheURI = false;
 	
-	/** Optimise for memory. */
+	/** Optimize for memory. */
 	public FreenetURI intern() {
 		boolean changedAnything = false;
 		byte[] x = extra;
@@ -1129,11 +1129,14 @@ public class FreenetURI implements Cloneable {
 		if(keyType.equalsIgnoreCase("USK"))
 			return suggestedEdition;
 		else if(keyType.equalsIgnoreCase("SSK")) {
-			if (!docName.matches(".*\\-[0-9]+")) /* Taken from uskForSSK, also modify there if necessary */
+			if (!docName.matches(".*\\-[0-9]+")) /* Taken from uskForSSK, also modify there if necessary; TODO just use isSSKForUSK() here?! */
 				throw new IllegalStateException();
 
 			return Long.valueOf(docName.substring(docName.lastIndexOf('-') + 1, docName.length()));
 		} else
 			throw new IllegalStateException();
 	}
+
+	// TODO add something like the following?
+	// public boolean isUpdatable() { return isUSK() || isSSKForUSK() }
 }
