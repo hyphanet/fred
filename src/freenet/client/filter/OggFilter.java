@@ -12,6 +12,9 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
+
+import freenet.support.Logger;
 
 public class OggFilter implements ContentDataFilter{
 	static final byte[] magicNumber = new byte[] {0x4f, 0x67, 0x67, 0x53};
@@ -211,5 +214,44 @@ class OggPage {
 
 	static private int byteToUnsigned(byte input) {
 		return (input & 0xff);
+	}
+
+	static private byte intToUnsignedByte(int input) {
+		return (byte) (input & 0xff);
+	}
+
+	void recalculateSegmentLacing(LinkedList<Integer> packetBoundaries) {
+		if(packetBoundaries == null) {
+			packetBoundaries = new LinkedList<Integer>();
+			packetBoundaries.push(payload.length);
+		}
+		segments = 0;
+		for(int i = packetBoundaries.size()-1; i >= 0; i--) {
+			int packet;
+			if(i < packetBoundaries.size()-1) packet = packetBoundaries.get(i)-packetBoundaries.get(i+1);
+			else packet = packetBoundaries.get(i);
+			segments += packet / 255 + (packet % 255 == 0 ? 0 : 1);
+			Logger.minor(this, "Current boundary: "+packet+"Current segment size: "+segments+" Current math: "+packet/255+ "Remainer "+packet%255);
+		}
+		Logger.minor(this, "Segments "+segments);
+		segmentTable = new byte[segments];
+		int segment = 0;
+		for(int i = packetBoundaries.size()-1; i >= 0; i--) {
+			int packet;
+			if(i < packetBoundaries.size()-1) packet = packetBoundaries.get(i)-packetBoundaries.get(i+1);
+			else packet = packetBoundaries.get(i);
+			Logger.minor(this, "Setting segments for packet "+i+" Sized "+packet);
+			for(int packetSegment = 0; packetSegment < packet / 255; packetSegment++) {
+				Logger.minor(this, "Setting segment "+segment+" to full.");
+				segmentTable[segment] = intToUnsignedByte(255);
+				segment++;
+			}
+			int remainder = packet % 255;
+			if(remainder != 0) {
+				Logger.minor(this, "Partially filling segment "+segment);
+				segmentTable[segment] = intToUnsignedByte(remainder);
+				segment++;
+			}
+		}	
 	}
 }
