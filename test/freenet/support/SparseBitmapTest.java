@@ -1,5 +1,7 @@
 package freenet.support;
 
+import java.util.Iterator;
+
 import junit.framework.TestCase;
 
 public class SparseBitmapTest extends TestCase {
@@ -71,5 +73,18 @@ public class SparseBitmapTest extends TestCase {
 		assertTrue(s.contains(0, 2));
 		assertFalse(s.contains(3, 12));
 		assertTrue(s.contains(13, 14));
+	}
+
+	public void testCombineBackwards() {
+		SparseBitmap s = new SparseBitmap();
+		s.add(5, 10);
+		s.add(0, 5);
+
+		Iterator<int[]> it = s.iterator();
+		assertTrue(it.hasNext());
+		int[] range = it.next();
+		assertEquals(0, range[0]);
+		assertEquals(10, range[1]);
+		assertFalse(it.hasNext());
 	}
 }
