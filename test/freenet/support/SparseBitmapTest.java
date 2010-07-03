@@ -101,4 +101,18 @@ public class SparseBitmapTest extends TestCase {
 		assertEquals(15, range[1]);
 		assertFalse(it.hasNext());
 	}
+
+	public void testCombineAdjacent() {
+		SparseBitmap s = new SparseBitmap();
+		s.add(10, 14);
+		s.add(0, 4);
+		s.add(5, 9);
+
+		Iterator<int[]> it = s.iterator();
+		assertTrue(it.hasNext());
+		int[] range = it.next();
+		assertEquals(0, range[0]);
+		assertEquals(14, range[1]);
+		assertFalse(it.hasNext());
+	}
 }

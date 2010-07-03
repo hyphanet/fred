@@ -23,8 +23,8 @@ public class SparseBitmap implements Iterable<int[]> {
 			if(range.start <= start && range.end >= end) {
 				// Equal or inside
 				return;
-			} else if((range.start <= start && range.end >= start)
-			                || (range.start <= end && range.end >= end)) {
+			} else if((range.start <= start && range.end >= (start - 1))
+			                || (range.start <= (end + 1) && range.end >= end)) {
 				// Overlapping
 				it.remove();
 
