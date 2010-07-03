@@ -14,7 +14,7 @@ public class SparseBitmap implements Iterable<int[]> {
 
 	public void add(int start, int end) {
 		if(start > end) {
-			throw new IllegalArgumentException("Tried adding badd range. Start: " + start + ", end: " + end);
+			throw new IllegalArgumentException("Tried adding bad range. Start: " + start + ", end: " + end);
 		}
 
 		Iterator<Range> it = ranges.iterator();
