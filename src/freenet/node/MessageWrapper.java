@@ -8,6 +8,7 @@ import java.util.TreeSet;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.support.Logger;
+import freenet.support.SparseBitmap;
 
 public class MessageWrapper {
 	private final MessageItem item;
@@ -15,8 +16,8 @@ public class MessageWrapper {
 	private final int messageID;
 	
 	//Sorted lists of non-overlapping ranges
-	private final SortedSet<int[]> acks = new TreeSet<int[]>(new RangeComparator());
-	private final SortedSet<int[]> sent = new TreeSet<int[]>(new RangeComparator());
+	private final SparseBitmap acks = new SparseBitmap();
+	private final SparseBitmap sent = new SparseBitmap();
 
 	public MessageWrapper(MessageItem item, int messageID) {
 		this.item = item;
@@ -58,7 +59,7 @@ public class MessageWrapper {
 
 		System.arraycopy(item.buf, start, dest, offset, realLength);
 		
-		addRangeToSet(start, start + realLength - 1, sent);
+		sent.add(start, start + realLength - 1);
 		return new int[] {realLength, start};
 	}
 
@@ -74,7 +75,7 @@ public class MessageWrapper {
 	 */
 	public void getData(byte[] dest, int offset, int start, int end) {
 		System.arraycopy(item.buf, start, dest, offset, end - start);
-		addRangeToSet(start, end, sent);
+		sent.add(start, end);
 	}
 
 	private boolean alreadyAcked = false;
@@ -85,26 +86,20 @@ public class MessageWrapper {
 	 * @param end the last byte to be marked
 	 */
 	public boolean ack(int start, int end) {
-		addRangeToSet(start, end, acks);
-		if(acks.size() == 1) {
-			int[] range = acks.first();
-			if(range[0] == 0 && (range[1] >= (item.buf.length - 1))) {
-				if(range[1] > (item.buf.length - 1)) {
-					Logger.warning(this, "Ack range is bigger than message", new Exception());
-				}
-				if(!alreadyAcked) {
-					//TODO: Add overhead
-					//TODO: This should be called when the packet is *sent* not acked
-					item.onSent(item.buf.length);
-					if(item.cb != null) {
-						for(AsyncMessageCallback cb : item.cb) {
-							cb.acknowledged();
-						}
+		acks.add(start, end);
+		if(acks.contains(0, item.buf.length - 1)) {
+			if(!alreadyAcked) {
+				//TODO: Add overhead
+				//TODO: This should be called when the packet is *sent* not acked
+				item.onSent(item.buf.length);
+				if(item.cb != null) {
+					for(AsyncMessageCallback cb : item.cb) {
+						cb.acknowledged();
 					}
-					alreadyAcked = true;
 				}
-				return true;
+				alreadyAcked = true;
 			}
+			return true;
 		}
 		return false;
 	}
@@ -121,7 +116,7 @@ public class MessageWrapper {
 		synchronized(acks) {
 			sent.clear();
 			for(int[] range : acks) {
-				sent.add(range);
+				sent.add(range[0], range[1]);
 			}
 		}
 		}
@@ -150,7 +145,7 @@ public class MessageWrapper {
 			return false;
 		}
 
-		if((sent.size() == 1) && (sent.first()[0] == 0) && (sent.first()[1] >= item.buf.length)) {
+		if(sent.contains(0, item.buf.length - 1)) {
 			//It can be sent in one go, and we have already sent everything
 			return false;
 		}
@@ -163,85 +158,6 @@ public class MessageWrapper {
 			return o1[0] - o2[0];
 		}
 
-	}
-
-	private void addRangeToSet(int start, int end, SortedSet<int[]> set) {
-		if(start > end) {
-			Logger.error(this, "Adding bad range. Start: " + start + ", end: " + end, new Exception());
-			return;
-		}
-
-		synchronized(set) {
-			if(set.size() == 0) {
-				set.add(new int[] {start, end});
-				return;
-			}
-
-			Iterator<int[]> it = set.iterator();
-			while (it.hasNext()) {
-				int[] range = it.next();
-				if(range[0] <= start && range[1] >= end) {
-					// Equal or inside
-					return;
-				} else if((range[0] <= start && range[1] >= (start - 1))
-				                || (range[0] <= (end + 1) && range[1] >= end)) {
-					// Overlapping or adjacent
-					it.remove();
-
-					int[] newRange = new int[2];
-					newRange[0] = Math.min(range[0], start);
-					newRange[1] = Math.max(range[1], end);
-					set.add(newRange);
-					return;
-				}
-			}
-
-			set.add(new int[] {start, end});
-		}
-	}
-
-	private void removeRangeFromSet(int start, int end, SortedSet<int[]> set) {
-		if(start > end) {
-			Logger.error(this, "Removing bad range. Start: " + start + ", end: " + end, new Exception());
-			return;
-		}
-
-		synchronized(set) {
-			LinkedList<int[]> toAdd = new LinkedList<int[]>();
-
-			Iterator<int[]> it = set.iterator();
-			while (it.hasNext()) {
-				int[] range = it.next();
-
-				if(range[0] < start) {
-					if(range[1] < start) {
-						//Outside
-						continue;
-					} else if(range[1] <= end) {
-						//Overlaps beginning
-						toAdd.add(new int [] {range[0], start - 1});
-					} else /* (range[1] > end) */{
-						//Overlaps entire range
-						toAdd.add(new int [] {range[0], start - 1});
-						toAdd.add(new int [] {end + 1, range[1]});
-					}
-				} else if(range[0] >= start && range[0] <= end) {
-					if (range[1] <= end) {
-						// Equal or inside
-						it.remove();
-					} else /* (range[1] > end) */ {
-						// Overlaps end
-						toAdd.add(new int [] {end + 1, range[1]});
-					}
-				} else /* (range[0] > end) */ {
-					//Outside
-					continue;
-				}
-				it.remove();
-			}
-
-			set.addAll(toAdd);
-		}
 	}
 
 	public boolean isFirstFragment() {
@@ -278,7 +194,7 @@ public class MessageWrapper {
 		byte[] fragmentData = new byte[fragmentLength];
 		System.arraycopy(item.buf, start, fragmentData, 0, fragmentLength);
 
-		addRangeToSet(start, start + fragmentLength - 1, sent);
+		sent.add(start, start + fragmentLength - 1);
 
 		boolean isFragmented = !((start == 0) && (fragmentLength == item.buf.length - 1));
 		return new MessageFragment(!isLongMessage, isFragmented, start == 0, messageID, fragmentLength,

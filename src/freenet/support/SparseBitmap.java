@@ -97,6 +97,10 @@ public class SparseBitmap implements Iterable<int[]> {
 		return new SparseBitmapIterator();
 	}
 
+	public boolean isEmpty() {
+		return ranges.isEmpty();
+	}
+
 	private class SparseBitmapIterator implements Iterator<int[]> {
 		Iterator<Range> it;
 
