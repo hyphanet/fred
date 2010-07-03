@@ -196,7 +196,7 @@ public class MessageWrapper {
 
 		sent.add(start, start + fragmentLength - 1);
 
-		boolean isFragmented = !((start == 0) && (fragmentLength == item.buf.length - 1));
+		boolean isFragmented = !((start == 0) && (fragmentLength == item.buf.length));
 		return new MessageFragment(!isLongMessage, isFragmented, start == 0, messageID, fragmentLength,
 		                item.buf.length, start, fragmentData);
         }
