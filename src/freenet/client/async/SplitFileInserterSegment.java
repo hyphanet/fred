@@ -1322,7 +1322,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.activate(this, 1);
 			container.activate(blocks, 1);
 		}
-		byte crytoAlgorithm = getCryptoAlgorithm(container);
 		synchronized(this) {
 			if(finished) return null;
 			if(blocks.isEmpty()) {
