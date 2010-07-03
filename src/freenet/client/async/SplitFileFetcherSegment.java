@@ -880,9 +880,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			try {
 				copy = context.tempBucketFactory.makeBucket(data.size());
 				BucketTools.copy(data, copy);
-				data.free();
-				if(persistent)
-					data.removeFrom(container);
 				data = copy;
 			} catch (IOException e) {
 				Logger.normal(this, "Failed to copy data for healing: "+e, e);
