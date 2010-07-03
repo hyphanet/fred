@@ -270,7 +270,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			int segmentNo = 0;
 			int bucketNo = 0;
 			SegmentedChainBucketSegment seg = makeSegment(segmentNo, null);
-			OutputStream cur = seg.makeBucketStream(bucketNo);
+			OutputStream cur = seg.makeBucketStream(bucketNo, SegmentedBucketChainBucket.this);
 			private long bucketLength;
 			private boolean closed;
 
@@ -304,7 +304,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 							segmentNo++;
 							seg = makeSegment(segmentNo, seg);
 						}
-						cur = seg.makeBucketStream(bucketNo);
+						cur = seg.makeBucketStream(bucketNo, SegmentedBucketChainBucket.this);
 						bucketLength = 0;
 					}
 					int left = (int)Math.min(Integer.MAX_VALUE, bucketSize - bucketLength);
