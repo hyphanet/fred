@@ -104,6 +104,10 @@ class NPFPacket {
 				}
 				if(firstFragment) messageLength = value;
 				else fragmentOffset = value;
+
+				if(messageLength == fragmentLength) {
+					Logger.warning(NPFPacket.class, "Received fragmented message, but fragment contains the entire message");
+				}
 			} else {
 				messageLength = fragmentLength;
 			}
