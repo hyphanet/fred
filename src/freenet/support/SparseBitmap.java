@@ -115,7 +115,7 @@ public class SparseBitmap {
 
 	private class RangeComparator implements Comparator<Range> {
 		public int compare(Range r1, Range r2) {
-			return r2.start - r1.start;
+			return r1.start - r2.start;
 		}
 	}
 }
