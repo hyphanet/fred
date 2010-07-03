@@ -240,7 +240,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(freeData) {
 				if(persistent) container.activate(data, 1);
 				data.free();
-				data.removeFrom(container);
+				if(persistent) data.removeFrom(container);
 				synchronized(this) {
 					data = null;
 				}
@@ -301,7 +301,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				if(freeData) {
 					if(persistent) container.activate(data, 1);
 					data.free();
-					data.removeFrom(container);
+					if(persistent) data.removeFrom(container);
 					synchronized(this) {
 						data = null;
 					}
@@ -315,7 +315,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(state != null && persistent) {
 			state.removeFrom(container, context);
 		}
-		if(oldSBI != null && oldSBI != state) {
+		if(oldSBI != null && oldSBI != state && persistent) {
 			container.activate(oldSBI, 1);
 			oldSBI.removeFrom(container, context);
 		}
