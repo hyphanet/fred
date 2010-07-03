@@ -720,7 +720,8 @@ public class SplitFileInserter implements ClientPutState {
 					break;
 				}
 				if(!segments[i].hasURIs()) {
-					Logger.error(this, "Segment finished but hasURIs() is false: "+segments[i]+" for "+this);
+					if(segments[i].getException(container) == null)
+						Logger.error(this, "Segment finished but hasURIs() is false: "+segments[i]+" for "+this);
 				}
 				if(persistent && segments[i] != segment)
 					container.deactivate(segments[i], 1);
