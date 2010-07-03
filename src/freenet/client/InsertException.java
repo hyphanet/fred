@@ -52,10 +52,12 @@ public class InsertException extends Exception {
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = msg;
 		mode = m;
-		if(logMINOR)
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+msg, this);
 		errorCodes = null;
 		this.uri = expectedURI;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(logMINOR) 
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+msg, this);
 	}
 	
 	public InsertException(int m, FreenetURI expectedURI) {
@@ -64,10 +66,12 @@ public class InsertException extends Exception {
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = null;
 		mode = m;
-		if(logMINOR)
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 		errorCodes = null;
 		this.uri = expectedURI;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(logMINOR) 
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 	}
 
 	public InsertException(int mode, Throwable e, FreenetURI expectedURI) {
@@ -75,12 +79,14 @@ public class InsertException extends Exception {
 		if(mode == 0)
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = e.getMessage();
-		if(logMINOR)
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, e);
 		this.mode = mode;
 		errorCodes = null;
 		initCause(e);
 		this.uri = expectedURI;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(logMINOR) 
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, this);
 	}
 
 	public InsertException(int mode, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
@@ -89,10 +95,12 @@ public class InsertException extends Exception {
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = null;
 		this.mode = mode;
-		if(logMINOR)
-			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 		this.errorCodes = errorCodes;
 		this.uri = expectedURI;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(logMINOR) 
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 	}
 
 	public InsertException(int mode) {
@@ -103,6 +111,10 @@ public class InsertException extends Exception {
 		this.mode = mode;
 		this.errorCodes = null;
 		this.uri = null;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(logMINOR) 
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 	}
 
 	public InsertException(InsertException e) {
