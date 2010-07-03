@@ -28,11 +28,8 @@ public class SparseBitmap implements Iterable<int[]> {
 				// Overlapping
 				it.remove();
 
-				Range newRange = new Range();
-				newRange.start = Math.min(range.start, start);
-				newRange.end = Math.max(range.end, end);
-				ranges.add(newRange);
-				return;
+				start = Math.min(start, range.start);
+				end = Math.max(end, range.end);
 			}
 		}
 		ranges.add(new Range(start, end));
