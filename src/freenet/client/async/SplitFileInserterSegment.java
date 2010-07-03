@@ -1450,6 +1450,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					context.mainExecutor.execute(new Runnable() {
 
 						public void run() {
+							// Make absolutely sure even if we run the two jobs out of order.
+							// Overhead for double-checking should be very low.
+							seg.onEncode(num, key, null, context);
 							req.onInsertSuccess(context);
 						}
 
