@@ -598,4 +598,24 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		return false;
 	}
 	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing SegmentedBucketChainBucket in database", new Exception("error"));
+		throw new IllegalStateException();
+	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a SegmentedBucketChainBucket!", new Exception("error"));
+		throw new IllegalStateException();
+	}
+	
+	public boolean objectCanActivate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a SegmentedBucketChainBucket!", new Exception("error"));
+		throw new IllegalStateException();
+	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a SegmentedBucketChainBucket!", new Exception("error"));
+		throw new IllegalStateException();
+	}
+	
 }
