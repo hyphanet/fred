@@ -408,7 +408,7 @@ public class TempBucketFactory implements BucketFactory {
 		
 		public boolean objectCanActivate(ObjectContainer container) {
 			Logger.error(this, "Trying to store a TempBucket!", new Exception("error"));
-			throw new IllegalStateException();
+			return false;
 		}
 		
 		public boolean objectCanDeactivate(ObjectContainer container) {
