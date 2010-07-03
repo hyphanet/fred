@@ -84,6 +84,8 @@ public class PersistentChosenBlock extends ChosenBlock {
 			}
 			insertSucceeded = true;
 			finished = true;
+			if(getGeneratedKey() == null)
+				Logger.error(this, "Insert completed but no generated key on "+this, new Exception("debug"));
 		}
 		parent.onFinished(this, context);
 	}
