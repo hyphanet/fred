@@ -40,14 +40,16 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 //	}
 //
 	public void storeTo(ObjectContainer container) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
-			Logger.minor(this, "Storing "+this+" with data: "+data);
 		if(data != null)
 			data.storeTo(container);
 		container.store(this);
+		if(Logger.shouldLog(LogLevel.MINOR, this))
+			Logger.minor(this, "Storing "+this+" with data: "+data+" id = "+container.ext().getID(this));
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		if(Logger.shouldLog(LogLevel.MINOR, this))
+			Logger.minor(this, "Removing "+this+" with data: "+data);
 		if(data != null) {
 			container.activate(data, 1);
 			data.removeFrom(container);
