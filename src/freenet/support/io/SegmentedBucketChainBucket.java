@@ -610,7 +610,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	
 	public boolean objectCanActivate(ObjectContainer container) {
 		Logger.error(this, "Trying to store a SegmentedBucketChainBucket!", new Exception("error"));
-		throw new IllegalStateException();
+		return false;
 	}
 	
 	public boolean objectCanDeactivate(ObjectContainer container) {
