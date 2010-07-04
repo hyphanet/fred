@@ -81,7 +81,7 @@ public abstract class WebInterfaceToadlet extends Toadlet implements LinkEnabled
 		if (retryUri != null) {
 			errorBox.addChild("#", "Retry: ");
 			errorBox.addChild(new HTMLNode("a", "href", path + "?key="
-					+ ((extraParams == null) ? retryUri : (retryUri + "?" + extraParams)), retryUri.toString(false, false)));
+					+ ((extraParams == null) ? retryUri : (retryUri + extraParams)), retryUri.toString(false, false)));
 		}
 		return box.outer;
 	}
