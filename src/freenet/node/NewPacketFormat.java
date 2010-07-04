@@ -117,10 +117,14 @@ public class NewPacketFormat implements PacketFormat {
 
 		synchronized(sentPackets) {
 			if(sentPackets.size() > 100) {
-				for(SentPacket sent : sentPackets.values()) {
-					sent.lost();
+				Iterator<Long> it = sentPackets.keySet().iterator();
+				while(it.hasNext()) {
+					Long seqNum = it.next();
+					if(nextSequenceNumber - seqNum >= 100) {
+						sentPackets.get(seqNum).lost();
+						it.remove();
+					}
 				}
-				sentPackets.clear();
 			}
 		}
 	}
