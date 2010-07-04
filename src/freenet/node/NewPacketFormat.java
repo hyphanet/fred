@@ -245,6 +245,10 @@ public class NewPacketFormat implements PacketFormat {
 
 		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
 
+		synchronized(sentPackets) {
+			sentPackets.put(packet.getSequenceNumber(), sentPacket);
+		}
+
 		try {
 	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
                 } catch (LocalAddressException e) {
@@ -252,10 +256,6 @@ public class NewPacketFormat implements PacketFormat {
 			sentPacket.lost();
 			return false;
                 }
-
-		synchronized(sentPackets) {
-			sentPackets.put(packet.getSequenceNumber(), sentPacket);
-		}
 		return true;
 	}
 
