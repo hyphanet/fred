@@ -254,6 +254,9 @@ public class NewPacketFormat implements PacketFormat {
                 } catch (LocalAddressException e) {
 	                Logger.error(this, "Caught exception while sending packet", e);
 			sentPacket.lost();
+			synchronized(sentPackets) {
+				sentPackets.remove(packet.getSequenceNumber());
+			}
 			return false;
                 }
 		return true;
