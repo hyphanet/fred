@@ -927,6 +927,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			s += ": "+getFailedMessage.extraDescription;
 		return s;
 	}
+	
+	public int getFailureReasonCode(ObjectContainer container) {
+		if(getFailedMessage == null)
+			return -1;
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(getFailedMessage, 5);
+		return getFailedMessage.code;
+		
+	}
 
 	@Override
 	public boolean isTotalFinalized(ObjectContainer container) {

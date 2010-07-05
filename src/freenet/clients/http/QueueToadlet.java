@@ -18,18 +18,22 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
@@ -39,6 +43,9 @@ import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.filter.ContentFilter;
+import freenet.client.filter.KnownUnsafeContentTypeException;
+import freenet.client.filter.MIMEType;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
@@ -961,6 +968,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		LinkedList<ClientRequest> uncompletedUpload = new LinkedList<ClientRequest>();
 		LinkedList<ClientRequest> uncompletedDirUpload = new LinkedList<ClientRequest>();
 		
+		Map<String, LinkedList<ClientGet>> failedUnknownMIMEType = new HashMap<String, LinkedList<ClientGet>>();
+		Map<String, LinkedList<ClientGet>> failedBadMIMEType = new HashMap<String, LinkedList<ClientGet>>();
+		
 		ClientRequest[] reqs = fcp.getGlobalRequests(container);
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Request count: "+reqs.length);
@@ -997,7 +1007,28 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						// FIXME
 						Logger.error(this, "Don't know what to do with "+cg);
 				} else if(cg.hasFinished()) {
-					failedDownload.add(cg);
+					int failureCode = cg.getFailureReasonCode(container);
+					if(failureCode == FetchException.CONTENT_VALIDATION_UNKNOWN_MIME) {
+						String mimeType = cg.getMIMEType(container);
+						mimeType = ContentFilter.stripMIMEType(mimeType);
+						LinkedList<ClientGet> list = failedUnknownMIMEType.get(mimeType);
+						if(list == null) {
+							list = new LinkedList<ClientGet>();
+							failedUnknownMIMEType.put(mimeType, list);
+						}
+						list.add(cg);
+					} else if(failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME) {
+						String mimeType = cg.getMIMEType(container);
+						mimeType = ContentFilter.stripMIMEType(mimeType);
+						LinkedList<ClientGet> list = failedBadMIMEType.get(mimeType);
+						if(list == null) {
+							list = new LinkedList<ClientGet>();
+							failedBadMIMEType.put(mimeType, list);
+						}
+						list.add(cg);
+					} else {
+						failedDownload.add(cg);
+					}
 				} else {
 					short prio = cg.getPriority();
 					if(prio < lowestQueuedPrio)
@@ -1268,6 +1299,54 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			} else {
 				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
 			}
+		}
+		
+		if(!failedBadMIMEType.isEmpty()) {
+			String[] types = failedBadMIMEType.keySet().toArray(new String[failedBadMIMEType.size()]);
+			Arrays.sort(types);
+			for(String type : types) {
+				LinkedList<ClientGet> getters = failedBadMIMEType.get(type);
+				contentNode.addChild("a", "id", "failedDownload");
+				MIMEType typeHandler = ContentFilter.getMIMEType(type);
+				HTMLNode failedContent = pageMaker.getInfobox("failed_requests", NodeL10n.getBase().getString("QueueToadlet.failedDBadMIME", new String[]{ "size", "type" }, new String[]{ String.valueOf(getters.size()), type }), contentNode, "download-failed-"+type, false);
+				// FIXME add a class for easier styling.
+				KnownUnsafeContentTypeException e = new KnownUnsafeContentTypeException(typeHandler);
+				failedContent.addChild("p", l10n("badMIMETypeIntro", "type", type));
+				List<String> detail = e.details();
+				if(detail != null && !detail.isEmpty()) {
+					HTMLNode list = failedContent.addChild("ul");
+					for(String s : detail)
+						list.addChild("li", s);
+				}
+				failedContent.addChild("p", l10n("mimeProblemFetchAnyway"));
+				Collections.sort(getters, jobComparator);
+				if (advancedModeEnabled) {
+					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container));
+				} else {
+					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container));
+				}
+			}
+		}
+		
+		if(!failedUnknownMIMEType.isEmpty()) {
+			String[] types = failedUnknownMIMEType.keySet().toArray(new String[failedUnknownMIMEType.size()]);
+			Arrays.sort(types);
+			for(String type : types) {
+				LinkedList<ClientGet> getters = failedUnknownMIMEType.get(type);
+				contentNode.addChild("a", "id", "failedDownload");
+				MIMEType typeHandler = ContentFilter.getMIMEType(type);
+				HTMLNode failedContent = pageMaker.getInfobox("failed_requests", NodeL10n.getBase().getString("QueueToadlet.failedDUnknownMIME", new String[]{ "size", "type" }, new String[]{ String.valueOf(getters.size()), type }), contentNode, "download-failed-"+type, false);
+				// FIXME add a class for easier styling.
+				failedContent.addChild("p", NodeL10n.getBase().getString("UnknownContentTypeException.explanation", "type", type));
+				failedContent.addChild("p", l10n("mimeProblemFetchAnyway"));
+				Collections.sort(getters, jobComparator);
+				if (advancedModeEnabled) {
+					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container));
+				} else {
+					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container));
+				}
+			}
+			
 		}
 		
 		if (!uncompletedDownload.isEmpty()) {
@@ -1570,7 +1649,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return lastActivityCell;
 	}
 
-	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List<ClientRequest> requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload, ObjectContainer container) {
+	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List<? extends ClientRequest> requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload, ObjectContainer container) {
 		boolean hasFriends = core.node.getDarknetConnections().length > 0;
 		long now = System.currentTimeMillis();
 		HTMLNode table = new HTMLNode("table", "class", "requests");
