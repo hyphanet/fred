@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -8,6 +9,7 @@ import java.util.Vector;
 
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
+import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.Peer.LocalAddressException;
@@ -31,7 +33,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private PeerNode pn;
-	private HashMap<Integer, MessageWrapper> started = new HashMap<Integer, MessageWrapper>();
+	private ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private final LinkedList<Long> acks = new LinkedList<Long>();
 	private long nextSequenceNumber = 0;
 	private HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
@@ -42,6 +44,11 @@ public class NewPacketFormat implements PacketFormat {
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
+
+		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
+		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
+			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
+		}
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
@@ -181,42 +188,48 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		//Try to finish messages that have been started
-		synchronized(started) {
-			Iterator<MessageWrapper> it = started.values().iterator();
-			while(it.hasNext() && packet.getLength() < maxPacketSize) {
-				MessageWrapper wrapper = it.next();
+		for(int i = 0; i < startedByPrio.size(); i++) {
+			HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
+
+			//Try to finish messages that have been started
+			synchronized(started) {
+				Iterator<MessageWrapper> it = started.values().iterator();
+				while(it.hasNext() && packet.getLength() < maxPacketSize) {
+					MessageWrapper wrapper = it.next();
+					MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+					if(frag == null) continue;
+					packet.addMessageFragment(frag);
+					sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
+				}
+			}
+
+			//Add messages from the message queue
+			PeerMessageQueue messageQueue = pn.getMessageQueue();
+			while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
+				MessageItem item = null;
+				synchronized(messageQueue) {
+					item = messageQueue.grabQueuedMessageItem(i);
+				}
+				if(item == null) break;
+
+				int messageID = getMessageID();
+				if(messageID == -1) {
+					Logger.warning(this, "No availiable message ID, requeuing and sending packet");
+					messageQueue.pushfrontPrioritizedMessageItem(item);
+					break;
+				}
+
+				MessageWrapper wrapper = new MessageWrapper(item, messageID);
 				MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-				if(frag == null) continue;
+				if(frag == null) break;
 				packet.addMessageFragment(frag);
 				sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
-			}
-		}
 
-		//Add messages from the message queue
-		PeerMessageQueue messageQueue = pn.getMessageQueue();
-		while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
-			MessageItem item = null;
-			synchronized(messageQueue) {
-				item = messageQueue.grabQueuedMessageItem();
-			}
-			if(item == null) break;
-
-			int messageID = getMessageID();
-			if(messageID == -1) {
-				Logger.warning(this, "No availiable message ID, requeuing and sending packet");
-				messageQueue.pushfrontPrioritizedMessageItem(item);
-				break;
-			}
-
-			MessageWrapper wrapper = new MessageWrapper(item, messageID);
-			MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-			if(frag == null) break;
-			packet.addMessageFragment(frag);
-			sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
-
-			synchronized(started) {
-				started.put(messageID, wrapper);
+				//Priority of the one we grabbed might be higher than i
+				HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
+				synchronized(queue) {
+					queue.put(messageID, wrapper);
+				}
 			}
 		}
 
@@ -265,8 +278,10 @@ public class NewPacketFormat implements PacketFormat {
 	private int getMessageID() {
 		int messageID = nextMessageID;
 
-		synchronized(started) {
-			if(started.containsKey(messageID)) return -1;
+		for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+			synchronized(started) {
+				if(started.containsKey(messageID)) return -1;
+			}
 		}
 
 		nextMessageID = (nextMessageID + 1) % 8192;
@@ -304,6 +319,7 @@ public class NewPacketFormat implements PacketFormat {
 				}
 
 				if(wrapper.ack(range[0], range[1])) {
+					HashMap<Integer, MessageWrapper> started = startedByPrio.get(wrapper.getPriority());
 					synchronized(started) {
 						started.remove(wrapper.getMessageID());
 					}

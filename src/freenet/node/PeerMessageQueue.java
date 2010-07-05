@@ -389,6 +389,14 @@ public class PeerMessageQueue {
 		return null;
         }
 
+	public synchronized MessageItem grabQueuedMessageItem(int minPriority) {
+		for(int i = 0; i <= minPriority; i++) {
+			MessageItem item = queuesByPriority[i].poll();
+			if(item != null) return item;
+		}
+		return null;
+	}
+
 	public synchronized MessageItem[] grabQueuedMessageItems() {
 		int size = 0;
 		for(int i=0;i<queuesByPriority.length;i++)

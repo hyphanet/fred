@@ -151,6 +151,10 @@ public class MessageWrapper {
 		}
 		return true;
 	}
+
+	public int getPriority() {
+		return item.getPriority();
+	}
 	
 	private class RangeComparator implements Comparator<int[]> {
 
