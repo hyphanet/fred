@@ -4,6 +4,8 @@
 
 package freenet.client.filter;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -14,37 +16,32 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 
 public class OggFilter implements ContentDataFilter{
-	static final byte[] magicNumber = new byte[] {0x4f, 0x67, 0x67, 0x53};
 	HashMap<Integer, OggBitstreamFilter> streamFilters = new HashMap<Integer, OggBitstreamFilter>();
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
 		DataInputStream in = new DataInputStream(input);
 		while(true) {
+			OggPage page = null;
 			try {
-				//Seek for magic number
-				if(in.readByte() != magicNumber[0]) continue;
-				if(in.readByte() != magicNumber[1]) continue;
-				if(in.readByte() != magicNumber[2]) continue;
-				if(in.readByte() != magicNumber[3]) continue;
-
-				OggPage page = new OggPage(in);
-				OggBitstreamFilter filter = null;
-				if(streamFilters.containsKey(page.getSerial())) {
-					filter = streamFilters.get(page.getSerial());
-				} else {
-					filter = OggBitstreamFilter.getBitstreamFilter(page);
-					streamFilters.put(page.getSerial(), filter);
-				}
-				if(filter == null) continue;
-				if(page.headerValid() && filter.parse(page)) {
-					output.write(page.array());
-				}
-			} catch(EOFException e) {
+				page = OggPage.readPage(in);
+			} catch (EOFException e) {
 				break;
+			}
+			OggBitstreamFilter filter = null;
+			if(streamFilters.containsKey(page.getSerial())) {
+				filter = streamFilters.get(page.getSerial());
+			} else {
+				filter = OggBitstreamFilter.getBitstreamFilter(page);
+				streamFilters.put(page.getSerial(), filter);
+			}
+			if(filter == null) continue;
+			if(page.headerValid() && filter.parse(page)) {
+				output.write(page.array());
 			}
 		}
 	}
@@ -55,9 +52,9 @@ public class OggFilter implements ContentDataFilter{
 		// TODO Auto-generated method stub
 		
 	}
-
 }
 class OggPage {
+	static final byte[] magicNumber = new byte[] {0x4f, 0x67, 0x67, 0x53};
 	/*This CRC lookup table was taken from libogg. These values
 	 * are XORed with 
 	 * See: http://www.ross.net/crc/download/crc_v3.txt
@@ -140,7 +137,7 @@ class OggPage {
 	byte[] segmentTable;
 	byte[] payload;
 
-	OggPage(DataInputStream input) throws IOException {
+	private OggPage(DataInputStream input) throws IOException {
 		version=input.readByte();
 		headerType = input.readByte();
 		input.readFully(granuelPosition);
@@ -156,6 +153,20 @@ class OggPage {
 		}
 		payload = new byte[payloadSize];
 		input.read(payload);
+		if(hasValidSubpage()) throw new DataFilterException(l10n("ValidSubpageTitle"), l10n("ValidSubpageTitle"), l10n("ValidSubpageMessage"));
+
+	}
+
+	static OggPage readPage(DataInputStream input) throws IOException {
+		while(true) {
+			//Seek for magic number
+			if(input.readByte() != magicNumber[0]) continue;
+			if(input.readByte() != magicNumber[1]) continue;
+			if(input.readByte() != magicNumber[2]) continue;
+			if(input.readByte() != magicNumber[3]) continue;
+			return new OggPage(input);
+		}
+		//If we've found all of the previous magic numbers, we've probably found a page
 	}
 
 	boolean headerValid() {
@@ -166,7 +177,7 @@ class OggPage {
 
 	byte[] array() {
 		ByteBuffer bb = ByteBuffer.allocate(27+byteToUnsigned(segments)+payload.length);
-		bb.put(OggFilter.magicNumber);
+		bb.put(magicNumber);
 		bb.put(version);
 		bb.put(headerType);
 		bb.put(granuelPosition);
@@ -212,6 +223,27 @@ class OggPage {
 				(byte) (crc_reg>>>24)};
 	}
 
+	boolean hasValidSubpage() throws IOException {
+		boolean hasValidSubpage = false;
+		ByteArrayInputStream data = new ByteArrayInputStream(payload);
+		DataInputStream input = new DataInputStream(data);
+		OggPage subpage = null;
+		while(true) {
+			try {
+				subpage = readPage(input);
+			} catch(EOFException e) {
+				break;
+			}
+				if(subpage.headerValid()) {
+					hasValidSubpage=true;
+					break;
+				}
+			
+		}
+		return hasValidSubpage;
+
+	}
+
 	static private int byteToUnsigned(byte input) {
 		return (input & 0xff);
 	}
@@ -253,5 +285,9 @@ class OggPage {
 				segment++;
 			}
 		}	
+	}
+
+	private String l10n(String key) {
+		return NodeL10n.getBase().getString("OggPage." + key);
 	}
 }
