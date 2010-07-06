@@ -125,7 +125,7 @@ public class BookmarkManager implements RequestClient {
 						if(logMINOR) Logger.minor(this, "Updating bookmark for "+furi+" to edition "+edition);
 						matched = true;
 						items.get(i).setEdition(edition, node);
-						break;
+						// We may have bookmarked the same site twice, so continue the search.
 					}
 				} catch(MalformedURLException mue) {
 				}
