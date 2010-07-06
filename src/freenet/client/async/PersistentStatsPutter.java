@@ -8,6 +8,7 @@ import com.db4o.ObjectSet;
 
 import freenet.node.Node;
 import freenet.support.BandwidthStatsContainer;
+import freenet.support.Logger;
 import freenet.support.UptimeContainer;
 
 /**
@@ -40,21 +41,31 @@ public class PersistentStatsPutter implements DBJob {
 		BandwidthStatsContainer storedBSC = null;
 
 		ObjectSet<BandwidthStatsContainer> BSCresult = container.query(BandwidthStatsContainer.class);
-		if(BSCresult.size() > 0) {
-			storedBSC = BSCresult.get(0);
-		} else {
-			storedBSC = new BandwidthStatsContainer();
+		for(BandwidthStatsContainer candidate : BSCresult) {
+			if(candidate == null)
+				Logger.error(this, "DB4O BUG??? Querying for BandwidthStatsContainer returned null");
+			else {
+				storedBSC = candidate;
+				break;
+			}
 		}
+		if(storedBSC == null)
+			storedBSC = new BandwidthStatsContainer();
 
 		this.latestBW = storedBSC;
 
 		UptimeContainer storedUC = null;
 		ObjectSet<UptimeContainer> UptimeResult = container.query(UptimeContainer.class);
-		if(UptimeResult.size() > 0) {
-			storedUC = UptimeResult.get(0);
-		} else {
-			storedUC = new UptimeContainer();
+		for(UptimeContainer candidate : UptimeResult) {
+			if(candidate == null)
+				Logger.error(this, "DB4O BUG??? Querying for UptimeResult returned null");
+			else {
+				storedUC = candidate;
+				break;
+			}
 		}
+		if(storedUC == null)
+			storedUC = new UptimeContainer();
 
 		this.latestUptime = storedUC;
 	}
