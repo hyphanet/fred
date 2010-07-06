@@ -1182,6 +1182,22 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			navigationContent.addChild("li").addChild("a", "href", "#failedDirUpload", NodeL10n.getBase().getString("QueueToadlet.failedDU", new String[]{ "size" }, new String[]{ String.valueOf(failedDirUpload.size()) }));
 			includeNavigationBar = true;
 		}
+		if (failedUnknownMIMEType.size() > 0) {
+			String[] types = failedUnknownMIMEType.keySet().toArray(new String[failedUnknownMIMEType.size()]);
+			Arrays.sort(types);
+			for(String type : types) {
+				String atype = type.replace("-", "--").replace('/', '-');
+				navigationContent.addChild("li").addChild("a", "href", "#failedDownload-"+atype, NodeL10n.getBase().getString("QueueToadlet.failedDUnknownMIME", new String[]{ "size", "type" }, new String[]{ String.valueOf(failedUnknownMIMEType.get(type).size()), type }));
+			}
+		}
+		if (failedBadMIMEType.size() > 0) {
+			String[] types = failedBadMIMEType.keySet().toArray(new String[failedBadMIMEType.size()]);
+			Arrays.sort(types);
+			for(String type : types) {
+				String atype = type.replace("-", "--").replace('/', '-');
+				navigationContent.addChild("li").addChild("a", "href", "#failedDownload-"+atype, NodeL10n.getBase().getString("QueueToadlet.failedDBadMIME", new String[]{ "size", "type" }, new String[]{ String.valueOf(failedBadMIMEType.get(type).size()), type }));
+			}
+		}
 		if (!uncompletedDownload.isEmpty()) {
 			navigationContent.addChild("li").addChild("a", "href", "#uncompletedDownload", NodeL10n.getBase().getString("QueueToadlet.DinProgress", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDownload.size()) }));
 			includeNavigationBar = true;
@@ -1306,9 +1322,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			Arrays.sort(types);
 			for(String type : types) {
 				LinkedList<ClientGet> getters = failedBadMIMEType.get(type);
-				contentNode.addChild("a", "id", "failedDownload");
+				String atype = type.replace("-", "--").replace('/', '-');
+				contentNode.addChild("a", "id", "failedDownload-"+atype);
 				MIMEType typeHandler = ContentFilter.getMIMEType(type);
-				HTMLNode failedContent = pageMaker.getInfobox("failed_requests", NodeL10n.getBase().getString("QueueToadlet.failedDBadMIME", new String[]{ "size", "type" }, new String[]{ String.valueOf(getters.size()), type }), contentNode, "download-failed-"+type, false);
+				HTMLNode failedContent = pageMaker.getInfobox("failed_requests", NodeL10n.getBase().getString("QueueToadlet.failedDBadMIME", new String[]{ "size", "type" }, new String[]{ String.valueOf(getters.size()), type }), contentNode, "download-failed-"+atype, false);
 				// FIXME add a class for easier styling.
 				KnownUnsafeContentTypeException e = new KnownUnsafeContentTypeException(typeHandler);
 				failedContent.addChild("p", l10n("badMIMETypeIntro", "type", type));
@@ -1333,9 +1350,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			Arrays.sort(types);
 			for(String type : types) {
 				LinkedList<ClientGet> getters = failedUnknownMIMEType.get(type);
-				contentNode.addChild("a", "id", "failedDownload");
+				String atype = type.replace("-", "--").replace('/', '-');
+				contentNode.addChild("a", "id", "failedDownload-"+atype);
 				MIMEType typeHandler = ContentFilter.getMIMEType(type);
-				HTMLNode failedContent = pageMaker.getInfobox("failed_requests", NodeL10n.getBase().getString("QueueToadlet.failedDUnknownMIME", new String[]{ "size", "type" }, new String[]{ String.valueOf(getters.size()), type }), contentNode, "download-failed-"+type, false);
+				HTMLNode failedContent = pageMaker.getInfobox("failed_requests", NodeL10n.getBase().getString("QueueToadlet.failedDUnknownMIME", new String[]{ "size", "type" }, new String[]{ String.valueOf(getters.size()), type }), contentNode, "download-failed-"+atype, false);
 				// FIXME add a class for easier styling.
 				failedContent.addChild("p", NodeL10n.getBase().getString("UnknownContentTypeException.explanation", "type", type));
 				failedContent.addChild("p", l10n("mimeProblemFetchAnyway"));
