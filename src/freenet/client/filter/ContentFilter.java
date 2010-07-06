@@ -75,7 +75,7 @@ public class ContentFilter {
 
 		/* Ogg - filter in process of being written
 		 * Xiph's container format. Contains one or more logical bitstreams.
-		 * Each type of bitstream will likly require additional processing,
+		 * Each type of bitstream will likely require additional processing,
 		 * on top of that needed for the Ogg container itself.
 		 * Reference: http://xiph.org/ogg/doc/rfc3533.txt
 		 */
