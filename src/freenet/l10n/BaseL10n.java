@@ -244,6 +244,8 @@ public class BaseL10n {
 	private synchronized void loadFallback() {
 		if (this.fallbackTranslation == null) {
 			this.fallbackTranslation = loadTranslation(LANGUAGE.getDefault());
+			if(fallbackTranslation == null)
+				fallbackTranslation = new SimpleFieldSet(true);
 		}
 	}
 
