@@ -55,7 +55,7 @@ public class InsertContext implements Cloneable {
 		/** We do not know. */
 		COMPAT_UNKNOWN("Unknown"),
 		/** No compatibility issues, use the most efficient metadata possible. */
-		COMPAT_CURRENT("None"),
+		COMPAT_CURRENT("Current"),
 		/** Exactly as before 1250: Segments of exactly 128 data, 128 check, check = data */
 		COMPAT_1250_EXACT("Pre-1250 (exact)"),
 		/** 1250 or previous: Segments up to 128 data 128 check, check <= data. */
