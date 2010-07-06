@@ -15,6 +15,7 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientGetter;
 import freenet.client.async.USKCallback;
 import freenet.clients.http.FProxyToadlet;
 import freenet.keys.FreenetURI;
@@ -90,6 +91,12 @@ public class BookmarkManager implements RequestClient {
 		}
 	}
 
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerClass(ClientGetter.class);
+	}
+
 	public void reAddDefaultBookmarks() {
 		BookmarkCategory bc = new BookmarkCategory(l10n("defaultBookmarks") + " - " + new Date());
 		addBookmark("/", bc);
@@ -114,6 +121,7 @@ public class BookmarkManager implements RequestClient {
 					USK usk = USK.create(furi);
 
 					if(usk.equals(key, false)) {
+						if(logMINOR) Logger.minor(this, "Updating bookmark for "+furi+" to edition "+edition);
 						items.get(i).setEdition(edition, node);
 						break;
 					}

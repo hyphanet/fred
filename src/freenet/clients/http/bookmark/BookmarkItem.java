@@ -5,6 +5,7 @@ package freenet.clients.http.bookmark;
 
 import java.net.MalformedURLException;
 
+import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.NodeL10n;
@@ -16,6 +17,7 @@ import freenet.node.useralerts.UserAlertManager;
 import freenet.support.Fields;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class BookmarkItem extends Bookmark {
@@ -62,6 +64,12 @@ public class BookmarkItem extends Bookmark {
         this.alerts = uam;
         this.alert = new BookmarkUpdatedUserAlert();
     }
+
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerClass(ClientGetter.class);
+	}
 
     private class BookmarkUpdatedUserAlert extends AbstractUserAlert {
 
@@ -179,6 +187,7 @@ public class BookmarkItem extends Bookmark {
 
     public synchronized void setEdition(long ed, NodeClientCore node) {
         if (key.getSuggestedEdition() >= ed) {
+        	if(logMINOR) Logger.minor(this, "Edition "+ed+" is too old, not updating "+key);
             return;
         }
         key = key.setSuggestedEdition(ed);
