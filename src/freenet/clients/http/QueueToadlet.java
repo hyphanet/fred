@@ -1792,9 +1792,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		InsertContext.CompatibilityMode[] compat = get.getCompatibilityMode(container);
 		if(!(compat[0] == InsertContext.CompatibilityMode.COMPAT_UNKNOWN && compat[1] == InsertContext.CompatibilityMode.COMPAT_UNKNOWN)) {
 			if(compat[0] == compat[1])
-				compatCell.addChild("#", compat[0].detail); // FIXME l10n
+				compatCell.addChild("#", NodeL10n.getBase().getString("InsertContext.CompatibilityMode."+compat[0].name())); // FIXME l10n
 			else
-				compatCell.addChild("#", compat[0].detail+" - "+compat[1].detail); // FIXME l10n
+				compatCell.addChild("#", NodeL10n.getBase().getString("InsertContext.CompatibilityMode."+compat[0].name())+" - "+NodeL10n.getBase().getString("InsertContext.CompatibilityMode."+compat[1].name())); // FIXME l10n
 			byte[] overrideCryptoKey = get.getOverriddenSplitfileCryptoKey(container);
 			if(overrideCryptoKey != null)
 				compatCell.addChild("#", " - "+l10n("overriddenCryptoKeyInCompatCell")+": "+HexUtil.bytesToHex(overrideCryptoKey));
