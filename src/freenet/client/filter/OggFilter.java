@@ -18,6 +18,7 @@ import java.util.LinkedList;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 public class OggFilter implements ContentDataFilter{
 	HashMap<Integer, OggBitstreamFilter> streamFilters = new HashMap<Integer, OggBitstreamFilter>();
@@ -54,6 +55,7 @@ public class OggFilter implements ContentDataFilter{
 	}
 }
 class OggPage {
+	boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	static final byte[] magicNumber = new byte[] {0x4f, 0x67, 0x67, 0x53};
 	/*This CRC lookup table was taken from libogg. These values
 	 * are XORed with 
@@ -263,24 +265,24 @@ class OggPage {
 			if(i < packetBoundaries.size()-1) packet = packetBoundaries.get(i)-packetBoundaries.get(i+1);
 			else packet = packetBoundaries.get(i);
 			segments += packet / 255 + (packet % 255 == 0 ? 0 : 1);
-			Logger.minor(this, "Current boundary: "+packet+"Current segment size: "+segments+" Current math: "+packet/255+ "Remainer "+packet%255);
+			if(logMINOR) Logger.minor(this, "Current boundary: "+packet+"Current segment size: "+segments+" Current math: "+packet/255+ "Remainer "+packet%255);
 		}
-		Logger.minor(this, "Segments "+segments);
+		if(logMINOR) Logger.minor(this, "Segments "+segments);
 		segmentTable = new byte[segments];
 		int segment = 0;
 		for(int i = packetBoundaries.size()-1; i >= 0; i--) {
 			int packet;
 			if(i < packetBoundaries.size()-1) packet = packetBoundaries.get(i)-packetBoundaries.get(i+1);
 			else packet = packetBoundaries.get(i);
-			Logger.minor(this, "Setting segments for packet "+i+" Sized "+packet);
+			if(logMINOR) Logger.minor(this, "Setting segments for packet "+i+" Sized "+packet);
 			for(int packetSegment = 0; packetSegment < packet / 255; packetSegment++) {
-				Logger.minor(this, "Setting segment "+segment+" to full.");
+				if(logMINOR) Logger.minor(this, "Setting segment "+segment+" to full.");
 				segmentTable[segment] = intToUnsignedByte(255);
 				segment++;
 			}
 			int remainder = packet % 255;
 			if(remainder != 0) {
-				Logger.minor(this, "Partially filling segment "+segment);
+				if(logMINOR) Logger.minor(this, "Partially filling segment "+segment);
 				segmentTable[segment] = intToUnsignedByte(remainder);
 				segment++;
 			}

@@ -12,6 +12,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.LinkedList;
 
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.CountedInputStream;
 
 import freenet.support.Logger;
@@ -28,6 +29,7 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 
 	@Override
 	boolean parse(OggPage page) throws IOException {
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		super.parse(page);
 		if(!isValidStream) return false;
 		LinkedList<Integer> VorbisPacketBoundaries = new LinkedList<Integer>();
@@ -78,22 +80,17 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					/*The header packets begin with the header type and the magic number
 					 * Validate both.
 					 */
-					Logger.minor(this, "Payload size: "+page.payload.length+" Read: "+cin.count());
 					magicHeader = new byte[1+magicNumber.length];
 					input.readFully(magicHeader);
-					Logger.minor(this, "Payload size: "+page.payload.length+" Read: "+cin.count());
 					if(magicHeader[0] != 3) isValidStream = false;
 					for(int i=0; i < magicNumber.length; i++) {
 						if(magicHeader[i+1] != magicNumber[i]) isValidStream=false;
 					}
-					Logger.minor(this, "Stream validity: "+isValidStream);
-					Logger.minor(this, "Payload size: "+page.payload.length+" Read: "+cin.count());
 					long vendor_length = Integer.reverseBytes(input.readInt());
-					Logger.minor(this, "Read a vendor length of "+vendor_length);
+					if(logMINOR) Logger.minor(this, "Read a vendor length of "+vendor_length);
 					byte[] vendor_string = new byte[(int)vendor_length];
 					input.readFully(vendor_string);
 					long user_comment_list_length = Integer.reverseBytes(input.readInt());
-					Logger.minor(this, "Stream validity later: "+isValidStream);
 					for(long i = 0; i < user_comment_list_length; i++) {
 						for(long j=Integer.reverseBytes(input.readInt()); j > 0 ; j--) {
 							input.skipBytes(1);
@@ -115,16 +112,12 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					finalPage.close();
 					VorbisPacketBoundaries.push(position);
 					output.close();
-					Logger.minor(this, "Validity: "+isValidStream);
 					pageModified=true;
 					currentState=State.COMMENT_FOUND;
 					break;
 				case COMMENT_FOUND:
 					//We should now be dealing with a setup header
-					if(page.payload.length-position == 0) running=false;
-					Logger.minor(this, "Setup before: "+position);
 					position += input.skipBytes(page.payload.length-position);
-					Logger.minor(this, "Setup after: "+position);
 					VorbisPacketBoundaries.push(position);
 					currentState=State.SETUP_FOUND;
 					running = false;//Pagebreak here
@@ -134,9 +127,9 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					position += input.skipBytes(page.payload.length-position);
 					VorbisPacketBoundaries.push(position);
 					}
-				Logger.minor(this, "Looping again... State: "+currentState);
+				if(logMINOR) Logger.minor(this, "Looping again... State: "+currentState);
 			} catch(Throwable e) {
-				Logger.minor(this, "In vorbis parser caught "+e, e);
+				if(logMINOR) Logger.minor(this, "In vorbis parser caught "+e, e);
 				running = false;
 			}
 		}
