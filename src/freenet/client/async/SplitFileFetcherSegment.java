@@ -444,7 +444,16 @@ public class SplitFileFetcherSegment implements FECCallback {
 //		}
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this+" data="+dataBuckets.length+" check="+checkBuckets.length);
 		try {
-			maybeAddToBinaryBlob(data, block, blockNo, container, context, block == null ? "CROSS-SEGMENT FEC" : "UNKNOWN");
+			if(!maybeAddToBinaryBlob(data, block, blockNo, container, context, block == null ? "CROSS-SEGMENT FEC" : "UNKNOWN")) {
+				if(block == null) {
+					// Cross-segment, just return false.
+					Logger.error(this, "CROSS-SEGMENT DECODED/ENCODED BLOCK INVALID: "+blockNo, new Exception("error"));
+					return false;
+				} else {
+					Logger.error(this, "DATA BLOCK INVALID: "+blockNo, new Exception("error"));
+					this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block"), blockNo, null, container, context);
+				}
+			}
 		} catch (FetchException e) {
 			fail(e, container, context, false);
 		}
@@ -626,7 +635,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(data == null) 
 				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
 			try {
-				maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE");
+				if(!maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE")) {
+					Logger.error(this, "Data block "+i+" FAILED TO DECODE CORRECTLY");
+					// Disable healing.
+					dataRetries[i] = 0;
+				}
 			} catch (FetchException e) {
 				fail(e, container, context, false);
 				return;
@@ -783,14 +796,17 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 					continue;
 				}
+				if(checkRetries[i] > 0)
+					heal = true;
 				try {
-					maybeAddToBinaryBlob(data, null, i+dataKeys.length, container, context, "FEC ENCODE");
+					if(!maybeAddToBinaryBlob(data, null, i+dataKeys.length, container, context, "FEC ENCODE")) {
+						heal = false;
+						Logger.error(this, "FAILED TO ENCODE CORRECTLY so not healing check block "+i);
+					}
 				} catch (FetchException e) {
 					fail(e, container, context, false);
 					return;
 				}
-				if(checkRetries[i] > 0)
-					heal = true;
 				if(heal) {
 					Bucket wrapper = queueHeal(data, container, context);
 					if(wrapper != data) {
@@ -836,7 +852,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		} else return false;
 	}
 	
-	private void maybeAddToBinaryBlob(Bucket data, ClientCHKBlock block, int blockNo, ObjectContainer container, ClientContext context, String dataSource) throws FetchException {
+	private boolean maybeAddToBinaryBlob(Bucket data, ClientCHKBlock block, int blockNo, ObjectContainer container, ClientContext context, String dataSource) throws FetchException {
 		if(parent instanceof ClientGetter || FORCE_CHECK_FEC_KEYS) {
 			if(((ClientGetter)parent).collectingBinaryBlob() || FORCE_CHECK_FEC_KEYS) {
 				try {
@@ -846,7 +862,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 						// All new splitfile inserts insert only complete blocks even at the end.
 						if((!ignoreLastDataBlock) || (blockNo != dataKeys.length-1))
 							Logger.error(this, "Block is too small: "+buf.length);
-						return;
+						return false;
 					}
 					if(block == null) {
 						block = 
@@ -858,10 +874,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 							if(ignoreLastDataBlock && blockNo == dataKeys.length-1 && dataSource.equals("FEC DECODE")) {
 								if(logMINOR) Logger.minor(this, "Last block wrong key, ignored because expected due to padding issues");
 							} else {
-								Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" (data "+dataKeys.length+" check "+checkKeys.length+" ignore last block="+ignoreLastDataBlock+") : key "+block.getClientKey()+" should be "+key, new Exception("error"));
-								this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from "+dataSource), blockNo, null, container, context);
+								Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" (data "+dataKeys.length+" check "+checkKeys.length+" ignore last block="+ignoreLastDataBlock+") : key "+block.getClientKey().getURI()+" should be "+key.getURI(), new Exception("error"));
 							}
-							return;
+							return false;
 						} else {
 							if(logMINOR) Logger.minor(this, "Verified key for block "+blockNo+" from "+dataSource);
 						}
@@ -876,6 +891,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					if(parent instanceof ClientGetter) {
 						((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 					}
+					return true;
 				} catch (CHKEncodeException e) {
 					Logger.error(this, "Failed to encode (collecting binary blob) block "+blockNo+": "+e, e);
 					throw new FetchException(FetchException.INTERNAL_ERROR, "Failed to encode for binary blob: "+e);
@@ -884,6 +900,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 		}
+		return true; // Assume it is encoded correctly.
 	}
 
 	/**
