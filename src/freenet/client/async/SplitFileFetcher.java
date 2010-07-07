@@ -240,7 +240,13 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250;
 					}
 				} else {
-					minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
+					if(checkBlocks == 64) {
+						// Very old 128/64 redundancy.
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
+					} else {
+						// Extra block per segment in 1251.
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
+					}
 				}
 			} else {
 				minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
