@@ -445,7 +445,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this+" data="+dataBuckets.length+" check="+checkBuckets.length);
 		try {
 			if(!maybeAddToBinaryBlob(data, block, blockNo, container, context, block == null ? "CROSS-SEGMENT FEC" : "UNKNOWN")) {
-				if(block == null) {
+				if((ignoreLastDataBlock && blockNo == dataKeys.length-1)) {
+					// Ignore
+				} else if(block == null) {
 					// Cross-segment, just return false.
 					Logger.error(this, "CROSS-SEGMENT DECODED/ENCODED BLOCK INVALID: "+blockNo, new Exception("error"));
 					return false;
