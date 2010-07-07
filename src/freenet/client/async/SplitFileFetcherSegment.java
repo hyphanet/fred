@@ -419,6 +419,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(allFailed) res |= ON_SUCCESS_ALL_FAILED;
 			if(decodeNow) res |= ON_SUCCESS_DECODE_NOW;
 		}
+		if(persistent) container.store(this);
 		if(crossSegment != null) {
 			if(persistent) container.activate(crossSegment, 1);
 			crossSegment.onFetched(this, blockNo, container, context);
