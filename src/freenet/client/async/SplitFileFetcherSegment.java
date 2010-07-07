@@ -637,7 +637,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
 			try {
 				if(!maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE")) {
-					Logger.error(this, "Data block "+i+" FAILED TO DECODE CORRECTLY");
+					if(!(ignoreLastDataBlock && i == dataKeys.length-1))
+						Logger.error(this, "Data block "+i+" FAILED TO DECODE CORRECTLY");
 					// Disable healing.
 					dataRetries[i] = 0;
 					allDecodedCorrectly = false;
