@@ -864,8 +864,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(getter.collectingBinaryBlob()) {
 				try {
 					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
-					ClientCHKBlock block =
-						ClientCHKBlock.encode(data, false, true, (short)-1, data.size(), COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, pre1254, forceCryptoKey, cryptoAlgorithm);
+					byte[] buf = BucketTools.toByteArray(data);
+					assert(buf.length == CHKBlock.DATA_LENGTH); // All new splitfile inserts insert only complete blocks even at the end.
+					ClientCHKBlock block = 
+						ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
+					((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 					getter.addKeyToBinaryBlob(block, container, context);
 				} catch (CHKEncodeException e) {
 					Logger.error(this, "Failed to encode (collecting binary blob) "+(check?"check":"data")+" block "+i+": "+e, e);
