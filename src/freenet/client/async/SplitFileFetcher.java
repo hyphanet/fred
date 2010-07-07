@@ -372,7 +372,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(splitfileCheckBlocks.length > 0)
 				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
 			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks,
-					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, !pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
+					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
 			for(int i=0;i<newSplitfileDataBlocks.length;i++) {
 				if(logMINOR) Logger.minor(this, "Added data block "+i+" : "+newSplitfileDataBlocks[i].getNodeKey(false));
 				tempListener.addKey(newSplitfileDataBlocks[i].getNodeKey(true), 0, context);
