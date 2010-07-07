@@ -446,7 +446,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this+" data="+dataBuckets.length+" check="+checkBuckets.length);
 		try {
 			if(!maybeAddToBinaryBlob(data, block, blockNo, container, context, block == null ? "CROSS-SEGMENT FEC" : "UNKNOWN")) {
-				if((ignoreLastDataBlock && blockNo == dataKeys.length-1)) {
+				if((ignoreLastDataBlock && blockNo == dataKeys.length-1) || (ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length)) {
 					// Ignore
 				} else if(block == null) {
 					// Cross-segment, just return false.
@@ -640,7 +640,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
 			try {
 				if(!maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE")) {
-					if(!(ignoreLastDataBlock && i == dataKeys.length-1))
+					if((!(ignoreLastDataBlock && i == dataKeys.length-1)) &&
+							(!(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length)))
 						Logger.error(this, "Data block "+i+" FAILED TO DECODE CORRECTLY");
 					// Disable healing.
 					dataRetries[i] = 0;
@@ -810,7 +811,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 				try {
 					if(!maybeAddToBinaryBlob(data, null, i+dataKeys.length, container, context, "FEC ENCODE")) {
 						heal = false;
-						Logger.error(this, "FAILED TO ENCODE CORRECTLY so not healing check block "+i);
+						if(!(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length))
+							Logger.error(this, "FAILED TO ENCODE CORRECTLY so not healing check block "+i);
 						allEncodedCorrectly = false;
 					}
 				} catch (FetchException e) {
@@ -887,6 +889,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 						if(!(key.equals(block.getClientKey()))) {
 							if(ignoreLastDataBlock && blockNo == dataKeys.length-1 && dataSource.equals("FEC DECODE")) {
 								if(logMINOR) Logger.minor(this, "Last block wrong key, ignored because expected due to padding issues");
+							} else if(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length) {
+								// We padded the last block. The inserter might have used a different padding algorithm.
+								if(logMINOR) Logger.minor(this, "Wrong key, might be due to padding issues");
 							} else {
 								Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" (data "+dataKeys.length+" check "+checkKeys.length+" ignore last block="+ignoreLastDataBlock+") : key "+block.getClientKey().getURI()+" should be "+key.getURI(), new Exception("error"));
 							}
