@@ -630,6 +630,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 		}
+		boolean allDecodedCorrectly = true;
 		for(int i=0;i<dataBuckets.length;i++) {
 			Bucket data = dataBlockStatus[i].getData();
 			if(data == null) 
@@ -639,12 +640,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 					Logger.error(this, "Data block "+i+" FAILED TO DECODE CORRECTLY");
 					// Disable healing.
 					dataRetries[i] = 0;
+					allDecodedCorrectly = false;
 				}
 			} catch (FetchException e) {
 				fail(e, container, context, false);
 				return;
 			}
 		}
+		if(allDecodedCorrectly && logMINOR) Logger.minor(this, "All decoded correctly on "+this);
 		// Must set finished BEFORE calling parentFetcher.
 		// Otherwise a race is possible that might result in it not seeing our finishing.
 		finished = true;
@@ -767,12 +770,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 				}
 			}
+			boolean allEncodedCorrectly = true;
 			for(int i=0;i<checkBuckets.length;i++) {
 				boolean heal = false;
 				// Check buckets will already be active because the FEC codec
 				// has been using them.
 				if(checkBuckets[i] == null) {
 					Logger.error(this, "Check bucket "+i+" is null in onEncodedSegment on "+this);
+					allEncodedCorrectly = false;
 					continue;
 				}
 				if(checkBuckets[i] != checkBlockStatus[i]) {
@@ -802,6 +807,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					if(!maybeAddToBinaryBlob(data, null, i+dataKeys.length, container, context, "FEC ENCODE")) {
 						heal = false;
 						Logger.error(this, "FAILED TO ENCODE CORRECTLY so not healing check block "+i);
+						allEncodedCorrectly = false;
 					}
 				} catch (FetchException e) {
 					fail(e, container, context, false);
@@ -825,6 +831,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent && checkKeys[i] != null)
 					checkKeys[i].removeFrom(container);
 				checkKeys[i] = null;
+			}
+			if(logMINOR) {
+				if(allEncodedCorrectly) Logger.minor(this, "All encoded correctly on "+this);
+				else Logger.minor(this, "Not encoded correctly on "+this);
 			}
 			if(persistent && !fetcherFinished) {
 				container.store(this);
