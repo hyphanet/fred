@@ -862,12 +862,20 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(parent instanceof ClientGetter) {
 			ClientGetter getter = (ClientGetter) (parent);
 			if(getter.collectingBinaryBlob()) {
+				int blockNo = i;
+				if(check) blockNo += dataKeys.length;
 				try {
 					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
 					byte[] buf = BucketTools.toByteArray(data);
 					assert(buf.length == CHKBlock.DATA_LENGTH); // All new splitfile inserts insert only complete blocks even at the end.
 					ClientCHKBlock block = 
 						ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
+					ClientCHK key = getBlockKey(blockNo, container);
+					if(!(key.equals(block.getClientKey()))) {
+						Logger.error(this, "INVALID KEY FROM FEC DECODE: Block "+blockNo+" : key "+block.getClientKey()+" should be "+key, new Exception("error"));
+						this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from direct FEC decode"), blockNo, null, container, context);
+						return;
+					}
 					((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 					getter.addKeyToBinaryBlob(block, container, context);
 				} catch (CHKEncodeException e) {
