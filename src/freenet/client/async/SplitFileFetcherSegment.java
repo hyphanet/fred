@@ -850,7 +850,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					ClientCHK key = getBlockKey(blockNo, container);
 					if(key != null) {
 						if(!(key.equals(block.getClientKey()))) {
-							Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" (data "+dataKeys.length+" check "+checkKeys.length+") : key "+block.getClientKey()+" should be "+key, new Exception("error"));
+							Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" (data "+dataKeys.length+" check "+checkKeys.length+" ignore last block="+ignoreLastDataBlock+") : key "+block.getClientKey()+" should be "+key, new Exception("error"));
 							this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from "+dataSource), blockNo, null, container, context);
 							return;
 						} else {
