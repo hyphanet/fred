@@ -621,17 +621,15 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 		}
-		if(isCollectingBinaryBlob()) {
-			for(int i=0;i<dataBuckets.length;i++) {
-				Bucket data = dataBlockStatus[i].getData();
-				if(data == null) 
-					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
-				try {
-					maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE");
-				} catch (FetchException e) {
-					fail(e, container, context, false);
-					return;
-				}
+		for(int i=0;i<dataBuckets.length;i++) {
+			Bucket data = dataBlockStatus[i].getData();
+			if(data == null) 
+				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
+			try {
+				maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE");
+			} catch (FetchException e) {
+				fail(e, container, context, false);
+				return;
 			}
 		}
 		// Must set finished BEFORE calling parentFetcher.
@@ -852,15 +850,16 @@ public class SplitFileFetcherSegment implements FECCallback {
 					ClientCHK key = getBlockKey(blockNo, container);
 					if(key != null) {
 						if(!(key.equals(block.getClientKey()))) {
-							Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" : key "+block.getClientKey()+" should be "+key, new Exception("error"));
+							Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" (data "+dataKeys.length+" check "+checkKeys.length+") : key "+block.getClientKey()+" should be "+key, new Exception("error"));
 							this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from "+dataSource), blockNo, null, container, context);
 							return;
 						} else {
 							if(logMINOR) Logger.minor(this, "Verified key for block "+blockNo+" from "+dataSource);
 						}
 					} else {
-						if(dataSource.equals("FEC ENCODE")) {
+						if(dataSource.equals("FEC ENCODE") || dataSource.equals("FEC DECODE")) {
 							// Ignore. FIXME Probably we should not delete the keys until after the encode??? Back compatibility issues maybe though...
+							if(logMINOR) Logger.minor(this, "Key is null for block "+blockNo+" when checking key / adding to binary blob, key source is "+dataSource, new Exception("error"));
 						} else {
 							Logger.error(this, "Key is null for block "+blockNo+" when checking key / adding to binary blob, key source is "+dataSource, new Exception("error"));
 						}
