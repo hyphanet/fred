@@ -300,12 +300,18 @@ public abstract class FECCodec {
 				if(buckets[i + k] == null) {
 					buckets[i + k] = bf.makeBucket(blockLength);
 					writers[i] = buckets[i + k].getOutputStream();
-					toEncode[numberToEncode++] = i + k;
+//					toEncode[numberToEncode++] = i + k;
+					numberToEncode++; // FIXME REMOVE
 					created++;
 				}
 				else
 					writers[i] = null;
 			}
+			
+			// Encode everything
+			for(int i=0;i<toEncode.length;i++)
+				toEncode[i] = i + k;
+			
 			if(logMINOR)
 				Logger.minor(this, "Created "+created+" check buckets");
 
