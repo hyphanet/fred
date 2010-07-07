@@ -21,7 +21,6 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND, SETUP_FOUND};
 	static final byte[] magicNumber = new byte[] {0x01, 0x76, 0x6f, 0x72, 0x62, 0x69, 0x73};
 	State currentState = State.UNINITIALIZED;
-	boolean isValidStream = true;
 
 	VorbisBitstreamFilter(OggPage page) {
 		super(page);
@@ -29,8 +28,9 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 
 	@Override
 	boolean parse(OggPage page) throws IOException {
-		LinkedList<Integer> VorbisPacketBoundaries = new LinkedList<Integer>();
+		super.parse(page);
 		if(!isValidStream) return false;
+		LinkedList<Integer> VorbisPacketBoundaries = new LinkedList<Integer>();
 		//Assemble the Vorbis packets
 		boolean pageModified = false;
 		CountedInputStream cin = new CountedInputStream(new ByteArrayInputStream(page.payload));

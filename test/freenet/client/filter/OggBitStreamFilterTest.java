@@ -23,6 +23,17 @@ public class OggBitStreamFilterTest extends TestCase{
 		Assert.assertEquals(null, getFilterClass(page));
 	}
 
+	public void testPagesOutOfOrderCausesException() throws IOException {
+		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/pages_out_of_order.ogg"));
+		OggPage page = OggPage.readPage(input);
+		OggBitstreamFilter filter = new OggBitstreamFilter(page);
+		page = OggPage.readPage(input);
+		try {
+			filter.parse(page);
+			fail("Expected exception not caught");
+		} catch(DataFilterException e) {}
+	}
+
 	private Class<? extends OggBitstreamFilter> getFilterClass(OggPage page) {
 		OggBitstreamFilter filter = OggBitstreamFilter.getBitstreamFilter(page);
 		if(filter != null) return filter.getClass();
