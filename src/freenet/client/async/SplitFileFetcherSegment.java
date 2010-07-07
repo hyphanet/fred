@@ -54,6 +54,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	private static volatile boolean logMINOR;
 	
+	private static final boolean FORCE_CHECK_FEC_KEYS = true;
+	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			
@@ -442,7 +444,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 //		}
 		boolean fromFEC = block == null;
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this+" data="+dataBuckets.length+" check="+checkBuckets.length);
-		if(parent instanceof ClientGetter) {
+		if(parent instanceof ClientGetter || FORCE_CHECK_FEC_KEYS) {
 			try {
 				if(block == null) {
 					byte[] buf = BucketTools.toByteArray(data);
@@ -459,7 +461,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 						this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block (fec="+fromFEC+")"), blockNo, sub, container, context);
 					return false;
 				}
-				((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
+				if(parent instanceof ClientGetter)
+					((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 			} catch (IOException e) {
 				// block is null only on a cross-decode so there will be enough data for decoding anyway, so don't fail.
 				Logger.error(this, "Unable to re-encode block for binary blob: "+e, e);
@@ -859,9 +862,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 	
 	private void maybeAddToBinaryBlob(Bucket data, int i, boolean check, ObjectContainer container, ClientContext context) throws FetchException {
-		if(parent instanceof ClientGetter) {
-			ClientGetter getter = (ClientGetter) (parent);
-			if(getter.collectingBinaryBlob()) {
+		if(parent instanceof ClientGetter || FORCE_CHECK_FEC_KEYS) {
+			if(((ClientGetter)parent).collectingBinaryBlob() || FORCE_CHECK_FEC_KEYS) {
 				int blockNo = i;
 				if(check) blockNo += dataKeys.length;
 				try {
@@ -876,8 +878,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 						this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from direct FEC decode"), blockNo, null, container, context);
 						return;
 					}
-					((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
-					getter.addKeyToBinaryBlob(block, container, context);
+					if(parent instanceof ClientGetter) {
+						((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
+					}
 				} catch (CHKEncodeException e) {
 					Logger.error(this, "Failed to encode (collecting binary blob) "+(check?"check":"data")+" block "+i+": "+e, e);
 					throw new FetchException(FetchException.INTERNAL_ERROR, "Failed to encode for binary blob: "+e);
