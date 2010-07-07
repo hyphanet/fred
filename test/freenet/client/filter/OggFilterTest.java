@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import freenet.l10n.NodeL10n;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
