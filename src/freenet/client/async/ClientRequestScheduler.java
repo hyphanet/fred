@@ -683,7 +683,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(!ignoreActive) {
 					if(container.ext().isActive(req.request))
-						Logger.error(this, "REQUEST ALREADY ACTIVATED: "+req.request+" for "+req+" while checking request queue in filling request queue");
+						Logger.warning(this, "REQUEST ALREADY ACTIVATED: "+req.request+" for "+req+" while checking request queue in filling request queue");
 					else if(logMINOR)
 						Logger.minor(this, "Not already activated for "+req+" in while checking request queue in filling request queue");
 				} else if(logMINOR)
@@ -773,7 +773,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(!ignoreActive) {
 					if(container.ext().isActive(old.request))
-						Logger.error(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue for "+req);
+						Logger.warning(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue for "+req);
 					else if(logDEBUG)
 						Logger.debug(this, "Not already activated for "+old+" in while checking request queue in maybeAddToStarterQueue for "+req);
 				} else if(logMINOR)
