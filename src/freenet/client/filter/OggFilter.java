@@ -44,6 +44,7 @@ public class OggFilter implements ContentDataFilter{
 				output.write(page.array());
 			}
 		}
+		output.flush();
 	}
 
 	public void writeFilter(InputStream input, OutputStream output,

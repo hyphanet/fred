@@ -10,10 +10,10 @@ import junit.framework.TestCase;
 
 public class OggBitStreamFilterTest extends TestCase{
 	public void testGetVorbisBitstreamFilter() throws IOException {
-		InputStream input = getClass().getResourceAsStream("./ogg/vorbis_header.ogg");
-		DataInputStream dis = new DataInputStream(input);
-		OggPage page = OggPage.readPage(dis);
+		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/vorbis_header.ogg"));
+		OggPage page = OggPage.readPage(input);
 		Assert.assertEquals(VorbisBitstreamFilter.class, getFilterClass(page));
+		input.close();
 	}
 
 	public void testGetFilterForInvalidFormat() throws IOException {
@@ -21,6 +21,7 @@ public class OggBitStreamFilterTest extends TestCase{
 		DataInputStream dis = new DataInputStream(input);
 		OggPage page = OggPage.readPage(dis);
 		Assert.assertEquals(null, getFilterClass(page));
+		input.close();
 	}
 
 	public void testPagesOutOfOrderCausesException() throws IOException {
@@ -32,6 +33,7 @@ public class OggBitStreamFilterTest extends TestCase{
 			filter.parse(page);
 			fail("Expected exception not caught");
 		} catch(DataFilterException e) {}
+		input.close();
 	}
 
 	private Class<? extends OggBitstreamFilter> getFilterClass(OggPage page) {

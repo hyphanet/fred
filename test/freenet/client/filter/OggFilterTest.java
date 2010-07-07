@@ -60,5 +60,6 @@ public class OggFilterTest extends TestCase {
 			OggPage page = OggPage.readPage(input);
 			Assert.fail("Expected exception not caught");
 		} catch(DataFilterException e) {}
+		input.close();
 	}
 }
