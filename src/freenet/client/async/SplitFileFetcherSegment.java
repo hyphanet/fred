@@ -842,7 +842,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 				try {
 					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
 					byte[] buf = BucketTools.toByteArray(data);
-					assert(buf.length == CHKBlock.DATA_LENGTH); // All new splitfile inserts insert only complete blocks even at the end.
+					if(!(buf.length == CHKBlock.DATA_LENGTH)) {
+						// All new splitfile inserts insert only complete blocks even at the end.
+						if((!ignoreLastDataBlock) || (blockNo != dataKeys.length-1))
+							Logger.error(this, "Block is too small: "+buf.length);
+						return;
+					}
 					if(block == null) {
 						block = 
 							ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
