@@ -850,10 +850,18 @@ public class SplitFileFetcherSegment implements FECCallback {
 							ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
 					}
 					ClientCHK key = getBlockKey(blockNo, container);
-					if(!(key.equals(block.getClientKey()))) {
-						Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" : key "+block.getClientKey()+" should be "+key, new Exception("error"));
-						this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from direct FEC decode"), blockNo, null, container, context);
-						return;
+					if(key != null) {
+						if(!(key.equals(block.getClientKey()))) {
+							Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" : key "+block.getClientKey()+" should be "+key, new Exception("error"));
+							this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from "+dataSource), blockNo, null, container, context);
+							return;
+						}
+					} else {
+						if(dataSource.equals("FEC ENCODE")) {
+							// Ignore. FIXME Probably we should not delete the keys until after the encode??? Back compatibility issues maybe though...
+						} else {
+							Logger.error(this, "Key is null for block "+blockNo+" when checking key / adding to binary blob, key source is "+dataSource, new Exception("error"));
+						}
 					}
 					if(parent instanceof ClientGetter) {
 						((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
