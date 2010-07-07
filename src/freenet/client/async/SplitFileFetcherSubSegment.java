@@ -426,7 +426,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 	
-	protected void onSuccess(Bucket data, boolean fromStore, Integer token, int blockNo, ClientKeyBlock block, ObjectContainer container, ClientContext context) {
+	protected void onSuccess(Bucket data, boolean fromStore, Integer token, int blockNo, ClientCHKBlock block, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);

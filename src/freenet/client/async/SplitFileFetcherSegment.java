@@ -431,7 +431,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private static final short ON_SUCCESS_ALL_FAILED = 2;
 	private static final short ON_SUCCESS_DECODE_NOW = 4;
 	
-	public boolean onSuccess(Bucket data, int blockNo, ClientKeyBlock block, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment sub) {
+	public boolean onSuccess(Bucket data, int blockNo, ClientCHKBlock block, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment sub) {
 		if(persistent)
 			container.activate(this, 1);
 		if(data == null) throw new NullPointerException();
@@ -442,34 +442,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 //			if(logMINOR) Logger.minor(this, "Reconstructing block from cross-segment decode");
 //			block = encode(data, blockNo);
 //		}
-		boolean fromFEC = block == null;
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this+" data="+dataBuckets.length+" check="+checkBuckets.length);
-		if(parent instanceof ClientGetter || FORCE_CHECK_FEC_KEYS) {
-			try {
-				if(block == null) {
-					byte[] buf = BucketTools.toByteArray(data);
-					assert(buf.length == CHKBlock.DATA_LENGTH); // All new splitfile inserts insert only complete blocks even at the end.
-					block = ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
-				}
-				ClientCHK key = getBlockKey(blockNo, container);
-				if(!(key.equals(block.getClientKey()))) {
-					if(fromFEC)
-						Logger.error(this, "INVALID KEY FROM FEC DECODE: Block "+blockNo+" : key "+block.getClientKey()+" should be "+key, new Exception("error"));
-					else
-						Logger.error(this, "INVALID KEY IN ONSUCCESS: Block "+blockNo+" : key "+block.getClientKey()+" should be "+key, new Exception("error"));
-					if(!fromFEC)
-						this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block (fec="+fromFEC+")"), blockNo, sub, container, context);
-					return false;
-				}
-				if(parent instanceof ClientGetter)
-					((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
-			} catch (IOException e) {
-				// block is null only on a cross-decode so there will be enough data for decoding anyway, so don't fail.
-				Logger.error(this, "Unable to re-encode block for binary blob: "+e, e);
-			} catch (CHKEncodeException e) {
-				// block is null only on a cross-decode so there will be enough data for decoding anyway, so don't fail.
-				Logger.error(this, "Unable to re-encode block for binary blob: "+e, e);
-			}
+		try {
+			maybeAddToBinaryBlob(data, block, blockNo, container, context, block == null ? "CROSS-SEGMENT FEC" : "UNKNOWN");
+		} catch (FetchException e) {
+			fail(e, container, context, false);
 		}
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		short result = onSuccessInner(data, blockNo, container, context);
@@ -650,7 +627,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(data == null) 
 					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
 				try {
-					maybeAddToBinaryBlob(data, i, container, context);
+					maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE");
 				} catch (FetchException e) {
 					fail(e, container, context, false);
 					return;
@@ -809,7 +786,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					continue;
 				}
 				try {
-					maybeAddToBinaryBlob(data, i+dataKeys.length, container, context);
+					maybeAddToBinaryBlob(data, null, i+dataKeys.length, container, context, "FEC ENCODE");
 				} catch (FetchException e) {
 					fail(e, container, context, false);
 					return;
@@ -861,18 +838,20 @@ public class SplitFileFetcherSegment implements FECCallback {
 		} else return false;
 	}
 	
-	private void maybeAddToBinaryBlob(Bucket data, int blockNo, ObjectContainer container, ClientContext context) throws FetchException {
+	private void maybeAddToBinaryBlob(Bucket data, ClientCHKBlock block, int blockNo, ObjectContainer container, ClientContext context, String dataSource) throws FetchException {
 		if(parent instanceof ClientGetter || FORCE_CHECK_FEC_KEYS) {
 			if(((ClientGetter)parent).collectingBinaryBlob() || FORCE_CHECK_FEC_KEYS) {
 				try {
 					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
 					byte[] buf = BucketTools.toByteArray(data);
 					assert(buf.length == CHKBlock.DATA_LENGTH); // All new splitfile inserts insert only complete blocks even at the end.
-					ClientCHKBlock block = 
-						ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
+					if(block == null) {
+						block = 
+							ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
+					}
 					ClientCHK key = getBlockKey(blockNo, container);
 					if(!(key.equals(block.getClientKey()))) {
-						Logger.error(this, "INVALID KEY FROM FEC DECODE: Block "+blockNo+" : key "+block.getClientKey()+" should be "+key, new Exception("error"));
+						Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" : key "+block.getClientKey()+" should be "+key, new Exception("error"));
 						this.onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from direct FEC decode"), blockNo, null, container, context);
 						return;
 					}
