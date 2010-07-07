@@ -419,7 +419,7 @@ public class USKManager implements RequestClient {
 				if(mustAdd) {
 					USKCallback[] newCallbacks = new USKCallback[callbacks.length+1];
 					System.arraycopy(callbacks, 0, newCallbacks, 0, callbacks.length);
-					callbacks[callbacks.length-1] = cb;
+					newCallbacks[callbacks.length] = cb;
 					callbacks = newCallbacks;
 				}
 			}
