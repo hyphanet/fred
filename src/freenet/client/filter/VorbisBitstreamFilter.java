@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.LinkedList;
 
@@ -137,8 +138,12 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					vorbisPacketLengths.push(position-initialPosition);
 					}
 				if(logMINOR) Logger.minor(this, "Looping again... State: "+currentState);
-			} catch(Throwable e) {
+			} catch(EOFException e) {
+			} catch(IOException e) {
 				if(logMINOR) Logger.minor(this, "In vorbis parser caught "+e, e);
+				isValidStream = false;
+				throw e;
+			} finally {
 				running = false;
 			}
 		}
