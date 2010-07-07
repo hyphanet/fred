@@ -650,7 +650,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(data == null) 
 					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
 				try {
-					maybeAddToBinaryBlob(data, i, false, container, context);
+					maybeAddToBinaryBlob(data, i, container, context);
 				} catch (FetchException e) {
 					fail(e, container, context, false);
 					return;
@@ -809,7 +809,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					continue;
 				}
 				try {
-					maybeAddToBinaryBlob(data, i, true, container, context);
+					maybeAddToBinaryBlob(data, i+dataKeys.length, container, context);
 				} catch (FetchException e) {
 					fail(e, container, context, false);
 					return;
@@ -861,11 +861,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 		} else return false;
 	}
 	
-	private void maybeAddToBinaryBlob(Bucket data, int i, boolean check, ObjectContainer container, ClientContext context) throws FetchException {
+	private void maybeAddToBinaryBlob(Bucket data, int blockNo, ObjectContainer container, ClientContext context) throws FetchException {
 		if(parent instanceof ClientGetter || FORCE_CHECK_FEC_KEYS) {
 			if(((ClientGetter)parent).collectingBinaryBlob() || FORCE_CHECK_FEC_KEYS) {
-				int blockNo = i;
-				if(check) blockNo += dataKeys.length;
 				try {
 					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
 					byte[] buf = BucketTools.toByteArray(data);
@@ -882,7 +880,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 						((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 					}
 				} catch (CHKEncodeException e) {
-					Logger.error(this, "Failed to encode (collecting binary blob) "+(check?"check":"data")+" block "+i+": "+e, e);
+					Logger.error(this, "Failed to encode (collecting binary blob) block "+blockNo+": "+e, e);
 					throw new FetchException(FetchException.INTERNAL_ERROR, "Failed to encode for binary blob: "+e);
 				} catch (IOException e) {
 					throw new FetchException(FetchException.BUCKET_ERROR, "Failed to encode for binary blob: "+e);
