@@ -21,10 +21,10 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
 public class OggFilter implements ContentDataFilter{
-	HashMap<Integer, OggBitstreamFilter> streamFilters = new HashMap<Integer, OggBitstreamFilter>();
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
+		HashMap<Integer, OggBitstreamFilter> streamFilters = new HashMap<Integer, OggBitstreamFilter>();
 		DataInputStream in = new DataInputStream(input);
 		while(true) {
 			OggPage page = null;
@@ -199,7 +199,7 @@ class OggPage {
 
 	int getPageNumber() {
 		ByteBuffer bb = ByteBuffer.wrap(pageSequenceNumber);
-		return bb.getInt();
+		return Integer.reverseBytes(bb.getInt());
 	}
 
 	byte[] getPayload() {
@@ -254,27 +254,21 @@ class OggPage {
 		return (byte) (input & 0xff);
 	}
 
-	void recalculateSegmentLacing(LinkedList<Integer> packetBoundaries) {
-		if(packetBoundaries == null) {
-			packetBoundaries = new LinkedList<Integer>();
-			packetBoundaries.push(payload.length);
+	void recalculateSegmentLacing(LinkedList<Integer> packetSizes) {
+		if(packetSizes == null) {
+			packetSizes = new LinkedList<Integer>();
+			packetSizes.push(payload.length);
 		}
 		segments = 0;
-		for(int i = packetBoundaries.size()-1; i >= 0; i--) {
-			int packet;
-			if(i < packetBoundaries.size()-1) packet = packetBoundaries.get(i)-packetBoundaries.get(i+1);
-			else packet = packetBoundaries.get(i);
+		for(int packet : packetSizes) {
 			segments += packet / 255 + (packet % 255 == 0 ? 0 : 1);
-			if(logMINOR) Logger.minor(this, "Current boundary: "+packet+"Current segment size: "+segments+" Current math: "+packet/255+ "Remainer "+packet%255);
+			if(logMINOR) Logger.minor(this, "Size of current packet: "+packet+" Current number of segments: "+segments+" Number of whole segments belonging to this packet: "+packet/255+ " Remaining bytes "+packet%255);
 		}
 		if(logMINOR) Logger.minor(this, "Segments "+segments);
 		segmentTable = new byte[segments];
 		int segment = 0;
-		for(int i = packetBoundaries.size()-1; i >= 0; i--) {
-			int packet;
-			if(i < packetBoundaries.size()-1) packet = packetBoundaries.get(i)-packetBoundaries.get(i+1);
-			else packet = packetBoundaries.get(i);
-			if(logMINOR) Logger.minor(this, "Setting segments for packet "+i+" Sized "+packet);
+		for(int packet : packetSizes) {
+			if(logMINOR) Logger.minor(this, "Setting segments for packet sized "+packet);
 			for(int packetSegment = 0; packetSegment < packet / 255; packetSegment++) {
 				if(logMINOR) Logger.minor(this, "Setting segment "+segment+" to full.");
 				segmentTable[segment] = intToUnsignedByte(255);

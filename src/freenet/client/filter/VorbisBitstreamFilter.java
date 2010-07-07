@@ -32,12 +32,13 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		super.parse(page);
 		if(!isValidStream) return false;
-		LinkedList<Integer> VorbisPacketBoundaries = new LinkedList<Integer>();
+		LinkedList<Integer> vorbisPacketLengths = new LinkedList<Integer>();
 		//Assemble the Vorbis packets
 		boolean pageModified = false;
 		CountedInputStream cin = new CountedInputStream(new ByteArrayInputStream(page.payload));
 		DataInputStream input = new DataInputStream(cin);
 		int position = 0;
+		int initialPosition = 0;
 		boolean running = true;
 		byte[] magicHeader = null;
 		while(running) {
@@ -71,11 +72,12 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					if((blocksize&0xf0 >>> 4) > (blocksize&0x0f)) isValidStream = false;
 					if(!framing_flag) isValidStream = false;
 					currentState = State.IDENTIFICATION_FOUND;
-					position +=(int)cin.count();
-					VorbisPacketBoundaries.push(position);
+					position += cin.count();
+					vorbisPacketLengths.add(position-initialPosition);
 					running=false; //There must be a pagebreak here
 					break;
 				case IDENTIFICATION_FOUND:
+					initialPosition = position;
 					//We should now be dealing with a comment header. We need to remove this.
 					/*The header packets begin with the header type and the magic number
 					 * Validate both.
@@ -110,22 +112,31 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					page.payload = finalPage.toByteArray();
 					position += data.toByteArray().length;
 					finalPage.close();
-					VorbisPacketBoundaries.push(position);
+					vorbisPacketLengths.add(position-initialPosition);
 					output.close();
 					pageModified=true;
 					currentState=State.COMMENT_FOUND;
 					break;
 				case COMMENT_FOUND:
+					if(page.payload.length-position == 0) {
+						running=false;
+						break;
+					}
+					initialPosition = position;
 					//We should now be dealing with a setup header
 					position += input.skipBytes(page.payload.length-position);
-					VorbisPacketBoundaries.push(position);
+					vorbisPacketLengths.add(position-initialPosition);
 					currentState=State.SETUP_FOUND;
 					running = false;//Pagebreak here
 					break;
 				case SETUP_FOUND:
-					if(page.payload.length-position == 0) running=false;
+					if(page.payload.length-position == 0) {
+						running=false;
+						break;
+					}
+					initialPosition = position;
 					position += input.skipBytes(page.payload.length-position);
-					VorbisPacketBoundaries.push(position);
+					vorbisPacketLengths.push(position-initialPosition);
 					}
 				if(logMINOR) Logger.minor(this, "Looping again... State: "+currentState);
 			} catch(Throwable e) {
@@ -136,7 +147,7 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 
 		input.close();
 		if(pageModified) {
-			page.recalculateSegmentLacing(VorbisPacketBoundaries);
+			page.recalculateSegmentLacing(vorbisPacketLengths);
 			page.checksum = page.calculateCRC();
 		}
 		return isValidStream;

@@ -9,7 +9,7 @@ import java.io.IOException;
 import freenet.l10n.NodeL10n;
 
 public class OggBitstreamFilter {
-	int lastPageSequenceNumber;
+	long lastPageSequenceNumber;
 	final int serialNumber;
 	boolean isValidStream = true;
 
@@ -19,7 +19,7 @@ public class OggBitstreamFilter {
 	}
 
 	boolean parse(OggPage page) throws IOException {
-		if(page.getPageNumber() != lastPageSequenceNumber+1){
+		if(!(page.getPageNumber() == lastPageSequenceNumber+1 || page.getPageNumber() == lastPageSequenceNumber)){
 			isValidStream = false;
 			throw new DataFilterException(l10n("MalformedTitle"), l10n("MalformedTitle"), l10n("MalformedMessage"));
 		}
