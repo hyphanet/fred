@@ -12,6 +12,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.LinkedList;
 
+import freenet.l10n.NodeL10n;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.CountedInputStream;
 
@@ -54,9 +55,9 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					 */
 					magicHeader = new byte[1+magicNumber.length];
 					input.readFully(magicHeader);
-					if(magicHeader[0] != 1) isValidStream = false;
+					if(magicHeader[0] != 1) invalidate();
 					for(int i=0; i < magicNumber.length; i++) {
-						if(magicHeader[i+1] != magicNumber[i]) isValidStream=false;
+						if(magicHeader[i+1] != magicNumber[i]) invalidate();
 					}
 					//Assemble identification header
 					int vorbis_version = input.readInt();
@@ -68,11 +69,11 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					byte blocksize = input.readByte();
 					boolean framing_flag = input.readBoolean();
 
-					if(vorbis_version != 0) isValidStream = false;
-					if(audio_channels == 0) isValidStream = false;
-					if(audio_sample_rate == 0) isValidStream = false;
-					if((blocksize&0xf0 >>> 4) > (blocksize&0x0f)) isValidStream = false;
-					if(!framing_flag) isValidStream = false;
+					if(vorbis_version != 0) invalidate();
+					if(audio_channels == 0) invalidate();
+					if(audio_sample_rate == 0) invalidate();
+					if((blocksize&0xf0 >>> 4) > (blocksize&0x0f)) invalidate();
+					if(!framing_flag) invalidate();
 					currentState = State.IDENTIFICATION_FOUND;
 					position += cin.count();
 					vorbisPacketLengths.add(position-initialPosition);
@@ -86,9 +87,9 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					 */
 					magicHeader = new byte[1+magicNumber.length];
 					input.readFully(magicHeader);
-					if(magicHeader[0] != 3) isValidStream = false;
+					if(magicHeader[0] != 0x3) invalidate();
 					for(int i=0; i < magicNumber.length; i++) {
-						if(magicHeader[i+1] != magicNumber[i]) isValidStream=false;
+						if(magicHeader[i+1] != magicNumber[i]) invalidate();
 					}
 					long vendor_length = Integer.reverseBytes(input.readInt());
 					if(logMINOR) Logger.minor(this, "Read a vendor length of "+vendor_length);
@@ -100,7 +101,7 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 							input.skipBytes(1);
 						}
 					}
-					if(!input.readBoolean()) isValidStream = false;
+					if(!input.readBoolean()) invalidate();
 					ByteArrayOutputStream data = new ByteArrayOutputStream();
 					ByteArrayOutputStream finalPage = new ByteArrayOutputStream();
 					DataOutputStream output = new DataOutputStream(data);

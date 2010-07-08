@@ -52,7 +52,12 @@ public class OggBitstreamFilter {
 		return null;
 	}
 
+	protected void invalidate() throws DataFilterException {
+		isValidStream = false;
+		throw new DataFilterException(l10n("MalformedTitle"), l10n("MalformedTitle"), l10n("MalformedMessage"));
+	}
+
 	private String l10n(String key) {
-		return NodeL10n.getBase().getString("OggBitstreamFilter." + key);
+		return NodeL10n.getBase().getString(getClass().getSimpleName()+"."+ key);
 	}
 }
