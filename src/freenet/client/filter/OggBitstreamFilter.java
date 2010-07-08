@@ -8,6 +8,11 @@ import java.io.IOException;
 
 import freenet.l10n.NodeL10n;
 
+/**Base class for specific logical bitstream filters. Subclasses should create
+ * a method overriding <code>parse</code> which includes a call to the original
+ * method.
+ * @author sajack
+ */
 public class OggBitstreamFilter {
 	long lastPageSequenceNumber;
 	final int serialNumber;
@@ -18,6 +23,12 @@ public class OggBitstreamFilter {
 		lastPageSequenceNumber = page.getPageNumber();
 	}
 
+	/**Does minimal validation of a page in this Ogg logical bitstream.
+	 * Should be extended by subclasses.
+	 * @param page An Ogg page belonging to this logical bitstream
+	 * @return Whether page was properly validated
+	 * @throws IOException
+	 */
 	boolean parse(OggPage page) throws IOException {
 		if(!(page.getPageNumber() == lastPageSequenceNumber+1 || page.getPageNumber() == lastPageSequenceNumber)){
 			isValidStream = false;
@@ -26,7 +37,13 @@ public class OggBitstreamFilter {
 		lastPageSequenceNumber = page.getPageNumber();
 		return isValidStream;
 	}
-	
+
+	/**Constructor method generating an appropriate Ogg bitstream parser.
+	 * @param page the <code>OggPage</code> from which the bitstream type will be
+	 * extracted.
+	 * @return a new bitstream parser or null if the <code>OggPage</code> is of an
+	 * unrecognized type
+	 */
 	public static OggBitstreamFilter getBitstreamFilter(OggPage page) {
 		for(int i = 0; i <= VorbisBitstreamFilter.magicNumber.length; i++) {
 			if(i == VorbisBitstreamFilter.magicNumber.length) return new VorbisBitstreamFilter(page);

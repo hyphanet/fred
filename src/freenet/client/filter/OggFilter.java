@@ -19,6 +19,13 @@ import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
+/** Filters Ogg container files. These containers contain one or more
+ * logical bitstreams of data encapsulated into a physical bitstream.
+ * The data is broken into variable length pages, consisting of a header
+ * and 0-255 segments of 0-255 bytes. For more details refer to
+ * <a href="http://www.xiph.org/ogg/doc/rfc3533.txt">http://www.xiph.org/ogg/doc/rfc3533.txt</a>
+ * @author sajack
+ */
 public class OggFilter implements ContentDataFilter{
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
@@ -54,6 +61,9 @@ public class OggFilter implements ContentDataFilter{
 		
 	}
 }
+/** Represents a single page of an Ogg bitstream
+ * @author sajack
+ */
 class OggPage {
 	boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	static final byte[] magicNumber = new byte[] {0x4f, 0x67, 0x67, 0x53};
@@ -159,6 +169,11 @@ class OggPage {
 
 	}
 
+	/**Extracts the Ogg page from a physical bitstream
+	 * @param input a stream of data containing a physical bitstream
+	 * @return the next Ogg page in bitstream
+	 * @throws IOException
+	 */
 	static OggPage readPage(DataInputStream input) throws IOException {
 		while(true) {
 			//Seek for magic number
@@ -171,6 +186,10 @@ class OggPage {
 		//If we've found all of the previous magic numbers, we've probably found a page
 	}
 
+	/**Checks some header values for sanity, and verifies this Page's
+	 * <code>checksum</code> field.
+	 * @return whether or not the page is valid
+	 */
 	boolean headerValid() {
 		if(version != 0) return false;
 		if(!Arrays.equals(checksum, calculateCRC())) return false;
@@ -206,6 +225,7 @@ class OggPage {
 		return payload;
 	}
 
+	/**Calculates this page's 32 bit CRC checksum.*/
 	byte[] calculateCRC() {
 		byte[] array = array();
 		//Strip out the checksum bytes
@@ -225,6 +245,10 @@ class OggPage {
 				(byte) (crc_reg>>>24)};
 	}
 
+	/**Searches for valid pages hidden inside this page
+	 * @return whether or not a hidden page exists
+	 * @throws IOException
+	 */
 	boolean hasValidSubpage() throws IOException {
 		boolean hasValidSubpage = false;
 		ByteArrayInputStream data = new ByteArrayInputStream(payload);
@@ -254,7 +278,16 @@ class OggPage {
 		return (byte) (input & 0xff);
 	}
 
+	/**Rewrites the stored sizes of this page's segments.
+	 * @param packetSizes The sizes of any packets inside of this page's payload.
+	 * If not null, a segment will be prematurely closed after each packet's size
+	 * number of bytes have been read.
+	 */
 	void recalculateSegmentLacing(LinkedList<Integer> packetSizes) {
+		/*Will packets ever need to be expanded? Right now we're just cutting
+		 * stuff away, but if we need to write stuff, we run the risk of overflowing
+		 * past the hard limit of 255 packets, and will need to create a continuing page
+		 */
 		if(packetSizes == null) {
 			packetSizes = new LinkedList<Integer>();
 			packetSizes.push(payload.length);

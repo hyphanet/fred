@@ -17,6 +17,9 @@ import freenet.support.io.CountedInputStream;
 
 import freenet.support.Logger;
 
+/**An Ogg bitstream parser for the Ogg Vorbis codec
+ * @author sajack
+ */
 public class VorbisBitstreamFilter extends OggBitstreamFilter {
 	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND, SETUP_FOUND};
 	static final byte[] magicNumber = new byte[] {0x76, 0x6f, 0x72, 0x62, 0x69, 0x73};
