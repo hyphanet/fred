@@ -207,26 +207,6 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent())
 			container.activate(uri, 5);
 		if(!closeBinaryBlobStream(container, context)) return;
-		input = new BufferedInputStream(input);
-		if(hashes != null) {
-			
-			try {
-				if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
-				MultiHashInputStream hasher = new MultiHashInputStream(input, HashResult.makeBitmask(hashes));
-				byte[] buf = new byte[32768];
-				input.mark(32768);
-				while(hasher.read(buf) > 0);
-				input.reset();
-				HashResult[] results = hasher.getResults();
-				if(!HashResult.strictEquals(results, hashes)) {
-					onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), state, container, context);
-					return;
-				}
-			} catch (IOException e) {
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
-				return;
-			}
-		}
 		String mimeType;
 		synchronized(this) {
 			finished = true;
@@ -281,6 +261,15 @@ public class ClientGetter extends BaseClientGetter {
 			}
 		}
 
+		//Validate the hash of the now decompressed data
+		input = new BufferedInputStream(input);
+		MultiHashInputStream hashStream = null;
+		if(hashes != null) {
+				if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
+				hashStream = new MultiHashInputStream(input, HashResult.makeBitmask(hashes));
+				input = hashStream;
+		}
+
 		//Filter the data, if we are supposed to
 		if(ctx.filterData){
 			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
@@ -325,6 +314,13 @@ public class ClientGetter extends BaseClientGetter {
 			} finally {
 				Closer.close(input);
 				Closer.close(output);
+			}
+		}
+		if(hashes != null) {
+			HashResult[] results = hashStream.getResults();
+			if(!HashResult.strictEquals(results, hashes)) {
+				onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), state, container, context);
+				return;
 			}
 		}
 		if(persistent()) {
