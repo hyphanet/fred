@@ -164,7 +164,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 						next=node.peers.getRandomPeer(source);
 					} else {
 						next = node.peers.closerPeer(source, routedTo, target, true, node.isAdvancedModeEnabled(), -1,
-						        null, null, htl);
+						        null, null, htl, 0);
 					}
 					
 					if (next==null) {
@@ -446,14 +446,14 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			PeerNode target=processing;
 			double randomTarget=node.random.nextDouble();
 			HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
-			PeerNode next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null, node.maxHTL());
+			PeerNode next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null, node.maxHTL(), 0);
 			while (next!=null && target.isRoutable() && !processingRace) {
 				nodesRoutedTo.add(next);
 				//the order is not that important, but for all connected peers try to ping 'target'
 				blockingUpdatePingRecord(target, next);
 				//Since we are causing traffic to 'target'
 				betweenPingSleep(target);
-				next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null, node.maxHTL());
+				next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null, node.maxHTL(), 0);
 			}
 		}
 		boolean didAnything;
@@ -582,10 +582,10 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	private HashSet<PeerNode> getAllConnectedPeers() {
 		double randomTarget=node.random.nextDouble();
 		HashSet<PeerNode> connectedPeers = new HashSet<PeerNode>();
-		PeerNode next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null, node.maxHTL());
+		PeerNode next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null, node.maxHTL(), 0);
 		while (next!=null) {
 			connectedPeers.add(next);
-			next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null, node.maxHTL());
+			next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null, node.maxHTL(), 0);
 		}
 		return connectedPeers;
 	}

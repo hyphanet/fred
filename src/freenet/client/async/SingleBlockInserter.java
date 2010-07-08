@@ -30,6 +30,7 @@ import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKEncodeException;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelPutException;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
@@ -146,7 +147,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.activate(ctx, 1);
 		}
 		CompatibilityMode cmode = ctx.getCompatibilityMode();
-		boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
+		boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 		try {
 			return innerEncode(random, uri, sourceData, isMetadata, compressionCodec, sourceLength, ctx.compressorDescriptor, pre1254, cryptoAlgorithm, cryptoKey);
 		} catch (KeyEncodeException e) {
@@ -550,7 +551,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						throw new LowLevelPutException(LowLevelPutException.COLLISION);
 					}
 				else
-					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
+					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT);
 			} catch (LowLevelPutException e) {
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
@@ -683,7 +684,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					container.activate(ctx, 1);
 			}
 			CompatibilityMode cmode = ctx.getCompatibilityMode();
-			boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
+			boolean pre1254 = !(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 			if(!ctxActive)
 				container.deactivate(ctx, 1);
 			return new BlockItem(this, data, isMetadata, compressionCodec, sourceLength, u, hashCode(), persistent, pre1254, cryptoAlgorithm, cryptoKey);

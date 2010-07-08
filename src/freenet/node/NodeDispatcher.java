@@ -281,7 +281,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		try {
 		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		String reject = 
-			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false);
+			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false, false);
 		if(reject != null) {
 			Logger.normal(this, "Rejecting FNPGetOfferedKey from "+source+" for "+key+" : "+reject);
 			Message rejected = DMT.createFNPRejectedOverload(uid, true);
@@ -391,7 +391,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		BlockMetadata meta = new BlockMetadata();
 		KeyBlock block = node.fetch(key, false, false, false, false, meta);
 		
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null && !meta.isOldBlock());
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null && !meta.isOldBlock(), false);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting "+(isSSK ? "SSK" : "CHK")+" request from "+source.getPeer()+" preemptively because "+rejectReason);
@@ -438,8 +438,20 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		}
+		boolean preferInsert = Node.PREFER_INSERT_DEFAULT;
+		boolean ignoreLowBackoff = Node.IGNORE_LOW_BACKOFF_DEFAULT;
+		boolean forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
+		Message forkControl = m.getSubMessage(DMT.FNPSubInsertForkControl);
+		if(forkControl != null)
+			forkOnCacheable = forkControl.getBoolean(DMT.ENABLE_INSERT_FORK_WHEN_CACHEABLE);
+		Message lowBackoff = m.getSubMessage(DMT.FNPSubInsertIgnoreLowBackoff);
+		if(lowBackoff != null)
+			ignoreLowBackoff = lowBackoff.getBoolean(DMT.IGNORE_LOW_BACKOFF);
+		Message preference = m.getSubMessage(DMT.FNPSubInsertPreferInsert);
+		if(preference != null)
+			preferInsert = preference.getBoolean(DMT.PREFER_INSERT);
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false);
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false, preferInsert);
 		if(rejectReason != null) {
 			Logger.normal(this, "Rejecting insert from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
@@ -451,27 +463,23 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			node.unlockUID(id, isSSK, true, false, false, false, tag);
 			return true;
 		}
-		boolean forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
-		Message forkControl = m.getSubMessage(DMT.FNPSubInsertForkControl);
-		if(forkControl != null)
-			forkOnCacheable = forkControl.getBoolean(DMT.ENABLE_INSERT_FORK_WHEN_CACHEABLE);
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
 			NodeSSK key = (NodeSSK) m.getObject(DMT.FREENET_ROUTING_KEY);
 	        byte[] data = ((ShortBuffer) m.getObject(DMT.DATA)).getData();
 	        byte[] headers = ((ShortBuffer) m.getObject(DMT.BLOCK_HEADERS)).getData();
 	        short htl = m.getShort(DMT.HTL);
-			SSKInsertHandler rh = new SSKInsertHandler(key, data, headers, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable);
+			SSKInsertHandler rh = new SSKInsertHandler(key, data, headers, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable, preferInsert, ignoreLowBackoff);
 	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else if(m.getSpec().equals(DMT.FNPSSKInsertRequestNew)) {
 			NodeSSK key = (NodeSSK) m.getObject(DMT.FREENET_ROUTING_KEY);
 			short htl = m.getShort(DMT.HTL);
-			SSKInsertHandler rh = new SSKInsertHandler(key, null, null, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable);
+			SSKInsertHandler rh = new SSKInsertHandler(key, null, null, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable, preferInsert, ignoreLowBackoff);
 	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
-			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now, tag, forkOnCacheable);
+			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now, tag, forkOnCacheable, preferInsert, ignoreLowBackoff);
 			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
@@ -719,7 +727,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			if(next == null)
 			next = node.peers.closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-				        null, htl);
+				        null, htl, 0);
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {
 				// next is connected, or at least has been => next.getPeer() CANNOT be null.

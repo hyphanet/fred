@@ -53,24 +53,18 @@ public class InsertContext implements Cloneable {
 	
 	public static enum CompatibilityMode {
 		/** We do not know. */
-		COMPAT_UNKNOWN("Unknown"),
+		COMPAT_UNKNOWN,
 		/** No compatibility issues, use the most efficient metadata possible. */
-		COMPAT_CURRENT("None"),
+		COMPAT_CURRENT,
 		/** Exactly as before 1250: Segments of exactly 128 data, 128 check, check = data */
-		COMPAT_1250_EXACT("Pre-1250 (exact)"),
+		COMPAT_1250_EXACT,
 		/** 1250 or previous: Segments up to 128 data 128 check, check <= data. */
-		COMPAT_1250("Pre-1250 (with even splitting)"),
+		COMPAT_1250,
 		/** 1251/2/3: Basic even splitting, 1 extra check block if data blocks < 128, max 131 data blocks. */
-		COMPAT_1251("1251"),
-		/** 1254: Second stage of even splitting, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. And hashes too! */
-		COMPAT_1254("1254");
+		COMPAT_1251,
+		/** 1255: Second stage of even splitting, a whole bunch of segments lose one block rather than the last segment losing lots of blocks. And hashes too! */
+		COMPAT_1255;
 		
-		public final String detail;
-		
-		CompatibilityMode(String detail) {
-			this.detail = detail;
-		}
-
 		// Inserts should be converted to a specific compatibility mode as soon as possible, to avoid
 		// problems when an insert is restarted on a newer build with a newer default compat mode.
 		public static CompatibilityMode latest() {

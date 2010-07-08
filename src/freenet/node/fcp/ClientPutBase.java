@@ -86,6 +86,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	static FreenetURI checkEmptySSK(FreenetURI uri, String filename, ClientContext context) {
 		if("SSK".equals(uri.getKeyType()) && uri.getDocName() == null && uri.getRoutingKey() == null) {
+			if(filename == null || filename.equals("")) filename = "key";
 			// SSK@ = use a random SSK.
 	    	InsertableClientSSK key = InsertableClientSSK.createRandom(context.random, "");
 	    	return key.getInsertURI().setDocName(filename);

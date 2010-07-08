@@ -227,9 +227,11 @@ public class ClientGetter extends BaseClientGetter {
 				return;
 			}
 		}
+		String mimeType;
 		synchronized(this) {
 			finished = true;
 			currentState = null;
+			mimeType = expectedMIME = clientMetadata.getMIMEType();
 		}
 		if(persistent()) {
 			container.store(this);
@@ -283,7 +285,8 @@ public class ClientGetter extends BaseClientGetter {
 		if(ctx.filterData){
 			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
 			try {
-				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
+				if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
+				// Send XHTML as HTML because we can't use web-pushing on XHTML.
 				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 				
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
@@ -553,7 +556,13 @@ public class ClientGetter extends BaseClientGetter {
 	 * @return True if we successfully restarted, false if we can't restart.
 	 * @throws FetchException If something went wrong.
 	 */
-	public boolean restart(FreenetURI redirect, ObjectContainer container, ClientContext context) throws FetchException {
+	public boolean restart(FreenetURI redirect, boolean filterData, ObjectContainer container, ClientContext context) throws FetchException {
+		if(persistent()) {
+			container.activate(ctx, 1);
+			container.activate(ctx.filterData, 1);
+		}
+		ctx.filterData = filterData;
+		if(persistent()) container.store(ctx);
 		return start(true, redirect, container, context);
 	}
 
@@ -753,7 +762,7 @@ public class ClientGetter extends BaseClientGetter {
 	
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 		if(finalBlocksRequired != 0 || finalBlocksTotal != 0) return;
-		System.out.println("New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
+		if(logMINOR) Logger.minor(this, "New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
 		onExpectedSize(size, container, context);
 		this.finalBlocksRequired = this.minSuccessBlocks + blocksReq;
 		this.finalBlocksTotal = this.totalBlocks + blocksTotal;

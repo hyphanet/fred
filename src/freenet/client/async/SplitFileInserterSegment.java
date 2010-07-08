@@ -26,6 +26,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelPutException;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
@@ -891,7 +892,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	public void fail(InsertException e, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Failing but already finished on "+this);
+				Logger.error(this, "Failing but already finished on "+this, new Exception("error"));
 				return;
 			}
 			finished = true;
@@ -1215,13 +1216,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		else if(treatAsSuccess)
 			putter.completedBlock(false, container, context);
 		if(persistent) container.deactivate(putter, 1);
-		if(treatAsSuccess && succeeded == dataBlocks.length) {
-			if(persistent) container.activate(parent, 1);
-			parent.segmentFetchable(this, container);
-			if(persistent) container.deactivate(parent, 1);
-		} else if(completed == dataBlocks.length + checkBlocks.length) {
+		if(completed == dataBlocks.length + checkBlocks.length) {
 			if(persistent) container.activate(parent, 1);
 			finish(container, context, parent);
+			if(persistent) container.deactivate(parent, 1);
+		} else if(treatAsSuccess && succeeded == dataBlocks.length) {
+			if(persistent) container.activate(parent, 1);
+			parent.segmentFetchable(this, container);
 			if(persistent) container.deactivate(parent, 1);
 		}
 	}
@@ -1299,13 +1300,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		if(persistent) container.activate(putter, 1);
 		putter.completedBlock(false, container, context);
 		if(persistent) container.deactivate(putter, 1);
-		if(succeeded == dataBlocks.length) {
-			if(persistent) container.activate(parent, 1);
-			parent.segmentFetchable(this, container);
-			if(persistent) container.deactivate(parent, 1);
-		} else if(completed == dataBlocks.length + checkBlocks.length) {
+		if(completed == dataBlocks.length + checkBlocks.length) {
 			if(persistent) container.activate(parent, 1);
 			finish(container, context, parent);
+			if(persistent) container.deactivate(parent, 1);
+		} else if(succeeded == dataBlocks.length) {
+			if(persistent) container.activate(parent, 1);
+			parent.segmentFetchable(this, container);
 			if(persistent) container.deactivate(parent, 1);
 		}
 	}
@@ -1321,7 +1322,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.activate(this, 1);
 			container.activate(blocks, 1);
 		}
-		byte crytoAlgorithm = getCryptoAlgorithm(container);
 		synchronized(this) {
 			if(finished) return null;
 			if(blocks.isEmpty()) {
@@ -1387,10 +1387,12 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			compressorDescriptor = compressorDescriptor2;
 			this.seg = seg;
 		}
-		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
+		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, final ChosenBlock req) {
 				// Ignore keyNum, key, since we're only sending one block.
+			final int num;
+			final ClientCHK key;
+			BlockItem block = (BlockItem) req.token;
 				try {
-					BlockItem block = (BlockItem) req.token;
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number "+block.blockNum);
 					ClientCHKBlock b;
 					try {
@@ -1408,11 +1410,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						Logger.error(this, "Asked to send empty block", new Exception("error"));
 						return false;
 					}
-					final ClientCHK key = b.getClientKey();
-					final int num = block.blockNum;
+					key = b.getClientKey();
+					num = block.blockNum;
 					if(block.persistent) {
 						req.setGeneratedKey(key);
-					} else {
+					} else if(!req.localRequestOnly) {
 						context.mainExecutor.execute(new Runnable() {
 
 							public void run() {
@@ -1429,14 +1431,34 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							throw new LowLevelPutException(LowLevelPutException.COLLISION);
 						}
 					else
-						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
+						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed for "+e);
 					return true;
 				}
 				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded");
-				req.onInsertSuccess(context);
+				if(req.localRequestOnly) {
+					// Must run on-thread or we will have exploding threads.
+					// Plus must run before onInsertSuccess().
+					if(!block.persistent)
+						seg.onEncode(num, key, null, context);
+					req.onInsertSuccess(context);
+				} else if(!block.persistent) {
+					// Must run after onEncode.
+					context.mainExecutor.execute(new Runnable() {
+
+						public void run() {
+							// Make absolutely sure even if we run the two jobs out of order.
+							// Overhead for double-checking should be very low.
+							seg.onEncode(num, key, null, context);
+							req.onInsertSuccess(context);
+						}
+
+					}, "Succeeded");
+				} else {
+					req.onInsertSuccess(context);
+				}
 				return true;
 			}
 

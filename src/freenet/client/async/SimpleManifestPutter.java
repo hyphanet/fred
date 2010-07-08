@@ -332,6 +332,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			} else {
 				// Resolve now to speed up the insert.
 				try {
+					if(persistent)
+						container.activate(m, Integer.MAX_VALUE);
 					byte[] buf = m.writeToByteArray();
 					if(buf.length > Metadata.MAX_SIZE_IN_MANIFEST)
 						throw new MetadataUnresolvedException(new Metadata[] { m }, "Too big");
@@ -425,6 +427,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			super.addMustSucceedBlocks(blocks, container);
 		}
 
+		@Override
+		public void addRedundantBlocks(int blocks, ObjectContainer container) {
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
+			SimpleManifestPutter.this.addRedundantBlocks(blocks, container);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
+			super.addMustSucceedBlocks(blocks, container);
+		}
+		
 		@Override
 		public void notifyClients(ObjectContainer container, ClientContext context) {
 			if(persistent)
@@ -624,6 +636,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			for (int i = 0; i < running.length; i++) {
 				if(logMINOR) Logger.minor(this, "Starting "+running[i]);
 				running[i].start(container, context);
+				synchronized(this) {
+					// It might have failed to start.
+					if(finished) return;
+				}
 				if(persistent && !container.ext().isActive(this))
 					container.activate(this, 1);
 				if (logMINOR)
@@ -1096,7 +1112,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				else {
 					ph.clearMetadata(container);
 					if(persistent())
-						container.activate(meta, 100);
+						container.activate(meta, Integer.MAX_VALUE);
 					if(logMINOR)
 						Logger.minor(this, "Putting "+name);
 					namesToByteArrays.put(name, meta);
@@ -1266,15 +1282,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(value instanceof PutHandler) {
 				PutHandler handler = (PutHandler) value;
 				container.activate(handler, 1);
-				if(runningPutHandlers.remove(handler))
+				if(runningPutHandlers != null && runningPutHandlers.remove(handler))
 					container.ext().store(runningPutHandlers, 2);
-				if(putHandlersWaitingForMetadata.remove(handler))
+				if(putHandlersWaitingForMetadata != null && putHandlersWaitingForMetadata.remove(handler))
 					container.ext().store(putHandlersWaitingForMetadata, 2);
-				if(waitingForBlockSets.remove(handler))
+				if(waitingForBlockSets != null && waitingForBlockSets.remove(handler))
 					container.ext().store(waitingForBlockSets, 2);
-				if(putHandlersWaitingForFetchable.remove(handler))
+				if(putHandlersWaitingForMetadata != null && putHandlersWaitingForFetchable.remove(handler))
 					container.ext().store(putHandlersWaitingForFetchable, 2);
-				if(elementsToPutInArchive.remove(handler))
+				if(elementsToPutInArchive != null && elementsToPutInArchive.remove(handler))
 					container.ext().store(elementsToPutInArchive, 2);
 				handler.removeFrom(container, context);
 			} else {

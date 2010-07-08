@@ -10,19 +10,18 @@ import com.db4o.ObjectContainer;
 import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
-import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
-import freenet.keys.InsertableClientSSK;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /** A high level insert. */
@@ -262,11 +261,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(randomiseSplitfileKeys) {
 			boolean ctxActive = true;
 			if(persistent) {
-				ctxActive = container.ext().isActive(ctx);
-				container.activate(ctx, 1);
+				ctxActive = container.ext().isActive(ctx) || !container.ext().isStored(ctx);
+				if(ctxActive) container.activate(ctx, 1);
 			}
 			CompatibilityMode cmode = ctx.getCompatibilityMode();
-			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()))
+			if(!(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()))
 				randomiseSplitfileKeys = false;
 			if(!ctxActive)
 				container.deactivate(ctx, 1);

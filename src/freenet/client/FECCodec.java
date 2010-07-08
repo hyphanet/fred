@@ -264,23 +264,44 @@ public abstract class FECCodec {
 			(dataBlockStatus.length != k))
 			throw new IllegalArgumentException("Data blocks: " + dataBlockStatus.length + ", Check blocks: " + checkBlockStatus.length + ", n: " + n + ", k: " + k);
 		Buffer[] dataPackets = new Buffer[k];
-		Buffer[] checkPackets = new Buffer[n - k];
+		Buffer[] checkPackets;
 		Bucket[] buckets = new Bucket[n];
 		DataInputStream[] readers = new DataInputStream[k];
-		OutputStream[] writers = new OutputStream[n - k];
+		OutputStream[] writers = null;
 		
 		try {
 
-			int[] toEncode = new int[n - k];
+			int[] toEncode;
 			int numberToEncode = 0; // can be less than n-k
 
-			byte[] realBuffer = new byte[n * STRIPE_SIZE];
-
+			int created = 0;
+			for(int i = 0; i < checkBlockStatus.length; i++) {
+				buckets[i + k] = checkBlockStatus[i];
+				if(buckets[i + k] == null) {
+					buckets[i + k] = bf.makeBucket(blockLength);
+					numberToEncode++;
+					created++;
+				}
+			}
+			
+			toEncode = new int[numberToEncode];
+			checkPackets = new Buffer[numberToEncode];
+			writers = new OutputStream[numberToEncode];
+			
+			byte[] realBuffer = new byte[(k + numberToEncode) * STRIPE_SIZE];
+			
+			int x = 0;
+			for(int i = 0; i < checkBlockStatus.length; i++) {
+				if(checkBlockStatus[i] == null) {
+					toEncode[x] = i + k;
+					checkPackets[x] = new Buffer(realBuffer, (x + k) * STRIPE_SIZE, STRIPE_SIZE);
+					writers[x] = buckets[i + k].getOutputStream();
+					x++;
+				}
+			}
+			
 			for(int i = 0; i < k; i++)
 				dataPackets[i] = new Buffer(realBuffer, i * STRIPE_SIZE,
-					STRIPE_SIZE);
-			for(int i = 0; i < n - k; i++)
-				checkPackets[i] = new Buffer(realBuffer, (i + k) * STRIPE_SIZE,
 					STRIPE_SIZE);
 
 			for(int i = 0; i < dataBlockStatus.length; i++) {
@@ -294,18 +315,6 @@ public abstract class FECCodec {
 				readers[i] = new DataInputStream(buckets[i].getInputStream());
 			}
 
-			int created = 0;
-			for(int i = 0; i < checkBlockStatus.length; i++) {
-				buckets[i + k] = checkBlockStatus[i];
-				if(buckets[i + k] == null) {
-					buckets[i + k] = bf.makeBucket(blockLength);
-					writers[i] = buckets[i + k].getOutputStream();
-					toEncode[numberToEncode++] = i + k;
-					created++;
-				}
-				else
-					writers[i] = null;
-			}
 			if(logMINOR)
 				Logger.minor(this, "Created "+created+" check buckets");
 
@@ -356,18 +365,19 @@ public abstract class FECCodec {
 						Logger.minor(this, "Stripe encode took " + (endTime - startTime) + "ms for k=" + k + ", n=" + n + ", stripeSize=" + STRIPE_SIZE);
 					// packets now contains an array of decoded blocks, in order
 					// Write the data out
-					for(int i = k; i < n; i++)
-						if(writers[i - k] != null)
-							writers[i - k].write(realBuffer, i * STRIPE_SIZE,
-								STRIPE_SIZE);
+					for(int i = 0; i < writers.length; i++) {
+						writers[i].write(realBuffer, (i + k) * STRIPE_SIZE, STRIPE_SIZE);
+					}
 				}
 
 		}
 		finally {
 			for(int i = 0; i < k; i++)
 				Closer.close(readers[i]);
-			for(int i = 0; i < n - k; i++)
-				Closer.close(writers[i]);
+			if(writers != null) {
+				for(int i = 0; i < writers.length; i++)
+					Closer.close(writers[i]);
+			}
 		}
 		// Set new buckets only after have a successful decode.
 		for(int i = 0; i < checkBlockStatus.length; i++) {

@@ -18,14 +18,14 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
-import freenet.client.FECCodec;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
+import freenet.client.FetchResult;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
-import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.keys.NodeCHK;
@@ -35,6 +35,7 @@ import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.io.Closer;
@@ -243,10 +244,16 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250;
 					}
 				} else {
-					minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
+					if(checkBlocks == 64) {
+						// Very old 128/64 redundancy.
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
+					} else {
+						// Extra block per segment in 1251.
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
+					}
 				}
 			} else {
-				minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1254;
+				minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
 				if(params.length < 10)
 					throw new MetadataParseException("Splitfile parameters too short for version 1");
 				short paramsType = Fields.bytesToShort(params, 0);
@@ -362,7 +369,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(persistent)
 			container.store(this);
 
-		boolean pre1254 = !(minCompatMode == CompatibilityMode.COMPAT_CURRENT || minCompatMode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal());
+		boolean pre1254 = !(minCompatMode == CompatibilityMode.COMPAT_CURRENT || minCompatMode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
+		boolean pre1250 = (minCompatMode == CompatibilityMode.COMPAT_UNKNOWN || minCompatMode == CompatibilityMode.COMPAT_1250_EXACT);
 		
 		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
 		if(segmentCount == 1) {
@@ -374,7 +382,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(splitfileCheckBlocks.length > 0)
 				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
 			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks,
-					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, true, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
+					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
 			for(int i=0;i<newSplitfileDataBlocks.length;i++) {
 				if(logMINOR) Logger.minor(this, "Added data block "+i+" : "+newSplitfileDataBlocks[i].getNodeKey(false));
 				tempListener.addKey(newSplitfileDataBlocks[i].getNodeKey(true), 0, context);
@@ -393,18 +401,29 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			int checkBlocksPtr = 0;
 			for(int i=0;i<segments.length;i++) {
 				// Create a segment. Give it its keys.
-				int copyDataBlocks = Math.min(splitfileDataBlocks.length - dataBlocksPtr, blocksPerSegment + crossCheckBlocks);
-				int copyCheckBlocks = Math.min(splitfileCheckBlocks.length - checkBlocksPtr, checkBlocksPerSegment);
-				if(i == segments.length - 1 && copyDataBlocks < (blocksPerSegment + crossCheckBlocks) && deductBlocksFromSegments == 0) {
-					// Last segment is truncated. Recalculate FEC.
-					copyCheckBlocks = FECCodec.getCheckBlocks(splitfileType, copyDataBlocks, minCompatMode);
-				}
-				if(segments.length - i <= deductBlocksFromSegments && i != segments.length-1) {
+				int copyDataBlocks = blocksPerSegment + crossCheckBlocks;
+				int copyCheckBlocks = checkBlocksPerSegment;
+				if(i == segments.length - 1) {
+					// Always accept the remainder as the last segment, but do basic sanity checking.
+					// In practice this can be affected by various things: 1) On old splitfiles before full even 
+					// segment splitting with deductBlocksFromSegments (i.e. pre-1255), the last segment could be
+					// significantly smaller than the rest; 2) On 1251-1253, with partial even segment splitting,
+					// up to 131 data blocks per segment, cutting the check blocks if necessary, and with an extra
+					// check block if possible, the last segment could have *more* check blocks than the rest. 
+					copyDataBlocks = splitfileDataBlocks.length - dataBlocksPtr;
+					copyCheckBlocks = splitfileCheckBlocks.length - checkBlocksPtr;
+					if(copyCheckBlocks <= 0 || copyDataBlocks <= 0)
+						throw new FetchException(FetchException.INVALID_METADATA, "Last segment has bogus block count: total data blocks "+splitfileDataBlocks.length+" total check blocks "+splitfileCheckBlocks.length+" segment size "+blocksPerSegment+" data "+checkBlocksPerSegment+" check "+crossCheckBlocks+" cross check blocks, deduct "+deductBlocksFromSegments+", segments "+segments.length);
+					if((copyDataBlocks > fetchContext.maxDataBlocksPerSegment)
+							|| (copyCheckBlocks > fetchContext.maxCheckBlocksPerSegment))
+						throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
+				} else if(segments.length - i <= deductBlocksFromSegments) {
+					// Deduct one data block from each of the last deductBlocksFromSegments segments.
+					// This ensures no segment is more than 1 block larger than any other.
+					// We do not shrink the check blocks.
 					copyDataBlocks--;
-					// Don't change check blocks.
 				}
-				//if(deductBlocksFromSegments != 0)
-					System.err.println("REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
+				if(logMINOR) Logger.minor(this, "REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
 				ClientCHK[] dataBlocks = new ClientCHK[copyDataBlocks];
 				ClientCHK[] checkBlocks = new ClientCHK[copyCheckBlocks];
 				if(copyDataBlocks > 0)
@@ -412,7 +431,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(copyCheckBlocks > 0)
 					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
 				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext,
-						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, i == segments.length-1, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
+						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, pre1250 && i == segments.length-1, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
 				for(int j=0;j<dataBlocks.length;j++)
 					tempListener.addKey(dataBlocks[j].getNodeKey(true), i, context);
 				for(int j=0;j<checkBlocks.length;j++)
@@ -806,11 +825,13 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			container.activate(segment, 1);
 			segment.fetcherFinished(container, context);
 		}
-		for(int i=0;i<crossSegments.length;i++) {
-			SplitFileFetcherCrossSegment segment = crossSegments[i];
-			crossSegments[i] = null;
-			container.activate(segment, 1);
-			segment.removeFrom(container, context);
+		if(crossCheckBlocks != 0) {
+			for(int i=0;i<crossSegments.length;i++) {
+				SplitFileFetcherCrossSegment segment = crossSegments[i];
+				crossSegments[i] = null;
+				container.activate(segment, 1);
+				segment.removeFrom(container, context);
+			}
 		}
 		container.activate(mainBloomFile, 5);
 		container.activate(altBloomFile, 5);

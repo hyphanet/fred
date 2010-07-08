@@ -337,7 +337,7 @@ public class ArchiveManager {
 					
 				});
 				is = pis;
-			} else if(ctype == COMPRESSOR_TYPE.LZMA_OLD) {
+			} else if(ctype == COMPRESSOR_TYPE.LZMA) {
 				if(logMINOR) Logger.minor(this, "dealing with LZMA");
 				is = new LzmaInputStream(data.getInputStream());
 				wrapper = null;

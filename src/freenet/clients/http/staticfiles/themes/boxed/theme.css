@@ -499,3 +499,7 @@ div#statusbar div.separator {
 	margin-left: 9px;
 	margin-right: 9px;
 }
+
+#content {
+	margin-bottom:5em;
+}

@@ -204,13 +204,13 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 						return false;
 					}
 					if(container.ext().isActive(fetcher))
-						Logger.error(this, "ALREADY ACTIVATED: "+fetcher);
+						Logger.warning(this, "ALREADY ACTIVATED: "+fetcher);
 					container.activate(fetcher, 1);
 				}
 				SplitFileFetcherSegment segment = fetcher.getSegment(i);
 				if(persistent) {
 					if(container.ext().isActive(segment))
-						Logger.error(this, "ALREADY ACTIVATED: "+segment);
+						Logger.warning(this, "ALREADY ACTIVATED: "+segment);
 					container.activate(segment, 1);
 				}
 				if(logMINOR)
@@ -254,7 +254,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			if(segmentFilters[i].checkFilter(salted)) {
 				if(persistent) {
 					if(container.ext().isActive(fetcher))
-						Logger.error(this, "ALREADY ACTIVATED in getRequestsForKey: "+fetcher);
+						Logger.warning(this, "ALREADY ACTIVATED in getRequestsForKey: "+fetcher);
 					container.activate(fetcher, 1);
 				}
 				SplitFileFetcherSegment segment = fetcher.getSegment(i);
@@ -262,7 +262,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 					container.deactivate(fetcher, 1);
 				if(persistent) {
 					if(container.ext().isActive(segment))
-						Logger.error(this, "ALREADY ACTIVATED in getRequestsForKey: "+segment);
+						Logger.warning(this, "ALREADY ACTIVATED in getRequestsForKey: "+segment);
 					container.activate(segment, 1);
 				}
 				int blockNum = segment.getBlockNumber(key, container);

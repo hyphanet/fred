@@ -793,8 +793,8 @@ public class PeerManager {
 	}
 
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
-	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL) {
-		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL);
+	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, int ignoreBackoffUnder) {
+		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder);
 	}
 
 	/**
@@ -810,7 +810,7 @@ public class PeerManager {
 	 * to avoid routing to nodes which have recently failed for the same key.
 	 */
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
-	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL) {
+	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, int ignoreBackoffUnder) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = connectedPeers;
@@ -963,7 +963,7 @@ public class PeerManager {
 				if(logMINOR)
 					Logger.minor(this, "New best: " + diff + " (" + loc + " for " + p.getPeer());
 			}
-			boolean backedOff = p.isRoutingBackedOff();
+			boolean backedOff = p.isRoutingBackedOff(ignoreBackoffUnder);
 			if(backedOff && (diff < closestBackedOffDistance || (Math.abs(diff - closestBackedOffDistance) < Double.MIN_VALUE*2 && (direct || realDiff < closestRealBackedOffDistance))) && !timedOut) {
 				closestBackedOffDistance = diff;
 				closestBackedOff = p;

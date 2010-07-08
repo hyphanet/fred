@@ -446,7 +446,7 @@ public class DatastoreChecker implements PrioRunnable {
 
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(get)) {
-							Logger.error(this, "ALREADY ACTIVATED: "+get);
+							Logger.warning(this, "ALREADY ACTIVATED: "+get);
 						}
 						if(!container.ext().isStored(get)) {
 							// Completed and deleted already.

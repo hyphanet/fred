@@ -26,6 +26,8 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 	final boolean persistent;
 	final short splitfileType;
 	final ClientRequester parent;
+	private boolean finishedEncoding;
+	private boolean shouldRemove;
 	
 	private transient int counter;
 	
@@ -105,8 +107,6 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				decodeCheck[i-dataBlocks] = wrapper;
 		}
 		if(!(needsDecode || needsEncode)) {
-			// This is actually fairly normal...
-			Logger.error(this, "Didn't need to decode cross-segment, all blocks found already on "+this);
 			return;
 		}
 		FECQueue queue = context.fecQueue;
@@ -169,8 +169,19 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			dataBlocks[i].setData(null);
 			if(persistent) container.delete(dataBlocks[i]);
 		}
-		// Try an encode now.
-		decodeOrEncode(null, container, context);
+		boolean bye = false;
+		synchronized(this) {
+			if(shouldRemove) {
+				bye = true;
+				finishedEncoding = true;
+			}
+		}
+		if(bye) {
+			if(persistent) removeFrom(container, context);
+		} else {
+			// Try an encode now.
+			decodeOrEncode(null, container, context);
+		}
 	}
 
 	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks) {
@@ -215,6 +226,16 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			if(persistent) container.delete(checkBlocks[i]);
 		}
 		// All done.
+		boolean bye = false;
+		synchronized(this) {
+			finishedEncoding = true;
+			bye = shouldRemove;
+		}
+		if(persistent) {
+			if(bye) removeFrom(container, context);
+			else
+				container.store(this);
+		}
 	}
 
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
@@ -232,7 +253,15 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
-		container.delete(this);
+		boolean finished;
+		synchronized(this) {
+			shouldRemove = true;
+			finished = finishedEncoding;
+		}
+		if(finished)
+			container.delete(this);
+		else
+			container.store(this);
 	}
 
 	

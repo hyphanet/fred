@@ -55,8 +55,11 @@ public class SplitFileInserter implements ClientPutState {
 	final long dataLength;
 	final COMPRESSOR_TYPE compressionCodec;
 	final short splitfileAlgorithm;
+	/** The number of data blocks in a typical segment. Does not include cross-check blocks. */
 	final int segmentSize;
+	/** The number of check blocks in a typical segment. Does not include cross-check blocks. */
 	final int deductBlocksFromSegments;
+	/** The number of cross-check blocks in any segment, or in any cross-segment. */
 	final int checkSegmentSize;
 	final SplitFileInserterSegment[] segments;
 	final boolean getCHKOnly;
@@ -170,7 +173,7 @@ public class SplitFileInserter implements ClientPutState {
 				segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
 			}
 			segmentSize = segSize;
-			if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) {
+			if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()) {
 				// Even with basic even segment splitting, it is possible for the last segment to be a lot smaller than the rest.
 				// So drop a single data block from each of the last [segmentSize-lastSegmentSize] segments instead.
 				// Hence all the segments are within 1 block of segmentSize.
@@ -184,7 +187,7 @@ public class SplitFileInserter implements ClientPutState {
 		int crossCheckBlocks = 0;
 		
 		// Cross-segment splitfile redundancy becomes useful at 20 segments.
-		if(segs >= 20 && (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal())) {
+		if(segs >= 20 && (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal())) {
 			// The optimal number of cross-check blocks per segment (and per cross-segment since there are the same number of cross-segments as segments) is 3.
 			crossCheckBlocks = 3;
 		}
@@ -206,13 +209,16 @@ public class SplitFileInserter implements ClientPutState {
 		if(splitfileKey != null) {
 			this.splitfileCryptoKey = splitfileKey;
 			specifySplitfileKeyInMetadata = true;
-		} else if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1254.ordinal()) {
+		} else if(cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal()) {
 			if(hashThisLayerOnly != null) {
 				this.splitfileCryptoKey = Metadata.getCryptoKey(hashThisLayerOnly);
 			} else {
 				if(persistent) {
 					// array elements are treated as part of the parent object, but the hashes themselves may not be activated?
-					for(HashResult res : hashes) container.activate(res, Integer.MAX_VALUE);
+					for(HashResult res : hashes) {
+						if(res == null) throw new NullPointerException();
+						container.activate(res, Integer.MAX_VALUE);
+					}
 				}
 				this.splitfileCryptoKey = Metadata.getCryptoKey(hashes);
 			}
@@ -245,7 +251,7 @@ public class SplitFileInserter implements ClientPutState {
 					segLen--;
 				}
 
-				SplitFileInserterCrossSegment seg = new SplitFileInserterCrossSegment(persistent, segLen, crossCheckBlocks, put, splitfileAlgorithm);
+				SplitFileInserterCrossSegment seg = new SplitFileInserterCrossSegment(persistent, segLen, crossCheckBlocks, put, splitfileAlgorithm, this, i);
 				crossSegments[i] = seg;
 				for(int j=0;j<segLen;j++) {
 					// Allocate random data blocks
@@ -465,7 +471,7 @@ public class SplitFileInserter implements ClientPutState {
 				segs.add(s);
 				
 				if(deductBlocksFromSegments != 0)
-					System.err.println("INSERTING: Segment "+segNo+" of "+segCount+" : "+data+" data blocks "+check+" check blocks");
+					if(logMINOR) Logger.minor(this, "INSERTING: Segment "+segNo+" of "+segCount+" : "+data+" data blocks "+check+" check blocks");
 
 				segNo++;
 				if(i == dataBlocks) break;
@@ -641,8 +647,12 @@ public class SplitFileInserter implements ClientPutState {
 					compressed = topCompressedSize;
 				}
 				if(persistent) container.activate(hashes, Integer.MAX_VALUE);
+				HashResult[] h;
+				if(persistent) h = HashResult.copy(hashes);
+				else h = hashes;
 				if(persistent) container.activate(compressionCodec, Integer.MAX_VALUE);
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, hashThisLayerOnly, data, compressed, req, total, topDontCompress, topCompatibilityMode, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata, crossCheckBlocks);
+				if(persistent) container.activate(archiveType, Integer.MAX_VALUE);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, h, hashThisLayerOnly, data, compressed, req, total, topDontCompress, topCompatibilityMode, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata, crossCheckBlocks);
 			}
 			haveSentMetadata = true;
 		}
@@ -710,7 +720,8 @@ public class SplitFileInserter implements ClientPutState {
 					break;
 				}
 				if(!segments[i].hasURIs()) {
-					Logger.error(this, "Segment finished but hasURIs() is false: "+segments[i]+" for "+this);
+					if(segments[i].getException(container) == null)
+						Logger.error(this, "Segment finished but hasURIs() is false: "+segments[i]+" for "+this);
 				}
 				if(persistent && segments[i] != segment)
 					container.deactivate(segments[i], 1);
@@ -846,6 +857,12 @@ public class SplitFileInserter implements ClientPutState {
 			container.activate(segment, 1);
 			segment.removeFrom(container, context);
 		}
+		if(hashes != null) {
+			for(HashResult res : hashes) {
+				container.activate(res, Integer.MAX_VALUE);
+				res.removeFrom(container);
+			}
+		}
 		container.delete(this);
 	}
 
@@ -874,6 +891,14 @@ public class SplitFileInserter implements ClientPutState {
 		System.out.println("Parent: "+parent);
 		parent.dump(container);
 		container.deactivate(parent, 1);
+	}
+
+	public void clearCrossSegment(int segNum, SplitFileInserterCrossSegment segment, ObjectContainer container) {
+		synchronized(this) {
+			assert(crossSegments[segNum] == segment);
+			crossSegments[segNum] = null;
+		}
+		if(persistent) container.store(this);
 	}
 
 }

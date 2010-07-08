@@ -46,6 +46,7 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
+import com.db4o.config.GlobalOnlyConfigException;
 import com.db4o.defragment.AvailableClassFilter;
 import com.db4o.defragment.BTreeIDMapping;
 import com.db4o.defragment.Defragment;
@@ -721,6 +722,12 @@ public class Node implements TimeSkewDetectorCallback {
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)18;
 	private short maxHTL;
+	/** Should inserts ignore low backoff times by default? */
+	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
+	/** Definition of "low backoff times" for above. */
+	public static int LOW_BACKOFF = 30*1000;
+	/** Should inserts be fairly blatently prioritised on accept by default? */
+	public static boolean PREFER_INSERT_DEFAULT = false;
 	/** Should inserts fork when the HTL reaches cacheability? */
 	public static boolean FORK_ON_CACHEABLE_DEFAULT = true;
 	public final IOStatisticCollector collector;
@@ -2661,6 +2668,20 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("Query activation depth: "+dbConfig.activationDepth());
 		ObjectContainer database;
 
+		File dbFileBackup = new File(dbFile.getPath()+".tmp");
+		File dbFileCryptBackup = new File(dbFileCrypt.getPath()+".tmp");
+		
+		if(dbFileBackup.exists() && !dbFile.exists()) {
+			if(!dbFileBackup.renameTo(dbFile)) {
+				throw new IOException("Database backup file "+dbFileBackup+" exists but cannot be renamed to "+dbFile+". Not loading database, please fix permissions problems!");
+			}
+		}
+		if(dbFileCryptBackup.exists() && !dbFileCrypt.exists()) {
+			if(!dbFileCryptBackup.renameTo(dbFileCrypt)) {
+				throw new IOException("Database backup file "+dbFileCryptBackup+" exists but cannot be renamed to "+dbFileCrypt+". Not loading database, please fix permissions problems!");
+			}
+		}
+		
 		try {
 			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 				databaseKey = new byte[32];
@@ -2766,7 +2787,9 @@ public class Node implements TimeSkewDetectorCallback {
 				synchronized(this) {
 					databaseEncrypted = true;
 				}
-			} else if(dbFileCrypt.exists() && !dbFile.exists()) {
+			} else if((dbFileCrypt.exists() && !dbFile.exists()) || 
+					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.NORMAL) ||
+					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH && databaseKey != null)) {
 				// Open encrypted, regardless of seclevel.
 				if(databaseKey == null) {
 					// Try with no password
@@ -2916,7 +2939,15 @@ public class Node implements TimeSkewDetectorCallback {
 		IoAdapter baseAdapter = dbConfig.io();
 		if(Logger.shouldLog(LogLevel.DEBUG, this))
 			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
-		dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+		try {
+			dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+		} catch (GlobalOnlyConfigException e) {
+			// Fouled up after encrypting/decrypting.
+			System.err.println("Caught "+e+" opening encrypted database.");
+			e.printStackTrace();
+			WrapperManager.restart();
+			throw e;
+		}
 
 		maybeDefragmentDatabase(dbConfig, dbFileCrypt);
 
@@ -2933,6 +2964,12 @@ public class Node implements TimeSkewDetectorCallback {
 		synchronized(this) {
 			if(!defragDatabaseOnStartup) return;
 		}
+		
+		// Open it first, because defrag will throw if it needs to upgrade the file.
+		
+		ObjectContainer database = Db4o.openFile(dbConfig, databaseFile.toString());
+		while(!database.close());
+		
 		if(!databaseFile.exists()) return;
 		long length = databaseFile.length();
 		// Estimate approx 1 byte/sec.
@@ -2944,11 +2981,35 @@ public class Node implements TimeSkewDetectorCallback {
 
 		File tmpFile = new File(databaseFile.getPath()+".map");
 		FileUtil.secureDelete(tmpFile, random);
+		
+		
 
 		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
 		config.storedClassFilter(new AvailableClassFilter());
 		config.db4oConfig(dbConfig);
-		Defragment.defrag(config);
+		try {
+			Defragment.defrag(config);
+		} catch (IOException e) {
+			if(backupFile.exists()) {
+				System.err.println("Defrag failed. Trying to preserve original database file.");
+				FileUtil.secureDelete(databaseFile, random);
+				if(!backupFile.renameTo(databaseFile)) {
+					System.err.println("Unable to rename backup file back to database file! Restarting on the assumption that it didn't get closed...");
+					WrapperManager.restart();
+					throw e;
+				}
+			}
+		} catch (Db4oException e) {
+			if(backupFile.exists()) {
+				System.err.println("Defrag failed. Trying to preserve original database file.");
+				FileUtil.secureDelete(databaseFile, random);
+				if(!backupFile.renameTo(databaseFile)) {
+					System.err.println("Unable to rename backup file back to database file! Restarting on the assumption that it didn't get closed...");
+					WrapperManager.restart();
+					throw e;
+				}
+			}
+		}
 		System.err.println("Finalising defragmentation...");
 		FileUtil.secureDelete(tmpFile, random);
 		FileUtil.secureDelete(backupFile, random);
@@ -3702,11 +3763,9 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 
-		boolean isApple;
+		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 
-		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
-
-		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun ")) || (isApple = jvmVendor.startsWith("Apple ")))) {
+		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun ")) || (jvmVendor.startsWith("Apple ")))) {
 			// Sun bugs
 
 			// Spurious OOMs
@@ -3757,7 +3816,7 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			}
 
-			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "version" }, new String[] { jvmVendor, javaVersion }), l10n("notUsingSunVMShort"), UserAlert.WARNING));
+			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "name", "version" }, new String[] { jvmVendor, jvmName, javaVersion }), l10n("notUsingSunVMShort"), UserAlert.WARNING));
 		}
 
 		if(!isUsingWrapper()) {
@@ -4333,12 +4392,14 @@ public class Node implements TimeSkewDetectorCallback {
 	 * CHKInsertSender running.
 	 * @param source The node that sent the InsertRequest, or null
 	 * if it originated locally.
+	 * @param ignoreLowBackoff 
+	 * @param preferInsert 
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
-			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable) {
+			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		CHKInsertSender is = null;
-		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable);
+		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 		is.start();
 		// CHKInsertSender adds itself to insertSenders
 		return is;
@@ -4354,9 +4415,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * SSKInsertSender running.
 	 * @param source The node that sent the InsertRequest, or null
 	 * if it originated locally.
+	 * @param ignoreLowBackoff 
+	 * @param preferInsert 
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
-			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable) {
+			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
 		NodeSSK key = block.getKey();
 		if(key.getPubKey() == null) {
 			throw new IllegalArgumentException("No pub key when inserting");
@@ -4365,7 +4428,7 @@ public class Node implements TimeSkewDetectorCallback {
 		getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), false, canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		SSKInsertSender is = null;
-		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, forkOnCacheable);
+		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 		is.start();
 		return is;
 	}
@@ -5365,7 +5428,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(!this.registerTurtleTransfer(sender)) {
 			// Too many turtles running, or already two turtles for this key (we allow two in case one peer turtles as a DoS).
 			sender.killTurtle();
-			Logger.error(this, "Didn't make turtle (global) for key "+sender.key+" for "+sender);
+			Logger.warning(this, "Didn't make turtle (global) for key "+sender.key+" for "+sender);
 			return;
 		}
 		PeerNode from = sender.transferringFrom();
@@ -5378,7 +5441,7 @@ public class Node implements TimeSkewDetectorCallback {
 			// Abort it.
 			unregisterTurtleTransfer(sender);
 			sender.killTurtle();
-			Logger.error(this, "Didn't make turtle (peer) for key "+sender.key+" for "+sender);
+			Logger.warning(this, "Didn't make turtle (peer) for key "+sender.key+" for "+sender);
 			return;
 		}
 		Logger.normal(this, "TURTLING: "+sender.key+" for "+sender);
@@ -5405,7 +5468,7 @@ public class Node implements TimeSkewDetectorCallback {
 		Key key = sender.key;
 		synchronized(turtlingTransfers) {
 			if(getNumIncomingTurtles() >= MAX_TURTLES) {
-				Logger.error(this, "Too many turtles running globally");
+				Logger.warning(this, "Too many turtles running globally");
 				return false;
 			}
 			if(!turtlingTransfers.containsKey(key)) {
@@ -5415,7 +5478,7 @@ public class Node implements TimeSkewDetectorCallback {
 			} else {
 				RequestSender[] senders = turtlingTransfers.get(key);
 				if(senders.length >= MAX_TURTLES_PER_KEY) {
-					Logger.error(this, "Too many turtles for key globally");
+					Logger.warning(this, "Too many turtles for key globally");
 					return false;
 				}
 				for(int i=0;i<senders.length;i++) {

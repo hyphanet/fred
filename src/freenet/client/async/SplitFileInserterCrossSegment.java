@@ -19,6 +19,8 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 	private final SplitFileInserterSegment[] segments;
 	private final int[] blockNumbers;
 	private final ClientRequester parent;
+	private final SplitFileInserter parentInserter;
+	private final int segNum;
 	
 	final short splitfileType;
 	
@@ -26,7 +28,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 	
 	private transient FECCodec codec;
 	
-	SplitFileInserterCrossSegment(boolean persistent, int dataBlocks, int crossCheckBlocks, ClientRequester parent, short splitfileType) {
+	SplitFileInserterCrossSegment(boolean persistent, int dataBlocks, int crossCheckBlocks, ClientRequester parent, short splitfileType, SplitFileInserter parentInserter, int segNum) {
 		this.persistent = persistent;
 		this.dataBlocks = dataBlocks;
 		this.crossCheckBlocks = crossCheckBlocks;
@@ -35,6 +37,8 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 		this.blockNumbers = new int[totalBlocks];
 		this.parent = parent;
 		this.splitfileType = splitfileType;
+		this.parentInserter = parentInserter;
+		this.segNum = segNum;
 	}
 	
 	public void addDataBlock(SplitFileInserterSegment seg, int blockNum) {
@@ -110,6 +114,14 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 			if(persistent) container.delete(dataBlocks[i]);
 		}
 		System.out.println("Completed encode for cross segment "+this);
+		if(persistent) container.activate(parentInserter, 1);
+		parentInserter.clearCrossSegment(segNum, this, container);
+		if(persistent) container.deactivate(parentInserter, 1);
+		if(persistent) removeFrom(container);
+	}
+
+	private void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {

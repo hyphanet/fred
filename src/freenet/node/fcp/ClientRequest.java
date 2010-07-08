@@ -425,7 +425,7 @@ public abstract class ClientRequest {
 
 	public abstract boolean canRestart();
 
-	public abstract boolean restart(ObjectContainer container, ClientContext context) throws DatabaseDisabledException;
+	public abstract boolean restart(boolean filterData, ObjectContainer container, ClientContext context) throws DatabaseDisabledException;
 
 	protected abstract FCPMessage persistentTagMessage(ObjectContainer container);
 
@@ -490,7 +490,7 @@ public abstract class ClientRequest {
 		fs.put(name, bucket.toFieldSet());
 	}
 
-	public void restartAsync(final FCPServer server) throws DatabaseDisabledException {
+	public void restartAsync(final boolean filterData, final FCPServer server) throws DatabaseDisabledException {
 		synchronized(this) {
 			this.started = false;
 		}
@@ -500,7 +500,7 @@ public abstract class ClientRequest {
 			public boolean run(ObjectContainer container, ClientContext context) {
 				container.activate(ClientRequest.this, 1);
 				try {
-					restart(container, context);
+					restart(filterData, container, context);
 				} catch (DatabaseDisabledException e) {
 					// Impossible
 				}
@@ -518,7 +518,7 @@ public abstract class ClientRequest {
 
 				public void run() {
 					try {
-						restart(null, server.core.clientContext);
+						restart(filterData, null, server.core.clientContext);
 					} catch (DatabaseDisabledException e) {
 						// Impossible
 					}

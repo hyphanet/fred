@@ -927,6 +927,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			s += ": "+getFailedMessage.extraDescription;
 		return s;
 	}
+	
+	public int getFailureReasonCode(ObjectContainer container) {
+		if(getFailedMessage == null)
+			return -1;
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(getFailedMessage, 5);
+		return getFailedMessage.code;
+		
+	}
 
 	@Override
 	public boolean isTotalFinalized(ObjectContainer container) {
@@ -973,7 +982,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	@Override
-	public boolean restart(ObjectContainer container, ClientContext context) {
+	public boolean restart(boolean filterData, ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
 		FreenetURI redirect;
 		synchronized(this) {
@@ -999,11 +1008,16 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				expectedHashes.removeFrom(container);
 				expectedHashes = null;
 			started = false;
+			if(persistenceType == PERSIST_FOREVER) {
+				container.activate(fctx, 1);
+				container.activate(fctx.filterData, 1);
+			}
+			fctx.filterData = filterData;
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
 		try {
-			if(getter.restart(redirect, container, context)) {
+			if(getter.restart(redirect, filterData, container, context)) {
 				synchronized(this) {
 					if(redirect != null) {
 						if(persistenceType == PERSIST_FOREVER)
@@ -1028,5 +1042,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
+	}
+
+	public boolean filterData(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(fctx, 1);
+		return fctx.filterData;
 	}
 }

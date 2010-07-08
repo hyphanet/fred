@@ -225,10 +225,11 @@ public class BaseL10n {
 			if (in != null) {
 				result = SimpleFieldSet.readFrom(in, false, false);
 			} else {
-				Logger.error(this.getClass(), "Could not get resource : " + this.getL10nFileName(lang));
+				System.err.println("Could not get resource : " + this.getL10nFileName(lang));
 			}
 		} catch (Exception e) {
-			Logger.error(this.getClass(), "Error while loading the l10n file from " + this.getL10nFileName(lang) + " :" + e.getMessage(), e);
+			System.err.println("Error while loading the l10n file from " + this.getL10nFileName(lang) + " :" + e.getMessage());
+			e.printStackTrace();
 			result = null;
 		} finally {
 			Closer.close(in);
@@ -243,6 +244,8 @@ public class BaseL10n {
 	private synchronized void loadFallback() {
 		if (this.fallbackTranslation == null) {
 			this.fallbackTranslation = loadTranslation(LANGUAGE.getDefault());
+			if(fallbackTranslation == null)
+				fallbackTranslation = new SimpleFieldSet(true);
 		}
 	}
 

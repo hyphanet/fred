@@ -50,10 +50,12 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     final InsertTag tag;
     private final boolean canWriteDatastore;
 	private final boolean forkOnCacheable;
+	private final boolean preferInsert;
+	private final boolean ignoreLowBackoff;
 
 	private boolean collided = false;
     
-    SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean canWriteDatastore, boolean forkOnCacheable) {
+    SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean canWriteDatastore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
         this.node = node;
         this.uid = id;
         this.source = source;
@@ -70,6 +72,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         canCommit = false;
         logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
         this.forkOnCacheable = forkOnCacheable;
+        this.preferInsert = preferInsert;
+        this.ignoreLowBackoff = ignoreLowBackoff;
     }
     
     @Override
@@ -219,7 +223,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         }
         
         if(htl > 0)
-            sender = node.makeInsertSender(block, htl, uid, source, false, false, canWriteDatastore, forkOnCacheable);
+            sender = node.makeInsertSender(block, htl, uid, source, false, false, canWriteDatastore, forkOnCacheable, preferInsert, ignoreLowBackoff);
         
         boolean receivedRejectedOverload = false;
         

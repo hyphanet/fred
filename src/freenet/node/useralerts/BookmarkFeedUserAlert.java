@@ -67,7 +67,7 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 						new String[] { "src", "alt", "title" },
 						new String[] { "/static/icon/bookmark-new.png", l10n("addAsABookmark"),
 								l10n("addAsABookmark") });
-		alertNode.addChild("a", "href", uri.toString()).addChild("#", name);
+		alertNode.addChild("a", "href", "/freenet:" + uri.toString()).addChild("#", name);
 		if (description != null && description.length() != 0) {
 			String[] lines = description.split("\n");
 			alertNode.addChild("br");

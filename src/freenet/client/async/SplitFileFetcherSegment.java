@@ -44,6 +44,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.MultiReaderBucket;
 
 /**
  * A single segment within a SplitFileFetcher.
@@ -52,6 +53,8 @@ import freenet.support.io.BucketTools;
 public class SplitFileFetcherSegment implements FECCallback {
 
 	private static volatile boolean logMINOR;
+	
+	private static final boolean FORCE_CHECK_FEC_KEYS = true;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -236,6 +239,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	/** Write the decoded segment's data to an OutputStream */
 	public long writeDecodedDataTo(OutputStream os, long truncateLength, ObjectContainer container) throws IOException {
+		if(logMINOR)
+			Logger.minor(this, "Writing decoded data on "+this);
 		if(decodedData != null) {
 			if(persistent) container.activate(decodedData, Integer.MAX_VALUE);
 			long len = decodedData.size();
@@ -257,7 +262,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 				Bucket data = status.getData();
 				if(data == null) 
-					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
+					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in writeDecodedData on "+this+" status = "+status+" number "+status.getNumber()+" data "+status.getData()+" persistence = "+persistent+(persistent ? (" (block active = "+container.ext().isActive(status)+" block ID = "+container.ext().getID(status)+" seg active="+container.ext().isActive(this)+")"):""));
 				if(persistent) container.activate(data, 1);
 				long copy;
 				if(truncateLength < 0)
@@ -414,6 +419,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(allFailed) res |= ON_SUCCESS_ALL_FAILED;
 			if(decodeNow) res |= ON_SUCCESS_DECODE_NOW;
 		}
+		if(persistent) container.store(this);
 		if(crossSegment != null) {
 			if(persistent) container.activate(crossSegment, 1);
 			crossSegment.onFetched(this, blockNo, container, context);
@@ -426,7 +432,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private static final short ON_SUCCESS_ALL_FAILED = 2;
 	private static final short ON_SUCCESS_DECODE_NOW = 4;
 	
-	public boolean onSuccess(Bucket data, int blockNo, ClientKeyBlock block, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment sub) {
+	public boolean onSuccess(Bucket data, int blockNo, ClientCHKBlock block, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment sub) {
 		if(persistent)
 			container.activate(this, 1);
 		if(data == null) throw new NullPointerException();
@@ -438,22 +444,21 @@ public class SplitFileFetcherSegment implements FECCallback {
 //			block = encode(data, blockNo);
 //		}
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this+" data="+dataBuckets.length+" check="+checkBuckets.length);
-		if(parent instanceof ClientGetter) {
-			try {
-				if(block == null) {
-					byte[] buf = BucketTools.toByteArray(data);
-					assert(buf.length == CHKBlock.DATA_LENGTH); // All new splitfile inserts insert only complete blocks even at the end.
-					block = ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
+		try {
+			if(!maybeAddToBinaryBlob(data, block, blockNo, container, context, block == null ? "CROSS-SEGMENT FEC" : "UNKNOWN")) {
+				if((ignoreLastDataBlock && blockNo == dataKeys.length-1) || (ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length)) {
+					// Ignore
+				} else if(block == null) {
+					// Cross-segment, just return false.
+					Logger.error(this, "CROSS-SEGMENT DECODED/ENCODED BLOCK INVALID: "+blockNo, new Exception("error"));
+					return false;
+				} else {
+					Logger.error(this, "DATA BLOCK INVALID: "+blockNo, new Exception("error"));
+					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block"), blockNo, null, container, context);
 				}
-				((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
-			} catch (IOException e) {
-				// block is null only on a cross-decode so there will be enough data for decoding anyway, so don't fail.
-				Logger.error(this, "Unable to re-encode block for binary blob: "+e, e);
-			} catch (CHKEncodeException e) {
-				// block is null only on a cross-decode so there will be enough data for decoding anyway, so don't fail.
-				Logger.error(this, "Unable to re-encode block for binary blob: "+e, e);
 			}
-			
+		} catch (FetchException e) {
+			fail(e, container, context, false);
 		}
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		short result = onSuccessInner(data, blockNo, container, context);
@@ -628,19 +633,26 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 		}
-		if(isCollectingBinaryBlob()) {
-			for(int i=0;i<dataBuckets.length;i++) {
-				Bucket data = dataBlockStatus[i].getData();
-				if(data == null) 
-					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
-				try {
-					maybeAddToBinaryBlob(data, i, false, container, context);
-				} catch (FetchException e) {
-					fail(e, container, context, false);
-					return;
+		boolean allDecodedCorrectly = true;
+		for(int i=0;i<dataBuckets.length;i++) {
+			Bucket data = dataBlockStatus[i].getData();
+			if(data == null) 
+				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
+			try {
+				if(!maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE")) {
+					if((!(ignoreLastDataBlock && i == dataKeys.length-1)) &&
+							(!(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length)))
+						Logger.error(this, "Data block "+i+" FAILED TO DECODE CORRECTLY");
+					// Disable healing.
+					dataRetries[i] = 0;
+					allDecodedCorrectly = false;
 				}
+			} catch (FetchException e) {
+				fail(e, container, context, false);
+				return;
 			}
 		}
+		if(allDecodedCorrectly && logMINOR) Logger.minor(this, "All decoded correctly on "+this);
 		// Must set finished BEFORE calling parentFetcher.
 		// Otherwise a race is possible that might result in it not seeing our finishing.
 		finished = true;
@@ -756,15 +768,21 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(dataRetries[i] > 0)
 					heal = true;
 				if(heal) {
-					queueHeal(data, container, context);
+					Bucket wrapper = queueHeal(data, container, context);
+					if(wrapper != data) {
+						assert(!persistent);
+						dataBuckets[i].setData(wrapper);
+					}
 				}
 			}
+			boolean allEncodedCorrectly = true;
 			for(int i=0;i<checkBuckets.length;i++) {
 				boolean heal = false;
 				// Check buckets will already be active because the FEC codec
 				// has been using them.
 				if(checkBuckets[i] == null) {
 					Logger.error(this, "Check bucket "+i+" is null in onEncodedSegment on "+this);
+					allEncodedCorrectly = false;
 					continue;
 				}
 				if(checkBuckets[i] != checkBlockStatus[i]) {
@@ -788,15 +806,26 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 					continue;
 				}
+				if(checkRetries[i] > 0)
+					heal = true;
 				try {
-					maybeAddToBinaryBlob(data, i, true, container, context);
+					if(!maybeAddToBinaryBlob(data, null, i+dataKeys.length, container, context, "FEC ENCODE")) {
+						heal = false;
+						if(!(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length))
+							Logger.error(this, "FAILED TO ENCODE CORRECTLY so not healing check block "+i);
+						allEncodedCorrectly = false;
+					}
 				} catch (FetchException e) {
 					fail(e, container, context, false);
 					return;
 				}
-				if(checkRetries[i] > 0)
-					heal = true;
 				if(heal) {
+					Bucket wrapper = queueHeal(data, container, context);
+					if(wrapper != data) {
+						assert(!persistent);
+						wrapper.free();
+					}
+
 					queueHeal(data, container, context);
 					checkBuckets[i].data = null;
 				} else {
@@ -809,10 +838,15 @@ public class SplitFileFetcherSegment implements FECCallback {
 					checkKeys[i].removeFrom(container);
 				checkKeys[i] = null;
 			}
+			if(logMINOR) {
+				if(allEncodedCorrectly) Logger.minor(this, "All encoded correctly on "+this);
+				else Logger.minor(this, "Not encoded correctly on "+this);
+			}
 			if(persistent && !fetcherFinished) {
 				container.store(this);
 			}
 		}
+		if(logMINOR) Logger.minor(this, "Checked blocks.");
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
 		if(isCollectingBinaryBlob()) {
 			if(persistent)
@@ -834,51 +868,85 @@ public class SplitFileFetcherSegment implements FECCallback {
 		} else return false;
 	}
 	
-	private void maybeAddToBinaryBlob(Bucket data, int i, boolean check, ObjectContainer container, ClientContext context) throws FetchException {
-		if(parent instanceof ClientGetter) {
-			ClientGetter getter = (ClientGetter) (parent);
-			if(getter.collectingBinaryBlob()) {
+	private boolean maybeAddToBinaryBlob(Bucket data, ClientCHKBlock block, int blockNo, ObjectContainer container, ClientContext context, String dataSource) throws FetchException {
+		if(parent instanceof ClientGetter || FORCE_CHECK_FEC_KEYS) {
+			if(((ClientGetter)parent).collectingBinaryBlob() || FORCE_CHECK_FEC_KEYS) {
 				try {
 					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
-					ClientCHKBlock block =
-						ClientCHKBlock.encode(data, false, true, (short)-1, data.size(), COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR, pre1254, forceCryptoKey, cryptoAlgorithm);
-					getter.addKeyToBinaryBlob(block, container, context);
+					byte[] buf = BucketTools.toByteArray(data);
+					if(!(buf.length == CHKBlock.DATA_LENGTH)) {
+						// All new splitfile inserts insert only complete blocks even at the end.
+						if((!ignoreLastDataBlock) || (blockNo != dataKeys.length-1))
+							Logger.error(this, "Block is too small: "+buf.length);
+						return false;
+					}
+					if(block == null) {
+						block = 
+							ClientCHKBlock.encodeSplitfileBlock(buf, forceCryptoKey, cryptoAlgorithm);
+					}
+					ClientCHK key = getBlockKey(blockNo, container);
+					if(key != null) {
+						if(!(key.equals(block.getClientKey()))) {
+							if(ignoreLastDataBlock && blockNo == dataKeys.length-1 && dataSource.equals("FEC DECODE")) {
+								if(logMINOR) Logger.minor(this, "Last block wrong key, ignored because expected due to padding issues");
+							} else if(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length) {
+								// We padded the last block. The inserter might have used a different padding algorithm.
+								if(logMINOR) Logger.minor(this, "Wrong key, might be due to padding issues");
+							} else {
+								Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" (data "+dataKeys.length+" check "+checkKeys.length+" ignore last block="+ignoreLastDataBlock+") : key "+block.getClientKey().getURI()+" should be "+key.getURI(), new Exception("error"));
+							}
+							return false;
+						} else {
+							if(logMINOR) Logger.minor(this, "Verified key for block "+blockNo+" from "+dataSource);
+						}
+					} else {
+						if(dataSource.equals("FEC ENCODE") || dataSource.equals("FEC DECODE")) {
+							// Ignore. FIXME Probably we should not delete the keys until after the encode??? Back compatibility issues maybe though...
+							if(logMINOR) Logger.minor(this, "Key is null for block "+blockNo+" when checking key / adding to binary blob, key source is "+dataSource, new Exception("error"));
+						} else {
+							Logger.error(this, "Key is null for block "+blockNo+" when checking key / adding to binary blob, key source is "+dataSource, new Exception("error"));
+						}
+					}
+					if(parent instanceof ClientGetter) {
+						((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
+					}
+					return true;
 				} catch (CHKEncodeException e) {
-					Logger.error(this, "Failed to encode (collecting binary blob) "+(check?"check":"data")+" block "+i+": "+e, e);
+					Logger.error(this, "Failed to encode (collecting binary blob) block "+blockNo+": "+e, e);
 					throw new FetchException(FetchException.INTERNAL_ERROR, "Failed to encode for binary blob: "+e);
 				} catch (IOException e) {
 					throw new FetchException(FetchException.BUCKET_ERROR, "Failed to encode for binary blob: "+e);
 				}
 			}
 		}
+		return true; // Assume it is encoded correctly.
 	}
 
 	/**
-	 * Queue the data for a healing insert. The data will be freed when it the healing insert completes,
-	 * or immediately if a healing insert isn't queued. If we are persistent, copies the data.
-	 * @param data
-	 * @param container
-	 * @param context
+	 * Queue the data for a healing insert. If the data is persistent, we copy it; the caller must free the 
+	 * original data when it is finished with it, the healing queue will free the copied data. If the data is 
+	 * not persistent, we create a MultiReaderBucket wrapper, so that the data will be freed when both the caller
+	 * and the healing queue are finished with it; the caller must accept the returned bucket, and free it when it
+	 * is finished with it. 
 	 */
-	private void queueHeal(Bucket data, ObjectContainer container, ClientContext context) {
+	private Bucket queueHeal(Bucket data, ObjectContainer container, ClientContext context) {
+		Bucket copy;
 		if(persistent) {
 			try {
-				Bucket copy = context.tempBucketFactory.makeBucket(data.size());
+				copy = context.tempBucketFactory.makeBucket(data.size());
 				BucketTools.copy(data, copy);
-				data.free();
-				if(persistent)
-					data.removeFrom(container);
-				data = copy;
 			} catch (IOException e) {
 				Logger.normal(this, "Failed to copy data for healing: "+e, e);
-				data.free();
-				if(persistent)
-					data.removeFrom(container);
-				return;
+				return data;
 			}
+		} else {
+			MultiReaderBucket wrapper = new MultiReaderBucket(data);
+			copy = wrapper.getReaderBucket();
+			data = wrapper.getReaderBucket();
 		}
 		if(logMINOR) Logger.minor(this, "Queueing healing insert for "+data+" on "+this);
-		context.healingQueue.queue(data, forceCryptoKey, cryptoAlgorithm, context);
+		context.healingQueue.queue(copy, forceCryptoKey, cryptoAlgorithm, context);
+		return data;
 	}
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal 
@@ -1110,6 +1178,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	void fail(FetchException e, ObjectContainer container, ClientContext context, boolean dontDeactivateParent) {
+		if(logMINOR) Logger.minor(this, "Failing segment "+this, e);
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -1713,6 +1782,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(!encoderFinished) return;
 			if(!fetcherHalfFinished) return;
 		}
+		if(logMINOR) Logger.minor(this, "Freeing decoded data on segment "+this);
 		if(decodedData != null) {
 			if(persistent)
 				container.activate(decodedData, 1);
@@ -1769,18 +1839,23 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	/** Free the data blocks but only if the encoder has finished with them. */
 	public void fetcherHalfFinished(ObjectContainer container) {
+		boolean finish = false;
 		synchronized(this) {
 			fetcherHalfFinished = true;
-			if(!encoderFinished) return;
+			finish = encoderFinished;
 		}
-		freeDecodedData(container);
+		if(finish) freeDecodedData(container);
+		else {
+			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+		}
 		if(persistent) container.store(this);
-		if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+		
 	}
 	
 	public void fetcherFinished(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			fetcherFinished = true;
+			fetcherHalfFinished = true;
 			if(!encoderFinished) {
 				if(!startedDecode) {
 					encoderFinished = true;
@@ -1809,6 +1884,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			freeDecodedData(container);
 			if(persistent) container.store(this);
 			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+		} else {
+			if(persistent) container.store(this);
 		}
 	}
 	
