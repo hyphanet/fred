@@ -142,12 +142,11 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					}
 				if(logMINOR) Logger.minor(this, "Looping again... State: "+currentState);
 			} catch(EOFException e) {
+				running = false;
 			} catch(IOException e) {
 				if(logMINOR) Logger.minor(this, "In vorbis parser caught "+e, e);
 				isValidStream = false;
 				throw e;
-			} finally {
-				running = false;
 			}
 		}
 
