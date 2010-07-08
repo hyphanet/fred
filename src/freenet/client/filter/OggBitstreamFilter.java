@@ -47,7 +47,7 @@ public class OggBitstreamFilter {
 	public static OggBitstreamFilter getBitstreamFilter(OggPage page) {
 		for(int i = 0; i <= VorbisBitstreamFilter.magicNumber.length; i++) {
 			if(i == VorbisBitstreamFilter.magicNumber.length) return new VorbisBitstreamFilter(page);
-			if(page.getPayload()[i+1] != VorbisBitstreamFilter.magicNumber[i]) break;
+			if(page.payload[i+1] != VorbisBitstreamFilter.magicNumber[i]) break;
 		}
 		return null;
 	}

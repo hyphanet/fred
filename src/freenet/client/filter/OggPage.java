@@ -172,10 +172,6 @@ public class OggPage {
 		return Integer.reverseBytes(bb.getInt());
 	}
 
-	byte[] getPayload() {
-		return payload;
-	}
-
 	/**Calculates this page's 32 bit CRC checksum.*/
 	byte[] calculateCRC() {
 		byte[] array = array();
