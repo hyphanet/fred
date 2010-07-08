@@ -20,6 +20,7 @@ import freenet.support.SparseBitmap;
 public class NewPacketFormat implements PacketFormat {
 
 	private static final int HMAC_LENGTH = 4;
+	private static final int PACKET_WINDOW = 128; //TODO: Find a good value
 
 	private static volatile boolean logMINOR;
 	static {
@@ -41,6 +42,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	private final HashMap<Integer, byte[]> receiveBuffers = new HashMap<Integer, byte[]>();
 	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
+	private long highestAckedSeqNum = -1;
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
@@ -66,6 +68,11 @@ public class NewPacketFormat implements PacketFormat {
 		}
 		if(packet == null) {
 			Logger.warning(this, "Could not decrypt received packet");
+			return;
+		}
+
+		if(packet.getSequenceNumber() < (highestAckedSeqNum - PACKET_WINDOW)) {
+			if(logMINOR) Logger.minor(this, "Dropping late packet");
 			return;
 		}
 
@@ -120,6 +127,7 @@ public class NewPacketFormat implements PacketFormat {
 			synchronized(acks) {
 				acks.add(packet.getSequenceNumber());
                         }
+			highestAckedSeqNum = packet.getSequenceNumber();
 		}
 
 		synchronized(sentPackets) {
