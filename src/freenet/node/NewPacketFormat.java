@@ -19,7 +19,7 @@ import freenet.support.SparseBitmap;
 
 public class NewPacketFormat implements PacketFormat {
 
-	public static final int HMAC_LENGTH = 4;
+	private static final int HMAC_LENGTH = 4;
 
 	private static volatile boolean logMINOR;
 	static {
@@ -31,15 +31,16 @@ public class NewPacketFormat implements PacketFormat {
 		});
 	}
 
-	private PeerNode pn;
-	private ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
+	private final PeerNode pn;
 	private final LinkedList<Long> acks = new LinkedList<Long>();
+	private final HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
+
+	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private long nextSequenceNumber = 0;
-	private HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
 	private int nextMessageID = 0;
 
-	private HashMap<Integer, byte[]> receiveBuffers = new HashMap<Integer, byte[]>();
-	private HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
+	private final HashMap<Integer, byte[]> receiveBuffers = new HashMap<Integer, byte[]>();
+	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
