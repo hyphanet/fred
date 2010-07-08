@@ -19,7 +19,6 @@ import freenet.support.SparseBitmap;
 
 public class NewPacketFormat implements PacketFormat {
 
-	public static final int MIN_MESSAGE_FRAGMENT_SIZE = 20;
 	public static final int HMAC_LENGTH = 4;
 
 	private static volatile boolean logMINOR;
@@ -329,7 +328,6 @@ public class NewPacketFormat implements PacketFormat {
 
 		public void lost() {
 			Iterator<MessageWrapper> msgIt = messages.iterator();
-			Iterator<int[]> rangeIt = ranges.iterator();
 
 			while(msgIt.hasNext()) {
 				MessageWrapper wrapper = msgIt.next();
