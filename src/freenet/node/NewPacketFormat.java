@@ -80,6 +80,10 @@ public class NewPacketFormat implements PacketFormat {
 		pn.verified(s);
 
 		if(packet.getAcks().size() > 0) pn.getThrottle().notifyOfPacketAcknowledged();
+		handleDecryptedPacket(packet);
+	}
+
+	void handleDecryptedPacket(NPFPacket packet) {
 		for(long ack : packet.getAcks()) {
 			synchronized(sentPackets) {
 				SentPacket sent = sentPackets.remove(ack);
@@ -170,8 +174,54 @@ public class NewPacketFormat implements PacketFormat {
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
-		SentPacket sentPacket = new SentPacket();
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
+		NPFPacket packet = createPacket(maxPacketSize, pn.getMessageQueue());
+		if(packet == null) return false;
+
+		//TODO: Do this properly
+		SentPacket sentPacket;
+		synchronized(sentPackets) {
+			sentPacket = sentPackets.get(packet.getSequenceNumber());
+		}
+
+		byte[] data = new byte[packet.getLength() + HMAC_LENGTH];
+		packet.toBytes(data, HMAC_LENGTH);
+
+		SessionKey sessionKey = pn.getCurrentKeyTracker();
+		if(sessionKey == null) {
+			Logger.warning(this, "No key for encrypting hash");
+			sentPacket.lost();
+			return false;
+		}
+
+		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher);
+		payloadCipher.blockEncipher(data, HMAC_LENGTH, packet.getLength());
+
+		//Add hash
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(data, HMAC_LENGTH, packet.getLength());
+		byte[] hash = md.digest();
+
+		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
+		hashCipher.blockEncipher(hash, 0, HMAC_LENGTH);
+
+		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
+
+		try {
+	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
+                } catch (LocalAddressException e) {
+	                Logger.error(this, "Caught exception while sending packet", e);
+			sentPacket.lost();
+			synchronized(sentPackets) {
+				sentPackets.remove(packet.getSequenceNumber());
+			}
+			return false;
+                }
+		return true;
+	}
+
+	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) {
+		SentPacket sentPacket = new SentPacket();
 		NPFPacket packet = new NPFPacket();
 		packet.setSequenceNumber(nextSequenceNumber++);
 
@@ -212,7 +262,6 @@ public class NewPacketFormat implements PacketFormat {
 			}
 
 			//Add messages from the message queue
-			PeerMessageQueue messageQueue = pn.getMessageQueue();
 			while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
 				MessageItem item = null;
 				synchronized(messageQueue) {
@@ -241,46 +290,13 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		if(packet.getLength() == 5) return false;
-
-		byte[] data = new byte[packet.getLength() + HMAC_LENGTH];
-		packet.toBytes(data, HMAC_LENGTH);
-
-		SessionKey sessionKey = pn.getCurrentKeyTracker();
-		if(sessionKey == null) {
-			Logger.warning(this, "No key for encrypting hash");
-			sentPacket.lost();
-			return false;
-		}
-
-		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher);
-		payloadCipher.blockEncipher(data, HMAC_LENGTH, packet.getLength());
-
-		//Add hash
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(data, HMAC_LENGTH, packet.getLength());
-		byte[] hash = md.digest();
-
-		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
-		hashCipher.blockEncipher(hash, 0, HMAC_LENGTH);
-
-		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
+		if(packet.getLength() == 5) return null;
 
 		synchronized(sentPackets) {
 			sentPackets.put(packet.getSequenceNumber(), sentPacket);
 		}
 
-		try {
-	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
-                } catch (LocalAddressException e) {
-	                Logger.error(this, "Caught exception while sending packet", e);
-			sentPacket.lost();
-			synchronized(sentPackets) {
-				sentPackets.remove(packet.getSequenceNumber());
-			}
-			return false;
-                }
-		return true;
+		return packet;
 	}
 
 	private int getMessageID() {
