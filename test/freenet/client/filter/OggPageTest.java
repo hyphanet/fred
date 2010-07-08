@@ -10,7 +10,7 @@ import java.util.Arrays;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-public class OggFilterTest extends TestCase {
+public class OggPageTest extends TestCase {
 	public void testStripNonsenseInterruption() throws IOException {
 		InputStream badData = getClass().getResourceAsStream("./ogg/nonsensical_interruption.ogg");
 		ByteArrayOutputStream filteredDataStream = new ByteArrayOutputStream();
