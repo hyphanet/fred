@@ -900,7 +900,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 							if(logMINOR) Logger.minor(this, "Verified key for block "+blockNo+" from "+dataSource);
 						}
 					} else {
-						if(dataSource.equals("FEC ENCODE") || dataSource.equals("FEC DECODE")) {
+						if(dataSource.equals("FEC ENCODE") || dataSource.equals("FEC DECODE")
+								|| dataSource.equals("CROSS-SEGMENT FEC") && haveBlock(blockNo, container)) {
 							// Ignore. FIXME Probably we should not delete the keys until after the encode??? Back compatibility issues maybe though...
 							if(logMINOR) Logger.minor(this, "Key is null for block "+blockNo+" when checking key / adding to binary blob, key source is "+dataSource, new Exception("error"));
 						} else {
