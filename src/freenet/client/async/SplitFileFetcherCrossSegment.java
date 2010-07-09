@@ -70,7 +70,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			if(totalFound < dataBlocks) {
 				Logger.normal(this, "Not decoding "+this+" : found "+totalFound+" blocks of "+dataBlocks+" (total "+segments.length+")");
 				return;
-			} else if(totalFound == dataBlocks) return; // Already decoding
+			}
 		}
 		if(!decodeOrEncode(segment, container, context)) {
 			// Don't need to encode or decode.
