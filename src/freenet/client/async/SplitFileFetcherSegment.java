@@ -1795,8 +1795,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		for(int i=0;i<dataBuckets.length;i++) {
 			MinimalSplitfileBlock block = dataBuckets[i];
 			if(block == null) continue;
+			if(persistent) container.activate(block, 1);
 			if(block.data != null) {
 				// We only free the data blocks at the last minute.
+				if(persistent) container.activate(block.data, 1);
 				block.data.free();
 			}
 			if(persistent) block.removeFrom(container);
@@ -1805,8 +1807,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		for(int i=0;i<checkBuckets.length;i++) {
 			MinimalSplitfileBlock block = checkBuckets[i];
 			if(block == null) continue;
+			if(persistent) container.activate(block, 1);
 			if(block.data != null) {
 				Logger.error(this, "Check block "+i+" still present in removeFrom()! on "+this);
+				if(persistent) container.activate(block.data, 1);
 				block.data.free();
 			}
 			if(persistent) block.removeFrom(container);
@@ -1847,7 +1851,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(finish) freeDecodedData(container, false);
 		else {
-			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+			if(logMINOR) Logger.minor(this, "Fetcher half-finished but fetcher not finished on "+this);
 		}
 		if(persistent) container.store(this);
 		
