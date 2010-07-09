@@ -225,6 +225,17 @@ public class NewPacketFormat implements PacketFormat {
 		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
 
 		try {
+			if(logMINOR) {
+				String fragments = null;
+				for(MessageFragment frag : packet.getFragments()) {
+					if(fragments == null) fragments = "" + frag.messageID;
+					else fragments = fragments + ", " + frag.messageID;
+				}
+
+				Logger.minor(this, "Sending packet " + packet.getSequenceNumber() + " ("
+				                + data.length + " bytes) with fragments " + fragments + " and "
+				                + packet.getAcks().size() + " acks");
+			}
 	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
 			sentPacket.sent();
                 } catch (LocalAddressException e) {
