@@ -675,6 +675,7 @@ public class PersistentBlobTempBucketFactory {
 						Logger.error(this, "Removing free slot "+l+" over the current block limit");
 					}
 				}
+				freeSlots.tailMap(newBlocks+1).clear();
 				lastCheckedEnd = now;
 				queueMaybeShrink();
 			} else return false;
