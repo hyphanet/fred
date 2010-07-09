@@ -418,15 +418,17 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
-		if(crossCheckBlocks != 0) {
-			// FIXME
-			// This simplifies matters significantly, but it reduces performance.
-			// We should really have a separate startEncode, and ensure that if we
-			// are scheduled before we have all the cross check blocks we just don't select them.
-			// See onEncodedCrossCheckBlock().
-			if(encodedCrossCheckBlocks != crossCheckBlocks)
-				return;
-			System.out.println("Starting segment "+segNo);
+		synchronized(this) {
+			if(crossCheckBlocks != 0) {
+				// FIXME
+				// This simplifies matters significantly, but it reduces performance.
+				// We should really have a separate startEncode, and ensure that if we
+				// are scheduled before we have all the cross check blocks we just don't select them.
+				// See onEncodedCrossCheckBlock().
+				if(encodedCrossCheckBlocks != crossCheckBlocks)
+					return;
+				System.out.println("Starting segment "+segNo);
+			}
 		}
 		// Always called by parent, so don't activate or deactivate parent.
 		if(persistent) {
