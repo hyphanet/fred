@@ -28,4 +28,43 @@ public class NewPacketFormatTest extends TestCase {
 		p = npf.createPacket(1400, pmq);
 		assertEquals(1, p.getAcks().size());
 	}
+
+	public void testLostLastAck() {
+		NewPacketFormat sender = new NewPacketFormat(null);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
+		NewPacketFormat receiver = new NewPacketFormat(null);
+		PeerMessageQueue receiverQueue = new PeerMessageQueue();
+
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
+
+		NPFPacket fragment1 = sender.createPacket(512, senderQueue);
+		assertEquals(1, fragment1.getFragments().size());
+		receiver.handleDecryptedPacket(fragment1);
+		
+		NPFPacket fragment2 = sender.createPacket(512, senderQueue);
+		assertEquals(1, fragment2.getFragments().size());
+		receiver.handleDecryptedPacket(fragment2);
+		
+		NPFPacket ack1 = receiver.createPacket(512, receiverQueue);
+		assertEquals(2, ack1.getAcks().size());
+		sender.handleDecryptedPacket(ack1);
+		
+		NPFPacket fragment3 = sender.createPacket(512, senderQueue);
+		assertEquals(1, fragment3.getFragments().size());
+		receiver.handleDecryptedPacket(fragment3);
+		receiver.createPacket(512, senderQueue); //Sent, but lost
+		
+		try {
+			Thread.sleep(100); //RTT should be small 
+		} catch (InterruptedException e) { fail(); }
+		
+		NPFPacket resend1 = sender.createPacket(512, senderQueue);
+		assertEquals(0, receiver.handleDecryptedPacket(resend1).size());
+		
+		//Make sure an ack is sent
+		NPFPacket ack2 = receiver.createPacket(512, receiverQueue);
+		assertNotNull(ack2);
+		assertEquals(1, ack2.getAcks().size());
+		assertEquals(0, ack2.getFragments().size());
+	}
 }
