@@ -22,6 +22,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int HMAC_LENGTH = 4;
 	private static final int PACKET_WINDOW = 128; //TODO: Find a good value
 	private static final int NUM_RTTS_TO_LOOSE = 2;
+	private static final int NUM_RTTS_MSGID_WAIT = 10;
 
 	private static volatile boolean logMINOR;
 	static {
@@ -42,10 +43,12 @@ public class NewPacketFormat implements PacketFormat {
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private long nextSequenceNumber = 0;
 	private int nextMessageID = 0;
+	private final HashMap<Integer, Long> msgIDCloseTimeSent = new HashMap<Integer, Long>();
 
 	private final HashMap<Integer, byte[]> receiveBuffers = new HashMap<Integer, byte[]>();
 	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
 	private long highestAckedSeqNum = -1;
+	private final HashMap<Integer, Long> msgIDCloseTimeRecv = new HashMap<Integer, Long>();
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
@@ -113,6 +116,17 @@ public class NewPacketFormat implements PacketFormat {
 			byte[] recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
+				Long time = msgIDCloseTimeRecv.get(fragment.messageID);
+				if(time != null) {
+					if(time < (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * averageRTT())) {
+						if(logMINOR) Logger.minor(this, "Ignoring fragment because we finished "
+						                + "the message fragment recently");
+						continue;
+					} else {
+						msgIDCloseTimeRecv.remove(fragment.messageID);
+					}
+				}
+				
 				if(!fragment.firstFragment) {
 					if(!dontAck) Logger.minor(this, "Not acking because missing first fragment");
 					dontAck = true;
@@ -134,6 +148,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(recvMap.contains(0, recvBuffer.length - 1)) {
 				receiveBuffers.remove(fragment.messageID);
 				receiveMaps.remove(fragment.messageID);
+				msgIDCloseTimeRecv.put(fragment.messageID, System.currentTimeMillis());
 				fullyReceived.add(recvBuffer);
 			}
 		}
@@ -225,11 +240,7 @@ public class NewPacketFormat implements PacketFormat {
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) {
 		//Mark packets as lost
 		synchronized(sentPackets) {
-			int avgRtt = 0;
-			for(int rtt : lastRtts) {
-				avgRtt += rtt;
-			}
-			avgRtt = avgRtt / lastRtts.length;
+			int avgRtt = averageRTT();
 			long curTime = System.currentTimeMillis();
 
 			Iterator<SentPacket> it = sentPackets.values().iterator();
@@ -325,6 +336,17 @@ public class NewPacketFormat implements PacketFormat {
 	private int getMessageID() {
 		int messageID = nextMessageID;
 
+		synchronized(msgIDCloseTimeSent) {
+			Long time = msgIDCloseTimeSent.get(messageID);
+			if(time != null) {
+				if(time < (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * averageRTT())) {
+					return -1;
+				} else {
+					msgIDCloseTimeSent.remove(messageID);
+				}
+			}
+		}
+
 		for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
 			synchronized(started) {
 				if(started.containsKey(messageID)) return -1;
@@ -341,6 +363,15 @@ public class NewPacketFormat implements PacketFormat {
 		if(m != null) {
 			core.checkFilters(m, pn.crypto.socket);
 		}
+	}
+
+	private int averageRTT() {
+		int avgRtt = 0;
+		for(int rtt : lastRtts) {
+			avgRtt += rtt;
+		}
+		avgRtt = avgRtt / lastRtts.length;
+		return avgRtt;
 	}
 
 	private class SentPacket {
@@ -367,6 +398,9 @@ public class NewPacketFormat implements PacketFormat {
 				}
 
 				if(wrapper.ack(range[0], range[1])) {
+					synchronized(msgIDCloseTimeSent) {
+						msgIDCloseTimeSent.put(wrapper.getMessageID(), System.currentTimeMillis());
+					}
 					HashMap<Integer, MessageWrapper> started = startedByPrio.get(wrapper.getPriority());
 					synchronized(started) {
 						started.remove(wrapper.getMessageID());
