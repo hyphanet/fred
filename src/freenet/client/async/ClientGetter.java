@@ -253,6 +253,7 @@ public class ClientGetter extends BaseClientGetter {
 		// doing massive encrypted I/Os while holding a lock.
 		
 		//Filter the data, if we are supposed to
+		Bucket filteredResult = null;
 		if(ctx.filterData){
 			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
 			InputStream input = null;
@@ -263,7 +264,6 @@ public class ClientGetter extends BaseClientGetter {
 				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 				assert(result.asBucket() != returnBucket);
 				
-				Bucket filteredResult;
 				if(returnBucket == null) filteredResult = context.getBucketFactory(persistent()).makeBucket(-1);
 				else {
 					if(persistent()) container.activate(returnBucket, 5);
@@ -280,15 +280,27 @@ public class ClientGetter extends BaseClientGetter {
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
+				if(filteredResult != null) {
+					filteredResult.free();
+					if(persistent()) filteredResult.removeFrom(container);
+				}
 				return;
 			} catch (URISyntaxException e) {
 				// Impossible
 				Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state/*Not really the state's fault*/, container, context);
+				if(filteredResult != null) {
+					filteredResult.free();
+					if(persistent()) filteredResult.removeFrom(container);
+				}
 				return;
 			} catch (IOException e) {
 				Logger.error(this, "Error filtering content", e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state/*Not really the state's fault*/, container, context);
+				if(filteredResult != null) {
+					filteredResult.free();
+					if(persistent()) filteredResult.removeFrom(container);
+				}
 				return;
 			} finally {
 				Closer.close(input);
