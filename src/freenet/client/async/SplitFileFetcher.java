@@ -550,7 +550,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	 * InputStream from which the fetched data may be read.
 	 * @throws FetchException If the fetch failed for some reason.
 	 */
-	private InputStream finalStatus(final ObjectContainer container, ClientContext context) throws FetchException {
+	private InputStream finalStatus(final ObjectContainer container, final ClientContext context) throws FetchException {
 		long length = 0;
 		for(int i=0;i<segments.length;i++) {
 			SplitFileFetcherSegment s = segments[i];
@@ -576,6 +576,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		PipedInputStream is = new PipedInputStream();
 		try {
 			final PipedOutputStream os = new PipedOutputStream(is);
+			final ClientGetState localGetState = this;
 			new Thread() {
 				public void run() {
 					long bytesWritten = 0;
@@ -584,19 +585,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 							SplitFileFetcherSegment s = segments[i];
 							long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
 							bytesWritten += s.writeDecodedDataTo(os, max, container);
+							s.fetcherHalfFinished(container);
 						}
 						os.close();
 					} catch(IOException e) {
 						Logger.error(this, "Failed to extract split file segments", e);
-						/* Handle exceptions by dying as violently as possible. As the main thread of
-						execution will be in the process of reading data from this thread, we need to generally
-						cause mayhem over there to make it stop. */
-						throw new RuntimeException(e);
-					} finally {
-						Closer.close(os);
-						for(SplitFileFetcherSegment s : segments) {
-							s.fetcherHalfFinished(container);
-						}
+						cb.onFailure(new FetchException(FetchException.BUCKET_ERROR), localGetState, container, context);
 					}
 				}
 			}.start();

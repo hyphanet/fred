@@ -330,6 +330,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			final Bucket resultBucket = result.asBucket();
 			final InputStream input = result.asBucket().getInputStream();
 			final PipedOutputStream output = new PipedOutputStream(data);
+			final ObjectContainer localContainer = container;
+			final ClientContext localContext = context;
+			final ClientGetState localGetState = this;
 			new Thread() {
 				public void run() {
 					try {
@@ -341,10 +344,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						Closer.close(input);
 						resultBucket.free();
 						Logger.error(this, "Failed to extract the data bucket form "+this, e);
-						/* Handle exceptions by dying as violently as possible. As the main thread of
-						execution will be in the process of reading data from this thread, we need to generally
-						cause mayhem over there to make it stop. */
-						throw new RuntimeException(e);
+						rcb.onFailure(new FetchException(FetchException.BUCKET_ERROR), localGetState, localContainer, localContext);
 					}
 				}
 			}.start();
