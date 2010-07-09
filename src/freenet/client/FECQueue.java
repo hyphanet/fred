@@ -220,8 +220,52 @@ public class FECQueue implements OOMHook {
 									job.checkBlockStatus[i].setData(job.checkBlocks[i]);
 							}
 						}
-					} catch (IOException e) {
-						Logger.error(this, "BOH! ioe:" + e.getMessage(), e);
+					} catch (final Throwable t) {
+						Logger.error(this, "Caught: "+t, t);
+						if(job.persistent) {
+							if(Logger.shouldLog(LogLevel.MINOR, this))
+								Logger.minor(this, "Scheduling callback for "+job+"...");
+							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY+1 : NativeThread.NORM_PRIORITY;
+							if(job.priority > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
+								prio--;
+							if(job.priority >= RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS)
+								prio--;
+							databaseJobRunner.queue(new DBJob() {
+
+								public boolean run(ObjectContainer container, ClientContext context) {
+									job.storeBlockStatuses(container);
+									// Don't activate the job itself.
+									// It MUST already be activated, because it is carrying the status blocks.
+									// The status blocks have been set on the FEC thread but *not stored* because
+									// they can't be stored on the FEC thread.
+									Logger.minor(this, "Activating "+job.callback+" is active="+container.ext().isActive(job.callback));
+									container.activate(job.callback, 1);
+									if(Logger.shouldLog(LogLevel.MINOR, this))
+										Logger.minor(this, "Running callback for "+job);
+									try {
+										job.callback.onFailed(t, container, context);
+									} catch (Throwable t1) {
+										Logger.error(this, "Caught "+t1+" in FECQueue callback failure", t1);
+									} finally {
+										// Always delete the job, even if the callback throws.
+										container.delete(job);
+									}
+									if(container.ext().isStored(job.callback))
+										container.deactivate(job.callback, 1);
+									return true;
+								}
+								
+								public String toString() {
+									return "FECQueueJobFailedCallback";
+								}
+								
+							}, prio, false);
+							if(Logger.shouldLog(LogLevel.MINOR, this))
+								Logger.minor(this, "Scheduled callback for "+job+"...");
+						} else {
+							job.callback.onFailed(t, null, clientContext);
+						}
+						continue; // Try the next one.
 					}
 
 					// Call the callback
