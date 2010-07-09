@@ -156,6 +156,8 @@ public class ClientGetter extends BaseClientGetter {
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
 			// which can call onSuccess and thereby almost anything.
 			synchronized(this) {
+				if(restart)
+					clearCountersOnRestart();
 				if(overrideURI != null) uri = overrideURI;
 				if(finished) {
 					if(!restart) return false;
@@ -197,6 +199,15 @@ public class ClientGetter extends BaseClientGetter {
 		return true;
 	}
 
+	protected void clearCountersOnRestart() {
+		this.archiveRestarts = 0;
+		this.expectedMIME = null;
+		this.expectedSize = 0;
+		this.finalBlocksRequired = 0;
+		this.finalBlocksTotal = 0;
+		super.clearCountersOnRestart();
+	}
+
 	/**
 	 * Called when the request succeeds.
 	 * @param state The ClientGetState which retrieved the data.
@@ -235,6 +246,7 @@ public class ClientGetter extends BaseClientGetter {
 			}
 			if(returnBucket == null) finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
 			else finalResult = returnBucket;
+			result = new FetchResult(clientMetadata, finalResult);
 			output = finalResult.getOutputStream();
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
@@ -271,13 +283,13 @@ public class ClientGetter extends BaseClientGetter {
 		}
 
 		//Filter the data, if we are supposed to
+		Bucket filteredResult = null;
 		if(ctx.filterData){
 			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
 			try {
 				if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
 				// Send XHTML as HTML because we can't use web-pushing on XHTML.
 				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
-				
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
 				output.close();
@@ -286,15 +298,36 @@ public class ClientGetter extends BaseClientGetter {
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
+				if(filteredResult != null && filteredResult != returnBucket) {
+					filteredResult.free();
+					if(persistent()) filteredResult.removeFrom(container);
+				}
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
 				return;
 			} catch (URISyntaxException e) {
 				// Impossible
 				Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state/*Not really the state's fault*/, container, context);
+				if(filteredResult != null && filteredResult != returnBucket) {
+					filteredResult.free();
+					if(persistent()) filteredResult.removeFrom(container);
+				}
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
 				return;
 			} catch (IOException e) {
 				Logger.error(this, "Error filtering content", e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state/*Not really the state's fault*/, container, context);
+				if(filteredResult != null && filteredResult != returnBucket) {
+					filteredResult.free();
+					if(persistent()) filteredResult.removeFrom(container);
+				}
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
 				return;
 			} finally {
 				Closer.close(input);

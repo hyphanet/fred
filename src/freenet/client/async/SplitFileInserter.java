@@ -893,12 +893,35 @@ public class SplitFileInserter implements ClientPutState {
 		container.deactivate(parent, 1);
 	}
 
-	public void clearCrossSegment(int segNum, SplitFileInserterCrossSegment segment, ObjectContainer container) {
+	public void clearCrossSegment(int segNum, SplitFileInserterCrossSegment segment, ObjectContainer container, ClientContext context) {
+		boolean clearedAll = true;
 		synchronized(this) {
 			assert(crossSegments[segNum] == segment);
 			crossSegments[segNum] = null;
+			for(SplitFileInserterCrossSegment seg : crossSegments) {
+				if(seg != null) clearedAll = false;
+			}
 		}
 		if(persistent) container.store(this);
+		if(clearedAll) {
+			for(int i=0;i<segments.length;i++) {
+				if(persistent)
+					container.activate(segments[i], 1);
+				try {
+					segments[i].start(container, context);
+				} catch (InsertException e) {
+					fail(e, container, context);
+				}
+				if(persistent)
+					container.deactivate(segments[i], 1);
+			}
+			if(persistent)
+				container.activate(parent, 1);
+
+			if(countDataBlocks > 32)
+				parent.onMajorProgress(container);
+			parent.notifyClients(container, context);
+		}
 	}
 
 }

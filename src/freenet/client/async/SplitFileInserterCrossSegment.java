@@ -115,7 +115,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 		}
 		System.out.println("Completed encode for cross segment "+this);
 		if(persistent) container.activate(parentInserter, 1);
-		parentInserter.clearCrossSegment(segNum, this, container);
+		parentInserter.clearCrossSegment(segNum, this, container, context);
 		if(persistent) container.deactivate(parentInserter, 1);
 		if(persistent) removeFrom(container);
 	}
@@ -125,7 +125,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 	}
 
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
-		Logger.error(this, "Encode or decode failed for cross segment: "+this);
+		Logger.error(this, "Encode or decode failed for cross segment: "+this, t);
 	}
 
 }

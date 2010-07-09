@@ -900,7 +900,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 							if(logMINOR) Logger.minor(this, "Verified key for block "+blockNo+" from "+dataSource);
 						}
 					} else {
-						if(dataSource.equals("FEC ENCODE") || dataSource.equals("FEC DECODE")) {
+						if(dataSource.equals("FEC ENCODE") || dataSource.equals("FEC DECODE")
+								|| dataSource.equals("CROSS-SEGMENT FEC") && haveBlock(blockNo, container)) {
 							// Ignore. FIXME Probably we should not delete the keys until after the encode??? Back compatibility issues maybe though...
 							if(logMINOR) Logger.minor(this, "Key is null for block "+blockNo+" when checking key / adding to binary blob, key source is "+dataSource, new Exception("error"));
 						} else {
@@ -1531,7 +1532,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		this.fail(new FetchException(FetchException.INTERNAL_ERROR, "FEC failure: "+t, t), container, context, false);
 	}
 
-	public boolean haveBlock(int blockNo, ObjectContainer container) {
+	public synchronized boolean haveBlock(int blockNo, ObjectContainer container) {
 		if(blockNo < dataBuckets.length) {
 			boolean wasActive = false;
 			if(dataBuckets[blockNo] == null) return false;
@@ -1777,7 +1778,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return getSubSegment(getBlockRetryCount(blockNum), container, false, null);
 	}
 
-	public void freeDecodedData(ObjectContainer container) {
+	public void freeDecodedData(ObjectContainer container, boolean noStore) {
 		synchronized(this) {
 			if(!encoderFinished) return;
 			if(!fetcherHalfFinished) return;
@@ -1794,8 +1795,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		for(int i=0;i<dataBuckets.length;i++) {
 			MinimalSplitfileBlock block = dataBuckets[i];
 			if(block == null) continue;
+			if(persistent) container.activate(block, 1);
 			if(block.data != null) {
 				// We only free the data blocks at the last minute.
+				if(persistent) container.activate(block.data, 1);
 				block.data.free();
 			}
 			if(persistent) block.removeFrom(container);
@@ -1804,20 +1807,22 @@ public class SplitFileFetcherSegment implements FECCallback {
 		for(int i=0;i<checkBuckets.length;i++) {
 			MinimalSplitfileBlock block = checkBuckets[i];
 			if(block == null) continue;
+			if(persistent) container.activate(block, 1);
 			if(block.data != null) {
 				Logger.error(this, "Check block "+i+" still present in removeFrom()! on "+this);
+				if(persistent) container.activate(block.data, 1);
 				block.data.free();
 			}
 			if(persistent) block.removeFrom(container);
 			checkBuckets[i] = null;
 		}
-		if(persistent)
+		if(persistent && !noStore)
 			container.store(this);
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removing "+this);
-		freeDecodedData(container);
+		freeDecodedData(container, true);
 		removeSubSegments(container, context, true);
 		container.delete(subSegments);
 		for(int i=0;i<dataKeys.length;i++) {
@@ -1844,9 +1849,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			fetcherHalfFinished = true;
 			finish = encoderFinished;
 		}
-		if(finish) freeDecodedData(container);
+		if(finish) freeDecodedData(container, false);
 		else {
-			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+			if(logMINOR) Logger.minor(this, "Fetcher half-finished but fetcher not finished on "+this);
 		}
 		if(persistent) container.store(this);
 		
@@ -1881,7 +1886,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(finish) {
 			if(persistent) removeFrom(container, context);
 		} else if(half) {
-			freeDecodedData(container);
+			freeDecodedData(container, false);
 			if(persistent) container.store(this);
 			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
 		} else {
