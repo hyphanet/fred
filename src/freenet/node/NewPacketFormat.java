@@ -23,6 +23,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int PACKET_WINDOW = 128; //TODO: Find a good value
 	private static final int NUM_RTTS_TO_LOOSE = 2;
 	private static final int NUM_RTTS_MSGID_WAIT = 10;
+	private static final int NUM_MESSAGE_IDS = 8192;
 
 	private static volatile boolean logMINOR;
 	static {
@@ -353,7 +354,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		nextMessageID = (nextMessageID + 1) % 8192;
+		nextMessageID = (nextMessageID + 1) % NUM_MESSAGE_IDS;
 		return messageID;
 	}
 
