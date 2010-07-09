@@ -225,10 +225,7 @@ public class FECQueue implements OOMHook {
 							if(Logger.shouldLog(LogLevel.MINOR, this))
 								Logger.minor(this, "Scheduling callback for "+job+"...");
 							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY+1 : NativeThread.NORM_PRIORITY;
-							if(job.priority > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
-								prio--;
-							if(job.priority >= RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS)
-								prio--;
+							// Run at a fairly high priority so we get the blocks out of memory and onto disk.
 							databaseJobRunner.queue(new DBJob() {
 
 								public boolean run(ObjectContainer container, ClientContext context) {
