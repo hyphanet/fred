@@ -185,6 +185,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 		boolean bye = false;
 		synchronized(this) {
 			if(shouldRemove) {
+				// Skip the encode.
 				bye = true;
 				finishedEncoding = true;
 			}
