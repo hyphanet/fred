@@ -72,7 +72,21 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				return;
 			} else if(totalFound == dataBlocks) return; // Already decoding
 		}
-		decodeOrEncode(segment, container, context);
+		if(!decodeOrEncode(segment, container, context)) {
+			// Don't need to encode or decode.
+			boolean bye;
+			synchronized(this) {
+				bye = shouldRemove;
+				finishedEncoding = true;
+			}
+			if(persistent) {
+				if(bye)
+					removeFrom(container, context);
+				else
+					container.store(this);
+			}
+			
+		}
 	}
 
 	/**
