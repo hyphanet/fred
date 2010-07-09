@@ -27,6 +27,8 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 	final short splitfileType;
 	final ClientRequester parent;
 	private boolean finishedEncoding;
+	private boolean startedDecoding;
+	private boolean startedEncoding;
 	private boolean shouldRemove;
 	
 	private transient int counter;
@@ -108,6 +110,17 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 		}
 		if(!(needsDecode || needsEncode)) {
 			return;
+		}
+		synchronized(this) {
+			if(needsDecode) {
+				if(startedDecoding) return;
+				startedDecoding = true;
+				if(persistent) container.store(this);
+			} else {
+				if(startedEncoding) return;
+				startedEncoding = true;
+				if(persistent) container.store(this);
+			}
 		}
 		FECQueue queue = context.fecQueue;
 		if(codec == null)
