@@ -429,6 +429,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					return;
 				System.out.println("Starting segment "+segNo);
 			}
+			if(started) return;
+			started = true;
 		}
 		// Always called by parent, so don't activate or deactivate parent.
 		if(persistent) {
@@ -456,7 +458,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 		}
 		// parent.parent.notifyClients();
-		started = true;
 		FECJob job = null;
 		FECCodec splitfileAlgo = null;
 		if (!encoded) {
