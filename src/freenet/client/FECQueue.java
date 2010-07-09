@@ -117,7 +117,7 @@ public class FECQueue implements OOMHook {
 	
 	private void queueCacheFiller() {
 		try {
-			databaseJobRunner.queue(cacheFillerJob, NativeThread.NORM_PRIORITY, false);
+			databaseJobRunner.queue(cacheFillerJob, NativeThread.NORM_PRIORITY, true);
 		} catch (DatabaseDisabledException e) {
 			// Ok.
 		}
