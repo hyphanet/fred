@@ -21,6 +21,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	private static final int HMAC_LENGTH = 4;
 	private static final int PACKET_WINDOW = 128; //TODO: Find a good value
+	private static final int NUM_RTTS_TO_LOOSE = 2;
 
 	private static volatile boolean logMINOR;
 	static {
@@ -35,6 +36,8 @@ public class NewPacketFormat implements PacketFormat {
 	private final PeerNode pn;
 	private final LinkedList<Long> acks = new LinkedList<Long>();
 	private final HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
+	private final int[] lastRtts = new int[10];
+	private int nextRttPos;
 
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private long nextSequenceNumber = 0;
@@ -94,7 +97,9 @@ public class NewPacketFormat implements PacketFormat {
 			synchronized(sentPackets) {
 				SentPacket sent = sentPackets.remove(ack);
 				if(sent != null) {
-					sent.acked();
+					long rtt = sent.acked();
+					lastRtts[nextRttPos] = (int) (Math.min(rtt, Integer.MAX_VALUE));
+					nextRttPos = (nextRttPos + 1) % lastRtts.length;
 				}
 			}
 		}
@@ -141,14 +146,18 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		synchronized(sentPackets) {
-			if(sentPackets.size() > 100) {
-				Iterator<Long> it = sentPackets.keySet().iterator();
-				while(it.hasNext()) {
-					Long seqNum = it.next();
-					if(nextSequenceNumber - seqNum >= 100) {
-						sentPackets.get(seqNum).lost();
-						it.remove();
-					}
+			int avgRtt = 0;
+			for(int rtt : lastRtts) {
+				avgRtt += rtt;
+			}
+			avgRtt = avgRtt / lastRtts.length;
+			long curTime = System.currentTimeMillis();
+
+			Iterator<SentPacket> it = sentPackets.values().iterator();
+			while(it.hasNext()) {
+				SentPacket s = it.next();
+				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * avgRtt)) {
+					it.remove();
 				}
 			}
 		}
@@ -217,6 +226,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		try {
 	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
+			sentPacket.sent();
                 } catch (LocalAddressException e) {
 	                Logger.error(this, "Caught exception while sending packet", e);
 			sentPacket.lost();
@@ -331,13 +341,14 @@ public class NewPacketFormat implements PacketFormat {
 	private class SentPacket {
 		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
 		LinkedList<int[]> ranges = new LinkedList<int[]>();
+		long sentTime;
 
 		public void addFragment(MessageWrapper source, int start, int length) {
 			messages.add(source);
 			ranges.add(new int[] { start, start + length - 1 });
 		}
 
-		public void acked() {
+		public long acked() {
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
 
@@ -357,6 +368,8 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				}
 			}
+
+			return System.currentTimeMillis() - sentTime;
 		}
 
 		public void lost() {
@@ -366,6 +379,14 @@ public class NewPacketFormat implements PacketFormat {
 				MessageWrapper wrapper = msgIt.next();
 				wrapper.lost();
 			}
+		}
+
+		public void sent() {
+			sentTime = System.currentTimeMillis();
+		}
+
+		public long getSentTime() {
+			return sentTime;
 		}
 	}
 }
