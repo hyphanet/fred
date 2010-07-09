@@ -1778,7 +1778,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return getSubSegment(getBlockRetryCount(blockNum), container, false, null);
 	}
 
-	public void freeDecodedData(ObjectContainer container) {
+	public void freeDecodedData(ObjectContainer container, boolean noStore) {
 		synchronized(this) {
 			if(!encoderFinished) return;
 			if(!fetcherHalfFinished) return;
@@ -1812,13 +1812,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent) block.removeFrom(container);
 			checkBuckets[i] = null;
 		}
-		if(persistent)
+		if(persistent && !noStore)
 			container.store(this);
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removing "+this);
-		freeDecodedData(container);
+		freeDecodedData(container, true);
 		removeSubSegments(container, context, true);
 		container.delete(subSegments);
 		for(int i=0;i<dataKeys.length;i++) {
@@ -1845,7 +1845,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			fetcherHalfFinished = true;
 			finish = encoderFinished;
 		}
-		if(finish) freeDecodedData(container);
+		if(finish) freeDecodedData(container, false);
 		else {
 			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
 		}
@@ -1882,7 +1882,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(finish) {
 			if(persistent) removeFrom(container, context);
 		} else if(half) {
-			freeDecodedData(container);
+			freeDecodedData(container, false);
 			if(persistent) container.store(this);
 			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
 		} else {
