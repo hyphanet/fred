@@ -151,7 +151,8 @@ public class ClientGetter extends BaseClientGetter {
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
 			// which can call onSuccess and thereby almost anything.
 			synchronized(this) {
-				clearCountersOnRestart();
+				if(restart)
+					clearCountersOnRestart();
 				if(overrideURI != null) uri = overrideURI;
 				if(finished) {
 					if(!restart) return false;
