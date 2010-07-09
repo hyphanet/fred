@@ -80,10 +80,16 @@ public class NewPacketFormat implements PacketFormat {
 		pn.verified(s);
 
 		if(packet.getAcks().size() > 0) pn.getThrottle().notifyOfPacketAcknowledged();
-		handleDecryptedPacket(packet);
+		
+		LinkedList<byte[]> finished = handleDecryptedPacket(packet);
+		for(byte[] buffer : finished) {
+			processFullyReceived(buffer);
+		}
 	}
 
-	void handleDecryptedPacket(NPFPacket packet) {
+	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet) {
+		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
+
 		for(long ack : packet.getAcks()) {
 			synchronized(sentPackets) {
 				SentPacket sent = sentPackets.remove(ack);
@@ -123,7 +129,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(recvMap.contains(0, recvBuffer.length - 1)) {
 				receiveBuffers.remove(fragment.messageID);
 				receiveMaps.remove(fragment.messageID);
-				processFullyReceived(recvBuffer);
+				fullyReceived.add(recvBuffer);
 			}
 		}
 
@@ -146,6 +152,8 @@ public class NewPacketFormat implements PacketFormat {
 				}
 			}
 		}
+
+		return fullyReceived;
 	}
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
