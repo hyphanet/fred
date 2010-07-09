@@ -280,27 +280,36 @@ public class ClientGetter extends BaseClientGetter {
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
-				if(filteredResult != null) {
+				if(filteredResult != null && filteredResult != returnBucket) {
 					filteredResult.free();
 					if(persistent()) filteredResult.removeFrom(container);
 				}
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
 				return;
 			} catch (URISyntaxException e) {
 				// Impossible
 				Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state/*Not really the state's fault*/, container, context);
-				if(filteredResult != null) {
+				if(filteredResult != null && filteredResult != returnBucket) {
 					filteredResult.free();
 					if(persistent()) filteredResult.removeFrom(container);
 				}
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
 				return;
 			} catch (IOException e) {
 				Logger.error(this, "Error filtering content", e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state/*Not really the state's fault*/, container, context);
-				if(filteredResult != null) {
+				if(filteredResult != null && filteredResult != returnBucket) {
 					filteredResult.free();
 					if(persistent()) filteredResult.removeFrom(container);
 				}
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
 				return;
 			} finally {
 				Closer.close(input);
