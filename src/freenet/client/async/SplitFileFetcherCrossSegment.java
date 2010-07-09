@@ -75,7 +75,14 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 		decodeOrEncode(segment, container, context);
 	}
 
-	private void decodeOrEncode(SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
+	/**
+	 * 
+	 * @param segment
+	 * @param container
+	 * @param context
+	 * @return True unless we didn't schedule a job and are not already running one.
+	 */
+	private boolean decodeOrEncode(SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
 		// Schedule decode or encode job depending on what is needed, decode always first.
 		boolean needsDecode = false;
 		boolean needsEncode = false;
@@ -109,15 +116,15 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				decodeCheck[i-dataBlocks] = wrapper;
 		}
 		if(!(needsDecode || needsEncode)) {
-			return;
+			return false;
 		}
 		synchronized(this) {
 			if(needsDecode) {
-				if(startedDecoding) return;
+				if(startedDecoding) return true;
 				startedDecoding = true;
 				if(persistent) container.store(this);
 			} else {
-				if(startedEncoding) return;
+				if(startedEncoding) return true;
 				startedEncoding = true;
 				if(persistent) container.store(this);
 			}
@@ -128,6 +135,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 		FECJob job = new FECJob(codec, queue, decodeData, decodeCheck, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), this, needsDecode, getPriorityClass(container), persistent);
 		codec.addToQueue(job, 
 				queue, container);
+		return true;
 	}
 
 	private short getPriorityClass(ObjectContainer container) {
@@ -194,7 +202,19 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			if(persistent) removeFrom(container, context);
 		} else {
 			// Try an encode now.
-			decodeOrEncode(null, container, context);
+			if(!decodeOrEncode(null, container, context)) {
+				// Didn't schedule a job. So it doesn't need to encode and hasn't already started encoding.
+				synchronized(this) {
+					bye = shouldRemove;
+					finishedEncoding = true;
+				}
+				if(persistent) {
+					if(bye)
+						removeFrom(container, context);
+					else
+						container.store(this);
+				}
+			}
 		}
 	}
 
