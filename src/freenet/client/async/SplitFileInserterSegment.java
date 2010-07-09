@@ -1823,7 +1823,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	public void onEncodedCrossCheckBlock(int blockNum, Bucket data, ObjectContainer container, ClientContext context) {
-		boolean gotAll = false;
 		synchronized(this) {
 			if(dataBlocks[blockNum] != null) {
 				Logger.error(this, "Cross-check block already encoded??? "+blockNum+" on "+this);
@@ -1832,21 +1831,12 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 			dataBlocks[blockNum] = data;
 			++encodedCrossCheckBlocks;
-			if(encodedCrossCheckBlocks == crossCheckBlocks)
-				gotAll = true;
-			else
+			if(encodedCrossCheckBlocks != crossCheckBlocks)
 				System.out.println("Segment "+segNo+" has "+encodedCrossCheckBlocks+" encoded of "+crossCheckBlocks+", still waiting...");
 		}
 		if(persistent) {
 			data.storeTo(container);
 			container.store(this);
-		}
-		if(gotAll) {
-			try {
-				start(container, context);
-			} catch (InsertException e) {
-				fail(e, container, context);
-			}
 		}
 	}
 
