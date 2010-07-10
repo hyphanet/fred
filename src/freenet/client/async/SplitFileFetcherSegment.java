@@ -826,7 +826,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 						wrapper.free();
 					}
 
-					queueHeal(data, container, context);
+					data.free();
+					if(persistent) data.removeFrom(container);
 					checkBuckets[i].data = null;
 				} else {
 					data.free();
