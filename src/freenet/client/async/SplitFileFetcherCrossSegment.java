@@ -230,7 +230,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				}
 				if(persistent) {
 					if(bye)
-						removeFrom(container, context);
+						onFinished(container, context);
 					else
 						container.store(this);
 				}
