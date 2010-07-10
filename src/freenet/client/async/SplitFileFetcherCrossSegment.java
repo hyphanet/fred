@@ -51,7 +51,6 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 
 	public void onFetched(SplitFileFetcherSegment segment, int blockNo, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
-			if(shouldRemove || finishedEncoding || startedDecoding || startedEncoding) return;
 			boolean found = false;
 			int totalFound = 0;
 			for(int i=0;i<segments.length;i++) {
@@ -66,6 +65,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				if(blocksFound[i]) totalFound++;
 			}
 			if(persistent) container.store(this);
+			if(shouldRemove || finishedEncoding || startedDecoding || startedEncoding) return;
 			if(!found) {
 				Logger.error(this, "Block "+blockNo+" on "+segment+" not wanted by "+this);
 				return;
