@@ -1,5 +1,6 @@
 package freenet.node;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import freenet.support.Logger;
@@ -137,15 +138,17 @@ class NPFPacket {
 		//Add acks
 		buf[offset++] = (byte) (acks.size());
 		long firstAck;
-		if(acks.size() > 0) {
-			firstAck = acks.remove(0);
+		Iterator<Long> acksIterator = acks.iterator();
+		if(acksIterator.hasNext()) {
+			firstAck = acksIterator.next();
 			buf[offset] = (byte) (firstAck >>> 24);
 			buf[offset + 1] = (byte) (firstAck >>> 16);
 			buf[offset + 2] = (byte) (firstAck >>> 8);
 			buf[offset + 3] = (byte) (firstAck);
 			offset += 4;
 
-			for(long ack : acks) {
+			while(acksIterator.hasNext()) {
+				long ack = acksIterator.next();
 				buf[offset++] = (byte) (ack - firstAck);
 			}
 		}
