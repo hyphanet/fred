@@ -119,7 +119,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(recvBuffer == null) {
 				Long time = msgIDCloseTimeRecv.get(fragment.messageID);
 				if(time != null) {
-					if(time < (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * averageRTT())) {
+					if(time < (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * maxRTT())) {
 						if(logMINOR) Logger.minor(this, "Ignoring fragment because we finished "
 						                + "the message fragment recently");
 						continue;
@@ -252,18 +252,18 @@ public class NewPacketFormat implements PacketFormat {
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) {
 		//Mark packets as lost
 		synchronized(sentPackets) {
-			int avgRtt = averageRTT();
+			int maxRtt = maxRTT();
 			long curTime = System.currentTimeMillis();
 
 			Iterator<Long> it = sentPackets.keySet().iterator();
 			while(it.hasNext()) {
 				Long l = it.next();
 				SentPacket s = sentPackets.get(l);
-				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * avgRtt)) {
+				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * maxRtt)) {
 					if(logMINOR) {
 						Logger.minor(this, "Assuming packet " + l + " has been lost. "
 						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
-						                + "threshold " + (NUM_RTTS_TO_LOOSE * avgRtt) + "ms");
+						                + "threshold " + (NUM_RTTS_TO_LOOSE * maxRtt) + "ms");
 					}
 					s.lost();
 					it.remove();
@@ -357,7 +357,7 @@ public class NewPacketFormat implements PacketFormat {
 		synchronized(msgIDCloseTimeSent) {
 			Long time = msgIDCloseTimeSent.get(messageID);
 			if(time != null) {
-				if(time < (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * averageRTT())) {
+				if(time < (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * maxRTT())) {
 					return -1;
 				} else {
 					msgIDCloseTimeSent.remove(messageID);
@@ -383,13 +383,12 @@ public class NewPacketFormat implements PacketFormat {
 		}
 	}
 
-	private int averageRTT() {
-		int avgRtt = 0;
+	private int maxRTT() {
+		int maxRtt = 0;
 		for(int rtt : lastRtts) {
-			avgRtt += rtt;
+			maxRtt = Math.max(rtt, maxRtt);
 		}
-		avgRtt = avgRtt / lastRtts.length;
-		return avgRtt;
+		return maxRtt;
 	}
 
 	private class SentPacket {
