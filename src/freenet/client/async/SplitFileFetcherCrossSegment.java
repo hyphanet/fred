@@ -121,7 +121,11 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				Bucket data = seg.getBlockBucket(blockNumbers[i], container);
 				if(data == null) {
 					Logger.error(this, "Cannot decode/encode: Found block "+i+" : "+blockNumbers[i]+" of "+segments[i]+" but is gone now!", new Exception("error"));
-					return false;
+					data = seg.getBlockBucket(blockNumbers[i], container);
+					if(data == null) {
+						Logger.error(this, "Cannot decode/encode: Found block "+i+" : "+blockNumbers[i]+" of "+segments[i]+" but is gone now!", new Exception("error"));
+						return false;
+					}
 				}
 				wrapper.data = data;
 				if(persistent) container.activate(data, Integer.MAX_VALUE);
