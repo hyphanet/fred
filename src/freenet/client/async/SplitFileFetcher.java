@@ -958,8 +958,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	public void onFinishedCrossSegment(ObjectContainer container, ClientContext context, SplitFileFetcherCrossSegment seg) {
 		boolean allGone = true;
 		for(int i=0;i<crossSegments.length;i++) {
-			if(crossSegments[i] == seg)
-				crossSegments[i] = null;
 			if(crossSegments[i] != null) {
 				boolean active = true;
 				if(persistent) {
