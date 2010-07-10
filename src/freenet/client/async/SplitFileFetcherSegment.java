@@ -1729,7 +1729,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			return null;
 		}
 		Bucket ret = block.data;
-		if(ret == null && logMINOR) Logger.minor(this, "Bucket is null: "+blockNum+" on "+this);
+		if(ret == null && logMINOR) Logger.minor(this, "Bucket is null: "+blockNum+" on "+this+" for "+block);
 		if(!active)
 			container.deactivate(block, 1);
 		return ret;
