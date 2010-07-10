@@ -83,7 +83,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			}
 			if(persistent) {
 				if(bye)
-					removeFrom(container, context);
+					onFinished(container, context);
 				else
 					container.store(this);
 			}
@@ -219,7 +219,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			}
 		}
 		if(bye) {
-			if(persistent) removeFrom(container, context);
+			if(persistent) onFinished(container, context);
 		} else {
 			// Try an encode now.
 			if(!decodeOrEncode(null, container, context)) {
@@ -286,7 +286,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			bye = shouldRemove;
 		}
 		if(persistent) {
-			if(bye) removeFrom(container, context);
+			if(bye) onFinished(container, context);
 			else
 				container.store(this);
 		}
@@ -305,23 +305,19 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 	public void storeTo(ObjectContainer container) {
 		container.store(this);
 	}
-
-	public void removeFrom(ObjectContainer container, ClientContext context) {
-		boolean finished;
-		synchronized(this) {
-			shouldRemove = true;
-			finished = finishedEncoding;
-		}
-		if(finished)
-			container.delete(this);
-		else
-			container.store(this);
+	
+	public void onFinished(ObjectContainer container, ClientContext context) {
+		assert(finishedEncoding); // Caller must set.
 		SplitFileFetcher fetcher = getFetcher(container);
 		if(fetcher == null) return;
 		boolean active = container.ext().isActive(fetcher);
 		if(!active) container.activate(fetcher, 1);
-		fetcher.onRemoveCrossSegment(container, context, this);
+		fetcher.onFinishedCrossSegment(container, context, this);
 		if(!active) container.deactivate(fetcher, 1);
+	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.delete(this);
 	}
 
 	private SplitFileFetcher getFetcher(ObjectContainer container) {
@@ -340,6 +336,10 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			return fetcher;
 		}
 		return null;
+	}
+
+	public boolean isFinished() {
+		return finishedEncoding;
 	}
 
 	

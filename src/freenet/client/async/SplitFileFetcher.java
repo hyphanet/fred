@@ -869,8 +869,19 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			toRemove = true;
 		}
 		if(crossCheckBlocks > 0) {
+			boolean allGone = true;
 			for(int i=0;i<crossSegments.length;i++) {
-				if(crossSegments[i] != null) return;
+				if(crossSegments[i] != null) {
+					boolean active = true;
+					if(persistent) {
+						active = container.ext().isActive(crossSegments[i]);
+						if(!active) container.activate(crossSegments[i], 1);
+					}
+					if(!crossSegments[i].isFinished())
+						allGone = false;
+					if(!active) container.deactivate(crossSegments[i], 1);
+					if(!allGone) return;
+				}
 			}
 		}
 		innerRemoveFrom(container, context);
@@ -897,6 +908,14 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			segments[i] = null;
 			container.activate(segment, 1);
 			segment.fetcherFinished(container, context);
+		}
+		if(crossCheckBlocks != 0) {
+			for(int i=0;i<crossSegments.length;i++) {
+				SplitFileFetcherCrossSegment segment = crossSegments[i];
+				crossSegments[i] = null;
+				container.activate(segment, 1);
+				segment.removeFrom(container, context);
+			}
 		}
 		container.activate(mainBloomFile, 5);
 		container.activate(altBloomFile, 5);
@@ -933,13 +952,22 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		return true;
 	}
 
-	public void onRemoveCrossSegment(ObjectContainer container, ClientContext context, SplitFileFetcherCrossSegment seg) {
+	public void onFinishedCrossSegment(ObjectContainer container, ClientContext context, SplitFileFetcherCrossSegment seg) {
 		boolean allGone = true;
 		for(int i=0;i<crossSegments.length;i++) {
 			if(crossSegments[i] == seg)
 				crossSegments[i] = null;
-			if(crossSegments[i] != null)
-				allGone = false;
+			if(crossSegments[i] != null) {
+				boolean active = true;
+				if(persistent) {
+					active = container.ext().isActive(crossSegments[i]);
+					if(!active) container.activate(crossSegments[i], 1);
+				}
+				if(!crossSegments[i].isFinished())
+					allGone = false;
+				if(!active) container.deactivate(crossSegments[i], 1);
+				if(!allGone) break;
+			}
 		}
 		if(!toRemove) return;
 		if(allGone)
