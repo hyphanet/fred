@@ -250,6 +250,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			int num = this.dataBlocks+i;
 			synchronized(this) {
 				found = blocksFound[num];
+				if(data == null && shouldRemove) continue; // Can happen
 			}
 			SplitFileFetcherSegment seg = segments[num];
 			boolean active = true;
@@ -279,6 +280,10 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				// Yay we decoded a block. Tell the segment.
 				if(seg.onSuccess(data, blockNumbers[i], null, container, context, null))
 					System.out.println("Cross segment encoded a block.");
+				else {
+					data.free();
+					if(persistent) data.removeFrom(container);
+				}
 			}
 			if(!active) container.deactivate(seg, 1);
 			checkBlocks[i].setData(null);
