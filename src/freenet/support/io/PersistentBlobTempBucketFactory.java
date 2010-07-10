@@ -484,10 +484,7 @@ public class PersistentBlobTempBucketFactory {
 			}
 		}
 		container.activate(tag, 1);
-		if(!bucket.persisted()) {
-			maybeShrink(container);
-			return;
-		}
+		// Probably best to store the tag even if the bucket was never persisted.
 		if(!bucket.freed()) {
 			Logger.error(this, "Removing bucket "+bucket+" for slot "+index+" but not freed!", new Exception("debug"));
 			notCommittedBlobs.put(index, bucket);
