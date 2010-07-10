@@ -463,7 +463,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(segments.length - i == deductBlocksFromSegments) {
 					segLen--;
 				}
-				SplitFileFetcherCrossSegment seg = new SplitFileFetcherCrossSegment(persistent, segLen, crossCheckBlocks, parent, metadata.getSplitfileType());
+				SplitFileFetcherCrossSegment seg = new SplitFileFetcherCrossSegment(persistent, segLen, crossCheckBlocks, parent, this, metadata.getSplitfileType());
 				crossSegments[i] = seg;
 				for(int j=0;j<segLen;j++) {
 					// Allocate random data blocks
@@ -862,7 +862,19 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		cancel(container, context);
 	}
 
+	private boolean toRemove = false;
+	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			toRemove = true;
+		}
+		for(int i=0;i<crossSegments.length;i++) {
+			if(crossSegments[i] != null) return;
+		}
+		innerRemoveFrom(container, context);
+	}
+	
+	public void innerRemoveFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
 		if(!container.ext().isStored(this)) {
 			Logger.error(this, "Already removed??? on "+this, new Exception("error"));
@@ -883,14 +895,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			segments[i] = null;
 			container.activate(segment, 1);
 			segment.fetcherFinished(container, context);
-		}
-		if(crossCheckBlocks != 0) {
-			for(int i=0;i<crossSegments.length;i++) {
-				SplitFileFetcherCrossSegment segment = crossSegments[i];
-				crossSegments[i] = null;
-				container.activate(segment, 1);
-				segment.removeFrom(container, context);
-			}
 		}
 		container.activate(mainBloomFile, 5);
 		container.activate(altBloomFile, 5);
@@ -925,6 +929,19 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			return false;
 		}
 		return true;
+	}
+
+	public void onRemoveCrossSegment(ObjectContainer container, ClientContext context, SplitFileFetcherCrossSegment seg) {
+		boolean allGone = true;
+		for(int i=0;i<crossSegments.length;i++) {
+			if(crossSegments[i] == seg)
+				crossSegments[i] = null;
+			if(crossSegments[i] != null)
+				allGone = false;
+		}
+		if(!toRemove) return;
+		if(allGone)
+			innerRemoveFrom(container, context);
 	}
 
 

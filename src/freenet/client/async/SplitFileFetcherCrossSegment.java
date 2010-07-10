@@ -15,6 +15,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 
 	// The blocks are all drawn from ordinary segments.
 	private final SplitFileFetcherSegment[] segments;
+	private final SplitFileFetcher splitFetcher;
 	private final int[] blockNumbers;
 	private final boolean[] blocksFound;
 	/** Count of data blocks i.e. blocks other than cross-check blocks. 
@@ -35,7 +36,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 	
 	private transient FECCodec codec;
 	
-	public SplitFileFetcherCrossSegment(boolean persistent, int blocksPerSegment, int crossCheckBlocks, ClientRequester parent, short splitfileType) {
+	public SplitFileFetcherCrossSegment(boolean persistent, int blocksPerSegment, int crossCheckBlocks, ClientRequester parent, SplitFileFetcher fetcher, short splitfileType) {
 		this.persistent = persistent;
 		this.dataBlocks = blocksPerSegment;
 		this.crossCheckBlocks = crossCheckBlocks;
@@ -45,6 +46,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 		segments = new SplitFileFetcherSegment[totalBlocks];
 		blockNumbers = new int[totalBlocks];
 		blocksFound = new boolean[totalBlocks];
+		this.splitFetcher = fetcher;
 	}
 
 	public void onFetched(SplitFileFetcherSegment segment, int blockNo, ObjectContainer container, ClientContext context) {
@@ -314,6 +316,30 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			container.delete(this);
 		else
 			container.store(this);
+		SplitFileFetcher fetcher = getFetcher(container);
+		if(fetcher == null) return;
+		boolean active = container.ext().isActive(fetcher);
+		if(!active) container.activate(fetcher, 1);
+		fetcher.onRemoveCrossSegment(container, context, this);
+		if(!active) container.deactivate(fetcher, 1);
+	}
+
+	private SplitFileFetcher getFetcher(ObjectContainer container) {
+		if(splitFetcher != null) return splitFetcher;
+		// FIXME horrible back compat code
+		for(int i=0;i<segments.length;i++) {
+			if(segments[i] == null) continue;
+			boolean active = true;
+			if(persistent) {
+				active = container.ext().isActive(segments[i]);
+				container.activate(segments[i], 1);
+			}
+			SplitFileFetcher fetcher = segments[i].parentFetcher;
+			if(!active)
+				container.deactivate(segments[i], 1);
+			return fetcher;
+		}
+		return null;
 	}
 
 	
