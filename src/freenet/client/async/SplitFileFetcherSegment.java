@@ -473,6 +473,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				} else {
 					Logger.error(this, "DATA BLOCK INVALID: "+blockNo, new Exception("error"));
 					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block"), blockNo, null, container, context);
+					return false;
 				}
 			}
 		} catch (FetchException e) {
