@@ -207,7 +207,7 @@ public class NewPacketFormat implements PacketFormat {
 		SessionKey sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
-			sentPacket.lost();
+			if(sentPacket != null) sentPacket.lost();
 			return false;
 		}
 
@@ -237,10 +237,10 @@ public class NewPacketFormat implements PacketFormat {
 				                + packet.getAcks().size() + " acks");
 			}
 	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
-			sentPacket.sent();
+			if(sentPacket != null) sentPacket.sent();
                 } catch (LocalAddressException e) {
 	                Logger.error(this, "Caught exception while sending packet", e);
-			sentPacket.lost();
+			if(sentPacket != null) sentPacket.lost();
 			synchronized(sentPackets) {
 				sentPackets.remove(packet.getSequenceNumber());
 			}
@@ -342,8 +342,10 @@ public class NewPacketFormat implements PacketFormat {
 
 		if(packet.getLength() == 5) return null;
 
-		synchronized(sentPackets) {
-			sentPackets.put(packet.getSequenceNumber(), sentPacket);
+		if(packet.getFragments().size() != 0) {
+			synchronized(sentPackets) {
+				sentPackets.put(packet.getSequenceNumber(), sentPacket);
+			}
 		}
 
 		sentPacket.sent();
