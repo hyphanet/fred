@@ -331,16 +331,13 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 
 	/** Notify that the splitfile has finished. We can skip encodes and decodes if possible. */
 	public void preRemove(ObjectContainer container, ClientContext context) {
-		boolean finished = false;
 		synchronized(this) {
 			shouldRemove = true;
 			if(!(startedDecoding || startedEncoding)) {
 				finishedEncoding = true;
 				startedDecoding = true;
 				startedEncoding = true;
-				finished = true;
-			} else if(finishedEncoding)
-				finished = true;
+			}
 		}
 		container.store(this);
 	}
