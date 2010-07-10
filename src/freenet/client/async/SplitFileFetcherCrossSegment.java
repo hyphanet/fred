@@ -96,6 +96,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				bye = shouldRemove;
 				finishedEncoding = true;
 			}
+			if(logMINOR) Logger.minor(this, "Finished as nothing to encode/decode in onFetched on "+this);
 			if(persistent) {
 				if(bye)
 					onFinished(container, context);
@@ -159,13 +160,21 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 		}
 		synchronized(this) {
 			if(needsDecode) {
-				if(startedDecoding) return true;
+				if(startedDecoding) {
+					if(logMINOR) Logger.minor(this, "Not starting decoding, already started, on "+this);
+					return true;
+				}
 				startedDecoding = true;
 				if(persistent) container.store(this);
+				if(logMINOR) Logger.minor(this, "Starting decoding on "+this);
 			} else {
-				if(startedEncoding) return true;
+				if(startedEncoding) {
+					if(logMINOR) Logger.minor(this, "Not starting encoding, already started, on "+this);
+					return true;
+				}
 				startedEncoding = true;
 				if(persistent) container.store(this);
+				if(logMINOR) Logger.minor(this, "Starting encoding on "+this);
 			}
 		}
 		FECQueue queue = context.fecQueue;
@@ -189,6 +198,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 	}
 
 	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks) {
+		if(logMINOR) Logger.minor(this, "Decoded segment on "+this);
 		for(int i=0;i<dataBlocks.length;i++) {
 			Bucket data = dataBlocks[i].getData();
 			boolean found;
@@ -235,6 +245,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				// Skip the encode.
 				bye = true;
 				finishedEncoding = true;
+				if(logMINOR) Logger.minor(this, "Finished as cancelled in decoded segment on "+this);
 			}
 		}
 		if(bye) {
@@ -247,6 +258,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 					bye = shouldRemove;
 					finishedEncoding = true;
 				}
+				if(logMINOR) Logger.minor(this, "Finished as nothing to encode/decode in decoded segment on "+this);
 				if(persistent) {
 					if(bye)
 						onFinished(container, context);
@@ -258,6 +270,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 	}
 
 	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks) {
+		if(logMINOR) Logger.minor(this, "Encoded segment on "+this);
 		for(int i=0;i<checkBlocks.length;i++) {
 			Bucket data = checkBlocks[i].getData();
 			boolean found;
@@ -312,6 +325,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			finishedEncoding = true;
 			bye = shouldRemove;
 		}
+		if(logMINOR) Logger.minor(this, "Finished encoding on "+this);
 		if(persistent) {
 			if(bye) onFinished(container, context);
 			else
@@ -334,6 +348,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 	}
 	
 	public void onFinished(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Finished on "+this);
 		assert(finishedEncoding); // Caller must set.
 		SplitFileFetcher fetcher = getFetcher(container);
 		if(fetcher == null) return;
