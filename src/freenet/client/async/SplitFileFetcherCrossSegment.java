@@ -249,7 +249,9 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			}
 		}
 		if(bye) {
-			if(persistent) onFinished(container, context);
+			if(persistent) {
+				onFinished(container, context);
+			}
 		} else {
 			// Try an encode now.
 			if(!decodeOrEncode(null, container, context)) {
@@ -354,7 +356,8 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 		if(fetcher == null) return;
 		boolean active = container.ext().isActive(fetcher);
 		if(!active) container.activate(fetcher, 1);
-		fetcher.onFinishedCrossSegment(container, context, this);
+		if(!fetcher.onFinishedCrossSegment(container, context, this))
+			container.store(this);
 		if(!active) container.deactivate(fetcher, 1);
 	}
 

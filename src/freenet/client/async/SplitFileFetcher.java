@@ -960,7 +960,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		return true;
 	}
 
-	public void onFinishedCrossSegment(ObjectContainer container, ClientContext context, SplitFileFetcherCrossSegment seg) {
+	public boolean onFinishedCrossSegment(ObjectContainer container, ClientContext context, SplitFileFetcherCrossSegment seg) {
 		boolean allGone = true;
 		for(int i=0;i<crossSegments.length;i++) {
 			if(crossSegments[i] != null) {
@@ -977,11 +977,13 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(!allGone) break;
 			}
 		}
-		if(!toRemove) return;
-		if(allGone)
+		if(!toRemove) return false;
+		if(allGone) {
 			innerRemoveFrom(container, context);
-		else if(persistent)
+			return true;
+		} else if(persistent)
 			container.store(this);
+		return false;
 	}
 
 
