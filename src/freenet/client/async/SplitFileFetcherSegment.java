@@ -1724,7 +1724,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 			active = container.ext().isActive(block);
 			if(!active) container.activate(block, 1);
 		}
+		if(block == null) {
+			Logger.error(this, "Block is null: "+blockNum+" on "+this+" activated = "+container.ext().isActive(this)+" finished = "+finished+" encoder finished = "+encoderFinished+" fetcher finished = "+fetcherFinished);
+			return null;
+		}
 		Bucket ret = block.data;
+		if(ret == null && logMINOR) Logger.minor(this, "Bucket is null: "+blockNum+" on "+this);
 		if(!active)
 			container.deactivate(block, 1);
 		return ret;
