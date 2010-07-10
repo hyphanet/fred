@@ -314,6 +314,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(logMINOR)
 					Logger.minor(this, "onSuccess() when already finished for "+this);
 				data.free();
+				if(persistent) data.removeFrom(container);
 				return -1;
 			}
 			if(startedDecode) {
@@ -321,6 +322,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(logMINOR)
 					Logger.minor(this, "onSuccess() when started decode for "+this);
 				data.free();
+				if(persistent) data.removeFrom(container);
 				return -1;
 			}
 			if(blockNo < dataKeys.length) {
@@ -338,6 +340,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 							Logger.minor(this, "Block already finished: "+blockNo);
 					}
 					data.free();
+					if(persistent) data.removeFrom(container);
 					return -1;
 				}
 				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
@@ -364,6 +367,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 							Logger.minor(this, "Check block already finished: "+checkNo);
 					}
 					data.free();
+					if(persistent) data.removeFrom(container);
 					return -1;
 				}
 				checkRetries[checkNo] = 0; // Prevent healing of successfully fetched block.
@@ -436,6 +440,16 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private static final short ON_SUCCESS_ALL_FAILED = 2;
 	private static final short ON_SUCCESS_DECODE_NOW = 4;
 	
+	/**
+	 * 
+	 * @param data Will be freed if not used.
+	 * @param blockNo
+	 * @param block
+	 * @param container
+	 * @param context
+	 * @param sub
+	 * @return
+	 */
 	public boolean onSuccess(Bucket data, int blockNo, ClientCHKBlock block, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment sub) {
 		if(persistent)
 			container.activate(this, 1);
@@ -463,6 +477,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 		} catch (FetchException e) {
 			fail(e, container, context, false);
+			data.free();
+			if(persistent) data.removeFrom(container);
+			return false;
 		}
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		short result = onSuccessInner(data, blockNo, container, context);
