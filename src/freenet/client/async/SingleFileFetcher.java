@@ -1025,25 +1025,29 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		/** For activation we need to know whether we are persistent even though the parent may not have been activated yet */
 		private final boolean persistent;
 		private HashResult[] hashes;
+		private final FetchContext ctx;
+		private final Bucket returnBucket;
 		
 		ArchiveFetcherCallback(boolean wasFetchingFinalData, String element, ArchiveExtractCallback cb) {
 			this.wasFetchingFinalData = wasFetchingFinalData;
 			this.element = element;
 			this.callback = cb;
 			this.persistent = SingleFileFetcher.this.persistent;
+			this.ctx = SingleFileFetcher.this.ctx;
+			this.returnBucket = SingleFileFetcher.this.returnBucket;
 		}
 		
 		public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 			Bucket finalData = null;
+			if(persistent()) {
+				container.activate(decompressors, 5);
+				container.activate(returnBucket, 5);
+				container.activate(ctx, 2);
+			}
 			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 			if(decompressors != null) {
 				if(logMINOR) Logger.minor(this, "decompressing...");
 				try {
-					if(persistent()) {
-						container.activate(decompressors, 5);
-						container.activate(returnBucket, 5);
-						container.activate(ctx, 1);
-					}
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
 					input = decompressorManager.execute();
 					if(returnBucket != null) finalData = returnBucket;
@@ -1229,22 +1233,26 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	class MultiLevelMetadataCallback implements GetCompletionCallback {
 		
 		private final boolean persistent;
+		private final FetchContext ctx;
+		private final Bucket returnBucket;
 		
 		MultiLevelMetadataCallback() {
 			this.persistent = SingleFileFetcher.this.persistent;
+			this.ctx = SingleFileFetcher.this.ctx;
+			this.returnBucket = SingleFileFetcher.this.returnBucket;
 		}
 		
 		public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 			Bucket finalData = null;
+			if(persistent()) {
+				container.activate(decompressors, 5);
+				container.activate(returnBucket, 5);
+				container.activate(ctx, 2);
+			}
 			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 			if(decompressors != null) {
 				if(logMINOR) Logger.minor(this, "Decompressing...");
 				try {
-					if(persistent()) {
-						container.activate(decompressors, 5);
-						container.activate(returnBucket, 5);
-						container.activate(ctx, 1);
-					}
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
 					input = decompressorManager.execute();
 					if(returnBucket != null) finalData = returnBucket;
