@@ -380,6 +380,7 @@ public class PersistentBlobTempBucketFactory {
 					try {
 						if(slot * blockSize > channel.size()) {
 							Logger.error(this, "Free slot "+slot+" but file length is "+channel.size()+" = "+(channel.size() / blockSize)+" blocks");
+							freeSlots.remove(slot);
 							return null;
 						}
 					} catch (IOException e) {
@@ -389,6 +390,7 @@ public class PersistentBlobTempBucketFactory {
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
+					freeSlots.remove(slot);
 					return null;
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag, false);
@@ -405,6 +407,7 @@ public class PersistentBlobTempBucketFactory {
 					try {
 						if(slot * blockSize > channel.size()) {
 							Logger.error(this, "Free slot "+slot+" but file length is "+channel.size()+" = "+(channel.size() / blockSize)+" blocks");
+							freeSlots.remove(slot);
 							return null;
 						}
 					} catch (IOException e) {
@@ -414,6 +417,7 @@ public class PersistentBlobTempBucketFactory {
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
+					freeSlots.remove(slot);
 					return null;
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag, false);
