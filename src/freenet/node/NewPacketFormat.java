@@ -119,7 +119,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(recvBuffer == null) {
 				Long time = msgIDCloseTimeRecv.get(fragment.messageID);
 				if(time != null) {
-					if(time < (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * maxRTT())) {
+					if(time > (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * maxRTT())) {
 						if(logMINOR) Logger.minor(this, "Ignoring fragment because we finished "
 						                + "the message fragment recently");
 						continue;
