@@ -493,6 +493,7 @@ public class PersistentBlobTempBucketFactory {
 			notCommittedBlobs.put(index, bucket);
 		} else {
 			almostFreeSlots.put(index, tag);
+			notCommittedBlobs.remove(index);
 		}
 		tag.bucket = null;
 		tag.isFree = true;
