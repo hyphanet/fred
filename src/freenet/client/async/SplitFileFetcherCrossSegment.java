@@ -335,8 +335,6 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				finished = true;
 		}
 		container.store(this);
-		if(finished)
-			onFinished(container, context);
 	}
 
 	/** Final removal, after all direct segments have been removed. */
