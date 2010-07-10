@@ -250,6 +250,10 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			int num = this.dataBlocks+i;
 			synchronized(this) {
 				found = blocksFound[num];
+				if(data == null) {
+					Logger.error(this, "Check block "+i+" is null in onEncodedSegment on "+this+" - shouldRemove = "+shouldRemove);
+					continue;
+				}
 			}
 			SplitFileFetcherSegment seg = segments[num];
 			boolean active = true;
