@@ -283,7 +283,8 @@ public class ClientGetter extends BaseClientGetter {
 				if(filteredResult != null && filteredResult != returnBucket) {
 					filteredResult.free();
 					if(persistent()) filteredResult.removeFrom(container);
-				}
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
 				Bucket data = result.asBucket();
 				data.free();
 				if(persistent()) data.removeFrom(container);
@@ -295,7 +296,8 @@ public class ClientGetter extends BaseClientGetter {
 				if(filteredResult != null && filteredResult != returnBucket) {
 					filteredResult.free();
 					if(persistent()) filteredResult.removeFrom(container);
-				}
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
 				Bucket data = result.asBucket();
 				data.free();
 				if(persistent()) data.removeFrom(container);
@@ -306,7 +308,8 @@ public class ClientGetter extends BaseClientGetter {
 				if(filteredResult != null && filteredResult != returnBucket) {
 					filteredResult.free();
 					if(persistent()) filteredResult.removeFrom(container);
-				}
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
 				Bucket data = result.asBucket();
 				data.free();
 				if(persistent()) data.removeFrom(container);
