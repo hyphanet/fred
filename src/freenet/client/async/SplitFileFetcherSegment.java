@@ -421,9 +421,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent) container.store(this);
 		if(crossSegment != null) {
-			if(persistent) container.activate(crossSegment, 1);
+			boolean active = true;
+			if(persistent) {
+				active = container.ext().isActive(crossSegment);
+				if(!active) container.activate(crossSegment, 1);
+			}
 			crossSegment.onFetched(this, blockNo, container, context);
-			if(persistent) container.deactivate(crossSegment, 1);
+			if(!active) container.deactivate(crossSegment, 1);
 		}
 		return res;
 	}
@@ -628,8 +632,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent) container.activate(dataBuckets[i], 1); // onFetched might deactivate blocks.
 				if(dataBuckets[i].flag) {
 					// New block. Might allow a cross-segment decode.
-					if(persistent) container.activate(crossSegmentsByBlock[i], 1);
+					boolean active = true;
+					if(persistent) {
+						active = container.ext().isActive(crossSegmentsByBlock[i]);
+						if(!active) container.activate(crossSegmentsByBlock[i], 1);
+					}
 					crossSegmentsByBlock[i].onFetched(this, i, container, context);
+					if(!active) container.deactivate(crossSegmentsByBlock[i], 1);
 				}
 			}
 		}
