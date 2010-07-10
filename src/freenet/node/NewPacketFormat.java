@@ -359,7 +359,7 @@ public class NewPacketFormat implements PacketFormat {
 		synchronized(msgIDCloseTimeSent) {
 			Long time = msgIDCloseTimeSent.get(messageID);
 			if(time != null) {
-				if(time < (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * maxRTT())) {
+				if(time > (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * maxRTT())) {
 					return -1;
 				} else {
 					msgIDCloseTimeSent.remove(messageID);
