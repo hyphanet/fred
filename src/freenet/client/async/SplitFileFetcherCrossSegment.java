@@ -51,6 +51,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 
 	public void onFetched(SplitFileFetcherSegment segment, int blockNo, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
+			if(shouldRemove || finishedEncoding || startedDecoding || startedEncoding) return;
 			boolean found = false;
 			int totalFound = 0;
 			for(int i=0;i<segments.length;i++) {
