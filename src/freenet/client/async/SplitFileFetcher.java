@@ -587,7 +587,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				SplitFileFetcherSegment s = segments[i];
 				long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
 				bytesWritten += s.writeDecodedDataTo(os, max, container);
-				s.fetcherHalfFinished(container);
+				if(crossCheckBlocks == 0)
+					s.fetcherHalfFinished(container);
+				// Else we need to wait for the cross-segment fetchers and innerRemoveFrom()
 			}
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, e);
