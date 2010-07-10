@@ -236,17 +236,6 @@ public abstract class ClientRequester {
 	 * checking the datastore for at least one part of the request. */
 	protected abstract void innerToNetwork(ObjectContainer container, ClientContext context);
 
-	protected void clearCountersOnRestart() {
-		this.blockSetFinalized = false;
-		this.cancelled = false;
-		this.failedBlocks = 0;
-		this.fatallyFailedBlocks = 0;
-		this.minSuccessBlocks = 0;
-		this.sentToNetwork = false;
-		this.successfulBlocks = 0;
-		this.totalBlocks = 0;
-	}
-
 	/** Get client context object */
 	public RequestClient getClient() {
 		return client;
