@@ -241,6 +241,11 @@ public class PersistentBlobTempBucketFactory {
 						Logger.error(this, "Bucket is occupied but not in notCommittedBlobs?!: "+tag+" : "+tag.bucket);
 						continue;
 					}
+					if(tag.index > ptr) {
+						if(logMINOR) Logger.minor(this, "Not adding slot "+tag.index+" to freeSlots because it is past the end of the file (but it is free)");
+						container.delete(tag);
+						continue;
+					}
 					if(logMINOR) Logger.minor(this, "Adding slot "+tag.index+" to freeSlots (has a free tag and no taken tag)");
 					freeSlots.put(tag.index, tag);
 					added++;
