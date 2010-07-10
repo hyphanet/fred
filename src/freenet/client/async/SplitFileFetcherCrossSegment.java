@@ -8,10 +8,24 @@ import freenet.client.FECJob;
 import freenet.client.FECQueue;
 import freenet.client.SplitfileBlock;
 import freenet.keys.CHKBlock;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class SplitFileFetcherCrossSegment implements FECCallback {
+
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	// The blocks are all drawn from ordinary segments.
 	private final SplitFileFetcherSegment[] segments;
