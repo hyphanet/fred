@@ -111,7 +111,6 @@ public class MessageWrapper {
 	 * @param end the last byte to be marked
 	 */
 	public void lost() {
-		Logger.minor(this, "Resetting sent ranges for message id " + messageID);
 		synchronized(sent) {
 		synchronized(acks) {
 			sent.clear();
