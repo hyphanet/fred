@@ -882,7 +882,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					crossSegments[i].preRemove(container, context);
 					if(!crossSegments[i].isFinished()) {
 						allGone = false;
-						if(logMINOR) Logger.minor(this, "Waiting for "+crossSegments[i]);
+						if(logMINOR) Logger.minor(this, "Waiting for "+crossSegments[i]+" in removeFrom()");
 					}
 					if(!active) container.deactivate(crossSegments[i], 1);
 				}
