@@ -868,8 +868,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		synchronized(this) {
 			toRemove = true;
 		}
-		for(int i=0;i<crossSegments.length;i++) {
-			if(crossSegments[i] != null) return;
+		if(crossCheckBlocks > 0) {
+			for(int i=0;i<crossSegments.length;i++) {
+				if(crossSegments[i] != null) return;
+			}
 		}
 		innerRemoveFrom(container, context);
 	}
