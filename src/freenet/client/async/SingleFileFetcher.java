@@ -1037,7 +1037,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		
 		public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 			Bucket finalData = null;
-			if(persistent()) {
+			if(persistent) {
 				container.activate(decompressors, 5);
 				container.activate(ctx, 2);
 			}
@@ -1047,7 +1047,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				try {
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
 					input = decompressorManager.execute();
-					finalData = context.getBucketFactory(persistent()).makeBucket(maxLen);
+					finalData = context.getBucketFactory(persistent).makeBucket(maxLen);
 					BucketTools.copyFrom(finalData, input, -1);
 					input.close();
 				} catch (OutOfMemoryError e) {
@@ -1238,7 +1238,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		
 		public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 			Bucket finalData = null;
-			if(persistent()) {
+			if(persistent) {
 				container.activate(decompressors, 5);
 				container.activate(ctx, 2);
 			}
@@ -1248,7 +1248,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				try {
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
 					input = decompressorManager.execute();
-					finalData = context.getBucketFactory(persistent()).makeBucket(maxLen);
+					finalData = context.getBucketFactory(persistent).makeBucket(maxLen);
 					BucketTools.copyFrom(finalData, input, -1);
 					input.close();
 				} catch (OutOfMemoryError e) {
