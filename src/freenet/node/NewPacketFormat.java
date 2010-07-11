@@ -22,7 +22,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int HMAC_LENGTH = 4;
 	private static final int PACKET_WINDOW = 128; //TODO: Find a good value
 	private static final int NUM_RTTS_TO_LOOSE = 2;
-	private static final int NUM_RTTS_MSGID_WAIT = 10;
+	private static final int MSGID_WAIT_TIME = 1000 * 60 * 2;
 	private static final int NUM_MESSAGE_IDS = 8192;
 
 	private static volatile boolean logMINOR;
@@ -119,7 +119,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(recvBuffer == null) {
 				Long time = msgIDCloseTimeRecv.get(fragment.messageID);
 				if(time != null) {
-					if(time > (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * maxRTT())) {
+					if(time > (System.currentTimeMillis() - MSGID_WAIT_TIME)) {
 						if(logMINOR) Logger.minor(this, "Ignoring fragment because we finished "
 						                + "the message fragment recently");
 						continue;
@@ -359,7 +359,7 @@ public class NewPacketFormat implements PacketFormat {
 		synchronized(msgIDCloseTimeSent) {
 			Long time = msgIDCloseTimeSent.get(messageID);
 			if(time != null) {
-				if(time > (System.currentTimeMillis() - NUM_RTTS_MSGID_WAIT * maxRTT())) {
+				if(time > (System.currentTimeMillis() - MSGID_WAIT_TIME)) {
 					return -1;
 				} else {
 					msgIDCloseTimeSent.remove(messageID);
