@@ -1026,7 +1026,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		private final boolean persistent;
 		private HashResult[] hashes;
 		private final FetchContext ctx;
-		private final Bucket returnBucket;
 		
 		ArchiveFetcherCallback(boolean wasFetchingFinalData, String element, ArchiveExtractCallback cb) {
 			this.wasFetchingFinalData = wasFetchingFinalData;
@@ -1034,14 +1033,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.callback = cb;
 			this.persistent = SingleFileFetcher.this.persistent;
 			this.ctx = SingleFileFetcher.this.ctx;
-			this.returnBucket = SingleFileFetcher.this.returnBucket;
 		}
 		
 		public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 			Bucket finalData = null;
 			if(persistent()) {
 				container.activate(decompressors, 5);
-				container.activate(returnBucket, 5);
 				container.activate(ctx, 2);
 			}
 			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
@@ -1050,8 +1047,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				try {
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
 					input = decompressorManager.execute();
-					if(returnBucket != null) finalData = returnBucket;
-					else finalData = context.getBucketFactory(persistent()).makeBucket(maxLen);
+					finalData = context.getBucketFactory(persistent()).makeBucket(maxLen);
 					BucketTools.copyFrom(finalData, input, -1);
 					input.close();
 				} catch (OutOfMemoryError e) {
@@ -1234,19 +1230,16 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		
 		private final boolean persistent;
 		private final FetchContext ctx;
-		private final Bucket returnBucket;
 		
 		MultiLevelMetadataCallback() {
 			this.persistent = SingleFileFetcher.this.persistent;
 			this.ctx = SingleFileFetcher.this.ctx;
-			this.returnBucket = SingleFileFetcher.this.returnBucket;
 		}
 		
 		public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 			Bucket finalData = null;
 			if(persistent()) {
 				container.activate(decompressors, 5);
-				container.activate(returnBucket, 5);
 				container.activate(ctx, 2);
 			}
 			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
@@ -1255,8 +1248,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				try {
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
 					input = decompressorManager.execute();
-					if(returnBucket != null) finalData = returnBucket;
-					else finalData = context.getBucketFactory(persistent()).makeBucket(maxLen);
+					finalData = context.getBucketFactory(persistent()).makeBucket(maxLen);
 					BucketTools.copyFrom(finalData, input, -1);
 					input.close();
 				} catch (OutOfMemoryError e) {
