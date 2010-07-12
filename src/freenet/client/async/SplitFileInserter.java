@@ -246,7 +246,7 @@ public class SplitFileInserter implements ClientPutState {
 			crossSegments = new SplitFileInserterCrossSegment[segs];
 			int segLen = segmentSize;
 			for(int i=0;i<crossSegments.length;i++) {
-				System.out.println("Allocating blocks for cross segment "+i);
+				if(logMINOR) Logger.minor(this, "Allocating blocks for cross segment "+i);
 				if(segments.length - i == deductBlocksFromSegments) {
 					segLen--;
 				}
