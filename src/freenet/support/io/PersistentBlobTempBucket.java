@@ -225,6 +225,17 @@ public class PersistentBlobTempBucket implements Bucket {
 		}
 		boolean p;
 		synchronized(this) {
+			if(freed) {
+				if(tag != null) {
+					container.activate(tag, 1);
+					tag.bucket = null;
+					tag.isFree = true;
+					container.store(tag);
+					this.tag = null;
+				}
+				container.store(this);
+				return;
+			}
 			if(tag == null) {
 				if(!container.ext().isActive(this)) {
 					Logger.error(this, "NOT ACTIVE IN storeTo()!!", new Exception("error"));
@@ -233,14 +244,7 @@ public class PersistentBlobTempBucket implements Bucket {
 						throw new NullPointerException("Activated but tag still null!");
 					}
 				}
-				if(freed) {
-					Logger.error(this, "Storing freed bucket "+this);
-					// We do need to record this fact.
-					container.store(this);
-					return;
-				} else {
-					throw new NullPointerException("Active but tag null! shadow="+shadow+" freed="+freed+" persisted="+persisted+" index="+index);
-				}
+				throw new NullPointerException("Active but tag null! shadow="+shadow+" freed="+freed+" persisted="+persisted+" index="+index);
 			}
 			p = persisted;
 			persisted = true;
