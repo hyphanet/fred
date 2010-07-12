@@ -226,6 +226,7 @@ public class PersistentBlobTempBucket implements Bucket {
 		boolean p;
 		synchronized(this) {
 			if(freed) {
+				Logger.error(this, "Storing freed bucket "+this+" formerly for slot "+index, new Exception("error"));
 				if(tag != null) {
 					container.activate(tag, 1);
 					tag.bucket = null;
