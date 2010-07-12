@@ -97,7 +97,7 @@ public class PooledExecutor implements Executor {
 			if (miss) {
 				long threadNo = threadCounter[prio - 1].getAndIncrement();
 				// Will be coalesced by thread count listings if we use "@" or "for"
-				t = new MyThread("Pooled thread awaiting work @" + threadNo, job, threadNo, prio, !fromTicker);
+				t = new MyThread("Pooled thread awaiting work @" + threadNo+" for prio "+prio, job, threadNo, prio, !fromTicker);
 				t.setDaemon(true);
 
 				synchronized(this) {
