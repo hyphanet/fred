@@ -215,7 +215,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				}
 				if(logMINOR)
 					Logger.minor(this, "Key "+key+" may be in segment "+segment);
-				if(segment.onGotKey(key, block, container, context)) {
+				// A segment can contain the same key twice if e.g. it isn't compressed and repeats itself.
+				while(segment.onGotKey(key, block, container, context)) {
 					synchronized(this) {
 						if(filter.checkFilter(saltedKey)) {
 							filter.removeKey(saltedKey);

@@ -927,8 +927,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.deactivate(baseMetadata, 1);
 				return;
 			}
-		} else
+		} else {
+			if(persistent()) container.activate(targetURI, 5);
 			block = new InsertBlock(bucket, null, persistent() ? targetURI.clone() : targetURI);
+		}
 		SingleFileInserter metadataInserter;
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.

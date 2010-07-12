@@ -467,7 +467,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(segments.length - i == deductBlocksFromSegments) {
 					segLen--;
 				}
-				SplitFileFetcherCrossSegment seg = new SplitFileFetcherCrossSegment(persistent, segLen, crossCheckBlocks, parent, metadata.getSplitfileType());
+				SplitFileFetcherCrossSegment seg = new SplitFileFetcherCrossSegment(persistent, segLen, crossCheckBlocks, parent, this, metadata.getSplitfileType());
 				crossSegments[i] = seg;
 				for(int j=0;j<segLen;j++) {
 					// Allocate random data blocks
@@ -585,7 +585,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 							SplitFileFetcherSegment s = segments[i];
 							long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
 							bytesWritten += s.writeDecodedDataTo(os, max, container);
-							s.fetcherHalfFinished(container);
+							if(crossCheckBlocks == 0) s.fetcherHalfFinished(container);
+							// Else we need to wait for the cross-segment fetchers and innerRemoveFrom()
 						}
 						os.close();
 					} catch(IOException e) {
@@ -797,7 +798,38 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		cancel(container, context);
 	}
 
+	private boolean toRemove = false;
+	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			toRemove = true;
+		}
+		if(crossCheckBlocks > 0) {
+			boolean allGone = true;
+			for(int i=0;i<crossSegments.length;i++) {
+				if(crossSegments[i] != null) {
+					boolean active = true;
+					if(persistent) {
+						active = container.ext().isActive(crossSegments[i]);
+						if(!active) container.activate(crossSegments[i], 1);
+					}
+					crossSegments[i].preRemove(container, context);
+					if(!crossSegments[i].isFinished()) {
+						allGone = false;
+						if(logMINOR) Logger.minor(this, "Waiting for "+crossSegments[i]+" in removeFrom()");
+					}
+					if(!active) container.deactivate(crossSegments[i], 1);
+				}
+			}
+			if(!allGone) {
+				container.store(this);
+				return;
+			}
+		}
+		innerRemoveFrom(container, context);
+	}
+	
+	public void innerRemoveFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
 		if(!container.ext().isStored(this)) {
 			Logger.error(this, "Already removed??? on "+this, new Exception("error"));
@@ -860,6 +892,32 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			return false;
 		}
 		return true;
+	}
+
+	public boolean onFinishedCrossSegment(ObjectContainer container, ClientContext context, SplitFileFetcherCrossSegment seg) {
+		boolean allGone = true;
+		for(int i=0;i<crossSegments.length;i++) {
+			if(crossSegments[i] != null) {
+				boolean active = true;
+				if(persistent) {
+					active = container.ext().isActive(crossSegments[i]);
+					if(!active) container.activate(crossSegments[i], 1);
+				}
+				if(!crossSegments[i].isFinished()) {
+					allGone = false;
+					if(logMINOR) Logger.minor(this, "Waiting for "+crossSegments[i]);
+				}
+				if(!active) container.deactivate(crossSegments[i], 1);
+				if(!allGone) break;
+			}
+		}
+		if(!toRemove) return false;
+		if(allGone) {
+			innerRemoveFrom(container, context);
+			return true;
+		} else if(persistent)
+			container.store(this);
+		return false;
 	}
 
 

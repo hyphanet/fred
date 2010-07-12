@@ -314,6 +314,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(logMINOR)
 					Logger.minor(this, "onSuccess() when already finished for "+this);
 				data.free();
+				if(persistent) data.removeFrom(container);
 				return -1;
 			}
 			if(startedDecode) {
@@ -321,6 +322,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(logMINOR)
 					Logger.minor(this, "onSuccess() when started decode for "+this);
 				data.free();
+				if(persistent) data.removeFrom(container);
 				return -1;
 			}
 			if(blockNo < dataKeys.length) {
@@ -338,6 +340,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 							Logger.minor(this, "Block already finished: "+blockNo);
 					}
 					data.free();
+					if(persistent) data.removeFrom(container);
 					return -1;
 				}
 				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
@@ -364,6 +367,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 							Logger.minor(this, "Check block already finished: "+checkNo);
 					}
 					data.free();
+					if(persistent) data.removeFrom(container);
 					return -1;
 				}
 				checkRetries[checkNo] = 0; // Prevent healing of successfully fetched block.
@@ -421,9 +425,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent) container.store(this);
 		if(crossSegment != null) {
-			if(persistent) container.activate(crossSegment, 1);
+			boolean active = true;
+			if(persistent) {
+				active = container.ext().isActive(crossSegment);
+				if(!active) container.activate(crossSegment, 1);
+			}
 			crossSegment.onFetched(this, blockNo, container, context);
-			if(persistent) container.deactivate(crossSegment, 1);
+			if(!active) container.deactivate(crossSegment, 1);
 		}
 		return res;
 	}
@@ -432,6 +440,16 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private static final short ON_SUCCESS_ALL_FAILED = 2;
 	private static final short ON_SUCCESS_DECODE_NOW = 4;
 	
+	/**
+	 * 
+	 * @param data Will be freed if not used.
+	 * @param blockNo
+	 * @param block
+	 * @param container
+	 * @param context
+	 * @param sub
+	 * @return
+	 */
 	public boolean onSuccess(Bucket data, int blockNo, ClientCHKBlock block, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment sub) {
 		if(persistent)
 			container.activate(this, 1);
@@ -451,14 +469,22 @@ public class SplitFileFetcherSegment implements FECCallback {
 				} else if(block == null) {
 					// Cross-segment, just return false.
 					Logger.error(this, "CROSS-SEGMENT DECODED/ENCODED BLOCK INVALID: "+blockNo, new Exception("error"));
+					data.free();
+					if(persistent) data.removeFrom(container);
 					return false;
 				} else {
 					Logger.error(this, "DATA BLOCK INVALID: "+blockNo, new Exception("error"));
 					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block"), blockNo, null, container, context);
+					data.free();
+					if(persistent) data.removeFrom(container);
+					return false;
 				}
 			}
 		} catch (FetchException e) {
 			fail(e, container, context, false);
+			data.free();
+			if(persistent) data.removeFrom(container);
+			return false;
 		}
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		short result = onSuccessInner(data, blockNo, container, context);
@@ -628,8 +654,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent) container.activate(dataBuckets[i], 1); // onFetched might deactivate blocks.
 				if(dataBuckets[i].flag) {
 					// New block. Might allow a cross-segment decode.
-					if(persistent) container.activate(crossSegmentsByBlock[i], 1);
+					boolean active = true;
+					if(persistent) {
+						active = container.ext().isActive(crossSegmentsByBlock[i]);
+						if(!active) container.activate(crossSegmentsByBlock[i], 1);
+					}
 					crossSegmentsByBlock[i].onFetched(this, i, container, context);
+					if(!active) container.deactivate(crossSegmentsByBlock[i], 1);
 				}
 			}
 		}
@@ -826,7 +857,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 						wrapper.free();
 					}
 
-					queueHeal(data, container, context);
+					data.free();
+					if(persistent) data.removeFrom(container);
 					checkBuckets[i].data = null;
 				} else {
 					data.free();
@@ -1714,7 +1746,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 			active = container.ext().isActive(block);
 			if(!active) container.activate(block, 1);
 		}
+		if(block == null) {
+			Logger.error(this, "Block is null: "+blockNum+" on "+this+" activated = "+container.ext().isActive(this)+" finished = "+finished+" encoder finished = "+encoderFinished+" fetcher finished = "+fetcherFinished);
+			return null;
+		}
 		Bucket ret = block.data;
+		if(ret == null && logMINOR) Logger.minor(this, "Bucket is null: "+blockNum+" on "+this+" for "+block);
 		if(!active)
 			container.deactivate(block, 1);
 		return ret;
