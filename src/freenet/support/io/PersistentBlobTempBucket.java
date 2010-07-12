@@ -235,6 +235,8 @@ public class PersistentBlobTempBucket implements Bucket {
 				} else {
 					if(freed) {
 						Logger.error(this, "Storing freed bucket "+this);
+						// We do need to record this fact.
+						container.store(this);
 						return;
 					} else {
 						throw new NullPointerException("Active but tag null! shadow="+shadow+" freed="+freed+" persisted="+persisted+" index="+index);
