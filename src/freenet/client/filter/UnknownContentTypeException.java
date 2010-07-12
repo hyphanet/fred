@@ -33,7 +33,7 @@ public class UnknownContentTypeException extends UnsafeContentTypeException {
 	
 	@Override
 	public String getMessage() {
-		return l10n("explanation", type, type);
+		return l10n("explanation", "type", type);
 	}
 
 	private static String l10n(String key) {
