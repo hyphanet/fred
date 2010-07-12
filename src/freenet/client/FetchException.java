@@ -205,6 +205,24 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
+	public FetchException(int mode, long expectedSize, Throwable t, String expectedMimeType) {
+		super(getMessage(mode)+": "+t.getMessage());
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
+		extraMessage = t.getMessage();
+		this.mode = mode;
+		this.expectedSize = expectedSize;
+		this.expectedMimeType = expectedMimeType;
+		errorCodes = null;
+		initCause(t);
+		newURI = null;
+		expectedSize = -1;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(logMINOR) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
+	}
+
 	public FetchException(int mode, FailureCodeTracker errorCodes) {
 		super(getMessage(mode));
 		if(mode == 0)
