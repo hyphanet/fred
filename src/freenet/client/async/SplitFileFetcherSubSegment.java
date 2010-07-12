@@ -349,6 +349,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			for(int i=0;i<blockNumbers.length;i++)
 				blockNumbers[i] = ((MySendableRequestItem)items[i].token).x;
 		}
+		if(logMINOR) Logger.minor(this, "Calling segment.onNonFatalFailure with "+blockNumbers.length+" failed fetches");
 		segment.onNonFatalFailure(fetchExceptions, blockNumbers, this, container, context);
 
 		if(persistent) {
