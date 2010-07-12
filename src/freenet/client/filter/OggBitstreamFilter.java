@@ -49,6 +49,10 @@ public class OggBitstreamFilter {
 			if(i == VorbisBitstreamFilter.magicNumber.length) return new VorbisBitstreamFilter(page);
 			if(page.payload[i+1] != VorbisBitstreamFilter.magicNumber[i]) break;
 		}
+		for(int i = 0; i <= TheoraBitstreamFilter.magicNumber.length; i++) {
+			if(i == TheoraBitstreamFilter.magicNumber.length) return new TheoraBitstreamFilter(page);
+			if(page.payload[i+1] != TheoraBitstreamFilter.magicNumber[i]) break;
+		}
 		return null;
 	}
 
