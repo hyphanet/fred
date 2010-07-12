@@ -666,10 +666,18 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		boolean allDecodedCorrectly = true;
 		for(int i=0;i<dataBuckets.length;i++) {
+			if(persistent && crossCheckBlocks != 0) {
+				// onFetched might deactivate blocks.
+				container.activate(dataBuckets[i], 1);
+			}
 			Bucket data = dataBlockStatus[i].getData();
 			if(data == null) 
 				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
 			try {
+				if(persistent && crossCheckBlocks != 0) {
+					// onFetched might deactivate blocks.
+					container.activate(data, Integer.MAX_VALUE);
+				}
 				if(!maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE")) {
 					if((!(ignoreLastDataBlock && i == dataKeys.length-1)) &&
 							(!(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length)))
