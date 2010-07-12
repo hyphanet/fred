@@ -929,7 +929,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 						if(!(key.equals(block.getClientKey()))) {
 							if(ignoreLastDataBlock && blockNo == dataKeys.length-1 && dataSource.equals("FEC DECODE")) {
 								if(logMINOR) Logger.minor(this, "Last block wrong key, ignored because expected due to padding issues");
-							} else if(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length) {
+							} else if(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length && dataSource.equals("FEC ENCODE")) {
 								// We padded the last block. The inserter might have used a different padding algorithm.
 								if(logMINOR) Logger.minor(this, "Wrong key, might be due to padding issues");
 							} else {
