@@ -378,8 +378,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(reg != null)
 					container.delete(reg);
-				maybeFillStarterQueue(container, clientContext, getters);
-				starter.wakeUp();
+				queueFillRequestStarterQueue(true);
 		} else {
 			// Register immediately.
 			for(int i=0;i<getters.length;i++) {
@@ -394,14 +393,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			starter.wakeUp();
 		}
-	}
-
-	private void maybeFillStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
-		synchronized(this) {
-			if(starterQueue.size() > MAX_STARTER_QUEUE_SIZE / 2)
-				return;
-		}
-		fillRequestStarterQueue(container, context, mightBeActive);
 	}
 
 	public ChosenBlock getBetterNonPersistentRequest(short prio, int retryCount) {
@@ -533,14 +524,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	public void queueFillRequestStarterQueue() {
+		queueFillRequestStarterQueue(false);
+	}
+	
 	/** Don't fill the starter queue until this point. Used to implement a 60 second
 	 * cooldown after failing to fill the queue: if there was nothing queued, and since
 	 * we know if more requests are started they will be added to the queue, this is
 	 * an acceptable optimisation to reduce the database load from the idle schedulers... */
 	private long nextQueueFillRequestStarterQueue = -1;
 	
-	public void queueFillRequestStarterQueue() {
-		if(System.currentTimeMillis() < nextQueueFillRequestStarterQueue)
+	public void queueFillRequestStarterQueue(boolean force) {
+		if(System.currentTimeMillis() < nextQueueFillRequestStarterQueue && !force)
 			return;
 		if(starterQueueLength() > MAX_STARTER_QUEUE_SIZE / 2)
 			return;
