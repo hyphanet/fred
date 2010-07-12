@@ -801,7 +801,12 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				container.activate(segment.blockFetchContext, 1);
 			}
 			// Wierd NPEs, test for why...
-			if(segment == null) throw new NullPointerException();
+			if(segment == null) {
+				String s = "Segment is null on "+this;
+				if(container != null)
+					s += " (persistent="+persistent+" but container non-null, active = "+container.ext().isActive(this)+" stored = "+container.ext().isStored(this);
+				throw new NullPointerException(s);
+			}
 			getScheduler(context).register(null, new SendableGet[] { this }, persistent, container, segment.blockFetchContext.blocks, true);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
