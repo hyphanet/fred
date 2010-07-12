@@ -240,7 +240,13 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250;
 					}
 				} else {
-					minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
+					if(checkBlocks == 64) {
+						// Very old 128/64 redundancy.
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
+					} else {
+						// Extra block per segment in 1251.
+						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
+					}
 				}
 			} else {
 				minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
@@ -360,6 +366,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			container.store(this);
 
 		boolean pre1254 = !(minCompatMode == CompatibilityMode.COMPAT_CURRENT || minCompatMode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
+		boolean pre1250 = (minCompatMode == CompatibilityMode.COMPAT_UNKNOWN || minCompatMode == CompatibilityMode.COMPAT_1250_EXACT);
 		
 		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
 		if(segmentCount == 1) {
@@ -371,7 +378,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(splitfileCheckBlocks.length > 0)
 				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
 			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks,
-					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, true, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
+					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
 			for(int i=0;i<newSplitfileDataBlocks.length;i++) {
 				if(logMINOR) Logger.minor(this, "Added data block "+i+" : "+newSplitfileDataBlocks[i].getNodeKey(false));
 				tempListener.addKey(newSplitfileDataBlocks[i].getNodeKey(true), 0, context);
@@ -412,8 +419,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					// We do not shrink the check blocks.
 					copyDataBlocks--;
 				}
-				//if(deductBlocksFromSegments != 0)
-					System.err.println("REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
+				if(logMINOR) Logger.minor(this, "REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
 				ClientCHK[] dataBlocks = new ClientCHK[copyDataBlocks];
 				ClientCHK[] checkBlocks = new ClientCHK[copyCheckBlocks];
 				if(copyDataBlocks > 0)
@@ -421,7 +427,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(copyCheckBlocks > 0)
 					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
 				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext,
-						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, i == segments.length-1, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
+						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, pre1250 && i == segments.length-1, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
 				for(int j=0;j<dataBlocks.length;j++)
 					tempListener.addKey(dataBlocks[j].getNodeKey(true), i, context);
 				for(int j=0;j<checkBlocks.length;j++)
@@ -457,7 +463,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(segments.length - i == deductBlocksFromSegments) {
 					segLen--;
 				}
-				SplitFileFetcherCrossSegment seg = new SplitFileFetcherCrossSegment(persistent, segLen, crossCheckBlocks, parent, metadata.getSplitfileType());
+				SplitFileFetcherCrossSegment seg = new SplitFileFetcherCrossSegment(persistent, segLen, crossCheckBlocks, parent, this, metadata.getSplitfileType());
 				crossSegments[i] = seg;
 				for(int j=0;j<segLen;j++) {
 					// Allocate random data blocks
@@ -554,7 +560,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			long sz = s.decodedLength(container);
 			finalLength += sz;
 			if(logMINOR)
-				Logger.minor(this, "Segment "+i+" decoded length "+sz+" total length now "+finalLength+" for "+s.dataBuckets.length+" blocks which should be "+(s.dataBuckets.length * NodeCHK.BLOCK_SIZE));
+				Logger.minor(this, "Segment "+i+" decoded length "+sz+" total length now "+finalLength+" for "+s.dataBuckets.length+" blocks which should be "+(s.dataBuckets.length * NodeCHK.BLOCK_SIZE)+" for "+this);
 			// Healing is done by Segment
 		}
 		if(finalLength > overrideLength) {
@@ -581,7 +587,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				SplitFileFetcherSegment s = segments[i];
 				long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
 				bytesWritten += s.writeDecodedDataTo(os, max, container);
-				s.fetcherHalfFinished(container);
+				if(crossCheckBlocks == 0)
+					s.fetcherHalfFinished(container);
+				// Else we need to wait for the cross-segment fetchers and innerRemoveFrom()
 			}
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, e);
@@ -856,7 +864,38 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		cancel(container, context);
 	}
 
+	private boolean toRemove = false;
+	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			toRemove = true;
+		}
+		if(crossCheckBlocks > 0) {
+			boolean allGone = true;
+			for(int i=0;i<crossSegments.length;i++) {
+				if(crossSegments[i] != null) {
+					boolean active = true;
+					if(persistent) {
+						active = container.ext().isActive(crossSegments[i]);
+						if(!active) container.activate(crossSegments[i], 1);
+					}
+					crossSegments[i].preRemove(container, context);
+					if(!crossSegments[i].isFinished()) {
+						allGone = false;
+						if(logMINOR) Logger.minor(this, "Waiting for "+crossSegments[i]+" in removeFrom()");
+					}
+					if(!active) container.deactivate(crossSegments[i], 1);
+				}
+			}
+			if(!allGone) {
+				container.store(this);
+				return;
+			}
+		}
+		innerRemoveFrom(container, context);
+	}
+	
+	public void innerRemoveFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
 		if(!container.ext().isStored(this)) {
 			Logger.error(this, "Already removed??? on "+this, new Exception("error"));
@@ -919,6 +958,32 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			return false;
 		}
 		return true;
+	}
+
+	public boolean onFinishedCrossSegment(ObjectContainer container, ClientContext context, SplitFileFetcherCrossSegment seg) {
+		boolean allGone = true;
+		for(int i=0;i<crossSegments.length;i++) {
+			if(crossSegments[i] != null) {
+				boolean active = true;
+				if(persistent) {
+					active = container.ext().isActive(crossSegments[i]);
+					if(!active) container.activate(crossSegments[i], 1);
+				}
+				if(!crossSegments[i].isFinished()) {
+					allGone = false;
+					if(logMINOR) Logger.minor(this, "Waiting for "+crossSegments[i]);
+				}
+				if(!active) container.deactivate(crossSegments[i], 1);
+				if(!allGone) break;
+			}
+		}
+		if(!toRemove) return false;
+		if(allGone) {
+			innerRemoveFrom(container, context);
+			return true;
+		} else if(persistent)
+			container.store(this);
+		return false;
 	}
 
 

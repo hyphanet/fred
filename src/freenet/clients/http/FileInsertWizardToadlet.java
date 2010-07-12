@@ -124,7 +124,7 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 			for(CompatibilityMode mode : InsertContext.CompatibilityMode.values()) {
 				if(mode == CompatibilityMode.COMPAT_UNKNOWN) continue;
 				// FIXME l10n???
-				HTMLNode option = select.addChild("option", "value", mode.name(), mode.detail);
+				HTMLNode option = select.addChild("option", "value", mode.name(), NodeL10n.getBase().getString("InsertContext.CompatibilityMode."+mode.name()));
 				if(mode == CompatibilityMode.COMPAT_CURRENT)
 					option.addAttribute("selected", "");
 			}

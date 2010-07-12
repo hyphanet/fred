@@ -404,16 +404,25 @@ public class USKManager implements RequestClient {
 		synchronized(this) {
 			USK clear = origUSK.clearCopy();
 			USKCallback[] callbacks = subscribersByClearUSK.get(clear);
-			if(callbacks == null)
-				callbacks = new USKCallback[1];
-			else {
-				for(int i=0;i<callbacks.length;i++)
-					if(callbacks[i] == cb) return;
-				USKCallback[] newCallbacks = new USKCallback[callbacks.length+1];
-				System.arraycopy(callbacks, 0, newCallbacks, 0, callbacks.length);
-				callbacks = newCallbacks;
+			if(callbacks == null) {
+				callbacks = new USKCallback[] { cb };
+			} else {
+				boolean mustAdd = true;
+				for(int i=0;i<callbacks.length;i++) {
+					if(callbacks[i] == cb) {
+						// Already subscribed.
+						// But it may still be waiting for the callback.
+						if(!(curEd > ed || goodEd > ed)) return;
+						mustAdd = false;
+					}
+				}
+				if(mustAdd) {
+					USKCallback[] newCallbacks = new USKCallback[callbacks.length+1];
+					System.arraycopy(callbacks, 0, newCallbacks, 0, callbacks.length);
+					newCallbacks[callbacks.length] = cb;
+					callbacks = newCallbacks;
+				}
 			}
-			callbacks[callbacks.length-1] = cb;
 			subscribersByClearUSK.put(clear, callbacks);
 			if(runBackgroundFetch) {
 				USKFetcher f = backgroundFetchersByClearUSK.get(clear);

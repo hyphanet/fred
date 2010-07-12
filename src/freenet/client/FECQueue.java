@@ -117,7 +117,7 @@ public class FECQueue implements OOMHook {
 	
 	private void queueCacheFiller() {
 		try {
-			databaseJobRunner.queue(cacheFillerJob, NativeThread.NORM_PRIORITY, false);
+			databaseJobRunner.queue(cacheFillerJob, NativeThread.NORM_PRIORITY, true);
 		} catch (DatabaseDisabledException e) {
 			// Ok.
 		}
@@ -138,12 +138,9 @@ public class FECQueue implements OOMHook {
 			job.activateForExecution(container);
 			container.store(job);
 		}
-		boolean kept = false;
-		
 		synchronized(this) {
 			if(!job.persistent) {
 				transientQueue[job.priority].addLast(job);
-				kept = true;
 			} else {
 				int totalAbove = 0;
 				for(int i=0;i<job.priority;i++) {
@@ -160,7 +157,6 @@ public class FECQueue implements OOMHook {
 							Logger.minor(this, "Not adding persistent job to in-RAM cache, too many at same priority");
 					} else {
 						persistentQueueCache[job.priority].addLast(job);
-						kept = true;
 						int total = totalAbove + persistentQueueCache[job.priority].size();
 						for(int i=job.priority+1;i<priorities;i++) {
 							total += persistentQueueCache[i].size();
@@ -174,11 +170,9 @@ public class FECQueue implements OOMHook {
 					}
 				}
 			}
-			if(!kept) {
-				if(logMINOR)
-					Logger.minor(this, "Deactivating job "+job);
-				job.deactivate(container);
-			}
+			// Do not deactivate the job.
+			// Two jobs may overlap in cross-segment decoding, resulting in very bad things.
+			// Plus, if we didn't add it to the cache, it will disappear when the parent is deactivated anyway.
 			if(runningFECThreads < maxThreads) {
 				executor.execute(runner, "FEC Pool(" + (fecPoolCounter++) + ")");
 				runningFECThreads++;
@@ -197,7 +191,6 @@ public class FECQueue implements OOMHook {
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
 				while(true) {
-					try {
 					final FECJob job;
 					// Get a job
 					synchronized (FECQueue.this) {
@@ -226,8 +219,49 @@ public class FECQueue implements OOMHook {
 									job.checkBlockStatus[i].setData(job.checkBlocks[i]);
 							}
 						}
-					} catch (IOException e) {
-						Logger.error(this, "BOH! ioe:" + e.getMessage(), e);
+					} catch (final Throwable t) {
+						Logger.error(this, "Caught: "+t, t);
+						if(job.persistent) {
+							if(Logger.shouldLog(LogLevel.MINOR, this))
+								Logger.minor(this, "Scheduling callback for "+job+"...");
+							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY+1 : NativeThread.NORM_PRIORITY;
+							// Run at a fairly high priority so we get the blocks out of memory and onto disk.
+							databaseJobRunner.queue(new DBJob() {
+
+								public boolean run(ObjectContainer container, ClientContext context) {
+									job.storeBlockStatuses(container);
+									// Don't activate the job itself.
+									// It MUST already be activated, because it is carrying the status blocks.
+									// The status blocks have been set on the FEC thread but *not stored* because
+									// they can't be stored on the FEC thread.
+									Logger.minor(this, "Activating "+job.callback+" is active="+container.ext().isActive(job.callback));
+									container.activate(job.callback, 1);
+									if(Logger.shouldLog(LogLevel.MINOR, this))
+										Logger.minor(this, "Running callback for "+job);
+									try {
+										job.callback.onFailed(t, container, context);
+									} catch (Throwable t1) {
+										Logger.error(this, "Caught "+t1+" in FECQueue callback failure", t1);
+									} finally {
+										// Always delete the job, even if the callback throws.
+										container.delete(job);
+									}
+									if(container.ext().isStored(job.callback))
+										container.deactivate(job.callback, 1);
+									return true;
+								}
+								
+								public String toString() {
+									return "FECQueueJobFailedCallback";
+								}
+								
+							}, prio, false);
+							if(Logger.shouldLog(LogLevel.MINOR, this))
+								Logger.minor(this, "Scheduled callback for "+job+"...");
+						} else {
+							job.callback.onFailed(t, null, clientContext);
+						}
+						continue; // Try the next one.
 					}
 
 					// Call the callback
@@ -284,10 +318,6 @@ public class FECQueue implements OOMHook {
 						}
 					} catch (Throwable e) {
 						Logger.error(this, "The callback failed!" + e, e);
-					}
-					} catch (Throwable t) {
-						Logger.error(this, "Caught: "+t, t);
-						// Try the next one, maybe it isn't broken.
 					}
 				}
 			} catch (Throwable t) {

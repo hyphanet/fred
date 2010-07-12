@@ -10,6 +10,7 @@ import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -26,7 +27,7 @@ public interface Compressor {
 		// They will be tried in order: put the less resource consuming first
 		GZIP("GZIP", new GzipCompressor(), (short) 0),
 		BZIP2("BZIP2", new Bzip2Compressor(), (short) 1),
-		LZMA_OLD("LZMA_OLD", new OldLZMACompressor(), (short)2),
+		LZMA("LZMA", new OldLZMACompressor(), (short)2),
 		LZMA_NEW("LZMA_NEW", new NewLZMACompressor(), (short)3);
 
 		public final String name;
@@ -100,7 +101,7 @@ public interface Compressor {
 				COMPRESSOR_TYPE[] ret = new COMPRESSOR_TYPE[val.length-1];
 				int x = 0;
 				for(int i=0;i<val.length;i++) {
-					if((val[i] == LZMA_OLD) && !pre1254) continue;
+					if((val[i] == LZMA) && !pre1254) continue;
 					if((val[i] == LZMA_NEW) && pre1254) continue;
 					ret[x++] = val[i];
 				}
@@ -182,7 +183,8 @@ public interface Compressor {
 		private Compressor getOfficial() {
 			if(name.equals("GZIP")) return GZIP;
 			if(name.equals("BZIP2")) return BZIP2;
-			if(name.equals("LZMA_OLD")) return LZMA_OLD;
+			if(name.equals("LZMA")) return LZMA;
+			if(name.equals("LZMA_OLD")) return LZMA;
 			if(name.equals("LZMA_NEW")) return LZMA_NEW;
 			if(name.equals("LZMA")) return LZMA_NEW;
 			return null;
@@ -201,7 +203,13 @@ public interface Compressor {
 		}
 
 		public boolean isOfficial() {
-			return this == GZIP || this == BZIP2 || this == LZMA_OLD || this == LZMA_NEW;
+			if(!(this == GZIP || this == BZIP2 || this == LZMA || this == LZMA_NEW)) {
+				Logger.error(this, "Unofficial COMPESSOR_TYPE, isn't this impossible?");
+				// Initially I had thought db4o was copying the enum values, but testing shows this doesn't happen.
+				// So this is definitely an error.
+				return false;
+			}
+			return true;
 		}
 
 		public static int countCompressors() {

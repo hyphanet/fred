@@ -378,8 +378,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(reg != null)
 					container.delete(reg);
-				maybeFillStarterQueue(container, clientContext, getters);
-				starter.wakeUp();
+				queueFillRequestStarterQueue(true);
 		} else {
 			// Register immediately.
 			for(int i=0;i<getters.length;i++) {
@@ -394,14 +393,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			starter.wakeUp();
 		}
-	}
-
-	private void maybeFillStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
-		synchronized(this) {
-			if(starterQueue.size() > MAX_STARTER_QUEUE_SIZE / 2)
-				return;
-		}
-		fillRequestStarterQueue(container, context, mightBeActive);
 	}
 
 	public ChosenBlock getBetterNonPersistentRequest(short prio, int retryCount) {
@@ -533,14 +524,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	public void queueFillRequestStarterQueue() {
+		queueFillRequestStarterQueue(false);
+	}
+	
 	/** Don't fill the starter queue until this point. Used to implement a 60 second
 	 * cooldown after failing to fill the queue: if there was nothing queued, and since
 	 * we know if more requests are started they will be added to the queue, this is
 	 * an acceptable optimisation to reduce the database load from the idle schedulers... */
 	private long nextQueueFillRequestStarterQueue = -1;
 	
-	public void queueFillRequestStarterQueue() {
-		if(System.currentTimeMillis() < nextQueueFillRequestStarterQueue)
+	public void queueFillRequestStarterQueue(boolean force) {
+		if(System.currentTimeMillis() < nextQueueFillRequestStarterQueue && !force)
 			return;
 		if(starterQueueLength() > MAX_STARTER_QUEUE_SIZE / 2)
 			return;
@@ -627,7 +622,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private DBJob requestStarterQueueFiller = new DBJob() {
 		public boolean run(ObjectContainer container, ClientContext context) {
-			fillRequestStarterQueue(container, context, null);
+			fillRequestStarterQueue(container, context);
 			return false;
 		}
 		public String toString() {
@@ -637,7 +632,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private boolean fillingRequestStarterQueue;
 	
-	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
+	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(fillingRequestStarterQueue) return;
 			fillingRequestStarterQueue = true;
@@ -645,7 +640,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		try {
 		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 		long noLaterThan = Long.MAX_VALUE;
-		boolean checkCooldownQueue = mightBeActive == null || System.currentTimeMillis() > nextQueueFillRequestStarterQueue;
+		boolean checkCooldownQueue = System.currentTimeMillis() > nextQueueFillRequestStarterQueue;
 		if((!isInsertScheduler) && checkCooldownQueue) {
 			if(persistentCooldownQueue != null)
 				noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
@@ -677,13 +672,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(old != null && old.request == req.request)
 					Logger.error(this, "DUPLICATE REQUEST ON QUEUE: "+old+" vs "+req+" both "+req.request);
 				boolean ignoreActive = false;
-				if(mightBeActive != null) {
-					for(SendableRequest tmp : mightBeActive)
-						if(tmp == req.request) ignoreActive = true;
-				}
 				if(!ignoreActive) {
 					if(container.ext().isActive(req.request))
-						Logger.error(this, "REQUEST ALREADY ACTIVATED: "+req.request+" for "+req+" while checking request queue in filling request queue");
+						Logger.warning(this, "REQUEST ALREADY ACTIVATED: "+req.request+" for "+req+" while checking request queue in filling request queue");
 					else if(logMINOR)
 						Logger.minor(this, "Not already activated for "+req+" in while checking request queue in filling request queue");
 				} else if(logMINOR)
@@ -773,7 +764,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(!ignoreActive) {
 					if(container.ext().isActive(old.request))
-						Logger.error(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue for "+req);
+						Logger.warning(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue for "+req);
 					else if(logDEBUG)
 						Logger.debug(this, "Not already activated for "+old+" in while checking request queue in maybeAddToStarterQueue for "+req);
 				} else if(logMINOR)

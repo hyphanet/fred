@@ -15,6 +15,7 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientGetter;
 import freenet.client.async.USKCallback;
 import freenet.clients.http.FProxyToadlet;
 import freenet.keys.FreenetURI;
@@ -90,6 +91,12 @@ public class BookmarkManager implements RequestClient {
 		}
 	}
 
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerClass(ClientGetter.class);
+	}
+
 	public void reAddDefaultBookmarks() {
 		BookmarkCategory bc = new BookmarkCategory(l10n("defaultBookmarks") + " - " + new Date());
 		addBookmark("/", bc);
@@ -105,6 +112,7 @@ public class BookmarkManager implements RequestClient {
 				return;
 			}
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
+			boolean matched = false;
 			for(int i = 0; i < items.size(); i++) {
 				if(!"USK".equals(items.get(i).getKeyType()))
 					continue;
@@ -114,13 +122,19 @@ public class BookmarkManager implements RequestClient {
 					USK usk = USK.create(furi);
 
 					if(usk.equals(key, false)) {
+						if(logMINOR) Logger.minor(this, "Updating bookmark for "+furi+" to edition "+edition);
+						matched = true;
 						items.get(i).setEdition(edition, node);
-						break;
+						// We may have bookmarked the same site twice, so continue the search.
 					}
 				} catch(MalformedURLException mue) {
 				}
 			}
-			storeBookmarks();
+			if(matched) {
+				storeBookmarks();
+			} else {
+				Logger.error(this, "No match for bookmark "+key+" edition "+edition);
+			}
 		}
 
 		public short getPollingPriorityNormal() {
@@ -212,7 +226,9 @@ public class BookmarkManager implements RequestClient {
 			if(((BookmarkItem) bookmark).getKeyType().equals("USK"))
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
-					this.node.uskManager.unsubscribe(u, this.uskCB);
+					if(!wantUSK(u)) {
+						this.node.uskManager.unsubscribe(u, this.uskCB);
+					}
 				} catch(MalformedURLException mue) {
 				}
 
@@ -220,6 +236,23 @@ public class BookmarkManager implements RequestClient {
 		synchronized(bookmarks) {
 			bookmarks.remove(path);
 		}
+	}
+
+	private boolean wantUSK(USK u) {
+		List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
+		for(int i = 0; i < items.size(); i++) {
+			if(!"USK".equals(items.get(i).getKeyType()))
+				continue;
+
+			try {
+				FreenetURI furi = new FreenetURI(items.get(i).getKey());
+				USK usk = USK.create(furi);
+
+				if(usk.equals(u, false)) return true;
+			} catch(MalformedURLException mue) {
+			}
+		}
+		return false;
 	}
 
 	public void moveBookmarkUp(String path, boolean store) {

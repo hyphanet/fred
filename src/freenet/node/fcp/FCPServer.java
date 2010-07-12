@@ -1038,10 +1038,10 @@ public class FCPServer implements Runnable {
 		}
 	}
 	
-	public boolean restartBlocking(final String identifier) throws DatabaseDisabledException {
+	public boolean restartBlocking(final String identifier, final boolean filterData) throws DatabaseDisabledException {
 		ClientRequest req = globalRebootClient.getRequest(identifier, null);
 		if(req != null) {
-			req.restart(null, core.clientContext);
+			req.restart(filterData, null, core.clientContext);
 			return true;
 		} else {
 			class OutputWrapper {
@@ -1056,7 +1056,7 @@ public class FCPServer implements Runnable {
 					try {
 						ClientRequest req = globalForeverClient.getRequest(identifier, container);
 						if(req != null) {
-							req.restart(container, context);
+							req.restart(filterData, container, context);
 							success = true;
 						}
 					} catch (DatabaseDisabledException e) {

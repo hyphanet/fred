@@ -156,7 +156,7 @@ public class PersistentChosenRequest {
 			return;
 		}
 		if((!alreadyActive) && container.ext().isActive(request))
-			Logger.error(this, "ALREADY ACTIVATED: "+request, new Exception("debug"));
+			Logger.warning(this, "ALREADY ACTIVATED: "+request, new Exception("debug"));
 		if(!alreadyActive)
 			container.activate(request, 1);
 		Logger.normal(this, "Finishing "+this+" for "+request);

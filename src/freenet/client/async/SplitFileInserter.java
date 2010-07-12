@@ -215,7 +215,10 @@ public class SplitFileInserter implements ClientPutState {
 			} else {
 				if(persistent) {
 					// array elements are treated as part of the parent object, but the hashes themselves may not be activated?
-					for(HashResult res : hashes) container.activate(res, Integer.MAX_VALUE);
+					for(HashResult res : hashes) {
+						if(res == null) throw new NullPointerException();
+						container.activate(res, Integer.MAX_VALUE);
+					}
 				}
 				this.splitfileCryptoKey = Metadata.getCryptoKey(hashes);
 			}
@@ -237,13 +240,13 @@ public class SplitFileInserter implements ClientPutState {
 		
 		if(crossCheckBlocks != 0) {
 			byte[] seed = Metadata.getCrossSegmentSeed(hashes, hashThisLayerOnly);
-			System.out.println("Cross-segment seed: "+HexUtil.bytesToHex(seed));
+			if(logMINOR) Logger.minor(this, "Cross-segment seed: "+HexUtil.bytesToHex(seed));
 			Random random = new MersenneTwister(seed);
 			// Cross segment redundancy: Allocate the blocks.
 			crossSegments = new SplitFileInserterCrossSegment[segs];
 			int segLen = segmentSize;
 			for(int i=0;i<crossSegments.length;i++) {
-				System.out.println("Allocating blocks for cross segment "+i);
+				if(logMINOR) Logger.minor(this, "Allocating blocks for cross segment "+i);
 				if(segments.length - i == deductBlocksFromSegments) {
 					segLen--;
 				}
@@ -468,7 +471,7 @@ public class SplitFileInserter implements ClientPutState {
 				segs.add(s);
 				
 				if(deductBlocksFromSegments != 0)
-					System.err.println("INSERTING: Segment "+segNo+" of "+segCount+" : "+data+" data blocks "+check+" check blocks");
+					if(logMINOR) Logger.minor(this, "INSERTING: Segment "+segNo+" of "+segCount+" : "+data+" data blocks "+check+" check blocks");
 
 				segNo++;
 				if(i == dataBlocks) break;
@@ -644,8 +647,12 @@ public class SplitFileInserter implements ClientPutState {
 					compressed = topCompressedSize;
 				}
 				if(persistent) container.activate(hashes, Integer.MAX_VALUE);
+				HashResult[] h;
+				if(persistent) h = HashResult.copy(hashes);
+				else h = hashes;
 				if(persistent) container.activate(compressionCodec, Integer.MAX_VALUE);
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, hashes, hashThisLayerOnly, data, compressed, req, total, topDontCompress, topCompatibilityMode, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata, crossCheckBlocks);
+				if(persistent) container.activate(archiveType, Integer.MAX_VALUE);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, deductBlocksFromSegments, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata, h, hashThisLayerOnly, data, compressed, req, total, topDontCompress, topCompatibilityMode, splitfileCryptoAlgorithm, splitfileCryptoKey, specifySplitfileKeyInMetadata, crossCheckBlocks);
 			}
 			haveSentMetadata = true;
 		}
@@ -713,7 +720,8 @@ public class SplitFileInserter implements ClientPutState {
 					break;
 				}
 				if(!segments[i].hasURIs()) {
-					Logger.error(this, "Segment finished but hasURIs() is false: "+segments[i]+" for "+this);
+					if(segments[i].getException(container) == null)
+						Logger.error(this, "Segment finished but hasURIs() is false: "+segments[i]+" for "+this);
 				}
 				if(persistent && segments[i] != segment)
 					container.deactivate(segments[i], 1);
@@ -849,6 +857,12 @@ public class SplitFileInserter implements ClientPutState {
 			container.activate(segment, 1);
 			segment.removeFrom(container, context);
 		}
+		if(hashes != null) {
+			for(HashResult res : hashes) {
+				container.activate(res, Integer.MAX_VALUE);
+				res.removeFrom(container);
+			}
+		}
 		container.delete(this);
 	}
 
@@ -879,12 +893,35 @@ public class SplitFileInserter implements ClientPutState {
 		container.deactivate(parent, 1);
 	}
 
-	public void clearCrossSegment(int segNum, SplitFileInserterCrossSegment segment, ObjectContainer container) {
+	public void clearCrossSegment(int segNum, SplitFileInserterCrossSegment segment, ObjectContainer container, ClientContext context) {
+		boolean clearedAll = true;
 		synchronized(this) {
 			assert(crossSegments[segNum] == segment);
 			crossSegments[segNum] = null;
+			for(SplitFileInserterCrossSegment seg : crossSegments) {
+				if(seg != null) clearedAll = false;
+			}
 		}
 		if(persistent) container.store(this);
+		if(clearedAll) {
+			for(int i=0;i<segments.length;i++) {
+				if(persistent)
+					container.activate(segments[i], 1);
+				try {
+					segments[i].start(container, context);
+				} catch (InsertException e) {
+					fail(e, container, context);
+				}
+				if(persistent)
+					container.deactivate(segments[i], 1);
+			}
+			if(persistent)
+				container.activate(parent, 1);
+
+			if(countDataBlocks > 32)
+				parent.onMajorProgress(container);
+			parent.notifyClients(container, context);
+		}
 	}
 
 }

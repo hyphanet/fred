@@ -241,6 +241,11 @@ public class PersistentBlobTempBucketFactory {
 						Logger.error(this, "Bucket is occupied but not in notCommittedBlobs?!: "+tag+" : "+tag.bucket);
 						continue;
 					}
+					if(tag.index > ptr) {
+						if(logMINOR) Logger.minor(this, "Not adding slot "+tag.index+" to freeSlots because it is past the end of the file (but it is free)");
+						container.delete(tag);
+						continue;
+					}
 					if(logMINOR) Logger.minor(this, "Adding slot "+tag.index+" to freeSlots (has a free tag and no taken tag)");
 					freeSlots.put(tag.index, tag);
 					added++;
@@ -375,6 +380,7 @@ public class PersistentBlobTempBucketFactory {
 					try {
 						if(slot * blockSize > channel.size()) {
 							Logger.error(this, "Free slot "+slot+" but file length is "+channel.size()+" = "+(channel.size() / blockSize)+" blocks");
+							freeSlots.remove(slot);
 							return null;
 						}
 					} catch (IOException e) {
@@ -384,6 +390,7 @@ public class PersistentBlobTempBucketFactory {
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
+					freeSlots.remove(slot);
 					return null;
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag, false);
@@ -400,6 +407,7 @@ public class PersistentBlobTempBucketFactory {
 					try {
 						if(slot * blockSize > channel.size()) {
 							Logger.error(this, "Free slot "+slot+" but file length is "+channel.size()+" = "+(channel.size() / blockSize)+" blocks");
+							freeSlots.remove(slot);
 							return null;
 						}
 					} catch (IOException e) {
@@ -409,6 +417,7 @@ public class PersistentBlobTempBucketFactory {
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
+					freeSlots.remove(slot);
 					return null;
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag, false);
@@ -475,15 +484,13 @@ public class PersistentBlobTempBucketFactory {
 			}
 		}
 		container.activate(tag, 1);
-		if(!bucket.persisted()) {
-			maybeShrink(container);
-			return;
-		}
+		// Probably best to store the tag even if the bucket was never persisted.
 		if(!bucket.freed()) {
 			Logger.error(this, "Removing bucket "+bucket+" for slot "+index+" but not freed!", new Exception("debug"));
 			notCommittedBlobs.put(index, bucket);
 		} else {
 			almostFreeSlots.put(index, tag);
+			notCommittedBlobs.remove(index);
 		}
 		tag.bucket = null;
 		tag.isFree = true;
@@ -675,6 +682,7 @@ public class PersistentBlobTempBucketFactory {
 						Logger.error(this, "Removing free slot "+l+" over the current block limit");
 					}
 				}
+				freeSlots.tailMap(newBlocks+1).clear();
 				lastCheckedEnd = now;
 				queueMaybeShrink();
 			} else return false;

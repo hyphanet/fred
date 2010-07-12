@@ -151,6 +151,8 @@ public class ClientGetter extends BaseClientGetter {
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
 			// which can call onSuccess and thereby almost anything.
 			synchronized(this) {
+				if(restart)
+					clearCountersOnRestart();
 				if(overrideURI != null) uri = overrideURI;
 				if(finished) {
 					if(!restart) return false;
@@ -190,6 +192,15 @@ public class ClientGetter extends BaseClientGetter {
 			container.deactivate(currentState, 1);
 		}
 		return true;
+	}
+
+	protected void clearCountersOnRestart() {
+		this.archiveRestarts = 0;
+		this.expectedMIME = null;
+		this.expectedSize = 0;
+		this.finalBlocksRequired = 0;
+		this.finalBlocksTotal = 0;
+		super.clearCountersOnRestart();
 	}
 
 	/**
@@ -242,6 +253,7 @@ public class ClientGetter extends BaseClientGetter {
 		// doing massive encrypted I/Os while holding a lock.
 		
 		//Filter the data, if we are supposed to
+		Bucket filteredResult = null;
 		if(ctx.filterData){
 			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
 			InputStream input = null;
@@ -252,7 +264,6 @@ public class ClientGetter extends BaseClientGetter {
 				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 				assert(result.asBucket() != returnBucket);
 				
-				Bucket filteredResult;
 				if(returnBucket == null) filteredResult = context.getBucketFactory(persistent()).makeBucket(-1);
 				else {
 					if(persistent()) container.activate(returnBucket, 5);
@@ -269,15 +280,39 @@ public class ClientGetter extends BaseClientGetter {
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
+				if(filteredResult != null && filteredResult != returnBucket) {
+					filteredResult.free();
+					if(persistent()) filteredResult.removeFrom(container);
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
 				return;
 			} catch (URISyntaxException e) {
 				// Impossible
 				Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state/*Not really the state's fault*/, container, context);
+				if(filteredResult != null && filteredResult != returnBucket) {
+					filteredResult.free();
+					if(persistent()) filteredResult.removeFrom(container);
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
 				return;
 			} catch (IOException e) {
 				Logger.error(this, "Error filtering content", e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state/*Not really the state's fault*/, container, context);
+				if(filteredResult != null && filteredResult != returnBucket) {
+					filteredResult.free();
+					if(persistent()) filteredResult.removeFrom(container);
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
 				return;
 			} finally {
 				Closer.close(input);
@@ -529,7 +564,13 @@ public class ClientGetter extends BaseClientGetter {
 	 * @return True if we successfully restarted, false if we can't restart.
 	 * @throws FetchException If something went wrong.
 	 */
-	public boolean restart(FreenetURI redirect, ObjectContainer container, ClientContext context) throws FetchException {
+	public boolean restart(FreenetURI redirect, boolean filterData, ObjectContainer container, ClientContext context) throws FetchException {
+		if(persistent()) {
+			container.activate(ctx, 1);
+			container.activate(ctx.filterData, 1);
+		}
+		ctx.filterData = filterData;
+		if(persistent()) container.store(ctx);
 		return start(true, redirect, container, context);
 	}
 
@@ -729,7 +770,7 @@ public class ClientGetter extends BaseClientGetter {
 	
 	public void onExpectedTopSize(long size, long compressed, int blocksReq, int blocksTotal, ObjectContainer container, ClientContext context) {
 		if(finalBlocksRequired != 0 || finalBlocksTotal != 0) return;
-		System.out.println("New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
+		if(logMINOR) Logger.minor(this, "New format metadata has top data: original size "+size+" (compressed "+compressed+") blocks "+blocksReq+" / "+blocksTotal);
 		onExpectedSize(size, container, context);
 		this.finalBlocksRequired = this.minSuccessBlocks + blocksReq;
 		this.finalBlocksTotal = this.totalBlocks + blocksTotal;

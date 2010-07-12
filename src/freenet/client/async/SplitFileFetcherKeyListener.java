@@ -204,18 +204,19 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 						return false;
 					}
 					if(container.ext().isActive(fetcher))
-						Logger.error(this, "ALREADY ACTIVATED: "+fetcher);
+						Logger.warning(this, "ALREADY ACTIVATED: "+fetcher);
 					container.activate(fetcher, 1);
 				}
 				SplitFileFetcherSegment segment = fetcher.getSegment(i);
 				if(persistent) {
 					if(container.ext().isActive(segment))
-						Logger.error(this, "ALREADY ACTIVATED: "+segment);
+						Logger.warning(this, "ALREADY ACTIVATED: "+segment);
 					container.activate(segment, 1);
 				}
 				if(logMINOR)
 					Logger.minor(this, "Key "+key+" may be in segment "+segment);
-				if(segment.onGotKey(key, block, container, context)) {
+				// A segment can contain the same key twice if e.g. it isn't compressed and repeats itself.
+				while(segment.onGotKey(key, block, container, context)) {
 					synchronized(this) {
 						if(filter.checkFilter(saltedKey)) {
 							filter.removeKey(saltedKey);
@@ -254,7 +255,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			if(segmentFilters[i].checkFilter(salted)) {
 				if(persistent) {
 					if(container.ext().isActive(fetcher))
-						Logger.error(this, "ALREADY ACTIVATED in getRequestsForKey: "+fetcher);
+						Logger.warning(this, "ALREADY ACTIVATED in getRequestsForKey: "+fetcher);
 					container.activate(fetcher, 1);
 				}
 				SplitFileFetcherSegment segment = fetcher.getSegment(i);
@@ -262,7 +263,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 					container.deactivate(fetcher, 1);
 				if(persistent) {
 					if(container.ext().isActive(segment))
-						Logger.error(this, "ALREADY ACTIVATED in getRequestsForKey: "+segment);
+						Logger.warning(this, "ALREADY ACTIVATED in getRequestsForKey: "+segment);
 					container.activate(segment, 1);
 				}
 				int blockNum = segment.getBlockNumber(key, container);

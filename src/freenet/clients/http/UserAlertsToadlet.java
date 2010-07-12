@@ -56,6 +56,7 @@ public class UserAlertsToadlet extends Toadlet {
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(node.clientCore.formPassword)) {
 			sendErrorPage(ctx, 403, "Forbidden", "Invalid form password.");
+			return;
 		}
 		if (request.isPartSet("dismiss-user-alert")) {
 			int userAlertHashCode = request.getIntPart("disable", -1);

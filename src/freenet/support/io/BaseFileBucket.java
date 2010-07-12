@@ -83,8 +83,14 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			if(isReadOnly())
 				throw new IOException("Bucket is read-only: "+this);
 			
-			if(createFileOnly() && file.exists())
-				throw new FileExistsException(file);
+			if(createFileOnly() && file.exists()) {
+				boolean failed = true;
+				if(fileRestartCounter > 0) {
+					file.delete();
+					if(!file.exists()) failed = false;
+				}
+				if(failed) throw new FileExistsException(file);
+			}
 			
 			if(streams != null && !streams.isEmpty())
 				Logger.error(this, "Streams open on "+this+" while opening an output stream!: "+streams, new Exception("debug"));

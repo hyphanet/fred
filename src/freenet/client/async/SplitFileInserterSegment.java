@@ -418,15 +418,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
-		if(crossCheckBlocks != 0) {
-			// FIXME
-			// This simplifies matters significantly, but it reduces performance.
-			// We should really have a separate startEncode, and ensure that if we
-			// are scheduled before we have all the cross check blocks we just don't select them.
-			// See onEncodedCrossCheckBlock().
-			if(encodedCrossCheckBlocks != crossCheckBlocks)
-				return;
-			System.out.println("Starting segment "+segNo);
+		synchronized(this) {
+			if(crossCheckBlocks != 0) {
+				// FIXME
+				// This simplifies matters significantly, but it reduces performance.
+				// We should really have a separate startEncode, and ensure that if we
+				// are scheduled before we have all the cross check blocks we just don't select them.
+				// See onEncodedCrossCheckBlock().
+				if(encodedCrossCheckBlocks != crossCheckBlocks)
+					return;
+				System.out.println("Starting segment "+segNo);
+			}
+			if(started) return;
+			started = true;
 		}
 		// Always called by parent, so don't activate or deactivate parent.
 		if(persistent) {
@@ -454,7 +458,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 		}
 		// parent.parent.notifyClients();
-		started = true;
 		FECJob job = null;
 		FECCodec splitfileAlgo = null;
 		if (!encoded) {
@@ -892,7 +895,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	public void fail(InsertException e, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Failing but already finished on "+this);
+				Logger.error(this, "Failing but already finished on "+this, new Exception("error"));
 				return;
 			}
 			finished = true;
@@ -1216,13 +1219,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		else if(treatAsSuccess)
 			putter.completedBlock(false, container, context);
 		if(persistent) container.deactivate(putter, 1);
-		if(treatAsSuccess && succeeded == dataBlocks.length) {
-			if(persistent) container.activate(parent, 1);
-			parent.segmentFetchable(this, container);
-			if(persistent) container.deactivate(parent, 1);
-		} else if(completed == dataBlocks.length + checkBlocks.length) {
+		if(completed == dataBlocks.length + checkBlocks.length) {
 			if(persistent) container.activate(parent, 1);
 			finish(container, context, parent);
+			if(persistent) container.deactivate(parent, 1);
+		} else if(treatAsSuccess && succeeded == dataBlocks.length) {
+			if(persistent) container.activate(parent, 1);
+			parent.segmentFetchable(this, container);
 			if(persistent) container.deactivate(parent, 1);
 		}
 	}
@@ -1300,13 +1303,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		if(persistent) container.activate(putter, 1);
 		putter.completedBlock(false, container, context);
 		if(persistent) container.deactivate(putter, 1);
-		if(succeeded == dataBlocks.length) {
-			if(persistent) container.activate(parent, 1);
-			parent.segmentFetchable(this, container);
-			if(persistent) container.deactivate(parent, 1);
-		} else if(completed == dataBlocks.length + checkBlocks.length) {
+		if(completed == dataBlocks.length + checkBlocks.length) {
 			if(persistent) container.activate(parent, 1);
 			finish(container, context, parent);
+			if(persistent) container.deactivate(parent, 1);
+		} else if(succeeded == dataBlocks.length) {
+			if(persistent) container.activate(parent, 1);
+			parent.segmentFetchable(this, container);
 			if(persistent) container.deactivate(parent, 1);
 		}
 	}
@@ -1322,7 +1325,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.activate(this, 1);
 			container.activate(blocks, 1);
 		}
-		byte crytoAlgorithm = getCryptoAlgorithm(container);
 		synchronized(this) {
 			if(finished) return null;
 			if(blocks.isEmpty()) {
@@ -1388,10 +1390,12 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			compressorDescriptor = compressorDescriptor2;
 			this.seg = seg;
 		}
-		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
+		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, final ChosenBlock req) {
 				// Ignore keyNum, key, since we're only sending one block.
+			final int num;
+			final ClientCHK key;
+			BlockItem block = (BlockItem) req.token;
 				try {
-					BlockItem block = (BlockItem) req.token;
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: block number "+block.blockNum);
 					ClientCHKBlock b;
 					try {
@@ -1409,11 +1413,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						Logger.error(this, "Asked to send empty block", new Exception("error"));
 						return false;
 					}
-					final ClientCHK key = b.getClientKey();
-					final int num = block.blockNum;
+					key = b.getClientKey();
+					num = block.blockNum;
 					if(block.persistent) {
 						req.setGeneratedKey(key);
-					} else {
+					} else if(!req.localRequestOnly) {
 						context.mainExecutor.execute(new Runnable() {
 
 							public void run() {
@@ -1437,7 +1441,27 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					return true;
 				}
 				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded");
-				req.onInsertSuccess(context);
+				if(req.localRequestOnly) {
+					// Must run on-thread or we will have exploding threads.
+					// Plus must run before onInsertSuccess().
+					if(!block.persistent)
+						seg.onEncode(num, key, null, context);
+					req.onInsertSuccess(context);
+				} else if(!block.persistent) {
+					// Must run after onEncode.
+					context.mainExecutor.execute(new Runnable() {
+
+						public void run() {
+							// Make absolutely sure even if we run the two jobs out of order.
+							// Overhead for double-checking should be very low.
+							seg.onEncode(num, key, null, context);
+							req.onInsertSuccess(context);
+						}
+
+					}, "Succeeded");
+				} else {
+					req.onInsertSuccess(context);
+				}
 				return true;
 			}
 
@@ -1802,7 +1826,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	public void onEncodedCrossCheckBlock(int blockNum, Bucket data, ObjectContainer container, ClientContext context) {
-		boolean gotAll = false;
 		synchronized(this) {
 			if(dataBlocks[blockNum] != null) {
 				Logger.error(this, "Cross-check block already encoded??? "+blockNum+" on "+this);
@@ -1811,21 +1834,12 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 			dataBlocks[blockNum] = data;
 			++encodedCrossCheckBlocks;
-			if(encodedCrossCheckBlocks == crossCheckBlocks)
-				gotAll = true;
-			else
+			if(encodedCrossCheckBlocks != crossCheckBlocks)
 				System.out.println("Segment "+segNo+" has "+encodedCrossCheckBlocks+" encoded of "+crossCheckBlocks+", still waiting...");
 		}
 		if(persistent) {
 			data.storeTo(container);
 			container.store(this);
-		}
-		if(gotAll) {
-			try {
-				start(container, context);
-			} catch (InsertException e) {
-				fail(e, container, context);
-			}
 		}
 	}
 

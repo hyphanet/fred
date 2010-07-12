@@ -13,10 +13,8 @@ import freenet.support.api.Bucket;
 public class SegmentedChainBucketSegment {
 	
 	private final ArrayList<Bucket> buckets;
-	private final SegmentedBucketChainBucket bcb;
 
 	public SegmentedChainBucketSegment(SegmentedBucketChainBucket bucket) {
-		this.bcb = bucket;
 		this.buckets = new ArrayList<Bucket>();
 	}
 
@@ -51,7 +49,7 @@ public class SegmentedChainBucketSegment {
 		for(int i=0;i<sz;i++) out[index++] = buckets.get(i);
 	}
 
-	public OutputStream makeBucketStream(int bucketNo) throws IOException {
+	public OutputStream makeBucketStream(int bucketNo, SegmentedBucketChainBucket bcb) throws IOException {
 		if(bucketNo >= bcb.segmentSize)
 			throw new IllegalArgumentException("Too many buckets in segment");
 		Bucket b = bcb.bf.makeBucket(bcb.bucketSize);

@@ -253,6 +253,7 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent) container.store(block);
 		} else {
 			data = block.getData();
+			bestCompressedDataSize = origSize;
 		}
 
 		int blockSize;
@@ -282,7 +283,8 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(ctx, 1);
 				container.activate(ctx.eventProducer, 1);
 			}
-			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.metadataID, origSize, data.size()), container, context);
+			short codecID = bestCodec == null ? -1 : bestCodec.metadataID;
+			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(codecID, origSize, bestCompressedDataSize), container, context);
 			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this+" data = "+data);
 		}
 		
@@ -318,6 +320,7 @@ class SingleFileInserter implements ClientPutState {
 					block.nullData();
 					block.removeFrom(container);
 					block = null;
+					// Deleting origHashes is fine, we are done with them.
 					removeFrom(container, context);
 				}
 				return;
@@ -339,6 +342,10 @@ class SingleFileInserter implements ClientPutState {
 				dataPutter.schedule(container, context);
 				if(!isUSK)
 					cb.onBlockSetFinished(this, container, context);
+				synchronized(this) {
+					// Don't delete them because they are being passed on.
+					origHashes = null;
+				}
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token, persistent);
@@ -372,6 +379,7 @@ class SingleFileInserter implements ClientPutState {
 				metaPutter.schedule(container, context);
 				if(!isUSK)
 					cb.onBlockSetFinished(this, container, context);
+				// Deleting origHashes is fine, we are done with them.
 			}
 			started = true;
 			if(persistent) {
@@ -402,6 +410,10 @@ class SingleFileInserter implements ClientPutState {
 			}
 			block.nullData();
 			block.nullMetadata();
+			synchronized(this) {
+				// Don't delete them because they are being passed on.
+				origHashes = null;
+			}
 			if(persistent) removeFrom(container, context);
 		} else {
 			if(persistent)
@@ -410,7 +422,7 @@ class SingleFileInserter implements ClientPutState {
 			boolean allowSizes = (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 			if(metadata) allowSizes = false;
 			SplitHandler sh = new SplitHandler(origSize, compressedDataSize, allowSizes);
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, hashes, hashThisLayerOnly, origDataLength, origCompressedDataLength, cryptoAlgorithm, forceCryptoKey);
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, HashResult.copy(hashes), hashThisLayerOnly, origDataLength, origCompressedDataLength, cryptoAlgorithm, forceCryptoKey);
 			sh.sfi = sfi;
 			if(logMINOR)
 				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+sh+" for "+this);
@@ -426,6 +438,7 @@ class SingleFileInserter implements ClientPutState {
 			started = true;
 			if(persistent)
 				container.store(this);
+			// SplitHandler will need this.origHashes.
 		}
 		if(persistent) {
 			if(!parentWasActive)
@@ -856,7 +869,7 @@ class SingleFileInserter implements ClientPutState {
 			byte[] metaBytes;
 			if(persistent)
 				// Load keys
-				container.activate(meta, 100);
+				container.activate(meta, Integer.MAX_VALUE);
 			try {
 				metaBytes = meta.writeToByteArray();
 			} catch (MetadataUnresolvedException e1) {
@@ -1226,8 +1239,10 @@ class SingleFileInserter implements ClientPutState {
 		// ctx is passed in, creator is responsible for removing it
 		// cb removes itself
 		if(origHashes != null)
-			for(HashResult h : origHashes)
+			for(HashResult h : origHashes) {
+				container.activate(h, Integer.MAX_VALUE);
 				h.removeFrom(container);
+			}
 		container.delete(this);
 	}
 	
