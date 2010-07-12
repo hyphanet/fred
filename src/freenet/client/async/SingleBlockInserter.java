@@ -523,17 +523,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				key = b.getClientKey();
 				final ClientKey k = key;
 				if(block.persistent) {
-				context.jobRunner.queue(new DBJob() {
-
-					public boolean run(ObjectContainer container, ClientContext context) {
-						if(!container.ext().isStored(SingleBlockInserter.this)) return false;
-						container.activate(SingleBlockInserter.this, 1);
-						onEncode(k, container, context);
-						container.deactivate(SingleBlockInserter.this, 1);
-						return false;
-					}
-					
-				}, NativeThread.NORM_PRIORITY+1, false);
+					context.jobRunner.queue(new DBJob() {
+						
+						public boolean run(ObjectContainer container, ClientContext context) {
+							if(!container.ext().isStored(SingleBlockInserter.this)) return false;
+							container.activate(SingleBlockInserter.this, 1);
+							onEncode(k, container, context);
+							container.deactivate(SingleBlockInserter.this, 1);
+							return false;
+						}
+						
+					}, NativeThread.NORM_PRIORITY+1, false);
 				} else {
 					context.mainExecutor.execute(new Runnable() {
 
