@@ -622,7 +622,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private DBJob requestStarterQueueFiller = new DBJob() {
 		public boolean run(ObjectContainer container, ClientContext context) {
-			fillRequestStarterQueue(container, context, null);
+			fillRequestStarterQueue(container, context);
 			return false;
 		}
 		public String toString() {
@@ -632,7 +632,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private boolean fillingRequestStarterQueue;
 	
-	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
+	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(fillingRequestStarterQueue) return;
 			fillingRequestStarterQueue = true;
@@ -640,7 +640,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		try {
 		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 		long noLaterThan = Long.MAX_VALUE;
-		boolean checkCooldownQueue = mightBeActive == null || System.currentTimeMillis() > nextQueueFillRequestStarterQueue;
+		boolean checkCooldownQueue = System.currentTimeMillis() > nextQueueFillRequestStarterQueue;
 		if((!isInsertScheduler) && checkCooldownQueue) {
 			if(persistentCooldownQueue != null)
 				noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
@@ -672,10 +672,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(old != null && old.request == req.request)
 					Logger.error(this, "DUPLICATE REQUEST ON QUEUE: "+old+" vs "+req+" both "+req.request);
 				boolean ignoreActive = false;
-				if(mightBeActive != null) {
-					for(SendableRequest tmp : mightBeActive)
-						if(tmp == req.request) ignoreActive = true;
-				}
 				if(!ignoreActive) {
 					if(container.ext().isActive(req.request))
 						Logger.warning(this, "REQUEST ALREADY ACTIVATED: "+req.request+" for "+req+" while checking request queue in filling request queue");
