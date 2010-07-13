@@ -28,7 +28,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import com.db4o.ObjectContainer;
 
@@ -37,9 +36,9 @@ import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.TempFetchResult;
-import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
@@ -55,6 +54,7 @@ import freenet.node.RequestStarter;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
+import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.node.fcp.ClientPutDir;
 import freenet.node.fcp.ClientPutMessage;
 import freenet.node.fcp.ClientRequest;
@@ -63,17 +63,16 @@ import freenet.node.fcp.IdentifierCollisionException;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.node.fcp.NotAllowedException;
 import freenet.node.fcp.RequestCompletionCallback;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.node.useralerts.StoringUserEvent;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
 import freenet.support.MutableBoolean;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
@@ -440,6 +439,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final MutableBoolean done = new MutableBoolean();
 				try {
 					core.queue(new DBJob() {
+						
+						public String toString() {
+							return "QueueToadlet StartInsert";
+						}
 
 						public boolean run(ObjectContainer container, ClientContext context) {
 							try {
@@ -545,6 +548,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final MutableBoolean done = new MutableBoolean();
 				try {
 					core.queue(new DBJob() {
+						
+						public String toString() {
+							return "QueueToadlet StartLocalFileInsert";
+						}
 
 						public boolean run(ObjectContainer container, ClientContext context) {
 							final ClientPut clientPut;
@@ -632,6 +639,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final MutableBoolean done = new MutableBoolean();
 				try {
 					core.queue(new DBJob() {
+						
+						public String toString() {
+							return "QueueToadlet StartLocalDirInsert";
+						}
 
 						public boolean run(ObjectContainer container, ClientContext context) {
 							ClientPutDir clientPutDir;
@@ -883,6 +894,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		
 		try {
 			core.clientContext.jobRunner.queue(new DBJob() {
+				
+				public String toString() {
+					return "QueueToadlet ShowQueue";
+				}
 
 				public boolean run(ObjectContainer container, ClientContext context) {
 					HTMLNode pageNode = null;
@@ -1847,6 +1862,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			oldCompletedIdentifiersList.delete();
 		final boolean writeAnyway = migrated;
 		core.clientContext.jobRunner.queue(new DBJob() {
+			
+			public String toString() {
+				return "QueueToadlet LoadCompletedIdentifiers";
+			}
 
 			public boolean run(ObjectContainer container, ClientContext context) {
 				String[] identifiers;
