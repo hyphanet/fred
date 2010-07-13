@@ -1087,7 +1087,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		for(int i=0;i<metas.length;i++) {
 			Metadata m = metas[i];
 			if(persistent()) container.activate(m, 100);
-			if(logMINOR) Logger.minor(this, "Resolving "+m);
+			if(logMINOR) Logger.minor(this, "Resolving "+m+" for "+this);
 			synchronized(this) {
 				if(metadataPuttersByMetadata.containsKey(m)) {
 					if(logMINOR) Logger.minor(this, "Already started insert for "+m+" in resolve() for "+metas.length+" Metadata's");
