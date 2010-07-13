@@ -269,9 +269,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(persistent) container.activate(data, 1);
 			data.free();
 			if(persistent) data.removeFrom(container);
-			synchronized(this) {
-				data = null;
-			}
+			data = null;
 			if(persistent) container.store(this);
 		}
 		if(persistent) {
