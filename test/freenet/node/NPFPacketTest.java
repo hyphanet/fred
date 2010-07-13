@@ -191,6 +191,35 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(r.getError());
 	}
 
+	public void testReceiveBadFragment() {
+		byte[] packet = new byte[] {
+		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+		                (byte)0x00,
+		                (byte)0xC0, (byte)0x00,
+		                (byte)0x01,
+		                (byte)0x00};
+
+		NPFPacket r = NPFPacket.create(packet);
+		assertEquals(0, r.getFragments().size());
+		assertTrue(r.getError());
+	}
+
+	public void testReceiveZeroLengthFragment() {
+		byte[] packet = new byte[] {
+		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+		                (byte)0x00,
+		                (byte)0xA0, (byte)0x00,
+		                (byte)0x00};
+
+		NPFPacket r = NPFPacket.create(packet);
+		assertFalse(r.getError());
+		assertEquals(1, r.getFragments().size());
+		
+		MessageFragment f = r.getFragments().get(0);
+		assertEquals(0, f.fragmentLength);
+		assertEquals(0, f.fragmentData.length);
+	}
+
 	public void testSendEmptyPacket() {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(0);
