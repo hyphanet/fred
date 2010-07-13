@@ -166,6 +166,31 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(r.getError());
 	}
 
+	public void testReceiveLongFragmentedMessage() {
+		byte[] packetNoData = new byte[] {
+		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number (0)
+		                (byte)0x00, //0 acks
+		                (byte)0x40, (byte)0x00, // Flags (long, fragmented, not first) and messageID 0
+		                (byte)0x01, (byte)0x01, //Fragment length
+		                (byte)0x01, (byte)0x01, (byte)0x01}; //Fragment offset
+		byte[] packet = new byte[packetNoData.length + 257];
+		System.arraycopy(packetNoData, 0, packet, 0, packetNoData.length);
+
+		NPFPacket r = NPFPacket.create(packet);
+		assertEquals(0, r.getSequenceNumber());
+		assertEquals(0, r.getAcks().size());
+		assertEquals(1, r.getFragments().size());
+
+		MessageFragment f = r.getFragments().get(0);
+		assertFalse(f.shortMessage);
+		assertFalse(f.firstFragment);
+		assertTrue(f.isFragmented);
+		assertEquals(257, f.fragmentLength);
+		assertEquals(65793, f.fragmentOffset);
+
+		assertFalse(r.getError());
+	}
+
 	public void testSendEmptyPacket() {
 		NPFPacket p = new NPFPacket();
 		p.setSequenceNumber(0);
