@@ -790,13 +790,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infobox.addChild("div", "class", "infobox-header", l10n("explanationTitle"));
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addChild("p", l10n("unableToRetrieve"));
-				if(e.isFatal())
-					infoboxContent.addChild("p", l10n("errorIsFatal"));
-				infoboxContent.addChild("p", msg);
 				UnsafeContentTypeException filterException = null;
 				if(e.getCause() != null && e.getCause() instanceof UnsafeContentTypeException) {
 					filterException = (UnsafeContentTypeException)e.getCause();
 				}
+				if(e.isFatal() && filterException == null)
+					infoboxContent.addChild("p", l10n("errorIsFatal"));
+				infoboxContent.addChild("p", msg);
 				if(filterException != null) {
 					if(filterException.details() != null) {
 						HTMLNode detailList = infoboxContent.addChild("ul");

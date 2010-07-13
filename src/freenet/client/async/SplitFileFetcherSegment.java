@@ -666,10 +666,18 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		boolean allDecodedCorrectly = true;
 		for(int i=0;i<dataBuckets.length;i++) {
+			if(persistent && crossCheckBlocks != 0) {
+				// onFetched might deactivate blocks.
+				container.activate(dataBuckets[i], 1);
+			}
 			Bucket data = dataBlockStatus[i].getData();
 			if(data == null) 
 				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
 			try {
+				if(persistent && crossCheckBlocks != 0) {
+					// onFetched might deactivate blocks.
+					container.activate(data, Integer.MAX_VALUE);
+				}
 				if(!maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE")) {
 					if((!(ignoreLastDataBlock && i == dataKeys.length-1)) &&
 							(!(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length)))
@@ -921,7 +929,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 						if(!(key.equals(block.getClientKey()))) {
 							if(ignoreLastDataBlock && blockNo == dataKeys.length-1 && dataSource.equals("FEC DECODE")) {
 								if(logMINOR) Logger.minor(this, "Last block wrong key, ignored because expected due to padding issues");
-							} else if(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length) {
+							} else if(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length && dataSource.equals("FEC ENCODE")) {
 								// We padded the last block. The inserter might have used a different padding algorithm.
 								if(logMINOR) Logger.minor(this, "Wrong key, might be due to padding issues");
 							} else {

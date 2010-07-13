@@ -586,6 +586,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
 		super(prioClass, clientContext);
 		this.defaultName = defaultName;
+		
+		if(defaultName != null) {
+			if(client.persistent())
+				container.activate(manifestElements, Integer.MAX_VALUE);
+			checkDefaultName(manifestElements, defaultName);
+		}
+		
 		this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
 
 		if(client.persistent())
@@ -613,6 +620,26 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		elementsToPutInArchive = new ArrayList<PutHandler>();
 		makePutHandlers(manifestElements, putHandlersByName, client.persistent());
 		checkZips();
+	}
+
+	private void checkDefaultName(HashMap<String, Object> manifestElements,
+			String defaultName2) {
+		int idx;
+		if((idx = defaultName.indexOf('/')) == -1) {
+			Object o = manifestElements.get(defaultName);
+			if(o == null) throw new IllegalArgumentException("Default name \""+defaultName+"\" does not exist");
+			if(o instanceof HashMap) throw new IllegalArgumentException("Default filename \""+defaultName+"\" is a directory?!");
+			// instanceof Bucket is checked in bucketsByNameToManifestEntries
+		} else {
+			String dir = defaultName.substring(0, idx);
+			String subname = defaultName.substring(idx+1);
+			Object o = manifestElements.get(defaultName);
+			if(o == null) throw new IllegalArgumentException("Default name dir \""+dir+"\" does not exist");
+			if(o instanceof HashMap)
+				checkDefaultName((HashMap)o, subname);
+			else
+				throw new IllegalArgumentException("Default name dir \""+dir+"\" is not a directory in \""+defaultName+"\"");
+		}
 	}
 
 	private void checkZips() {
@@ -927,8 +954,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.deactivate(baseMetadata, 1);
 				return;
 			}
-		} else
+		} else {
+			if(persistent()) container.activate(targetURI, 5);
 			block = new InsertBlock(bucket, null, persistent() ? targetURI.clone() : targetURI);
+		}
 		SingleFileInserter metadataInserter;
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.

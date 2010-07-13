@@ -494,10 +494,11 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			compressorDescriptor = ctx.compressorDescriptor;
 		}
 
-		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
+		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, final ChosenBlock req) {
 			// Ignore keyNum, key, since we're only sending one block.
 			ClientKeyBlock b;
-			ClientKey key = null;
+			final ClientKey key;
+			ClientKey k = null;
 			if(SingleBlockInserter.logMINOR) Logger.minor(this, "Starting request: "+SingleBlockInserter.this);
 			BlockItem block = (BlockItem) req.token;
 			try {
@@ -521,24 +522,24 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					return false;
 				}
 				key = b.getClientKey();
-				final ClientKey k = key;
+				k = key;
 				if(block.persistent) {
-				context.jobRunner.queue(new DBJob() {
-
-					public boolean run(ObjectContainer container, ClientContext context) {
-						if(!container.ext().isStored(SingleBlockInserter.this)) return false;
-						container.activate(SingleBlockInserter.this, 1);
-						onEncode(k, container, context);
-						container.deactivate(SingleBlockInserter.this, 1);
-						return false;
-					}
-					
-				}, NativeThread.NORM_PRIORITY+1, false);
-				} else {
+					context.jobRunner.queue(new DBJob() {
+						
+						public boolean run(ObjectContainer container, ClientContext context) {
+							if(!container.ext().isStored(SingleBlockInserter.this)) return false;
+							container.activate(SingleBlockInserter.this, 1);
+							onEncode(key, container, context);
+							container.deactivate(SingleBlockInserter.this, 1);
+							return false;
+						}
+						
+					}, NativeThread.NORM_PRIORITY+1, false);
+				} else if(!req.localRequestOnly) {
 					context.mainExecutor.execute(new Runnable() {
 
 						public void run() {
-							onEncode(k, null, context);
+							onEncode(key, null, context);
 						}
 						
 					}, "Got URI");
@@ -556,11 +557,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
 					try {
-						ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)key, true, true, req.canWriteClientCache);
+						ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)k, true, true, req.canWriteClientCache);
 						byte[] data = collided.memoryDecode(true);
 						byte[] inserting = BucketTools.toByteArray(block.copyBucket);
 						if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
 							if(SingleBlockInserter.logMINOR) Logger.minor(this, "Collided with identical data: "+SingleBlockInserter.this);
+							onEncode(k, null, context);
 							req.onInsertSuccess(context);
 							return true;
 						}
@@ -578,11 +580,32 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			} catch (DatabaseDisabledException e) {
 				// Impossible, and nothing to do.
 				Logger.error(this, "Running persistent insert but database is disabled!");
+				return true;
 			} finally {
 				block.copyBucket.free();
 			}
 			if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request succeeded: "+SingleBlockInserter.this);
-			req.onInsertSuccess(context);
+			if(req.localRequestOnly) {
+				// Must run on-thread or we will have exploding threads.
+				// Plus must run before onInsertSuccess().
+				if(!block.persistent)
+					onEncode(key, null, context);
+				req.onInsertSuccess(context);
+			} else if(!block.persistent) {
+				// Must run after onEncode.
+				context.mainExecutor.execute(new Runnable() {
+
+					public void run() {
+						// Make absolutely sure even if we run the two jobs out of order.
+						// Overhead for double-checking should be very low.
+						onEncode(key, null, context);
+						req.onInsertSuccess(context);
+					}
+
+				}, "Succeeded");
+			} else {
+				req.onInsertSuccess(context);
+			}
 			return true;
 		}
 	}
