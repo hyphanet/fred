@@ -27,6 +27,11 @@ class NPFPacket {
 		NPFPacket packet = new NPFPacket();
 		int offset = 0;
 
+		if(plaintext.length < (offset + 5)) { //Sequence number + the number of acks
+			packet.error = true;
+			return packet;
+		}
+
 		packet.sequenceNumber = ((plaintext[offset] & 0xFF) << 24)
 		                | ((plaintext[offset + 1] & 0xFF) << 16)
 		                | ((plaintext[offset + 2] & 0xFF) << 8)
@@ -35,6 +40,11 @@ class NPFPacket {
 
 		//Process received acks
 		int numAcks = plaintext[offset++] & 0xFF;
+		if(plaintext.length < (offset + numAcks + (numAcks > 0 ? 3 : 0))) {
+			packet.error = true;
+			return packet;
+		}
+
 		long firstAck = 0;
 		for(int i = 0; i < numAcks; i++) {
 			long ack = 0;
@@ -53,6 +63,11 @@ class NPFPacket {
 
 		//Handle received message fragments
 		while(offset < plaintext.length) {
+			if(offset < (plaintext.length + 2)) {
+				packet.error = true;
+				return packet;
+			}
+
 			boolean shortMessage = (plaintext[offset] & 0x80) != 0;
 			boolean isFragmented = (plaintext[offset] & 0x40) != 0;
 			boolean firstFragment = (plaintext[offset] & 0x20) != 0;
@@ -65,6 +80,14 @@ class NPFPacket {
 				                + " the first");
 				packet.error = true;
 				break;
+			}
+
+			int requiredLength = offset
+			                + (shortMessage ? 1 : 2)
+			                + (isFragmented ? (shortMessage ? 1 : 3) : 0);
+			if(plaintext.length < requiredLength) {
+				packet.error = true;
+				return packet;
 			}
 
 			int fragmentLength;
