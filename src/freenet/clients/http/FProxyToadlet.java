@@ -22,6 +22,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.FoundURICallback;
+import freenet.client.filter.KnownUnsafeContentTypeException;
 import freenet.client.filter.MIMEType;
 import freenet.client.filter.PushingTagReplacerCallback;
 import freenet.client.filter.UnsafeContentTypeException;
@@ -278,7 +279,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 
-	private static void addDownloadOptions(ToadletContext ctx, HTMLNode optionList, FreenetURI key, String mimeType, boolean disableFiltration, NodeClientCore core) {
+	private static void addDownloadOptions(ToadletContext ctx, HTMLNode optionList, FreenetURI key, String mimeType, boolean disableFiltration, boolean dontShowFilter, NodeClientCore core) {
 		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 		NETWORK_THREAT_LEVEL netLevel = core.node.securityLevels.getNetworkThreatLevel();
 		boolean filterChecked = !(((threatLevel == PHYSICAL_THREAT_LEVEL.LOW && netLevel == NETWORK_THREAT_LEVEL.LOW)) || disableFiltration);
@@ -301,10 +302,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk",
 					new String[] { "dir", "page", "/link" },
 					new String[] { HTMLEncoder.encode(core.getDownloadDir().getAbsolutePath()), "<a href=\"/downloads\">", "</a>" });
-			HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
-			HTMLNode f = filterControl.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "filterData", "filterData"});
-			if(filterChecked) f.addAttribute("checked", "checked");
-			filterControl.addChild("div", l10n("filterDataMessage"));
+			if(!dontShowFilter) {
+				HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
+				HTMLNode f = filterControl.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "filterData", "filterData"});
+				if(filterChecked) f.addAttribute("checked", "checked");
+				filterControl.addChild("div", l10n("filterDataMessage"));
+			}
 			if (threatLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
 				NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadToDiskSecurityWarning",
 						new String[] {"bold", "/bold"},
@@ -650,7 +653,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTMLNode optionList = infoboxContent.addChild("ul");
 				optionList.addChild("li").addChild("p", l10n("progressOptionZero"));
 				
-				addDownloadOptions(ctx, optionList, key, mimeType, false, core);
+				addDownloadOptions(ctx, optionList, key, mimeType, false, false, core);
 
 				optionList.addChild("li").addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" },
@@ -761,7 +764,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", l10n("fetchLargeFileAnywayAndDisplayButton") });
 					optionForm.addChild("#", " - " + l10n("fetchLargeFileAnywayAndDisplay"));
-					addDownloadOptions(ctx, optionList, key, mime, false, core);
+					addDownloadOptions(ctx, optionList, key, mime, false, false, core);
 				}
 				
 
@@ -846,7 +849,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 
 				if((!e.isFatal() || filterException != null) && (ctx.isAllowedFullAccess() || !container.publicGatewayMode())) {
-					addDownloadOptions(ctx, optionList, key, mimeType, true, core);
+					addDownloadOptions(ctx, optionList, key, mimeType, true, filterException instanceof KnownUnsafeContentTypeException, core);
 					optionList.addChild("li").
 						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null),
 									httprequest.isParameterSet("forcedownload"))).addChild("#", l10n("retryNow"));
