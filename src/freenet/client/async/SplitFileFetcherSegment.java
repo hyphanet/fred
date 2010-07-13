@@ -909,8 +909,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 	
 	private boolean maybeAddToBinaryBlob(Bucket data, ClientCHKBlock block, int blockNo, ObjectContainer container, ClientContext context, String dataSource) throws FetchException {
-		if(parent instanceof ClientGetter || FORCE_CHECK_FEC_KEYS) {
-			if(((ClientGetter)parent).collectingBinaryBlob() || FORCE_CHECK_FEC_KEYS) {
+		if(FORCE_CHECK_FEC_KEYS || parent instanceof ClientGetter) {
+			if(FORCE_CHECK_FEC_KEYS || ((ClientGetter)parent).collectingBinaryBlob()) {
 				try {
 					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
 					byte[] buf = BucketTools.toByteArray(data);
