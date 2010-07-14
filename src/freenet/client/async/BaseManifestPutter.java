@@ -51,6 +51,34 @@ import freenet.support.io.NativeThread;
  */
 public abstract class BaseManifestPutter extends BaseClientPutter {
 
+	// FIXME: DB4O ISSUE: HASHMAP ACTIVATION:
+	// REDFLAG MUST BE FIXED BEFORE DEPLOYING THE NEW PUTTERS !!!
+	
+	// Unfortunately this class uses a lot of HashMap's, and is persistent.
+	// The two things do not play well together!
+	
+	// Activating a HashMap to depth 1 breaks it badly, so that even if it is then activated to a higher depth, it remains empty.
+	// Activating a HashMap to depth 2 loads the elements but does not activate them. In particular, Metadata's used as keys will not have their hashCode loaded so we end up with all of them on the 0th slot.
+	// Activating a HashMap to depth 3 loads it properly, including activating both the keys and values to depth 1.
+	// Of course, the side effect of activating the values to depth 1 may cause problems ...
+
+	// OPTIONS:
+	// 1. Activate to depth 2. Activate the Metadata we are looking for *FIRST*!
+	// Then the Metadata we are looking for will be in the correct slot.
+	// Everything else will be in the 0'th slot, in one long chain, i.e. if there are lots of entries it will be a very inefficient HashMap.
+	
+	// 2. Activate to depth 3.
+	// If there are lots of entries, we have a significant I/O cost for activating *all* of them.
+	// We also have the possibility of a memory/space leak if these are linked from somewhere that assumed they had been deactivated.
+	
+	// Clearly option 1 is superior. However they both suck.
+	// The *correct* solution is to use a HashMap from a primitive type e.g. a String, so we can use depth 2.
+	
+	// Note that this also applies to HashSet's: We activate to depth 2, which pulls in and minimally activates *all* the PutHandler's...
+	// We don't have any real problems because the caller is generally already active - but it is grossly inefficient.
+	
+
+	
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
