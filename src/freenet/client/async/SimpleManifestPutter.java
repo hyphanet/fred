@@ -1408,6 +1408,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					if(persistent())
 						container.ext().store(metadataPuttersUnfetchable, 2);
 				}
+			} else {
+				if(logMINOR) Logger.minor(this, "Did not remove metadata putter "+state+" for "+token+" because not present");
 			}
 			if(!metadataPuttersByMetadata.isEmpty()) {
 				if(logMINOR) {
