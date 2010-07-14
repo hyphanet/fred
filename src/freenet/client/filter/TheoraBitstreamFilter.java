@@ -55,10 +55,8 @@ public class TheoraBitstreamFilter extends OggBitstreamFilter {
 					int VMIN = input.readUnsignedByte();
 					int VREV = input.readUnsignedByte();
 					int FMBW = input.readShort();
-					Logger.minor(this, "FMBW: "+FMBW);
 					int FMBH = input.readShort();
 					int PICW = input.readShort() << 8 | input.readUnsignedByte();
-					Logger.minor(this, "PICW: "+PICW);
 					int PICH = input.readShort() << 8 | input.readUnsignedByte();
 					int PICX = input.readUnsignedByte();
 					int PICY = input.readUnsignedByte();
