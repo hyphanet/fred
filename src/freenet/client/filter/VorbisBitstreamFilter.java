@@ -72,7 +72,7 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					if(vorbis_version != 0) invalidate();
 					if(audio_channels == 0) invalidate();
 					if(audio_sample_rate == 0) invalidate();
-					if((blocksize&0xf0 >>> 4) > (blocksize&0x0f)) invalidate();
+					if((blocksize & 0xf0 >>> 4) > (blocksize & 0x0f)) invalidate();
 					if(!framing_flag) invalidate();
 					currentState = State.IDENTIFICATION_FOUND;
 					position += cin.count();

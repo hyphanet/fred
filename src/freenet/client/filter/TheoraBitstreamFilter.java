@@ -70,10 +70,10 @@ public class TheoraBitstreamFilter extends OggBitstreamFilter {
 					int CS = input.readByte();
 					int NOMBR = input.readShort() | (input.readUnsignedByte() >>> 16);
 					short unalignedBytes = input.readShort();
-					byte QUAL = (byte) (unalignedBytes &0x3f);
-					byte KFGSHIFT = (byte) (unalignedBytes&0x3C0);
-					byte PF = (byte) (unalignedBytes&0x1800);
-					byte Res = (byte) (unalignedBytes&0xE000);
+					byte QUAL = (byte) (unalignedBytes & 0x3f);
+					byte KFGSHIFT = (byte) (unalignedBytes & 0x3C0);
+					byte PF = (byte) (unalignedBytes & 0x1800);
+					byte Res = (byte) (unalignedBytes & 0xE000);
 
 					if(VMAJ != 3) invalidate();
 					if(VMIN != 2) invalidate();

@@ -211,11 +211,10 @@ public class OggPage {
 			} catch(EOFException e) {
 				break;
 			}
-				if(subpage.headerValid()) {
-					hasValidSubpage=true;
-					break;
-				}
-			
+			if(subpage.headerValid()) {
+				hasValidSubpage=true;
+				break;
+			}
 		}
 		return hasValidSubpage;
 
