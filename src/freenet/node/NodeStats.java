@@ -574,7 +574,7 @@ public class NodeStats implements Persistable {
 		long uptime = node.getUptime();
 		double sentOverheadPerSecond = (totalOverhead*1000.0) / (uptime);
 		/** The fraction of output bytes which are used for requests */
-		double overheadFraction = ((double)(totalSent - totalOverhead)) / totalSent;
+		double overheadFraction = ((double)(Math.max(totalSent,((node.getOutputBandwidthLimit() * uptime) / 1000.0)) - totalOverhead)) / totalSent;
 		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Output rate: "+(totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+overheadFraction);
