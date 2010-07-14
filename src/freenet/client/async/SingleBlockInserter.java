@@ -552,7 +552,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						byte[] inserting = BucketTools.toByteArray(block.copyBucket);
 						if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
 							if(SingleBlockInserter.logMINOR) Logger.minor(this, "Collided with identical data: "+SingleBlockInserter.this);
-							if(!persistent)
+							if(!block.persistent)
 								onEncode(k, null, context);
 							req.onInsertSuccess(context);
 							return true;
