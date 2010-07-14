@@ -849,7 +849,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 
 				if((!e.isFatal() || filterException != null) && (ctx.isAllowedFullAccess() || !container.publicGatewayMode())) {
-					addDownloadOptions(ctx, optionList, key, mimeType, true, filterException instanceof KnownUnsafeContentTypeException, core);
+					addDownloadOptions(ctx, optionList, key, mimeType, true, filterException != null, core);
 					optionList.addChild("li").
 						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null),
 									httprequest.isParameterSet("forcedownload"))).addChild("#", l10n("retryNow"));
