@@ -61,12 +61,12 @@ public class VorbisBitstreamFilter extends OggBitstreamFilter {
 					}
 					//Assemble identification header
 					int vorbis_version = input.readInt();
-					byte audio_channels = input.readByte();
+					int audio_channels = input.readUnsignedByte();
 					int audio_sample_rate = input.readInt();
 					int bitrate_maximum = input.readInt();
 					int bitrate_nominal = input.readInt();
 					int bitrate_minimum = input.readInt();
-					byte blocksize = input.readByte();
+					int blocksize = input.readUnsignedByte();
 					boolean framing_flag = input.readBoolean();
 
 					if(vorbis_version != 0) invalidate();
