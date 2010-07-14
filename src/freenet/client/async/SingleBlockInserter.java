@@ -524,26 +524,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				key = b.getClientKey();
 				k = key;
 				if(block.persistent) {
-					context.jobRunner.queue(new DBJob() {
-						
-						public boolean run(ObjectContainer container, ClientContext context) {
-							if(!container.ext().isStored(SingleBlockInserter.this)) return false;
-							container.activate(SingleBlockInserter.this, 1);
-							onEncode(key, container, context);
-							container.deactivate(SingleBlockInserter.this, 1);
-							return false;
-						}
-						
-					}, NativeThread.NORM_PRIORITY+1, false);
+					req.setGeneratedKey(key);
 				} else if(!req.localRequestOnly) {
 					context.mainExecutor.execute(new Runnable() {
 
 						public void run() {
 							onEncode(key, null, context);
 						}
-						
+
 					}, "Got URI");
-					
+
 				}
 				if(req.localRequestOnly)
 					try {
@@ -576,10 +566,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				}
 				req.onFailure(e, context);
 				if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request failed: "+SingleBlockInserter.this+" for "+e);
-				return true;
-			} catch (DatabaseDisabledException e) {
-				// Impossible, and nothing to do.
-				Logger.error(this, "Running persistent insert but database is disabled!");
 				return true;
 			} finally {
 				block.copyBucket.free();
