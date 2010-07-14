@@ -453,6 +453,11 @@ public class WelcomeToadlet extends Toadlet {
         	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "choice", "index" });
         	form.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "search" });
         	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", l10n("searchFreenet") });
+        } else if(core.node.pluginManager == null || 
+        		core.node.pluginManager.isPluginLoadedOrLoadingOrWantLoad("Library")) {
+			// Warn that search plugin is not loaded.
+			HTMLNode textSpan = searchBoxContent.addChild("span", "class", "search-not-availible-warning");
+			NodeL10n.getBase().addL10nSubstitution(textSpan, "WelcomeToadlet.searchPluginLoading", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/\">", "</a>" });
         } else {
 			// Warn that search plugin is not loaded.
 			HTMLNode textSpan = searchBoxContent.addChild("span", "class", "search-not-availible-warning");
