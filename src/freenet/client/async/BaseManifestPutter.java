@@ -74,10 +74,8 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	// Clearly option 1 is superior. However they both suck.
 	// The *correct* solution is to use a HashMap from a primitive type e.g. a String, so we can use depth 2.
 	
-	// Note that this also applies to HashSet's: We activate to depth 2, which pulls in and minimally activates *all* the PutHandler's...
+	// Note that this also applies to HashSet's: The entries are the keys, and they are not activated, so we end up with them all in a long chain off bucket 0, except any that are already active.
 	// We don't have any real problems because the caller is generally already active - but it is grossly inefficient.
-	
-
 	
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
