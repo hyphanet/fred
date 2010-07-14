@@ -166,14 +166,10 @@ public class TheoraBitstreamFilter extends OggBitstreamFilter {
 
 	private long decode32bitIntegerFrom8BitChunks(DataInputStream input) throws IOException {
 		int LEN0 = input.readUnsignedByte();
-		Logger.minor(this, "LEN0: "+Integer.toBinaryString(LEN0));
 		int LEN1 = input.readUnsignedByte();
-		Logger.minor(this, "LEN1: "+LEN1);
 		int LEN2 = input.readUnsignedByte();
-		Logger.minor(this, "LEN2: "+LEN2);
 		int LEN3 = input.readUnsignedByte();
-		Logger.minor(this, "LEN3: "+LEN3);
-		int LEN = LEN0+(LEN1 >>> 8)+(LEN2 >>> 16)+(LEN3 >>> 24);
+		int LEN = LEN0|(LEN1 << 8)|(LEN2 << 16)|(LEN3 << 24);
 		return LEN;
 	}
 }
