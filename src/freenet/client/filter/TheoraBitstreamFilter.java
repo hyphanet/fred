@@ -12,7 +12,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.io.CountedInputStream;
 
 public class TheoraBitstreamFilter extends OggBitstreamFilter {
-	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND, SETUP_FOUND};
+	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND};
 	static final byte[] magicNumber = new byte[] {0x74, 0x68, 0x65, 0x6f, 0x72, 0x61};
 	State currentState = State.UNINITIALIZED;
 
