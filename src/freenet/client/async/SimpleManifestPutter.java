@@ -1111,7 +1111,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.activate(metadataPuttersByMetadata, 2);
 		for(int i=0;i<metas.length;i++) {
 			Metadata m = metas[i];
-			if(persistent()) container.activate(m, 100);
+			if(persistent()) container.activate(m, Integer.MAX_VALUE);
 			if(logMINOR) Logger.minor(this, "Resolving "+m+" for "+this);
 			synchronized(this) {
 				if(metadataPuttersByMetadata.containsKey(m)) {
@@ -1562,7 +1562,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		Metadata m = (Metadata) oldState.getToken();
 		if(persistent()) {
-			container.activate(m, 100);
+			container.activate(m, Integer.MAX_VALUE);
 			container.activate(metadataPuttersUnfetchable, 2);
 			container.activate(metadataPuttersByMetadata, 2);
 		}
@@ -1822,7 +1822,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		Metadata m = (Metadata) state.getToken();
 		if(persistent()) {
-			container.activate(m, 100);
+			container.activate(m, Integer.MAX_VALUE);
 			container.activate(metadataPuttersUnfetchable, 2);
 			container.activate(putHandlersWaitingForFetchable, 2);
 		}
