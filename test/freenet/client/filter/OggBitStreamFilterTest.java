@@ -16,6 +16,12 @@ public class OggBitStreamFilterTest extends TestCase{
 		input.close();
 	}
 
+	public void testGetTheoraBitStreamFilter() throws IOException { 
+		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/theora_header.ogg"));
+		OggPage page = OggPage.readPage(input);
+		Assert.assertEquals(TheoraBitstreamFilter.class, getFilterClass(page));
+		input.close();
+	}
 	public void testGetFilterForInvalidFormat() throws IOException {
 		InputStream input = getClass().getResourceAsStream("./ogg/invalid_header.ogg");
 		DataInputStream dis = new DataInputStream(input);
