@@ -1550,7 +1550,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		if(persistent()) {
-			container.deactivate(m, 100);
+			container.deactivate(m, 1);
 			container.deactivate(metadataPuttersUnfetchable, 2);
 			container.deactivate(metadataPuttersByMetadata, 2);
 		}
