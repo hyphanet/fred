@@ -963,7 +963,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			// Treat it as a splitfile for purposes of determining reinserts.
 			metadataInserter =
 				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey);
-			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata);
+			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata+" for "+this);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
 				container.activate(metadataPuttersUnfetchable, 2);
