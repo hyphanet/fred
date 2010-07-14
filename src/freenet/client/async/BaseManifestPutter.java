@@ -77,6 +77,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	// Note that this also applies to HashSet's: The entries are the keys, and they are not activated, so we end up with them all in a long chain off bucket 0, except any that are already active.
 	// We don't have any real problems because the caller is generally already active - but it is grossly inefficient.
 	
+	// Options for a real fix:
+	// - Assign each PutHandler a Long id, replace Set<X> with Map<Long,X>, and activate to depth 2.
+	// - Use IdentityHashMap instead of HashMap.
+	// - Implement a custom class similar to IdentityHashMap which doesn't activate a bucket unless it needs to and uses db4o ID's.
+	
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
