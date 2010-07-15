@@ -866,7 +866,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// Don't support profiles.
 				// We don't know what format they might be in, whether they will be parsed even though they have bogus MIME types (which seems likely), etc.
 				new String[] { /*"profile"*/ },
-				null));
+				null,
+				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"title",
 			new TagVerifier("title", new String[] { "id" }));
@@ -878,7 +879,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "bgcolor", "text", "link", "vlink", "alink" },
 				null,
 				new String[] { "background" },
-				new String[] { "onload", "onunload" }));
+				new String[] { "onload", "onunload" },
+				emptyStringArray));
 		String[] group =
 			{ "div", "h1", "h2", "h3", "h4", "h5", "h6", "p", "caption" };
 		for (int x = 0; x < group.length; x++)
@@ -887,6 +889,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new CoreTagVerifier(
 					group[x],
 					new String[] { "align" },
+					emptyStringArray,
 					emptyStringArray,
 					emptyStringArray,
 					emptyStringArray));
@@ -940,6 +943,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					emptyStringArray,
 					emptyStringArray,
 					emptyStringArray,
+					emptyStringArray,
 					emptyStringArray));
 		allowedTagsVerifiers.put(
 			"blockquote",
@@ -947,6 +951,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"blockquote",
 				emptyStringArray,
 				new String[] { "cite" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
@@ -956,6 +961,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				new String[] { "cite" },
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"br",
@@ -963,12 +969,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"br",
 				new String[] { "clear" },
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"pre",
 			new CoreTagVerifier(
 				"pre",
 				new String[] { "width", "xml:space" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -979,6 +987,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "datetime" },
 				new String[] { "cite" },
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"del",
@@ -987,12 +996,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "datetime" },
 				new String[] { "cite" },
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"ul",
 			new CoreTagVerifier(
 				"ul",
 				new String[] { "type", "compact" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1003,12 +1014,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "type", "compact", "start" },
 				emptyStringArray,
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"li",
 			new CoreTagVerifier(
 				"li",
 				new String[] { "type", "value" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1019,6 +1032,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "compact" },
 				emptyStringArray,
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"dir",
@@ -1027,12 +1041,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "compact" },
 				emptyStringArray,
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"menu",
 			new CoreTagVerifier(
 				"menu",
 				new String[] { "compact" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1052,12 +1068,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"bgcolor" },
 				emptyStringArray,
 				new String[] { "background" },
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"thead",
 			new CoreTagVerifier(
 				"thead",
 				new String[] { "align", "char", "charoff", "valign" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1068,12 +1086,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "align", "char", "charoff", "valign" },
 				emptyStringArray,
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"tbody",
 			new CoreTagVerifier(
 				"tbody",
 				new String[] { "align", "char", "charoff", "valign" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1090,6 +1110,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"valign" },
 				emptyStringArray,
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"col",
@@ -1104,6 +1125,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"valign" },
 				emptyStringArray,
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"tr",
@@ -1115,6 +1137,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"charoff",
 					"valign",
 					"bgcolor" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1139,6 +1162,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"height" },
 				emptyStringArray,
 				new String[] { "background" },
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"td",
@@ -1161,6 +1185,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"height" },
 				emptyStringArray,
 				new String[] { "background" },
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"a",
@@ -1206,6 +1231,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"vspace" },
 				new String[] { "longdesc", "usemap" },
 				new String[] { "src" },
+				emptyStringArray,
 				emptyStringArray));
 		// FIXME: object tag -
 		// http://www.w3.org/TR/html4/struct/objects.html#h-13.3
@@ -1217,6 +1243,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			new CoreTagVerifier(
 				"map",
 				new String[] { "name" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1234,13 +1261,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"target" },
 				new String[] { "href" },
 				emptyStringArray,
-				new String[] { "onfocus", "onblur" }));
+				new String[] { "onfocus", "onblur" },
+				emptyStringArray));
 		allowedTagsVerifiers.put("style", new StyleTagVerifier());
 		allowedTagsVerifiers.put(
 			"font",
 			new BaseCoreTagVerifier(
 				"font",
 				new String[] { "size", "color", "face" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
@@ -1249,12 +1278,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"basefont",
 				new String[] { "size", "color", "face" },
 				emptyStringArray,
+				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"hr",
 			new CoreTagVerifier(
 				"hr",
 				new String[] { "align", "noshade", "size", "width" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1266,6 +1297,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray,
 				emptyStringArray,
 				new String[] { "onload", "onunload" },
+				emptyStringArray,
 				false));
 		allowedTagsVerifiers.put(
 			"frame",
@@ -1279,7 +1311,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"noresize",
 					"scrolling" },
 				new String[]  { "longdesc" },
-				new String[] { "src" }));
+				new String[] { "src" },
+				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"iframe",
 			new BaseCoreTagVerifier(
@@ -1294,7 +1327,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"height",
 					"width" },
 				new String[] { "longdesc"}, 
-				new String[] { "src" }));
+				new String[] { "src" },
+				emptyStringArray));
 		
 		allowedTagsVerifiers.put(
 			"form",
@@ -1340,7 +1374,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"disabled" },
 				emptyStringArray,
 				emptyStringArray,
-				new String[] { "onfocus", "onblur" }));
+				new String[] { "onfocus", "onblur" },
+				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"select",
 			new CoreTagVerifier(
@@ -1353,12 +1388,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"tabindex" },
 				emptyStringArray,
 				emptyStringArray,
-				new String[] { "onfocus", "onblur", "onchange" }));
+				new String[] { "onfocus", "onblur", "onchange" },
+				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"optgroup",
 			new CoreTagVerifier(
 				"optgroup",
 				new String[] { "disabled", "label" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1367,6 +1404,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			new CoreTagVerifier(
 				"option",
 				new String[] { "selected", "disabled", "label", "value" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1384,12 +1422,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					"readonly" },
 				emptyStringArray,
 				emptyStringArray,
-				new String[] { "onfocus", "onblur", "onselect", "onchange" }));
+				new String[] { "onfocus", "onblur", "onselect", "onchange" },
+				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"isindex",
 			new BaseCoreTagVerifier(
 				"isindex",
 				new String[] { "prompt" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
 		allowedTagsVerifiers.put(
@@ -1399,12 +1439,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "for", "accesskey" },
 				emptyStringArray,
 				emptyStringArray,
-				new String[] { "onfocus", "onblur" }));
+				new String[] { "onfocus", "onblur" },
+				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"legend",
 			new CoreTagVerifier(
 				"legend",
 				new String[] { "accesskey", "align" },
+				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray,
 				emptyStringArray));
@@ -1419,12 +1461,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		final HashSet<String> parsedAttrs;
 		final HashSet<String> uriAttrs;
 		final HashSet<String> inlineURIAttrs;
+		final HashSet<String> booleanAttrs;
 
 		TagVerifier(String tag, String[] allowedAttrs) {
-			this(tag, allowedAttrs, null, null);
+			this(tag, allowedAttrs, null, null, null);
 		}
 
-		TagVerifier(String tag, String[] allowedAttrs, String[] uriAttrs, String[] inlineURIAttrs) {
+		TagVerifier(String tag, String[] allowedAttrs, String[] uriAttrs, String[] inlineURIAttrs, String[] booleanAttrs) {
 			this.tag = tag;
 			this.allowedAttrs = new HashSet<String>();
 			this.parsedAttrs = new HashSet<String>();
@@ -1441,6 +1484,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (inlineURIAttrs != null) {
 				for (int x = 0; x < inlineURIAttrs.length; x++)
 					this.inlineURIAttrs.add(inlineURIAttrs[x]);
+			}
+			this.booleanAttrs = new HashSet<String>();
+			if (booleanAttrs != null) {
+				for(int x = 0; x < booleanAttrs.length; x++) {
+					this.booleanAttrs.add(booleanAttrs[x]);
+				}
 			}
 		}
 
@@ -1569,7 +1618,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					hn.put(x, o);
 					continue;
 				}
-
+				/*Boolean attributes must either be empty or equal to their own name*/
+				if(booleanAttrs.contains(x)) {
+					String value = null;
+					if(o instanceof String ) value = (String) o;
+					if((value != null && value.equalsIgnoreCase(x)) || (!pc.isXHTML && o == null)) {
+						hn.put(x, o);
+						continue;
+					}
+				}
 				// lang, xml:lang and dir can go on anything
 				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
 				// The variant can be just about anything; no way to test (avian)
@@ -1613,7 +1670,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs) {
-			super(tag, allowedAttrs, uriAttrs, null);
+			super(tag, allowedAttrs, uriAttrs, null, null);
 		}
 
 		abstract void setStyle(boolean b, HTMLParseContext pc);
@@ -1770,8 +1827,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs,
-			String[] inlineURIAttrs) {
-			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
+			String[] inlineURIAttrs, String[] booleanAttrs) {
+			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, booleanAttrs);
 			for(String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
@@ -1846,8 +1903,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] allowedAttrs,
 			String[] uriAttrs,
 			String[] inlineURIAttrs,
-			String[] eventAttrs) {
-			this(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, true);
+			String[] eventAttrs, String[] booleanAttrs) {
+			this(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, booleanAttrs, true);
 		}
 
 		CoreTagVerifier(
@@ -1856,8 +1913,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] uriAttrs,
 			String[] inlineURIAttrs,
 			String[] eventAttrs,
-			boolean addStdEvents) {
-			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
+			String[] booleanAttrs, boolean addStdEvents) {
+			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, booleanAttrs);
 			this.eventAttrs = new HashSet<String>();
 			if (eventAttrs != null) {
 				for (int x = 0; x < eventAttrs.length; x++) {
@@ -1910,7 +1967,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] uriAttrs,
 			String[] inlineURIAttrs,
 			String[] eventAttrs) {
-			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
+			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, null);
 			for(String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
@@ -2118,7 +2175,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] allowedAttrs,
 			String[] uriAttrs,
 			String[] eventAttrs) {
-			super(tag, allowedAttrs, uriAttrs, null, eventAttrs);
+			super(tag, allowedAttrs, uriAttrs, null, eventAttrs, null);
 			for(String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
@@ -2173,7 +2230,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] uriAttrs,
 			String[] inlineURIAttrs,
 			String[] eventAttrs) {
-			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
+			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs, null);
 			this.allowedTypes = new HashSet<String>();
 			if (types != null) {
 				for (int x = 0; x < types.length; x++) {
@@ -2432,7 +2489,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			"href"};
 
 		BaseHrefTagVerifier(String string, String[] strings, String[] strings2) {
-			super(string, strings, strings2, null);
+			super(string, strings, strings2, null, null);
 			for(String attr : locallyVerifiedAttrs) {
 				this.parsedAttrs.add(attr);
 			}
