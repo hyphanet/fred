@@ -80,6 +80,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	private boolean allSegmentsFinished;
 	/** Override length. If this is positive, truncate the splitfile to this length. */
 	private final long overrideLength;
+	private final long eventualLength;
 	/** Preferred bucket to return data in */
 	private final Bucket returnBucket;
 	private boolean finished;
@@ -177,7 +178,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(splitfileDataBlocks[i] == null) throw new MetadataParseException("Null: data block "+i+" of "+splitfileDataBlocks.length);
 		for(int i=0;i<splitfileCheckBlocks.length;i++)
 			if(splitfileCheckBlocks[i] == null) throw new MetadataParseException("Null: check block "+i+" of "+splitfileCheckBlocks.length);
-		long eventualLength = Math.max(overrideLength, metadata.uncompressedDataLength());
+		eventualLength = Math.max(overrideLength, metadata.uncompressedDataLength());
 		boolean wasActive = true;
 		if(persistent) {
 			wasActive = container.ext().isActive(cb);
@@ -692,7 +693,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				Compressor c = decompressors.remove(decompressors.size()-1);
 				if(logMINOR)
 					Logger.minor(this, "Decompressing with "+c);
-				long maxLen = Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength);
+				long maxLen = eventualLength;
 				Bucket orig = data;
 				try {
 					Bucket out = returnBucket;
