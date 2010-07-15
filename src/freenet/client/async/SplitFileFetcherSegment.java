@@ -679,9 +679,16 @@ public class SplitFileFetcherSegment implements FECCallback {
 					container.activate(data, Integer.MAX_VALUE);
 				}
 				if(!maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE")) {
-					if((!(ignoreLastDataBlock && i == dataKeys.length-1)) &&
-							(!(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length)))
+					if(ignoreLastDataBlock && i == dataKeys.length-1) {
+						// Padding issue: It was inserted un-padded and we decoded it padded, or similar situations.
+						// Does not corrupt the result, or at least, corruption is undetectable if it's only on the last block.
+						Logger.normal(this, "Last block padding issue on decode on "+this);
+					} else {
+						// Most likely the data was corrupt as inserted.
 						Logger.error(this, "Data block "+i+" FAILED TO DECODE CORRECTLY");
+						fail(new FetchException(FetchException.SPLITFILE_DECODE_ERROR), container, context, false);
+						return;
+					}
 					// Disable healing.
 					dataRetries[i] = 0;
 					allDecodedCorrectly = false;
