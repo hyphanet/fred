@@ -454,6 +454,8 @@ public class FetchException extends Exception {
 	public static final int CONTENT_VALIDATION_BAD_MIME = 33;
 	/** The metadata specified a hash but the data didn't match it. */
 	public static final int CONTENT_HASH_FAILED = 34;
+	/** FEC decode produced a block that doesn't match the data in the original splitfile. */
+	public static final int SPLITFILE_DECODE_ERROR = 35;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -483,6 +485,7 @@ public class FetchException extends Exception {
 		case TOO_BIG_METADATA:
 		case TOO_MANY_BLOCKS_PER_SEGMENT:
 		case CONTENT_HASH_FAILED:
+		case SPLITFILE_DECODE_ERROR:
 			return true;
 
 		// Low level errors, can be retried
