@@ -1241,7 +1241,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					emptyStringArray,
 					new String[] { "src", "poster" },
 					emptyStringArray,
-					new String[] {"preload", "autoplay", "loop", "controls"}));
+					new String[] {"preload", "loop", "controls"}));
 			allowedTagsVerifiers.put(
 					"audio",
 					new CoreTagVerifier(
@@ -1250,7 +1250,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						emptyStringArray,
 						new String[] { "src" },
 						emptyStringArray,
-						new String[] {"preload", "autoplay", "loop", "controls"}));
+						new String[] {"preload", "loop", "controls"}));
 			allowedTagsVerifiers.put(
 					"source",
 					new CoreTagVerifier(
