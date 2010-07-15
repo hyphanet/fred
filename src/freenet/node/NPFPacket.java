@@ -63,7 +63,7 @@ class NPFPacket {
 
 		//Handle received message fragments
 		while(offset < plaintext.length) {
-			if(offset < (plaintext.length + 2)) {
+			if(plaintext.length < (offset + 2)) {
 				packet.error = true;
 				return packet;
 			}
