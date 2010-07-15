@@ -1233,6 +1233,33 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "src" },
 				emptyStringArray,
 				emptyStringArray));
+		allowedTagsVerifiers.put(
+				"video",
+				new CoreTagVerifier(
+					"video",
+					new String[] {"width", "height" },
+					emptyStringArray,
+					new String[] { "src", "poster" },
+					emptyStringArray,
+					new String[] {"preload", "autoplay", "loop", "controls"}));
+			allowedTagsVerifiers.put(
+					"audio",
+					new CoreTagVerifier(
+						"audio",
+						emptyStringArray,
+						emptyStringArray,
+						new String[] { "src" },
+						emptyStringArray,
+						new String[] {"preload", "autoplay", "loop", "controls"}));
+			allowedTagsVerifiers.put(
+					"source",
+					new CoreTagVerifier(
+						"source",
+						new String[] {"type", "media" },
+						emptyStringArray,
+						new String[] { "src",},
+						emptyStringArray,
+						emptyStringArray));
 		// FIXME: object tag -
 		// http://www.w3.org/TR/html4/struct/objects.html#h-13.3
 		// FIXME: param tag -
