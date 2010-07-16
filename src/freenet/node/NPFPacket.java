@@ -98,15 +98,6 @@ class NPFPacket {
 				                | (plaintext[offset + 1] & 0xFF);
 				offset += 2;
 			}
-			if(fragmentLength < 0) {
-				//Probably means that offset is wrong, so continuing isn't a good idea
-				Logger.warning(NPFPacket.class, "Read negative fragment length from offset "
-				                + (shortMessage ? offset - 1 : offset - 2)
-						+ ". Probably a bug");
-				offset = -1;
-				packet.error = true;
-				break;
-			}
 
 			int messageLength = -1;
 			int fragmentOffset = 0;
@@ -119,12 +110,6 @@ class NPFPacket {
 					                | ((plaintext[offset + 1] & 0xFF) << 8)
 							| (plaintext[offset + 2] & 0xFF);
 					offset += 3;
-				}
-				if(value < 0) {
-					Logger.warning(NPFPacket.class, "Read negative value from offset "
-					                + (shortMessage ? offset - 1 : offset - 3)
-							+ ". Probably a bug");
-					packet.error = true;
 				}
 				if(firstFragment) messageLength = value;
 				else fragmentOffset = value;
