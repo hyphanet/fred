@@ -88,11 +88,38 @@ public class TrivialTicker implements Ticker {
 		}, offset);
 	}
 	
+	private Thread shutdownThread = null;
+	
 	public void shutdown() {
 		synchronized(this) {
 			running = false;
-			// TODO: As far as I've understood the javadoc of class Timer, this waits for a currently running job to quit. Verify that by reading the source.
-			timer.cancel();
+			
+			timer.schedule(new TimerTask() {
+
+				public void run() {
+					// According to the JavaDoc of cancel(), calling it inside a TimerTask guarantees that the task is the last one which is run.
+					timer.cancel();
+					synchronized(TrivialTicker.this) {
+						shutdownThread = Thread.currentThread();
+						TrivialTicker.this.notifyAll();
+					}
+				}
+				
+			}, 0);
+			
+			while(shutdownThread == null) {
+				try {
+					wait();
+				} catch (InterruptedException e) { } // Valid to happen due to spurious wakeups
+			}
+			
+			while(shutdownThread.isAlive()) { // Ignore InterruptedExceptions
+				try {
+					shutdownThread.join();
+				} catch (InterruptedException e) { 
+					Logger.error(this, "Got an unexpected InterruptedException", e);
+				}
+			}
 		}
 	}
 
