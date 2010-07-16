@@ -46,7 +46,7 @@ public class NewPacketFormat implements PacketFormat {
 	private int nextMessageID = 0;
 	private final HashMap<Integer, Long> msgIDCloseTimeSent = new HashMap<Integer, Long>();
 
-	private final HashMap<Integer, byte[]> receiveBuffers = new HashMap<Integer, byte[]>();
+	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
 	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
 	private long highestAckedSeqNum = -1;
 	private final HashMap<Integer, Long> msgIDCloseTimeRecv = new HashMap<Integer, Long>();
@@ -114,7 +114,7 @@ public class NewPacketFormat implements PacketFormat {
 			dontAck = true;
 		}
 		for(MessageFragment fragment : packet.getFragments()) {
-			byte[] recvBuffer = receiveBuffers.get(fragment.messageID);
+			PartiallyReceivedBuffer recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
 				Long time = msgIDCloseTimeRecv.get(fragment.messageID);
@@ -127,30 +127,30 @@ public class NewPacketFormat implements PacketFormat {
 						msgIDCloseTimeRecv.remove(fragment.messageID);
 					}
 				}
-				
-				if(!fragment.firstFragment) {
-					if(!dontAck) Logger.minor(this, "Not acking because missing first fragment");
-					dontAck = true;
-					continue;
-				}
-				recvBuffer = new byte[fragment.messageLength];
+
+				if(fragment.firstFragment) recvBuffer = new PartiallyReceivedBuffer(fragment.messageLength);
+				else recvBuffer = new PartiallyReceivedBuffer();
+
 				recvMap = new SparseBitmap();
 				receiveBuffers.put(fragment.messageID, recvBuffer);
 				receiveMaps.put(fragment.messageID, recvMap);
+			} else {
+				if(fragment.firstFragment) recvBuffer.setMessageLength(fragment.messageLength);
 			}
 
-			System.arraycopy(fragment.fragmentData, 0, recvBuffer, fragment.fragmentOffset,
-			                fragment.fragmentLength);
+			recvBuffer.add(fragment.fragmentData, fragment.fragmentOffset);
 			if(fragment.fragmentLength == 0) {
 				Logger.warning(this, "Received fragment of length 0");
 				continue;
 			}
 			recvMap.add(fragment.fragmentOffset, fragment.fragmentOffset + fragment.fragmentLength - 1);
-			if(recvMap.contains(0, recvBuffer.length - 1)) {
+			if((recvBuffer.messageLength != -1) && recvMap.contains(0, recvBuffer.messageLength - 1)) {
 				receiveBuffers.remove(fragment.messageID);
 				receiveMaps.remove(fragment.messageID);
 				msgIDCloseTimeRecv.put(fragment.messageID, System.currentTimeMillis());
-				fullyReceived.add(recvBuffer);
+				fullyReceived.add(recvBuffer.buffer);
+			} else {
+				System.out.println("Message (0->" + (recvBuffer.messageLength - 1) + ") isn't fully received. Received: " + recvMap);
 			}
 		}
 
@@ -445,6 +445,40 @@ public class NewPacketFormat implements PacketFormat {
 
 		public long getSentTime() {
 			return sentTime;
+		}
+	}
+
+	private class PartiallyReceivedBuffer {
+		private int messageLength;
+		private byte[] buffer;
+
+		private PartiallyReceivedBuffer() {
+			messageLength = -1;
+			buffer = new byte[0];
+		}
+
+		private PartiallyReceivedBuffer(int messageLength) {
+			this.messageLength = messageLength;
+			buffer = new byte[messageLength];
+		}
+
+		private void add(byte[] data, int dataOffset) {
+			if(buffer.length < (dataOffset + data.length)) {
+				resize(dataOffset + data.length);
+			}
+
+			System.arraycopy(data, 0, buffer, dataOffset, data.length);
+		}
+
+		private void setMessageLength(int messageLength) {
+			this.messageLength = messageLength;
+			resize(messageLength);
+		}
+
+		private void resize(int length) {
+			byte[] newBuffer = new byte[length];
+			System.arraycopy(buffer, 0, newBuffer, 0, Math.min(length, buffer.length));
+			buffer = newBuffer;
 		}
 	}
 }

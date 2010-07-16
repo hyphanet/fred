@@ -87,4 +87,24 @@ public class NewPacketFormatTest extends TestCase {
 		receiver.handleDecryptedPacket(fragment3);
 		assertEquals(1, receiver.handleDecryptedPacket(fragment2).size());
 	}
+
+	public void testReceiveUnknownMessageLength() {
+		NewPacketFormat sender = new NewPacketFormat(null);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
+		NewPacketFormat receiver = new NewPacketFormat(null);
+		PeerMessageQueue receiverQueue = new PeerMessageQueue();
+
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
+
+		NPFPacket fragment1 = sender.createPacket(512, senderQueue);
+		assertEquals(1, fragment1.getFragments().size());
+		NPFPacket fragment2 = sender.createPacket(512, senderQueue);
+		assertEquals(1, fragment2.getFragments().size());
+		NPFPacket fragment3 = sender.createPacket(512, senderQueue);
+		assertEquals(1, fragment3.getFragments().size());
+		
+		receiver.handleDecryptedPacket(fragment3);
+		receiver.handleDecryptedPacket(fragment2);
+		assertEquals(1, receiver.handleDecryptedPacket(fragment1).size());
+	}
 }
