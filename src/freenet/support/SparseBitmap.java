@@ -101,6 +101,15 @@ public class SparseBitmap implements Iterable<int[]> {
 		return ranges.isEmpty();
 	}
 
+	public String toString() {
+		StringBuffer s = new StringBuffer();
+		for(int[] range : this) {
+			if(s.length() != 0) s.append(", ");
+			s.append(range[0] + "->" + range[1]);
+		}
+		return s.toString();
+	}
+
 	private class SparseBitmapIterator implements Iterator<int[]> {
 		Iterator<Range> it;
 
