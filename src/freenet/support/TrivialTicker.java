@@ -83,7 +83,7 @@ public class TrivialTicker implements Ticker {
 			if(!running)
 				return;
 			
-			if(noDupes && jobs.contains(job))
+			if(noDupes && jobs.containsKey(job))
 				return;
 			
 			timer.schedule(t, offset);
