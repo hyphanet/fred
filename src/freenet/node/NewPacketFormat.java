@@ -317,6 +317,8 @@ public class NewPacketFormat implements PacketFormat {
 			sentPackets.put(packet.getSequenceNumber(), sentPacket);
 		}
 
+		sentPacket.sent();
+		
 		return packet;
 	}
 
