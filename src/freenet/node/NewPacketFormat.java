@@ -149,8 +149,6 @@ public class NewPacketFormat implements PacketFormat {
 				receiveMaps.remove(fragment.messageID);
 				msgIDCloseTimeRecv.put(fragment.messageID, System.currentTimeMillis());
 				fullyReceived.add(recvBuffer.buffer);
-			} else {
-				System.out.println("Message (0->" + (recvBuffer.messageLength - 1) + ") isn't fully received. Received: " + recvMap);
 			}
 		}
 
