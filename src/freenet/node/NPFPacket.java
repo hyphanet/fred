@@ -2,6 +2,8 @@ package freenet.node;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
@@ -18,7 +20,7 @@ class NPFPacket {
 	}
 
 	private long sequenceNumber;
-	private final LinkedList<Long> acks = new LinkedList<Long>();
+	private final SortedSet<Long> acks = new TreeSet<Long>();
 	private final LinkedList<MessageFragment> fragments = new LinkedList<MessageFragment>();
 	private boolean error;
 	private int length = 5; //Sequence number (4), numAcks(1)
@@ -45,20 +47,20 @@ class NPFPacket {
 			return packet;
 		}
 
-		long firstAck = 0;
+		long prevAck = 0;
 		for(int i = 0; i < numAcks; i++) {
 			long ack = 0;
 			if(i == 0) {
-				firstAck = ((plaintext[offset] & 0xFF) << 24)
+				ack = ((plaintext[offset] & 0xFF) << 24)
 				                | ((plaintext[offset + 1] & 0xFF) << 16)
 				                | ((plaintext[offset + 2] & 0xFF) << 8)
 				                | (plaintext[offset + 3] & 0xFF);
-				ack = firstAck;
 				offset += 4;
 			} else {
-				ack = firstAck + (plaintext[offset++] & 0xFF);
+				ack = prevAck + (plaintext[offset++] & 0xFF);
 			}
 			packet.acks.add(ack);
+			prevAck = ack;
 		}
 
 		//Handle received message fragments
@@ -148,19 +150,20 @@ class NPFPacket {
 
 		//Add acks
 		buf[offset++] = (byte) (acks.size());
-		long firstAck;
+		long prevAck;
 		Iterator<Long> acksIterator = acks.iterator();
 		if(acksIterator.hasNext()) {
-			firstAck = acksIterator.next();
-			buf[offset] = (byte) (firstAck >>> 24);
-			buf[offset + 1] = (byte) (firstAck >>> 16);
-			buf[offset + 2] = (byte) (firstAck >>> 8);
-			buf[offset + 3] = (byte) (firstAck);
+			prevAck = acksIterator.next();
+			buf[offset] = (byte) (prevAck >>> 24);
+			buf[offset + 1] = (byte) (prevAck >>> 16);
+			buf[offset + 2] = (byte) (prevAck >>> 8);
+			buf[offset + 3] = (byte) (prevAck);
 			offset += 4;
 
 			while(acksIterator.hasNext()) {
 				long ack = acksIterator.next();
-				buf[offset++] = (byte) (ack - firstAck);
+				buf[offset++] = (byte) (ack - prevAck);
+				prevAck = ack;
 			}
 		}
 
@@ -234,7 +237,7 @@ class NPFPacket {
 		this.sequenceNumber = sequenceNumber;
 	}
 
-	public LinkedList<Long> getAcks() {
+	public SortedSet<Long> getAcks() {
 		return acks;
         }
 

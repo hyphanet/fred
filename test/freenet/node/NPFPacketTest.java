@@ -26,7 +26,7 @@ public class NPFPacketTest extends TestCase {
 
 		assertEquals(r.getSequenceNumber(), 0);
 		assertEquals(r.getAcks().size(), 1);
-		assertEquals(r.getAcks().get(0), Long.valueOf(0));
+		assertTrue(r.getAcks().contains(Long.valueOf(0)));
 		assertEquals(r.getFragments().size(), 0);
 		assertFalse(r.getError());
 	}
@@ -36,14 +36,14 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
 		                (byte)0x03, //3 acks
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x05, //Ack for packet 5
-		                (byte)0x05, (byte)0x06}; //Acks for packets 10 and 11
+		                (byte)0x05, (byte)0x01}; //Acks for packets 10 and 11
 		NPFPacket r = NPFPacket.create(packet);
 
 		assertEquals(r.getSequenceNumber(), 0);
 		assertEquals(r.getAcks().size(), 3);
-		assertEquals(r.getAcks().get(0), Long.valueOf(5));
-		assertEquals(r.getAcks().get(1), Long.valueOf(10));
-		assertEquals(r.getAcks().get(2), Long.valueOf(11));
+		assertTrue(r.getAcks().contains(Long.valueOf(5)));
+		assertTrue(r.getAcks().contains(Long.valueOf(10)));
+		assertTrue(r.getAcks().contains(Long.valueOf(11)));
 		assertEquals(r.getFragments().size(), 0);
 		assertFalse(r.getError());
 	}
@@ -240,7 +240,7 @@ public class NPFPacketTest extends TestCase {
 		byte[] correctData = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
 		                (byte)0x03,
 				(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-				(byte)0x05, (byte)0x0A};
+				(byte)0x05, (byte)0x05};
 
 		checkPacket(p, correctData);
 	}
@@ -277,7 +277,7 @@ public class NPFPacketTest extends TestCase {
 		byte[] correctData = new byte[] {(byte)0xFF, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number
 		                (byte)0x03, //Number of ack
 		                (byte)0x00, (byte)0x0F, (byte)0x42, (byte)0x40, //First ack
-		                (byte)0x0A, (byte)0xFF, //Acks
+		                (byte)0x0A, (byte)0xF5, //Acks
 		                //First fragment
 		                (byte)0xA0, (byte)0x00, //Message id + flags
 		                (byte)0x08, //Fragment length
