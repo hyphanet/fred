@@ -175,25 +175,6 @@ public class NewPacketFormat implements PacketFormat {
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
-		//Mark packets as lost
-		synchronized(sentPackets) {
-			int avgRtt = 0;
-			for(int rtt : lastRtts) {
-				avgRtt += rtt;
-			}
-			avgRtt = avgRtt / lastRtts.length;
-			long curTime = System.currentTimeMillis();
-
-			Iterator<SentPacket> it = sentPackets.values().iterator();
-			while(it.hasNext()) {
-				SentPacket s = it.next();
-				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * avgRtt)) {
-					s.lost();
-					it.remove();
-				}
-			}
-		}
-
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
 		NPFPacket packet = createPacket(maxPacketSize, pn.getMessageQueue());
 		if(packet == null) return false;
@@ -242,6 +223,25 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) {
+		//Mark packets as lost
+		synchronized(sentPackets) {
+			int avgRtt = 0;
+			for(int rtt : lastRtts) {
+				avgRtt += rtt;
+			}
+			avgRtt = avgRtt / lastRtts.length;
+			long curTime = System.currentTimeMillis();
+
+			Iterator<SentPacket> it = sentPackets.values().iterator();
+			while(it.hasNext()) {
+				SentPacket s = it.next();
+				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * avgRtt)) {
+					s.lost();
+					it.remove();
+				}
+			}
+		}
+
 		SentPacket sentPacket = new SentPacket();
 		NPFPacket packet = new NPFPacket();
 		packet.setSequenceNumber(nextSequenceNumber++);
