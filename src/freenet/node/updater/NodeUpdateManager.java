@@ -132,12 +132,12 @@ public class NodeUpdateManager {
 		alert.isValid(false);
 		
         SubConfig updaterConfig = new SubConfig("node.updater", config);
-        
-        updaterConfig.register("enabled", WrapperManager.isControlledByNativeWrapper(), 1, true, false, "NodeUpdateManager.enabled",
+
+        updaterConfig.register("enabled", true, 1, true, false, "NodeUpdateManager.enabled",
         		"NodeUpdateManager.enabledLong",
         		new UpdaterEnabledCallback());
-        
-        wasEnabledOnStartup = updaterConfig.getBoolean("enabled");
+
+		wasEnabledOnStartup = updaterConfig.getBoolean("enabled");
 
         // is the auto-update allowed ?
         updaterConfig.register("autoupdate", false, 2, false, true, "NodeUpdateManager.installNewVersions", "NodeUpdateManager.installNewVersionsLong",
@@ -410,10 +410,10 @@ public class NodeUpdateManager {
 	 */
 	void enable(boolean enable) throws InvalidConfigValueException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		if(!node.isUsingWrapper()){
-			Logger.normal(this, "Don't try to start the updater as we are not running under the wrapper.");
-			return;
-		}
+//		if(!node.isUsingWrapper()){
+//			Logger.normal(this, "Don't try to start the updater as we are not running under the wrapper.");
+//			return;
+//		}
 		NodeUpdater main = null, ext = null;
 		Map<String, PluginJarUpdater> oldPluginUpdaters = null;
 		synchronized(this) {
@@ -431,10 +431,10 @@ public class NodeUpdateManager {
 				oldPluginUpdaters = pluginUpdaters;
 				pluginUpdaters = null;
 			} else {
-				if((!WrapperManager.isControlledByNativeWrapper()) || (NodeStarter.extBuildNumber == -1)) {
-					Logger.error(this, "Cannot update because not running under wrapper");
-					throw new InvalidConfigValueException(l10n("noUpdateWithoutWrapper"));
-				}
+//				if((!WrapperManager.isControlledByNativeWrapper()) || (NodeStarter.extBuildNumber == -1)) {
+//					Logger.error(this, "Cannot update because not running under wrapper");
+//					throw new InvalidConfigValueException(l10n("noUpdateWithoutWrapper"));
+//				}
 				// Start it
 				mainUpdater = new MainJarUpdater(this, updateURI, Version.buildNumber(), -1, Integer.MAX_VALUE, "main-jar-");
 				extUpdater = new ExtJarUpdater(this, extURI, NodeStarter.extBuildNumber, NodeStarter.REQUIRED_EXT_BUILD_NUMBER, NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER, "ext-jar-");
