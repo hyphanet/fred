@@ -22,6 +22,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
 import freenet.client.filter.ContentFilter;
 import freenet.client.filter.FoundURICallback;
+import freenet.client.filter.GeneralTagReplacerCallback;
 import freenet.client.filter.KnownUnsafeContentTypeException;
 import freenet.client.filter.MIMEType;
 import freenet.client.filter.PushingTagReplacerCallback;
@@ -546,6 +547,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		//Load the fetch context with the callbacks needed for web-pushing, if enabled
 		if(container.enableInlinePrefetch()) fctx.prefetchHook = prefetchHook;
 		if(container.isFProxyWebPushingEnabled()) fctx.tagReplacer = new PushingTagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx);
+		else fctx.tagReplacer = new GeneralTagReplacerCallback();
 
 		String requestedMimeType = httprequest.getParam("type", null);
 		fctx.overrideMIME = requestedMimeType;
