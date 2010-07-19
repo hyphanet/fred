@@ -271,7 +271,12 @@ public class NewPacketFormat implements PacketFormat {
 
 		SentPacket sentPacket = new SentPacket();
 		NPFPacket packet = new NPFPacket();
-		packet.setSequenceNumber(nextSequenceNumber++);
+
+		long sequenceNumber;
+		synchronized(this) {
+			sequenceNumber = nextSequenceNumber++;
+		}
+		packet.setSequenceNumber(sequenceNumber);
 
 		int numAcks = 0;
 		synchronized(acks) {
