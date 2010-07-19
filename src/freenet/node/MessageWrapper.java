@@ -1,13 +1,6 @@
 package freenet.node;
 
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
 import freenet.io.comm.AsyncMessageCallback;
-import freenet.support.Logger;
 import freenet.support.SparseBitmap;
 
 public class MessageWrapper {
@@ -106,9 +99,6 @@ public class MessageWrapper {
 
 	/**
 	 * Remove any mark that has already been set for the given range.
-	 *
-	 * @param start the first byte to be marked
-	 * @param end the last byte to be marked
 	 */
 	public void lost() {
 		synchronized(sent) {
@@ -153,14 +143,6 @@ public class MessageWrapper {
 
 	public int getPriority() {
 		return item.getPriority();
-	}
-	
-	private class RangeComparator implements Comparator<int[]> {
-
-		public int compare(int[] o1, int[] o2) {
-			return o1[0] - o2[0];
-		}
-
 	}
 
 	public boolean isFirstFragment() {
