@@ -451,7 +451,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 	}
 
-	private class PartiallyReceivedBuffer {
+	private static class PartiallyReceivedBuffer {
 		private int messageLength;
 		private byte[] buffer;
 
