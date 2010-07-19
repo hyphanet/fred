@@ -135,8 +135,6 @@ public class SparseBitmap implements Iterable<int[]> {
 		int start; // inclusive
 		int end;   // inclusive
 
-		public Range() {}
-
 		public Range(int start, int end) {
 			this.start = start;
 			this.end = end;
