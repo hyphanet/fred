@@ -52,7 +52,7 @@ public class NPFPacketTest extends TestCase {
 		byte[] packet = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
 		                (byte)0x00, // 0 acks
-		                (byte)0xA0, (byte)0x00, //Flags (short and first fragment) and messageID 0
+		                (byte)0xB0, (byte)0x00, (byte)0x00, (byte)0x00,//Flags (short, first fragment and full id) and messageID 0
 		                (byte)0x08, //Fragment length
 		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}; //Data
 		NPFPacket r = NPFPacket.create(packet);
@@ -78,7 +78,7 @@ public class NPFPacketTest extends TestCase {
 	public void testPacketWithFragments() {
 		byte[] packet = new byte[] { (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, // Sequence number 0
 		                (byte)0x00, // 0 acks
-		                (byte)0xA0, (byte)0x00, // Flags (short and first fragment) and messageID 0
+		                (byte)0xB0, (byte)0x00, (byte)0x00, (byte)0x00,// Flags (short and first fragment) and messageID 0
 		                (byte)0x08, // Fragment length
 		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF, // Data
 		                (byte)0xA0, (byte)0x00, // Flags (short and first fragment) and messageID 0
@@ -253,7 +253,7 @@ public class NPFPacketTest extends TestCase {
 
 		byte[] correctData = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x64, //Sequence number (100)
 		                (byte)0x00,
-				(byte)0xA0, (byte)0x00, //Flags + messageID
+				(byte)0xB0, (byte)0x00, (byte)0x00, (byte)0x00, //Flags + messageID
 				(byte)0x08, //Fragment length
 				(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};
 
@@ -268,7 +268,7 @@ public class NPFPacketTest extends TestCase {
 		p.addAck(1000255);
 		p.addMessageFragment(new MessageFragment(true, false, true, 0, 8, 8, 0,
 		                new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}));
-		p.addMessageFragment(new MessageFragment(false, true, false, 8191, 14, 1024, 256, new byte[] {
+		p.addMessageFragment(new MessageFragment(false, true, false, 4095, 14, 1024, 256, new byte[] {
 		                (byte)0xfd, (byte)0x47, (byte)0xc2, (byte)0x30,
 		                (byte)0x41, (byte)0x53, (byte)0x57, (byte)0x56,
 		                (byte)0x0e, (byte)0x56, (byte)0x69, (byte)0xf5,
@@ -279,11 +279,11 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x00, (byte)0x0F, (byte)0x42, (byte)0x40, //First ack
 		                (byte)0x0A, (byte)0xF5, //Acks
 		                //First fragment
-		                (byte)0xA0, (byte)0x00, //Message id + flags
+		                (byte)0xB0, (byte)0x00, (byte)0x00, (byte)0x00, //Message id + flags
 		                (byte)0x08, //Fragment length
 		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF,
 		                //Second fragment
-		                (byte)0x5F, (byte)0xFF,
+		                (byte)0x4F, (byte)0xFF,
 		                (byte)0x00, (byte)0x0e, //Fragment length
 		                (byte)0x00, (byte)0x01, (byte)0x00, //Fragment offset
 		                (byte)0xfd, (byte)0x47, (byte)0xc2, (byte)0x30,

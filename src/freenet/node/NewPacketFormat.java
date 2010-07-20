@@ -373,26 +373,10 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private long getMessageID() {
-		long messageID = nextMessageID;
-
-		synchronized(msgIDCloseTimeSent) {
-			Long time = msgIDCloseTimeSent.get(messageID);
-			if(time != null) {
-				if(time > (System.currentTimeMillis() - MSGID_WAIT_TIME)) {
-					return -1;
-				} else {
-					msgIDCloseTimeSent.remove(messageID);
-				}
-			}
+		long messageID;
+		synchronized(this) {
+			messageID = nextMessageID++;
 		}
-
-		for(HashMap<Long, MessageWrapper> started : startedByPrio) {
-			synchronized(started) {
-				if(started.containsKey(messageID)) return -1;
-			}
-		}
-
-		nextMessageID = (nextMessageID + 1) % NUM_MESSAGE_IDS;
 		return messageID;
 	}
 

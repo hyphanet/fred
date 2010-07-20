@@ -64,6 +64,7 @@ class NPFPacket {
 		}
 
 		//Handle received message fragments
+		long prevFragmentID = -1;
 		while(offset < plaintext.length) {
 			if(plaintext.length < (offset + 2)) {
 				packet.error = true;
@@ -73,9 +74,20 @@ class NPFPacket {
 			boolean shortMessage = (plaintext[offset] & 0x80) != 0;
 			boolean isFragmented = (plaintext[offset] & 0x40) != 0;
 			boolean firstFragment = (plaintext[offset] & 0x20) != 0;
-			int messageID = ((plaintext[offset] & 0x1F) << 8)
-			                | (plaintext[offset + 1] & 0xFF);
-			offset += 2;
+
+			long messageID = -1;
+			if((plaintext[offset] & 0x10) != 0) {
+				messageID = ((plaintext[offset] & 0x0F) << 24)
+				                | ((plaintext[offset + 1] & 0xFF) << 16)
+				                | ((plaintext[offset + 2] & 0xFF) << 8)
+				                | (plaintext[offset + 3] & 0xFF);
+				offset += 4;
+			} else {
+				messageID = prevFragmentID + (((plaintext[offset] & 0x0F) << 8)
+				                | (plaintext[offset + 1] & 0xFF));
+				offset += 2;
+			}
+			prevFragmentID = messageID;
 
 			if(!isFragmented && !firstFragment) {
 				Logger.warning(NPFPacket.class, "Received unfragmented message, but the fragment wasn't"
@@ -168,13 +180,26 @@ class NPFPacket {
 		}
 
 		//Add fragments
+		long prevFragmentID = -1;
 		for(MessageFragment fragment : fragments) {
-			buf[offset] = (byte) ((fragment.messageID >>> 8) & 0x1F);
-			buf[offset + 1] = (byte) (fragment.messageID);
 			if(fragment.shortMessage) buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x80);
 			if(fragment.isFragmented) buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x40);
 			if(fragment.firstFragment) buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x20);
-			offset += 2;
+
+			if(prevFragmentID == -1 || (fragment.messageID - prevFragmentID >= 4096)) {
+				buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x10);
+				buf[offset] = (byte) ((buf[offset] & 0xFF) | ((fragment.messageID >>> 24) & 0x0F));
+				buf[offset + 1] = (byte) (fragment.messageID >>> 16);
+				buf[offset + 2] = (byte) (fragment.messageID >>> 8);
+				buf[offset + 3] = (byte) (fragment.messageID);
+				offset += 4;
+			} else {
+				long compressedMsgID = fragment.messageID - prevFragmentID;
+				buf[offset] = (byte) ((buf[offset] & 0xFF) | ((compressedMsgID >>> 8) & 0x0F));
+				buf[offset + 1] = (byte) (compressedMsgID);
+				offset += 2;
+			}
+			prevFragmentID = fragment.messageID;
 
 			if(fragment.shortMessage) {
 				buf[offset++] = (byte) (fragment.fragmentLength);
@@ -216,8 +241,14 @@ class NPFPacket {
 	}
 
 	public int addMessageFragment(MessageFragment frag) {
-		fragments.add(frag);
 		length += frag.length();
+
+		if(fragments.size() == 0 || (frag.messageID - fragments.get(fragments.size() - 1).messageID >= 4096)) {
+			length += 2;
+		}
+
+		fragments.add(frag);
+
 		return length;
 	}
 
