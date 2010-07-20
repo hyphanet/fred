@@ -4,13 +4,13 @@ class MessageFragment {
 	boolean shortMessage;
 	boolean isFragmented;
 	boolean firstFragment;
-	int messageID;
+	long messageID;
 	int fragmentLength;
 	int messageLength;
 	int fragmentOffset;
 	byte[] fragmentData;
 
-	public MessageFragment(boolean shortMessage, boolean isFragmented, boolean firstFragment, int messageID,
+	public MessageFragment(boolean shortMessage, boolean isFragmented, boolean firstFragment, long messageID,
 	                int fragmentLength, int messageLength, int fragmentOffset, byte[] fragmentData) {
 		this.shortMessage = shortMessage;
 		this.isFragmented = isFragmented;

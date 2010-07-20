@@ -42,22 +42,22 @@ public class NewPacketFormat implements PacketFormat {
 	private final int[] lastRtts;
 	private int nextRttPos;
 
-	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
+	private final ArrayList<HashMap<Long, MessageWrapper>> startedByPrio;
 	private long nextSequenceNumber = 0;
-	private int nextMessageID = 0;
-	private final HashMap<Integer, Long> msgIDCloseTimeSent = new HashMap<Integer, Long>();
+	private long nextMessageID = 0;
+	private final HashMap<Long, Long> msgIDCloseTimeSent = new HashMap<Long, Long>();
 
-	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
-	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
+	private final HashMap<Long, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Long, PartiallyReceivedBuffer>();
+	private final HashMap<Long, SparseBitmap> receiveMaps = new HashMap<Long, SparseBitmap>();
 	private long highestAckedSeqNum = -1;
-	private final HashMap<Integer, Long> msgIDCloseTimeRecv = new HashMap<Integer, Long>();
+	private final HashMap<Long, Long> msgIDCloseTimeRecv = new HashMap<Long, Long>();
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
 
-		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
+		startedByPrio = new ArrayList<HashMap<Long, MessageWrapper>>(DMT.NUM_PRIORITIES);
 		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
-			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
+			startedByPrio.add(new HashMap<Long, MessageWrapper>());
 		}
 
 		lastRtts = new int[100];
@@ -313,7 +313,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		for(int i = 0; i < startedByPrio.size(); i++) {
-			HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
+			HashMap<Long, MessageWrapper> started = startedByPrio.get(i);
 
 			//Try to finish messages that have been started
 			synchronized(started) {
@@ -335,7 +335,7 @@ public class NewPacketFormat implements PacketFormat {
 				}
 				if(item == null) break;
 
-				int messageID = getMessageID();
+				long messageID = getMessageID();
 				if(messageID == -1) {
 					if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
 					messageQueue.pushfrontPrioritizedMessageItem(item);
@@ -352,7 +352,7 @@ public class NewPacketFormat implements PacketFormat {
 				sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
 
 				//Priority of the one we grabbed might be higher than i
-				HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
+				HashMap<Long, MessageWrapper> queue = startedByPrio.get(item.getPriority());
 				synchronized(queue) {
 					queue.put(messageID, wrapper);
 				}
@@ -372,8 +372,8 @@ public class NewPacketFormat implements PacketFormat {
 		return packet;
 	}
 
-	private int getMessageID() {
-		int messageID = nextMessageID;
+	private long getMessageID() {
+		long messageID = nextMessageID;
 
 		synchronized(msgIDCloseTimeSent) {
 			Long time = msgIDCloseTimeSent.get(messageID);
@@ -386,7 +386,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+		for(HashMap<Long, MessageWrapper> started : startedByPrio) {
 			synchronized(started) {
 				if(started.containsKey(messageID)) return -1;
 			}
@@ -441,7 +441,7 @@ public class NewPacketFormat implements PacketFormat {
 					synchronized(msgIDCloseTimeSent) {
 						msgIDCloseTimeSent.put(wrapper.getMessageID(), System.currentTimeMillis());
 					}
-					HashMap<Integer, MessageWrapper> started = startedByPrio.get(wrapper.getPriority());
+					HashMap<Long, MessageWrapper> started = startedByPrio.get(wrapper.getPriority());
 					synchronized(started) {
 						started.remove(wrapper.getMessageID());
 					}
