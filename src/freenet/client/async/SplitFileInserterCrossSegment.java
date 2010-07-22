@@ -63,7 +63,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 				if(!active) container.activate(seg, 1);
 			}
 			Bucket data = seg.getBucket(blockNumbers[i]);
-			wrapper.data = data;
+			wrapper.setData(data);
 			if(persistent) container.activate(data, Integer.MAX_VALUE);
 			if(!active) container.deactivate(seg, 1);
 			decodeData[i] = wrapper;

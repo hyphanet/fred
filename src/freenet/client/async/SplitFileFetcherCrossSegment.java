@@ -143,7 +143,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 						return false;
 					}
 				}
-				wrapper.data = data;
+				wrapper.setData(data);
 				if(persistent) container.activate(data, Integer.MAX_VALUE);
 				if(!active) container.deactivate(seg, 1);
 			} else {

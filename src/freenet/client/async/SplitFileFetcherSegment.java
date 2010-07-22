@@ -578,7 +578,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(persistent)
 				container.activate(parent, 1);
-			Bucket lastBlock = dataBuckets[dataBuckets.length-1].data;
+			Bucket lastBlock = dataBuckets[dataBuckets.length-1].getData();
 			if(lastBlock != null) {
 				if(persistent)
 					container.activate(lastBlock, 1);
@@ -586,7 +586,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					lastBlock.free();
 					if(persistent)
 						lastBlock.removeFrom(container);
-					dataBuckets[dataBuckets.length-1].data = null;
+					dataBuckets[dataBuckets.length-1].setData(null);
 					if(persistent)
 						container.store(dataBuckets[dataBuckets.length-1]);
 					// It will be decoded by the FEC job.
@@ -643,10 +643,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 					Logger.error(this, "Data block "+i+" is inactive! : "+dataBuckets[i]);
 				if(dataBuckets[i] == null)
 					Logger.error(this, "Data block "+i+" is null!");
-				else if(dataBuckets[i].data == null)
+				else if(dataBuckets[i].getData() == null)
 					Logger.error(this, "Data block "+i+" has null data!");
 				else
-					dataBuckets[i].data.storeTo(container);
+					dataBuckets[i].getData().storeTo(container);
 				container.store(dataBuckets[i]);
 			}
 		}
@@ -739,14 +739,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 		 */
 
 		// FIXME don't heal if ignoreLastBlock.
-		Bucket lastBlock = dataBuckets[dataBuckets.length-1].data;
+		Bucket lastBlock = dataBuckets[dataBuckets.length-1].getData();
 		if(lastBlock != null) {
 			if(persistent)
 				container.activate(lastBlock, 1);
 			if(lastBlock.size() != CHKBlock.DATA_LENGTH) {
 				try {
-					dataBuckets[dataBuckets.length-1].data =
-						BucketTools.pad(lastBlock, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), (int) lastBlock.size());
+					dataBuckets[dataBuckets.length-1].setData(
+						BucketTools.pad(lastBlock, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), (int) lastBlock.size()));
 					lastBlock.free();
 					if(persistent) {
 						lastBlock.removeFrom(container);
@@ -875,7 +875,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 					data.free();
 					if(persistent) data.removeFrom(container);
-					checkBuckets[i].data = null;
+					checkBuckets[i].setData(null);
 				} else {
 					data.free();
 				}
@@ -1766,7 +1766,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			Logger.error(this, "Block is null: "+blockNum+" on "+this+" activated = "+container.ext().isActive(this)+" finished = "+finished+" encoder finished = "+encoderFinished+" fetcher finished = "+fetcherFinished);
 			return null;
 		}
-		Bucket ret = block.data;
+		Bucket ret = block.getData();
 		if(ret == null && logMINOR) Logger.minor(this, "Bucket is null: "+blockNum+" on "+this+" for "+block);
 		if(!active)
 			container.deactivate(block, 1);
@@ -1849,10 +1849,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 			MinimalSplitfileBlock block = dataBuckets[i];
 			if(block == null) continue;
 			if(persistent) container.activate(block, 1);
-			if(block.data != null) {
+			Bucket data = block.getData();
+			if(data != null) {
 				// We only free the data blocks at the last minute.
-				if(persistent) container.activate(block.data, 1);
-				block.data.free();
+				if(persistent) container.activate(data, 1);
+				data.free();
 			}
 			if(persistent) block.removeFrom(container);
 			dataBuckets[i] = null;
@@ -1861,10 +1862,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 			MinimalSplitfileBlock block = checkBuckets[i];
 			if(block == null) continue;
 			if(persistent) container.activate(block, 1);
-			if(block.data != null) {
+			Bucket data = block.getData();
+			if(data != null) {
 				Logger.error(this, "Check block "+i+" still present in removeFrom()! on "+this);
-				if(persistent) container.activate(block.data, 1);
-				block.data.free();
+				if(persistent) container.activate(data, 1);
+				data.free();
 			}
 			if(persistent) block.removeFrom(container);
 			checkBuckets[i] = null;

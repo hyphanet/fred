@@ -9,8 +9,11 @@ import freenet.support.api.Bucket;
 
 public class MinimalSplitfileBlock implements SplitfileBlock {
 
+	// LOCKING: MinimalSplitfileBlock is accessed by the client database thread and by the FEC threads.
+	// Therefore we need synchronization on data.
+	
 	public final int number;
-	Bucket data;
+	private Bucket data;
 	boolean flag;
 	
 	public MinimalSplitfileBlock(int n) {
@@ -25,11 +28,11 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 		return data != null;
 	}
 
-	public Bucket getData() {
+	public synchronized Bucket getData() {
 		return data;
 	}
 
-	public void setData(Bucket data) {
+	public synchronized void setData(Bucket data) {
 		this.data = data;
 	}
 
@@ -39,7 +42,7 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 //			Logger.minor(this, "Deactivating "+this, new Exception("debug"));
 //	}
 //
-	public void storeTo(ObjectContainer container) {
+	public synchronized void storeTo(ObjectContainer container) {
 		if(data != null)
 			data.storeTo(container);
 		container.store(this);
@@ -47,7 +50,7 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 			Logger.minor(this, "Storing "+this+" with data: "+data+" id = "+container.ext().getID(this));
 	}
 
-	public void removeFrom(ObjectContainer container) {
+	public synchronized void removeFrom(ObjectContainer container) {
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Removing "+this+" with data: "+data);
 		if(data != null) {
