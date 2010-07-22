@@ -469,6 +469,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				} else if(block == null) {
 					// Cross-segment, just return false.
 					Logger.error(this, "CROSS-SEGMENT DECODED/ENCODED BLOCK INVALID: "+blockNo, new Exception("error"));
+					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from cross-segment decode"), blockNo, null, container, context);
 					data.free();
 					if(persistent) data.removeFrom(container);
 					return false;
