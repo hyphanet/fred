@@ -932,8 +932,10 @@ public class NodeUpdateManager {
 	
 	private int getReadyExt() {
 		int ver = NodeStarter.extBuildNumber;
-		int fetched = extUpdater.getFetchedVersion();
-		if(fetched > 0) ver = fetched;
+		if(extUpdater != null) {
+			int fetched = extUpdater.getFetchedVersion();
+			if(fetched > 0) ver = fetched;
+		}
 		return ver;
 	}
 
