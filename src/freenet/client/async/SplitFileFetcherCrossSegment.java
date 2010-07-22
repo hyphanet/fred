@@ -141,6 +141,8 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 					if(data == null) {
 						Logger.error(this, "Cannot decode/encode: Found block "+i+" : "+blockNumbers[i]+" of "+segments[i]+" but is gone now!", new Exception("error"));
 						return false;
+					} else {
+						Logger.error(this, "Synchronization bug: got the bucket the second time?!");
 					}
 				}
 				wrapper.setData(data);
