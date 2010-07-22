@@ -6,6 +6,7 @@ import freenet.client.FECCallback;
 import freenet.client.FECCodec;
 import freenet.client.FECJob;
 import freenet.client.FECQueue;
+import freenet.client.FetchException;
 import freenet.client.SplitfileBlock;
 import freenet.keys.CHKBlock;
 import freenet.support.LogThresholdCallback;
@@ -333,6 +334,8 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
 		Logger.error(this, "Encode or decode failed for cross segment: "+this, t);
+		SplitFileFetcher fetcher = getFetcher(container);
+		fetcher.onFailed(new FetchException(FetchException.INTERNAL_ERROR, t), container, context);
 	}
 
 	public void addDataBlock(SplitFileFetcherSegment seg, int blockNum) {
