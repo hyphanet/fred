@@ -1451,6 +1451,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 		public void onFailure(ObjectContainer container, ClientContext context) {
 			if(datastoreOnly) {
+				if(persistent)
+					container.activate(usk, Integer.MAX_VALUE);
 				onFoundEdition(usk.suggestedEdition, usk, container, context, false, (short) -1, null, false, false);
 				return;
 			}
