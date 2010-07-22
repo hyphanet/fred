@@ -227,6 +227,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		});
 		while(set.hasNext()) {
 			ArchiveExtractTag tag = set.next();
+			if(tag.checkBroken(container)) continue;
 			tag.activateForExecution(container);
 			runPersistentOffThread(tag, context, context.archiveManager, context.persistentBucketFactory);
 		}
