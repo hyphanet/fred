@@ -310,6 +310,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	@Override
 	public Key[] listKeys(ObjectContainer container) {
+		if(container != null && !persistent)
+			Logger.error(this, "listKeys() on "+this+" but persistent=false, stored is "+container.ext().isStored(this)+" active is "+container.ext().isActive(this));
 		synchronized(this) {
 			if(cancelled || finished)
 				return new Key[0];
