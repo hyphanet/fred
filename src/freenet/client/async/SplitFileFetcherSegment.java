@@ -1747,7 +1747,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return checkRetries[blockNum];
 	}
 	
-	private MinimalSplitfileBlock getBlock(int blockNum) {
+	private synchronized MinimalSplitfileBlock getBlock(int blockNum) {
 		if(blockNum < dataBuckets.length) {
 			return dataBuckets[blockNum];
 		}
