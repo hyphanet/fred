@@ -1772,6 +1772,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.deactivate(block, 1);
 		return ret;
 	}
+	
+	public boolean hasBlockWrapper(int i) {
+		return getBlock(i) != null;
+	}
 
 	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure
 	 * and return null.
