@@ -5,7 +5,9 @@ import com.db4o.ObjectContainer;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
+import freenet.node.LowLevelGetException;
 import freenet.node.SendableGet;
+import freenet.support.Logger;
 
 public class SingleKeyListener implements KeyListener {
 	
@@ -52,7 +54,12 @@ public class SingleKeyListener implements KeyListener {
 		if(!key.equals(this.key)) return false;
 		if(persistent)
 			container.activate(fetcher, 1);
-		fetcher.onGotKey(key, found, container, context);
+		try {
+			fetcher.onGotKey(key, found, container, context);
+		} catch (Throwable t) {
+			Logger.error(this, "Failed: "+t, t);
+			fetcher.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), null, container, context);
+		}
 		if(persistent)
 			container.deactivate(fetcher, 1);
 		synchronized(this) {
