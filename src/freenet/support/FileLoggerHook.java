@@ -645,15 +645,13 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 		//If a compressed log file already exists for a given date,
 		//add a number to the end of the file that already exists
-		for(int a = 1; currentFilename != null && currentFilename.exists(); a++){
-			numericSameDateFilename = new File(getHourLogName(gc, a, true));
-			if(numericSameDateFilename != null && numericSameDateFilename.exists()){
-				currentFilename = numericSameDateFilename;
-			}
-			else{
-				FileUtil.renameTo(currentFilename, numericSameDateFilename);
-				currentFilename = numericSameDateFilename;
-				break;
+		if(currentFilename != null && currentFilename.exists()) {
+			for(int a = 1;; a++){
+				numericSameDateFilename = new File(getHourLogName(gc, a, true));
+				if(numericSameDateFilename == null || !numericSameDateFilename.exists()) {
+					FileUtil.renameTo(currentFilename, numericSameDateFilename);
+					break;
+				}
 			}
 		}
 		if(oldFile != null) {
