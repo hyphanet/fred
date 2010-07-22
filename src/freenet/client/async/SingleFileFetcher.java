@@ -1450,15 +1450,21 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onFailure(ObjectContainer container, ClientContext context) {
+			FetchException e = null;
 			if(datastoreOnly) {
 				if(persistent)
 					container.activate(usk, Integer.MAX_VALUE);
-				onFoundEdition(usk.suggestedEdition, usk, container, context, false, (short) -1, null, false, false);
-				return;
+				try {
+					onFoundEdition(usk.suggestedEdition, usk, container, context, false, (short) -1, null, false, false);
+					return;
+				} catch (Throwable t) {
+					e = new FetchException(FetchException.INTERNAL_ERROR, t);
+				}
 			}
 			if(persistent)
 				container.activate(this, 2);
-			cb.onFailure(new FetchException(FetchException.DATA_NOT_FOUND, "No USK found"), null, container, context);
+			if(e != null) e = new FetchException(FetchException.DATA_NOT_FOUND, "No USK found");
+			cb.onFailure(e, null, container, context);
 			if(persistent) removeFrom(container);
 		}
 
