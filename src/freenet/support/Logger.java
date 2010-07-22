@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.regex.PatternSyntaxException;
 
+import freenet.support.FileLoggerHook.IntervalParseException;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.Closer;
 
@@ -252,7 +253,12 @@ public abstract class Logger {
 		logger.setThreshold(level);
 		logger.setDetailedThresholds(detail);
 		FileLoggerHook fh;
-		fh = new FileLoggerHook(System.out, "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", level.name());
+		try {
+			fh = new FileLoggerHook(System.out, "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", level.name());
+		} catch (IntervalParseException e) {
+			// Impossible
+			throw new Error(e);
+		}
 		if (detail != null) fh.setDetailedThresholds(detail);
 		((LoggerHookChain) logger).addHook(fh);
 		fh.start();

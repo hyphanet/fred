@@ -40,6 +40,7 @@ public class NodeInitException extends Exception {
 	public static final int EXIT_CANT_WRITE_MASTER_KEYS = 30;
 	public static final int EXIT_EXCEPTION_TO_DEBUG = 1023;
 	
+	
 	private static final long serialVersionUID = -1;
 	
 	NodeInitException(int exitCode, String msg) {

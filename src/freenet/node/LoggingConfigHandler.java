@@ -290,20 +290,25 @@ public class LoggingConfigHandler {
 			try {
 				hook = 
 					new FileLoggerHook(true, new File(logDir, LOG_PREFIX).getAbsolutePath(), 
-				    		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", LogLevel.DEBUG /* filtered by chain */, false, true, 
+				    		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", logRotateInterval, LogLevel.DEBUG /* filtered by chain */, false, true, 
 				    		maxZippedLogsSize /* 1GB of old compressed logfiles */, maxCachedLogLines);
 			} catch (IOException e) {
 				System.err.println("CANNOT START LOGGER: "+e.getMessage());
 				return;
-			}
-			try {
-				hook.setInterval(logRotateInterval);
 			} catch (IntervalParseException e) {
 				System.err.println("INVALID LOGGING INTERVAL: "+e.getMessage());
+				logRotateInterval = "5MINUTE";
 				try {
-					hook.setInterval("5MINUTE");
+					hook = 
+						new FileLoggerHook(true, new File(logDir, LOG_PREFIX).getAbsolutePath(), 
+					    		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", logRotateInterval, LogLevel.DEBUG /* filtered by chain */, false, true, 
+					    		maxZippedLogsSize /* 1GB of old compressed logfiles */, maxCachedLogLines);
 				} catch (IntervalParseException e1) {
-					System.err.println("Impossible: "+e1.getMessage());
+					System.err.println("CANNOT START LOGGER: IMPOSSIBLE: "+e1.getMessage());
+					return;
+				} catch (IOException e1) {
+					System.err.println("CANNOT START LOGGER: "+e1.getMessage());
+					return;
 				}
 			}
 			hook.setMaxListBytes(maxCachedLogBytes);
