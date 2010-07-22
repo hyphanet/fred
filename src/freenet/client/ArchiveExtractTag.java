@@ -46,6 +46,7 @@ class ArchiveExtractTag {
 				callback.onFailed(new ArchiveFailureException(error), container, context);
 			}
 			if(data != null && freeBucket) {
+				container.activate(data, 1);
 				data.free();
 				data.removeFrom(container);
 			}
