@@ -1433,10 +1433,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					sf.schedule(container, context);
 					if(persistent) removeFrom(container);
 				} else {
+					if(persistent) container.activate(cb, 1);
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null, container, context);
 					if(persistent) removeFrom(container);
 				}
 			} catch (FetchException e) {
+				if(persistent) container.activate(cb, 1);
 				cb.onFailure(e, null, container, context);
 				if(persistent) removeFrom(container);
 			}
@@ -1464,6 +1466,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent)
 				container.activate(this, 2);
 			if(e != null) e = new FetchException(FetchException.DATA_NOT_FOUND, "No USK found");
+			if(persistent) container.activate(cb, 1);
 			cb.onFailure(e, null, container, context);
 			if(persistent) removeFrom(container);
 		}
