@@ -905,7 +905,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	public void innerRemoveFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
 		if(!container.ext().isStored(this)) {
-			Logger.error(this, "Already removed??? on "+this, new Exception("error"));
 			return;
 		}
 		container.activate(blockFetchContext, 1);
