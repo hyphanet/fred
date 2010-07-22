@@ -624,6 +624,7 @@ public class NodeUpdateManager {
 		long now = System.currentTimeMillis();
 		long startedMillisAgo;
 		synchronized(this) {
+			if(mainUpdater == null) return false;
 			if(!(hasNewMainJar || hasNewExtJar)) {
 				if(logMINOR) Logger.minor(this, "hasNewMainJar="+hasNewMainJar+" hasNewExtJar="+hasNewExtJar);
 				return false; // no jar
