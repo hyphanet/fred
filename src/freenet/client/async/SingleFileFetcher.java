@@ -855,8 +855,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				if(persistent) container.store(clientMetadata);
-				String mime = clientMetadata.getMIMEType();
-				if(mime != null) rcb.onExpectedMIME(mime, container, context);
 				
 				String mimeType = clientMetadata.getMIMETypeNoParams();
 				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
@@ -870,6 +868,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					}
 					if(logMINOR) Logger.minor(this, "Handling implicit container... (splitfile)");
 					continue;
+				} else {
+					String mime = clientMetadata.getMIMEType();
+					if(mime != null) rcb.onExpectedMIME(mime, container, context);
 				}
 				
 				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null &&
