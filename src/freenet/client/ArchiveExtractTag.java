@@ -16,6 +16,7 @@ class ArchiveExtractTag {
 	final long nodeDBHandle;
 	
 	ArchiveExtractTag(ArchiveHandlerImpl handler, Bucket data, boolean freeBucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, long nodeDBHandle) {
+		if(handler == null) throw new NullPointerException();
 		this.handler = handler;
 		this.data = data;
 		this.freeBucket = freeBucket;
