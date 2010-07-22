@@ -315,7 +315,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				}
 			} else {
 				// Yay we decoded a block. Tell the segment.
-				if(seg.onSuccess(data, blockNumbers[i], null, container, context, null))
+				if(seg.onSuccess(data, blockNumbers[num], null, container, context, null))
 					System.out.println("Cross segment encoded a block.");
 			}
 			if(!active) container.deactivate(seg, 1);
