@@ -317,14 +317,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent) data.removeFrom(container);
 				return -1;
 			}
-			if(startedDecode) {
-				// Much the same.
-				if(logMINOR)
-					Logger.minor(this, "onSuccess() when started decode for "+this);
-				data.free();
-				if(persistent) data.removeFrom(container);
-				return -1;
-			}
+			// We accept blocks after startedDecode. So the FEC code will drop the surplus blocks.
+			// This is important for cross-segment encoding:
+			// Cross-segment decodes a block. This triggers a decode here, and also an encode on the cross-segment.
+			// If we ignore the block here, the cross-segment encode will fail because a block is missing.
 			if(blockNo < dataKeys.length) {
 				wasDataBlock = true;
 				if(dataKeys[blockNo] == null) {
