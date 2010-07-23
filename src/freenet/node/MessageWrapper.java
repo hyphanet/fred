@@ -5,7 +5,7 @@ import freenet.support.SparseBitmap;
 
 public class MessageWrapper {
 	private final MessageItem item;
-	private final boolean isLongMessage;
+	private final boolean isShortMessage;
 	private final int messageID;
 	
 	//Sorted lists of non-overlapping ranges
@@ -14,7 +14,7 @@ public class MessageWrapper {
 
 	public MessageWrapper(MessageItem item, int messageID) {
 		this.item = item;
-		isLongMessage = item.buf.length > 255;
+		isShortMessage = item.buf.length <= 255;
 		this.messageID = messageID;
 	}
 
@@ -119,8 +119,8 @@ public class MessageWrapper {
 		return item.buf.length;
 	}
 
-	public boolean isLongMessage() {
-		return isLongMessage;
+	public boolean isShortMessage() {
+		return isShortMessage;
 	}
 
 	public boolean isFragmented(int length) {
@@ -182,7 +182,7 @@ public class MessageWrapper {
 		sent.add(start, start + fragmentLength - 1);
 
 		boolean isFragmented = !((start == 0) && (fragmentLength == item.buf.length));
-		return new MessageFragment(!isLongMessage, isFragmented, start == 0, messageID, fragmentLength,
+		return new MessageFragment(isShortMessage, isFragmented, start == 0, messageID, fragmentLength,
 		                item.buf.length, start, fragmentData);
         }
 
