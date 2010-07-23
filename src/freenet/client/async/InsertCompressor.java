@@ -173,9 +173,17 @@ public class InsertCompressor implements CompressJob {
 						maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
 					}
 					first = false;
-					comp.compress(is, os, origSize, maxOutputSize);
-					is.close();
-					os.close();
+					try {
+						comp.compress(is, os, origSize, maxOutputSize);
+					} catch (RuntimeException e) {
+						// ArithmeticException has been seen in bzip2 codec.
+						Logger.error(this, "Compression failed with codec "+comp+" : "+e, e);
+						// Try the next one
+						continue;
+					} finally {
+						is.close();
+						os.close();
+					}
 					long resultSize = result.size();
 					if(hasher != null) hashes = hasher.getResults();
 					// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH
