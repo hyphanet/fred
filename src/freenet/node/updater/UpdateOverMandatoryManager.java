@@ -751,7 +751,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final long uid = m.getLong(DMT.UID);
 
-		RandomAccessFileWrapper raf;
+		final RandomAccessFileWrapper raf;
 		try {
 			raf = new RandomAccessFileWrapper(data, "r");
 		} catch(FileNotFoundException e) {
@@ -767,6 +767,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				Node.PACKET_SIZE, raf, true);
 		} catch(IOException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but we can't determine the file size: " + e, e);
+			raf.close();
 			return true;
 		}
 
@@ -775,6 +776,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr);
 		} catch(DisconnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, then disconnected: " + e, e);
+			raf.close();
 			return true;
 		}
 
@@ -785,6 +787,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Failed to send revocation key blob to " + source.userToString() + " : " + bt.getCancelReason());
 				else
 					Logger.normal(this, "Sent revocation key blob to " + source.userToString());
+				raf.close();
 			}
 		};
 
@@ -1197,7 +1200,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final long uid = m.getLong(DMT.UID);
 
-		RandomAccessFileWrapper raf;
+		final RandomAccessFileWrapper raf;
 		try {
 			raf = new RandomAccessFileWrapper(data, "r");
 		} catch(FileNotFoundException e) {
@@ -1213,6 +1216,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				Node.PACKET_SIZE, raf, true);
 		} catch(IOException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but we can't determine the file size: " + e, e);
+			raf.close();
 			return true;
 		}
 
@@ -1221,6 +1225,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr);
 		} catch(DisconnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected: " + e, e);
+			raf.close();
 			return true;
 		}
 
@@ -1231,6 +1236,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Failed to send "+name+" jar blob to " + source.userToString() + " : " + bt.getCancelReason());
 				else
 					Logger.normal(this, "Sent "+name+" jar blob to " + source.userToString());
+				raf.close();
 			}
 		};
 
