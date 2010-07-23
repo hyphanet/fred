@@ -26,6 +26,8 @@ import freenet.support.api.Bucket;
  * A proxy Bucket which adds:
  * - Encryption with the supplied cipher, and a random, ephemeral key.
  * - Padding to the next PO2 size.
+ * 
+ * CRYPTO WARNING: This uses PCFB with no IV. That means it is only safe if the key is unique!
  */
 public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToFieldSetBucket {
 
