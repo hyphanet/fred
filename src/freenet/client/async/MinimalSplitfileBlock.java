@@ -32,8 +32,32 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 		return data;
 	}
 
-	public synchronized void setData(Bucket data) {
+	/** Set the data but only if there is no data already. 
+	 * @return True if we set the data to the new bucket. */
+	public synchronized boolean trySetData(Bucket data) {
+		if(this.data == data) return true;
+		if(this.data != null) return false;
 		this.data = data;
+		return true;
+	}
+
+	/** Set the data, assert that it is null before being set */
+	public synchronized void assertSetData(Bucket data) {
+		assert(this.data == null || this.data == data);
+		this.data = data;
+	}
+	
+	public synchronized Bucket clearData() {
+		Bucket ret = data;
+		data = null;
+		return ret;
+	}
+
+	/** Replace the data - set it and return the old data */
+	public synchronized Bucket replaceData(Bucket data) {
+		Bucket ret = this.data;
+		this.data = data;
+		return ret;
 	}
 
 	// Useful for debugging duplicate object bugs. But use the new logging infrastructure if you reinstate it, please.

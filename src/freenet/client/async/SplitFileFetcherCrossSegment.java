@@ -156,7 +156,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 						Logger.error(this, "Synchronization bug: got the bucket the second time?!");
 					}
 				}
-				wrapper.setData(data);
+				wrapper.assertSetData(data);
 				if(persistent) container.activate(data, Integer.MAX_VALUE);
 				if(!active) container.deactivate(seg, 1);
 			} else {
@@ -250,7 +250,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 					System.out.println("Cross-segment decoded a block.");
 			}
 			if(!active) container.deactivate(seg, 1);
-			dataBlocks[i].setData(null);
+			dataBlocks[i].clearData();
 			if(persistent) container.delete(dataBlocks[i]);
 		}
 		boolean bye = false;
@@ -328,7 +328,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 					System.out.println("Cross segment encoded a block.");
 			}
 			if(!active) container.deactivate(seg, 1);
-			checkBlocks[i].setData(null);
+			checkBlocks[i].clearData();
 			if(persistent) container.delete(checkBlocks[i]);
 		}
 		// All done.

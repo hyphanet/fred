@@ -213,10 +213,18 @@ public class FECQueue implements OOMHook {
 							job.getCodec().realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
 							// Update SplitFileBlocks from buckets if necessary
 							if ((job.dataBlockStatus != null) || (job.checkBlockStatus != null)) {
-								for (int i = 0; i < job.dataBlocks.length; i++)
-									job.dataBlockStatus[i].setData(job.dataBlocks[i]);
-								for (int i = 0; i < job.checkBlocks.length; i++)
-									job.checkBlockStatus[i].setData(job.checkBlocks[i]);
+								for (int i = 0; i < job.dataBlocks.length; i++) {
+									if(!job.dataBlockStatus[i].trySetData(job.dataBlocks[i])) {
+										job.dataBlocks[i].free();
+										job.dataBlocks[i] = null;
+									}
+								}
+								for (int i = 0; i < job.checkBlocks.length; i++) {
+									if(!job.checkBlockStatus[i].trySetData(job.checkBlocks[i])) {
+										job.checkBlocks[i].free();
+										job.checkBlocks[i] = null;
+									}
+								}
 							}
 						}
 					} catch (final Throwable t) {
