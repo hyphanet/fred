@@ -373,9 +373,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 					return -1;
 				}
 				checkRetries[checkNo] = 0; // Prevent healing of successfully fetched block.
-				if(!checkBuckets[blockNo].trySetData(data)) {
+				if(!checkBuckets[checkNo].trySetData(data)) {
 					if(logMINOR)
-						Logger.minor(this, "Already have data for data block "+blockNo);
+						Logger.minor(this, "Already have data for check block "+checkNo);
 					data.free();
 					if(persistent) data.removeFrom(container);
 					return -1;
