@@ -58,7 +58,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 */
 	public void start() {
 		Logger.debug(this, "Starting...");
-		mTicker.queueTimedJob(this, getStartupDelay());
+		mTicker.queueTimedJob(this, mName, getStartupDelay(), false, true);
 	}
 	
 	/** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
@@ -76,7 +76,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 		}
 		finally {
 			Logger.debug(this, "Loop finished. Sleeping for " + (sleepTime/(1000*60)) + " minutes.");
-			mTicker.queueTimedJob(this, sleepTime);
+			mTicker.queueTimedJob(this, mName, sleepTime, false, true);
 		}
 	}
 	
@@ -84,7 +84,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 * Wakes up the thread so that iterate() is called.
 	 */
 	public void nextIteration() {
-		mTicker.rescheduleTimedJob(this, 0);
+		mTicker.rescheduleTimedJob(this, mName, 0);
 	}
 	
 	protected void abortAllTransfers() {
