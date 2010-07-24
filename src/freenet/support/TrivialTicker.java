@@ -108,9 +108,11 @@ public class TrivialTicker implements Ticker {
 	 * Changes the offset of a already-queued job.
 	 * If the given job was not queued yet it will be queued nevertheless.
 	 */
-	public void rescheduleTimedJob(final Runnable job, long newOffset) {
-		cancelTimedJob(job);
-		queueTimedJob(job, newOffset);
+	public void rescheduleTimedJob(final Runnable job, final String name, long newOffset) {
+		synchronized(this) {
+			cancelTimedJob(job);
+			queueTimedJob(job, name, newOffset, false, false); // Don't dupe-check, we are synchronized
+		}
 	}
 	
 	private Thread shutdownThread = null;
