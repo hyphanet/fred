@@ -150,8 +150,6 @@ public class MessageWrapper {
 	}
 
 	public MessageFragment getMessageFragment(int maxLength) {
-		if(maxLength <= 9) return null; //Won't fit more than a few bytes in the best case anyway
-
 		int start = 0;
 		int end = Integer.MAX_VALUE;
 
@@ -168,21 +166,26 @@ public class MessageWrapper {
 		if(start >= item.buf.length) {
 			return null;
 		}
+		
+		int dataLength = maxLength
+		                - 2 //Message id + flags
+		                - (isShortMessage ? 1 : 2); //Fragment length
 
-		//Copy start to end into dest
-		if(item.buf.length - start <= 0) return null;
-		if(maxLength - 9 <= 0) return null;
-		if(end - start <= 0) return null;
-		int fragmentLength = Math.min((end - start), (maxLength - 9));
-		fragmentLength = Math.min(fragmentLength, item.buf.length - start);
+		if(isFragmented(dataLength)) {
+			dataLength -= (isShortMessage ? 1 : 3); //Message length / fragment offset
+		}
+		
+		dataLength = Math.min(end - start, dataLength);
+		dataLength = Math.min(item.buf.length - start, dataLength);
+		if(dataLength <= 0) return null;
 
-		byte[] fragmentData = new byte[fragmentLength];
-		System.arraycopy(item.buf, start, fragmentData, 0, fragmentLength);
+		byte[] fragmentData = new byte[dataLength];
+		System.arraycopy(item.buf, start, fragmentData, 0, dataLength);
 
-		sent.add(start, start + fragmentLength - 1);
+		sent.add(start, start + dataLength - 1);
 
-		boolean isFragmented = !((start == 0) && (fragmentLength == item.buf.length));
-		return new MessageFragment(isShortMessage, isFragmented, start == 0, messageID, fragmentLength,
+		boolean isFragmented = !((start == 0) && (dataLength == item.buf.length));
+		return new MessageFragment(isShortMessage, isFragmented, start == 0, messageID, dataLength,
 		                item.buf.length, start, fragmentData);
         }
 
