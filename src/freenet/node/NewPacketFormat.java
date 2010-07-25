@@ -190,7 +190,7 @@ public class NewPacketFormat implements PacketFormat {
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
-		NPFPacket packet = createPacket(maxPacketSize, pn.getMessageQueue());
+		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue());
 		if(packet == null) return false;
 
 		//TODO: Do this properly
