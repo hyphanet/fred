@@ -74,6 +74,8 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat receiver = new NewPacketFormat(null);
 		PeerMessageQueue receiverQueue = new PeerMessageQueue();
 
+		setUpRTT(50, sender, senderQueue, receiver, receiverQueue);
+
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue);
@@ -94,6 +96,8 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat receiver = new NewPacketFormat(null);
 		PeerMessageQueue receiverQueue = new PeerMessageQueue();
 
+		setUpRTT(50, sender, senderQueue, receiver, receiverQueue);
+
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue);
@@ -106,5 +110,16 @@ public class NewPacketFormatTest extends TestCase {
 		receiver.handleDecryptedPacket(fragment3);
 		receiver.handleDecryptedPacket(fragment2);
 		assertEquals(1, receiver.handleDecryptedPacket(fragment1).size());
+	}
+
+	private void setUpRTT(long delay, NewPacketFormat sender, PeerMessageQueue senderQueue, NewPacketFormat receiver, PeerMessageQueue receiverQueue) {
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1], null, false, null, (short) 0));
+		receiver.handleDecryptedPacket(sender.createPacket(512, senderQueue));
+		try {
+			Thread.sleep(delay);
+		} catch(InterruptedException e) {
+
+		}
+		sender.handleDecryptedPacket(receiver.createPacket(512, receiverQueue));
 	}
 }
