@@ -171,6 +171,8 @@ public class NewPacketFormat implements PacketFormat {
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(buf, offset + HMAC_LENGTH, length - HMAC_LENGTH);
 		byte[] hash = md.digest();
+		SHA256.returnMessageDigest(md);
+		md = null;
 
 		for(int i = 0; i < HMAC_LENGTH; i++) {
 			if(buf[offset + i] != hash[i]) {
@@ -216,6 +218,8 @@ public class NewPacketFormat implements PacketFormat {
 		MessageDigest md = SHA256.getMessageDigest();
 		md.update(data, HMAC_LENGTH, packet.getLength());
 		byte[] hash = md.digest();
+		SHA256.returnMessageDigest(md);
+		md = null;
 
 		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
 		hashCipher.blockEncipher(hash, 0, HMAC_LENGTH);
