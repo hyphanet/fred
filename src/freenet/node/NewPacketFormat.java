@@ -38,7 +38,7 @@ public class NewPacketFormat implements PacketFormat {
 	private final PeerNode pn;
 	private final LinkedList<Long> acks = new LinkedList<Long>();
 	private final HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
-	private final int[] lastRtts = new int[100];
+	private final int[] lastRtts;
 	private int nextRttPos;
 
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
@@ -57,6 +57,11 @@ public class NewPacketFormat implements PacketFormat {
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
 		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
 			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
+		}
+
+		lastRtts = new int[100];
+		for(int i = 0; i < lastRtts.length; i++) {
+			lastRtts[i] = -1;
 		}
 	}
 
@@ -400,10 +405,14 @@ public class NewPacketFormat implements PacketFormat {
 
 	private int averageRTT() {
 		int avgRtt = 0;
-		for(int rtt : lastRtts) {
-			avgRtt += rtt;
+		int numRtts = 0;
+		for(int i = 0; i < lastRtts.length; i++) {
+			if(lastRtts[i] < 0) break;
+			avgRtt += lastRtts[i];
+			++numRtts;
 		}
-		avgRtt = avgRtt / lastRtts.length;
+
+		avgRtt = avgRtt / numRtts;
 		return avgRtt;
 	}
 
