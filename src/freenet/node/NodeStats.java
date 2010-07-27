@@ -553,7 +553,13 @@ public class NodeStats implements Persistable {
 	static final double DEFAULT_OVERHEAD = 0.7;
 	static final long DEFAULT_ONLY_PERIOD = 60*1000;
 	static final long DEFAULT_TRANSITION_PERIOD = 240*1000;
-	static final double MIN_OVERHEAD = 0.2;
+	/** Relatively high minimum overhead. A low overhead estimate becomes a self-fulfilling
+	 * prophecy, and it takes a long time to shake it off as the averages gradually increase.
+	 * If we accept no requests then everything is overhead! Whereas with a high minimum 
+	 * overhead the worst case is that more stuff succeeds than expected and we have a few 
+	 * timeouts (because output bandwidth liability was assuming a lower overhead than 
+	 * actually happens) - but this should be very rare. */
+	static final double MIN_OVERHEAD = 0.5;
 	
 	/* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert) {
