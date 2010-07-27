@@ -424,9 +424,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 				boolean haveDataBlocks = fetchedDataBlocks == dataKeys.length;
 				decodeNow = (!startedDecode) && (fetchedBlocks >= minFetched || haveDataBlocks);
 				if(decodeNow) {
-					startedDecode = true;
-					finishing = true;
-				} else {
+					decodeNow = checkAndDecodeNow(container, blockNo, tooSmall, haveDataBlocks);
+				}
+				if(!decodeNow) {
 					// Avoid hanging when we have n-1 check blocks, we succeed on the last data block,
 					// we don't have the other data blocks, and we have nothing else fetching.
 					allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
@@ -450,6 +450,79 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return res;
 	}
 	
+	private boolean checkAndDecodeNow(ObjectContainer container, int blockNo, boolean tooSmall, boolean haveDataBlocks) {
+		boolean decodeNow = true;
+		// Double-check...
+		// This is somewhat defensive, but these things have happened, and caused stalls.
+		// And this may help recover from persistent damage caused by previous bugs ...
+		int count = 0;
+		boolean haveFullLast = false;
+		for(int i=0;i<dataBuckets.length;i++) {
+			boolean active = true;
+			if(persistent) {
+				active = container.ext().isActive(dataBuckets[i]);
+				if(!active) container.activate(dataBuckets[i], 1);
+			}
+			Bucket d = dataBuckets[i].getData();
+			if(d != null) {
+				count++;
+				if(i == dataBuckets.length-1) {
+					if(ignoreLastDataBlock) {
+						if(blockNo == dataKeys.length && tooSmall) {
+							// Too small.
+						} else if(blockNo == dataKeys.length && !tooSmall) {
+							// Not too small. Cool.
+							haveFullLast = true;
+						} else {
+							boolean blockActive = true;
+							if(persistent) {
+								blockActive = container.ext().isActive(d);
+								if(blockActive) container.activate(d, 1);
+							}
+							haveFullLast = d.size() >= CHKBlock.DATA_LENGTH;
+							if(!blockActive) container.deactivate(d, 1);
+						}
+					} else {
+						haveFullLast = true;
+					}
+				}
+			} else {
+				if(dataKeys[i] == null) {
+					Logger.error(this, "Data block "+i+" does not exist but key does not exist either on "+this);
+				}
+			}
+			if(!active) container.deactivate(dataBuckets[i], 1);
+		}
+		if(count < dataBuckets.length) {
+			Logger.error(this, "haveDataBlocks is wrong: count is "+count);
+		}
+		if(!haveFullLast) count--;
+		for(int i=0;i<checkBuckets.length;i++) {
+			boolean active = true;
+			if(persistent) {
+				active = container.ext().isActive(checkBuckets[i]);
+				if(!active) container.activate(checkBuckets[i], 1);
+			}
+			if(checkBuckets[i].getData() != null) {
+				count++;
+			} else {
+				if(checkKeys[i] == null) {
+					Logger.error(this, "Check block "+i+" does not exist but key does not exist either on "+this);
+				}
+			}
+			if(!active) container.deactivate(checkBuckets[i], 1);
+		}
+		if(count < dataBuckets.length) {
+			Logger.error(this, "Attempting to decode but only "+count+" of "+dataBuckets.length+" blocks available!", new Exception("error"));
+			decodeNow = false;
+			fetchedDataBlocks = count;
+		} else {
+			startedDecode = true;
+			finishing = true;
+		}
+		return decodeNow;
+	}
+
 	private static final short ON_SUCCESS_DONT_NOTIFY = 1;
 	private static final short ON_SUCCESS_ALL_FAILED = 2;
 	private static final short ON_SUCCESS_DECODE_NOW = 4;
@@ -578,8 +651,28 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// Double-check...
 			int count = 0;
 			for(int i=0;i<dataBuckets.length;i++) {
-				if(dataBuckets[i].getData() != null)
-					count++;
+				Bucket d = dataBuckets[i].getData();
+				if(d != null) {
+					boolean valid = false;
+					if(i == dataBuckets.length-1) {
+						if(ignoreLastDataBlock) {
+							boolean blockActive = true;
+							if(persistent) {
+								blockActive = container.ext().isActive(d);
+								if(blockActive) container.activate(d, 1);
+							}
+							if(d.size() >= CHKBlock.DATA_LENGTH)
+								valid = true;
+							if(!blockActive) container.deactivate(d, 1);
+						} else {
+							valid = true;
+						}
+					} else {
+						valid = true;
+					}
+					if(valid)
+						count++;
+				}
 			}
 			for(int i=0;i<checkBuckets.length;i++) {
 				if(checkBuckets[i].getData() != null)
@@ -587,6 +680,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(count < dataBuckets.length) {
 				Logger.error(this, "Attempting to decode but only "+count+" of "+dataBuckets.length+" blocks available!", new Exception("error"));
+				// startedDecode and finishing are already set, so we can't recover.
+				fail(new FetchException(FetchException.INTERNAL_ERROR, "Not enough blocks to decode but decoding anyway?!"), container, context, true);
+				return;
 			}
 			if(persistent)
 				container.activate(parent, 1);
