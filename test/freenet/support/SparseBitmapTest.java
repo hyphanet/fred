@@ -14,7 +14,7 @@ public class SparseBitmapTest extends TestCase {
 
 		s.add(3,3);
 		assertFalse(s.contains(2, 2));
-		assertTrue(s.contains(3, 2));
+		assertTrue(s.contains(3, 3));
 		assertFalse(s.contains(4, 4));
 
 		s.add(0, 5);
