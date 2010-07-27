@@ -265,13 +265,13 @@ public class NewPacketFormat implements PacketFormat {
 			int avgRtt = averageRTT();
 			long curTime = System.currentTimeMillis();
 
-			Iterator<Long> it = sentPackets.keySet().iterator();
+			Iterator<Map.Entry<Long, SentPacket>> it = sentPackets.entrySet().iterator();
 			while(it.hasNext()) {
-				Long l = it.next();
-				SentPacket s = sentPackets.get(l);
+				Map.Entry<Long, SentPacket> e = it.next();
+				SentPacket s = e.getValue();
 				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * avgRtt)) {
 					if(logMINOR) {
-						Logger.minor(this, "Assuming packet " + l + " has been lost. "
+						Logger.minor(this, "Assuming packet " + e.getKey() + " has been lost. "
 						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
 						                + "threshold " + (NUM_RTTS_TO_LOOSE * avgRtt) + "ms");
 					}
