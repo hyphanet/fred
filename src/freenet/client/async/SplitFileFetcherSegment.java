@@ -1340,10 +1340,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(finished) return;
 			finished = true;
 			this.failureException = e;
-			if(startedDecode) {
-				Logger.error(this, "Failing with "+e+" but already started decode", e);
-				return;
-			}
+			// Failure in decode is possible.
 			for(int i=0;i<checkBuckets.length;i++) {
 				MinimalSplitfileBlock b = checkBuckets[i];
 				if(persistent)
