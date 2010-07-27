@@ -156,11 +156,11 @@ public class NPFPacketTest extends TestCase {
 
 	public void testReceiveSequenceNumber() {
 		byte[] packet = new byte[] {
-		                (byte)0x01, (byte)0x01, (byte)0x01, (byte)0x01, //Sequence number
+		                (byte)0x01, (byte)0x02, (byte)0x04, (byte)0x08, //Sequence number
 		                (byte)0x00}; // 0 acks
 		NPFPacket r = NPFPacket.create(packet);
 
-		assertEquals(r.getSequenceNumber(), 16843009);
+		assertEquals(r.getSequenceNumber(), 16909320);
 		assertEquals(r.getAcks().size(), 0);
 		assertEquals(r.getFragments().size(), 0);
 		assertFalse(r.getError());
