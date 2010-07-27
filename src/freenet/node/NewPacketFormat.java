@@ -409,6 +409,8 @@ public class NewPacketFormat implements PacketFormat {
 		long sentTime;
 
 		public void addFragment(MessageWrapper source, int start, int length) {
+			if(length < 1) throw new IllegalArgumentException();
+
 			messages.add(source);
 			ranges.add(new int[] { start, start + length - 1 });
 		}
@@ -420,11 +422,6 @@ public class NewPacketFormat implements PacketFormat {
 			while(msgIt.hasNext()) {
 				MessageWrapper wrapper = msgIt.next();
 				int[] range = rangeIt.next();
-
-				if(range[1] - range[0] < 0) {
-					Logger.minor(this, "Would ack negative range");
-					continue;
-				}
 
 				if(wrapper.ack(range[0], range[1])) {
 					synchronized(msgIDCloseTimeSent) {
