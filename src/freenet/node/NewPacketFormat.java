@@ -335,7 +335,10 @@ public class NewPacketFormat implements PacketFormat {
 
 				MessageWrapper wrapper = new MessageWrapper(item, messageID);
 				MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-				if(frag == null) break;
+				if(frag == null) {
+					messageQueue.pushfrontPrioritizedMessageItem(item);
+					break;
+				}
 				packet.addMessageFragment(frag);
 				sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
 
