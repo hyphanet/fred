@@ -341,11 +341,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 				if(persistent)
 					container.activate(dataBuckets[blockNo], 1);
-				if(!dataBuckets[blockNo].trySetData(data)) {
+				Bucket existingBlock = dataBuckets[blockNo].trySetData(data);
+				if(existingBlock != null) {
 					if(logMINOR)
 						Logger.minor(this, "Already have data for data block "+blockNo);
-					data.free();
-					if(persistent) data.removeFrom(container);
+					if(existingBlock != data) {
+						data.free();
+						if(persistent) data.removeFrom(container);
+					}
 					return -1;
 				}
 				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
@@ -375,11 +378,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 				checkRetries[checkNo] = 0; // Prevent healing of successfully fetched block.
 				if(persistent)
 					container.activate(checkBuckets[checkNo], 1);
-				if(!checkBuckets[checkNo].trySetData(data)) {
+				Bucket existingBlock = checkBuckets[checkNo].trySetData(data);
+				if(existingBlock != null) {
 					if(logMINOR)
 						Logger.minor(this, "Already have data for check block "+checkNo);
-					data.free();
-					if(persistent) data.removeFrom(container);
+					if(existingBlock != data) {
+						data.free();
+						if(persistent) data.removeFrom(container);
+					}
 					return -1;
 				}
 				if(persistent) {

@@ -34,11 +34,10 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 
 	/** Set the data but only if there is no data already. 
 	 * @return True if we set the data to the new bucket. */
-	public synchronized boolean trySetData(Bucket data) {
-		if(this.data == data) return true;
-		if(this.data != null) return false;
+	public synchronized Bucket trySetData(Bucket data) {
+		if(this.data != null) return this.data;
 		this.data = data;
-		return true;
+		return null;
 	}
 
 	/** Set the data, assert that it is null before being set */

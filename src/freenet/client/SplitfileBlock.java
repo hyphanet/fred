@@ -19,7 +19,7 @@ public interface SplitfileBlock {
 
 	/** Set the data but only if there is no data already. 
 	 * @return True if we set the data to the new bucket. */
-	abstract boolean trySetData(Bucket data);
+	abstract Bucket trySetData(Bucket data);
 
 	/** Set the data, assert that it is null before being set */
 	abstract void assertSetData(Bucket data);

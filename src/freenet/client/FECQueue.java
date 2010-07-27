@@ -24,6 +24,7 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
 /**
@@ -214,13 +215,15 @@ public class FECQueue implements OOMHook {
 							// Update SplitFileBlocks from buckets if necessary
 							if ((job.dataBlockStatus != null) || (job.checkBlockStatus != null)) {
 								for (int i = 0; i < job.dataBlocks.length; i++) {
-									if(!job.dataBlockStatus[i].trySetData(job.dataBlocks[i])) {
+									Bucket existingData = job.dataBlockStatus[i].trySetData(job.dataBlocks[i]);
+									if(existingData != null && existingData != job.dataBlocks[i]) {
 										job.dataBlocks[i].free();
 										job.dataBlocks[i] = null;
 									}
 								}
 								for (int i = 0; i < job.checkBlocks.length; i++) {
-									if(!job.checkBlockStatus[i].trySetData(job.checkBlocks[i])) {
+									Bucket existingData = job.checkBlockStatus[i].trySetData(job.checkBlocks[i]);
+									if(existingData != null && existingData != job.checkBlocks[i]) {
 										job.checkBlocks[i].free();
 										job.checkBlocks[i] = null;
 									}

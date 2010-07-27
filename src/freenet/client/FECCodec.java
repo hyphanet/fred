@@ -238,7 +238,8 @@ public abstract class FECCodec {
 			Bucket data = buckets[i];
 			if(data.size() != blockLength)
 				throw new IllegalStateException("Block " + i + ": " + data + " : " + dataBlockStatus[i] + " length " + data.size() + " whereas blockLength="+blockLength);
-			if(!dataBlockStatus[i].trySetData(data)) {
+			Bucket existingData = dataBlockStatus[i].trySetData(data);
+			if(existingData != null && existingData != data) {
 				if(logMINOR) Logger.minor(this, "Discarding block "+i+" as now unneeded");
 				data.free();
 			}
