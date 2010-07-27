@@ -413,7 +413,7 @@ public class NewPacketFormat implements PacketFormat {
 			++numRtts;
 		}
 
-		avgRtt = avgRtt / numRtts;
+		if(numRtts != 0) avgRtt = avgRtt / numRtts;
 		return avgRtt;
 	}
 
