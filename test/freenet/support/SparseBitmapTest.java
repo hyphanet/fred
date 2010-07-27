@@ -75,6 +75,16 @@ public class SparseBitmapTest extends TestCase {
 		assertTrue(s.contains(13, 14));
 	}
 
+	public void testContainsThrowsOnBadRange() {
+		SparseBitmap s = new SparseBitmap();
+		try {
+			s.contains(2, 1);
+			fail();
+		} catch (IllegalArgumentException e) {
+			//Expected
+		}
+	}
+
 	public void testCombineBackwards() {
 		SparseBitmap s = new SparseBitmap();
 		s.add(5, 10);

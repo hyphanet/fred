@@ -40,6 +40,10 @@ public class SparseBitmap implements Iterable<int[]> {
 	}
 
 	public boolean contains(int start, int end) {
+		if(start > end) {
+			throw new IllegalArgumentException("Tried checking bad range. Start: " + start + ", end: " + end);
+		}
+
 		Iterator<Range> it = ranges.iterator();
 		while(it.hasNext()) {
 			Range r = it.next();
