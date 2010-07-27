@@ -208,6 +208,9 @@ public class NewPacketFormat implements PacketFormat {
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
 			if(sentPacket != null) sentPacket.lost();
+			synchronized(sentPackets) {
+				sentPacket = sentPackets.remove(packet.getSequenceNumber());
+			}
 			return false;
 		}
 
