@@ -257,18 +257,18 @@ public class NewPacketFormat implements PacketFormat {
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) {
 		//Mark packets as lost
 		synchronized(sentPackets) {
-			int maxRtt = maxRTT();
+			int avgRtt = averageRTT();
 			long curTime = System.currentTimeMillis();
 
 			Iterator<Long> it = sentPackets.keySet().iterator();
 			while(it.hasNext()) {
 				Long l = it.next();
 				SentPacket s = sentPackets.get(l);
-				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * maxRtt)) {
+				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * avgRtt)) {
 					if(logMINOR) {
 						Logger.minor(this, "Assuming packet " + l + " has been lost. "
 						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
-						                + "threshold " + (NUM_RTTS_TO_LOOSE * maxRtt) + "ms");
+						                + "threshold " + (NUM_RTTS_TO_LOOSE * avgRtt) + "ms");
 					}
 					s.lost();
 					it.remove();
@@ -398,12 +398,13 @@ public class NewPacketFormat implements PacketFormat {
 		}
 	}
 
-	private int maxRTT() {
-		int maxRtt = 0;
+	private int averageRTT() {
+		int avgRtt = 0;
 		for(int rtt : lastRtts) {
-			maxRtt = Math.max(rtt, maxRtt);
+			avgRtt += rtt;
 		}
-		return maxRtt;
+		avgRtt = avgRtt / lastRtts.length;
+		return avgRtt;
 	}
 
 	private class SentPacket {
