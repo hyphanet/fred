@@ -3,7 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Random;
@@ -250,6 +252,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			return len;
 		} else {
 			long totalCopied = 0;
+			byte[] buf = new byte[CHKBlock.DATA_LENGTH];
 			for(int i=0;i<dataBuckets.length-crossCheckBlocks;i++) {
 				if(logMINOR) Logger.minor(this, "Copying data from block "+i);
 				SplitfileBlock status = dataBuckets[i];
@@ -269,12 +272,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 					copy = Long.MAX_VALUE;
 				else
 					copy = truncateLength - totalCopied;
-				if(copy > CHKBlock.DATA_LENGTH) copy = CHKBlock.DATA_LENGTH;
-				long copied = BucketTools.copyTo(data, os, copy);
-				totalCopied += copy;
-				if(i != dataBuckets.length-crossCheckBlocks-1 && copied != 32768)
-					Logger.error(this, "Copied only "+copied+" bytes from "+data+" (bucket "+i+")");
-				if(logMINOR) Logger.minor(this, "Copied "+copied+" bytes from bucket "+i);
+				if(copy < ((long)CHKBlock.DATA_LENGTH))
+					buf = new byte[(int)copy];
+				InputStream is = data.getInputStream();
+				DataInputStream dis = new DataInputStream(is);
+				dis.readFully(buf);
+				is.close();
+				os.write(buf);
+				totalCopied += buf.length;
 				if(!blockActive) container.deactivate(status, 1);
 			}
 			if(logMINOR) Logger.minor(this, "Copied data ("+totalCopied+")");
