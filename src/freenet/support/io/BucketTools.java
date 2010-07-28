@@ -28,7 +28,7 @@ import freenet.support.api.BucketFactory;
  */
 public class BucketTools {
 
-	static final int BLOCK_SIZE = 4096;
+	private static final int BUFFER_SIZE = 64 * 1024;
 	
 	/**
 	 * Copy from the input stream of <code>src</code> to the output stream of
@@ -44,7 +44,7 @@ public class BucketTools {
 		ReadableByteChannel readChannel = Channels.newChannel(in);
 		WritableByteChannel writeChannel = Channels.newChannel(out);
 
-		ByteBuffer buffer = ByteBuffer.allocateDirect(BLOCK_SIZE);
+		ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
 		while (readChannel.read(buffer) != -1) {
 			buffer.flip();
 			while(buffer.hasRemaining())
@@ -248,7 +248,7 @@ public class BucketTools {
 			try { 
 				long bucketLength = data.size();
 				long bytesRead = 0;
-				byte[] buf = new byte[4096];
+				byte[] buf = new byte[BUFFER_SIZE];
 				while ((bytesRead < bucketLength) || (bucketLength == -1)) {
 					int readBytes = is.read(buf);
 					if (readBytes < 0)
@@ -278,7 +278,7 @@ public class BucketTools {
 		if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
 		InputStream is = decodedData.getInputStream();
 		try {
-			int bufferSize = 65536;
+			int bufferSize = BUFFER_SIZE;
 			if(truncateLength < (long)bufferSize) bufferSize = (int) truncateLength;
 			byte[] buf = new byte[bufferSize];
 			long moved = 0;
@@ -308,7 +308,7 @@ public class BucketTools {
 	/** Copy data from an InputStream into a Bucket. */
 	public static void copyFrom(Bucket bucket, InputStream is, long truncateLength) throws IOException {
 		OutputStream os = bucket.getOutputStream();
-		byte[] buf = new byte[4096];
+		byte[] buf = new byte[BUFFER_SIZE];
 		if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
 		try {
 			long moved = 0;
@@ -450,7 +450,7 @@ public class BucketTools {
 		OutputStream os = b.getOutputStream();
 		try {
 			BucketTools.copyTo(oldBucket, os, length);
-			byte[] buf = new byte[4096];
+			byte[] buf = new byte[BUFFER_SIZE];
 			for(int x=length;x<blockLength;) {
 				int remaining = blockLength - x;
 				int thisCycle = Math.min(remaining, buf.length);
