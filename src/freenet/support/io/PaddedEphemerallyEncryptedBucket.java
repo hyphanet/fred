@@ -210,7 +210,10 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 				synchronized(PaddedEphemerallyEncryptedBucket.this) {
 					long finalLength = paddedLength();
 					long padding = finalLength - dataLength;
-					byte[] buf = new byte[4096];
+					int sz = 65536;
+					if(padding < (long)sz)
+						sz = (int)padding;
+					byte[] buf = new byte[sz];
 					long writtenPadding = 0;
 					while(writtenPadding < padding) {
 						int left = (int) Math.min((long) (padding - writtenPadding), (long) buf.length);

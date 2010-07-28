@@ -316,7 +316,7 @@ public class PersistentBlobTempBucketFactory {
 			long addBlocks = Math.min(8192, (blocks / 10) + 32);
 			long extendBy = addBlocks * blockSize;
 			long written = 0;
-			byte[] buf = new byte[4096];
+			byte[] buf = new byte[65536];
 			ByteBuffer buffer = ByteBuffer.wrap(buf);
 			while(written < extendBy) {
 				weakRandomSource.nextBytes(buf);
