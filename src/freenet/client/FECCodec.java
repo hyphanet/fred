@@ -28,12 +28,12 @@ import freenet.support.io.Closer;
  */
 public abstract class FECCodec {
 
-	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
-
-	private static int STRIPE_SIZE = 4096;
 	static boolean logMINOR;
 	protected transient FECCode fec;
 	protected final int k, n;
+	// Striping is very costly I/O wise.
+	// So set a maximum buffer size and calculate the stripe size accordingly.
+	static final int MAX_MEMORY_BUFFER = 8*1024*1024;
 
 	protected abstract void loadFEC();
 	
@@ -127,6 +127,14 @@ public abstract class FECCodec {
 		DataInputStream[] readers = new DataInputStream[n];
 		OutputStream[] writers = new OutputStream[k];
 		int numberToDecode = 0; // can be less than n-k
+		
+		int STRIPE_SIZE = MAX_MEMORY_BUFFER / k;
+		if(STRIPE_SIZE > blockLength)
+			STRIPE_SIZE = blockLength;
+		// Must be even if 16-bit code.
+		if((k > 256 || n > 256) && ((STRIPE_SIZE & 1) == 1))
+			STRIPE_SIZE++;
+		System.out.println("Stripe size is "+STRIPE_SIZE);
 
 		try {
 
@@ -205,6 +213,8 @@ public abstract class FECCodec {
 				}
 				
 				for(int offset = 0; offset < blockLength; offset += STRIPE_SIZE) {
+					if(offset + STRIPE_SIZE > blockLength)
+						STRIPE_SIZE = blockLength - offset;
 					// Read the data in first
 					for(int i = 0; i < k; i++) {
 						int x = packetIndexes[i];
@@ -292,6 +302,14 @@ public abstract class FECCodec {
 			checkPackets = new Buffer[numberToEncode];
 			writers = new OutputStream[numberToEncode];
 			
+			int STRIPE_SIZE = MAX_MEMORY_BUFFER / (k + numberToEncode);
+			if(STRIPE_SIZE > blockLength)
+				STRIPE_SIZE = blockLength;
+			// Must be even if 16-bit code.
+			if((k > 256 || n > 256) && ((STRIPE_SIZE & 1) == 1))
+				STRIPE_SIZE++;
+			System.out.println("Stripe size is "+STRIPE_SIZE);
+
 			byte[] realBuffer = new byte[(k + numberToEncode) * STRIPE_SIZE];
 			
 			int x = 0;
@@ -339,6 +357,8 @@ public abstract class FECCodec {
 				// Do the (striped) encode
 
 				for(int offset = 0; offset < blockLength; offset += STRIPE_SIZE) {
+					if(offset + STRIPE_SIZE > blockLength)
+						STRIPE_SIZE = blockLength - offset;
 					long memUsedBeforeRead = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 					if(logMINOR)
 						Logger.minor(this, "Memory in use before read: " + memUsedBeforeRead);
