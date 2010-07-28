@@ -126,6 +126,7 @@ public abstract class FECCodec {
 		Bucket[] buckets = new Bucket[n];
 		DataInputStream[] readers = new DataInputStream[n];
 		OutputStream[] writers = new OutputStream[k];
+		boolean[] toWrite = new boolean[k];
 		int numberToDecode = 0; // can be less than n-k
 		
 		int STRIPE_SIZE = MAX_MEMORY_BUFFER / k;
@@ -166,7 +167,9 @@ public abstract class FECCodec {
 				buckets[i] = dataBlockStatus[i].getData();
 				if(buckets[i] == null) {
 					buckets[i] = bf.makeBucket(blockLength);
-					writers[i] = buckets[i].getOutputStream();
+					if(STRIPE_SIZE != blockLength)
+						writers[i] = buckets[i].getOutputStream();
+					toWrite[i] = true;
 					if(logMINOR)
 						Logger.minor(this, "writers[" + i + "] != null");
 					readers[i] = null;
@@ -191,7 +194,8 @@ public abstract class FECCodec {
 				if(buckets[i + k] == null)
 					readers[i + k] = null;
 				else {
-					readers[i + k] = new DataInputStream(buckets[i + k].getInputStream());
+					if(STRIPE_SIZE != blockLength)
+						readers[i + k] = new DataInputStream(buckets[i + k].getInputStream());
 					if(idx < k)
 						packetIndexes[idx++] = i + k;
 				}
@@ -218,8 +222,15 @@ public abstract class FECCodec {
 					// Read the data in first
 					for(int i = 0; i < k; i++) {
 						int x = packetIndexes[i];
-						readers[x].readFully(realBuffer, i * STRIPE_SIZE,
+						DataInputStream dis;
+						if(STRIPE_SIZE == blockLength)
+							dis = new DataInputStream(buckets[i + k].getInputStream());
+						else
+							dis = readers[x];
+						dis.readFully(realBuffer, i * STRIPE_SIZE,
 							STRIPE_SIZE);
+						if(STRIPE_SIZE == blockLength)
+							dis.close();
 					}
 					// Do the decode
 					// Not shuffled
@@ -229,10 +240,19 @@ public abstract class FECCodec {
 					fec.decode(packets, disposableIndexes);
 					// packets now contains an array of decoded blocks, in order
 					// Write the data out
-					for(int i = 0; i < k; i++)
-						if(writers[i] != null)
-							writers[i].write(realBuffer, i * STRIPE_SIZE,
+					for(int i = 0; i < k; i++) {
+						if(toWrite[i]) {
+							OutputStream os;
+							if(STRIPE_SIZE == blockLength)
+								os = buckets[i].getOutputStream();
+							else
+								os = writers[i];
+							os.write(realBuffer, i * STRIPE_SIZE,
 								STRIPE_SIZE);
+							if(STRIPE_SIZE == blockLength)
+								os.close();
+						}
+					}
 				}
 
 		}
@@ -334,7 +354,8 @@ public abstract class FECCodec {
 				if(sz < blockLength) {
 					throw new IllegalArgumentException("All buckets must be the full size: caller must pad the last one if needed");
 				}
-				readers[i] = new DataInputStream(buckets[i].getInputStream());
+				if(STRIPE_SIZE != blockLength)
+					readers[i] = new DataInputStream(buckets[i].getInputStream());
 			}
 
 			if(logMINOR)
@@ -363,9 +384,17 @@ public abstract class FECCodec {
 					if(logMINOR)
 						Logger.minor(this, "Memory in use before read: " + memUsedBeforeRead);
 					// Read the data in first
-					for(int i = 0; i < k; i++)
-						readers[i].readFully(realBuffer, i * STRIPE_SIZE,
+					for(int i = 0; i < k; i++) {
+						DataInputStream dis;
+						if(STRIPE_SIZE == blockLength)
+							dis = new DataInputStream(buckets[i].getInputStream());
+						else
+							dis = readers[i];
+						dis.readFully(realBuffer, i * STRIPE_SIZE,
 							STRIPE_SIZE);
+						if(STRIPE_SIZE == blockLength)
+							dis.close();
+					}
 					// Do the encode
 					// Not shuffled
 					long startTime = System.currentTimeMillis();
@@ -390,7 +419,14 @@ public abstract class FECCodec {
 					// packets now contains an array of decoded blocks, in order
 					// Write the data out
 					for(int i = 0; i < writers.length; i++) {
-						writers[i].write(realBuffer, (i + k) * STRIPE_SIZE, STRIPE_SIZE);
+						OutputStream os;
+						if(STRIPE_SIZE == blockLength)
+							os = buckets[toEncode[i]].getOutputStream();
+						else
+							os = writers[i];
+						os.write(realBuffer, (i + k) * STRIPE_SIZE, STRIPE_SIZE);
+						if(STRIPE_SIZE == blockLength)
+							os.close();
 					}
 				}
 
