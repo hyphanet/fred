@@ -278,7 +278,9 @@ public class BucketTools {
 		if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
 		InputStream is = decodedData.getInputStream();
 		try {
-			byte[] buf = new byte[4096];
+			int bufferSize = 65536;
+			if(truncateLength < (long)bufferSize) bufferSize = (int) truncateLength;
+			byte[] buf = new byte[bufferSize];
 			long moved = 0;
 			while(moved < truncateLength) {
 				// DO NOT move the (int) inside the Math.min()! big numbers truncate to negative numbers.
