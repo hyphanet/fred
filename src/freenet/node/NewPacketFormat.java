@@ -21,7 +21,6 @@ import freenet.support.SparseBitmap;
 public class NewPacketFormat implements PacketFormat {
 
 	private static final int HMAC_LENGTH = 4;
-	private static final int PACKET_WINDOW = 128; //TODO: Find a good value
 	private static final int NUM_RTTS_TO_LOOSE = 2;
 
 	private static volatile boolean logMINOR;
@@ -77,11 +76,6 @@ public class NewPacketFormat implements PacketFormat {
 		}
 		if(packet == null) {
 			Logger.warning(this, "Could not decrypt received packet");
-			return;
-		}
-
-		if(packet.getSequenceNumber() < (highestAckedSeqNum - PACKET_WINDOW)) {
-			if(logMINOR) Logger.minor(this, "Dropping late packet");
 			return;
 		}
 
