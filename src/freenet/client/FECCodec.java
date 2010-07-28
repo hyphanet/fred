@@ -224,7 +224,7 @@ public abstract class FECCodec {
 						int x = packetIndexes[i];
 						DataInputStream dis;
 						if(stripeSize == blockLength)
-							dis = new DataInputStream(buckets[i + k].getInputStream());
+							dis = new DataInputStream(buckets[i].getInputStream());
 						else
 							dis = readers[x];
 						dis.readFully(realBuffer, i * stripeSize,
