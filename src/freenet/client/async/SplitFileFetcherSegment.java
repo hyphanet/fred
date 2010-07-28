@@ -496,6 +496,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(haveDataBlocks && count < dataBuckets.length) {
 			Logger.error(this, "haveDataBlocks is wrong: count is "+count);
+		} else if(haveDataBlocks && count >= dataBuckets.length) {
+			return true;
 		}
 		if(lastBlockTruncated) count--;
 		for(int i=0;i<checkBuckets.length;i++) {
