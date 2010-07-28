@@ -456,7 +456,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		// This is somewhat defensive, but these things have happened, and caused stalls.
 		// And this may help recover from persistent damage caused by previous bugs ...
 		int count = 0;
-		boolean haveFullLast = false;
+		boolean lastBlockTruncated = false;
 		for(int i=0;i<dataBuckets.length;i++) {
 			boolean active = true;
 			if(persistent) {
@@ -470,20 +470,21 @@ public class SplitFileFetcherSegment implements FECCallback {
 					if(ignoreLastDataBlock) {
 						if(blockNo == dataKeys.length && tooSmall) {
 							// Too small.
+							lastBlockTruncated = true;
 						} else if(blockNo == dataKeys.length && !tooSmall) {
 							// Not too small. Cool.
-							haveFullLast = true;
+							//lastBlockTruncated = false;
 						} else {
 							boolean blockActive = true;
 							if(persistent) {
 								blockActive = container.ext().isActive(d);
 								if(!blockActive) container.activate(d, 1);
 							}
-							haveFullLast = d.size() >= CHKBlock.DATA_LENGTH;
+							lastBlockTruncated = d.size() < CHKBlock.DATA_LENGTH;
 							if(!blockActive) container.deactivate(d, 1);
 						}
-					} else {
-						haveFullLast = true;
+//					} else {
+//						lastBlockTruncated = false;
 					}
 				}
 			} else {
@@ -496,7 +497,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(count < dataBuckets.length) {
 			Logger.error(this, "haveDataBlocks is wrong: count is "+count);
 		}
-		if(!haveFullLast) count--;
+		if(lastBlockTruncated) count--;
 		for(int i=0;i<checkBuckets.length;i++) {
 			boolean active = true;
 			if(persistent) {
