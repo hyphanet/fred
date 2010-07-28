@@ -129,17 +129,17 @@ public abstract class FECCodec {
 		boolean[] toWrite = new boolean[k];
 		int numberToDecode = 0; // can be less than n-k
 		
-		int STRIPE_SIZE = MAX_MEMORY_BUFFER / k;
-		if(STRIPE_SIZE > blockLength)
-			STRIPE_SIZE = blockLength;
+		int stripeSize = MAX_MEMORY_BUFFER / k;
+		if(stripeSize > blockLength)
+			stripeSize = blockLength;
 		// Must be even if 16-bit code.
-		if((k > 256 || n > 256) && ((STRIPE_SIZE & 1) == 1))
-			STRIPE_SIZE++;
-		System.out.println("Stripe size is "+STRIPE_SIZE);
+		if((k > 256 || n > 256) && ((stripeSize & 1) == 1))
+			stripeSize++;
+		System.out.println("Stripe size is "+stripeSize);
 
 		try {
 
-			byte[] realBuffer = new byte[k * STRIPE_SIZE];
+			byte[] realBuffer = new byte[k * stripeSize];
 
 			int[] packetIndexes = new int[k];
 			for(int i = 0; i < packetIndexes.length; i++)
@@ -148,8 +148,8 @@ public abstract class FECCodec {
 			int idx = 0;
 
 			for(int i = 0; i < k; i++)
-				packets[i] = new Buffer(realBuffer, i * STRIPE_SIZE,
-					STRIPE_SIZE);
+				packets[i] = new Buffer(realBuffer, i * stripeSize,
+					stripeSize);
 
 			// Shortcut.
 			// Due to the not-fetching-last-block code, we need to check here,
@@ -167,7 +167,7 @@ public abstract class FECCodec {
 				buckets[i] = dataBlockStatus[i].getData();
 				if(buckets[i] == null) {
 					buckets[i] = bf.makeBucket(blockLength);
-					if(STRIPE_SIZE != blockLength)
+					if(stripeSize != blockLength)
 						writers[i] = buckets[i].getOutputStream();
 					toWrite[i] = true;
 					if(logMINOR)
@@ -194,7 +194,7 @@ public abstract class FECCodec {
 				if(buckets[i + k] == null)
 					readers[i + k] = null;
 				else {
-					if(STRIPE_SIZE != blockLength)
+					if(stripeSize != blockLength)
 						readers[i + k] = new DataInputStream(buckets[i + k].getInputStream());
 					if(idx < k)
 						packetIndexes[idx++] = i + k;
@@ -216,20 +216,20 @@ public abstract class FECCodec {
 					System.out.flush();
 				}
 				
-				for(int offset = 0; offset < blockLength; offset += STRIPE_SIZE) {
-					if(offset + STRIPE_SIZE > blockLength)
-						STRIPE_SIZE = blockLength - offset;
+				for(int offset = 0; offset < blockLength; offset += stripeSize) {
+					if(offset + stripeSize > blockLength)
+						stripeSize = blockLength - offset;
 					// Read the data in first
 					for(int i = 0; i < k; i++) {
 						int x = packetIndexes[i];
 						DataInputStream dis;
-						if(STRIPE_SIZE == blockLength)
+						if(stripeSize == blockLength)
 							dis = new DataInputStream(buckets[i + k].getInputStream());
 						else
 							dis = readers[x];
-						dis.readFully(realBuffer, i * STRIPE_SIZE,
-							STRIPE_SIZE);
-						if(STRIPE_SIZE == blockLength)
+						dis.readFully(realBuffer, i * stripeSize,
+							stripeSize);
+						if(stripeSize == blockLength)
 							dis.close();
 					}
 					// Do the decode
@@ -243,13 +243,13 @@ public abstract class FECCodec {
 					for(int i = 0; i < k; i++) {
 						if(toWrite[i]) {
 							OutputStream os;
-							if(STRIPE_SIZE == blockLength)
+							if(stripeSize == blockLength)
 								os = buckets[i].getOutputStream();
 							else
 								os = writers[i];
-							os.write(realBuffer, i * STRIPE_SIZE,
-								STRIPE_SIZE);
-							if(STRIPE_SIZE == blockLength)
+							os.write(realBuffer, i * stripeSize,
+								stripeSize);
+							if(stripeSize == blockLength)
 								os.close();
 						}
 					}
@@ -322,29 +322,29 @@ public abstract class FECCodec {
 			checkPackets = new Buffer[numberToEncode];
 			writers = new OutputStream[numberToEncode];
 			
-			int STRIPE_SIZE = MAX_MEMORY_BUFFER / (k + numberToEncode);
-			if(STRIPE_SIZE > blockLength)
-				STRIPE_SIZE = blockLength;
+			int stripeSize = MAX_MEMORY_BUFFER / (k + numberToEncode);
+			if(stripeSize > blockLength)
+				stripeSize = blockLength;
 			// Must be even if 16-bit code.
-			if((k > 256 || n > 256) && ((STRIPE_SIZE & 1) == 1))
-				STRIPE_SIZE++;
-			System.out.println("Stripe size is "+STRIPE_SIZE);
+			if((k > 256 || n > 256) && ((stripeSize & 1) == 1))
+				stripeSize++;
+			System.out.println("Stripe size is "+stripeSize);
 
-			byte[] realBuffer = new byte[(k + numberToEncode) * STRIPE_SIZE];
+			byte[] realBuffer = new byte[(k + numberToEncode) * stripeSize];
 			
 			int x = 0;
 			for(int i = 0; i < checkBlockStatus.length; i++) {
 				if(checkBlockStatus[i] == null) {
 					toEncode[x] = i + k;
-					checkPackets[x] = new Buffer(realBuffer, (x + k) * STRIPE_SIZE, STRIPE_SIZE);
+					checkPackets[x] = new Buffer(realBuffer, (x + k) * stripeSize, stripeSize);
 					writers[x] = buckets[i + k].getOutputStream();
 					x++;
 				}
 			}
 			
 			for(int i = 0; i < k; i++)
-				dataPackets[i] = new Buffer(realBuffer, i * STRIPE_SIZE,
-					STRIPE_SIZE);
+				dataPackets[i] = new Buffer(realBuffer, i * stripeSize,
+					stripeSize);
 
 			for(int i = 0; i < dataBlockStatus.length; i++) {
 				buckets[i] = dataBlockStatus[i];
@@ -354,7 +354,7 @@ public abstract class FECCodec {
 				if(sz < blockLength) {
 					throw new IllegalArgumentException("All buckets must be the full size: caller must pad the last one if needed");
 				}
-				if(STRIPE_SIZE != blockLength)
+				if(stripeSize != blockLength)
 					readers[i] = new DataInputStream(buckets[i].getInputStream());
 			}
 
@@ -377,22 +377,22 @@ public abstract class FECCodec {
 			if(numberToEncode > 0)
 				// Do the (striped) encode
 
-				for(int offset = 0; offset < blockLength; offset += STRIPE_SIZE) {
-					if(offset + STRIPE_SIZE > blockLength)
-						STRIPE_SIZE = blockLength - offset;
+				for(int offset = 0; offset < blockLength; offset += stripeSize) {
+					if(offset + stripeSize > blockLength)
+						stripeSize = blockLength - offset;
 					long memUsedBeforeRead = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 					if(logMINOR)
 						Logger.minor(this, "Memory in use before read: " + memUsedBeforeRead);
 					// Read the data in first
 					for(int i = 0; i < k; i++) {
 						DataInputStream dis;
-						if(STRIPE_SIZE == blockLength)
+						if(stripeSize == blockLength)
 							dis = new DataInputStream(buckets[i].getInputStream());
 						else
 							dis = readers[i];
-						dis.readFully(realBuffer, i * STRIPE_SIZE,
-							STRIPE_SIZE);
-						if(STRIPE_SIZE == blockLength)
+						dis.readFully(realBuffer, i * stripeSize,
+							stripeSize);
+						if(stripeSize == blockLength)
 							dis.close();
 					}
 					// Do the encode
@@ -415,17 +415,17 @@ public abstract class FECCodec {
 						Logger.minor(this, "Memory in use after stripe: " + memUsedAfterStripe);
 					long endTime = System.currentTimeMillis();
 					if(logMINOR)
-						Logger.minor(this, "Stripe encode took " + (endTime - startTime) + "ms for k=" + k + ", n=" + n + ", stripeSize=" + STRIPE_SIZE);
+						Logger.minor(this, "Stripe encode took " + (endTime - startTime) + "ms for k=" + k + ", n=" + n + ", stripeSize=" + stripeSize);
 					// packets now contains an array of decoded blocks, in order
 					// Write the data out
 					for(int i = 0; i < writers.length; i++) {
 						OutputStream os;
-						if(STRIPE_SIZE == blockLength)
+						if(stripeSize == blockLength)
 							os = buckets[toEncode[i]].getOutputStream();
 						else
 							os = writers[i];
-						os.write(realBuffer, (i + k) * STRIPE_SIZE, STRIPE_SIZE);
-						if(STRIPE_SIZE == blockLength)
+						os.write(realBuffer, (i + k) * stripeSize, stripeSize);
+						if(stripeSize == blockLength)
 							os.close();
 					}
 				}
