@@ -477,7 +477,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 							boolean blockActive = true;
 							if(persistent) {
 								blockActive = container.ext().isActive(d);
-								if(blockActive) container.activate(d, 1);
+								if(!blockActive) container.activate(d, 1);
 							}
 							haveFullLast = d.size() >= CHKBlock.DATA_LENGTH;
 							if(!blockActive) container.deactivate(d, 1);
@@ -659,7 +659,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 							boolean blockActive = true;
 							if(persistent) {
 								blockActive = container.ext().isActive(d);
-								if(blockActive) container.activate(d, 1);
+								if(!blockActive) container.activate(d, 1);
 							}
 							if(d.size() >= CHKBlock.DATA_LENGTH)
 								valid = true;
