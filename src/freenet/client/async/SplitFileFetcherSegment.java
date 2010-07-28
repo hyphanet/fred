@@ -849,23 +849,17 @@ public class SplitFileFetcherSegment implements FECCallback {
 		 * reconstructed and reinserted.
 		 */
 
-		// FIXME don't heal if ignoreLastBlock.
 		Bucket lastBlock = dataBuckets[dataBuckets.length-1].getData();
 		if(lastBlock != null) {
 			if(persistent)
 				container.activate(lastBlock, 1);
-			if(lastBlock.size() != CHKBlock.DATA_LENGTH) {
-				try {
-					dataBuckets[dataBuckets.length-1].replaceData(
-						BucketTools.pad(lastBlock, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), (int) lastBlock.size()));
-					lastBlock.free();
-					if(persistent) {
-						lastBlock.removeFrom(container);
-						dataBuckets[dataBuckets.length-1].storeTo(container);
-					}
-				} catch (IOException e) {
-					fail(new FetchException(FetchException.BUCKET_ERROR, e), container, context, true);
+			if(ignoreLastDataBlock && lastBlock.size() != CHKBlock.DATA_LENGTH) {
+				if(persistent) {
+					container.deactivate(parent, 1);
+					container.deactivate(context, 1);
+					encoderFinished(container, context);
 				}
+				return;
 			}
 		}
 		
