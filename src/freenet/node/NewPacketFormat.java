@@ -106,7 +106,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		boolean dontAck = false;
 		if(packet.getError() || (packet.getFragments().size() == 0)) {
-			Logger.minor(this, "Not acking because " + (packet.getError() ? "error" : "no fragments"));
+			if(logMINOR) Logger.minor(this, "Not acking because " + (packet.getError() ? "error" : "no fragments"));
 			dontAck = true;
 		}
 		for(MessageFragment fragment : packet.getFragments()) {
