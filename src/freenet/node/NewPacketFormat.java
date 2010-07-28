@@ -23,8 +23,6 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int HMAC_LENGTH = 4;
 	private static final int PACKET_WINDOW = 128; //TODO: Find a good value
 	private static final int NUM_RTTS_TO_LOOSE = 2;
-	private static final int MSGID_WAIT_TIME = 1000 * 60 * 2;
-	private static final int NUM_MESSAGE_IDS = 8192;
 
 	private static volatile boolean logMINOR;
 	static {
@@ -45,12 +43,10 @@ public class NewPacketFormat implements PacketFormat {
 	private final ArrayList<HashMap<Long, MessageWrapper>> startedByPrio;
 	private long nextSequenceNumber = 0;
 	private long nextMessageID = 0;
-	private final HashMap<Long, Long> msgIDCloseTimeSent = new HashMap<Long, Long>();
 
 	private final HashMap<Long, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Long, PartiallyReceivedBuffer>();
 	private final HashMap<Long, SparseBitmap> receiveMaps = new HashMap<Long, SparseBitmap>();
 	private long highestAckedSeqNum = -1;
-	private final HashMap<Long, Long> msgIDCloseTimeRecv = new HashMap<Long, Long>();
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
@@ -123,17 +119,6 @@ public class NewPacketFormat implements PacketFormat {
 			PartiallyReceivedBuffer recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
-				Long time = msgIDCloseTimeRecv.get(fragment.messageID);
-				if(time != null) {
-					if(time > (System.currentTimeMillis() - MSGID_WAIT_TIME)) {
-						if(logMINOR) Logger.minor(this, "Ignoring fragment because we finished "
-						                + "the message fragment recently");
-						continue;
-					} else {
-						msgIDCloseTimeRecv.remove(fragment.messageID);
-					}
-				}
-
 				if(fragment.firstFragment) recvBuffer = new PartiallyReceivedBuffer(fragment.messageLength);
 				else recvBuffer = new PartiallyReceivedBuffer();
 
@@ -153,7 +138,6 @@ public class NewPacketFormat implements PacketFormat {
 			if((recvBuffer.messageLength != -1) && recvMap.contains(0, recvBuffer.messageLength - 1)) {
 				receiveBuffers.remove(fragment.messageID);
 				receiveMaps.remove(fragment.messageID);
-				msgIDCloseTimeRecv.put(fragment.messageID, System.currentTimeMillis());
 				fullyReceived.add(recvBuffer.buffer);
 			}
 		}
@@ -422,9 +406,6 @@ public class NewPacketFormat implements PacketFormat {
 				int[] range = rangeIt.next();
 
 				if(wrapper.ack(range[0], range[1])) {
-					synchronized(msgIDCloseTimeSent) {
-						msgIDCloseTimeSent.put(wrapper.getMessageID(), System.currentTimeMillis());
-					}
 					HashMap<Long, MessageWrapper> started = startedByPrio.get(wrapper.getPriority());
 					synchronized(started) {
 						started.remove(wrapper.getMessageID());
