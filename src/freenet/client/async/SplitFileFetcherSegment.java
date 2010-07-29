@@ -531,10 +531,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 //						lastBlockTruncated = false;
 					}
 				}
-			} else {
-				if(haveFoundKey(i, container)) {
-					Logger.error(this, "Data block "+i+" does not exist but key does not exist either on "+this);
-				}
 			}
 			if(!active) container.deactivate(dataBuckets[i], 1);
 		}
@@ -552,10 +548,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(checkBuckets[i].getData() != null) {
 				count++;
-			} else {
-				if(haveFoundKey(i+dataBuckets.length, container)) {
-					Logger.error(this, "Check block "+i+" does not exist but key does not exist either on "+this);
-				}
 			}
 			if(!active) container.deactivate(checkBuckets[i], 1);
 		}
