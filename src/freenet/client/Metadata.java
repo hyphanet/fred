@@ -548,6 +548,7 @@ public class Metadata implements Cloneable {
 						// We do not shrink the check blocks.
 						copyDataBlocks--;
 					}
+					segments[i] = new SplitFileSegmentKeys(copyDataBlocks, copyCheckBlocks, splitfileSingleCryptoKey, splitfileSingleCryptoAlgorithm);
 					if(logMINOR) Logger.minor(this, "REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
 					dataBlocksPtr += copyDataBlocks;
 					checkBlocksPtr += copyCheckBlocks;
