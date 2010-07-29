@@ -176,7 +176,12 @@ public class NewPacketFormat implements PacketFormat {
 				seqNumBytes[3] = (byte) (seqNum);
 				seqNum++;
 
-				PCFBMode cipher = PCFBMode.create(sessionKey.sessionCipher);
+				byte[] IV = new byte[sessionKey.sessionCipher.getBlockSize() / 8];
+				System.arraycopy(seqNumBytes, 0, IV, 0, seqNumBytes.length);
+
+				sessionKey.sessionCipher.encipher(IV, IV);
+
+				PCFBMode cipher = PCFBMode.create(sessionKey.sessionCipher, IV);
 				cipher.blockEncipher(seqNumBytes, 0, seqNumBytes.length);
 
 				seqNumWatchList[i] = seqNumBytes;
@@ -186,19 +191,27 @@ public class NewPacketFormat implements PacketFormat {
 			watchListOffsets.put(sessionKey, watchListOffset);
 		}
 
-		boolean hasMatched = false;
-		for(int i = 0; (i < seqNumWatchList.length) && !hasMatched; i++) {
+		long sequenceNumber = -1;
+		for(int i = 0; (i < seqNumWatchList.length) && (sequenceNumber == -1); i++) {
 			for(int j = 0; j < seqNumWatchList[i].length; j++) {
 				if(seqNumWatchList[i][j] != buf[offset + HMAC_LENGTH + j]) break;
-				if(j == (seqNumWatchList[i].length - 1)) hasMatched = true;
+				if(j == (seqNumWatchList[i].length - 1)) sequenceNumber = watchListOffset + i;
 			}
 		}
-		if(hasMatched == false) {
+		if(sequenceNumber == -1) {
 			if(logMINOR) Logger.minor(this, "Dropping packet because it isn't on our watchlist");
 			return null;
 		}
 
-		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
+		byte[] IV = new byte[sessionKey.sessionCipher.getBlockSize() / 8];
+		IV[0] = (byte) (sequenceNumber >>> 24);
+		IV[1] = (byte) (sequenceNumber >>> 16);
+		IV[2] = (byte) (sequenceNumber >>> 8);
+		IV[3] = (byte) (sequenceNumber);
+
+		sessionKey.sessionCipher.encipher(IV, IV);
+
+		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
 		hashCipher.blockDecipher(buf, offset, HMAC_LENGTH);
 
 		//Check the hash
@@ -214,7 +227,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher);
+		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
 		payloadCipher.blockDecipher(buf, offset + HMAC_LENGTH, length - HMAC_LENGTH);
 
 		byte[] payload = new byte[length - HMAC_LENGTH];
@@ -251,7 +264,12 @@ public class NewPacketFormat implements PacketFormat {
 			return false;
 		}
 
-		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher);
+		byte[] IV = new byte[sessionKey.sessionCipher.getBlockSize() / 8];
+		System.arraycopy(data, HMAC_LENGTH, IV, 0, 4);
+
+		sessionKey.sessionCipher.encipher(IV, IV);
+
+		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
 		payloadCipher.blockEncipher(data, HMAC_LENGTH, packet.getLength());
 
 		//Add hash
@@ -261,7 +279,7 @@ public class NewPacketFormat implements PacketFormat {
 		SHA256.returnMessageDigest(md);
 		md = null;
 
-		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
+		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
 		hashCipher.blockEncipher(hash, 0, HMAC_LENGTH);
 
 		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
