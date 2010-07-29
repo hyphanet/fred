@@ -157,7 +157,7 @@ public class NewPacketFormat implements PacketFormat {
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
 		byte[][] seqNumWatchList = seqNumWatchLists.get(sessionKey);
 		long watchListOffset = 0;
-		if(seqNumWatchList != null) watchListOffsets.get(sessionKey);
+		if(seqNumWatchList != null) watchListOffset = watchListOffsets.get(sessionKey);
 
 		if(seqNumWatchList == null || (highestReceivedSeqNum > watchListOffset + ((NUM_SEQNUMS_TO_WATCH_FOR * 3) / 4))) {
 
