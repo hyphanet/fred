@@ -17,6 +17,7 @@ import freenet.keys.KeyBlock;
 import freenet.node.PrioRunnable;
 import freenet.node.SendableGet;
 import freenet.support.BinaryBloomFilter;
+import freenet.support.BloomFilter;
 import freenet.support.CountingBloomFilter;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -47,17 +48,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	private final SplitFileFetcher fetcher;
 	private final boolean persistent;
 	private int keyCount;
-	private final byte[] filterBuffer;
 	private final CountingBloomFilter filter;
-	/** All the segment's bloom filters, stuck together into a single blob
-	 * so can be read/written en bloc */
-	private final byte[] segmentsFilterBuffer;
 	private final BinaryBloomFilter[] segmentFilters;
-	/** We store the Bloom filter to this file, but we don't map it, since we
-	 * can't generally afford the fd's. */
-	private final File mainBloomFile;
-	/** Stores Bloom filters for every segment. */
-	private final File altBloomFile;
 	/** Wait for this period for new data to come in before writing the filter.
 	 * The filter is only ever subtracted from, so if we crash we just have a
 	 * few more false positives. On a fast node with slow disk, writing on every 
@@ -75,12 +67,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * should be created from scratch.
 	 * @throws IOException 
 	 */
-	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter) throws IOException {
+	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter, CountingBloomFilter cachedMainFilter, BinaryBloomFilter[] cachedSegFilters, ObjectContainer container) throws IOException {
 		fetcher = parent;
 		this.persistent = persistent;
 		this.keyCount = keyCount;
-		this.mainBloomFile = bloomFile;
-		this.altBloomFile = altBloomFile;
 		assert(localSalt.length == 32);
 		if(persistent) {
 			this.localSalt = new byte[32];
@@ -88,24 +78,68 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		} else {
 			this.localSalt = localSalt;
 		}
-		segmentsFilterBuffer = new byte[segmentFilterSizeBytes * segments];
-		ByteBuffer baseBuffer = ByteBuffer.wrap(segmentsFilterBuffer);
 		segmentFilters = new BinaryBloomFilter[segments];
-		int start = 0;
-		int end = segmentFilterSizeBytes;
-		for(int i=0;i<segments;i++) {
-			baseBuffer.position(start);
-			baseBuffer.limit(end);
-			ByteBuffer slice = baseBuffer.slice();
-			segmentFilters[i] = new BinaryBloomFilter(slice, segmentFilterSizeBytes * 8, segmentBloomK);
-			start += segmentFilterSizeBytes;
-			end += segmentFilterSizeBytes;
+		if(cachedSegFilters != null) {
+			for(int i=0;i<cachedSegFilters.length;i++) {
+				segmentFilters[i] = cachedSegFilters[i];
+				container.activate(cachedSegFilters[i], Integer.MAX_VALUE);
+				cachedSegFilters[i].init(container);
+				System.out.println("Restored segment "+i+" filter for "+parent+" : k="+cachedSegFilters[i].getK()+" size = "+cachedSegFilters[i].getSizeBytes()+" bytes = "+cachedSegFilters[i].getLength()+" elements, filled: "+cachedSegFilters[i].getFilledCount());
+			}
+		} else {
+			byte[] segmentsFilterBuffer = new byte[segmentFilterSizeBytes * segments];
+			ByteBuffer baseBuffer = ByteBuffer.wrap(segmentsFilterBuffer);
+			if(!newFilter) {
+				FileInputStream fis = new FileInputStream(altBloomFile);
+				DataInputStream dis = new DataInputStream(fis);
+				dis.readFully(segmentsFilterBuffer);
+				dis.close();
+			}
+			int start = 0;
+			int end = segmentFilterSizeBytes;
+			for(int i=0;i<segments;i++) {
+				baseBuffer.position(start);
+				baseBuffer.limit(end);
+				ByteBuffer slice;
+				
+				if(persistent) {
+					// byte[] arrays get stored separately in each object, so we need to copy it.
+					byte[] buf = new byte[segmentFilterSizeBytes];
+					System.arraycopy(segmentsFilterBuffer, start, buf, 0, segmentFilterSizeBytes);
+					slice = ByteBuffer.wrap(buf);
+				} else {
+					slice = baseBuffer.slice();
+				}
+				segmentFilters[i] = new BinaryBloomFilter(slice, segmentFilterSizeBytes * 8, segmentBloomK);
+				start += segmentFilterSizeBytes;
+				end += segmentFilterSizeBytes;
+			}
+			if(persistent) {
+				for(int i=0;i<segments;i++) {
+					System.out.println("Storing segment "+i+" filter to database for "+parent+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
+					segmentFilters[i].storeTo(container);
+				}
+			}
+			parent.setCachedSegFilters(segmentFilters);
+			if(persistent) {
+				container.store(parent);
+			}
 		}
 		
-		filterBuffer = new byte[mainBloomSizeBytes];
-		if(newFilter) {
+		byte[] filterBuffer = new byte[mainBloomSizeBytes];
+		if(cachedMainFilter != null) {
+			filter = cachedMainFilter;
+			if(persistent) container.activate(filter, Integer.MAX_VALUE);
+			filter.init(container);
+			System.out.println("Restored filter for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
+		} else if(newFilter) {
 			filter = new CountingBloomFilter(mainBloomSizeBytes * 8 / 2, mainBloomK, filterBuffer);
 			filter.setWarnOnRemoveFromEmpty();
+			parent.setCachedMainFilter(filter);
+			if(persistent) {
+				filter.storeTo(container);
+				container.store(parent);
+			}
 		} else {
 			// Read from file.
 			FileInputStream fis = new FileInputStream(bloomFile);
@@ -114,10 +148,12 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			dis.close();
 			filter = new CountingBloomFilter(mainBloomSizeBytes * 8 / 2, mainBloomK, filterBuffer);
 			filter.setWarnOnRemoveFromEmpty();
-			fis = new FileInputStream(altBloomFile);
-			dis = new DataInputStream(fis);
-			dis.readFully(segmentsFilterBuffer);
-			dis.close();
+			parent.setCachedMainFilter(filter);
+			if(persistent) {
+				System.out.println("Storing filter to database for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
+				filter.storeTo(container);
+				container.store(parent);
+			}
 		}
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Created "+this+" for "+fetcher);
@@ -281,27 +317,23 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		synchronized(this) {
 			killed = true;
 		}
-		if(persistent) {
-			mainBloomFile.delete();
-			altBloomFile.delete();
-		}
+		
 	}
 
 	public boolean persistent() {
 		return persistent;
 	}
 
-	public void writeFilters() throws IOException {
+	public void writeFilters(ObjectContainer container) throws IOException {
 		if(!persistent) return;
 		synchronized(this) {
 			if(killed) return;
 		}
-		RandomAccessFile raf = new RandomAccessFile(mainBloomFile, "rw");
-		raf.write(filterBuffer);
-		raf.close();
-		raf = new RandomAccessFile(altBloomFile, "rw");
-		raf.write(segmentsFilterBuffer);
-		raf.close();
+		filter.storeTo(container);
+		for(int i=0;i<segmentFilters.length;i++) {
+			System.out.println("Storing segment "+i+" filter to database for "+fetcher+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
+			segmentFilters[i].storeTo(container);
+		}
 	}
 
 	public synchronized int killSegment(SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
@@ -320,18 +352,19 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				// Huh??
 				Logger.error(this, "Removing key "+removeKeys[i]+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!", new Exception("debug"));
 		}
-		scheduleWriteFilters(context);
+		scheduleWriteFilters(container, context);
 		return keyCount -= removeKeys.length;
 	}
 
 	private boolean writingBloomFilter;
 	
-	private void scheduleWriteFilters(ClientContext context) {
+	private void scheduleWriteFilters(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(!persistent) return;
 			if(writingBloomFilter) return;
 			writingBloomFilter = true;
 			try {
+				filter.storeTo(container);
 				// The write must be executed on the database thread, and must happen
 				// AFTER this one has committed. Otherwise we have a serious risk of inconsistency:
 				// A transaction that deletes a segment and then does something big, and
@@ -343,7 +376,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 							ClientContext context) {
 						synchronized(SplitFileFetcherKeyListener.this) {
 							try {
-								writeFilters();
+								writeFilters(container);
 							} catch (IOException e) {
 								Logger.error(this, "Failed to write bloom filters, we will have more false positives on already-found blocks which aren't in the store: "+e, e);
 							} finally {
