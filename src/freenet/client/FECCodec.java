@@ -135,7 +135,7 @@ public abstract class FECCodec {
 		// Must be even if 16-bit code.
 		if((k > 256 || n > 256) && ((stripeSize & 1) == 1))
 			stripeSize++;
-		System.out.println("Stripe size is "+stripeSize);
+		if(stripeSize != 32768) System.out.println("Stripe size is "+stripeSize);
 
 		try {
 
@@ -328,7 +328,7 @@ public abstract class FECCodec {
 			// Must be even if 16-bit code.
 			if((k > 256 || n > 256) && ((stripeSize & 1) == 1))
 				stripeSize++;
-			System.out.println("Stripe size is "+stripeSize);
+			if(stripeSize != 32768) System.out.println("Stripe size is "+stripeSize);
 
 			byte[] realBuffer = new byte[(k + numberToEncode) * stripeSize];
 			
