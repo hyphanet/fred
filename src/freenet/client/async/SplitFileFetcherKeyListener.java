@@ -354,27 +354,6 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 					}
 					
 				}, NativeThread.HIGH_PRIORITY, false);
-			} else {
-				context.ticker.queueTimedJob(new PrioRunnable() {
-
-					public void run() {
-						synchronized(SplitFileFetcherKeyListener.this) {
-							try {
-								writeFilters();
-							} catch (IOException e) {
-								Logger.error(this, "Failed to write bloom filters, we will have more false positives on already-found blocks which aren't in the store: "+e, e);
-							} finally {
-								writingBloomFilter = false;
-							}
-						}
-					}
-
-					public int getPriority() {
-						// Don't run the write at too low a priority or we may get priority inversion.
-						return NativeThread.HIGH_PRIORITY;
-					}
-					
-				}, WRITE_DELAY);
 			}
 			} catch (Throwable t) {
 				writingBloomFilter = false;
