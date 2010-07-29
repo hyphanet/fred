@@ -50,7 +50,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	//FIXME: Should be a better way to store it
 	private final HashMap<SessionKey, byte[][]> seqNumWatchLists = new HashMap<SessionKey, byte[][]>();
-	private final HashMap<SessionKey, Long> watchListBases = new HashMap<SessionKey, Long>();
+	private final HashMap<SessionKey, Long> watchListOffsets = new HashMap<SessionKey, Long>();
 	private long highestReceivedSeqNum = -1;
 
 	public NewPacketFormat(PeerNode pn) {
@@ -156,16 +156,16 @@ public class NewPacketFormat implements PacketFormat {
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
 		byte[][] seqNumWatchList = seqNumWatchLists.get(sessionKey);
-		long watchListBase = 0;
-		if(seqNumWatchList != null) watchListBases.get(sessionKey);
+		long watchListOffset = 0;
+		if(seqNumWatchList != null) watchListOffsets.get(sessionKey);
 
-		if(seqNumWatchList == null || (highestReceivedSeqNum > watchListBase + (NUM_SEQNUMS_TO_WATCH_FOR / 2))) {
+		if(seqNumWatchList == null || (highestReceivedSeqNum > watchListOffset + ((NUM_SEQNUMS_TO_WATCH_FOR * 3) / 4))) {
 			if(logMINOR) Logger.minor(this, "Creating watchlist");
 
 			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][];
 
-			watchListBase = (highestReceivedSeqNum == -1 ? 0 : highestReceivedSeqNum - (seqNumWatchList.length / 2));
-			long seqNum = watchListBase;
+			watchListOffset = (highestReceivedSeqNum == -1 ? 0 : highestReceivedSeqNum - (seqNumWatchList.length / 2));
+			long seqNum = watchListOffset;
 			for(int i = 0; i < seqNumWatchList.length; i++) {
 				byte[] seqNumBytes = new byte[4];
 				seqNumBytes[0] = (byte) (seqNum >>> 24);
@@ -181,7 +181,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 
 			seqNumWatchLists.put(sessionKey, seqNumWatchList);
-			watchListBases.put(sessionKey, watchListBase);
+			watchListOffsets.put(sessionKey, watchListOffset);
 		}
 
 		boolean hasMatched = false;
