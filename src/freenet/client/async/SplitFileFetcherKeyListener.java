@@ -345,7 +345,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 							} catch (IOException e) {
 								Logger.error(this, "Failed to write bloom filters, we will have more false positives on already-found blocks which aren't in the store: "+e, e);
 							} finally {
-								writingBloomFilter = true;
+								writingBloomFilter = false;
 							}
 						}
 					}
