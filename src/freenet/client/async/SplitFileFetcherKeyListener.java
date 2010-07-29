@@ -326,16 +326,35 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 
 	private boolean writingBloomFilter;
 	
-	/** Arrange to write the filters, at some point after this transaction is
-	 * committed. */
 	private void scheduleWriteFilters(ClientContext context) {
 		synchronized(this) {
-			// Worst case, we end up blocking the database thread while a write completes off thread.
-			// Common case, the write executes on a separate thread.
-			// Don't run the write at too low a priority or we may get priority inversion.
 			if(writingBloomFilter) return;
 			writingBloomFilter = true;
 			try {
+			if(persistent) {
+				// The write must be executed on the database thread, and must happen
+				// AFTER this one has committed. Otherwise we have a serious risk of inconsistency:
+				// A transaction that deletes a segment and then does something big, and
+				// is interrupted and rolled back, must not write the filters...
+				context.jobRunner.setCommitThisTransaction();
+				context.jobRunner.queue(new DBJob() {
+
+					public boolean run(ObjectContainer container,
+							ClientContext context) {
+						synchronized(SplitFileFetcherKeyListener.this) {
+							try {
+								writeFilters();
+							} catch (IOException e) {
+								Logger.error(this, "Failed to write bloom filters, we will have more false positives on already-found blocks which aren't in the store: "+e, e);
+							} finally {
+								writingBloomFilter = false;
+							}
+						}
+						return false;
+					}
+					
+				}, NativeThread.HIGH_PRIORITY, false);
+			} else {
 				context.ticker.queueTimedJob(new PrioRunnable() {
 
 					public void run() {
@@ -356,6 +375,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 					}
 					
 				}, WRITE_DELAY);
+			}
 			} catch (Throwable t) {
 				writingBloomFilter = false;
 			}
