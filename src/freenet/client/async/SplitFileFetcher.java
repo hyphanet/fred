@@ -326,7 +326,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			int data = keys.getDataBlocks();
 			int check = keys.getCheckBlocks();
 			for(int j=0;j<(data+check);j++) {
-				tempListener.addKey(keys.getKey(j, null, false).getNodeKey(false), 0, context);
+				tempListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, context);
 			}
 			if(persistent) {
 				container.store(segments[0]);
