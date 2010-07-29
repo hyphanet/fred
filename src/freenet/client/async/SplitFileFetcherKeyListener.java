@@ -328,10 +328,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	
 	private void scheduleWriteFilters(ClientContext context) {
 		synchronized(this) {
+			if(!persistent) return;
 			if(writingBloomFilter) return;
 			writingBloomFilter = true;
 			try {
-			if(persistent) {
 				// The write must be executed on the database thread, and must happen
 				// AFTER this one has committed. Otherwise we have a serious risk of inconsistency:
 				// A transaction that deletes a segment and then does something big, and
@@ -354,7 +354,6 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 					}
 					
 				}, NativeThread.HIGH_PRIORITY, false);
-			}
 			} catch (Throwable t) {
 				writingBloomFilter = false;
 			}
