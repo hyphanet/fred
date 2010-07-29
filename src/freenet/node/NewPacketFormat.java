@@ -160,11 +160,12 @@ public class NewPacketFormat implements PacketFormat {
 		if(seqNumWatchList != null) watchListOffsets.get(sessionKey);
 
 		if(seqNumWatchList == null || (highestReceivedSeqNum > watchListOffset + ((NUM_SEQNUMS_TO_WATCH_FOR * 3) / 4))) {
-			if(logMINOR) Logger.minor(this, "Creating watchlist");
 
 			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][];
 
 			watchListOffset = (highestReceivedSeqNum == -1 ? 0 : highestReceivedSeqNum - (seqNumWatchList.length / 2));
+			if(logMINOR) Logger.minor(this, "Recreating watchlist from offset " + watchListOffset);
+
 			long seqNum = watchListOffset;
 			for(int i = 0; i < seqNumWatchList.length; i++) {
 				byte[] seqNumBytes = new byte[4];
