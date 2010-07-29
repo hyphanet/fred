@@ -134,7 +134,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		// j16sdiz (22-DEC-2008):
 		// ClientRequestSchedular.removePendingKeys() call this to get a list of request to be removed
 		// FIXME ClientRequestSchedular.removePendingKeys() is leaking, what's missing here?
-		return segment.getKeyNumbersAtRetryLevel(retryCount).length;
+		return segment.getKeyNumbersAtRetryLevel(retryCount, container).length;
 	}
 	
 	/**

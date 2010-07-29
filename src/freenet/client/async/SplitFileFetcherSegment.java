@@ -69,8 +69,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 	
 	final short splitfileType;
-	final ClientCHK[] dataKeys;
-	final ClientCHK[] checkKeys;
+	SplitFileSegmentKeys keys;
+	boolean[] foundKeys;
+	ClientCHK[] dataKeys;
+	ClientCHK[] checkKeys;
 	final MinimalSplitfileBlock[] dataBuckets;
 	final MinimalSplitfileBlock[] checkBuckets;
 	final long[] dataCooldownTimes;
@@ -148,9 +150,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	private transient FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254, int crossCheckBlocks, byte cryptoAlgorithm, byte[] forceCryptoKey) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, SplitFileSegmentKeys keys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254, int crossCheckBlocks, byte cryptoAlgorithm, byte[] forceCryptoKey) throws MetadataParseException, FetchException {
 		this.crossCheckBlocks = crossCheckBlocks;
-		this.crossSegmentsByBlock = new SplitFileFetcherCrossSegment[splitfileDataKeys.length];
+		this.keys = keys;
+		int dataBlocks = keys.getDataBlocks();
+		int checkBlocks = keys.getCheckBlocks();
+		foundKeys = new boolean[dataBlocks + checkBlocks];
+		this.crossSegmentsByBlock = new SplitFileFetcherCrossSegment[dataBlocks];
 		this.segNum = segNum;
 		this.hashCode = super.hashCode();
 		this.persistent = fetcher.persistent;
@@ -160,35 +166,31 @@ public class SplitFileFetcherSegment implements FECCallback {
 		this.archiveContext = archiveContext;
 		this.splitfileType = splitfileType;
 		this.parent = requester;
-		dataKeys = splitfileDataKeys;
-		checkKeys = splitfileCheckKeys;
+		dataKeys = null;
+		checkKeys = null;
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
-			minFetched = dataKeys.length;
+			minFetched = dataBlocks;
 		} else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			minFetched = dataKeys.length;
+			minFetched = dataBlocks;
 		} else throw new MetadataParseException("Unknown splitfile type"+splitfileType);
 		finished = false;
 		decodedData = null;
-		dataBuckets = new MinimalSplitfileBlock[dataKeys.length];
-		checkBuckets = new MinimalSplitfileBlock[checkKeys.length];
+		dataBuckets = new MinimalSplitfileBlock[dataBlocks];
+		checkBuckets = new MinimalSplitfileBlock[checkBlocks];
 		for(int i=0;i<dataBuckets.length;i++) {
 			dataBuckets[i] = new MinimalSplitfileBlock(i);
 		}
 		for(int i=0;i<checkBuckets.length;i++)
 			checkBuckets[i] = new MinimalSplitfileBlock(i+dataBuckets.length);
-		dataRetries = new int[dataKeys.length];
-		checkRetries = new int[checkKeys.length];
-		dataCooldownTimes = new long[dataKeys.length];
-		checkCooldownTimes = new long[checkKeys.length];
+		dataRetries = new int[dataBlocks];
+		checkRetries = new int[checkBlocks];
+		dataCooldownTimes = new long[dataBlocks];
+		checkCooldownTimes = new long[checkBlocks];
 		subSegments = new Vector<SplitFileFetcherSubSegment>();
 		maxBlockLength = maxTempLength;
 		this.blockFetchContext = blockFetchContext;
 		this.recursionLevel = 0;
 		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher+" : "+dataRetries.length+" data blocks "+checkRetries.length+" check blocks");
-		for(int i=0;i<dataKeys.length;i++)
-			if(dataKeys[i] == null) throw new NullPointerException("Null: data block "+i);
-		for(int i=0;i<checkKeys.length;i++)
-			if(checkKeys[i] == null) throw new NullPointerException("Null: check block "+i);
 		this.pre1254 = pre1254;
 		this.cryptoAlgorithm = cryptoAlgorithm;
 		this.forceCryptoKey = forceCryptoKey;
@@ -326,9 +328,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// This is important for cross-segment encoding:
 			// Cross-segment decodes a block. This triggers a decode here, and also an encode on the cross-segment.
 			// If we ignore the block here, the cross-segment encode will fail because a block is missing.
-			if(blockNo < dataKeys.length) {
+			if(blockNo < dataBuckets.length) {
 				wasDataBlock = true;
-				if(dataKeys[blockNo] == null) {
+				if(haveFoundKey(blockNo, container)) {
 					if(!startedDecode) {
 						// This can happen.
 						// We queue a persistent download, we queue a transient.
@@ -357,11 +359,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					return -1;
 				}
 				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
-				if(persistent) {
-					container.activate(dataKeys[blockNo], 5);
-					dataKeys[blockNo].removeFrom(container);
-				}
-				dataKeys[blockNo] = null;
+				setFoundKey(blockNo, container);
 				if(persistent) {
 					data.storeTo(container);
 					container.store(dataBuckets[blockNo]);
@@ -369,9 +367,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 				if(crossCheckBlocks != 0)
 					crossSegment = crossSegmentsByBlock[blockNo];
-			} else if(blockNo < checkKeys.length + dataKeys.length) {
-				int checkNo = blockNo - dataKeys.length;
-				if(checkKeys[checkNo] == null) {
+			} else if(blockNo < checkBuckets.length + dataBuckets.length) {
+				int checkNo = blockNo - dataBuckets.length;
+				if(haveFoundKey(blockNo, container)) {
 					if(!startedDecode) {
 						if(logMINOR)
 							Logger.minor(this, "Check block already finished: "+checkNo);
@@ -393,11 +391,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 					return -1;
 				}
-				if(persistent) {
-					container.activate(checkKeys[checkNo], 5);
-					checkKeys[checkNo].removeFrom(container);
-				}
-				checkKeys[checkNo] = null;
+				setFoundKey(blockNo, container);
 				if(persistent) {
 					data.storeTo(container);
 					container.store(checkBuckets[checkNo]);
@@ -410,11 +404,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 			} else {
 				boolean tooSmall = data.size() < CHKBlock.DATA_LENGTH;
 				// Don't count the last data block, since we can't use it in FEC decoding.
-				if(tooSmall && ((!ignoreLastDataBlock) || (blockNo != dataKeys.length - 1))) {
-					fail(new FetchException(FetchException.INVALID_METADATA, "Block too small in splitfile: block "+blockNo+" of "+dataKeys.length+" data keys, "+checkKeys.length+" check keys"), container, context, true);
+				if(tooSmall && ((!ignoreLastDataBlock) || (blockNo != dataBuckets.length - 1))) {
+					fail(new FetchException(FetchException.INVALID_METADATA, "Block too small in splitfile: block "+blockNo+" of "+dataBuckets.length+" data keys, "+checkBuckets.length+" check keys"), container, context, true);
 					return -1;
 				}
-				if(!(ignoreLastDataBlock && blockNo == dataKeys.length - 1 && tooSmall))
+				if(!(ignoreLastDataBlock && blockNo == dataBuckets.length - 1 && tooSmall))
 					fetchedBlocks++;
 				else
 					// This block is not going to be fetched, and because of the insertion format. 
@@ -426,7 +420,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(wasDataBlock)
 					fetchedDataBlocks++;
 				if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
-				boolean haveDataBlocks = fetchedDataBlocks == dataKeys.length;
+				boolean haveDataBlocks = fetchedDataBlocks == dataBuckets.length;
 				decodeNow = (!startedDecode) && (fetchedBlocks >= minFetched || haveDataBlocks);
 				if(decodeNow) {
 					decodeNow = checkAndDecodeNow(container, blockNo, tooSmall, haveDataBlocks);
@@ -434,7 +428,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(!decodeNow) {
 					// Avoid hanging when we have n-1 check blocks, we succeed on the last data block,
 					// we don't have the other data blocks, and we have nothing else fetching.
-					allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
+					allFailed = failedBlocks + fatallyFailedBlocks > (dataBuckets.length + checkBuckets.length - minFetched);
 				}
 			}
 			dontNotify = !scheduled;
@@ -455,6 +449,51 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return res;
 	}
 	
+	private void setFoundKey(int blockNo, ObjectContainer container) {
+		if(keys == null) migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		foundKeys[blockNo] = true;
+		if(persistent) container.store(this);
+	}
+
+	private boolean haveFoundKey(int blockNo, ObjectContainer container) {
+		if(keys == null) migrateToKeys(container);
+		return foundKeys[blockNo];
+	}
+
+	private synchronized void migrateToKeys(ObjectContainer container) {
+		keys = new SplitFileSegmentKeys(dataKeys.length, checkBuckets.length, forceCryptoKey, cryptoAlgorithm);
+		foundKeys = new boolean[dataKeys.length + checkBuckets.length];
+		for(int i=0;i<dataKeys.length;i++) {
+			ClientCHK key = dataKeys[i];
+			if(key == null) {
+				foundKeys[i] = true;
+			} else {
+				if(persistent) container.activate(key, 5);
+				keys.setKey(i, key);
+				key.removeFrom(container);
+			}
+		}
+		for(int i=0;i<checkBuckets.length;i++) {
+			ClientCHK key = checkKeys[i];
+			if(key == null) {
+				foundKeys[i+dataKeys.length] = true;
+			} else {
+				if(persistent) container.activate(key, 5);
+				keys.setKey(i+dataKeys.length, key);
+				key.removeFrom(container);
+			}
+		}
+		dataKeys = null;
+		checkKeys = null;
+		if(persistent) {
+			container.store(keys);
+			container.store(this);
+		}
+	}
+
 	private boolean checkAndDecodeNow(ObjectContainer container, int blockNo, boolean tooSmall, boolean haveDataBlocks) {
 		boolean decodeNow = true;
 		// Double-check...
@@ -473,10 +512,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				count++;
 				if(i == dataBuckets.length-1) {
 					if(ignoreLastDataBlock) {
-						if(blockNo == dataKeys.length && tooSmall) {
+						if(blockNo == dataBuckets.length && tooSmall) {
 							// Too small.
 							lastBlockTruncated = true;
-						} else if(blockNo == dataKeys.length && !tooSmall) {
+						} else if(blockNo == dataBuckets.length && !tooSmall) {
 							// Not too small. Cool.
 							//lastBlockTruncated = false;
 						} else {
@@ -493,7 +532,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 				}
 			} else {
-				if(dataKeys[i] == null) {
+				if(haveFoundKey(i, container)) {
 					Logger.error(this, "Data block "+i+" does not exist but key does not exist either on "+this);
 				}
 			}
@@ -514,7 +553,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(checkBuckets[i].getData() != null) {
 				count++;
 			} else {
-				if(checkKeys[i] == null) {
+				if(haveFoundKey(i+dataBuckets.length, container)) {
 					Logger.error(this, "Check block "+i+" does not exist but key does not exist either on "+this);
 				}
 			}
@@ -559,7 +598,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this+" data="+dataBuckets.length+" check="+checkBuckets.length);
 		try {
 			if(!maybeAddToBinaryBlob(data, block, blockNo, container, context, block == null ? "CROSS-SEGMENT FEC" : "UNKNOWN")) {
-				if((ignoreLastDataBlock && blockNo == dataKeys.length-1) || (ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length)) {
+				if((ignoreLastDataBlock && blockNo == dataBuckets.length-1) || (ignoreLastDataBlock && fetchedDataBlocks == dataBuckets.length)) {
 					// Ignore
 				} else if(block == null) {
 					// Cross-segment, just return false.
@@ -714,7 +753,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 			if(codec == null)
-				codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
+				codec = FECCodec.getCodec(splitfileType, dataBuckets.length, checkBuckets.length);
 			FECJob job = new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), this, true, parent.getPriorityClass(), persistent);
 			codec.addToQueue(job, 
 					queue, container);
@@ -736,7 +775,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.activate(blockFetchContext, 1);
 		}
 		if(codec == null)
-			codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
+			codec = FECCodec.getCodec(splitfileType, dataBuckets.length, checkBuckets.length);
 		// Because we use SplitfileBlock, we DON'T have to copy here.
 		// See FECCallback comments for explanation.
 		if(persistent) {
@@ -796,7 +835,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					container.activate(data, Integer.MAX_VALUE);
 				}
 				if(!maybeAddToBinaryBlob(data, null, i, container, context, "FEC DECODE")) {
-					if(ignoreLastDataBlock && i == dataKeys.length-1) {
+					if(ignoreLastDataBlock && i == dataBuckets.length-1) {
 						// Padding issue: It was inserted un-padded and we decoded it padded, or similar situations.
 						// Does not corrupt the result, or at least, corruption is undetectable if it's only on the last block.
 						Logger.normal(this, "Last block padding issue on decode on "+this);
@@ -966,9 +1005,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(checkRetries[i] > 0)
 					heal = true;
 				try {
-					if(!maybeAddToBinaryBlob(data, null, i+dataKeys.length, container, context, "FEC ENCODE")) {
+					if(!maybeAddToBinaryBlob(data, null, i+dataBuckets.length, container, context, "FEC ENCODE")) {
 						heal = false;
-						if(!(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length))
+						if(!(ignoreLastDataBlock && fetchedDataBlocks == dataBuckets.length))
 							Logger.error(this, "FAILED TO ENCODE CORRECTLY so not healing check block "+i);
 						allEncodedCorrectly = false;
 					}
@@ -992,9 +1031,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					checkBuckets[i].removeFrom(container);
 				checkBuckets[i] = null;
-				if(persistent && checkKeys[i] != null)
-					checkKeys[i].removeFrom(container);
-				checkKeys[i] = null;
+				setFoundKey(i+dataBuckets.length, container);
 			}
 			if(logMINOR) {
 				if(allEncodedCorrectly) Logger.minor(this, "All encoded correctly on "+this);
@@ -1034,7 +1071,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					byte[] buf = BucketTools.toByteArray(data);
 					if(!(buf.length == CHKBlock.DATA_LENGTH)) {
 						// All new splitfile inserts insert only complete blocks even at the end.
-						if((!ignoreLastDataBlock) || (blockNo != dataKeys.length-1))
+						if((!ignoreLastDataBlock) || (blockNo != dataBuckets.length-1))
 							Logger.error(this, "Block is too small: "+buf.length);
 						return false;
 					}
@@ -1045,13 +1082,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 					ClientCHK key = getBlockKey(blockNo, container);
 					if(key != null) {
 						if(!(key.equals(block.getClientKey()))) {
-							if(ignoreLastDataBlock && blockNo == dataKeys.length-1 && dataSource.equals("FEC DECODE")) {
+							if(ignoreLastDataBlock && blockNo == dataBuckets.length-1 && dataSource.equals("FEC DECODE")) {
 								if(logMINOR) Logger.minor(this, "Last block wrong key, ignored because expected due to padding issues");
-							} else if(ignoreLastDataBlock && fetchedDataBlocks == dataKeys.length && dataSource.equals("FEC ENCODE")) {
+							} else if(ignoreLastDataBlock && fetchedDataBlocks == dataBuckets.length && dataSource.equals("FEC ENCODE")) {
 								// We padded the last block. The inserter might have used a different padding algorithm.
 								if(logMINOR) Logger.minor(this, "Wrong key, might be due to padding issues");
 							} else {
-								Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" (data "+dataKeys.length+" check "+checkKeys.length+" ignore last block="+ignoreLastDataBlock+") : key "+block.getClientKey().getURI()+" should be "+key.getURI(), new Exception("error"));
+								Logger.error(this, "INVALID KEY FROM "+dataSource+": Block "+blockNo+" (data "+dataBuckets.length+" check "+checkBuckets.length+" ignore last block="+ignoreLastDataBlock+") : key "+block.getClientKey().getURI()+" should be "+key.getURI(), new Exception("error"));
 							}
 							return false;
 						} else {
@@ -1118,28 +1155,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 		// Since we can't keep the key, we need to unregister for it at this point to avoid a memory leak
 		synchronized(this) {
 			if(isFinishing(container)) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
-			if(blockNo < dataKeys.length) {
-				if(dataKeys[blockNo] == null) {
-					Logger.error(this, "Block already finished: "+blockNo);
-					return;
-				}
-				if(persistent) {
-					container.activate(dataKeys[blockNo], 1);
-					dataKeys[blockNo].removeFrom(container);
-				}
-				dataKeys[blockNo] = null;
-			} else if(blockNo < checkKeys.length + dataKeys.length) {
-				if(checkKeys[blockNo-dataKeys.length] == null) {
-					Logger.error(this, "Check block already finished: "+blockNo);
-					return;
-				}
-				if(persistent) {
-					container.activate(checkKeys[blockNo-dataKeys.length], 1);
-					checkKeys[blockNo-dataKeys.length].removeFrom(container);
-				}
-				checkKeys[blockNo-dataKeys.length] = null;
-			} else
-				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
+			if(haveFoundKey(blockNo, container)) {
+				Logger.error(this, "Block already finished: "+blockNo);
+				return;
+			}
+			setFoundKey(blockNo, container);
 			// :(
 			boolean deactivateParent = false; // can get called from wierd places, don't deactivate parent if not necessary
 			if(persistent) {
@@ -1156,7 +1176,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(deactivateParent)
 				container.deactivate(parent, 1);
 			// Once it is no longer possible to have a successful fetch, fail...
-			allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
+			allFailed = failedBlocks + fatallyFailedBlocks > (dataBuckets.length + checkBuckets.length - minFetched);
 		}
 		if(persistent)
 			container.store(this);
@@ -1233,10 +1253,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		SplitFileFetcherSubSegment sub = null;
 		synchronized(this) {
 			if(isFinished(container)) return null;
-			if(blockNo < dataKeys.length) {
-				key = dataKeys[blockNo];
-				if(persistent)
-					container.activate(key, 5);
+			if(blockNo < dataBuckets.length) {
+				key = this.getBlockKey(blockNo, container);
 				tries = ++dataRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
@@ -1251,8 +1269,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 				}
 			} else {
-				int checkNo = blockNo - dataKeys.length;
-				key = checkKeys[checkNo];
+				int checkNo = blockNo - dataBuckets.length;
+				key = this.getBlockKey(blockNo, container);
 				if(persistent)
 					container.activate(key, 5);
 				tries = ++checkRetries[checkNo];
@@ -1354,9 +1372,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					b.removeFrom(container);
 				checkBuckets[i] = null;
-				if(persistent && checkKeys[i] != null)
-					checkKeys[i].removeFrom(container);
-				checkKeys[i] = null;
 			}
 		}
 		encoderFinished(container, context);
@@ -1412,16 +1427,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public synchronized ClientCHK getBlockKey(int blockNum, ObjectContainer container) {
-		ClientCHK ret;
-		if(blockNum < 0) return null;
-		else if(blockNum < dataKeys.length)
-			ret = dataKeys[blockNum];
-		else if(blockNum < dataKeys.length + checkKeys.length)
-			ret = checkKeys[blockNum - dataKeys.length];
-		else return null;
-		if(persistent)
-			container.activate(ret, 5);
-		return ret;
+		if(keys == null) migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		return keys.getKey(blockNum, foundKeys, persistent);
 	}
 	
 	public NodeCHK getBlockNodeKey(int blockNum, ObjectContainer container) {
@@ -1494,10 +1504,17 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public synchronized long getCooldownWakeup(int blockNum) {
-		if(blockNum < dataKeys.length)
+		if(blockNum < dataBuckets.length)
 			return dataCooldownTimes[blockNum];
 		else
-			return checkCooldownTimes[blockNum - dataKeys.length];
+			return checkCooldownTimes[blockNum - dataBuckets.length];
+	}
+
+	private int getRetries(int blockNum) {
+		if(blockNum < dataBuckets.length)
+			return dataRetries[blockNum];
+		else
+			return checkRetries[blockNum - dataBuckets.length];
 	}
 
 	/**
@@ -1511,48 +1528,27 @@ public class SplitFileFetcherSegment implements FECCallback {
 		synchronized(this) {
 		if(isFinishing(container)) return false;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
-		for(int i=0;i<dataKeys.length;i++) {
-			if(dataKeys[i] == null) continue;
-			ClientKey k = dataKeys[i];
-			if(persistent)
-				container.activate(k, 5);
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		int[] matches = keys.getBlockNumbers((NodeCHK)key, foundKeys);
+		for(int i : matches) {
+			ClientCHK k = keys.getKey(i, foundKeys, persistent);
 			if(k.getNodeKey(false).equals(key)) {
-				if(dataCooldownTimes[i] > time) {
+				if(getCooldownWakeup(i) > time) {
 					if(logMINOR)
 						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(dataCooldownTimes[i]-time)+"ms");
 					return false;
 				}
-				int tries = dataRetries[i];
+				int tries = getRetries(i);
 				SplitFileFetcherSubSegment sub = getSubSegment(tries, container, false, dontDeactivate);
 				if(logMINOR)
-					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
+					Logger.minor(this, "Retrying after cooldown on "+this+": block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector<SplitFileFetcherSubSegment>();
 				// We always schedule. FIXME: only schedule if sub.add() returns true???
 				sub.add(i, container, context, true);
-				if(!v.contains(sub)) v.add(sub);
-				notFound = false;
-			} else {
-				if(persistent)
-					container.deactivate(k, 5);
-			}
-		}
-		for(int i=0;i<checkKeys.length;i++) {
-			if(checkKeys[i] == null) continue;
-			ClientKey k = checkKeys[i];
-			if(persistent)
-				container.activate(k, 5);
-			if(k.getNodeKey(false).equals(key)) {
-				if(checkCooldownTimes[i] > time) {
-					if(logMINOR)
-						Logger.minor(this, "Not retrying after cooldown for check block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(checkCooldownTimes[i]-time)+"ms");
-					return false;
-				}
-				int tries = checkRetries[i];
-				SplitFileFetcherSubSegment sub = getSubSegment(tries, container, false, dontDeactivate);
-				if(logMINOR)
-					Logger.minor(this, "Retrying after cooldown on "+this+": check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
-				if(v == null) v = new Vector<SplitFileFetcherSubSegment>();
-				sub.add(i+dataKeys.length, container, context, true);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			} else {
@@ -1592,74 +1588,41 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public synchronized long getCooldownWakeupByKey(Key key, ObjectContainer container) {
-		for(int i=0;i<dataKeys.length;i++) {
-			if(dataKeys[i] == null) continue;
-			ClientKey k = dataKeys[i];
-			if(persistent)
-				container.activate(k, 5);
-			if(k.getNodeKey(false).equals(key)) {
-				return dataCooldownTimes[i];
-			} else {
-				if(persistent)
-					container.deactivate(k, 5);
-			}
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
 		}
-		for(int i=0;i<checkKeys.length;i++) {
-			if(checkKeys[i] == null) continue;
-			ClientKey k = checkKeys[i];
-			if(persistent)
-				container.activate(k, 5);
-			if(checkKeys[i].getNodeKey(false).equals(key)) {
-				return checkCooldownTimes[i];
-			} else {
-				if(persistent)
-					container.deactivate(k, 5);
-			}
-		}
-		return -1;
+		int blockNo = keys.getBlockNumber((NodeCHK)key, foundKeys);
+		if(blockNo == -1) return -1;
+		return getCooldownWakeup(blockNo);
 	}
 
 	public synchronized int getBlockNumber(Key key, ObjectContainer container) {
-		for(int i=0;i<dataKeys.length;i++) {
-			ClientCHK k = dataKeys[i];
-			if(k == null) continue;
-			if(persistent)
-				container.activate(k, 5);
-			if(k.getRoutingKey() == null)
-				throw new NullPointerException("Routing key is null yet key exists for data block "+i+" of "+this+(persistent?(" stored="+container.ext().isStored(k)+" active="+container.ext().isActive(k)) : ""));
-			if(k.getNodeKey(false).equals(key)) return i;
-			else {
-				if(persistent)
-					container.deactivate(k, 5);
-			}
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
 		}
-		for(int i=0;i<checkKeys.length;i++) {
-			ClientCHK k = checkKeys[i];
-			if(k == null) continue;
-			if(persistent)
-				container.activate(k, 5);
-			if(k.getRoutingKey() == null)
-				throw new NullPointerException("Routing key is null yet key exists for check block "+i+" of "+this);
-			if(k.getNodeKey(false).equals(key)) return dataKeys.length+i;
-			else {
-				if(persistent)
-					container.deactivate(k, 5);
-			}
-		}
-		return -1;
+		return keys.getBlockNumber((NodeCHK)key, foundKeys);
 	}
 
-	public synchronized Integer[] getKeyNumbersAtRetryLevel(int retryCount) {
+	public synchronized Integer[] getKeyNumbersAtRetryLevel(int retryCount, ObjectContainer container) {
 		Vector<Integer> v = new Vector<Integer>();
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
 		for(int i=0;i<dataRetries.length;i++) {
-			if(dataKeys[i] == null) continue;
+			if(foundKeys[i]) continue;
 			if(dataRetries[i] == retryCount)
 				v.add(Integer.valueOf(i));
 		}
 		for(int i=0;i<checkRetries.length;i++) {
-			if(checkKeys[i] == null) continue;
+			if(foundKeys[i+dataBuckets.length]) continue;
 			if(checkRetries[i] == retryCount)
-				v.add(Integer.valueOf(i+dataKeys.length));
+				v.add(Integer.valueOf(i+dataBuckets.length));
 		}
 		return v.toArray(new Integer[v.size()]);
 	}
@@ -1734,24 +1697,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public Key[] listKeys(ObjectContainer container) {
-		Vector<Key> v = new Vector<Key>();
-		synchronized(this) {
-			for(int i=0;i<dataKeys.length;i++) {
-				if(dataKeys[i] != null) {
-					if(persistent)
-						container.activate(dataKeys[i], 5);
-					v.add(dataKeys[i].getNodeKey(true));
-				}
-			}
-			for(int i=0;i<checkKeys.length;i++) {
-				if(checkKeys[i] != null) {
-					if(persistent)
-						container.activate(checkKeys[i], 5);
-					v.add(checkKeys[i].getNodeKey(true));
-				}
-			}
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
 		}
-		return v.toArray(new Key[v.size()]);
+		return keys.listNodeKeys(foundKeys, persistent);
 	}
 
 	/**
@@ -1932,10 +1883,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public void deactivateKeys(ObjectContainer container) {
-		for(int i=0;i<dataKeys.length;i++)
-			container.deactivate(dataKeys[i], 1);
-		for(int i=0;i<checkKeys.length;i++)
-			container.deactivate(checkKeys[i], 1);
+		container.deactivate(keys, 1);
 	}
 
 	public SplitFileFetcherSubSegment getSubSegmentFor(int blockNum, ObjectContainer container) {
@@ -1991,19 +1939,27 @@ public class SplitFileFetcherSegment implements FECCallback {
 		freeDecodedData(container, true);
 		removeSubSegments(container, context, true);
 		container.delete(subSegments);
-		for(int i=0;i<dataKeys.length;i++) {
-			if(dataKeys[i] != null) dataKeys[i].removeFrom(container);
-			dataKeys[i] = null;
+		if(dataKeys != null) {
+			for(int i=0;i<dataKeys.length;i++) {
+				if(dataKeys[i] != null) dataKeys[i].removeFrom(container);
+				dataKeys[i] = null;
+			}
 		}
-		for(int i=0;i<checkKeys.length;i++) {
-			if(checkKeys[i] != null) checkKeys[i].removeFrom(container);
-			checkKeys[i] = null;
+		if(checkKeys != null) {
+			for(int i=0;i<checkKeys.length;i++) {
+				if(checkKeys[i] != null) checkKeys[i].removeFrom(container);
+				checkKeys[i] = null;
+			}
 		}
 		container.activate(errors, 1);
 		errors.removeFrom(container);
 		if(failureException != null) {
 			container.activate(failureException, 5);
 			failureException.removeFrom(container);
+		}
+		if(keys != null) {
+			container.activate(keys, 1);
+			keys.removeFrom(container);
 		}
 		container.delete(this);
 	}
