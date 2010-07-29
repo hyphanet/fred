@@ -22,6 +22,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	private static final int HMAC_LENGTH = 4;
 	private static final int NUM_RTTS_TO_LOOSE = 2;
+	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
 
 	private static volatile boolean logMINOR;
 	static {
@@ -46,6 +47,11 @@ public class NewPacketFormat implements PacketFormat {
 	private final HashMap<Long, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Long, PartiallyReceivedBuffer>();
 	private final HashMap<Long, SparseBitmap> receiveMaps = new HashMap<Long, SparseBitmap>();
 	private long highestAckedSeqNum = -1;
+
+	//FIXME: Should be a better way to store it
+	private final HashMap<SessionKey, byte[][]> seqNumWatchLists = new HashMap<SessionKey, byte[][]>();
+	private final HashMap<SessionKey, Long> watchListBases = new HashMap<SessionKey, Long>();
+	private long highestReceivedSeqNum = -1;
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
@@ -148,6 +154,47 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
+		byte[][] seqNumWatchList = seqNumWatchLists.get(sessionKey);
+		long watchListBase = 0;
+		if(seqNumWatchList != null) watchListBases.get(sessionKey);
+
+		if(seqNumWatchList == null || (highestReceivedSeqNum > watchListBase + (NUM_SEQNUMS_TO_WATCH_FOR / 2))) {
+			if(logMINOR) Logger.minor(this, "Creating watchlist");
+
+			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][];
+
+			watchListBase = (highestReceivedSeqNum == -1 ? 0 : highestReceivedSeqNum - (seqNumWatchList.length / 2));
+			long seqNum = watchListBase;
+			for(int i = 0; i < seqNumWatchList.length; i++) {
+				byte[] seqNumBytes = new byte[4];
+				seqNumBytes[0] = (byte) (seqNum >>> 24);
+				seqNumBytes[1] = (byte) (seqNum >>> 16);
+				seqNumBytes[2] = (byte) (seqNum >>> 8);
+				seqNumBytes[3] = (byte) (seqNum);
+				seqNum++;
+
+				PCFBMode cipher = PCFBMode.create(sessionKey.sessionCipher);
+				cipher.blockEncipher(seqNumBytes, 0, seqNumBytes.length);
+
+				seqNumWatchList[i] = seqNumBytes;
+			}
+
+			seqNumWatchLists.put(sessionKey, seqNumWatchList);
+			watchListBases.put(sessionKey, watchListBase);
+		}
+
+		boolean hasMatched = false;
+		for(int i = 0; (i < seqNumWatchList.length) && !hasMatched; i++) {
+			for(int j = 0; j < seqNumWatchList[i].length; j++) {
+				if(seqNumWatchList[i][j] != buf[offset + HMAC_LENGTH + j]) break;
+				if(j == (seqNumWatchList[i].length - 1)) hasMatched = true;
+			}
+		}
+		if(hasMatched == false) {
+			if(logMINOR) Logger.minor(this, "Dropping packet because it isn't on our watchlist");
+			return null;
+		}
+
 		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher);
 		hashCipher.blockDecipher(buf, offset, HMAC_LENGTH);
 
@@ -170,7 +217,10 @@ public class NewPacketFormat implements PacketFormat {
 		byte[] payload = new byte[length - HMAC_LENGTH];
 		System.arraycopy(buf, offset + HMAC_LENGTH, payload, 0, length - HMAC_LENGTH);
 
-		return NPFPacket.create(payload);
+		NPFPacket p = NPFPacket.create(payload);
+		if(highestReceivedSeqNum < p.getSequenceNumber()) highestReceivedSeqNum = p.getSequenceNumber();
+
+		return p;
 	}
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
