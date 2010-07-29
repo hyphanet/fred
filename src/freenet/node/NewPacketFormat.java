@@ -84,6 +84,7 @@ public class NewPacketFormat implements PacketFormat {
 			Logger.warning(this, "Could not decrypt received packet");
 			return;
 		}
+		if(logMINOR) Logger.minor(this, "Received packet " + packet.getSequenceNumber());
 
 		pn.receivedPacket(false, true);
 		pn.verified(s);
