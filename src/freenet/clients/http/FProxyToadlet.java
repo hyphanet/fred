@@ -572,7 +572,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		String accept = headers.get("accept");
 		FProxyFetchResult fr = null;
 		if(logMINOR) Logger.minor(this, "UA = "+ua+" accept = "+accept);
-		if(isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload")) {
+		if(isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload") && !httprequest.isParameterSet("noprogress")) {
 			FProxyFetchWaiter fetch = null;
 			try {
 				fetch = fetchTracker.makeFetcher(key, maxSize, fctx);
