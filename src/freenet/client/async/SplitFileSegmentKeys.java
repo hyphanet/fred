@@ -244,10 +244,14 @@ outer:	for(int i=0;i<(dataBlocks + checkBlocks);i++) {
 	public void setKey(int i, ClientCHK key) {
 		byte[] r = key.getRoutingKey();
 		System.arraycopy(r, 0, routingKeys, i * NodeCHK.KEY_LENGTH, NodeCHK.KEY_LENGTH);
-		byte[] c = key.getCryptoKey();
-		System.arraycopy(c, 0, decryptKeys, i * ClientCHK.CRYPTO_KEY_LENGTH, ClientCHK.CRYPTO_KEY_LENGTH);
-		byte[] e = key.getExtra();
-		System.arraycopy(e, 0, extraBytesForKeys, i * EXTRA_BYTES_LENGTH, EXTRA_BYTES_LENGTH);
+		if(decryptKeys != null) {
+			byte[] c = key.getCryptoKey();
+			System.arraycopy(c, 0, decryptKeys, i * ClientCHK.CRYPTO_KEY_LENGTH, ClientCHK.CRYPTO_KEY_LENGTH);
+		}
+		if(extraBytesForKeys != null) {
+			byte[] e = key.getExtra();
+			System.arraycopy(e, 0, extraBytesForKeys, i * EXTRA_BYTES_LENGTH, EXTRA_BYTES_LENGTH);
+		}
 	}
 
 	public void removeFrom(ObjectContainer container) {
