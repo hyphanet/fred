@@ -258,22 +258,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			finalLength = overrideLength;
 		}
 		
-		// Setup bloom parameters.
-		if(persistent) {
-			// FIXME: Should this be encrypted? It's protected to some degree by the salt...
-			// Since it isn't encrypted, it's likely to be very sparse; we should name
-			// it appropriately...
-			try {
-				mainBloomFile = context.persistentFG.makeRandomFile();
-				altBloomFile = context.persistentFG.makeRandomFile();
-			} catch (IOException e) {
-				throw new FetchException(FetchException.BUCKET_ERROR, "Unable to create Bloom filter files", e);
-			}
-		} else {
-			// Not persistent, keep purely in RAM.
-			mainBloomFile = null;
-			altBloomFile = null;
-		}
+		mainBloomFile = null;
+		altBloomFile = null;
 		int mainElementsPerKey = DEFAULT_MAIN_BLOOM_ELEMENTS_PER_KEY;
 		int origSize = splitfileDataBlocks + splitfileCheckBlocks;
 		mainBloomK = (int) (mainElementsPerKey * 0.7);
