@@ -322,16 +322,16 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					|| (checkBlocks > fetchContext.maxCheckBlocksPerSegment))
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
 			segments[i] = new SplitFileFetcherSegment(splitfileType, keys,
-					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
+					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, i, pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
 			int data = keys.getDataBlocks();
 			int check = keys.getCheckBlocks();
 			for(int j=0;j<(data+check);j++) {
 				tempListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, context);
 			}
 			if(persistent) {
-				container.store(segments[0]);
-				segments[0].deactivateKeys(container);
-				container.deactivate(segments[0], 1);
+				container.store(segments[i]);
+				segments[i].deactivateKeys(container);
+				container.deactivate(segments[i], 1);
 			}
 		}
 		int totalCrossCheckBlocks = segments.length * crossCheckBlocks;
