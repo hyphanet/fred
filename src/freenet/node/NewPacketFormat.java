@@ -46,7 +46,6 @@ public class NewPacketFormat implements PacketFormat {
 
 	private final HashMap<Long, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Long, PartiallyReceivedBuffer>();
 	private final HashMap<Long, SparseBitmap> receiveMaps = new HashMap<Long, SparseBitmap>();
-	private long highestAckedSeqNum = -1;
 
 	//FIXME: Should be a better way to store it
 	private final HashMap<SessionKey, byte[][]> seqNumWatchLists = new HashMap<SessionKey, byte[][]>();
@@ -147,7 +146,6 @@ public class NewPacketFormat implements PacketFormat {
 			synchronized(acks) {
 				acks.add(packet.getSequenceNumber());
                         }
-			highestAckedSeqNum = packet.getSequenceNumber();
 		}
 
 
