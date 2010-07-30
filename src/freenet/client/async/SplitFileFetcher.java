@@ -331,7 +331,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(persistent) {
 				container.store(segments[i]);
 				segments[i].deactivateKeys(container);
-				container.deactivate(segments[i], 1);
 			}
 		}
 		int totalCrossCheckBlocks = segments.length * crossCheckBlocks;
