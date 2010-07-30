@@ -51,6 +51,7 @@ public class NewPacketFormat implements PacketFormat {
 	private final HashMap<SessionKey, byte[][]> seqNumWatchLists = new HashMap<SessionKey, byte[][]>();
 	private final HashMap<SessionKey, Long> watchListOffsets = new HashMap<SessionKey, Long>();
 	private long highestReceivedSeqNum = -1;
+	private volatile long highestReceivedAck = -1;
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
@@ -108,6 +109,8 @@ public class NewPacketFormat implements PacketFormat {
 					nextRttPos = (nextRttPos + 1) % lastRtts.length;
 				}
 			}
+
+			if(highestReceivedAck < ack) highestReceivedAck = ack;
 		}
 
 		boolean dontAck = false;
@@ -317,6 +320,12 @@ public class NewPacketFormat implements PacketFormat {
 		synchronized(this) {
 			sequenceNumber = nextSequenceNumber++;
 		}
+
+		if(sequenceNumber > highestReceivedAck + (NUM_SEQNUMS_TO_WATCH_FOR / 2)) {
+			//FIXME: Will result in busy looping until we receive a higher ack
+			return null;
+		}
+
 		packet.setSequenceNumber(sequenceNumber);
 
 		int numAcks = 0;
