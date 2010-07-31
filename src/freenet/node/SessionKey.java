@@ -3,7 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.HashMap;
+
 import freenet.crypt.BlockCipher;
+import freenet.support.Logger;
 
 /**
  * Class representing a single session key.
@@ -26,16 +29,21 @@ public class SessionKey {
 	/** Key for above cipher, so far for debugging */
 	public final byte[] sessionKey;
 
-	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher cipher, byte[] sessionKey) {
+	public final BlockCipher ivCipher;
+	public final byte[] hmacKey;
+	
+	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher cipher, byte[] sessionKey,
+	                BlockCipher ivCipher, byte[] hmacKey) {
 		this.pn = parent;
 		this.packets = tracker;
 		this.sessionCipher = cipher;
 		this.sessionKey = sessionKey;
+		this.ivCipher = ivCipher;
+		this.hmacKey = hmacKey;
 	}
 	
 	@Override
 	public String toString() {
 		return super.toString()+":"+packets.toString();
 	}
-
 }
