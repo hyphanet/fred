@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Vector;
 
+import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.io.comm.DMT;
@@ -211,21 +212,12 @@ public class NewPacketFormat implements PacketFormat {
 
 		sessionKey.sessionCipher.encipher(IV, IV);
 
-		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
-		hashCipher.blockDecipher(buf, offset, HMAC_LENGTH);
+		byte[] text = new byte[length - HMAC_LENGTH];
+		System.arraycopy(buf, offset + HMAC_LENGTH, text, 0, text.length);
+		byte[] hash = new byte[HMAC_LENGTH];
+		System.arraycopy(buf, offset, hash, 0, hash.length);
 
-		//Check the hash
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(buf, offset + HMAC_LENGTH, length - HMAC_LENGTH);
-		byte[] hash = md.digest();
-		SHA256.returnMessageDigest(md);
-		md = null;
-
-		for(int i = 0; i < HMAC_LENGTH; i++) {
-			if(buf[offset + i] != hash[i]) {
-				return null;
-			}
-		}
+		if(!HMAC.verifyWithSHA256(sessionKey.sessionKey, text, hash)) return null;
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
 		payloadCipher.blockDecipher(buf, offset + HMAC_LENGTH, length - HMAC_LENGTH);
@@ -273,14 +265,10 @@ public class NewPacketFormat implements PacketFormat {
 		payloadCipher.blockEncipher(data, HMAC_LENGTH, packet.getLength());
 
 		//Add hash
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(data, HMAC_LENGTH, packet.getLength());
-		byte[] hash = md.digest();
-		SHA256.returnMessageDigest(md);
-		md = null;
+		byte[] text = new byte[packet.getLength()];
+		System.arraycopy(data, HMAC_LENGTH, text, 0, text.length);
 
-		PCFBMode hashCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
-		hashCipher.blockEncipher(hash, 0, HMAC_LENGTH);
+		byte[] hash = HMAC.macWithSHA256(sessionKey.sessionKey, text, HMAC_LENGTH);
 
 		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
 
