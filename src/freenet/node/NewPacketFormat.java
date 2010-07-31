@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Vector;
 
+import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
@@ -177,10 +178,12 @@ public class NewPacketFormat implements PacketFormat {
 				seqNumBytes[3] = (byte) (seqNum);
 				seqNum++;
 
-				byte[] IV = new byte[sessionKey.sessionCipher.getBlockSize() / 8];
+				BlockCipher ivCipher = sessionKey.ivCipher;
+
+				byte[] IV = new byte[ivCipher.getBlockSize() / 8];
 				System.arraycopy(seqNumBytes, 0, IV, 0, seqNumBytes.length);
 
-				sessionKey.sessionCipher.encipher(IV, IV);
+				ivCipher.encipher(IV, IV);
 
 				PCFBMode cipher = PCFBMode.create(sessionKey.sessionCipher, IV);
 				cipher.blockEncipher(seqNumBytes, 0, seqNumBytes.length);
@@ -204,20 +207,22 @@ public class NewPacketFormat implements PacketFormat {
 			return null;
 		}
 
-		byte[] IV = new byte[sessionKey.sessionCipher.getBlockSize() / 8];
+		BlockCipher ivCipher = sessionKey.ivCipher;
+
+		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
 		IV[0] = (byte) (sequenceNumber >>> 24);
 		IV[1] = (byte) (sequenceNumber >>> 16);
 		IV[2] = (byte) (sequenceNumber >>> 8);
 		IV[3] = (byte) (sequenceNumber);
 
-		sessionKey.sessionCipher.encipher(IV, IV);
+		ivCipher.encipher(IV, IV);
 
 		byte[] text = new byte[length - HMAC_LENGTH];
 		System.arraycopy(buf, offset + HMAC_LENGTH, text, 0, text.length);
 		byte[] hash = new byte[HMAC_LENGTH];
 		System.arraycopy(buf, offset, hash, 0, hash.length);
 
-		if(!HMAC.verifyWithSHA256(sessionKey.sessionKey, text, hash)) return null;
+		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, text, hash)) return null;
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
 		payloadCipher.blockDecipher(buf, offset + HMAC_LENGTH, length - HMAC_LENGTH);
@@ -256,10 +261,12 @@ public class NewPacketFormat implements PacketFormat {
 			return false;
 		}
 
-		byte[] IV = new byte[sessionKey.sessionCipher.getBlockSize() / 8];
-		System.arraycopy(data, HMAC_LENGTH, IV, 0, 4);
+		BlockCipher ivCipher = sessionKey.ivCipher;
 
-		sessionKey.sessionCipher.encipher(IV, IV);
+		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
+		System.arraycopy(data, HMAC_LENGTH, IV, 0, 4);
+		
+		ivCipher.encipher(IV, IV);
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
 		payloadCipher.blockEncipher(data, HMAC_LENGTH, packet.getLength());
@@ -268,7 +275,7 @@ public class NewPacketFormat implements PacketFormat {
 		byte[] text = new byte[packet.getLength()];
 		System.arraycopy(data, HMAC_LENGTH, text, 0, text.length);
 
-		byte[] hash = HMAC.macWithSHA256(sessionKey.sessionKey, text, HMAC_LENGTH);
+		byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text, HMAC_LENGTH);
 
 		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
 
