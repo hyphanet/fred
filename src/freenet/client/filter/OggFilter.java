@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 
 /** Filters Ogg container files. These containers contain one or more
  * logical bitstreams of data encapsulated into a physical bitstream.
@@ -20,10 +21,12 @@ import java.util.HashMap;
  * @author sajack
  */
 public class OggFilter implements ContentDataFilter{
+
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
 		HashMap<Integer, OggBitstreamFilter> streamFilters = new HashMap<Integer, OggBitstreamFilter>();
+		LinkedList<OggPage> splitPages = new LinkedList<OggPage>();
 		DataInputStream in = new DataInputStream(input);
 		while(true) {
 			OggPage page = null;
@@ -41,8 +44,14 @@ public class OggFilter implements ContentDataFilter{
 			}
 			if(filter == null) continue;
 			if(page.headerValid() && filter.parse(page)) {
-				output.write(page.array());
-			}
+				splitPages.add(page);
+				if(page.isFinalPacket()) {
+					//Don't write a continuous pages unless they are all valid
+					for(OggPage part : splitPages) {
+						output.write(part.array());
+					}
+				}
+			} else if(!splitPages.isEmpty()) splitPages.clear();
 		}
 		output.flush();
 	}

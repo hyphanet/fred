@@ -151,6 +151,15 @@ public class OggPage {
 		return true;
 	}
 
+	boolean isPacketContinued() {
+		if(logMINOR) Logger.minor(this, "Packet continued: "+(headerType & 0x1));
+		return (headerType & 0x01) == 1;
+	}
+
+	boolean isFinalPacket() {
+		return (headerType & 0x04) == 4;
+	}
+
 	byte[] array() {
 		ByteBuffer bb = ByteBuffer.allocate(27+byteToUnsigned(segments)+payload.length);
 		bb.put(magicNumber);
