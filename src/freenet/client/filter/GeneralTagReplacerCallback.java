@@ -2,6 +2,7 @@ package freenet.client.filter;
 
 import freenet.client.filter.HTMLFilter.ParsedTag;
 
+/**TagReplacerCallback for use when web-pushing is disabled.*/
 public class GeneralTagReplacerCallback implements TagReplacerCallback {
 
 	public String processTag(ParsedTag pt, URIProcessor uriProcessor) {
