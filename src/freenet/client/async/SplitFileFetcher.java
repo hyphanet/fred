@@ -839,16 +839,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		container.activate(altBloomFile, 5);
 		if(mainBloomFile != null && !mainBloomFile.delete() && mainBloomFile.exists())
 			Logger.error(this, "Unable to delete main bloom file: "+mainBloomFile+" for "+this);
-		else if(mainBloomFile == null)
-			Logger.error(this, "mainBloomFile is null on "+this);
-		else
-			if(logMINOR) Logger.minor(this, "Deleted main bloom file "+mainBloomFile);
 		if(altBloomFile != null && !altBloomFile.delete() && altBloomFile.exists())
 			Logger.error(this, "Unable to delete alt bloom file: "+altBloomFile+" for "+this);
-		else if(altBloomFile == null)
-			Logger.error(this, "altBloomFile is null on "+this);
-		else
-			if(logMINOR) Logger.minor(this, "Deleted alt bloom file "+altBloomFile);
 		container.delete(mainBloomFile);
 		container.delete(altBloomFile);
 		container.activate(cachedMainBloomFilter, Integer.MAX_VALUE);
