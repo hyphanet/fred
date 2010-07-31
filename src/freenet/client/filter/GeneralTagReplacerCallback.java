@@ -12,7 +12,7 @@ public class GeneralTagReplacerCallback implements TagReplacerCallback {
 					String name = attr.substring(0, attr.indexOf("="));
 					String value = attr.substring(attr.indexOf("=") + 2, attr.length() - 1);
 					if(name.compareTo("src") == 0) {
-						pt.unparsedAttrs[i] = name+"=\""+value+"?max-size=0\"";
+						pt.unparsedAttrs[i] = name+"=\""+value+"?noprogress&max-size=0\"";
 					}
 				}
 			}
