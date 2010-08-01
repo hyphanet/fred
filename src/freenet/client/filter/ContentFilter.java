@@ -73,7 +73,7 @@ public class ContentFilter {
 				l10n("imageBMPReadAdvice"),
 				l10n("imageBMPWriteAdvice"), false, null, null, false));	
 
-		/* Ogg - filter in process of being written
+		/* Ogg - has a filter
 		 * Xiph's container format. Contains one or more logical bitstreams.
 		 * Each type of bitstream will likely require additional processing,
 		 * on top of that needed for the Ogg container itself.
