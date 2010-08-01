@@ -4,6 +4,9 @@
 
 package freenet.client.filter;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -27,13 +30,16 @@ public class OggFilter implements ContentDataFilter{
 			FilterCallback cb) throws DataFilterException, IOException {
 		HashMap<Integer, OggBitstreamFilter> streamFilters = new HashMap<Integer, OggBitstreamFilter>();
 		LinkedList<OggPage> splitPages = new LinkedList<OggPage>();
-		DataInputStream in = new DataInputStream(input);
-		while(true) {
-			OggPage page = null;
+		DataInputStream in = new DataInputStream(new BufferedInputStream(input, 255));
+		OggPage page = null;
+		OggPage nextPage = OggPage.readPage(in);
+		boolean running = true;
+		while(running) {
+			page = nextPage;
 			try {
-				page = OggPage.readPage(in);
+				nextPage = OggPage.readPage(in);
 			} catch (EOFException e) {
-				break;
+				running = false;
 			}
 			OggBitstreamFilter filter = null;
 			if(streamFilters.containsKey(page.getSerial())) {
@@ -43,17 +49,43 @@ public class OggFilter implements ContentDataFilter{
 				streamFilters.put(page.getSerial(), filter);
 			}
 			if(filter == null) continue;
-			if(page.headerValid() && filter.parse(page)) {
+			//Don't write a continuous pages unless they are all valid
+			if(page.headerValid() && filter.parse(page) && !hasValidSubpage(page, nextPage)) {
 				splitPages.add(page);
 				if(page.isFinalPacket()) {
-					//Don't write a continuous pages unless they are all valid
-					for(OggPage part : splitPages) {
+					while(!splitPages.isEmpty()) {
+						OggPage part = splitPages.remove();
 						output.write(part.array());
 					}
 				}
 			} else if(!splitPages.isEmpty()) splitPages.clear();
 		}
 		output.flush();
+	}
+
+	/**Searches for valid pages hidden inside this page
+	 * @return whether or not a hidden page exists
+	 * @throws IOException
+	 */
+	private boolean hasValidSubpage(OggPage page, OggPage nextPage) throws IOException {
+		OggPage subpage = null;
+		int pageCount = 0;
+		try{
+			//Populate a byte array with all the data in which a subpage might hide
+			ByteArrayOutputStream data = new ByteArrayOutputStream();
+			data.write(page.array());
+			if(nextPage != null) data.write(nextPage.array());
+			DataInputStream in = new DataInputStream(new ByteArrayInputStream(data.toByteArray()));
+			while(true) {
+				subpage = OggPage.readPage(in);
+				if(subpage.headerValid()) {
+					pageCount++;
+				}
+			}
+		} catch(EOFException e) {
+			//We've ran out of data to read. Break.
+		}
+		return pageCount > 2;
 	}
 
 	public void writeFilter(InputStream input, OutputStream output,

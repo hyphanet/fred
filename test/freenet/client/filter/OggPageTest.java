@@ -52,14 +52,4 @@ public class OggPageTest extends TestCase {
 		Assert.assertFalse(page.headerValid());
 		input.close();
 	}
-
-	public void testValidSubPageCausesFailure() throws IOException {
-		DataInputStream input = new DataInputStream(getClass().getResourceAsStream("./ogg/contains_subpages.ogg"));
-		try {
-			@SuppressWarnings("unused")
-			OggPage page = OggPage.readPage(input);
-			Assert.fail("Expected exception not caught");
-		} catch(DataFilterException e) {}
-		input.close();
-	}
 }

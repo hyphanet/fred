@@ -120,8 +120,6 @@ public class OggPage {
 		}
 		payload = new byte[payloadSize];
 		input.read(payload);
-		if(hasValidSubpage()) throw new DataFilterException(l10n("ValidSubpageTitle"), l10n("ValidSubpageTitle"), l10n("ValidSubpageMessage"));
-
 	}
 
 	/**Extracts the Ogg page from a physical bitstream
@@ -203,30 +201,6 @@ public class OggPage {
 				(byte) (crc_reg>>>8),
 				(byte) (crc_reg>>>16),
 				(byte) (crc_reg>>>24)};
-	}
-
-	/**Searches for valid pages hidden inside this page
-	 * @return whether or not a hidden page exists
-	 * @throws IOException
-	 */
-	boolean hasValidSubpage() throws IOException {
-		boolean hasValidSubpage = false;
-		ByteArrayInputStream data = new ByteArrayInputStream(payload);
-		DataInputStream input = new DataInputStream(data);
-		OggPage subpage = null;
-		while(true) {
-			try {
-				subpage = readPage(input);
-			} catch(EOFException e) {
-				break;
-			}
-			if(subpage.headerValid()) {
-				hasValidSubpage=true;
-				break;
-			}
-		}
-		return hasValidSubpage;
-
 	}
 
 	static private int byteToUnsigned(byte input) {
