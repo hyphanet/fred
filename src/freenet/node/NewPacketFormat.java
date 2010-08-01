@@ -326,7 +326,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		SentPacket sentPacket = new SentPacket();
+		SentPacket sentPacket = new SentPacket(this);
 		NPFPacket packet = new NPFPacket();
 
 		long sequenceNumber;
@@ -451,10 +451,15 @@ public class NewPacketFormat implements PacketFormat {
 		return avgRtt;
 	}
 
-	private class SentPacket {
+	private static class SentPacket {
+		NewPacketFormat npf;
 		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
 		LinkedList<int[]> ranges = new LinkedList<int[]>();
 		long sentTime;
+
+		public SentPacket(NewPacketFormat npf) {
+			this.npf = npf;
+		}
 
 		public void addFragment(MessageWrapper source, int start, int length) {
 			if(length < 1) throw new IllegalArgumentException();
@@ -472,7 +477,7 @@ public class NewPacketFormat implements PacketFormat {
 				int[] range = rangeIt.next();
 
 				if(wrapper.ack(range[0], range[1])) {
-					HashMap<Long, MessageWrapper> started = startedByPrio.get(wrapper.getPriority());
+					HashMap<Long, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
 					synchronized(started) {
 						started.remove(wrapper.getMessageID());
 					}
