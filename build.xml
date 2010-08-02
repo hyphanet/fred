@@ -170,6 +170,7 @@
 		<copy todir="${build}/freenet/l10n">
 			<fileset dir="${src}/freenet/l10n">
 				<include name="freenet.l10n.*.properties"/>
+				<include name="freenet.l10n.*.tab"/>
 			</fileset>
 		</copy>
 
