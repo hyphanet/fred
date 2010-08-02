@@ -2075,10 +2075,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			maybeOnConnect();
 		}
 		
-		if(negType != 5) {
-			packetFormat = new FNPWrapper(this);
-		} else {
-			packetFormat = new NewPacketFormat(this);
+		if(!wasARekey) {
+			if(negType != 5) {
+				packetFormat = new FNPWrapper(this);
+			} else {
+				packetFormat = new NewPacketFormat(this);
+			}
 		}
 
 		return packets.trackerID;
