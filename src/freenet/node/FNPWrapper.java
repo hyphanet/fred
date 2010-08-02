@@ -173,4 +173,7 @@ public class FNPWrapper implements PacketFormat {
 		pn.crypto.packetMangler.process(buf, offset, length, pn.getPeer(), now);
 	}
 
+	public void onDisconnect() {
+		//Nothing to do, MessageItems are either sent or requeued.
+	}
 }

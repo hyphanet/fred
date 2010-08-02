@@ -18,4 +18,8 @@ public interface PacketFormat {
 	boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException;
 
+	/**
+	 * Called when the peer has been disconnected.
+	 */
+	void onDisconnect();
 }

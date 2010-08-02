@@ -132,4 +132,7 @@ public class MessageWrapper {
 		                item.buf.length, start, fragmentData);
         }
 
+	public void onDisconnect() {
+		item.onDisconnect();
+	}
 }

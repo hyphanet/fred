@@ -422,6 +422,17 @@ public class NewPacketFormat implements PacketFormat {
 		return packet;
 	}
 
+	public void onDisconnect() {
+		for(HashMap<Long, MessageWrapper> queue : startedByPrio) {
+			synchronized(queue) {
+				for(MessageWrapper wrapper : queue.values()) {
+					wrapper.onDisconnect();
+				}
+				queue.clear();
+			}
+		}
+	}
+
 	private long getMessageID() {
 		long messageID;
 		synchronized(this) {
