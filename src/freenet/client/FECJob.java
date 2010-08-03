@@ -374,4 +374,12 @@ public class FECJob {
 				System.out.println("Does not have all data block statuses: "+dataCount+" of "+checkBlockStatus.length);
 		}
 	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		if(running) {
+			Logger.error(this, "Tried to deactivate but running == true!");
+			return false;
+		}
+		return true;
+	}
 }
