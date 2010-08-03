@@ -234,7 +234,7 @@ public class FECQueue implements OOMHook {
 						Logger.error(this, "Caught: "+t, t);
 						if(job.persistent) {
 							if(Logger.shouldLog(LogLevel.MINOR, this))
-								Logger.minor(this, "Scheduling callback for "+job+"...");
+								Logger.minor(this, "Scheduling callback for "+job+" after "+t, t);
 							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY+1 : NativeThread.NORM_PRIORITY;
 							// Run at a fairly high priority so we get the blocks out of memory and onto disk.
 							databaseJobRunner.queue(new DBJob() {
