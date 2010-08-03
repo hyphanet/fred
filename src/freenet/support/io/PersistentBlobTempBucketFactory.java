@@ -701,7 +701,9 @@ public class PersistentBlobTempBucketFactory {
 		ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
 		long deleted = 0;
 		while(tags.hasNext()) {
-			container.delete(tags.next());
+			PersistentBlobTempBucketTag tag = tags.next();
+			if(logMINOR) Logger.minor(this, "Deleting tag "+tag+" for index "+tag.index);
+			container.delete(tag);
 			deleted++;
 			if(deleted > 1024) break;
 		}
@@ -730,6 +732,7 @@ public class PersistentBlobTempBucketFactory {
 								Logger.error(this, "Tag with bucket beyond end of file! index="+tag.index+" bucket="+tag.bucket);
 								continue;
 							}
+							if(logMINOR) Logger.minor(this, "Deleting tag "+tag+" for index "+tag.index);
 							container.delete(tag);
 							deleted++;
 							if(deleted > 1024) break;
