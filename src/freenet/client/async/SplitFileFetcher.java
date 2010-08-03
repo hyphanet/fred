@@ -776,6 +776,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	}
 
 	private boolean toRemove = false;
+	// Leaks can happen if it is still in memory after removal.
+	// It shouldn't be referred to by anything but it's good to detect such problems.
 	private boolean removed = false;
 	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
@@ -810,7 +812,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	
 	public void innerRemoveFrom(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
-			if(removed) return;
+			if(removed) {
+				Logger.error(this, "innerRemoveFrom() called twice", new Exception("error"));
+				return;
+			}
 			removed = true;
 		}
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
