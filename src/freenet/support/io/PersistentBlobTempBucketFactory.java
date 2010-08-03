@@ -831,7 +831,7 @@ public class PersistentBlobTempBucketFactory {
 			for(int i=freeNow;i<MAX_FREE && it.hasNext();i++) {
 				Map.Entry<Long,PersistentBlobTempBucketTag> entry = it.next();
 				Long slot = entry.getKey();
-				if(slot > blocks) {
+				if(slot >= blocks) {
 					i--;
 					continue;
 				}
