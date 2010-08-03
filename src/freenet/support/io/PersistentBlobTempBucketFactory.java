@@ -199,15 +199,8 @@ public class PersistentBlobTempBucketFactory {
 			synchronized(PersistentBlobTempBucketFactory.this) {
 				if(freeSlots.size() > MAX_FREE) return false;
 			}
-			long size;
-			try {
-				size = channel.size();
-			} catch (IOException e1) {
-				Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
-				return false;
-			}
-			size -= size % blockSize;
-			long blocks = size / blockSize;
+			long blocks = getSize();
+			if(blocks == Long.MAX_VALUE) return false;
 			long ptr = blocks - 1;
 
 			boolean changedTags = false;
@@ -324,7 +317,7 @@ public class PersistentBlobTempBucketFactory {
 				if(bytesLeft < buf.length)
 					buffer.limit(bytesLeft);
 				try {
-					written += channel.write(buffer, size + written);
+					written += channel.write(buffer, blocks * blockSize + written);
 					buffer.clear();
 				} catch (IOException e) {
 					break;
@@ -516,15 +509,11 @@ public class PersistentBlobTempBucketFactory {
 			if(now - lastCheckedEnd > 60*1000) {
 				if(logMINOR) Logger.minor(this, "maybeShrink() inner");
 				// Check whether there is a big white space at the end of the file.
-				long size;
-				try {
-					size = channel.size();
-				} catch (IOException e1) {
-					Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+				long blocks = getSize();
+				if(blocks == Long.MAX_VALUE) {
+					Logger.error(this, "Not shrinking, unable to determine size");
 					return false;
 				}
-				size -= size % blockSize;
-				long blocks = size / blockSize;
 				if(blocks <= 32) {
 					if(logMINOR) Logger.minor(this, "Not shrinking, blob file not larger than a megabyte");
 					lastCheckedEnd = now;
@@ -686,6 +675,7 @@ public class PersistentBlobTempBucketFactory {
 				lastCheckedEnd = now;
 				queueMaybeShrink();
 			} else return false;
+			cachedSize = newBlocks;
 		}
 		try {
 			channel.truncate(newBlocks * blockSize);
@@ -845,6 +835,21 @@ public class PersistentBlobTempBucketFactory {
 			freeSlots.putAll(almostFreeSlots);
 		}
 		almostFreeSlots.clear();
+	}
+	
+	private transient long cachedSize;
+
+	private synchronized long getSize() {
+		if(cachedSize != Long.MAX_VALUE && cachedSize != 0) return cachedSize;
+		long size;
+		try {
+			size = channel.size();
+		} catch (IOException e1) {
+			Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+			return Long.MAX_VALUE;
+		}
+		size -= size % blockSize;
+		return cachedSize = size / blockSize;
 	}
 
 	public Bucket createShadow(PersistentBlobTempBucket bucket) {
