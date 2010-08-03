@@ -231,9 +231,12 @@ public class PersistentBlobTempBucket implements Bucket {
 				Logger.error(this, "Storing freed bucket "+this+" formerly for slot "+index, new Exception("error"));
 				if(tag != null) {
 					container.activate(tag, 1);
-					tag.bucket = null;
-					tag.isFree = true;
-					container.store(tag);
+					if(tag.bucket == this) {
+						Logger.error(this, "Clearing tag");
+						tag.bucket = null;
+						tag.isFree = true;
+						container.store(tag);
+					}
 					this.tag = null;
 				}
 				container.store(this);
