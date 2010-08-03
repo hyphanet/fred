@@ -200,7 +200,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 					return;
 				} // Else try to insert the other hints.
 			} catch (InsertException e) {
-				Logger.error(this, "Unable to insert USK date hints due to disk I/O error: "+e, e);
+				Logger.error(this, "Unable to insert USK date hints due to error: "+e, e);
 				if(!added) {
 					cb.onFailure(e, this, container, context);
 					return;
