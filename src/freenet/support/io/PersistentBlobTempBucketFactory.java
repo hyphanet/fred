@@ -825,6 +825,7 @@ public class PersistentBlobTempBucketFactory {
 	public synchronized void postCommit() {
 		int freeNow = freeSlots.size();
 		int sz = freeNow + almostFreeSlots.size();
+		if(sz == 0) return;
 		long blocks = getSize();
 		if(sz > MAX_FREE) {
 			Iterator<Map.Entry<Long,PersistentBlobTempBucketTag>> it = almostFreeSlots.entrySet().iterator();
