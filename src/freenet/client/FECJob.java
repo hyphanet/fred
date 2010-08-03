@@ -169,8 +169,11 @@ public class FECJob {
 			}
 		}
 		if(checkBlocks != null) {
-			for(int i=0;i<checkBlocks.length;i++)
+			for(int i=0;i<checkBlocks.length;i++) {
 				container.activate(checkBlocks[i], 1);
+				if(logMINOR)
+					Logger.minor(this, "Check bucket "+i+": "+checkBlocks[i]+" (after activation)");
+			}
 		}
 		if(!isADecodingJob) {
 			// First find the target
