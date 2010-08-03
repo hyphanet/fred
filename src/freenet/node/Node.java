@@ -1077,10 +1077,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
 
 			File seed = userDir.file("prng.seed");
-			if (!FileUtil.setOwnerOnlyReadWrite(seed)) {
-				throw new NodeInitException(NodeInitException.EXIT_YARROW_INIT_FAILED, "could not make PRNG seed owner-only rw");
-			}
-
+			FileUtil.setOwnerOnlyReadWrite(seed);
 			entropyGatheringThread.start();
 			this.random = new Yarrow(seed);
 			DiffieHellman.init(random);
@@ -1146,25 +1143,25 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Location of master key
 		nodeConfig.register("masterKeyFile", "master.keys", sortOrder++, true, true, "Node.masterKeyFile", "Node.masterKeyFileLong",
-				new StringCallback() {
+			new StringCallback() {
 
-					@Override
-					public String get() {
-						if(masterKeysFile == null) return "none";
-						else return masterKeysFile.getPath();
-					}
+				@Override
+				public String get() {
+					if(masterKeysFile == null) return "none";
+					else return masterKeysFile.getPath();
+				}
 
-					@Override
-					public void set(String val) throws InvalidConfigValueException, NodeNeedRestartException {
-						// FIXME l10n
-						// FIXME wipe the old one and move
-						throw new InvalidConfigValueException("Node.masterKeyFile cannot be changed on the fly, you must shutdown, wipe the old file and reconfigure");
-					}
+				@Override
+				public void set(String val) throws InvalidConfigValueException, NodeNeedRestartException {
+					// FIXME l10n
+					// FIXME wipe the old one and move
+					throw new InvalidConfigValueException("Node.masterKeyFile cannot be changed on the fly, you must shutdown, wipe the old file and reconfigure");
+				}
 
 		});
 		String value = nodeConfig.getString("masterKeyFile");
 		File f;
-		if(value.equalsIgnoreCase("none")) {
+		if (value.equalsIgnoreCase("none")) {
 			f = null;
 		} else {
 			f = new File(value);
@@ -1174,6 +1171,7 @@ public class Node implements TimeSkewDetectorCallback {
 				throw new NodeInitException(NodeInitException.EXIT_CANT_WRITE_MASTER_KEYS, "Cannot read from and write to master keys file "+f);
 		}
 		masterKeysFile = f;
+		FileUtil.setOwnerOnlyReadWrite(masterKeysFile);
 
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
 
@@ -2673,7 +2671,7 @@ public class Node implements TimeSkewDetectorCallback {
 					Logger.debug(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
 			}
 		});
-		
+
 		// Make db4o throw an exception if we call store for something for which we do not have to call it, String or Date for example.
 		// This prevents us from writing code which is based on misunderstanding of db4o internals...
 		dbConfig.exceptionsOnNotStorable(true);
@@ -2684,7 +2682,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		File dbFileBackup = new File(dbFile.getPath()+".tmp");
 		File dbFileCryptBackup = new File(dbFileCrypt.getPath()+".tmp");
-		
+
 		if(dbFileBackup.exists() && !dbFile.exists()) {
 			if(!dbFileBackup.renameTo(dbFile)) {
 				throw new IOException("Database backup file "+dbFileBackup+" exists but cannot be renamed to "+dbFile+". Not loading database, please fix permissions problems!");
@@ -2695,7 +2693,7 @@ public class Node implements TimeSkewDetectorCallback {
 				throw new IOException("Database backup file "+dbFileCryptBackup+" exists but cannot be renamed to "+dbFileCrypt+". Not loading database, please fix permissions problems!");
 			}
 		}
-		
+
 		try {
 			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 				databaseKey = new byte[32];
@@ -2801,7 +2799,7 @@ public class Node implements TimeSkewDetectorCallback {
 				synchronized(this) {
 					databaseEncrypted = true;
 				}
-			} else if((dbFileCrypt.exists() && !dbFile.exists()) || 
+			} else if((dbFileCrypt.exists() && !dbFile.exists()) ||
 					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.NORMAL) ||
 					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH && databaseKey != null)) {
 				// Open encrypted, regardless of seclevel.
@@ -2978,12 +2976,12 @@ public class Node implements TimeSkewDetectorCallback {
 		synchronized(this) {
 			if(!defragDatabaseOnStartup) return;
 		}
-		
+
 		// Open it first, because defrag will throw if it needs to upgrade the file.
-		
+
 		ObjectContainer database = Db4o.openFile(dbConfig, databaseFile.toString());
 		while(!database.close());
-		
+
 		if(!databaseFile.exists()) return;
 		long length = databaseFile.length();
 		// Estimate approx 1 byte/sec.
@@ -2995,8 +2993,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		File tmpFile = new File(databaseFile.getPath()+".map");
 		FileUtil.secureDelete(tmpFile, random);
-		
-		
+
+
 
 		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
 		config.storedClassFilter(new AvailableClassFilter());
@@ -4406,8 +4404,8 @@ public class Node implements TimeSkewDetectorCallback {
 	 * CHKInsertSender running.
 	 * @param source The node that sent the InsertRequest, or null
 	 * if it originated locally.
-	 * @param ignoreLowBackoff 
-	 * @param preferInsert 
+	 * @param ignoreLowBackoff
+	 * @param preferInsert
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
@@ -4429,8 +4427,8 @@ public class Node implements TimeSkewDetectorCallback {
 	 * SSKInsertSender running.
 	 * @param source The node that sent the InsertRequest, or null
 	 * if it originated locally.
-	 * @param ignoreLowBackoff 
-	 * @param preferInsert 
+	 * @param ignoreLowBackoff
+	 * @param preferInsert
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
 			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {

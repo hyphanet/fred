@@ -565,9 +565,9 @@ final public class FileUtil {
 	}
 
 	public static boolean setOwnerOnlyReadWrite(File f) {
-		boolean b = f.setReadable(false);
-		b &= f.setWritable(false);
-		b &= f.setExecutable(false);
+		boolean b = f.setReadable(false, false);
+		b &= f.setWritable(false, false);
+		b &= f.setExecutable(false, false);
 		b &= f.setReadable(true, true);
 		b &= f.setWritable(true, true);
 		return b;
