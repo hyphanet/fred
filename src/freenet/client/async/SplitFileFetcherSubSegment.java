@@ -191,9 +191,12 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				Key key = segment.getBlockNodeKey(num, container);
 				if(key == null) {
 					if(segment.isFinishing(container) || segment.isFinished(container)) return null;
-					if(segment.haveBlock(num, container))
-						Logger.error(this, "Already have block "+ret+" but was in blockNums on "+this);
-					else
+					if(segment.haveBlock(num, container)) {
+						// Maybe it found it a different way e.g. via cross-segment decode.
+						blockNums.remove(x);
+						if(persistent) container.store(blockNums);
+						if(logMINOR) Logger.minor(this, "Already have block "+ret+" but was in blockNums on "+this);
+					} else
 						Logger.error(this, "Key is null for block "+ret+" for "+this);
 					continue;
 				}
@@ -214,9 +217,13 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				Key key = segment.getBlockNodeKey(num, container);
 				if(key == null) {
 					if(segment.isFinishing(container) || segment.isFinished(container)) return null;
-					if(segment.haveBlock(num, container))
-						Logger.error(this, "Already have block "+ret+" but was in blockNums on "+this);
-					else
+					if(segment.haveBlock(num, container)) {
+						// Maybe it found it a different way e.g. via cross-segment decode.
+						blockNums.remove(x);
+						if(persistent) container.store(blockNums);
+						x--;
+						if(logMINOR) Logger.minor(this, "Already have block "+ret+" but was in blockNums on "+this);
+					} else
 						Logger.error(this, "Key is null for block "+ret+" for "+this);
 					continue;
 				}
