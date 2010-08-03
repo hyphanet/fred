@@ -776,10 +776,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	}
 
 	private boolean toRemove = false;
+	private boolean removed = false;
 	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			toRemove = true;
+			if(removed) return;
 		}
 		if(crossCheckBlocks > 0) {
 			boolean allGone = true;
@@ -807,6 +809,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	}
 	
 	public void innerRemoveFrom(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(removed) return;
+			removed = true;
+		}
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
 		if(!container.ext().isStored(this)) {
 			return;
@@ -857,6 +863,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			Logger.error(this, "Trying to update with hash 0 => already deleted! active="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("error"));
 			return false;
 		}
+		synchronized(this) {
+			if(removed) {
+				Logger.error(this, "Trying to write but already removed", new Exception("error"));
+				return false;
+			}
+		}
 		return true;
 	}
 
@@ -864,6 +876,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(hashCode == 0) {
 			Logger.error(this, "Trying to write with hash 0 => already deleted! active="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("error"));
 			return false;
+		}
+		synchronized(this) {
+			if(removed) {
+				Logger.error(this, "Trying to write but already removed", new Exception("error"));
+				return false;
+			}
 		}
 		return true;
 	}
