@@ -25,33 +25,33 @@ import freenet.support.io.Closer;
  * @author toad
  */
 public class UptimeEstimator implements Runnable {
-	
+
 	static final int PERIOD = 5*60*1000;
-	
+
 	Ticker ticker;
-	
+
 	/** For each 5 minute slot in the last 48 hours, were we online? */
 	private boolean[] wasOnline = new boolean[48*12];
-	
+
 	/** Which slot are we up to? We rotate around the array. Slots before us are before us,
 	 * slots after us are also before us (it wraps around). */
 	private int slot;
-	
+
 	/** The file we are writing to */
 	private File logFile;
-	
+
 	/** The previous file. We have read this. When logFile reaches 48 hours, we dump the prevFile,
 	 * move the logFile over it, and write to a new logFile.
 	 */
 	private File prevFile;
-	
+
 	/** We write to disk every 5 minutes. The offset is derived from the node's identity. */
 	private long timeOffset;
-	
-	public UptimeEstimator(File nodeDir, Ticker ticker, byte[] bs) {
+
+	public UptimeEstimator(ProgramDirectory runDir, Ticker ticker, byte[] bs) {
 		this.ticker = ticker;
-		logFile = new File(nodeDir, "uptime.dat");
-		prevFile = new File(nodeDir, "uptime.old.dat");
+		logFile = runDir.file("uptime.dat");
+		prevFile = runDir.file("uptime.old.dat");
 		timeOffset = (int)
 			((((double)(Math.abs(Fields.hashCode(bs, bs.length / 2, bs.length - bs.length / 2)))) /  Integer.MAX_VALUE)
 			* (5*60*1000));
@@ -67,7 +67,7 @@ public class UptimeEstimator implements Runnable {
 		schedule(System.currentTimeMillis());
 		System.out.println("Created uptime estimator, time offset is "+timeOffset+" uptime at startup is "+new DecimalFormat("0.00").format(getUptime()));
 	}
-	
+
 	private void readData(File file, int base) {
 		FileInputStream fis = null;
 		try {
@@ -132,7 +132,7 @@ public class UptimeEstimator implements Runnable {
 		if(nextTime < now) nextTime += PERIOD;
 		ticker.queueTimedJob(this, nextTime - System.currentTimeMillis());
 	}
-	
+
 	/**
 	 * Get the node's uptime fraction over the last 48 hours.
 	 */
@@ -143,5 +143,5 @@ public class UptimeEstimator implements Runnable {
 		}
 		return ((double) upCount) / ((double) wasOnline.length);
 	}
-	
+
 }

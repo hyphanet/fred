@@ -67,7 +67,7 @@ public class Announcer {
 	private int announcementAddedNodes;
 	/** Total nodes that didn't want us so far */
 	private int announcementNotWantedNodes;
-	
+
 	Announcer(OpennetManager om) {
 		this.om = om;
 		this.node = om.node;
@@ -108,7 +108,7 @@ public class Announcer {
 			}, MIN_ADDED_SEEDS_INTERVAL);
 		}
 	}
-	
+
 	private void registerEvent(int eventStatus) {
 		node.clientCore.alerts.register(new AnnouncementUserEvent(eventStatus));
 	}
@@ -118,7 +118,7 @@ public class Announcer {
 		boolean announceNow = false;
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
-		List<SimpleFieldSet> seeds = Announcer.readSeednodes(node.nodeDir);
+		List<SimpleFieldSet> seeds = Announcer.readSeednodes(node.nodeDir().file(SEEDNODES_FILENAME));
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(now - timeAddedSeeds < MIN_ADDED_SEEDS_INTERVAL) return;
@@ -233,8 +233,7 @@ public class Announcer {
 		return count;
 	}
 
-	public static List<SimpleFieldSet> readSeednodes(File nodeDir) {
-		File file = new File(nodeDir, SEEDNODES_FILENAME);
+	public static List<SimpleFieldSet> readSeednodes(File file) {
 		List<SimpleFieldSet> list = new ArrayList<SimpleFieldSet>();
 		FileInputStream fis = null;
 		try {
@@ -261,17 +260,17 @@ public class Announcer {
 	protected void stop() {
 		// Do nothing at present
 	}
-	
+
 	private long timeGotEnoughPeers = -1;
 	private final Object timeGotEnoughPeersLock = new Object();
 	private boolean killedAnnouncementTooOld;
-	
+
 	public int getAnnouncementThreshold() {
 		// First, do we actually need to announce?
 		int target = Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAim() / 2);
 		return target;
 	}
-	
+
 	/** @return True if we have enough peers that we don't need to announce. */
 	boolean enoughPeers() {
 		// Do we want to send an announcement to the node?
@@ -302,7 +301,7 @@ public class Announcer {
 					node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
 				return true;
 			}
-				
+
 		}
 		synchronized(timeGotEnoughPeersLock) {
 			timeGotEnoughPeers = -1;
@@ -327,11 +326,11 @@ public class Announcer {
 	/** But if we don't have enough peers at that point, wait another minute and if the situation has not improved, reannounce. */
 	static final int RETRY_DELAY = 60*1000;
 	private boolean started = false;
-	
+
 	private long toldUserNoIP = -1;
-	
+
 	private final Runnable checker = new Runnable() {
-		
+
 		public void run() {
 			int running;
 			synchronized(Announcer.this) {
@@ -357,9 +356,9 @@ public class Announcer {
 					maybeSendAnnouncement();
 			}
 		}
-		
+
 	};
-	
+
 	public void maybeSendAnnouncementOffThread() {
 		if(enoughPeers()) return;
 		node.getTicker().queueTimedJob(new Runnable() {
@@ -367,10 +366,10 @@ public class Announcer {
 			public void run() {
 				maybeSendAnnouncement();
 			}
-			
+
 		}, 0);
 	}
-	
+
 	protected void maybeSendAnnouncement() {
 		synchronized(this) {
 			if(!started) return;
@@ -455,7 +454,7 @@ public class Announcer {
 		}
 		connectSomeSeednodes();
 	}
-	
+
 	private synchronized void addAnnouncedIPs(InetAddress[] addrs) {
 		for (InetAddress addr : addrs)
 	        announcedToIPs.add(addr);
@@ -520,7 +519,7 @@ public class Announcer {
 							public void run() {
 								maybeSendAnnouncement();
 							}
-							
+
 						}, COOLING_OFF_PERIOD);
 					} else if(runningAnnouncements == 0) {
 						sentAnnouncements = 0;
@@ -601,7 +600,7 @@ public class Announcer {
 					refusedNodes = announcementNotWantedNodes;
 					recentSentAnnouncements = sentAnnouncements;
 					runningAnnouncements = Announcer.this.runningAnnouncements;
-					
+
 				}
 				List<SeedServerPeerNode> nodes = node.peers.getSeedServerPeersVector();
 				for(SeedServerPeerNode seed : nodes) {
@@ -673,7 +672,7 @@ public class Announcer {
 		}
 
 	}
-	
+
 	private String l10n(String key) {
 		return NodeL10n.getBase().getString("Announcer."+key);
 	}

@@ -673,7 +673,14 @@ public class Node implements TimeSkewDetectorCallback {
 	/** My peers */
 	public final PeerManager peers;
 	/** Directory to put node, peers, etc into */
-	final File nodeDir;
+	final ProgramDirectory nodeDir;
+	/** Directory to put user-related state (bookmarks, completed lists, etc) into */
+	final ProgramDirectory userDir;
+	/** Directory to put run-time state (bootID, PRNG seed, etc) into */
+	final ProgramDirectory runDir;
+	/** Directory to put user-editable config (freenet.ini, l10n overrides, etc) into */
+	final ProgramDirectory cfgDir;
+
 	/** File to write crypto master keys into, possibly passworded */
 	final File masterKeysFile;
 	/** Directory to put extra peer data into */
@@ -904,7 +911,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void writeNodeFile() {
 		synchronized(writeNodeFileSync) {
-			writeNodeFile(new File(nodeDir, "node-"+getDarknetPortNumber()), new File(nodeDir, "node-"+getDarknetPortNumber()+".bak"));
+			writeNodeFile(nodeDir.file("node-"+getDarknetPortNumber()), nodeDir.file("node-"+getDarknetPortNumber()+".bak"));
 		}
 	}
 
@@ -1103,30 +1110,14 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Directory for node-related files other than store
 
-		nodeConfig.register("nodeDir", ".", sortOrder++, true, true /* because can't be changed on the fly, also for packages */, "Node.nodeDir", "Node.nodeDirLong",
-				new StringCallback() {
-					@Override
-					public String get() {
-						return nodeDir.getPath();
-					}
-					@Override
-					public void set(String val) throws InvalidConfigValueException {
-						if(nodeDir.equals(new File(val))) return;
-						// FIXME support it
-						// Don't translate the below as very few users will use it.
-						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
-					}
-					@Override
-					public boolean isReadOnly() {
-				        return true;
-			        }
-		});
-
-		nodeDir = new File(nodeConfig.getString("nodeDir"));
-		if(!((nodeDir.exists() && nodeDir.isDirectory()) || (nodeDir.mkdir()))) {
-			String msg = "Could not find or create datastore directory";
-			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
-		}
+		this.nodeDir = setupProgramDir(nodeConfig, "node references", "nodeDir", ".",
+		  sortOrder++, "Node.nodeDir", "Node.nodeDirLong");
+		this.userDir = setupProgramDir(nodeConfig, "user state", "userDir", ".",
+		  sortOrder++, "Node.userDir", "Node.userDirLong");
+		this.cfgDir = setupProgramDir(nodeConfig, "user config", "cfgDir", ".",
+		  sortOrder++, "Node.cfgDir", "Node.cfgDirLong");
+		this.runDir = setupProgramDir(nodeConfig, "runtime state", "runDir", ".",
+		  sortOrder++, "Node.runDir", "Node.runDirLong");
 
 		nodeConfig.register("autoChangeDatabaseEncryption", true, sortOrder++, true, false, "Node.autoChangeDatabaseEncryption", "Node.autoChangeDatabaseEncryptionLong", new BooleanCallback() {
 
@@ -1149,7 +1140,6 @@ public class Node implements TimeSkewDetectorCallback {
 		autoChangeDatabaseEncryption = nodeConfig.getBoolean("autoChangeDatabaseEncryption");
 
 		// Location of master key
-
 		nodeConfig.register("masterKeyFile", "master.keys", sortOrder++, true, true, "Node.masterKeyFile", "Node.masterKeyFileLong",
 				new StringCallback() {
 
@@ -1167,15 +1157,13 @@ public class Node implements TimeSkewDetectorCallback {
 					}
 
 		});
-
 		String value = nodeConfig.getString("masterKeyFile");
 		File f;
 		if(value.equalsIgnoreCase("none")) {
 			f = null;
 		} else {
 			f = new File(value);
-			if((!nodeDir.getPath().equals(".")) && !f.isAbsolute() && !value.startsWith(nodeDir.getPath()))
-				f = new File(nodeDir, value);
+			if (!f.isAbsolute()) { f = userDir.file(value); }
 
 			if(f.exists() && !(f.canWrite() && f.canRead()))
 				throw new NodeInitException(NodeInitException.EXIT_CANT_WRITE_MASTER_KEYS, "Cannot read from and write to master keys file "+f);
@@ -1254,8 +1242,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		defragOnce = nodeConfig.getBoolean("defragOnce");
 
-		dbFile = new File(nodeDir, "node.db4o");
-		dbFileCrypt = new File(nodeDir, "node.db4o.crypt");
+		dbFile = userDir.file("node.db4o");
+		dbFileCrypt = userDir.file("node.db4o.crypt");
 
 		boolean dontCreate = (!dbFile.exists()) && (!dbFileCrypt.exists()) && (!toadlets.fproxyHasCompletedWizard());
 
@@ -1279,7 +1267,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Fixed length file containing boot ID. Accessed with random access file. So hopefully it will always be
 		// written. Note that we set lastBootID to -1 if we can't _write_ our ID as well as if we can't read it,
 		// because if we can't write it then we probably couldn't write it on the last bootup either.
-		File bootIDFile = new File(nodeDir, "bootID");
+		File bootIDFile = runDir.file("bootID");
 		int BOOT_FILE_LENGTH = 64 / 4; // A long in padded hex bytes
 		long oldBootID = -1;
 		RandomAccessFile raf = null;
@@ -1694,8 +1682,8 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 
-		File nodeFile = new File(nodeDir, "node-"+getDarknetPortNumber());
-		File nodeFileBackup = new File(nodeDir, "node-"+getDarknetPortNumber()+".bak");
+		File nodeFile = nodeDir.file("node-"+getDarknetPortNumber());
+		File nodeFileBackup = nodeDir.file("node-"+getDarknetPortNumber()+".bak");
 		// After we have set up testnet and IP address, load the node file
 		try {
 			// FIXME should take file directly?
@@ -1729,11 +1717,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Then read the peers
 		peers = new PeerManager(this);
-		peers.tryReadPeers(new File(nodeDir, "peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
+		peers.tryReadPeers(nodeDir.file("peers-"+getDarknetPortNumber()).getPath(), darknetCrypto, null, false, false);
 		peers.writePeers();
 		peers.updatePMUserAlert();
 
-		uptime = new UptimeEstimator(nodeDir, ps, darknetCrypto.identityHash);
+		uptime = new UptimeEstimator(runDir, ps, darknetCrypto.identityHash);
 
 		// ULPRs
 
@@ -1901,7 +1889,7 @@ public class Node implements TimeSkewDetectorCallback {
 		passOpennetRefsThroughDarknet = nodeConfig.getBoolean("passOpennetPeersThroughDarknet");
 
 		// Extra Peer Data Directory
-		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+getDarknetPortNumber()).toString(), sortOrder++, true, true /* can't be changed on the fly, also for packages */, "Node.extraPeerDir", "Node.extraPeerDirLong",
+		nodeConfig.register("extraPeerDataDir", userDir.file("extra-peer-data-"+getDarknetPortNumber()).toString(), sortOrder++, true, true /* can't be changed on the fly, also for packages */, "Node.extraPeerDir", "Node.extraPeerDirLong",
 				new StringCallback() {
 					@Override
 					public String get() {
@@ -2241,9 +2229,9 @@ public class Node implements TimeSkewDetectorCallback {
 			initRAMFS();
 		}
 
-		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, nodeDir);
+		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit);
 
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
+		clientCore = new NodeClientCore(this, config, nodeConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
 
 		if(databaseAwaitingPassword) createPasswordUserAlert();
 		if(notEnoughSpaceForAutoCrypt) createAutoCryptFailedUserAlert();
@@ -2520,7 +2508,7 @@ public class Node implements TimeSkewDetectorCallback {
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this, lastVersion);
-		
+
 		shutdownHook.addLateJob(new NativeThread("Shutdown plugins", NativeThread.HIGH_PRIORITY, true) {
 			public void realRun() {
 				pluginManager.stop(30*1000); // FIXME make it configurable??
@@ -2573,6 +2561,23 @@ public class Node implements TimeSkewDetectorCallback {
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+	}
+
+	/**
+	** Sets up a program directory using the config value defined by the given
+	** parameters.
+	*/
+	protected ProgramDirectory setupProgramDir(SubConfig nodeConfig, String shortname,
+	  String cfgKey, String defaultValue, int sortOrder, String shortdesc, String longdesc) throws NodeInitException {
+		ProgramDirectory dir = new ProgramDirectory();
+		// forceWrite=true because currently it can't be changed on the fly, also for packages
+		nodeConfig.register(cfgKey, defaultValue, sortOrder, true, true, shortdesc, longdesc, dir.getStringCallback());
+		try {
+			dir.move(nodeConfig.getString(cfgKey));
+		} catch (IOException e) {
+			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, "could not set up directory: " + shortname);
+		}
+		return dir;
 	}
 
 	public void lateSetupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
@@ -5182,9 +5187,20 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public File getNodeDir() {
-		return nodeDir;
-	}
+	public File getNodeDir() { return nodeDir.dir(); }
+	public File getUserDir() { return userDir.dir(); }
+	public File getRunDir() { return runDir.dir(); }
+	public File getCfgDir() { return cfgDir.dir(); }
+	public File getStoreDir() { return storeDir; } //public File getStoreDir() { return storeDir.dir(); }
+
+	public ProgramDirectory nodeDir() { return nodeDir; }
+	public ProgramDirectory userDir() { return userDir; }
+	public ProgramDirectory runDir() { return runDir; }
+	public ProgramDirectory cfgDir() { return cfgDir; }
+	//public ProgramDirectory storeDir() { return storeDir; }
+
+	// TODO LOW hack; make this static and configured on the command line or something
+	public File getPluginDir() { return new File(userDir.dir(), "plugins"); }
 
 	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler);
