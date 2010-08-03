@@ -25,6 +25,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int HMAC_LENGTH = 4;
 	private static final int NUM_RTTS_TO_LOOSE = 2;
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
+	private static final int MAX_BUFFER_SIZE = 256 * 1024;
 
 	private static volatile boolean logMINOR;
 	static {
@@ -54,6 +55,9 @@ public class NewPacketFormat implements PacketFormat {
 	private final HashMap<SessionKey, Long> watchListOffsets = new HashMap<SessionKey, Long>();
 	private long highestReceivedSeqNum = -1;
 	private volatile long highestReceivedAck = -1;
+
+	private int usedBufferOtherSide = 0;
+	private final Object bufferUsageLock = new Object();
 
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
@@ -385,6 +389,16 @@ public class NewPacketFormat implements PacketFormat {
 				}
 				if(item == null) break;
 
+				int bufferUsage;
+				synchronized(bufferUsageLock) {
+					bufferUsage = usedBufferOtherSide;
+				}
+				if((bufferUsage + item.buf.length) > MAX_BUFFER_SIZE) {
+					if(logMINOR) Logger.minor(this, "Would excede remote buffer size, requeuing and sending packet");
+					messageQueue.pushfrontPrioritizedMessageItem(item);
+					break;
+				}
+
 				long messageID = getMessageID();
 				if(messageID == -1) {
 					if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
@@ -406,6 +420,10 @@ public class NewPacketFormat implements PacketFormat {
 				synchronized(queue) {
 					queue.put(messageID, wrapper);
 				}
+
+				synchronized(bufferUsageLock) {
+					usedBufferOtherSide += item.buf.length;
+				}
 			}
 		}
 
@@ -423,13 +441,18 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	public void onDisconnect() {
+		int messageSize = 0;
 		for(HashMap<Long, MessageWrapper> queue : startedByPrio) {
 			synchronized(queue) {
 				for(MessageWrapper wrapper : queue.values()) {
 					wrapper.onDisconnect();
+					messageSize += wrapper.getLength();
 				}
 				queue.clear();
 			}
+		}
+		synchronized(bufferUsageLock) {
+			usedBufferOtherSide -= messageSize;
 		}
 	}
 
@@ -483,6 +506,8 @@ public class NewPacketFormat implements PacketFormat {
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
 
+			int completedMessagesSize = 0;
+
 			while(msgIt.hasNext()) {
 				MessageWrapper wrapper = msgIt.next();
 				int[] range = rangeIt.next();
@@ -492,7 +517,12 @@ public class NewPacketFormat implements PacketFormat {
 					synchronized(started) {
 						started.remove(wrapper.getMessageID());
 					}
+					completedMessagesSize = wrapper.getLength();
 				}
+			}
+
+			synchronized(npf.bufferUsageLock) {
+				npf.usedBufferOtherSide -= completedMessagesSize;
 			}
 
 			return System.currentTimeMillis() - sentTime;
