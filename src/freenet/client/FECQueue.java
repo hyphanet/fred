@@ -391,7 +391,7 @@ public class FECQueue implements OOMHook {
 							synchronized(FECQueue.this) {
 								if(job.running) {
 									j--;
-									if(logMINOR) Logger.minor(this, "Not adding, already running: "+job);
+									if(logMINOR) Logger.minor(this, "Not adding, already running (1): "+job);
 									continue;
 								}
 							}
@@ -419,7 +419,7 @@ public class FECQueue implements OOMHook {
 							synchronized(FECQueue.this) {
 								if(job.running) {
 									j--;
-									if(logMINOR) Logger.minor(this, "Not adding, already running: "+job);
+									if(logMINOR) Logger.minor(this, "Not adding, already running (2): "+job);
 									continue;
 								}
 								if(persistentQueueCache[prio].contains(job)) {
