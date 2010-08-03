@@ -245,7 +245,7 @@ public class PersistentBlobTempBucket implements Bucket {
 						throw new NullPointerException("Activated but tag still null!");
 					}
 				}
-				throw new NullPointerException("Active but tag null! shadow="+shadow+" freed="+freed+" persisted="+persisted+" stored="+container.ext().isStored(this)+" index="+index);
+				throw new NullPointerException("Active but tag null! shadow="+shadow+" freed="+freed+" persisted="+persisted+" stored="+container.ext().isStored(this)+" index="+index+" for "+this);
 			}
 			p = persisted;
 			persisted = true;

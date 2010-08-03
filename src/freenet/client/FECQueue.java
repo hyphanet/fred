@@ -267,7 +267,7 @@ public class FECQueue implements OOMHook {
 								}
 								
 								public String toString() {
-									return "FECQueueJobFailedCallback";
+									return "FECQueueJobFailedCallback@"+Integer.toHexString(super.hashCode());
 								}
 								
 							}, prio, false);
@@ -323,7 +323,7 @@ public class FECQueue implements OOMHook {
 								}
 								
 								public String toString() {
-									return "FECQueueJobCompletedCallback";
+									return "FECQueueJobCompletedCallback@"+Integer.toHexString(super.hashCode());
 								}
 								
 							}, prio, false);
