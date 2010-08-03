@@ -1080,7 +1080,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
 
 			File seed = userDir.file("prng.seed");
-			FileUtil.setOwnerOnlyReadWrite(seed);
+			FileUtil.setOwnerRW(seed);
 			entropyGatheringThread.start();
 			this.random = new Yarrow(seed);
 			DiffieHellman.init(random);
@@ -1174,7 +1174,7 @@ public class Node implements TimeSkewDetectorCallback {
 				throw new NodeInitException(NodeInitException.EXIT_CANT_WRITE_MASTER_KEYS, "Cannot read from and write to master keys file "+f);
 		}
 		masterKeysFile = f;
-		FileUtil.setOwnerOnlyReadWrite(masterKeysFile);
+		FileUtil.setOwnerRW(masterKeysFile);
 
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
 

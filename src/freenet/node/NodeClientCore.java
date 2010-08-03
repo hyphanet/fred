@@ -217,6 +217,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			String msg = "Could not find or create temporary directory";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
+		FileUtil.setOwnerRWX(tempDir);
 
 		try {
 			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");

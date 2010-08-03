@@ -564,12 +564,30 @@ final public class FileUtil {
 		return freeSpace;
 	}
 
-	public static boolean setOwnerOnlyReadWrite(File f) {
+	/**
+	** Set owner-only RW on the given file.
+	*/
+	public static boolean setOwnerRW(File f) {
+		return setOwnerPerm(f, true, true, false);
+	}
+
+	/**
+	** Set owner-only RWX on the given file.
+	*/
+	public static boolean setOwnerRWX(File f) {
+		return setOwnerPerm(f, true, true, true);
+	}
+
+	/**
+	** Set owner-only permissions on the given file.
+	*/
+	public static boolean setOwnerPerm(File f, boolean r, boolean w, boolean x) {
 		boolean b = f.setReadable(false, false);
 		b &= f.setWritable(false, false);
 		b &= f.setExecutable(false, false);
-		b &= f.setReadable(true, true);
-		b &= f.setWritable(true, true);
+		b &= f.setReadable(r, true);
+		b &= f.setWritable(w, true);
+		b &= f.setExecutable(x, true);
 		return b;
 	}
 
