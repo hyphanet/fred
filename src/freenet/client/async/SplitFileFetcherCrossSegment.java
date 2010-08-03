@@ -348,6 +348,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
 		Logger.error(this, "Encode or decode failed for cross segment: "+this, t);
 		SplitFileFetcher fetcher = getFetcher(container);
+		if(persistent) container.activate(fetcher, 1);
 		fetcher.onFailed(new FetchException(FetchException.INTERNAL_ERROR, t), container, context);
 	}
 
