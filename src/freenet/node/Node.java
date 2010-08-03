@@ -1002,6 +1002,16 @@ public class Node implements TimeSkewDetectorCallback {
 
 		int sortOrder = 0;
 
+		// Directory for node-related files other than store
+		this.nodeDir = setupProgramDir(nodeConfig, "node references", "nodeDir", ".",
+		  sortOrder++, "Node.nodeDir", "Node.nodeDirLong");
+		this.cfgDir = setupProgramDir(nodeConfig, "user config", "cfgDir", ".",
+		  sortOrder++, "Node.cfgDir", "Node.cfgDirLong");
+		this.userDir = setupProgramDir(nodeConfig, "user state", "userDir", ".",
+		  sortOrder++, "Node.userDir", "Node.userDirLong");
+		this.runDir = setupProgramDir(nodeConfig, "runtime state", "runDir", ".",
+		  sortOrder++, "Node.runDir", "Node.runDirLong");
+
 		// l10n stuffs
 		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true,
 				"Node.l10nLanguage",
@@ -1009,12 +1019,12 @@ public class Node implements TimeSkewDetectorCallback {
 				new L10nCallback());
 
 		try {
-			new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getString("l10n")));
+			new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getString("l10n")), cfgDir.dir());
 		} catch (MissingResourceException e) {
 			try {
-				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getOption("l10n").getDefault()));
+				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getOption("l10n").getDefault()), cfgDir.dir());
 			} catch (MissingResourceException e1) {
-				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(BaseL10n.LANGUAGE.getDefault().shortCode));
+				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(BaseL10n.LANGUAGE.getDefault().shortCode), cfgDir.dir());
 			}
 		}
 
@@ -1034,17 +1044,6 @@ public class Node implements TimeSkewDetectorCallback {
 			e4.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e4);
 		}
-
-		// Directory for node-related files other than store
-
-		this.nodeDir = setupProgramDir(nodeConfig, "node references", "nodeDir", ".",
-		  sortOrder++, "Node.nodeDir", "Node.nodeDirLong");
-		this.userDir = setupProgramDir(nodeConfig, "user state", "userDir", ".",
-		  sortOrder++, "Node.userDir", "Node.userDirLong");
-		this.cfgDir = setupProgramDir(nodeConfig, "user config", "cfgDir", ".",
-		  sortOrder++, "Node.cfgDir", "Node.cfgDirLong");
-		this.runDir = setupProgramDir(nodeConfig, "runtime state", "runDir", ".",
-		  sortOrder++, "Node.runDir", "Node.runDirLong");
 
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
 		if (r == null) {
@@ -5191,15 +5190,15 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public File getNodeDir() { return nodeDir.dir(); }
+	public File getCfgDir() { return cfgDir.dir(); }
 	public File getUserDir() { return userDir.dir(); }
 	public File getRunDir() { return runDir.dir(); }
-	public File getCfgDir() { return cfgDir.dir(); }
 	public File getStoreDir() { return storeDir; } //public File getStoreDir() { return storeDir.dir(); }
 
 	public ProgramDirectory nodeDir() { return nodeDir; }
+	public ProgramDirectory cfgDir() { return cfgDir; }
 	public ProgramDirectory userDir() { return userDir; }
 	public ProgramDirectory runDir() { return runDir; }
-	public ProgramDirectory cfgDir() { return cfgDir; }
 	//public ProgramDirectory storeDir() { return storeDir; }
 
 	// TODO LOW hack; make this static and configured on the command line or something
