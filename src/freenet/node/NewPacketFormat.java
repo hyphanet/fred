@@ -129,8 +129,8 @@ public class NewPacketFormat implements PacketFormat {
 			PartiallyReceivedBuffer recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
-				if(fragment.firstFragment) recvBuffer = new PartiallyReceivedBuffer(fragment.messageLength);
-				else recvBuffer = new PartiallyReceivedBuffer(this);
+				recvBuffer = new PartiallyReceivedBuffer(this);
+				if(fragment.firstFragment) recvBuffer.setMessageLength(fragment.messageLength);
 
 				recvMap = new SparseBitmap();
 				receiveBuffers.put(fragment.messageID, recvBuffer);
@@ -562,11 +562,6 @@ public class NewPacketFormat implements PacketFormat {
 			messageLength = -1;
 			buffer = new byte[0];
 			this.npf = npf;
-		}
-
-		private PartiallyReceivedBuffer(int messageLength) {
-			this.messageLength = messageLength;
-			buffer = new byte[messageLength];
 		}
 
 		private boolean add(byte[] data, int dataOffset) {
