@@ -849,7 +849,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(allDecodedCorrectly && logMINOR) Logger.minor(this, "All decoded correctly on "+this);
 		// Must set finished BEFORE calling parentFetcher.
 		// Otherwise a race is possible that might result in it not seeing our finishing.
-		finished = true;
+		synchronized(this) {
+			finished = true;
+		}
 		if(persistent) container.store(this);
 		if(persistent) {
 			boolean fin;
