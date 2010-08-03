@@ -141,7 +141,6 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(alreadyInserted) {
 			if(persistent) container.activate(parent, 1);
 			// Success!
-			parent.addMustSucceedBlocks(1, container);
 			parent.completedBlock(true, container, context);
 			if(persistent) {
 				container.activate(cb, 1);
