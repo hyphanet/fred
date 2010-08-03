@@ -579,12 +579,12 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		private boolean resize(int length) {
-			if((npf.usedBuffer + (length - buffer.length)) > MAX_BUFFER_SIZE) {
-				if(logMINOR) Logger.minor(this, "Could not resize buffer, would excede max size");
-				return false;
-			}
-
 			synchronized(npf.bufferUsageLock) {
+				if((npf.usedBuffer + (length - buffer.length)) > MAX_BUFFER_SIZE) {
+					if(logMINOR) Logger.minor(this, "Could not resize buffer, would excede max size");
+					return false;
+				}
+
 				npf.usedBuffer += (length - buffer.length);
 			}
 
