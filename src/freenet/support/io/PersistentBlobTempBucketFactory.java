@@ -662,9 +662,9 @@ public class PersistentBlobTempBucketFactory {
 					return false;
 				}
 				Logger.normal(this, "Shrinking blob file from "+blocks+" to "+newBlocks);
+				// Not safe to remove from almostFreeSlots here.
 				for(long l = newBlocks; l <= blocks; l++) {
 					freeSlots.remove(l);
-					almostFreeSlots.remove(l);
 				}
 				for(Long l : freeSlots.keySet()) {
 					if(l > newBlocks) {
@@ -825,14 +825,18 @@ public class PersistentBlobTempBucketFactory {
 	public synchronized void postCommit() {
 		int freeNow = freeSlots.size();
 		int sz = freeNow + almostFreeSlots.size();
+		long blocks = getSize();
 		if(sz > MAX_FREE) {
 			Iterator<Map.Entry<Long,PersistentBlobTempBucketTag>> it = almostFreeSlots.entrySet().iterator();
 			for(int i=freeNow;i<MAX_FREE && it.hasNext();i++) {
 				Map.Entry<Long,PersistentBlobTempBucketTag> entry = it.next();
+				Long slot = entry.getKey();
+				if(slot > blocks) {
+					i--;
+					continue;
+				}
 				freeSlots.put(entry.getKey(), entry.getValue());
 			}
-		} else {
-			freeSlots.putAll(almostFreeSlots);
 		}
 		almostFreeSlots.clear();
 	}
