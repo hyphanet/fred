@@ -215,7 +215,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		tempDir = new File(nodeConfig.getString("tempDir"));
 		if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
 			String msg = "Could not find or create temporary directory";
-			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		}
 		FileUtil.setOwnerRWX(tempDir);
 
@@ -223,7 +223,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");
 		} catch(IOException e) {
 			String msg = "Could not find or create temporary directory (filename generator)";
-			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		}
 
 		this.bandwidthStatsPutter = new PersistentStatsPutter(this.node);
@@ -393,7 +393,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		String val = nodeConfig.getString("downloadsDir");
 		downloadDir = new File(val);
 		if(!((downloadDir.exists() && downloadDir.isDirectory()) || (downloadDir.mkdir())))
-			throw new NodeInitException(NodeInitException.EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
+			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, "Could not find or create default downloads directory");
 
 		// Downloads allowed, uploads allowed
 
@@ -580,7 +580,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		} catch(IOException e2) {
 			String msg = "Could not find or create persistent temporary directory: "+e2;
 			e2.printStackTrace();
-			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		} catch (Db4oException e) {
 			killedDatabase = true;
 		}

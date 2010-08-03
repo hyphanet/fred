@@ -1894,28 +1894,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 		passOpennetRefsThroughDarknet = nodeConfig.getBoolean("passOpennetPeersThroughDarknet");
 
-		// Extra Peer Data Directory
-		nodeConfig.register("extraPeerDataDir", userDir.file("extra-peer-data-"+getDarknetPortNumber()).toString(), sortOrder++, true, true /* can't be changed on the fly, also for packages */, "Node.extraPeerDir", "Node.extraPeerDirLong",
-				new StringCallback() {
-					@Override
-					public String get() {
-						return extraPeerDataDir.getPath();
-					}
-					@Override
-					public void set(String val) throws InvalidConfigValueException {
-						if(extraPeerDataDir.equals(new File(val))) return;
-						// FIXME
-						throw new InvalidConfigValueException("Moving extra peer data directory on the fly not supported at present");
-					}
-					@Override
-					public boolean isReadOnly() {
-				        return true;
-			        }
-		});
-		extraPeerDataDir = new File(nodeConfig.getString("extraPeerDataDir"));
-		if(!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
+		extraPeerDataDir = userDir.file("extra-peer-data").toString();
+		if (!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
 			String msg = "Could not find or create extra peer data directory";
-			throw new NodeInitException(NodeInitException.EXIT_EXTRA_PEER_DATA_DIR, msg);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		}
 
 		// Name
@@ -2581,7 +2563,7 @@ public class Node implements TimeSkewDetectorCallback {
 		try {
 			dir.move(nodeConfig.getString(cfgKey));
 		} catch (IOException e) {
-			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, "could not set up directory: " + shortname);
+			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, "could not set up directory: " + shortname);
 		}
 		return dir;
 	}
