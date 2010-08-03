@@ -200,6 +200,10 @@ public class FECQueue implements OOMHook {
 							// Too many jobs running.
 							return;
 						}
+						if(job.running) {
+							Logger.error(this, "Job already running: "+job);
+							continue;
+						}
 						job.running = true;
 					}
 
@@ -384,6 +388,13 @@ public class FECQueue implements OOMHook {
 					if(results.hasNext()) {
 						for(int j=0;j<grab && results.hasNext();j++) {
 							FECJob job = results.next();
+							synchronized(FECQueue.this) {
+								if(job.running) {
+									j--;
+									if(logMINOR) Logger.minor(this, "Not adding, already running: "+job);
+									continue;
+								}
+							}
 							if(!job.activateForExecution(container)) {
 								if(job.callback != null) {
 									container.activate(job.callback, 1);
