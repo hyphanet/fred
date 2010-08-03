@@ -582,6 +582,7 @@ final public class FileUtil {
 	** Set owner-only permissions on the given file.
 	*/
 	public static boolean setOwnerPerm(File f, boolean r, boolean w, boolean x) {
+		/* JDK6 replace when we upgrade
 		boolean b = f.setReadable(false, false);
 		b &= f.setWritable(false, false);
 		b &= f.setExecutable(false, false);
@@ -589,6 +590,34 @@ final public class FileUtil {
 		b &= f.setWritable(w, true);
 		b &= f.setExecutable(x, true);
 		return b;
+		*/
+
+		boolean success = false;
+		try {
+
+			String[] methods = {"setReadable", "setWritable", "setExecutable"};
+			boolean[] perms = {r, w, x};
+
+			for (int i=0; i<methods.length; ++i) {
+				Method m = File.class.getDeclaredMethod(methods[i], boolean.class, boolean.class);
+				if (m != null) {
+					success &= (Boolean)m.invoke(f, false, false);
+					success &= (Boolean)m.invoke(f, perms[i], true);
+				}
+			}
+
+		} catch (NoSuchMethodException e) {
+			// pass
+		} catch (java.lang.reflect.InvocationTargetException e) {
+			// pass
+		} catch (IllegalAccessException e) {
+			// pass
+		} catch (ExceptionInInitializerError e) {
+			// pass
+		} catch (RuntimeException e) {
+			// pass
+		}
+		return success;
 	}
 
 }
