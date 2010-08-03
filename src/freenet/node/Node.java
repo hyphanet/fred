@@ -1894,7 +1894,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		passOpennetRefsThroughDarknet = nodeConfig.getBoolean("passOpennetPeersThroughDarknet");
 
-		extraPeerDataDir = userDir.file("extra-peer-data").toString();
+		extraPeerDataDir = userDir.file("extra-peer-data");
 		if (!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
 			String msg = "Could not find or create extra peer data directory";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
