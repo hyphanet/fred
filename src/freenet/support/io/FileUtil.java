@@ -27,31 +27,30 @@ import freenet.support.StringValidityChecker;
 import freenet.support.Logger.LogLevel;
 
 final public class FileUtil {
-	
+
 	private static final int BUFFER_SIZE = 32*1024;
-	
+
 	public static enum OperatingSystem {
 		All,
 		MacOS,
 		Unix,
 		Windows
 	};
-	
+
 	private static final OperatingSystem detectedOS;
-	
+
 	private static final Charset fileNameCharset;
 
-	
 	static {
 		detectedOS = detectOperatingSystem();
-		
-		// I did not find any way to detect the Charset of the file system so I'm using the file encoding charset. 
+
+		// I did not find any way to detect the Charset of the file system so I'm using the file encoding charset.
 		// On Windows and Linux this is set based on the users configured system language which is probably equal to the filename charset.
 		// The worst thing which can happen if we misdetect the filename charset is that downloads fail because the filenames are invalid:
 		// We disallow path and file separator characters anyway so its not possible to cause files to be stored in arbitrary places.
 		fileNameCharset = getFileEncodingCharset();
 	}
-	
+
 	/**
 	 * Detects the operating system in which the JVM is running. Returns OperatingSystem.All if the OS is unknown or an error occured.
 	 * Therefore this function should never throw.
@@ -59,42 +58,42 @@ final public class FileUtil {
 	private static final OperatingSystem detectOperatingSystem() { // TODO: Move to the proper class
 		try {
 			final String name =  System.getProperty("os.name").toLowerCase();
-			
-			// Order the if() by probability instead alphabetically to decrease the false-positive rate in case they decide to call it "Windows Mac" or whatever 
-			
+
+			// Order the if() by probability instead alphabetically to decrease the false-positive rate in case they decide to call it "Windows Mac" or whatever
+
 			// Please adapt sanitizeFileName when adding new OS.
-			
+
 			if(name.indexOf("win") >= 0)
 				return OperatingSystem.Windows;
-			
+
 			if(name.indexOf("mac") >= 0)
 				return OperatingSystem.MacOS;
-			
+
 			if(name.indexOf("unix") >= 0 || name.indexOf("linux") >= 0 || name.indexOf("freebsd") >= 0)
 				return OperatingSystem.Unix;
-			
+
 			Logger.error(FileUtil.class, "Unknown operating system:" + name);
 		} catch(Throwable t) {
 			Logger.error(FileUtil.class, "Operating system detection failed", t);
 		}
-		
+
 		return OperatingSystem.All;
 	}
-	
+
 	/**
-	 * Returns the Charset which is equal to the "file.encoding" property. 
+	 * Returns the Charset which is equal to the "file.encoding" property.
 	 * This property is set to the users configured system language on windows for example.
-	 * 
-	 * If any error occurs, the default Charset is returned. Therefore this function should never throw. 
+	 *
+	 * If any error occurs, the default Charset is returned. Therefore this function should never throw.
 	 */
 	public static final Charset getFileEncodingCharset() {
-		try { 
+		try {
 			return Charset.forName(System.getProperty("file.encoding"));
 		} catch(Throwable t) {
 			return Charset.defaultCharset();
 		}
 	}
-	
+
 
 	/** Round up a value to the next multiple of a power of 2 */
 	private static final long roundup_2n (long val, int blocksize) {
@@ -143,11 +142,11 @@ final public class FileUtil {
 			if(filename == null) return false;
 		}
 	}
-	
+
 	public static File getCanonicalFile(File file) {
 		// Having some problems storing File's in db4o ...
 		// It would start up, and canonicalise a file with path "/var/lib/freenet-experimental/persistent-temp-24374"
-		// to /var/lib/freenet-experimental/var/lib/freenet-experimental/persistent-temp-24374 
+		// to /var/lib/freenet-experimental/var/lib/freenet-experimental/persistent-temp-24374
 		// (where /var/lib/freenet-experimental is the current working dir)
 		// Regenerating from path worked. So do that here.
 		// And yes, it's voodoo.
@@ -160,17 +159,17 @@ final public class FileUtil {
 		}
 		return result;
 	}
-	
+
         public static String readUTF(File file) throws FileNotFoundException, IOException {
             return readUTF(file, 0);
         }
-        
+
 	public static String readUTF(File file, long offset) throws FileNotFoundException, IOException {
 		StringBuilder result = new StringBuilder();
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
 		InputStreamReader isr = null;
-		
+
 		try {
 			fis = new FileInputStream(file);
 			skipFully(fis, offset);
@@ -210,7 +209,7 @@ final public class FileUtil {
 		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
 		if(Logger.shouldLog(LogLevel.MINOR, FileUtil.class))
 			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
-		
+
 		try {
 			dis = new DataInputStream(input);
 			fos = new FileOutputStream(file);
@@ -226,7 +225,7 @@ final public class FileUtil {
 			if(dis != null) dis.close();
 			if(fos != null) fos.close();
 		}
-		
+
 		if(FileUtil.renameTo(file, target))
 			return true;
 		else {
@@ -234,7 +233,7 @@ final public class FileUtil {
 			return false;
 		}
 	}
-        
+
         public static boolean renameTo(File orig, File dest) {
             // Try an atomic rename
             // Shall we prevent symlink-race-conditions here ?
@@ -309,7 +308,7 @@ final public class FileUtil {
     			}
     		} else return true;
     	}
-    
+
     /**
      * Sanitizes the given filename to be valid on the given operating system.
      * If OperatingSystem.All is specified this function will generate a filename which fullfils the restrictions of all known OS, currently
@@ -320,7 +319,7 @@ final public class FileUtil {
 		final CharBuffer buffer = fileNameCharset.decode(fileNameCharset.encode(fileName)); // Charset are thread-safe
 
 		final StringBuilder sb = new StringBuilder(fileName.length() + 1);
-		
+
 		switch(targetOS) {
 			case All: break;
 			case MacOS: break;
@@ -339,22 +338,22 @@ final public class FileUtil {
 				sb.append(' ');
 				continue;
 			}
-			
-			
+
+
 			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
 				if(StringValidityChecker.isWindowsReservedPrintableFilenameCharacter(c)) {
 					sb.append(' ');
 					continue;
 				}
 			}
-			
+
 			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.MacOS) {
 				if(StringValidityChecker.isMacOSReservedPrintableFilenameCharacter(c)) {
 					sb.append(' ');
 					continue;
 				}
 			}
-			
+
 			// Nothing did continue; so the character is okay
 			sb.append(c);
 		}
@@ -370,20 +369,20 @@ final public class FileUtil {
 					break;
 			}
 		}
-		
+
 		// Now the filename might be one of the reserved filenames in Windows (CON etc.) and we must replace it if it is...
 		if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
 			if(StringValidityChecker.isWindowsReservedFilename(sb.toString()))
 				sb.insert(0, '_');
 		}
-	
+
 		if(sb.length() == 0) {
 			sb.append("Invalid filename"); // TODO: L10n
 		}
-		
+
 		return sb.toString();
 	}
-    	
+
 	public static String sanitize(String fileName) {
 		return sanitizeFileName(fileName, detectedOS);
 	}
@@ -405,7 +404,7 @@ final public class FileUtil {
 	 * Find the length of an input stream. This method will consume the complete
 	 * input stream until its {@link InputStream#read(byte[])} method returns
 	 * <code>-1</code>, thus signalling the end of the stream.
-	 * 
+	 *
 	 * @param source
 	 *            The input stream to find the length of
 	 * @return The numbe of bytes that can be read from the stream
@@ -431,7 +430,7 @@ final public class FileUtil {
 	 * as much bytes as possible will be copied (i.e. until
 	 * {@link InputStream#read()} returns <code>-1</code> to signal the end of
 	 * the stream).
-	 * 
+	 *
 	 * @param source
 	 *            The input stream to read from
 	 * @param destination
@@ -564,5 +563,14 @@ final public class FileUtil {
 		}
 		return freeSpace;
 	}
-	
+
+	public static boolean setOwnerOnlyReadWrite(File f) {
+		boolean b = f.setReadable(false);
+		b &= f.setWritable(false);
+		b &= f.setExecutable(false);
+		b &= f.setReadable(true, true);
+		b &= f.setWritable(true, true);
+		return b;
+	}
+
 }

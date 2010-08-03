@@ -1035,8 +1035,19 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e4);
 		}
 
+		// Directory for node-related files other than store
+
+		this.nodeDir = setupProgramDir(nodeConfig, "node references", "nodeDir", ".",
+		  sortOrder++, "Node.nodeDir", "Node.nodeDirLong");
+		this.userDir = setupProgramDir(nodeConfig, "user state", "userDir", ".",
+		  sortOrder++, "Node.userDir", "Node.userDirLong");
+		this.cfgDir = setupProgramDir(nodeConfig, "user config", "cfgDir", ".",
+		  sortOrder++, "Node.cfgDir", "Node.cfgDirLong");
+		this.runDir = setupProgramDir(nodeConfig, "runtime state", "runDir", ".",
+		  sortOrder++, "Node.runDir", "Node.runDirLong");
+
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
-		if(r == null) {
+		if (r == null) {
 			final NativeThread entropyGatheringThread = new NativeThread(new Runnable() {
 
 				private void recurse(File f) {
@@ -1065,8 +1076,13 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
 
+			File seed = userDir.file("prng.seed");
+			if (!FileUtil.setOwnerOnlyReadWrite(seed)) {
+				throw new NodeInitException(NodeInitException.EXIT_YARROW_INIT_FAILED, "could not make PRNG seed owner-only rw");
+			}
+
 			entropyGatheringThread.start();
-			this.random = new Yarrow();
+			this.random = new Yarrow(seed);
 			DiffieHellman.init(random);
 
 		} else // if it's not null it's because we are running in the simulator
@@ -1107,17 +1123,6 @@ public class Node implements TimeSkewDetectorCallback {
 		runningSSKOfferReplyUIDs = new HashMap<Long,OfferReplyTag>();
 
 		this.securityLevels = new SecurityLevels(this, config);
-
-		// Directory for node-related files other than store
-
-		this.nodeDir = setupProgramDir(nodeConfig, "node references", "nodeDir", ".",
-		  sortOrder++, "Node.nodeDir", "Node.nodeDirLong");
-		this.userDir = setupProgramDir(nodeConfig, "user state", "userDir", ".",
-		  sortOrder++, "Node.userDir", "Node.userDirLong");
-		this.cfgDir = setupProgramDir(nodeConfig, "user config", "cfgDir", ".",
-		  sortOrder++, "Node.cfgDir", "Node.cfgDirLong");
-		this.runDir = setupProgramDir(nodeConfig, "runtime state", "runDir", ".",
-		  sortOrder++, "Node.runDir", "Node.runDirLong");
 
 		nodeConfig.register("autoChangeDatabaseEncryption", true, sortOrder++, true, false, "Node.autoChangeDatabaseEncryption", "Node.autoChangeDatabaseEncryptionLong", new BooleanCallback() {
 
