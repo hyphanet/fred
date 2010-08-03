@@ -672,14 +672,16 @@ public class Node implements TimeSkewDetectorCallback {
 	public final LocationManager lm;
 	/** My peers */
 	public final PeerManager peers;
-	/** Directory to put node, peers, etc into */
+	/** Node-reference directory (node identity, peers, etc) */
 	final ProgramDirectory nodeDir;
-	/** Directory to put user-related state (bookmarks, completed lists, etc) into */
-	final ProgramDirectory userDir;
-	/** Directory to put run-time state (bootID, PRNG seed, etc) into */
-	final ProgramDirectory runDir;
-	/** Directory to put user-editable config (freenet.ini, l10n overrides, etc) into */
+	/** Config directory (l10n overrides, etc) */
 	final ProgramDirectory cfgDir;
+	/** User data directory (bookmarks, download lists, etc) */
+	final ProgramDirectory userDir;
+	/** Run-time state directory (bootID, PRNG seed, etc) */
+	final ProgramDirectory runDir;
+	/** Plugin directory */
+	final ProgramDirectory pluginDir;
 
 	/** File to write crypto master keys into, possibly passworded */
 	final File masterKeysFile;
@@ -1011,6 +1013,8 @@ public class Node implements TimeSkewDetectorCallback {
 		  sortOrder++, "Node.userDir", "Node.userDirLong");
 		this.runDir = setupProgramDir(nodeConfig, "runtime state", "runDir", ".",
 		  sortOrder++, "Node.runDir", "Node.runDirLong");
+		this.pluginDir = setupProgramDir(nodeConfig, "plugins", "pluginDir", "./plugins",
+		  sortOrder++, "Node.pluginDir", "Node.pluginDirLong");
 
 		// l10n stuffs
 		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true,
@@ -5194,15 +5198,15 @@ public class Node implements TimeSkewDetectorCallback {
 	public File getUserDir() { return userDir.dir(); }
 	public File getRunDir() { return runDir.dir(); }
 	public File getStoreDir() { return storeDir; } //public File getStoreDir() { return storeDir.dir(); }
+	public File getPluginDir() { return pluginDir.dir(); }
 
 	public ProgramDirectory nodeDir() { return nodeDir; }
 	public ProgramDirectory cfgDir() { return cfgDir; }
 	public ProgramDirectory userDir() { return userDir; }
 	public ProgramDirectory runDir() { return runDir; }
 	//public ProgramDirectory storeDir() { return storeDir; }
+	public ProgramDirectory pluginDir() { return pluginDir; }
 
-	// TODO LOW hack; make this static and configured on the command line or something
-	public File getPluginDir() { return new File(userDir.dir(), "plugins"); }
 
 	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler);
