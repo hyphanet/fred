@@ -829,14 +829,12 @@ public class PersistentBlobTempBucketFactory {
 		long blocks = getSize();
 		if(sz > MAX_FREE) {
 			Iterator<Map.Entry<Long,PersistentBlobTempBucketTag>> it = almostFreeSlots.entrySet().iterator();
-			for(int i=freeNow;i<MAX_FREE && it.hasNext();i++) {
+			while(freeNow < MAX_FREE && it.hasNext()) {
 				Map.Entry<Long,PersistentBlobTempBucketTag> entry = it.next();
 				Long slot = entry.getKey();
-				if(slot >= blocks) {
-					i--;
-					continue;
-				}
+				if(slot >= blocks) continue;
 				freeSlots.put(entry.getKey(), entry.getValue());
+				freeNow++;
 			}
 		}
 		almostFreeSlots.clear();
