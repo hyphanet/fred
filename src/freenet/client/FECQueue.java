@@ -244,7 +244,12 @@ public class FECQueue implements OOMHook {
 							databaseJobRunner.queue(new DBJob() {
 
 								public boolean run(ObjectContainer container, ClientContext context) {
-									job.storeBlockStatuses(container);
+									try {
+										job.storeBlockStatuses(container);
+									} catch (Throwable t) {
+										Logger.error(this, "Caught storing block statuses for "+job+" : "+t, t);
+										// Fail with the original error.
+									}
 									// Don't activate the job itself.
 									// It MUST already be activated, because it is carrying the status blocks.
 									// The status blocks have been set on the FEC thread but *not stored* because
@@ -297,7 +302,30 @@ public class FECQueue implements OOMHook {
 							databaseJobRunner.queue(new DBJob() {
 
 								public boolean run(ObjectContainer container, ClientContext context) {
-									job.storeBlockStatuses(container);
+									try {
+										job.storeBlockStatuses(container);
+									} catch (Throwable t) {
+										Logger.error(this, "Caught storing block statuses on "+this+" : "+t, t);
+										// Don't activate the job itself.
+										// It MUST already be activated, because it is carrying the status blocks.
+										// The status blocks have been set on the FEC thread but *not stored* because
+										// they can't be stored on the FEC thread.
+										Logger.minor(this, "Activating "+job.callback+" is active="+container.ext().isActive(job.callback));
+										container.activate(job.callback, 1);
+										if(Logger.shouldLog(LogLevel.MINOR, this))
+											Logger.minor(this, "Running callback for "+job);
+										try {
+											job.callback.onFailed(t, container, context);
+										} catch (Throwable t1) {
+											Logger.error(this, "Caught "+t1+" in FECQueue callback failure", t1);
+										} finally {
+											// Always delete the job, even if the callback throws.
+											container.delete(job);
+										}
+										if(container.ext().isStored(job.callback))
+											container.deactivate(job.callback, 1);
+										return true;
+									}
 									// Don't activate the job itself.
 									// It MUST already be activated, because it is carrying the status blocks.
 									// The status blocks have been set on the FEC thread but *not stored* because
