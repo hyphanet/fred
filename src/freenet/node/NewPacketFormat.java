@@ -56,6 +56,7 @@ public class NewPacketFormat implements PacketFormat {
 	private long highestReceivedSeqNum = -1;
 	private volatile long highestReceivedAck = -1;
 
+	private int usedBuffer = 0;
 	private int usedBufferOtherSide = 0;
 	private final Object bufferUsageLock = new Object();
 
@@ -129,16 +130,18 @@ public class NewPacketFormat implements PacketFormat {
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
 				if(fragment.firstFragment) recvBuffer = new PartiallyReceivedBuffer(fragment.messageLength);
-				else recvBuffer = new PartiallyReceivedBuffer();
+				else recvBuffer = new PartiallyReceivedBuffer(this);
 
 				recvMap = new SparseBitmap();
 				receiveBuffers.put(fragment.messageID, recvBuffer);
 				receiveMaps.put(fragment.messageID, recvMap);
 			} else {
-				if(fragment.firstFragment) recvBuffer.setMessageLength(fragment.messageLength);
+				if(fragment.firstFragment) {
+					if(!recvBuffer.setMessageLength(fragment.messageLength)) dontAck = true;
+				}
 			}
 
-			recvBuffer.add(fragment.fragmentData, fragment.fragmentOffset);
+			if(!recvBuffer.add(fragment.fragmentData, fragment.fragmentOffset)) dontAck = true;
 			if(fragment.fragmentLength == 0) {
 				Logger.warning(this, "Received fragment of length 0");
 				continue;
@@ -148,6 +151,10 @@ public class NewPacketFormat implements PacketFormat {
 				receiveBuffers.remove(fragment.messageID);
 				receiveMaps.remove(fragment.messageID);
 				fullyReceived.add(recvBuffer.buffer);
+
+				synchronized(bufferUsageLock) {
+					usedBuffer -= recvBuffer.messageLength;
+				}
 			}
 		}
 
@@ -549,10 +556,12 @@ public class NewPacketFormat implements PacketFormat {
 	private static class PartiallyReceivedBuffer {
 		private int messageLength;
 		private byte[] buffer;
+		private NewPacketFormat npf;
 
-		private PartiallyReceivedBuffer() {
+		private PartiallyReceivedBuffer(NewPacketFormat npf) {
 			messageLength = -1;
 			buffer = new byte[0];
+			this.npf = npf;
 		}
 
 		private PartiallyReceivedBuffer(int messageLength) {
@@ -560,23 +569,35 @@ public class NewPacketFormat implements PacketFormat {
 			buffer = new byte[messageLength];
 		}
 
-		private void add(byte[] data, int dataOffset) {
+		private boolean add(byte[] data, int dataOffset) {
 			if(buffer.length < (dataOffset + data.length)) {
-				resize(dataOffset + data.length);
+				if(!resize(dataOffset + data.length)) return false;
 			}
 
 			System.arraycopy(data, 0, buffer, dataOffset, data.length);
+			return true;
 		}
 
-		private void setMessageLength(int messageLength) {
+		private boolean setMessageLength(int messageLength) {
 			this.messageLength = messageLength;
-			resize(messageLength);
+			return resize(messageLength);
 		}
 
-		private void resize(int length) {
+		private boolean resize(int length) {
+			if((npf.usedBuffer + (length - buffer.length)) > MAX_BUFFER_SIZE) {
+				if(logMINOR) Logger.minor(this, "Could not resize buffer, would excede max size");
+				return false;
+			}
+
+			synchronized(npf.bufferUsageLock) {
+				npf.usedBuffer += (length - buffer.length);
+			}
+
 			byte[] newBuffer = new byte[length];
 			System.arraycopy(buffer, 0, newBuffer, 0, Math.min(length, buffer.length));
 			buffer = newBuffer;
+
+			return true;
 		}
 	}
 }
