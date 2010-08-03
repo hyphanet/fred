@@ -847,11 +847,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 		}
 		if(allDecodedCorrectly && logMINOR) Logger.minor(this, "All decoded correctly on "+this);
-		// Must set finished BEFORE calling parentFetcher.
-		// Otherwise a race is possible that might result in it not seeing our finishing.
-		synchronized(this) {
-			finished = true;
-		}
 		if(persistent) container.store(this);
 		if(persistent) {
 			boolean fin;
@@ -863,7 +858,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 				return;
 			}
 		}
-		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob()) {
+		boolean finishNow = splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob();
+		if(finishNow) {
+			// Must set finished BEFORE calling parentFetcher.
+			// Otherwise a race is possible that might result in it not seeing our finishing.
+			synchronized(this) {
+				finished = true;
+			}
 			if(persistent) container.activate(parentFetcher, 1);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
 			if(persistent) container.deactivate(parentFetcher, 1);
@@ -892,6 +893,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent)
 				container.activate(lastBlock, 1);
 			if(ignoreLastDataBlock && lastBlock.size() != CHKBlock.DATA_LENGTH) {
+				if(!finishNow) {
+					synchronized(this) {
+						finished = true;
+					}
+					if(persistent) container.activate(parentFetcher, 1);
+					parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
+					if(persistent) container.deactivate(parentFetcher, 1);
+				}
 				if(persistent) {
 					container.deactivate(parent, 1);
 					container.deactivate(context, 1);
@@ -911,6 +920,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
+			onFailed(t, container, context);
 			if(persistent)
 				encoderFinished(container, context);
 		}
@@ -1034,10 +1044,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent && !fetcherFinished) {
 				container.store(this);
 			}
+			finished = true;
 		}
 		if(logMINOR) Logger.minor(this, "Checked blocks.");
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
-		if(isCollectingBinaryBlob()) {
+		if(!(splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob())) {
 			if(persistent)
 				container.activate(parentFetcher, 1);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
