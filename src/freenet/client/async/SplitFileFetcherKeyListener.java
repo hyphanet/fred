@@ -19,6 +19,7 @@ import freenet.node.SendableGet;
 import freenet.support.BinaryBloomFilter;
 import freenet.support.BloomFilter;
 import freenet.support.CountingBloomFilter;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
@@ -45,6 +46,18 @@ import freenet.support.io.NativeThread;
  */
 public class SplitFileFetcherKeyListener implements KeyListener {
 	
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	private final SplitFileFetcher fetcher;
 	private final boolean persistent;
 	private int keyCount;
@@ -116,7 +129,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			}
 			if(persistent) {
 				for(int i=0;i<segments;i++) {
-					Logger.minor(this, "Storing segment "+i+" filter to database for "+parent+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
+					if(logMINOR) Logger.minor(this, "Storing segment "+i+" filter to database for "+parent+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
 					segmentFilters[i].storeTo(container);
 				}
 			}
@@ -131,7 +144,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			filter = cachedMainFilter;
 			if(persistent) container.activate(filter, Integer.MAX_VALUE);
 			filter.init(container);
-			Logger.minor(this, "Restored filter for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
+			if(logMINOR) Logger.minor(this, "Restored filter for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
 		} else if(newFilter) {
 			filter = new CountingBloomFilter(mainBloomSizeBytes * 8 / 2, mainBloomK, filterBuffer);
 			filter.setWarnOnRemoveFromEmpty();
@@ -150,12 +163,12 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			filter.setWarnOnRemoveFromEmpty();
 			parent.setCachedMainFilter(filter);
 			if(persistent) {
-				Logger.minor(this, "Storing filter to database for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
+				if(logMINOR) Logger.minor(this, "Storing filter to database for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
 				filter.storeTo(container);
 				container.store(parent);
 			}
 		}
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Created "+this+" for "+fetcher);
 	}
 
@@ -225,7 +238,6 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		// Caller has already called probablyWantKey(), so don't do it again.
 		boolean found = false;
 		byte[] salted = localSaltKey(key);
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "handleBlock("+key+") on "+this+" for "+fetcher);
 		for(int i=0;i<segmentFilters.length;i++) {
@@ -340,10 +352,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		int segNo = segment.segNum;
 		segmentFilters[segNo].unsetAll();
 		Key[] removeKeys = segment.listKeys(container);
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Removing segment from bloom filter: "+segment+" keys: "+removeKeys.length);
 		for(int i=0;i<removeKeys.length;i++) {
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Removing key from bloom filter: "+removeKeys[i]);
 			byte[] salted = context.getChkFetchScheduler().saltKey(persistent, removeKeys[i]);
 			if(filter.checkFilter(salted)) {
