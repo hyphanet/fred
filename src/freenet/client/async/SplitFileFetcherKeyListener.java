@@ -116,7 +116,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			}
 			if(persistent) {
 				for(int i=0;i<segments;i++) {
-					System.out.println("Storing segment "+i+" filter to database for "+parent+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
+					Logger.minor(this, "Storing segment "+i+" filter to database for "+parent+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
 					segmentFilters[i].storeTo(container);
 				}
 			}
@@ -131,7 +131,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			filter = cachedMainFilter;
 			if(persistent) container.activate(filter, Integer.MAX_VALUE);
 			filter.init(container);
-			System.out.println("Restored filter for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
+			Logger.minor(this, "Restored filter for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
 		} else if(newFilter) {
 			filter = new CountingBloomFilter(mainBloomSizeBytes * 8 / 2, mainBloomK, filterBuffer);
 			filter.setWarnOnRemoveFromEmpty();
@@ -150,7 +150,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			filter.setWarnOnRemoveFromEmpty();
 			parent.setCachedMainFilter(filter);
 			if(persistent) {
-				System.out.println("Storing filter to database for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
+				Logger.minor(this, "Storing filter to database for "+parent+" : k="+filter.getK()+" size = "+filter.getSizeBytes()+" bytes = "+filter.getLength()+" elements, filled: "+filter.getFilledCount());
 				filter.storeTo(container);
 				container.store(parent);
 			}
