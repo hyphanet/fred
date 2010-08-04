@@ -22,7 +22,7 @@ import freenet.support.Logger;
  * 
  * @author toad
  */
-public class SplitFileSegmentKeys {
+public class SplitFileSegmentKeys implements Cloneable {
 	
 	public final int dataBlocks;
 	public final int checkBlocks;
@@ -266,6 +266,15 @@ outer:	for(int i=0;i<(dataBlocks + checkBlocks);i++) {
 			list.add(k);
 		}
 		return list.toArray(new NodeCHK[list.size()]);
+	}
+	
+	@Override
+	public SplitFileSegmentKeys clone() {
+		try {
+			return (SplitFileSegmentKeys) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new Error("Yes it is!");
+		}
 	}
 
 }
