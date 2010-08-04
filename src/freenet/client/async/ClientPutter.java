@@ -83,7 +83,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.getCHKOnly = getCHKOnly;
 		this.client = client;
 		this.data = data;
-		this.targetURI = targetURI;
+		this.targetURI = targetURI.clone();
 		this.ctx = ctx;
 		this.finished = false;
 		this.cancelled = false;
