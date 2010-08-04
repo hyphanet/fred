@@ -2002,6 +2002,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			fetcherHalfFinished = true;
 			if(!encoderFinished) {
 				if(!startedDecode) {
+					if(logMINOR) Logger.minor(this, "Never started decode, completing immediately on "+this);
 					encoderFinished = true;
 					container.store(this);
 				} else {
