@@ -681,6 +681,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 					container.activate(dataBuckets[i].getData(), 1);
 				}
 			}
+			synchronized(this) {
+				startedDecode = true;
+			}
 			onDecodedSegment(container, context, null, null, null, dataBuckets, checkBuckets);
 			return;
 		}
@@ -756,6 +759,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// Now have all the data blocks (not necessarily all the check blocks)
 		} else {
 			Logger.error(this, "SPLITFILE_NONREDUNDANT !!");
+			synchronized(this) {
+				startedDecode = true;
+			}
 			onDecodedSegment(container, context, null, null, null, null, null);
 		}
 	}
