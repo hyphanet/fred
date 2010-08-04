@@ -47,15 +47,24 @@ public class MessageWrapper {
 	/**
 	 * Remove any mark that has already been set for the given range.
 	 */
-	public void lost() {
+	public int lost() {
+		int bytesToResend = 0;
+
 		synchronized(sent) {
 		synchronized(acks) {
+			for(int [] range : sent) {
+				bytesToResend += range[1] - range[0] + 1;
+			}
+
 			sent.clear();
 			for(int[] range : acks) {
 				sent.add(range[0], range[1]);
+				bytesToResend -= range[1] - range[0] + 1;
 			}
 		}
 		}
+
+		return bytesToResend;
 	}
 
 	public long getMessageID() {

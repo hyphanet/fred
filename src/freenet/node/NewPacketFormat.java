@@ -312,6 +312,16 @@ public class NewPacketFormat implements PacketFormat {
 			}
 			return false;
                 }
+
+		pn.sentPacket();
+		pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
+		if(PeerNode.shouldThrottle(pn.getPeer(), pn.node)) {
+			pn.node.outputThrottle.forceGrab(data.length);
+		}
+		if(packet.getFragments().size() == 0) {
+			pn.node.nodeStats.reportNotificationOnlyPacketSent(data.length);
+		}
+
 		return true;
 	}
 
@@ -536,12 +546,16 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		public void lost() {
+			int bytesToResend = 0;
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 
 			while(msgIt.hasNext()) {
 				MessageWrapper wrapper = msgIt.next();
-				wrapper.lost();
+				bytesToResend += wrapper.lost();
 			}
+
+			//Unless we disconnect these will be resent eventually
+			if(npf.pn != null) npf.pn.resendByteCounter.sentBytes(bytesToResend);
 		}
 
 		public void sent() {
