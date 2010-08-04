@@ -323,6 +323,9 @@ public class PersistentBlobTempBucketFactory {
 					break;
 				}
 			}
+			synchronized(this) {
+				cachedSize = blocks + addBlocks;
+			}
 			query = container.query();
 			query.constrain(PersistentBlobTempBucketTag.class);
 			query.descend("index").constrain(blocks-1).greater().and(query.descend("factory").constrain(PersistentBlobTempBucketFactory.this));
@@ -331,7 +334,7 @@ public class PersistentBlobTempBucketFactory {
 			while(results.hasNext()) {
 				PersistentBlobTempBucketTag tag = results.next();
 				if(!tag.isFree) {
-					Logger.error(this, "Block already exists beyond the end of the file, yet is occupied: block "+tag.index);
+					Logger.error(this, "Block already exists beyond the end of the file ("+blocks+"), yet is occupied: block "+tag.index);
 				}
 				if(taken == null) taken = new HashSet<Long>();
 				taken.add(tag.index);
