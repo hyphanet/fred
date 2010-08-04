@@ -464,6 +464,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	private synchronized void migrateToKeys(ObjectContainer container) {
+		if(logMINOR) Logger.minor(this, "Migrating keys on "+this);
 		keys = new SplitFileSegmentKeys(dataKeys.length, checkBuckets.length, forceCryptoKey, cryptoAlgorithm);
 		foundKeys = new boolean[dataKeys.length + checkBuckets.length];
 		for(int i=0;i<dataKeys.length;i++) {
