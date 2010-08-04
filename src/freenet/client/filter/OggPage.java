@@ -4,9 +4,7 @@
 
 package freenet.client.filter;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -26,7 +24,7 @@ public class OggPage {
 	 * are XORed with 
 	 * See: http://www.ross.net/crc/download/crc_v3.txt
 	 */
-	static final int crc_lookup[]= new int[] {
+	static final private int crc_lookup[]= new int[] {
 		0x00000000,0x04c11db7,0x09823b6e,0x0d4326d9,
 		0x130476dc,0x17c56b6b,0x1a864db2,0x1e475005,
 		0x2608edb8,0x22c9f00f,0x2f8ad6d6,0x2b4bcb61,
@@ -127,7 +125,7 @@ public class OggPage {
 	 * @return the next Ogg page in bitstream
 	 * @throws IOException
 	 */
-	static OggPage readPage(DataInputStream input) throws IOException {
+	public static OggPage readPage(DataInputStream input) throws IOException {
 		while(true) {
 			//Seek for magic number
 			if(input.readByte() != magicNumber[0]) continue;
@@ -143,22 +141,22 @@ public class OggPage {
 	 * <code>checksum</code> field.
 	 * @return whether or not the page is valid
 	 */
-	boolean headerValid() {
+	public boolean headerValid() {
 		if(version != 0) return false;
 		if(!Arrays.equals(checksum, calculateCRC())) return false;
 		return true;
 	}
 
-	boolean isPacketContinued() {
+	public boolean isPacketContinued() {
 		if(logMINOR) Logger.minor(this, "Packet continued: "+(headerType & 0x1));
 		return (headerType & 0x01) == 1;
 	}
 
-	boolean isFinalPacket() {
+	public boolean isFinalPacket() {
 		return (headerType & 0x04) == 4;
 	}
 
-	byte[] array() {
+	public byte[] toArray() {
 		ByteBuffer bb = ByteBuffer.allocate(27+byteToUnsigned(segments)+payload.length);
 		bb.put(magicNumber);
 		bb.put(version);
@@ -173,19 +171,19 @@ public class OggPage {
 		return bb.array();
 	}
 
-	int getSerial() {
+	public int getSerial() {
 		ByteBuffer bb = ByteBuffer.wrap(bitStreamSerial);
 		return bb.getInt();
 	}
 
-	int getPageNumber() {
+	public int getPageNumber() {
 		ByteBuffer bb = ByteBuffer.wrap(pageSequenceNumber);
 		return Integer.reverseBytes(bb.getInt());
 	}
 
 	/**Calculates this page's 32 bit CRC checksum.*/
-	byte[] calculateCRC() {
-		byte[] array = array();
+	public byte[] calculateCRC() {
+		byte[] array = toArray();
 		//Strip out the checksum bytes
 		array[22] = 0;
 		array[23] = 0;
@@ -203,20 +201,12 @@ public class OggPage {
 				(byte) (crc_reg>>>24)};
 	}
 
-	static private int byteToUnsigned(byte input) {
-		return (input & 0xff);
-	}
-
-	static private byte intToUnsignedByte(int input) {
-		return (byte) (input & 0xff);
-	}
-
 	/**Rewrites the stored sizes of this page's segments.
 	 * @param packetSizes The sizes of any packets inside of this page's payload.
 	 * If not null, a segment will be prematurely closed after each packet's size
 	 * number of bytes have been read.
 	 */
-	void recalculateSegmentLacing(LinkedList<Integer> packetSizes) {
+	public void recalculateSegmentLacing(LinkedList<Integer> packetSizes) {
 		/*Will packets ever need to be expanded? Right now we're just cutting
 		 * stuff away, but if we need to write stuff, we run the risk of overflowing
 		 * past the hard limit of 255 packets, and will need to create a continuing page
@@ -247,6 +237,14 @@ public class OggPage {
 				segment++;
 			}
 		}	
+	}
+
+	static private int byteToUnsigned(byte input) {
+		return (input & 0xff);
+	}
+
+	static private byte intToUnsignedByte(int input) {
+		return (byte) (input & 0xff);
 	}
 
 	private String l10n(String key) {

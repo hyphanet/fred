@@ -55,7 +55,7 @@ public class OggFilter implements ContentDataFilter{
 				if(page.isFinalPacket()) {
 					while(!splitPages.isEmpty()) {
 						OggPage part = splitPages.remove();
-						output.write(part.array());
+						output.write(part.toArray());
 					}
 				}
 			} else if(!splitPages.isEmpty()) splitPages.clear();
@@ -73,8 +73,8 @@ public class OggFilter implements ContentDataFilter{
 		try{
 			//Populate a byte array with all the data in which a subpage might hide
 			ByteArrayOutputStream data = new ByteArrayOutputStream();
-			data.write(page.array());
-			if(nextPage != null) data.write(nextPage.array());
+			data.write(page.toArray());
+			if(nextPage != null) data.write(nextPage.toArray());
 			DataInputStream in = new DataInputStream(new ByteArrayInputStream(data.toByteArray()));
 			while(true) {
 				subpage = OggPage.readPage(in);

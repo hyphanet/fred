@@ -17,9 +17,9 @@ public class OggPageTest extends TestCase {
 		DataOutputStream output = new DataOutputStream(filteredDataStream);
 		DataInputStream input = new DataInputStream(badData);
 		OggPage page = OggPage.readPage(input);
-		if(page.headerValid()) output.write(page.array());
+		if(page.headerValid()) output.write(page.toArray());
 		page = OggPage.readPage(input);
-		if(page.headerValid()) output.write(page.array());
+		if(page.headerValid()) output.write(page.toArray());
 		byte[] filteredData = filteredDataStream.toByteArray();
 		output.close();
 		input.close();
@@ -29,9 +29,9 @@ public class OggPageTest extends TestCase {
 		ByteArrayOutputStream expectedDataStream = new ByteArrayOutputStream();
 		output = new DataOutputStream(expectedDataStream);
 		page = OggPage.readPage(input);
-		if(page.headerValid()) output.write(page.array());
+		if(page.headerValid()) output.write(page.toArray());
 		page = OggPage.readPage(input);
-		if(page.headerValid()) output.write(page.array());
+		if(page.headerValid()) output.write(page.toArray());
 		byte[] expectedData = expectedDataStream.toByteArray();
 		output.close();
 		input.close();
