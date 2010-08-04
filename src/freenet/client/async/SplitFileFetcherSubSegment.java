@@ -270,9 +270,9 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				Key key = segment.getBlockNodeKey(block, container);
 				if(key == null) {
 					if(segment.isFinishing(container) || segment.isFinished(container)) return false;
-					if(segment.haveBlock(block, container))
-						Logger.error(this, "Already have block "+ret+" but was in blockNums on "+this+" in hasValidKeys");
-					else
+					if(segment.haveBlock(block, container)) {
+						if(logMINOR) Logger.minor(this, "Already have block "+ret+" but was in blockNums on "+this+" in hasValidKeys");
+					} else
 						Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys");
 					blockNums.remove(x);
 					if(persistent) {
