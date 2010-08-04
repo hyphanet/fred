@@ -176,7 +176,7 @@ public class Metadata implements Cloneable {
 	String targetName;
 
 	ClientMetadata clientMetadata;
-	private final HashResult[] hashes;
+	private HashResult[] hashes;
 	
 	
 	public final long topSize;
@@ -189,10 +189,39 @@ public class Metadata implements Cloneable {
 	@Override
 	public Object clone() {
 		try {
-			return super.clone();
+			Metadata meta = (Metadata) super.clone();
+			meta.finishClone(this);
+			return meta;
 		} catch (CloneNotSupportedException e) {
 			throw new Error("Yes it is!");
 		}
+	}
+	
+	/** Deep copy those fields that need to be deep copied after clone() */
+	private void finishClone(Metadata orig) {
+		if(orig.segments != null) {
+			segments = new SplitFileSegmentKeys[orig.segments.length];
+			for(int i=0;i<segments.length;i++) {
+				segments[i] = orig.segments[i].clone();
+			}
+		}
+		if(hashes != null) {
+			hashes = new HashResult[orig.hashes.length];
+			for(int i=0;i<hashes.length;i++)
+				hashes[i] = orig.hashes[i].clone();
+		}
+		if(manifestEntries != null) {
+			manifestEntries = new HashMap<String, Metadata>(orig.manifestEntries);
+			for(Map.Entry<String, Metadata> entry : manifestEntries.entrySet()) {
+				entry.setValue((Metadata)entry.getValue().clone());
+			}
+		}
+		if(resolvedURI != null)
+			resolvedURI = resolvedURI.clone();
+		if(simpleRedirectKey != null)
+			simpleRedirectKey = simpleRedirectKey.clone();
+		if(clientMetadata != null)
+			clientMetadata = clientMetadata.clone();
 	}
 
 	/** Parse a block of bytes into a Metadata structure.
