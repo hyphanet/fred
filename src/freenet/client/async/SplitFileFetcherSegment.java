@@ -772,6 +772,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.activate(context, 1);
 			container.activate(blockFetchContext, 1);
 		}
+		synchronized(this) {
+			if(encoderFinished)
+				Logger.error(this, "Decoded segment after encoder finished");
+		}
 		if(codec == null)
 			codec = FECCodec.getCodec(splitfileType, dataBuckets.length, checkBuckets.length);
 		// Because we use SplitfileBlock, we DON'T have to copy here.
@@ -942,6 +946,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		// Because we use SplitfileBlock, we DON'T have to copy here.
 		// See FECCallback comments for explanation.
 		synchronized(this) {
+			if(encoderFinished)
+				Logger.error(this, "Decoded segment after encoder finished");
 			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
 			for(int i=0;i<dataBuckets.length;i++) {
 				boolean heal = false;
