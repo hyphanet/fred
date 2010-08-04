@@ -1466,7 +1466,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			if(persistent)
 				container.activate(this, 2);
-			if(e != null) e = new FetchException(FetchException.DATA_NOT_FOUND, "No USK found");
+			if(e == null) e = new FetchException(FetchException.DATA_NOT_FOUND, "No USK found");
 			if(logMINOR) Logger.minor(this, "Failing USK with "+e, e);
 			if(persistent) container.activate(cb, 1);
 			if(cb == null)
