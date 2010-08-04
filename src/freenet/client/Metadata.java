@@ -1765,10 +1765,16 @@ public class Metadata implements Cloneable {
 		return segmentCount;
 	}
 
-	public SplitFileSegmentKeys[] grabSegmentKeys() throws FetchException {
-		if(segments == null && splitfileDataKeys != null && splitfileCheckKeys != null)
-			throw new FetchException(FetchException.INTERNAL_ERROR, "Please restart the download, need to re-parse metadata due to internal changes");
-		return segments;
+	public SplitFileSegmentKeys[] grabSegmentKeys(ObjectContainer container) throws FetchException {
+		synchronized(this) {
+			if(segments == null && splitfileDataKeys != null && splitfileCheckKeys != null)
+				throw new FetchException(FetchException.INTERNAL_ERROR, "Please restart the download, need to re-parse metadata due to internal changes");
+			SplitFileSegmentKeys[] segs = segments;
+			segments = null;
+			if(container != null && container.ext().isStored(this))
+				container.store(this);
+			return segs;
+		}
 	}
 
 	public int getDeductBlocksFromSegments() {

@@ -174,7 +174,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			throw new FetchException(FetchException.CANCELLED);
 		overrideLength = metadata.dataLength();
 		this.splitfileType = metadata.getSplitfileType();
-		SplitFileSegmentKeys[] segmentKeys = metadata.grabSegmentKeys();
+		SplitFileSegmentKeys[] segmentKeys = metadata.grabSegmentKeys(container);
 		if(persistent) {
 			// Clear them here so they don't get deleted and we don't need to clone them.
 			metadata.clearSplitfileKeys();
