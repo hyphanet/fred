@@ -7,7 +7,9 @@ package freenet.client.filter;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 
 import freenet.l10n.NodeL10n;
@@ -118,6 +120,15 @@ public class OggPage {
 		}
 		payload = new byte[payloadSize];
 		input.read(payload);
+	}
+
+	public OggPage(OggPage oldPage, Collection<CodecPacket> packets) {
+		this.version = oldPage.version;
+		this.headerType = oldPage.headerType;
+		this.granuelPosition = oldPage.granuelPosition;
+		this.bitStreamSerial = oldPage.bitStreamSerial;
+		this.pageSequenceNumber = oldPage.pageSequenceNumber;
+		this.segments = (byte) packets.size(); 
 	}
 
 	/**Extracts the Ogg page from a physical bitstream
@@ -239,6 +250,17 @@ public class OggPage {
 		}	
 	}
 
+	public Collection<CodecPacket> asPackets() {
+		ArrayList<CodecPacket> packets = new ArrayList<CodecPacket>();
+		int bytesParsed = 0;
+		for(int i = 0; i < segments; i++) {
+			byte[] packetPayload = new byte[segmentTable[i]];
+			System.arraycopy(payload, bytesParsed, packetPayload, 0, segmentTable[i]);
+			packets.add(new CodecPacket(packetPayload));
+			bytesParsed += segmentTable[i];
+		}
+		return packets;
+	}
 	static private int byteToUnsigned(byte input) {
 		return (input & 0xff);
 	}
