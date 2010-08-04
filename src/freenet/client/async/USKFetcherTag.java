@@ -41,6 +41,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	private boolean finished;
 	private final boolean ownFetchContext;
 	private final boolean checkStoreOnly;
+	private final int hashCode;
 	
 	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, ObjectContainer container, FetchContext ctx, boolean keepLastData, long token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
 		this.nodeDBHandle = nodeDBHandle;
@@ -56,6 +57,11 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		pollingPriorityProgress = callback.getPollingPriorityProgress();
 		priority = pollingPriorityNormal;
 		this.checkStoreOnly = checkStoreOnly;
+		this.hashCode = super.hashCode();
+	}
+	
+	public int hashCode() {
+		return hashCode;
 	}
 	
 	/**
