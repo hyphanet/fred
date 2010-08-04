@@ -155,6 +155,10 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 	public void onFailure(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
+			if(finished) {
+				Logger.error(this, "onFailure called after finish on "+this, new Exception("error"));
+				return;
+			}
 			finished = true;
 		}
 		if(persistent) {
@@ -198,6 +202,10 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		synchronized(this) {
 			if(fetcher == null) {
 				Logger.error(this, "onFoundEdition but fetcher is null - isn't onFoundEdition() terminal for USKFetcherCallback's??", new Exception("debug"));
+			}
+			if(finished) {
+				Logger.error(this, "onFoundEdition called after finish on "+this, new Exception("error"));
+				return;
 			}
 			finished = true;
 			fetcher = null;
