@@ -1418,6 +1418,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.returnBucket = returnBucket;
 			this.persistent = persistent;
 			this.datastoreOnly = datastoreOnly;
+			if(logMINOR) Logger.minor(this, "Created "+this+" for "+usk+" and "+cb+" datastore only = "+datastoreOnly);
 		}
 
 		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
@@ -1466,7 +1467,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent)
 				container.activate(this, 2);
 			if(e != null) e = new FetchException(FetchException.DATA_NOT_FOUND, "No USK found");
+			if(logMINOR) Logger.minor(this, "Failing USK with "+e, e);
 			if(persistent) container.activate(cb, 1);
+			if(cb == null)
+				throw new NullPointerException("Callback is null in "+this+" for usk "+usk+" with datastoreOnly="+datastoreOnly);
 			cb.onFailure(e, null, container, context);
 			if(persistent) removeFrom(container);
 		}
