@@ -1388,7 +1388,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 	}
 
-	public static class MyUSKFetcherCallback implements USKFetcherCallback {
+	public static class MyUSKFetcherCallback implements USKFetcherTagCallback {
 
 		final ClientRequester parent;
 		final GetCompletionCallback cb;
@@ -1404,6 +1404,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final boolean persistent;
 		final boolean datastoreOnly;
 		final int hashCode;
+		private USKFetcherTag tag;
+		
+		public void setTag(USKFetcherTag tag, ObjectContainer container, ClientContext context) {
+			this.tag = tag;
+			if(persistent) container.store(this);
+		}
 		
 		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket, boolean persistent, boolean datastoreOnly) {
 			this.parent = requester;
@@ -1437,6 +1443,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(l == usk.suggestedEdition) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, false, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true, false, (short)0, container, context);
+					if(tag != null) {
+						if(persistent) container.activate(cb, 1);
+						cb.onTransition(tag, sf, container);
+					}
 					sf.schedule(container, context);
 					if(persistent) removeFrom(container);
 				} else {

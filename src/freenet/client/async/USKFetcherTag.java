@@ -148,6 +148,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(callback, 1);
+						if(callback instanceof USKFetcherTagCallback)
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
 						callback.onCancelled(container, context);
 						removeFrom(container, context);
 						container.deactivate(callback, 1);
@@ -175,6 +177,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		if(persistent) {
 			if(container != null) {
 				container.activate(callback, 1);
+				if(callback instanceof USKFetcherTagCallback)
+					((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
 				callback.onFailure(container, context);
 				container.deactivate(callback, 1);
 				removeFrom(container, context);
@@ -185,6 +189,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(USKFetcherTag.this, 1);
 						container.activate(callback, 1);
+						if(callback instanceof USKFetcherTagCallback)
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
 						callback.onFailure(container, context);
 						container.deactivate(callback, 1);
 						removeFrom(container, context);
@@ -225,6 +231,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		if(persistent) {
 			if(container != null) {
 				container.activate(callback, 1);
+				if(callback instanceof USKFetcherTagCallback)
+					((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
 				callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
 				container.deactivate(callback, 1);
 				removeFrom(container, context);
@@ -234,6 +242,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(callback, 1);
+						if(callback instanceof USKFetcherTagCallback)
+							((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
 						callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
 						container.deactivate(callback, 1);
 						removeFrom(container, context);
