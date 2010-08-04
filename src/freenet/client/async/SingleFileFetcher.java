@@ -1403,6 +1403,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final Bucket returnBucket;
 		final boolean persistent;
 		final boolean datastoreOnly;
+		final int hashCode;
 		
 		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket, boolean persistent, boolean datastoreOnly) {
 			this.parent = requester;
@@ -1418,7 +1419,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.returnBucket = returnBucket;
 			this.persistent = persistent;
 			this.datastoreOnly = datastoreOnly;
+			this.hashCode = super.hashCode();
 			if(logMINOR) Logger.minor(this, "Created "+this+" for "+usk+" and "+cb+" datastore only = "+datastoreOnly);
+		}
+		
+		public int hashCode() {
+			return hashCode;
 		}
 
 		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
