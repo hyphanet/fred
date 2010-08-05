@@ -77,9 +77,11 @@ public class NewPacketFormat implements PacketFormat {
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
 		NPFPacket packet = null;
 		SessionKey s = null;
-		for(int i = 0; i < 2; i++) {
+		for(int i = 0; i < 3; i++) {
 			if(i == 0) {
 				s = pn.getCurrentKeyTracker();
+			} else if (i == 1) {
+				s = pn.getPreviousKeyTracker();
 			} else {
 				s = pn.getUnverifiedKeyTracker();
 			}
