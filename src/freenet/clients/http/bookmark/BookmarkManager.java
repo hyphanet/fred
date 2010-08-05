@@ -240,14 +240,14 @@ public class BookmarkManager implements RequestClient {
 
 	private boolean wantUSK(USK u, BookmarkItem ignore) {
 		List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
-		for(int i = 0; i < items.size(); i++) {
-			if(items.get(i) == ignore)
+		for(BookmarkItem item : items) {
+			if(item == ignore)
 				continue;
-			if(!"USK".equals(items.get(i).getKeyType()))
+			if(!"USK".equals(item.getKeyType()))
 				continue;
 
 			try {
-				FreenetURI furi = new FreenetURI(items.get(i).getKey());
+				FreenetURI furi = new FreenetURI(item.getKey());
 				USK usk = USK.create(furi);
 
 				if(usk.equals(u, false)) return true;
