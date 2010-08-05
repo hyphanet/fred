@@ -226,7 +226,7 @@ public class BookmarkManager implements RequestClient {
 			if(((BookmarkItem) bookmark).getKeyType().equals("USK"))
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
-					if(!wantUSK(u)) {
+					if(!wantUSK(u, (BookmarkItem)bookmark)) {
 						this.node.uskManager.unsubscribe(u, this.uskCB);
 					}
 				} catch(MalformedURLException mue) {
@@ -238,9 +238,11 @@ public class BookmarkManager implements RequestClient {
 		}
 	}
 
-	private boolean wantUSK(USK u) {
+	private boolean wantUSK(USK u, BookmarkItem ignore) {
 		List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 		for(int i = 0; i < items.size(); i++) {
+			if(items.get(i) == ignore)
+				continue;
 			if(!"USK".equals(items.get(i).getKeyType()))
 				continue;
 
