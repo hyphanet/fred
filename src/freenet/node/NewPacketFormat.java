@@ -385,6 +385,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
+fragments:
 		for(int i = 0; i < startedByPrio.size(); i++) {
 			HashMap<Long, MessageWrapper> started = startedByPrio.get(i);
 
@@ -415,14 +416,14 @@ public class NewPacketFormat implements PacketFormat {
 				if((bufferUsage + item.buf.length) > MAX_BUFFER_SIZE) {
 					if(logMINOR) Logger.minor(this, "Would excede remote buffer size, requeuing and sending packet");
 					messageQueue.pushfrontPrioritizedMessageItem(item);
-					break;
+					break fragments;
 				}
 
 				long messageID = getMessageID();
 				if(messageID == -1) {
 					if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
 					messageQueue.pushfrontPrioritizedMessageItem(item);
-					break;
+					break fragments;
 				}
 
 				MessageWrapper wrapper = new MessageWrapper(item, messageID);
