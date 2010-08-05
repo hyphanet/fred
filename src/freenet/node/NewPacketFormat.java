@@ -541,8 +541,11 @@ fragments:
 				}
 			}
 
-			synchronized(npf.bufferUsageLock) {
-				npf.usedBufferOtherSide -= completedMessagesSize;
+			if(completedMessagesSize > 0) {
+				synchronized(npf.bufferUsageLock) {
+					npf.usedBufferOtherSide -= completedMessagesSize;
+					if(logMINOR) Logger.minor(this, "Removed " + completedMessagesSize + " from remote buffer. Total is now " + npf.usedBufferOtherSide);
+				}
 			}
 
 			return System.currentTimeMillis() - sentTime;
