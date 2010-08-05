@@ -136,6 +136,8 @@ public class NewPacketFormat implements PacketFormat {
 			PartiallyReceivedBuffer recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
+				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Creating buffer");
+
 				recvBuffer = new PartiallyReceivedBuffer(this);
 				if(fragment.firstFragment) recvBuffer.setMessageLength(fragment.messageLength);
 
@@ -161,11 +163,15 @@ public class NewPacketFormat implements PacketFormat {
 
 				synchronized(bufferUsageLock) {
 					usedBuffer -= recvBuffer.messageLength;
+					if(logMINOR) Logger.minor(this, "Removed " + recvBuffer.messageLength + " from buffer. Total is now " + usedBuffer);
 				}
 
 				synchronized(finishedMessages) {
 					finishedMessages.add(fragment.messageID, fragment.messageID);
 				}
+				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Completed");
+			} else {
+				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": " + recvMap);
 			}
 		}
 
@@ -423,7 +429,7 @@ fragments:
 					bufferUsage = usedBufferOtherSide;
 				}
 				if((bufferUsage + item.buf.length) > MAX_BUFFER_SIZE) {
-					if(logMINOR) Logger.minor(this, "Would excede remote buffer size, requeuing and sending packet");
+					if(logMINOR) Logger.minor(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
 					messageQueue.pushfrontPrioritizedMessageItem(item);
 					break fragments;
 				}
@@ -452,6 +458,7 @@ fragments:
 
 				synchronized(bufferUsageLock) {
 					usedBufferOtherSide += item.buf.length;
+					if(logMINOR) Logger.minor(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide);
 				}
 			}
 		}
@@ -482,6 +489,7 @@ fragments:
 		}
 		synchronized(bufferUsageLock) {
 			usedBufferOtherSide -= messageSize;
+			if(logMINOR) Logger.minor(this, "Removed " + messageSize + " from remote buffer. Total is now " + usedBufferOtherSide);
 		}
 	}
 
@@ -604,10 +612,17 @@ fragments:
 
 		private boolean setMessageLength(int messageLength) {
 			this.messageLength = messageLength;
+
+			if(buffer.length > messageLength) {
+				Logger.warning(this, "Buffer is larger than set message length! (" + buffer.length + ">" + messageLength + ")");
+			}
+
 			return resize(messageLength);
 		}
 
 		private boolean resize(int length) {
+			if(logMINOR) Logger.minor(this, "Resizing from " + buffer.length + " to " + length);
+
 			synchronized(npf.bufferUsageLock) {
 				if((npf.usedBuffer + (length - buffer.length)) > MAX_BUFFER_SIZE) {
 					if(logMINOR) Logger.minor(this, "Could not resize buffer, would excede max size");
@@ -615,6 +630,7 @@ fragments:
 				}
 
 				npf.usedBuffer += (length - buffer.length);
+				if(logMINOR) Logger.minor(this, "Added " + (length - buffer.length) + " to buffer. Total is now " + npf.usedBuffer);
 			}
 
 			byte[] newBuffer = new byte[length];
