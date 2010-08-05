@@ -1,5 +1,7 @@
 package freenet.node;
 
+import java.util.Comparator;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.SortedSet;
@@ -180,6 +182,7 @@ class NPFPacket {
 		}
 
 		//Add fragments
+		Collections.sort(fragments, new MessageFragmentComparator());
 		long prevFragmentID = -1;
 		for(MessageFragment fragment : fragments) {
 			if(fragment.shortMessage) buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x80);
@@ -274,5 +277,14 @@ class NPFPacket {
 
 	public int getLength() {
 		return length;
+	}
+
+	private static class MessageFragmentComparator implements Comparator<MessageFragment> {
+		@Override
+		public int compare(MessageFragment frag1, MessageFragment frag2) {
+			if(frag1.messageID < frag2.messageID) return -1;
+			if(frag1.messageID == frag2.messageID) return 0;
+			return 1;
+		}
 	}
 }
