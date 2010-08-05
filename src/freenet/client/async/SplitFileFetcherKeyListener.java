@@ -376,6 +376,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		fetcher.setKeyCount(keyCount, container);
 		if(deactivateFetcher)
 			container.deactivate(fetcher, 1);
+		// Don't save the bloom filter, to limit I/O.
+		// Frequent restarts will result in higher false positive rates.
 	}
 
 	private boolean writingBloomFilter;
