@@ -55,6 +55,7 @@ public class NewPacketFormat implements PacketFormat {
 	private final HashMap<SessionKey, Long> watchListOffsets = new HashMap<SessionKey, Long>();
 	private long highestReceivedSeqNum = -1;
 	private volatile long highestReceivedAck = -1;
+	private final SparseBitmap finishedMessages = new SparseBitmap();
 
 	private int usedBuffer = 0;
 	private int usedBufferOtherSide = 0;
@@ -128,6 +129,10 @@ public class NewPacketFormat implements PacketFormat {
 			dontAck = true;
 		}
 		for(MessageFragment fragment : packet.getFragments()) {
+			synchronized(finishedMessages) {
+				if(finishedMessages.contains(fragment.messageID, fragment.messageID)) continue;
+			}
+
 			PartiallyReceivedBuffer recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
@@ -156,6 +161,10 @@ public class NewPacketFormat implements PacketFormat {
 
 				synchronized(bufferUsageLock) {
 					usedBuffer -= recvBuffer.messageLength;
+				}
+
+				synchronized(finishedMessages) {
+					finishedMessages.add(fragment.messageID, fragment.messageID);
 				}
 			}
 		}
