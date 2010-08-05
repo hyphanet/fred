@@ -536,7 +536,7 @@ public class NewPacketFormat implements PacketFormat {
 					synchronized(started) {
 						started.remove(wrapper.getMessageID());
 					}
-					completedMessagesSize = wrapper.getLength();
+					completedMessagesSize += wrapper.getLength();
 				}
 			}
 
