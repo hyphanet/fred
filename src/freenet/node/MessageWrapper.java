@@ -6,13 +6,13 @@ import freenet.support.SparseBitmap;
 public class MessageWrapper {
 	private final MessageItem item;
 	private final boolean isShortMessage;
-	private final long messageID;
+	private final int messageID;
 	
 	//Sorted lists of non-overlapping ranges
 	private final SparseBitmap acks = new SparseBitmap();
 	private final SparseBitmap sent = new SparseBitmap();
 
-	public MessageWrapper(MessageItem item, long messageID) {
+	public MessageWrapper(MessageItem item, int messageID) {
 		this.item = item;
 		isShortMessage = item.buf.length <= 255;
 		this.messageID = messageID;
@@ -67,7 +67,7 @@ public class MessageWrapper {
 		return bytesToResend;
 	}
 
-	public long getMessageID() {
+	public int getMessageID() {
 		return messageID;
 	}
 

@@ -66,7 +66,7 @@ class NPFPacket {
 		}
 
 		//Handle received message fragments
-		long prevFragmentID = -1;
+		int prevFragmentID = -1;
 		while(offset < plaintext.length) {
 			if(plaintext.length < (offset + 2)) {
 				packet.error = true;
@@ -77,7 +77,7 @@ class NPFPacket {
 			boolean isFragmented = (plaintext[offset] & 0x40) != 0;
 			boolean firstFragment = (plaintext[offset] & 0x20) != 0;
 
-			long messageID = -1;
+			int messageID = -1;
 			if((plaintext[offset] & 0x10) != 0) {
 				messageID = ((plaintext[offset] & 0x0F) << 24)
 				                | ((plaintext[offset + 1] & 0xFF) << 16)

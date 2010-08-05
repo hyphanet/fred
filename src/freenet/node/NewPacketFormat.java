@@ -43,12 +43,12 @@ public class NewPacketFormat implements PacketFormat {
 	private final int[] lastRtts;
 	private int nextRttPos;
 
-	private final ArrayList<HashMap<Long, MessageWrapper>> startedByPrio;
+	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private long nextSequenceNumber = 0;
-	private long nextMessageID = 0;
+	private int nextMessageID = 0;
 
-	private final HashMap<Long, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Long, PartiallyReceivedBuffer>();
-	private final HashMap<Long, SparseBitmap> receiveMaps = new HashMap<Long, SparseBitmap>();
+	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
+	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
 
 	//FIXME: Should be a better way to store it
 	private final HashMap<SessionKey, byte[][]> seqNumWatchLists = new HashMap<SessionKey, byte[][]>();
@@ -63,9 +63,9 @@ public class NewPacketFormat implements PacketFormat {
 	public NewPacketFormat(PeerNode pn) {
 		this.pn = pn;
 
-		startedByPrio = new ArrayList<HashMap<Long, MessageWrapper>>(DMT.NUM_PRIORITIES);
+		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
 		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
-			startedByPrio.add(new HashMap<Long, MessageWrapper>());
+			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
 		}
 
 		lastRtts = new int[100];
@@ -387,7 +387,7 @@ public class NewPacketFormat implements PacketFormat {
 
 fragments:
 		for(int i = 0; i < startedByPrio.size(); i++) {
-			HashMap<Long, MessageWrapper> started = startedByPrio.get(i);
+			HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
 
 			//Try to finish messages that have been started
 			synchronized(started) {
@@ -419,7 +419,7 @@ fragments:
 					break fragments;
 				}
 
-				long messageID = getMessageID();
+				int messageID = getMessageID();
 				if(messageID == -1) {
 					if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
 					messageQueue.pushfrontPrioritizedMessageItem(item);
@@ -436,7 +436,7 @@ fragments:
 				sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
 
 				//Priority of the one we grabbed might be higher than i
-				HashMap<Long, MessageWrapper> queue = startedByPrio.get(item.getPriority());
+				HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
 				synchronized(queue) {
 					queue.put(messageID, wrapper);
 				}
@@ -462,7 +462,7 @@ fragments:
 
 	public void onDisconnect() {
 		int messageSize = 0;
-		for(HashMap<Long, MessageWrapper> queue : startedByPrio) {
+		for(HashMap<Integer, MessageWrapper> queue : startedByPrio) {
 			synchronized(queue) {
 				for(MessageWrapper wrapper : queue.values()) {
 					wrapper.onDisconnect();
@@ -476,8 +476,8 @@ fragments:
 		}
 	}
 
-	private long getMessageID() {
-		long messageID;
+	private int getMessageID() {
+		int messageID;
 		synchronized(this) {
 			messageID = nextMessageID++;
 		}
@@ -533,7 +533,7 @@ fragments:
 				int[] range = rangeIt.next();
 
 				if(wrapper.ack(range[0], range[1])) {
-					HashMap<Long, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
+					HashMap<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
 					synchronized(started) {
 						started.remove(wrapper.getMessageID());
 					}
