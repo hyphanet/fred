@@ -551,10 +551,11 @@ fragments:
 
 				if(wrapper.ack(range[0], range[1])) {
 					HashMap<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
+					MessageWrapper removed = null;
 					synchronized(started) {
-						started.remove(wrapper.getMessageID());
+						removed = started.remove(wrapper.getMessageID());
 					}
-					completedMessagesSize += wrapper.getLength();
+					if(removed != null) completedMessagesSize += wrapper.getLength();
 				}
 			}
 
