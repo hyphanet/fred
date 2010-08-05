@@ -1384,9 +1384,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	void fail(FetchException e, ObjectContainer container, ClientContext context, boolean dontDeactivateParent) {
 		if(logMINOR) Logger.minor(this, "Failing segment "+this, e);
+		boolean alreadyDecoding = false;
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
+			alreadyDecoding = startedDecode;
 			this.failureException = e;
 			// Failure in decode is possible.
 			for(int i=0;i<checkBuckets.length;i++) {
@@ -1408,7 +1410,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.store(this);
 			container.activate(parentFetcher, 1);
 		}
-		parentFetcher.removeMyPendingKeys(this, container, context);
+		if(!alreadyDecoding)
+			parentFetcher.removeMyPendingKeys(this, container, context);
 		parentFetcher.segmentFinished(this, container, context);
 		if(persistent && !dontDeactivateParent)
 			container.deactivate(parentFetcher, 1);
