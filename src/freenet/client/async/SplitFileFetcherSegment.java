@@ -1740,14 +1740,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 		boolean killSeg = false;
 		FetchException fatal = null;
 		synchronized(this) {
-			if(finished || startedDecode || fetcherFinished) {
-				if(logMINOR) Logger.minor(this, "Rejecting block because "+(finished?"finished ":"")+(startedDecode?"started decode ":"")+(fetcherFinished?"fetcher finished ":""));
-				return false;
-			}
 			blockNum = this.getBlockNumber(key, container);
 			if(blockNum < 0) {
 				if(logMINOR) Logger.minor(this, "Rejecting block because not found");
 				return false;
+			}
+			if(finished || startedDecode || fetcherFinished) {
+				if(logMINOR) Logger.minor(this, "Rejecting block because "+(finished?"finished ":"")+(startedDecode?"started decode ":"")+(fetcherFinished?"fetcher finished ":""));
+				return true; // The block was present but we didn't want it.
 			}
 			if(logMINOR)
 				Logger.minor(this, "Found key for block "+blockNum+" on "+this+" in onGotKey() for "+key);
