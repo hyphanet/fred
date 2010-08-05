@@ -359,7 +359,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					return -1;
 				}
 				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
-				setFoundKey(blockNo, container);
+				setFoundKey(blockNo, container, context);
 				if(persistent) {
 					data.storeTo(container);
 					container.store(dataBuckets[blockNo]);
@@ -391,7 +391,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 					return -1;
 				}
-				setFoundKey(blockNo, container);
+				setFoundKey(blockNo, container, context);
 				if(persistent) {
 					data.storeTo(container);
 					container.store(checkBuckets[checkNo]);
@@ -449,13 +449,18 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return res;
 	}
 	
-	private void setFoundKey(int blockNo, ObjectContainer container) {
+	private void setFoundKey(int blockNo, ObjectContainer container, ClientContext context) {
 		if(keys == null) migrateToKeys(container);
 		else {
 			if(persistent) container.activate(keys, 1);
 		}
 		foundKeys[blockNo] = true;
 		if(persistent) container.store(this);
+		SplitFileFetcherKeyListener listener = parentFetcher.getListener();
+		if(listener == null)
+			Logger.error(this, "NO LISTENER FOR "+this, new Exception("error"));
+		else
+			listener.removeKey(keys.getNodeKey(blockNo, null, false), this, container, context);
 	}
 
 	private boolean haveFoundKey(int blockNo, ObjectContainer container) {
@@ -1048,7 +1053,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					checkBuckets[i].removeFrom(container);
 				checkBuckets[i] = null;
-				setFoundKey(i+dataBuckets.length, container);
+				setFoundKey(i+dataBuckets.length, container, context);
 			}
 			if(logMINOR) {
 				if(allEncodedCorrectly) Logger.minor(this, "All encoded correctly on "+this);
@@ -1177,7 +1182,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Logger.error(this, "Block already finished: "+blockNo);
 				return;
 			}
-			setFoundKey(blockNo, container);
+			setFoundKey(blockNo, container, context);
 			// :(
 			boolean deactivateParent = false; // can get called from wierd places, don't deactivate parent if not necessary
 			if(persistent) {

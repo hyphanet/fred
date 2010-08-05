@@ -927,5 +927,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		this.cachedSegmentBloomFilters = segmentFilters;
 	}
 
+	public SplitFileFetcherKeyListener getListener() {
+		return tempListener;
+	}
+
 
 }
