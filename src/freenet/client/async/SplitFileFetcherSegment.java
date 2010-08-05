@@ -454,7 +454,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		else {
 			if(persistent) container.activate(keys, 1);
 		}
-		foundKeys[blockNo] = true;
+		synchronized(this) {
+			if(foundKeys[blockNo]) return;
+			foundKeys[blockNo] = true;
+		}
 		if(persistent) container.store(this);
 		SplitFileFetcherKeyListener listener = parentFetcher.getListener();
 		if(listener == null)
