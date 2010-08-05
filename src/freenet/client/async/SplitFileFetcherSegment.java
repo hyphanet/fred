@@ -1557,7 +1557,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(k.getNodeKey(false).equals(key)) {
 				if(getCooldownWakeup(i) > time) {
 					if(logMINOR)
-						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(dataCooldownTimes[i]-time)+"ms");
+						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(getCooldownWakeup(i)-time)+"ms");
 					return false;
 				}
 				int tries = getRetries(i);
