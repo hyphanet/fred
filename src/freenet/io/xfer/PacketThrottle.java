@@ -167,7 +167,7 @@ public class PacketThrottle {
 				// If we have different timeouts, and we have packets 1 and 2 timeout and 3 and 4 not timeout,
 				// we could end up not sending 3 and 4 at all if we use == here.
 				boolean wereNext=(_packetSeq>=(thisTicket-_abandonedTickets));
-				//If there is room for it in the window, break and send it immeadiately
+				//If there is room for it in the window, break and send it immediately
 				if(_packetsInFlight < windowSize && wereNext) {
 					_packetsInFlight++;
 					_packetSeq++;

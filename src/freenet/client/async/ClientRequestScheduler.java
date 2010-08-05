@@ -305,9 +305,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(logMINOR) Logger.minor(this, "Key listener is cancelled, not registering: "+hasListener);
 				return;
 			}
+			container.store(hasListener);
 			listener = hasListener.makeKeyListener(container, clientContext);
 			schedCore.addPendingKeys(listener);
-			container.store(hasListener);
 		} else
 			listener = null;
 		

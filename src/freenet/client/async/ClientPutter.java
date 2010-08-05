@@ -83,7 +83,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.getCHKOnly = getCHKOnly;
 		this.client = client;
 		this.data = data;
-		this.targetURI = targetURI;
+		this.targetURI = targetURI.clone();
 		this.ctx = ctx;
 		this.finished = false;
 		this.cancelled = false;
@@ -291,9 +291,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(state != null && state != oldState && persistent())
 			state.removeFrom(container, context);
 		if(super.failedBlocks > 0 || super.fatallyFailedBlocks > 0 || super.successfulBlocks < super.totalBlocks) {
-			Logger.error(this, "Failed blocks: "+failedBlocks+", Fatally failed blocks: "+fatallyFailedBlocks+
-					", Successful blocks: "+successfulBlocks+", Total blocks: "+totalBlocks+" but success?! on "+this+" from "+state,
-					new Exception("debug"));
+			if(persistent()) container.activate(uri, 1);
+			// USK auxiliary inserts are allowed to fail.
+			if(!uri.isUSK())
+				Logger.error(this, "Failed blocks: "+failedBlocks+", Fatally failed blocks: "+fatallyFailedBlocks+
+						", Successful blocks: "+successfulBlocks+", Total blocks: "+totalBlocks+" but success?! on "+this+" from "+state,
+						new Exception("debug"));
 		}
 		if(persistent())
 			container.store(this);

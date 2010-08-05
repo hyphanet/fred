@@ -205,6 +205,24 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
+	public FetchException(int mode, long expectedSize, Throwable t, String expectedMimeType) {
+		super(getMessage(mode)+": "+t.getMessage());
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
+		extraMessage = t.getMessage();
+		this.mode = mode;
+		this.expectedSize = expectedSize;
+		this.expectedMimeType = expectedMimeType;
+		errorCodes = null;
+		initCause(t);
+		newURI = null;
+		expectedSize = -1;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(logMINOR) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
+	}
+
 	public FetchException(int mode, FailureCodeTracker errorCodes) {
 		super(getMessage(mode));
 		if(mode == 0)
@@ -436,6 +454,8 @@ public class FetchException extends Exception {
 	public static final int CONTENT_VALIDATION_BAD_MIME = 33;
 	/** The metadata specified a hash but the data didn't match it. */
 	public static final int CONTENT_HASH_FAILED = 34;
+	/** FEC decode produced a block that doesn't match the data in the original splitfile. */
+	public static final int SPLITFILE_DECODE_ERROR = 35;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -465,6 +485,7 @@ public class FetchException extends Exception {
 		case TOO_BIG_METADATA:
 		case TOO_MANY_BLOCKS_PER_SEGMENT:
 		case CONTENT_HASH_FAILED:
+		case SPLITFILE_DECODE_ERROR:
 			return true;
 
 		// Low level errors, can be retried

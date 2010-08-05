@@ -101,7 +101,10 @@ public class Bzip2Compressor implements Compressor {
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		CBZip2InputStream bz2is = new CBZip2InputStream(new BufferedInputStream(is));
 		long written = 0;
-		byte[] buffer = new byte[4096];
+		int bufSize = 32768;
+		if(maxLength > 0 && maxLength < (long)bufSize)
+			bufSize = (int)maxLength;
+		byte[] buffer = new byte[bufSize];
 		while(true) {
 			int l = (int) Math.min(buffer.length, maxLength - written);
 			// We can over-read to determine whether we have over-read.

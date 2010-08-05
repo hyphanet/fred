@@ -57,7 +57,7 @@ function processReqChange() {
 			}else{
 				document.getElementById('infoContent').innerHTML=substringTillClosing(req.responseText,req.responseText.indexOf("id=\"infoContent\""))
 			}
-		}else if(req.status==500){
+		}else if(req.status==500 || req.status==404){
 			timer_disabled=1;
 			window.location.reload();
 		}

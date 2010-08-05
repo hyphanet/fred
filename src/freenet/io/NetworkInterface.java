@@ -365,11 +365,16 @@ public class NetworkInterface implements Closeable {
 
 	public void waitBound() throws InterruptedException {
 		synchronized(syncObject) {
-			while (!isBound()) {
+			if(isBound()) return;
+			while (true) {
 				Logger.error(this, "Network interface isn't bound, waiting");
 				syncObject.wait();
+				if(isBound()) {
+					Logger.error(this, "Finished waiting, network interface is now bound");
+					return;
+				}
 			}
-			Logger.error(this, "Finished waiting, network interface is now bound");
+			
 		}
 	}
 

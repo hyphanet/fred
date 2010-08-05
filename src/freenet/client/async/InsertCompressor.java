@@ -126,7 +126,7 @@ public class InsertCompressor implements CompressJob {
 		// Try each algorithm, starting with the fastest and weakest.
 		// Stop when run out of algorithms, or the compressed data fits in a single block.
 		try {
-			BucketChainBucketFactory bucketFactory2 = new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, 1024);
+			BucketChainBucketFactory bucketFactory2 = new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, 1024, true);
 			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor, pre1254);
 			boolean first = true;
 			for (final COMPRESSOR_TYPE comp : comps) {
@@ -173,9 +173,17 @@ public class InsertCompressor implements CompressJob {
 						maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
 					}
 					first = false;
-					comp.compress(is, os, origSize, maxOutputSize);
-					is.close();
-					os.close();
+					try {
+						comp.compress(is, os, origSize, maxOutputSize);
+					} catch (RuntimeException e) {
+						// ArithmeticException has been seen in bzip2 codec.
+						Logger.error(this, "Compression failed with codec "+comp+" : "+e, e);
+						// Try the next one
+						continue;
+					} finally {
+						is.close();
+						os.close();
+					}
 					long resultSize = result.size();
 					if(hasher != null) hashes = hasher.getResults();
 					// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH

@@ -356,9 +356,11 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				if(!req.persistent() && !isInsertScheduler) {
 					List<BaseSendableGet> recent = schedTransient.recentSuccesses;
 					BaseSendableGet altReq = null;
-					if(!recent.isEmpty()) {
-						if(random.nextBoolean()) {
-							altReq = recent.remove(recent.size()-1);
+					synchronized(recent) {
+						if(!recent.isEmpty()) {
+							if(random.nextBoolean()) {
+								altReq = recent.remove(recent.size()-1);
+							}
 						}
 					}
 					if(altReq != null && (altReq.isCancelled(container) || altReq.isEmpty(container))) {
@@ -378,7 +380,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 							// Don't use the recent one
 							if(logMINOR)
 								Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
-							recent.add(altReq);
+							synchronized(recent) {
+								recent.add(altReq);
+							}
 						}
 					}
 				} else if(!isInsertScheduler) {

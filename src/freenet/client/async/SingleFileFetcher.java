@@ -859,8 +859,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				if(persistent) container.store(clientMetadata);
-				String mime = clientMetadata.getMIMEType();
-				if(mime != null) rcb.onExpectedMIME(mime, container, context);
 				
 				String mimeType = clientMetadata.getMIMETypeNoParams();
 				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
@@ -874,6 +872,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					}
 					if(logMINOR) Logger.minor(this, "Handling implicit container... (splitfile)");
 					continue;
+				} else {
+					String mime = clientMetadata.getMIMEType();
+					if(mime != null) rcb.onExpectedMIME(mime, container, context);
 				}
 				
 				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null &&
@@ -1447,7 +1448,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 	}
 
-	public static class MyUSKFetcherCallback implements USKFetcherCallback {
+	public static class MyUSKFetcherCallback implements USKFetcherTagCallback {
 
 		final ClientRequester parent;
 		final GetCompletionCallback cb;
@@ -1462,6 +1463,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final Bucket returnBucket;
 		final boolean persistent;
 		final boolean datastoreOnly;
+		final int hashCode;
+		private USKFetcherTag tag;
+		
+		public void setTag(USKFetcherTag tag, ObjectContainer container, ClientContext context) {
+			this.tag = tag;
+			if(persistent) container.store(this);
+		}
 		
 		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket, boolean persistent, boolean datastoreOnly) {
 			this.parent = requester;
@@ -1477,6 +1485,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.returnBucket = returnBucket;
 			this.persistent = persistent;
 			this.datastoreOnly = datastoreOnly;
+			this.hashCode = super.hashCode();
+			if(logMINOR) Logger.minor(this, "Created "+this+" for "+usk+" and "+cb+" datastore only = "+datastoreOnly);
+		}
+		
+		public int hashCode() {
+			return hashCode;
 		}
 
 		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
@@ -1489,13 +1503,19 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(l == usk.suggestedEdition) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, false, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true, false, (short)0, container, context);
+					if(tag != null) {
+						if(persistent) container.activate(cb, 1);
+						cb.onTransition(tag, sf, container);
+					}
 					sf.schedule(container, context);
 					if(persistent) removeFrom(container);
 				} else {
+					if(persistent) container.activate(cb, 1);
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null, container, context);
 					if(persistent) removeFrom(container);
 				}
 			} catch (FetchException e) {
+				if(persistent) container.activate(cb, 1);
 				cb.onFailure(e, null, container, context);
 				if(persistent) removeFrom(container);
 			}
@@ -1509,13 +1529,25 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onFailure(ObjectContainer container, ClientContext context) {
+			FetchException e = null;
 			if(datastoreOnly) {
-				onFoundEdition(usk.suggestedEdition, usk, container, context, false, (short) -1, null, false, false);
-				return;
+				if(persistent)
+					container.activate(usk, Integer.MAX_VALUE);
+				try {
+					onFoundEdition(usk.suggestedEdition, usk, container, context, false, (short) -1, null, false, false);
+					return;
+				} catch (Throwable t) {
+					e = new FetchException(FetchException.INTERNAL_ERROR, t);
+				}
 			}
 			if(persistent)
 				container.activate(this, 2);
-			cb.onFailure(new FetchException(FetchException.DATA_NOT_FOUND, "No USK found"), null, container, context);
+			if(e == null) e = new FetchException(FetchException.DATA_NOT_FOUND, "No USK found");
+			if(logMINOR) Logger.minor(this, "Failing USK with "+e, e);
+			if(persistent) container.activate(cb, 1);
+			if(cb == null)
+				throw new NullPointerException("Callback is null in "+this+" for usk "+usk+" with datastoreOnly="+datastoreOnly);
+			cb.onFailure(e, null, container, context);
 			if(persistent) removeFrom(container);
 		}
 

@@ -11,6 +11,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 
+import com.db4o.ObjectContainer;
+
 public abstract class BloomFilter {
 	protected ByteBuffer filter;
 
@@ -18,7 +20,11 @@ public abstract class BloomFilter {
 	protected final int k;
 	protected final int length;
 
-	protected ReadWriteLock lock = new ReentrantReadWriteLock();
+	protected transient ReadWriteLock lock = new ReentrantReadWriteLock();
+	
+	public void init(ObjectContainer container) {
+		lock = new ReentrantReadWriteLock();
+	}
 
 	public static BloomFilter createFilter(int length, int k, boolean counting) {
 		if (length == 0)
@@ -209,4 +215,30 @@ public abstract class BloomFilter {
 	protected void finalize() {
 		close();
 	}
+	
+	public void storeTo(ObjectContainer container) {
+		container.store(filter);
+		container.store(this);
+	}
+	
+	public int getSizeBytes() {
+		return filter.capacity();
+	}
+	
+	public int getLength() {
+		return length;
+	}
+	
+	public int getFilledCount() {
+		int x = 0;
+		for(int i=0;i<length;i++)
+			if(getBit(i)) x++;
+		return x;
+	}
+	
+	public void removeFrom(ObjectContainer container) {
+		container.delete(filter);
+		container.delete(this);
+	}
+
 }

@@ -74,7 +74,10 @@ public class GzipCompressor implements Compressor {
 		GZIPInputStream gis = new GZIPInputStream(new BufferedInputStream(is, 32768));
 		os = new BufferedOutputStream(os, 32768);
 		long written = 0;
-		byte[] buffer = new byte[4096];
+		int bufSize = 32768;
+		if(maxLength > 0 && maxLength < (long)bufSize)
+			bufSize = (int)maxLength;
+		byte[] buffer = new byte[bufSize];
 		while(true) {
 			int l = (int) Math.min(buffer.length, maxLength - written);
 			// We can over-read to determine whether we have over-read.

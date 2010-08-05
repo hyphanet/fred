@@ -30,7 +30,9 @@ import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.keys.NodeCHK;
 import freenet.node.SendableGet;
+import freenet.support.BinaryBloomFilter;
 import freenet.support.BloomFilter;
+import freenet.support.CountingBloomFilter;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -39,6 +41,7 @@ import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /**
  * Fetch a splitfile, decompress it if need be, and return it to the GetCompletionCallback.
@@ -108,6 +111,11 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	/** The per-segment bloom filters are kept in this (slightly larger) file,
 	 * appended one after the next. */
 	File altBloomFile;
+	
+	// The above are obsolete. We now store the bloom filter in the database.
+	CountingBloomFilter cachedMainBloomFilter;
+	BinaryBloomFilter[] cachedSegmentBloomFilters;
+	
 	/** Size of the main Bloom filter in bytes. */
 	final int mainBloomFilterSizeBytes;
 	/** Default mainBloomElementsPerKey. False positives is approx
@@ -170,17 +178,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			throw new FetchException(FetchException.CANCELLED);
 		overrideLength = metadata.dataLength();
 		this.splitfileType = metadata.getSplitfileType();
-		ClientCHK[] splitfileDataBlocks = metadata.getSplitfileDataKeys();
-		ClientCHK[] splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
+		SplitFileSegmentKeys[] segmentKeys = metadata.grabSegmentKeys(container);
 		if(persistent) {
 			// Clear them here so they don't get deleted and we don't need to clone them.
 			metadata.clearSplitfileKeys();
 			container.store(metadata);
 		}
-		for(int i=0;i<splitfileDataBlocks.length;i++)
-			if(splitfileDataBlocks[i] == null) throw new MetadataParseException("Null: data block "+i+" of "+splitfileDataBlocks.length);
-		for(int i=0;i<splitfileCheckBlocks.length;i++)
-			if(splitfileCheckBlocks[i] == null) throw new MetadataParseException("Null: check block "+i+" of "+splitfileCheckBlocks.length);
 		long eventualLength = Math.max(overrideLength, metadata.uncompressedDataLength());
 		boolean wasActive = true;
 		if(persistent) {
@@ -201,75 +204,28 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 		this.token = token2;
 		
-		CompatibilityMode minCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
-		CompatibilityMode maxCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
+		CompatibilityMode minCompatMode = metadata.getMinCompatMode();
+		CompatibilityMode maxCompatMode = metadata.getMaxCompatMode();
 
-		int crossCheckBlocks = 0;
+		int crossCheckBlocks = metadata.getCrossCheckBlocks();
+		
+		blocksPerSegment = metadata.getDataBlocksPerSegment();
+		checkBlocksPerSegment = metadata.getCheckBlocksPerSegment();
+		
+		int splitfileDataBlocks = 0;
+		int splitfileCheckBlocks = 0;
+		
+		for(SplitFileSegmentKeys keys : segmentKeys) {
+			splitfileDataBlocks += keys.getDataBlocks();
+			splitfileCheckBlocks += keys.getCheckBlocks();
+		}
 		
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
-			// Don't need to do much - just fetch everything and piece it together.
-			blocksPerSegment = -1;
-			checkBlocksPerSegment = -1;
-			segmentCount = 1;
-			deductBlocksFromSegments = 0;
-			if(splitfileCheckBlocks.length > 0) {
-				Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet "+splitfileCheckBlocks.length+" check blocks found!! : "+this);
-				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile type is non-redundant yet have "+splitfileCheckBlocks.length+" check blocks");
+			if(splitfileCheckBlocks > 0) {
+				Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet "+splitfileCheckBlocks+" check blocks found!! : "+this);
+				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile type is non-redundant yet have "+splitfileCheckBlocks+" check blocks");
 			}
 		} else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			byte[] params = metadata.splitfileParams();
-			int checkBlocks;
-			if(metadata.getParsedVersion() == 0) {
-				if((params == null) || (params.length < 8))
-					throw new MetadataParseException("No splitfile params");
-				blocksPerSegment = Fields.bytesToInt(params, 0);
-				checkBlocks = Fields.bytesToInt(params, 4);
-				deductBlocksFromSegments = 0;
-				int countDataBlocks = splitfileDataBlocks.length;
-				int countCheckBlocks = splitfileCheckBlocks.length;
-				if(countDataBlocks == countCheckBlocks) {
-					// No extra check blocks, so before 1251.
-					if(blocksPerSegment == 128) {
-						// Is the last segment small enough that we can't have used even splitting?
-						int segs = (int)Math.ceil(((double)countDataBlocks) / 128);
-						int segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
-						if(segSize == 128) {
-							// Could be either
-							minCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
-							maxCompatMode = CompatibilityMode.COMPAT_1250;
-						} else {
-							minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
-						}
-					} else {
-						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250;
-					}
-				} else {
-					if(checkBlocks == 64) {
-						// Very old 128/64 redundancy.
-						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
-					} else {
-						// Extra block per segment in 1251.
-						minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
-					}
-				}
-			} else {
-				minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
-				if(params.length < 10)
-					throw new MetadataParseException("Splitfile parameters too short for version 1");
-				short paramsType = Fields.bytesToShort(params, 0);
-				if(paramsType == Metadata.SPLITFILE_PARAMS_SIMPLE_SEGMENT || paramsType == Metadata.SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS || paramsType == Metadata.SPLITFILE_PARAMS_CROSS_SEGMENT) {
-					blocksPerSegment = Fields.bytesToInt(params, 2);
-					checkBlocks = Fields.bytesToInt(params, 6);
-				} else
-					throw new MetadataParseException("Unknown splitfile params type "+paramsType);
-				if(paramsType == Metadata.SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS || paramsType == Metadata.SPLITFILE_PARAMS_CROSS_SEGMENT) {
-					deductBlocksFromSegments = Fields.bytesToInt(params, 10);
-					if(paramsType == Metadata.SPLITFILE_PARAMS_CROSS_SEGMENT) {
-						crossCheckBlocks = Fields.bytesToInt(params, 14);
-					}
-				} else
-					deductBlocksFromSegments = 0;
-			}
 			
 			boolean dontCompress = decompressors.isEmpty();
 			if(topCompatibilityMode != 0) {
@@ -283,60 +239,33 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			}
 			cb.onSplitfileCompatibilityMode(minCompatMode, maxCompatMode, metadata.getCustomSplitfileKey(), dontCompress, true, topCompatibilityMode != 0, container, context);
 
-			// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
-			// Work around a bug around build 1135.
-			// We were splitting as (128,255), but we were then setting the checkBlocksPerSegment to 64.
-			// Detect this.
-			if(checkBlocks == 64 && blocksPerSegment == 128 &&
-					splitfileCheckBlocks.length == splitfileDataBlocks.length - (splitfileDataBlocks.length / 128)) {
-				Logger.normal(this, "Activating 1135 wrong check blocks per segment workaround for "+this);
-				checkBlocks = 127;
-			}
-			checkBlocksPerSegment = checkBlocks;
-
 			if((blocksPerSegment > fetchContext.maxDataBlocksPerSegment)
 					|| (checkBlocksPerSegment > fetchContext.maxCheckBlocksPerSegment))
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
-			segmentCount = (splitfileDataBlocks.length / (blocksPerSegment + crossCheckBlocks)) +
-				(splitfileDataBlocks.length % (blocksPerSegment + crossCheckBlocks) == 0 ? 0 : 1);
+			
 				
-			// Onion, 128/192.
-			// Will be segmented.
 		} else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
+		segmentCount = metadata.getSegmentCount();
 		this.maxTempLength = fetchContext.maxTempLength;
 		if(logMINOR)
 			Logger.minor(this, "Algorithm: "+splitfileType+", blocks per segment: "+blocksPerSegment+
 					", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount+
-					", data blocks: "+splitfileDataBlocks.length+", check blocks: "+splitfileCheckBlocks.length);
+					", data blocks: "+splitfileDataBlocks+", check blocks: "+splitfileCheckBlocks);
 		segments = new SplitFileFetcherSegment[segmentCount]; // initially null on all entries
 
 		this.crossCheckBlocks = crossCheckBlocks;
 		
-		long finalLength = 1L * (splitfileDataBlocks.length - segmentCount * crossCheckBlocks) * CHKBlock.DATA_LENGTH;
+		long finalLength = 1L * (splitfileDataBlocks - segmentCount * crossCheckBlocks) * CHKBlock.DATA_LENGTH;
 		if(finalLength > overrideLength) {
 			if(finalLength - overrideLength > CHKBlock.DATA_LENGTH)
 				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+finalLength+" but length is "+finalLength);
 			finalLength = overrideLength;
 		}
 		
-		// Setup bloom parameters.
-		if(persistent) {
-			// FIXME: Should this be encrypted? It's protected to some degree by the salt...
-			// Since it isn't encrypted, it's likely to be very sparse; we should name
-			// it appropriately...
-			try {
-				mainBloomFile = context.persistentFG.makeRandomFile();
-				altBloomFile = context.persistentFG.makeRandomFile();
-			} catch (IOException e) {
-				throw new FetchException(FetchException.BUCKET_ERROR, "Unable to create Bloom filter files", e);
-			}
-		} else {
-			// Not persistent, keep purely in RAM.
-			mainBloomFile = null;
-			altBloomFile = null;
-		}
+		mainBloomFile = null;
+		altBloomFile = null;
 		int mainElementsPerKey = DEFAULT_MAIN_BLOOM_ELEMENTS_PER_KEY;
-		int origSize = splitfileDataBlocks.length + splitfileCheckBlocks.length;
+		int origSize = splitfileDataBlocks + splitfileCheckBlocks;
 		mainBloomK = (int) (mainElementsPerKey * 0.7);
 		long elementsLong = origSize * mainElementsPerKey;
 		// REDFLAG: SIZE LIMIT: 3.36TB limit!
@@ -359,9 +288,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		keyCount = origSize;
 		// Now create it.
 		if(logMINOR)
-			Logger.minor(this, "Creating block filter for "+this+": keys="+(splitfileDataBlocks.length+splitfileCheckBlocks.length)+" main bloom size "+mainBloomFilterSizeBytes+" bytes, K="+mainBloomK+", filename="+mainBloomFile+" alt bloom filter: filename="+altBloomFile+" segments: "+segments.length+" each is "+perSegmentBloomFilterSizeBytes+" bytes k="+perSegmentK);
+			Logger.minor(this, "Creating block filter for "+this+": keys="+(splitfileDataBlocks+splitfileCheckBlocks)+" main bloom size "+mainBloomFilterSizeBytes+" bytes, K="+mainBloomK+", filename="+mainBloomFile+" alt bloom filter: filename="+altBloomFile+" segments: "+segments.length+" each is "+perSegmentBloomFilterSizeBytes+" bytes k="+perSegmentK);
 		try {
-			tempListener = new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true);
+			tempListener = new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true, null, null, container);
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, "Unable to write Bloom filters for splitfile");
 		}
@@ -373,89 +302,33 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		boolean pre1250 = (minCompatMode == CompatibilityMode.COMPAT_UNKNOWN || minCompatMode == CompatibilityMode.COMPAT_1250_EXACT);
 		
 		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
-		if(segmentCount == 1) {
+		for(int i=0;i<segments.length;i++) {
 			// splitfile* will be overwritten, this is bad
 			// so copy them
-			ClientCHK[] newSplitfileDataBlocks = new ClientCHK[splitfileDataBlocks.length];
-			ClientCHK[] newSplitfileCheckBlocks = new ClientCHK[splitfileCheckBlocks.length];
-			System.arraycopy(splitfileDataBlocks, 0, newSplitfileDataBlocks, 0, splitfileDataBlocks.length);
-			if(splitfileCheckBlocks.length > 0)
-				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
-			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks,
-					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
-			for(int i=0;i<newSplitfileDataBlocks.length;i++) {
-				if(logMINOR) Logger.minor(this, "Added data block "+i+" : "+newSplitfileDataBlocks[i].getNodeKey(false));
-				tempListener.addKey(newSplitfileDataBlocks[i].getNodeKey(true), 0, context);
-			}
-			for(int i=0;i<newSplitfileCheckBlocks.length;i++) {
-				if(logMINOR) Logger.minor(this, "Added check block "+i+" : "+newSplitfileCheckBlocks[i].getNodeKey(false));
-				tempListener.addKey(newSplitfileCheckBlocks[i].getNodeKey(true), 0, context);
+			SplitFileSegmentKeys keys = segmentKeys[i];
+			int dataBlocks = keys.getDataBlocks();
+			int checkBlocks = keys.getCheckBlocks();
+			if((dataBlocks > fetchContext.maxDataBlocksPerSegment)
+					|| (checkBlocks > fetchContext.maxCheckBlocksPerSegment))
+				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
+			segments[i] = new SplitFileFetcherSegment(splitfileType, keys,
+					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, i, pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
+			int data = keys.getDataBlocks();
+			int check = keys.getCheckBlocks();
+			for(int j=0;j<(data+check);j++) {
+				tempListener.addKey(keys.getKey(j, null, false).getNodeKey(false), i, context);
 			}
 			if(persistent) {
-				container.store(segments[0]);
-				segments[0].deactivateKeys(container);
-				container.deactivate(segments[0], 1);
+				container.store(segments[i]);
+				segments[i].deactivateKeys(container);
 			}
-		} else {
-			int dataBlocksPtr = 0;
-			int checkBlocksPtr = 0;
-			for(int i=0;i<segments.length;i++) {
-				// Create a segment. Give it its keys.
-				int copyDataBlocks = blocksPerSegment + crossCheckBlocks;
-				int copyCheckBlocks = checkBlocksPerSegment;
-				if(i == segments.length - 1) {
-					// Always accept the remainder as the last segment, but do basic sanity checking.
-					// In practice this can be affected by various things: 1) On old splitfiles before full even 
-					// segment splitting with deductBlocksFromSegments (i.e. pre-1255), the last segment could be
-					// significantly smaller than the rest; 2) On 1251-1253, with partial even segment splitting,
-					// up to 131 data blocks per segment, cutting the check blocks if necessary, and with an extra
-					// check block if possible, the last segment could have *more* check blocks than the rest. 
-					copyDataBlocks = splitfileDataBlocks.length - dataBlocksPtr;
-					copyCheckBlocks = splitfileCheckBlocks.length - checkBlocksPtr;
-					if(copyCheckBlocks <= 0 || copyDataBlocks <= 0)
-						throw new FetchException(FetchException.INVALID_METADATA, "Last segment has bogus block count: total data blocks "+splitfileDataBlocks.length+" total check blocks "+splitfileCheckBlocks.length+" segment size "+blocksPerSegment+" data "+checkBlocksPerSegment+" check "+crossCheckBlocks+" cross check blocks, deduct "+deductBlocksFromSegments+", segments "+segments.length);
-					if((copyDataBlocks > fetchContext.maxDataBlocksPerSegment)
-							|| (copyCheckBlocks > fetchContext.maxCheckBlocksPerSegment))
-						throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
-				} else if(segments.length - i <= deductBlocksFromSegments) {
-					// Deduct one data block from each of the last deductBlocksFromSegments segments.
-					// This ensures no segment is more than 1 block larger than any other.
-					// We do not shrink the check blocks.
-					copyDataBlocks--;
-				}
-				if(logMINOR) Logger.minor(this, "REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
-				ClientCHK[] dataBlocks = new ClientCHK[copyDataBlocks];
-				ClientCHK[] checkBlocks = new ClientCHK[copyCheckBlocks];
-				if(copyDataBlocks > 0)
-					System.arraycopy(splitfileDataBlocks, dataBlocksPtr, dataBlocks, 0, copyDataBlocks);
-				if(copyCheckBlocks > 0)
-					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
-				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext,
-						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, pre1250 && i == segments.length-1, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
-				for(int j=0;j<dataBlocks.length;j++)
-					tempListener.addKey(dataBlocks[j].getNodeKey(true), i, context);
-				for(int j=0;j<checkBlocks.length;j++)
-					tempListener.addKey(checkBlocks[j].getNodeKey(true), i, context);
-				if(persistent) {
-					container.store(segments[i]);
-					segments[i].deactivateKeys(container);
-					for(int x=dataBlocksPtr;x<dataBlocksPtr+copyDataBlocks;x++)
-						splitfileDataBlocks[x] = null;
-					for(int x=checkBlocksPtr;x<checkBlocksPtr+copyCheckBlocks;x++)
-						splitfileCheckBlocks[x] = null;
-				}
-				dataBlocksPtr += copyDataBlocks;
-				checkBlocksPtr += copyCheckBlocks;
-			}
-			if(dataBlocksPtr != splitfileDataBlocks.length)
-				throw new FetchException(FetchException.INVALID_METADATA, "Unable to allocate all data blocks to segments - buggy or malicious inserter");
-			if(checkBlocksPtr != splitfileCheckBlocks.length)
-				throw new FetchException(FetchException.INVALID_METADATA, "Unable to allocate all check blocks to segments - buggy or malicious inserter");
 		}
 		int totalCrossCheckBlocks = segments.length * crossCheckBlocks;
-		parent.addMustSucceedBlocks(splitfileDataBlocks.length - totalCrossCheckBlocks, container);
-		parent.addBlocks(splitfileCheckBlocks.length + totalCrossCheckBlocks, container);
+		parent.addMustSucceedBlocks(splitfileDataBlocks - totalCrossCheckBlocks, container);
+		parent.addBlocks(splitfileCheckBlocks + totalCrossCheckBlocks, container);
 		parent.notifyClients(container, context);
+		
+		deductBlocksFromSegments = metadata.getDeductBlocksFromSegments();
 		
 		if(crossCheckBlocks != 0) {
 			Random random = new MersenneTwister(Metadata.getCrossSegmentSeed(metadata.getHashes(), metadata.getHashThisLayerOnly()));
@@ -492,7 +365,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 
 		try {
-			tempListener.writeFilters();
+			tempListener.writeFilters(container);
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, "Unable to write Bloom filters for splitfile");
 		}
@@ -738,8 +611,20 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(persistent) {
 				container.activate(mainBloomFile, 5);
 				container.activate(altBloomFile, 5);
-				main = new File(mainBloomFile.getPath());
-				alt = new File(altBloomFile.getPath());
+				if(mainBloomFile != null) {
+					main = new File(mainBloomFile.getPath());
+					container.delete(mainBloomFile);
+					mainBloomFile = null;
+					if(persistent) container.store(this);
+				} else
+					main = null;
+				if(altBloomFile != null) {
+					alt = new File(altBloomFile.getPath());
+					container.delete(altBloomFile);
+					altBloomFile = null;
+					if(persistent) container.store(this);
+				} else
+					alt = null;
 				container.deactivate(mainBloomFile, 1);
 				container.deactivate(altBloomFile, 1);
 			} else {
@@ -750,23 +635,42 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(logMINOR)
 					Logger.minor(this, "Attempting to read Bloom filter for "+this+" main file="+main+" alt file="+alt);
 				tempListener =
-					new SplitFileFetcherKeyListener(this, keyCount, main, alt, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false);
+					new SplitFileFetcherKeyListener(this, keyCount, main, alt, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false, cachedMainBloomFilter, cachedSegmentBloomFilters, container);
+				if(main != null) {
+					try {
+						FileUtil.secureDelete(main, context.fastWeakRandom);
+					} catch (IOException e) {
+						System.err.println("Failed to delete old bloom filter file: "+main+" - this may leak information about a download : "+e);
+						e.printStackTrace();
+					}
+				}
+				if(alt != null) {
+					try {
+						FileUtil.secureDelete(alt, context.fastWeakRandom);
+					} catch (IOException e) {
+						System.err.println("Failed to delete old segment filters file: "+alt+" - this may leak information about a download : "+e);
+					}
+				}
 			} catch (IOException e) {
 				Logger.error(this, "Unable to read Bloom filter for "+this+" attempting to reconstruct...", e);
-				main.delete();
-				alt.delete();
 				try {
-					mainBloomFile = context.fg.makeRandomFile();
-					altBloomFile = context.fg.makeRandomFile();
-					if(persistent)
-						container.store(this);
-				} catch (IOException e1) {
-					throw new KeyListenerConstructionException(new FetchException(FetchException.BUCKET_ERROR, "Unable to create Bloom filter files in reconstruction", e1));
+					FileUtil.secureDelete(main, context.fastWeakRandom);
+				} catch (IOException e2) {
+					// Ignore
 				}
+				try {
+					FileUtil.secureDelete(alt, context.fastWeakRandom);
+				} catch (IOException e2) {
+					// Ignore
+				}
+				mainBloomFile = null;
+				altBloomFile = null;
+				if(persistent)
+					container.store(this);
 
 				try {
 					tempListener =
-						new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true);
+						new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true, cachedMainBloomFilter, cachedSegmentBloomFilters, container);
 				} catch (IOException e1) {
 					throw new KeyListenerConstructionException(new FetchException(FetchException.BUCKET_ERROR, "Unable to reconstruct Bloom filters: "+e1, e1));
 				}
@@ -793,16 +697,27 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			container.store(this);
 	}
 
-	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
-		otherFailure = e.getFetchException();
+	public void onFailed(FetchException e, ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(finished) return;
+			otherFailure = e;
+		}
 		cancel(container, context);
+	}
+	
+	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
+		onFailed(e.getFetchException(), container, context);
 	}
 
 	private boolean toRemove = false;
+	// Leaks can happen if it is still in memory after removal.
+	// It shouldn't be referred to by anything but it's good to detect such problems.
+	private boolean removed = false;
 	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			toRemove = true;
+			if(removed) return;
 		}
 		if(crossCheckBlocks > 0) {
 			boolean allGone = true;
@@ -830,9 +745,15 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	}
 	
 	public void innerRemoveFrom(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(removed) {
+				Logger.error(this, "innerRemoveFrom() called twice", new Exception("error"));
+				return;
+			}
+			removed = true;
+		}
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
 		if(!container.ext().isStored(this)) {
-			Logger.error(this, "Already removed??? on "+this, new Exception("error"));
 			return;
 		}
 		container.activate(blockFetchContext, 1);
@@ -863,18 +784,16 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		container.activate(altBloomFile, 5);
 		if(mainBloomFile != null && !mainBloomFile.delete() && mainBloomFile.exists())
 			Logger.error(this, "Unable to delete main bloom file: "+mainBloomFile+" for "+this);
-		else if(mainBloomFile == null)
-			Logger.error(this, "mainBloomFile is null on "+this);
-		else
-			if(logMINOR) Logger.minor(this, "Deleted main bloom file "+mainBloomFile);
 		if(altBloomFile != null && !altBloomFile.delete() && altBloomFile.exists())
 			Logger.error(this, "Unable to delete alt bloom file: "+altBloomFile+" for "+this);
-		else if(altBloomFile == null)
-			Logger.error(this, "altBloomFile is null on "+this);
-		else
-			if(logMINOR) Logger.minor(this, "Deleted alt bloom file "+altBloomFile);
 		container.delete(mainBloomFile);
 		container.delete(altBloomFile);
+		container.activate(cachedMainBloomFilter, Integer.MAX_VALUE);
+		cachedMainBloomFilter.removeFrom(container);
+		for(int i=0;i<cachedSegmentBloomFilters.length;i++) {
+			container.activate(cachedSegmentBloomFilters[i], Integer.MAX_VALUE);
+			cachedSegmentBloomFilters[i].removeFrom(container);
+		}
 		container.delete(this);
 	}
 
@@ -883,6 +802,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			Logger.error(this, "Trying to update with hash 0 => already deleted! active="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("error"));
 			return false;
 		}
+		synchronized(this) {
+			if(removed) {
+				Logger.error(this, "Trying to write but already removed", new Exception("error"));
+				return false;
+			}
+		}
 		return true;
 	}
 
@@ -890,6 +815,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(hashCode == 0) {
 			Logger.error(this, "Trying to write with hash 0 => already deleted! active="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("error"));
 			return false;
+		}
+		synchronized(this) {
+			if(removed) {
+				Logger.error(this, "Trying to write but already removed", new Exception("error"));
+				return false;
+			}
 		}
 		return true;
 	}
@@ -918,6 +849,14 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		} else if(persistent)
 			container.store(this);
 		return false;
+	}
+
+	public void setCachedMainFilter(CountingBloomFilter filter) {
+		this.cachedMainBloomFilter = filter;
+	}
+
+	public void setCachedSegFilters(BinaryBloomFilter[] segmentFilters) {
+		this.cachedSegmentBloomFilters = segmentFilters;
 	}
 
 

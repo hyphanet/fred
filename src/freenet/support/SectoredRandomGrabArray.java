@@ -326,8 +326,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				}
 			}
 		}
-		if(count == 0) Logger.error(this, "Not in parent: "+r+" for "+this, new Exception("error"));
-		else if(persistent) {
+		if(count == 0) {
+			// This is not unusual, it was e.g. removed because of being empty.
+			// And it has already been removeFrom()'ed.
+			if(logMINOR) Logger.minor(this, "Not in parent: "+r+" for "+this, new Exception("error"));
+		} else if(persistent) {
 			container.store(this);
 			r.removeFrom(container);
 		}

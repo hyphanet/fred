@@ -118,7 +118,7 @@ public class ClientGetter extends BaseClientGetter {
 		super(priorityClass, clientContext);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
-		this.uri = uri;
+		this.uri = uri.clone();
 		this.ctx = ctx;
 		this.finished = false;
 		this.actx = new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels);
@@ -285,7 +285,7 @@ public class ClientGetter extends BaseClientGetter {
 				clientMetadata = new ClientMetadata(detectedMIMEType);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
-				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
+				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
 				if(finalResult != null && finalResult != returnBucket) {
 					finalResult.free();
 					if(persistent()) finalResult.removeFrom(container);
@@ -683,7 +683,7 @@ public class ClientGetter extends BaseClientGetter {
 					if(logMINOR) Logger.minor(this, "Unable to filter unsafe MIME type "+expectedMIME);
 					e = new KnownUnsafeContentTypeException(handler);
 				}
-				throw new FetchException(e.getFetchErrorCode(), expectedSize, e.getMessage(), e, expectedMIME);
+				throw new FetchException(e.getFetchErrorCode(), expectedSize, e, expectedMIME);
 			}
 		}
 		if(persistent()) {

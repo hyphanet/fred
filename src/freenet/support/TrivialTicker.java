@@ -1,6 +1,6 @@
 package freenet.support;
 
-import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -22,7 +22,7 @@ public class TrivialTicker implements Ticker {
 	
 	private final Executor executor;
 	
-	private final HashSet<Runnable> jobs = new HashSet<Runnable>();
+	private final Hashtable<Runnable, TimerTask> jobs = new Hashtable<Runnable, TimerTask>();
 	
 	private boolean running = true;
 	
@@ -31,14 +31,7 @@ public class TrivialTicker implements Ticker {
 	}
 	
 	public void queueTimedJob(final Runnable job, long offset) {
-		synchronized(this) {
-			if(!running)
-				return;
-			
-			jobs.add(job);
-		}
-		timer.schedule(new TimerTask() {
-
+		TimerTask t = new TimerTask() {
 			@Override
 			public void run() {
 				try {
@@ -52,22 +45,21 @@ public class TrivialTicker implements Ticker {
 						jobs.remove(job);
 					}
 				}
-				
 			}
-			
-		}, offset);
+		};
+		
+		synchronized(this) {
+			if(!running)
+				return;
+		
+			timer.schedule(t, offset);
+			jobs.put(job, t);
+		}
 	}
 
 	public void queueTimedJob(final Runnable job, final String name, long offset,
 			boolean runOnTickerAnyway, boolean noDupes) {
-		synchronized(this) {
-			if(!running)
-				return;
-			
-			if(noDupes && jobs.contains(job)) return;
-			jobs.add(job);
-		}
-		timer.schedule(new TimerTask() {
+		TimerTask t = new TimerTask() {
 
 			@Override
 			public void run() {
@@ -85,14 +77,76 @@ public class TrivialTicker implements Ticker {
 				
 			}
 			
-		}, offset);
+		};
+		
+		synchronized(this) {
+			if(!running)
+				return;
+			
+			if(noDupes && jobs.containsKey(job))
+				return;
+			
+			timer.schedule(t, offset);
+			jobs.put(job, t);
+		}
 	}
+	
+	public void cancelTimedJob(final Runnable job) {
+		synchronized(this) {
+			if(!running)
+				return;
+			
+			TimerTask t = jobs.get(job);
+			if(t != null) {
+				t.cancel();
+				jobs.remove(t);
+			}
+		}
+	}
+	
+	/**
+	 * Changes the offset of a already-queued job.
+	 * If the given job was not queued yet it will be queued nevertheless.
+	 */
+	public void rescheduleTimedJob(final Runnable job, final String name, long newOffset) {
+		synchronized(this) {
+			cancelTimedJob(job);
+			queueTimedJob(job, name, newOffset, false, false); // Don't dupe-check, we are synchronized
+		}
+	}
+	
+	private Thread shutdownThread = null;
 	
 	public void shutdown() {
 		synchronized(this) {
 			running = false;
-			// TODO: As far as I've understood the javadoc of class Timer, this waits for a currently running job to quit. Verify that by reading the source.
-			timer.cancel();
+			
+			timer.schedule(new TimerTask() {
+
+				public void run() {
+					// According to the JavaDoc of cancel(), calling it inside a TimerTask guarantees that the task is the last one which is run.
+					timer.cancel();
+					synchronized(TrivialTicker.this) {
+						shutdownThread = Thread.currentThread();
+						TrivialTicker.this.notifyAll();
+					}
+				}
+				
+			}, 0);
+			
+			while(shutdownThread == null) {
+				try {
+					wait();
+				} catch (InterruptedException e) { } // Valid to happen due to spurious wakeups
+			}
+			
+			while(shutdownThread.isAlive()) { // Ignore InterruptedExceptions
+				try {
+					shutdownThread.join();
+				} catch (InterruptedException e) { 
+					Logger.error(this, "Got an unexpected InterruptedException", e);
+				}
+			}
 		}
 	}
 
