@@ -457,6 +457,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		synchronized(this) {
 			if(foundKeys[blockNo]) return;
 			foundKeys[blockNo] = true;
+			// Don't remove from KeyListener if we have already removed this segment.
+			if(startedDecode) return;
 		}
 		if(persistent) container.store(this);
 		SplitFileFetcherKeyListener listener = parentFetcher.getListener();
