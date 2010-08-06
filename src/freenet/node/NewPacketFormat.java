@@ -144,6 +144,14 @@ public class NewPacketFormat implements PacketFormat {
 						dontAck = true;
 						continue;
 					}
+				} else {
+					synchronized(bufferUsageLock) {
+						if((usedBuffer + fragment.fragmentLength) > MAX_BUFFER_SIZE) {
+							if(logMINOR) Logger.minor(this, "Could not create buffer, would excede max size");
+							dontAck = true;
+							continue;
+						}
+					}
 				}
 
 				recvMap = new SparseBitmap();
