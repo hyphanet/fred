@@ -634,6 +634,10 @@ fragments:
 		}
 
 		private boolean setMessageLength(int messageLength) {
+			if(this.messageLength != -1 && this.messageLength != messageLength) {
+				Logger.warning(this, "Message length has already been set to a different length");
+			}
+
 			this.messageLength = messageLength;
 
 			if(buffer.length > messageLength) {
