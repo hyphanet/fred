@@ -139,18 +139,29 @@ public class NewPacketFormat implements PacketFormat {
 				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Creating buffer");
 
 				recvBuffer = new PartiallyReceivedBuffer(this);
-				if(fragment.firstFragment) recvBuffer.setMessageLength(fragment.messageLength);
+				if(fragment.firstFragment) {
+					if(!recvBuffer.setMessageLength(fragment.messageLength)) {
+						dontAck = true;
+						continue;
+					}
+				}
 
 				recvMap = new SparseBitmap();
 				receiveBuffers.put(fragment.messageID, recvBuffer);
 				receiveMaps.put(fragment.messageID, recvMap);
 			} else {
 				if(fragment.firstFragment) {
-					if(!recvBuffer.setMessageLength(fragment.messageLength)) dontAck = true;
+					if(!recvBuffer.setMessageLength(fragment.messageLength)) {
+						dontAck = true;
+						continue;
+					}
 				}
 			}
 
-			if(!recvBuffer.add(fragment.fragmentData, fragment.fragmentOffset)) dontAck = true;
+			if(!recvBuffer.add(fragment.fragmentData, fragment.fragmentOffset)) {
+				dontAck = true;
+				continue;
+			}
 			if(fragment.fragmentLength == 0) {
 				Logger.warning(this, "Received fragment of length 0");
 				continue;
