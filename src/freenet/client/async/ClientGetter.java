@@ -274,9 +274,9 @@ public class ClientGetter extends BaseClientGetter {
 			if(hashes != null) container.activate(hashes, Integer.MAX_VALUE);
 		}
 
-		Worker worker = null;
+		ClientGetWorkerThread worker = null;
 		try {
-			worker = new Worker(dataInput, mimeType, finalResult, hashes, ctx);
+			worker = new ClientGetWorkerThread(dataInput, uri, mimeType, finalResult, hashes, ctx);
 			worker.start();
 			streamGenerator.writeTo(dataOutput, container, context);
 
@@ -808,101 +808,5 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		if(persistent()) container.store(this);
 		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
-	}
-
-	private class Worker extends Thread {
-
-		private InputStream input;
-		final private HashResult[] hashes;
-		final private FetchContext ctx;
-		private String mimeType;
-		private OutputStream output;
-		private boolean finished = false;
-		private Throwable error = null;
-
-		Worker(PipedInputStream input, String mimeType, Bucket destination, HashResult[] hashes, FetchContext ctx) throws IOException {
-			this.input = input;
-			this.ctx = ctx;
-			this.mimeType = mimeType;
-			this.hashes = hashes;
-			output = destination.getOutputStream();
-		}
-
-		@Override
-		public void run() {
-			try {
-				//Validate the hash of the now decompressed data
-				input = new BufferedInputStream(input);
-				MultiHashInputStream hashStream = null;
-				if(hashes != null) {
-					hashStream = new MultiHashInputStream(input, HashResult.makeBitmask(hashes));
-					input = hashStream;
-				}
-				//Filter the data, if we are supposed to
-				if(ctx.filterData){
-					if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
-					try {
-						if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
-						// Send XHTML as HTML because we can't use web-pushing on XHTML.
-						if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
-						FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
-						input.close();
-						output.close();
-						String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
-						//clientMetadata = new ClientMetadata(detectedMIMEType);
-					} finally {
-						Closer.close(input);
-						Closer.close(output);
-					}
-				}
-				else {
-					if(logMINOR) Logger.minor(this, "Ignoring content filter. The final result has not been written. Writing now.");
-					try {
-						FileUtil.copy(input, output, -1);
-						input.close();
-						output.close();
-					} finally {
-						Closer.close(input);
-						Closer.close(output);
-					}
-				}
-				if(hashes != null) {
-					HashResult[] results = hashStream.getResults();
-					if(!HashResult.strictEquals(results, hashes)) {
-						throw new FetchException(FetchException.CONTENT_HASH_FAILED);
-					}
-				}
-
-				onFinish();
-			} catch(Throwable t) {
-				setError(t);
-			}
-		}
-
-		public synchronized void setError(Throwable t) {
-			error = t;
-			onFinish();
-		}
-
-		public synchronized void getError() throws Throwable {
-			if(error != null) throw error;
-		}
-		/** Marks that all work has finished, and wakes blocked threads.*/
-		public synchronized void onFinish() {
-			finished = true;
-			notifyAll();
-		}
-
-		/** Blocks until all threads have finished executing and cleaning up.*/
-		public synchronized void waitFinished() throws Throwable {
-			while(!finished) {
-				try {
-					wait();
-				} catch(InterruptedException e) {
-					//Do nothing
-				}
-			}
-			getError();
-		}
 	}
 }
