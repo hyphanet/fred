@@ -120,7 +120,7 @@ public class NPFPacketTest extends TestCase {
 	public void testReceivedLargeFragment() {
 		byte[] packet = new byte[] { (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Sequence number 0
 		                (byte) 0x00, // 0 acks
-		                (byte) 0xA0, (byte) 0x00, // Flags (short and first fragment) and messageID 0
+		                (byte) 0xB0, (byte) 0x00, (byte) 0x00, (byte) 0x00, // Flags (short and first fragment) and messageID 0
 		                (byte) 0x80, // Fragment length
 		                (byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67, (byte) 0x89, (byte) 0xAB,
 		                (byte) 0xCD, (byte) 0xEF, (byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67,
@@ -150,6 +150,7 @@ public class NPFPacketTest extends TestCase {
 		MessageFragment f = r.getFragments().get(0);
 		assertTrue(f.firstFragment);
 		assertTrue(f.shortMessage);
+		assertEquals(0, f.messageID);
 		assertEquals(128, f.fragmentLength);
 		assertFalse(r.getError());
 	}
@@ -170,7 +171,7 @@ public class NPFPacketTest extends TestCase {
 		byte[] packetNoData = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number (0)
 		                (byte)0x00, //0 acks
-		                (byte)0x40, (byte)0x00, // Flags (long, fragmented, not first) and messageID 0
+		                (byte)0x50, (byte)0x00, (byte) 0x00, (byte) 0x00, // Flags (long, fragmented, not first) and messageID 0
 		                (byte)0x01, (byte)0x01, //Fragment length
 		                (byte)0x01, (byte)0x01, (byte)0x01}; //Fragment offset
 		byte[] packet = new byte[packetNoData.length + 257];
@@ -187,6 +188,7 @@ public class NPFPacketTest extends TestCase {
 		assertTrue(f.isFragmented);
 		assertEquals(257, f.fragmentLength);
 		assertEquals(65793, f.fragmentOffset);
+		assertEquals(0, f.messageID);
 
 		assertFalse(r.getError());
 	}
@@ -208,7 +210,7 @@ public class NPFPacketTest extends TestCase {
 		byte[] packet = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
 		                (byte)0x00,
-		                (byte)0xA0, (byte)0x00,
+		                (byte)0xB0, (byte)0x00, (byte) 0x00, (byte) 0x00,
 		                (byte)0x00};
 
 		NPFPacket r = NPFPacket.create(packet);
@@ -218,6 +220,7 @@ public class NPFPacketTest extends TestCase {
 		MessageFragment f = r.getFragments().get(0);
 		assertEquals(0, f.fragmentLength);
 		assertEquals(0, f.fragmentData.length);
+		assertEquals(0, f.messageID);
 	}
 
 	public void testSendEmptyPacket() {
