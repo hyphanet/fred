@@ -117,6 +117,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	protected byte[] jfkMyRef;
 	protected byte[] hmacKey;
 	protected byte[] ivKey;
+	protected byte[] ivNonce;
 	// The following is used only if we are the initiator
 
 	protected long jfkContextLifetime = 0;
@@ -1854,7 +1855,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @return The ID of the new PacketTracker. If this is different to the passed-in trackerID, then
 	* it's a new tracker. -1 to indicate failure.
 	*/
-	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher) {
+	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce) {
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
 
@@ -2003,7 +2004,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else {
 				// else it's a rekey
 			}
-			newTracker = new SessionKey(this, packets, encCipher, encKey, ivCipher, hmacKey);
+			newTracker = new SessionKey(this, packets, encCipher, encKey, ivCipher, ivNonce, hmacKey);
 			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+shortToString()+" neg type "+negType);
 			if(unverified) {
 				if(unverifiedTracker != null) {

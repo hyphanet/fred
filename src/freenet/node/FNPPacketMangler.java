@@ -1141,6 +1141,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		byte[] hmacKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "3");
 		byte[] ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
+		byte[] ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
 
 		c.initialize(Ke);
 		final PCFBMode pk = PCFBMode.create(c);
@@ -1243,7 +1244,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 
-		long newTrackerID = pn.completedHandshake(bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher);
+		long newTrackerID = pn.completedHandshake(bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher, ivNonce);
 
 		if(newTrackerID > 0) {
 
@@ -1473,7 +1474,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		c.initialize(pn.jfkKs);
 		ivCipher.initialize(pn.ivKey);
 		
-		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey, ivCipher) >= 0) {
+		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey, ivCipher, pn.ivNonce) >= 0) {
 			if(dontWant) {
 				node.peers.disconnect(pn, true, true, true);
 			} else {
@@ -1491,6 +1492,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKs = null;
 		pn.hmacKey = null;
 		pn.ivKey = null;
+		pn.ivNonce = null;
 		// We want to clear it here so that new handshake requests
 		// will be sent with a different DH pair
 		pn.setKeyAgreementSchemeContext(null);
@@ -1583,6 +1585,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		pn.hmacKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "3");
 		pn.ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
+		pn.ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
 
 		c.initialize(pn.jfkKe);
 		PCFBMode pcfb = PCFBMode.create(c);

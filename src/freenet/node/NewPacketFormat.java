@@ -209,6 +209,7 @@ public class NewPacketFormat implements PacketFormat {
 				BlockCipher ivCipher = sessionKey.ivCipher;
 
 				byte[] IV = new byte[ivCipher.getBlockSize() / 8];
+				System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
 				System.arraycopy(seqNumBytes, 0, IV, 0, seqNumBytes.length);
 
 				ivCipher.encipher(IV, IV);
@@ -238,6 +239,7 @@ public class NewPacketFormat implements PacketFormat {
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
 		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
+		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
 		IV[0] = (byte) (sequenceNumber >>> 24);
 		IV[1] = (byte) (sequenceNumber >>> 16);
 		IV[2] = (byte) (sequenceNumber >>> 8);
@@ -292,6 +294,7 @@ public class NewPacketFormat implements PacketFormat {
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
 		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
+		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
 		System.arraycopy(data, HMAC_LENGTH, IV, 0, 4);
 		
 		ivCipher.encipher(IV, IV);
