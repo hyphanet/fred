@@ -66,6 +66,12 @@ class NPFPacket {
 		}
 
 		//Handle received message fragments
+		if((offset < plaintext.length) && ((plaintext[offset] & 0x10) == 0)) {
+			Logger.warning(NPFPacket.class, "First fragment doen't have full message id");
+			packet.error = true;
+			return packet;
+		}
+
 		int prevFragmentID = -1;
 		while(offset < plaintext.length) {
 			if(plaintext.length < (offset + 2)) {
