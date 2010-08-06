@@ -111,6 +111,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			usk = usk.copy(edition);
 		else if(persistent) // Copy it to avoid deactivation issues
 			usk = usk.clone();
+		if(persistent)
+			container.activate(ctx, 1);
 		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, client), keepLastData, checkStoreOnly);
 		fetcher.addCallback(this);
 		fetcher.schedule(null, context); // non-persistent
