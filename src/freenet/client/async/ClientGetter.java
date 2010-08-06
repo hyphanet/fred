@@ -276,7 +276,7 @@ public class ClientGetter extends BaseClientGetter {
 
 		Worker worker = null;
 		try {
-			worker = new Worker(dataInput, mimeType, finalResult, ctx);
+			worker = new Worker(dataInput, mimeType, finalResult, hashes, ctx);
 			worker.start();
 			streamGenerator.writeTo(dataOutput, container, context);
 
@@ -813,16 +813,18 @@ public class ClientGetter extends BaseClientGetter {
 	private class Worker extends Thread {
 
 		private InputStream input;
+		final private HashResult[] hashes;
 		final private FetchContext ctx;
 		private String mimeType;
 		private OutputStream output;
 		private boolean finished = false;
 		private Throwable error = null;
 
-		Worker(PipedInputStream input, String mimeType, Bucket destination, FetchContext ctx) throws IOException {
+		Worker(PipedInputStream input, String mimeType, Bucket destination, HashResult[] hashes, FetchContext ctx) throws IOException {
 			this.input = input;
 			this.ctx = ctx;
 			this.mimeType = mimeType;
+			this.hashes = hashes;
 			output = destination.getOutputStream();
 		}
 
