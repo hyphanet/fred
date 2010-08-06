@@ -273,10 +273,12 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(clientCallback, 1);
 		}
 
+		Worker worker = null;
 		try {
-			Worker worker = new Worker(dataInput, mimeType, finalResult, ctx, state, container, context);
+			worker = new Worker(dataInput, mimeType, finalResult, ctx, state, container, context);
 			worker.start();
 			streamGenerator.writeTo(dataOutput, container, context);
+
 			if(logMINOR) Logger.minor(this, "Size of written data: "+result.asBucket().size());
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
@@ -293,6 +295,11 @@ public class ClientGetter extends BaseClientGetter {
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, decompressorManager.getError()), state, container, context);
 				return;
 			}
+		}
+
+		if(worker != null) {
+			if(logMINOR) Logger.minor(this, "Waiting for hashing, filtration, and writing to finish");
+			worker.waitFinished();
 		}
 
 		clientCallback.onSuccess(result, ClientGetter.this, container);
@@ -749,6 +756,7 @@ public class ClientGetter extends BaseClientGetter {
 		final private ClientGetState state;
 		private String mimeType;
 		private OutputStream output;
+		private boolean finished = false;
 
 		Worker(PipedInputStream input, String mimeType, Bucket destination, FetchContext ctx,
 				ClientGetState state, ObjectContainer container, ClientContext context) throws IOException {
@@ -847,6 +855,23 @@ public class ClientGetter extends BaseClientGetter {
 				if(!HashResult.strictEquals(results, hashes)) {
 					onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), state, container, context);
 					return;
+				}
+			}
+			onFinish();
+		}
+		/** Marks that all work has finished, and wakes blocked threads.*/
+		public synchronized void onFinish() {
+			finished = true;
+			notifyAll();
+		}
+
+		/** Blocks until all threads have finished executing and cleaning up.*/
+		public synchronized void waitFinished() {
+			while(!finished) {
+				try {
+					wait();
+				} catch(InterruptedException e) {
+					//Do nothing
 				}
 			}
 		}
