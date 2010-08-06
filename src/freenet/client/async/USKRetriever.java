@@ -82,12 +82,10 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			Logger.minor(this, "Success on "+this+" from "+state+" :"+" mime type "+clientMetadata.getMIMEType());
 		DecompressorThreadManager decompressorManager = null;
 		OutputStream output = null;
-		InputStream input = null;
 		Bucket finalResult = null;
 		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 		try {
 			finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
-			output = finalResult.getOutputStream();
 		} catch (IOException e) {
 			Logger.error(this, "Caught "+e, e);
 			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
@@ -111,26 +109,21 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 				pipeIn = new PipedInputStream();
 				pipeOut = new PipedOutputStream(pipeIn);
 				decompressorManager = new DecompressorThreadManager(pipeIn, decompressors, maxLen);
-				input = decompressorManager.execute();
-				final InputStream finalInput = input;
-				final OutputStream finalOutput = output;
-				final ClientGetState finalState = state;
-				final ObjectContainer finalContainer = container;
-				final ClientContext finalContext = context;
-				new Thread() {
-					public void run() {
-						try {
-							FileUtil.copy(finalInput, finalOutput, -1);
-						} catch(IOException e) {
-							onFailure(new FetchException(FetchException.BUCKET_ERROR, e), finalState, finalContainer, finalContext);
-						}
-					}
-				}.start();
+				pipeIn = decompressorManager.execute();
+				ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, null, null, finalResult, null, ctx);
+				worker.start();
 				streamGenerator.writeTo(pipeOut, container, context);
+				worker.waitFinished();
 				pipeOut.close();
-			} else streamGenerator.writeTo(output, container, context);
-			input.close();
-			output.close();
+			} else {
+				try {
+					output = finalResult.getOutputStream();
+					streamGenerator.writeTo(output, container, context);
+					output.close();
+				} finally {
+					Closer.close(output);
+				}
+			}
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 			System.err.println("Failing above attempted fetch...");
@@ -144,7 +137,6 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 			return;
 		} finally {
-			Closer.close(input);
 			Closer.close(output);
 			Closer.close(pipeOut);
 		}
