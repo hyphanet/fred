@@ -518,7 +518,7 @@ fragments:
 			++numRtts;
 		}
 
-		if(numRtts == 0) return 0;
+		if(numRtts == 0) return 250;
 		return avgRtt / numRtts;
 	}
 
