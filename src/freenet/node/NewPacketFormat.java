@@ -518,8 +518,8 @@ fragments:
 			++numRtts;
 		}
 
-		if(numRtts != 0) avgRtt = avgRtt / numRtts;
-		return avgRtt;
+		if(numRtts == 0) return 0;
+		return avgRtt / numRtts;
 	}
 
 	private static class SentPacket {
