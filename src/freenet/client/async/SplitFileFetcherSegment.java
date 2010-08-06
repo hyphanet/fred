@@ -933,6 +933,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 		
 		// Encode any check blocks we don't have
 		try {
+			synchronized(this) {
+				if(encoderFinished) {
+					Logger.error(this, "Encoder finished in onDecodedSegment at end??? on "+this);
+					return; // Calling addToQueue now will NPE.
+				}
+			}
 		codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(persistent), this, false, parent.getPriorityClass(), persistent),
 				context.fecQueue, container);
 		if(persistent) {
