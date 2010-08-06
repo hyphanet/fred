@@ -1038,7 +1038,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					new Thread() {
 						public void run() {
 							try {
-								FileUtil.copy(finalInput, finalOutput, -1);
+								synchronized(finalOutput) {
+									FileUtil.copy(finalInput, finalOutput, -1);
+								}
 							} catch(IOException e) {
 								onFailure(new FetchException(FetchException.BUCKET_ERROR, e), finalState, finalContainer, finalContext);
 							}
@@ -1046,10 +1048,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					}.start();
 					streamGenerator.writeTo(pipeOut, container, context);
 				} else streamGenerator.writeTo(output, container, context);
-
-				pipeOut.close();
-				input.close();
-				output.close();
+				synchronized(finalOutput) {
+					pipeOut.close();
+					input.close();
+					output.close();
+				}
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
@@ -1265,7 +1268,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					new Thread() {
 						public void run() {
 							try {
-								FileUtil.copy(finalInput, finalOutput, -1);
+								synchronized(finalOutput) {
+									FileUtil.copy(finalInput, finalOutput, -1);
+								}
 							} catch(IOException e) {
 								onFailure(new FetchException(FetchException.BUCKET_ERROR, e), finalState, finalContainer, finalContext);
 							}
@@ -1274,9 +1279,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					streamGenerator.writeTo(pipeOut, container, context);
 				} else streamGenerator.writeTo(output, container, context);
 
-				pipeOut.close();
-				input.close();
-				output.close();
+				synchronized(finalOutput) {
+					pipeOut.close();
+					input.close();
+					output.close();
+				}
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
