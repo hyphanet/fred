@@ -392,7 +392,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	public void onFailure(ObjectContainer container, ClientContext context) {
-		Logger.error(this, "Fetcher failed", new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Fetcher failed to find the given edition or any later edition on "+this);
 		scheduleInsert(container, context);
 	}
 
