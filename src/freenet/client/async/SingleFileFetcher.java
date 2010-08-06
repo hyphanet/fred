@@ -1057,9 +1057,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+				return;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				return;
 			} finally {
 				Closer.close(pipeOut);
 				Closer.close(input);
@@ -1288,9 +1290,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+				return;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				return;
 			} finally {
 				Closer.close(pipeOut);
 				Closer.close(input);
@@ -1317,9 +1321,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				innerWrapHandleMetadata(true, container, context);
 			} catch (MetadataParseException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
+				return;
 			} catch (IOException e) {
 				// Bucket error?
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
+				return;
 			} finally {
 				finalData.free();
 				if(persistent)
