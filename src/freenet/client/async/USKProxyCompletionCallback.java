@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.io.InputStream;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
@@ -28,13 +27,13 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		this.persistent = persistent;
 	}
 
-	public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(container != null && persistent) {
 			container.activate(cb, 1);
 			container.activate(usk, 5);
 		}
 		context.uskManager.updateKnownGood(usk, usk.suggestedEdition, context);
-		cb.onSuccess(input, clientMetadata, decompressors, state, container, context);
+		cb.onSuccess(streamGenerator, clientMetadata, decompressors, state, container, context);
 		if(persistent) removeFrom(container);
 	}
 

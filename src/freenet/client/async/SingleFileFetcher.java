@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
@@ -325,34 +326,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			result.asBucket().free();
 			if(persistent) result.asBucket().removeFrom(container);
 		} else {
-			try {
-			PipedInputStream data = new PipedInputStream();
-			final Bucket resultBucket = result.asBucket();
-			final InputStream input = result.asBucket().getInputStream();
-			final PipedOutputStream output = new PipedOutputStream(data);
-			final ObjectContainer localContainer = container;
-			final ClientContext localContext = context;
-			final ClientGetState localGetState = this;
-			new Thread() {
-				public void run() {
-					try {
-						FileUtil.copy(input, output , -1);
-						output.close();
-						input.close();
-					} catch(IOException e) {
-						Closer.close(output);
-						Closer.close(input);
-						resultBucket.free();
-						Logger.error(this, "Failed to extract the data bucket form "+this, e);
-						rcb.onFailure(new FetchException(FetchException.BUCKET_ERROR), localGetState, localContainer, localContext);
-					}
-				}
-			}.start();
-			rcb.onSuccess(data, result.getMetadata(), decompressors, this, container, context);
-			} catch(IOException e) {
-				Logger.error(this, "Failed to extract data bucket");
-				rcb.onFailure(new FetchException(FetchException.BUCKET_ERROR), this, container, context);
-			}
+			rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket()), result.getMetadata(), decompressors, this, container, context);
 		}
 	}
 
@@ -1036,22 +1010,46 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.ctx = SingleFileFetcher.this.ctx;
 		}
 		
-		public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
-			Bucket finalData = null;
+		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+			InputStream input = null;
+			OutputStream output = null;
+			PipedInputStream pipeIn = null;
+			PipedOutputStream pipeOut = null;
+			Bucket data = null;
 			if(persistent) {
 				container.activate(decompressors, 5);
 				container.activate(ctx, 2);
 			}
 			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 			try {
-				finalData = context.getBucketFactory(persistent).makeBucket(maxLen);
+				data = context.getBucketFactory(persistent).makeBucket(maxLen);
+				output = data.getOutputStream();
+				final OutputStream finalOutput = output;
+				final ClientGetState finalState = state;
+				final ObjectContainer finalContainer = container;
+				final ClientContext finalContext = context;
+				pipeIn = new PipedInputStream();
+				pipeOut = new PipedOutputStream(pipeIn);
 				if(decompressors != null) {
 					if(logMINOR) Logger.minor(this, "decompressing...");
-					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
+					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(pipeIn, decompressors, maxLen);
 					input = decompressorManager.execute();
-				}
-				BucketTools.copyFrom(finalData, input, -1);
+					final InputStream finalInput = input;
+					new Thread() {
+						public void run() {
+							try {
+								FileUtil.copy(finalInput, finalOutput, -1);
+							} catch(IOException e) {
+								onFailure(new FetchException(FetchException.BUCKET_ERROR, e), finalState, finalContainer, finalContext);
+							}
+						}
+					}.start();
+					streamGenerator.writeTo(pipeOut, container, context);
+				} else streamGenerator.writeTo(output, container, context);
+
+				pipeOut.close();
 				input.close();
+				output.close();
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
@@ -1060,12 +1058,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 			} finally {
+				Closer.close(pipeOut);
 				Closer.close(input);
+				Closer.close(output);
 			}
 
 			if(!persistent) {
 				// Run directly - we are running on some thread somewhere, don't worry about it.
-				innerSuccess(finalData, container, context);
+				innerSuccess(data, container, context);
 			} else {
 				boolean wasActive;
 				// We are running on the database thread.
@@ -1079,7 +1079,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent)
 					container.activate(actx, 1);
 				ah.activateForExecution(container);
-				ah.extractPersistentOffThread(finalData, true, actx, element, callback, container, context);
+				ah.extractPersistentOffThread(data, true, actx, element, callback, container, context);
 				if(!wasActive)
 					container.deactivate(SingleFileFetcher.this, 1);
 				if(state != null)
@@ -1237,7 +1237,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.ctx = SingleFileFetcher.this.ctx;
 		}
 		
-		public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+			InputStream input = null;
+			OutputStream output = null;
+			PipedInputStream pipeIn = null;
+			PipedOutputStream pipeOut = null;
 			Bucket finalData = null;
 			if(persistent) {
 				container.activate(decompressors, 5);
@@ -1246,13 +1250,33 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 			try {
 				finalData = context.getBucketFactory(persistent).makeBucket(maxLen);
+				output = finalData.getOutputStream();
+				final OutputStream finalOutput = output;
+				final ClientGetState finalState = state;
+				final ObjectContainer finalContainer = container;
+				final ClientContext finalContext = context;
+				pipeIn = new PipedInputStream();
+				pipeOut = new PipedOutputStream(pipeIn);
 				if(decompressors != null) {
 					if(logMINOR) Logger.minor(this, "decompressing...");
-					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(input, decompressors, maxLen);
+					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(pipeIn, decompressors, maxLen);
 					input = decompressorManager.execute();
-				}
-				BucketTools.copyFrom(finalData, input, -1);
+					final InputStream finalInput = input;
+					new Thread() {
+						public void run() {
+							try {
+								FileUtil.copy(finalInput, finalOutput, -1);
+							} catch(IOException e) {
+								onFailure(new FetchException(FetchException.BUCKET_ERROR, e), finalState, finalContainer, finalContext);
+							}
+						}
+					}.start();
+					streamGenerator.writeTo(pipeOut, container, context);
+				} else streamGenerator.writeTo(output, container, context);
+
+				pipeOut.close();
 				input.close();
+				output.close();
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
@@ -1261,7 +1285,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 			} finally {
+				Closer.close(pipeOut);
 				Closer.close(input);
+				Closer.close(output);
 			}
 
 			boolean wasActive = true;

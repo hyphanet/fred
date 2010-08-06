@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.io.InputStream;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
@@ -20,7 +19,7 @@ import freenet.crypt.HashResult;
  */
 public interface GetCompletionCallback {
 
-	public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context);
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context);
 	
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context);
 	

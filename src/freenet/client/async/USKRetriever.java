@@ -6,6 +6,8 @@ package freenet.client.async;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.util.List;
 
@@ -75,11 +77,12 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		}
 	}
 
-	public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(LogLevel.MINOR, this))
 			Logger.minor(this, "Success on "+this+" from "+state+" :"+" mime type "+clientMetadata.getMIMEType());
 		DecompressorThreadManager decompressorManager = null;
 		OutputStream output = null;
+		InputStream input = null;
 		Bucket finalResult = null;
 		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 		try {
@@ -94,42 +97,61 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 			return;
 		}
-		// Decompress
-		if(decompressors != null) {
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Decompressing...");
-			try {
+
+		PipedInputStream pipeIn = null;
+		PipedOutputStream pipeOut = null;
+		try {
+			// Decompress
+			if(decompressors != null) {
+				if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Decompressing...");
 				if(persistent()) {
 					container.activate(decompressors, 5);
 					container.activate(ctx, 1);
 				}
-				decompressorManager = new DecompressorThreadManager(input, decompressors, maxLen);
+				pipeIn = new PipedInputStream();
+				pipeOut = new PipedOutputStream(pipeIn);
+				decompressorManager = new DecompressorThreadManager(pipeIn, decompressors, maxLen);
 				input = decompressorManager.execute();
-
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Failing above attempted fetch...");
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
-				return;
-			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
-				return;
-			}
-		}
-		try {
-			FileUtil.copy(input, output, -1);
+				final InputStream finalInput = input;
+				final OutputStream finalOutput = output;
+				final ClientGetState finalState = state;
+				final ObjectContainer finalContainer = container;
+				final ClientContext finalContext = context;
+				new Thread() {
+					public void run() {
+						try {
+							FileUtil.copy(finalInput, finalOutput, -1);
+						} catch(IOException e) {
+							onFailure(new FetchException(FetchException.BUCKET_ERROR, e), finalState, finalContainer, finalContext);
+						}
+					}
+				}.start();
+				streamGenerator.writeTo(pipeOut, container, context);
+				pipeOut.close();
+			} else streamGenerator.writeTo(output, container, context);
 			input.close();
 			output.close();
-			FetchResult result = new FetchResult(clientMetadata, finalResult);
-			cb.onFound(origUSK, state.getToken(), result);
-			context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
+			System.err.println("Failing above attempted fetch...");
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+			return;
 		} catch(IOException e) {
 			Logger.error(this, "Caught "+e, e);
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			return;
 		} finally {
 			Closer.close(input);
 			Closer.close(output);
+			Closer.close(pipeOut);
 		}
+
+		FetchResult result = new FetchResult(clientMetadata, finalResult);
+		cb.onFound(origUSK, state.getToken(), result);
+		context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 	}
 
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {

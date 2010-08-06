@@ -24,7 +24,7 @@ import freenet.support.io.Closer;
 public class DecompressorThreadManager {
 
 	final LinkedList<DecompressorThread> threads;
-	InputStream input;
+	PipedInputStream input;
 	PipedOutputStream output = new PipedOutputStream();
 	final long maxLen;
 	private boolean finished = false;
@@ -34,7 +34,7 @@ public class DecompressorThreadManager {
 	 * @param inputStream The stream that will be decompressed, if compressed
 	 * @param maxLen The maximum number of bytes to extract
 	 */
-	public DecompressorThreadManager(InputStream inputStream, List<? extends Compressor> decompressors, long maxLen) throws IOException {
+	public DecompressorThreadManager(PipedInputStream inputStream, List<? extends Compressor> decompressors, long maxLen) throws IOException {
 		threads = new LinkedList<DecompressorThread>();
 		this.maxLen = maxLen;
 		if(inputStream == null) {
@@ -57,7 +57,7 @@ public class DecompressorThreadManager {
 	 * chaining the output of the previous to the next.
 	 * @return An InputStream from which uncompressed data may be read from
 	 */
-	public synchronized InputStream execute() throws Exception{
+	public synchronized PipedInputStream execute() throws Exception{
 		if(getError() != null) throw getError();
 		if(threads.isEmpty()) {
 			onFinish();

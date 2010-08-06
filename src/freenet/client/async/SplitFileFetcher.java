@@ -423,7 +423,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	 * InputStream from which the fetched data may be read.
 	 * @throws FetchException If the fetch failed for some reason.
 	 */
-	private InputStream finalStatus(final ObjectContainer container, final ClientContext context) throws FetchException {
+	private SplitFileStreamGenerator finalStatus(final ObjectContainer container, final ClientContext context) throws FetchException {
 		long length = 0;
 		for(int i=0;i<segments.length;i++) {
 			SplitFileFetcherSegment s = segments[i];
@@ -445,34 +445,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+length+" but length is "+length);
 			length = overrideLength;
 		}
-		final long finalLength = length;
-		PipedInputStream is = new PipedInputStream();
-		try {
-			final PipedOutputStream os = new PipedOutputStream(is);
-			final ClientGetState localGetState = this;
-			new Thread() {
-				public void run() {
-					long bytesWritten = 0;
-					try {
-						for(int i=0;i<segments.length;i++) {
-							SplitFileFetcherSegment s = segments[i];
-							long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
-							bytesWritten += s.writeDecodedDataTo(os, max, container);
-							if(crossCheckBlocks == 0) s.fetcherHalfFinished(container);
-							// Else we need to wait for the cross-segment fetchers and innerRemoveFrom()
-						}
-						os.close();
-					} catch(IOException e) {
-						Logger.error(this, "Failed to extract split file segments", e);
-						cb.onFailure(new FetchException(FetchException.BUCKET_ERROR), localGetState, container, context);
-					}
-				}
-			}.start();
-		} catch (IOException e) {
-			throw new FetchException(FetchException.BUCKET_ERROR, e);
-		}
-		return is;
-	}
+		SplitFileStreamGenerator streamGenerator = new SplitFileStreamGenerator(segments, length, crossCheckBlocks);
+		return streamGenerator;
+}
 
 	public void segmentFinished(SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
 		if(persistent)
@@ -515,7 +490,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 		context.getChkFetchScheduler().removePendingKeys(this, true);
 		boolean cbWasActive = true;
-		InputStream data = null;
+		SplitFileStreamGenerator data = null;
 		try {
 			synchronized(this) {
 				if(otherFailure != null) {

@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.io.InputStream;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
@@ -44,7 +43,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Do nothing
 	}
 
-	public void onSuccess(InputStream input, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore; we don't do anything with it because we are running in the background.
 	}
 
