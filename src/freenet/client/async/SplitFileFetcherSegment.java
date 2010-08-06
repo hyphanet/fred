@@ -1766,7 +1766,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(finished || startedDecode || fetcherFinished) {
 				if(logMINOR) Logger.minor(this, "Rejecting block because "+(finished?"finished ":"")+(startedDecode?"started decode ":"")+(fetcherFinished?"fetcher finished ":""));
-				return true; // The block was present but we didn't want it.
+				return false; // The block was present but we didn't want it.
 			}
 			if(logMINOR)
 				Logger.minor(this, "Found key for block "+blockNum+" on "+this+" in onGotKey() for "+key);
