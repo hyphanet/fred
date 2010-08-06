@@ -271,11 +271,12 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(state, 1);
 			state.removeFrom(container, context);
 			container.activate(clientCallback, 1);
+			if(hashes != null) container.activate(hashes, Integer.MAX_VALUE);
 		}
 
 		Worker worker = null;
 		try {
-			worker = new Worker(dataInput, mimeType, finalResult, ctx, state, container, context);
+			worker = new Worker(dataInput, mimeType, finalResult, ctx);
 			worker.start();
 			streamGenerator.writeTo(dataOutput, container, context);
 
@@ -299,7 +300,70 @@ public class ClientGetter extends BaseClientGetter {
 
 		if(worker != null) {
 			if(logMINOR) Logger.minor(this, "Waiting for hashing, filtration, and writing to finish");
+			try {
 			worker.waitFinished();
+			} catch(UnsafeContentTypeException e) {
+				Logger.error(this, "Error filtering content: will not validate", e);
+				onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
+				if(finalResult != null && finalResult != returnBucket) {
+					finalResult.free();
+					if(persistent()) finalResult.removeFrom(container);
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
+				return;
+			} catch(URISyntaxException e) {
+				//Impossible
+				Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state/*Not really the state's fault*/, container, context);
+				if(finalResult != null && finalResult != returnBucket) {
+					finalResult.free();
+					if(persistent()) finalResult.removeFrom(container);
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
+				return;
+			} catch(IOException e) {
+				Logger.error(this, "Caught "+e, e);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+				if(finalResult != null && finalResult != returnBucket) {
+					finalResult.free();
+					if(persistent()) finalResult.removeFrom(container);
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
+				return;
+			} catch(FetchException e) {
+				Logger.error(this, "Caught "+e, e);
+				onFailure(e, state, container, context);
+				if(finalResult != null && finalResult != returnBucket) {
+					finalResult.free();
+					if(persistent()) finalResult.removeFrom(container);
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
+				return;
+			} catch(Throwable t) {
+				Logger.error(this, "Caught "+t, t);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				if(finalResult != null && finalResult != returnBucket) {
+					finalResult.free();
+					if(persistent()) finalResult.removeFrom(container);
+				} else if(returnBucket != null && persistent())
+					returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+				Bucket data = result.asBucket();
+				data.free();
+				if(persistent()) data.removeFrom(container);
+				return;
+			}
 		}
 
 		clientCallback.onSuccess(result, ClientGetter.this, container);
@@ -749,115 +813,77 @@ public class ClientGetter extends BaseClientGetter {
 	private class Worker extends Thread {
 
 		private InputStream input;
-		final private Bucket destination;
 		final private FetchContext ctx;
-		final private ObjectContainer container;
-		final private ClientContext context;
-		final private ClientGetState state;
 		private String mimeType;
 		private OutputStream output;
 		private boolean finished = false;
+		private Throwable error = null;
 
-		Worker(PipedInputStream input, String mimeType, Bucket destination, FetchContext ctx,
-				ClientGetState state, ObjectContainer container, ClientContext context) throws IOException {
+		Worker(PipedInputStream input, String mimeType, Bucket destination, FetchContext ctx) throws IOException {
 			this.input = input;
 			this.ctx = ctx;
-			this.state = state;
-			this.container = container;
-			this.context = context;
-			this.destination = destination;
 			this.mimeType = mimeType;
 			output = destination.getOutputStream();
 		}
 
 		@Override
 		public void run() {
-			//Validate the hash of the now decompressed data
-			input = new BufferedInputStream(input);
-			MultiHashInputStream hashStream = null;
-			if(hashes != null) {
-					if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
+			try {
+				//Validate the hash of the now decompressed data
+				input = new BufferedInputStream(input);
+				MultiHashInputStream hashStream = null;
+				if(hashes != null) {
 					hashStream = new MultiHashInputStream(input, HashResult.makeBitmask(hashes));
 					input = hashStream;
-			}
+				}
+				//Filter the data, if we are supposed to
+				if(ctx.filterData){
+					if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
+					try {
+						if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
+						// Send XHTML as HTML because we can't use web-pushing on XHTML.
+						if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
+						FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
+						input.close();
+						output.close();
+						String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
+						//clientMetadata = new ClientMetadata(detectedMIMEType);
+					} finally {
+						Closer.close(input);
+						Closer.close(output);
+					}
+				}
+				else {
+					if(logMINOR) Logger.minor(this, "Ignoring content filter. The final result has not been written. Writing now.");
+					try {
+						FileUtil.copy(input, output, -1);
+						input.close();
+						output.close();
+					} finally {
+						Closer.close(input);
+						Closer.close(output);
+					}
+				}
+				if(hashes != null) {
+					HashResult[] results = hashStream.getResults();
+					if(!HashResult.strictEquals(results, hashes)) {
+						throw new FetchException(FetchException.CONTENT_HASH_FAILED);
+					}
+				}
 
-			//Filter the data, if we are supposed to
-			if(ctx.filterData){
-				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
-				try {
-					if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
-					// Send XHTML as HTML because we can't use web-pushing on XHTML.
-					if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
-					FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
-					input.close();
-					output.close();
-					String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
-					//clientMetadata = new ClientMetadata(detectedMIMEType);
-				} catch (UnsafeContentTypeException e) {
-					Logger.error(this, "Error filtering content: will not validate", e);
-					onFailure(new FetchException(e.getFetchErrorCode(), expectedSize, e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
-					if(destination != null && destination != returnBucket) {
-						destination.free();
-						if(persistent()) destination.removeFrom(container);
-					} else if(returnBucket != null && persistent())
-						returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
-					//Bucket data = result.asBucket();
-					//data.free();
-					//if(persistent()) data.removeFrom(container);
-					return;
-				} catch (URISyntaxException e) {
-					// Impossible
-					Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
-					onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state/*Not really the state's fault*/, container, context);
-					if(destination != null && destination != returnBucket) {
-						destination.free();
-						if(persistent()) destination.removeFrom(container);
-					} else if(returnBucket != null && persistent())
-						returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
-					//Bucket data = result.asBucket();
-					//data.free();
-					//if(persistent()) data.removeFrom(container);
-					return;
-				} catch (IOException e) {
-					Logger.error(this, "Error filtering content", e);
-					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state/*Not really the state's fault*/, container, context);
-					if(destination != null && destination != returnBucket) {
-						destination.free();
-						if(persistent()) destination.removeFrom(container);
-					} else if(returnBucket != null && persistent())
-						returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
-					//Bucket data = result.asBucket();
-					//data.free();
-					//if(persistent()) data.removeFrom(container);
-					return;
-				} finally {
-					Closer.close(input);
-					Closer.close(output);
-				}
+				onFinish();
+			} catch(Throwable t) {
+				setError(t);
 			}
-			else {
-				if(logMINOR) Logger.minor(this, "Ignoring content filter. The final result has not been written. Writing now.");
-				try {
-					FileUtil.copy(input, output, -1);
-					input.close();
-					output.close();
-				} catch(IOException e) {
-					Logger.error(this, "Caught "+e, e);
-					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
-					return;
-				} finally {
-					Closer.close(input);
-					Closer.close(output);
-				}
-			}
-			if(hashes != null) {
-				HashResult[] results = hashStream.getResults();
-				if(!HashResult.strictEquals(results, hashes)) {
-					onFailure(new FetchException(FetchException.CONTENT_HASH_FAILED), state, container, context);
-					return;
-				}
-			}
+		}
+
+		public synchronized void setError(Throwable t) {
+			error = t;
 			onFinish();
+		}
+
+		public synchronized void getError() throws Throwable {
+			if(error != null) throw error;
 		}
 		/** Marks that all work has finished, and wakes blocked threads.*/
 		public synchronized void onFinish() {
@@ -866,7 +892,7 @@ public class ClientGetter extends BaseClientGetter {
 		}
 
 		/** Blocks until all threads have finished executing and cleaning up.*/
-		public synchronized void waitFinished() {
+		public synchronized void waitFinished() throws Throwable {
 			while(!finished) {
 				try {
 					wait();
@@ -874,6 +900,7 @@ public class ClientGetter extends BaseClientGetter {
 					//Do nothing
 				}
 			}
+			getError();
 		}
 	}
 }
