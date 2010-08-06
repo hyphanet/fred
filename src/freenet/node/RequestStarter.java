@@ -278,10 +278,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			return false;
 		}
 		BaseSendableGet get = (BaseSendableGet) item;
-		if(get.hasValidKeys(sched.fetchingKeys(), container, context)) {
-			Logger.normal(this, "Excluding (no valid keys): "+get);
+		if(get.hasValidKeys(sched.fetchingKeys(), container, context))
 			return false;
-		}
+		Logger.normal(this, "Excluding (no valid keys): "+get);
 		return true;
 	}
 
