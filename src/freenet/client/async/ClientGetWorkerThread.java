@@ -36,7 +36,7 @@ class ClientGetWorkerThread extends Thread {
 	private static volatile boolean logMINOR;
 
 	static {
-		Logger.registerClass(ClientGetter.class);
+		Logger.registerClass(ClientGetWorkerThread.class);
 	}
 
 	ClientGetWorkerThread(PipedInputStream input, FreenetURI uri, String mimeType, Bucket destination, HashResult[] hashes, FetchContext ctx) throws IOException {
@@ -95,6 +95,7 @@ class ClientGetWorkerThread extends Thread {
 
 			onFinish();
 		} catch(Throwable t) {
+			Logger.error(this, "Exception caught while processing fetch: "+t,t);
 			setError(t);
 		}
 	}
