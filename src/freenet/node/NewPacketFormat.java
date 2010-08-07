@@ -389,18 +389,6 @@ public class NewPacketFormat implements PacketFormat {
 		SentPacket sentPacket = new SentPacket(this);
 		NPFPacket packet = new NPFPacket();
 
-		long sequenceNumber;
-		synchronized(this) {
-			sequenceNumber = nextSequenceNumber++;
-		}
-
-		if(sequenceNumber > highestReceivedAck + (NUM_SEQNUMS_TO_WATCH_FOR / 2)) {
-			//FIXME: Will result in busy looping until we receive a higher ack
-			return null;
-		}
-
-		packet.setSequenceNumber(sequenceNumber);
-
 		int numAcks = 0;
 		synchronized(acks) {
 			long firstAck = 0;
@@ -486,6 +474,18 @@ fragments:
 		}
 
 		if(packet.getLength() == 5) return null;
+		
+		long sequenceNumber;
+		synchronized(this) {
+			sequenceNumber = nextSequenceNumber++;
+		}
+
+		if(sequenceNumber > highestReceivedAck + (NUM_SEQNUMS_TO_WATCH_FOR / 2)) {
+			//FIXME: Will result in busy looping until we receive a higher ack
+			return null;
+		}
+
+		packet.setSequenceNumber(sequenceNumber);
 
 		if(packet.getFragments().size() != 0) {
 			synchronized(sentPackets) {
