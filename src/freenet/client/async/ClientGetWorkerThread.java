@@ -62,31 +62,20 @@ class ClientGetWorkerThread extends Thread {
 			//Filter the data, if we are supposed to
 			if(ctx.filterData){
 				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
-				try {
-					if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
-					// Send XHTML as HTML because we can't use web-pushing on XHTML.
-					if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
-					FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
-					input.close();
-					output.close();
-					String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
-					//clientMetadata = new ClientMetadata(detectedMIMEType);
-				} finally {
-					Closer.close(input);
-					Closer.close(output);
-				}
+				if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
+				// Send XHTML as HTML because we can't use web-pushing on XHTML.
+				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
+				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
+
+				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
+				//clientMetadata = new ClientMetadata(detectedMIMEType);
 			}
 			else {
 				if(logMINOR) Logger.minor(this, "Ignoring content filter. The final result has not been written. Writing now.");
-				try {
-					FileUtil.copy(input, output, -1);
-					input.close();
-					output.close();
-				} finally {
-					Closer.close(input);
-					Closer.close(output);
-				}
+				FileUtil.copy(input, output, -1);
 			}
+			input.close();
+			output.close();
 			if(hashes != null) {
 				HashResult[] results = hashStream.getResults();
 				if(!HashResult.strictEquals(results, hashes)) {
@@ -98,6 +87,9 @@ class ClientGetWorkerThread extends Thread {
 		} catch(Throwable t) {
 			Logger.error(this, "Exception caught while processing fetch: "+t,t);
 			setError(t);
+		} finally {
+			Closer.close(input);
+			Closer.close(output);
 		}
 	}
 
