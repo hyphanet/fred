@@ -40,6 +40,7 @@ class ClientGetWorkerThread extends Thread {
 	}
 
 	ClientGetWorkerThread(PipedInputStream input, FreenetURI uri, String mimeType, Bucket destination, HashResult[] hashes, FetchContext ctx) throws IOException {
+		super("ClientGetWorkerThread");
 		this.input = input;
 		this.ctx = ctx;
 		this.uri = uri;
