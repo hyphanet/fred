@@ -896,7 +896,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(persistent) container.activate(segment, 1);
 		SplitFileFetcherSegmentGet getter = segment.makeGetter(container, context);
 		getter.reschedule(container, context);
-		kill(container, context, false, false);
+		segment.removeSubSegment(this, container, context);
 	}
 
 	@Override
