@@ -185,7 +185,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			boolean forkOnCacheable;
 			if(req instanceof SendableGet) {
 				SendableGet sg = (SendableGet) req;
-				FetchContext ctx = sg.getContext();
+				FetchContext ctx = sg.getContext(container);
 				localRequestOnly = ctx.localRequestOnly;
 				ignoreStore = ctx.ignoreStore;
 				canWriteClientCache = ctx.canWriteClientCache;

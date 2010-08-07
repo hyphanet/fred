@@ -7,7 +7,9 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Vector;
 
@@ -35,6 +37,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.NodeCHK;
 import freenet.keys.TooBigException;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.support.LogThresholdCallback;
@@ -1232,7 +1235,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		RequestScheduler sched = context.getFetchScheduler(false);
-		seg.removeBlockNum(blockNo, container, false);
+		if(seg != null) seg.removeBlockNum(blockNo, container, false);
 		SplitFileFetcherSubSegment sub = onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries, callStore);
 		if(sub != null) {
 			sub.reschedule(container, context);
@@ -1321,7 +1324,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 		}
-		if(tries != seg.retryCount+1) {
+		if(seg != null && tries != seg.retryCount+1) {
 			Logger.error(this, "Failed on segment "+seg+" but tries for block "+blockNo+" (after increment) is "+tries);
 		}
 		if(failed) {
@@ -1671,6 +1674,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 			else
 				checkCooldownTimes[blockNo - dataCooldownTimes.length] = -1;
 		}
+	}
+
+	public synchronized void resetCooldownTimes(ObjectContainer container) {
+		for(int i=0;i<dataCooldownTimes.length;i++)
+			dataCooldownTimes[i] = -1;
+		for(int i=0;i<checkCooldownTimes.length;i++)
+			checkCooldownTimes[i] = -1;
+		if(persistent) container.store(this);
 	}
 
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
@@ -2098,6 +2109,138 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	public final int realDataBlocks() {
 		return dataBuckets.length - crossCheckBlocks;
+	}
+
+	public boolean hasValidKeys(SplitFileFetcherSegmentGet getter, 
+			KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(startedDecode || isFinishing(container)) return false;
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				if(getCooldownWakeup(i) > now) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) continue;
+				Key key = keys.getNodeKey(i, null, true);
+				if(fetching.hasKey(key)) continue;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 
+	 * @param fetching
+	 * @param onlyLowestTries If true, only return blocks of the lowest currently valid 
+	 * retry count. Otherwise return all blocks that we haven't either found or given up on.
+	 * @param container
+	 * @param context
+	 * @return
+	 */
+	public ArrayList<Integer> validBlockNumbers(KeysFetchingLocally fetching, boolean onlyLowestTries,
+			ObjectContainer container, ClientContext context) {
+		long now = System.currentTimeMillis();
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		synchronized(this) {
+			int minRetries = Integer.MAX_VALUE;
+			ArrayList<Integer> list = null;
+			if(startedDecode || isFinishing(container)) return null;
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				if(getCooldownWakeup(i) > now) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) continue;
+				// Possible ...
+				Key key = keys.getNodeKey(i, null, true);
+				if(fetching.hasKey(key)) continue;
+				if(onlyLowestTries) {
+					int retryCount = this.getRetries(i);
+					if(retryCount > minRetries) {
+						// Ignore
+						continue;
+					}
+					if(retryCount < minRetries && list != null)
+						list.clear();
+				}
+				if(list == null) list = new ArrayList<Integer>();
+				list.add(i);
+			}
+			return list;
+		}
+	}
+
+	/** Separate method because we will need to create the Key anyway for checking against
+	 * the KeysFetchingLocally, and we can reuse that in the created Block. Yes we don't 
+	 * pass that in at the moment but we will in future. 
+	 * future.
+	 * @param request
+	 * @param sched
+	 * @param container
+	 * @param context
+	 * @return
+	 */
+	public List<PersistentChosenBlock> makeBlocks(
+			PersistentChosenRequest request, RequestScheduler sched,
+			ObjectContainer container, ClientContext context) {
+		long now = System.currentTimeMillis();
+		ArrayList<PersistentChosenBlock> list = null;
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		synchronized(this) {
+			if(startedDecode || isFinishing(container)) return null;
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				if(getCooldownWakeup(i) > now) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) continue;
+				// Possible ...
+				Key key = keys.getNodeKey(i, null, true);
+				// FIXME pass in the KeysFetchingLocally and check against it.
+				//if(fetching.hasKey(key)) continue;
+				if(list == null) list = new ArrayList<PersistentChosenBlock>();
+				ClientCHK ckey = keys.getKey(i, null, true); // FIXME Duplicates the routingKey field
+				list.add(new PersistentChosenBlock(false, request, new SplitFileFetcherSegmentSendableRequestItem(i), key, ckey, sched));
+			}
+			return list;
+		}
+	}
+
+	public long countAllKeys(ObjectContainer container, ClientContext context) {
+		int count = 0;
+		synchronized(this) {
+			if(startedDecode || isFinishing(container)) return 0;
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) continue;
+				count++;
+			}
+			return count;
+		}
+	}
+
+	public long countSendableKeys(ObjectContainer container, ClientContext context) {
+		int count = 0;
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(startedDecode || isFinishing(container)) return 0;
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				if(getCooldownWakeup(i) > now) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) continue;
+				count++;
+			}
+			return count;
+		}
 	}
 
 }

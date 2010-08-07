@@ -42,14 +42,11 @@ public abstract class SendableGet extends BaseSendableGet {
 	public abstract Key[] listKeys(ObjectContainer container);
 
 	/** Get the fetch context (settings) object. */
-	public abstract FetchContext getContext();
+	public abstract FetchContext getContext(ObjectContainer container);
 	
 	/** Called when/if the low-level request fails. */
 	public abstract void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context);
 	
-	/** Should the request ignore the datastore? */
-	public abstract boolean ignoreStore();
-
 	// Implementation
 
 	public SendableGet(ClientRequester parent) {

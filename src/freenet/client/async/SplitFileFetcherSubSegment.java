@@ -85,7 +85,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 	
 	@Override
-	public FetchContext getContext() {
+	public FetchContext getContext(ObjectContainer container) {
+		if(persistent) container.activate(ctx, 1);
 		return ctx;
 	}
 
@@ -334,11 +335,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return retval;
 	}
 	
-	@Override
-	public boolean ignoreStore() {
-		return ctx.ignoreStore;
-	}
-
 	// SendableGet has a hashCode() and inherits equals(), which is consistent with the hashCode().
 	
 	public void onFailure(BulkCallFailureItem[] items, ObjectContainer container, ClientContext context) {

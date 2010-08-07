@@ -91,7 +91,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public FetchContext getContext() {
+	public FetchContext getContext(ObjectContainer container) {
+		if(persistent) container.activate(ctx, 1);
 		return ctx;
 	}
 
@@ -154,11 +155,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(persistent) container.activate(parent, 1); // Not much point deactivating it
 		short retval = parent.getPriorityClass();
 		return retval;
-	}
-
-	@Override
-	public boolean ignoreStore() {
-		return ctx.ignoreStore;
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {

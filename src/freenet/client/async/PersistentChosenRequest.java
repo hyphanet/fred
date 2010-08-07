@@ -60,7 +60,7 @@ public class PersistentChosenRequest {
 		this.retryCount = retryCount;
 		if(req instanceof SendableGet) {
 			SendableGet sg = (SendableGet) req;
-			FetchContext ctx = sg.getContext();
+			FetchContext ctx = sg.getContext(container);
 			if(container != null)
 				container.activate(ctx, 1);
 			localRequestOnly = ctx.localRequestOnly;

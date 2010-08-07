@@ -997,7 +997,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		boolean done = false;
 
 		@Override
-		public FetchContext getContext() {
+		public FetchContext getContext(ObjectContainer container) {
 			return ctx;
 		}
 
@@ -1014,11 +1014,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		@Override
 		public ClientKey getKey(Object token, ObjectContainer container) {
 			return null;
-		}
-
-		@Override
-		public boolean ignoreStore() {
-			return false;
 		}
 
 		@Override
