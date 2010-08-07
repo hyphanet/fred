@@ -161,4 +161,11 @@ public class SortedVectorByNumber {
 		return persistent;
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		for(int i=0;i<data.length;i++) {
+			if(data[i] != null) throw new IllegalStateException("Still have contents: "+i);
+		}
+		container.delete(this);
+	}
+
 }

@@ -44,7 +44,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	private RemoveRandomWithObject[] grabArrays;
 	private Object[] grabClients;
 	private final boolean persistent;
-	private final RemoveRandomParent parent;
+	private RemoveRandomParent parent;
 	
 	public SectoredRandomGrabArray(boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
 		this.persistent = persistent;
@@ -336,4 +336,65 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 	}
 
+	public void moveElementsTo(SectoredRandomGrabArray newTopLevel,
+			ObjectContainer container, boolean canCommit) {
+		for(int i=0;i<grabArrays.length;i++) {
+			RemoveRandomWithObject grabber = (RemoveRandomWithObject) grabArrays[i];
+			Object client = grabClients[i];
+			if(grabber == null && client == null) continue;
+			if(grabber == null && client != null) {
+				System.err.println("Grabber is null but client is not null? client is "+client);
+				continue;
+			}
+			if(grabber != null && client == null) {
+				System.err.println("Client is null but grabber is not? grabber is "+grabber);
+			}
+			RemoveRandomWithObject existingGrabber = newTopLevel.getGrabber(client);
+			if(persistent()) container.activate(client, 1);
+			System.out.println("Merging with existing grabber for client "+client);
+			if(persistent()) container.deactivate(client, 1);
+			if(existingGrabber != null) {
+				if(persistent) {
+					container.activate(grabber, 1);
+					container.activate(existingGrabber, 1);
+				}
+				grabber.moveElementsTo(existingGrabber, container, canCommit);
+				if(persistent) {
+					container.deactivate(grabber, 1);
+					container.deactivate(existingGrabber, 1);
+				}
+			} else {
+				if(persistent) container.activate(grabber, 1);
+				grabber.setParent(newTopLevel, container);
+				newTopLevel.addGrabber(client, grabber, container);
+				if(persistent) container.deactivate(grabber, 1);
+			}
+			grabArrays[i] = null;
+			grabClients[i] = null;
+			if(persistent) {
+				container.store(this);
+				if(canCommit) container.commit();
+			}
+		}
+		grabArrays = new RemoveRandomWithObject[0];
+		grabClients = new Object[0];
+		if(persistent) {
+			container.store(this);
+			if(canCommit) container.commit();
+		}
+	}
+
+	public void moveElementsTo(RemoveRandom existingGrabber,
+			ObjectContainer container, boolean canCommit) {
+		if(existingGrabber instanceof SectoredRandomGrabArray)
+			moveElementsTo((SectoredRandomGrabArray)existingGrabber, container, canCommit);
+		else
+			throw new IllegalArgumentException();
+	}
+
+	public void setParent(RemoveRandomParent newParent, ObjectContainer container) {
+		this.parent = newParent;
+		if(persistent()) container.store(this);
+	}
+	
 }

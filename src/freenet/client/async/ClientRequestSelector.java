@@ -21,6 +21,7 @@ import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
+import freenet.support.SectoredRandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
@@ -100,7 +101,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
 	private int removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container){
-		SortedVectorByNumber result = null;
+		SectoredRandomGrabArray result = null;
 		
 		short iteration = 0, priority;
 		// we loop to ensure we try every possibilities ( n + 1)
@@ -112,9 +113,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			if(transientOnly || schedCore == null)
 				result = null;
 			else
-				result = schedCore.priorities[priority];
+				result = schedCore.newPriorities[priority];
 			if(result == null)
-				result = schedTransient.priorities[priority];
+				result = schedTransient.newPriorities[priority];
 			if(priority > maxPrio) {
 				fuzz++;
 				continue; // Don't return because first round may be higher with soft scheduling
@@ -230,89 +231,54 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 		if(maxPrio >= RequestStarter.MINIMUM_PRIORITY_CLASS)
 			maxPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
-		for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
+outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
-			SortedVectorByNumber perm = null;
+			SectoredRandomGrabArray perm = null;
 			if(!transientOnly)
-				perm = schedCore.priorities[choosenPriorityClass];
-			SortedVectorByNumber trans = null;
+				perm = schedCore.newPriorities[choosenPriorityClass];
+			SectoredRandomGrabArray trans = null;
 			if(!notTransient)
-				trans = schedTransient.priorities[choosenPriorityClass];
+				trans = schedTransient.newPriorities[choosenPriorityClass];
 			if(perm == null && trans == null) {
 				if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
 				continue; // Try next priority
 			}
 			int permRetryIndex = 0;
 			int transRetryIndex = 0;
+			boolean triedPerm = false;
+			boolean triedTrans = false;
 			while(true) {
-				int permRetryCount = perm == null ? Integer.MAX_VALUE : perm.getNumberByIndex(permRetryIndex);
-				int transRetryCount = trans == null ? Integer.MAX_VALUE : trans.getNumberByIndex(transRetryIndex);
-				if(choosenPriorityClass == maxPrio) {
-					if(permRetryCount >= retryCount) {
-						permRetryCount = Integer.MAX_VALUE;
-					}
-					if(transRetryCount >= retryCount) {
-						transRetryCount = Integer.MAX_VALUE;
-					}
-				}
-				if(permRetryCount == Integer.MAX_VALUE && transRetryCount == Integer.MAX_VALUE) {
-					if(logMINOR) Logger.minor(this, "No requests to run: ran out of retrycounts on chosen priority");
-					break; // Try next priority
-				}
-				SectoredRandomGrabArrayWithInt chosenTracker = null;
-				SortedVectorByNumber trackerParent = null;
-				if(permRetryCount == transRetryCount) {
-					// Choose between them.
-					SectoredRandomGrabArrayWithInt permRetryTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
-					if(permRetryTracker != null)
-						container.activate(permRetryTracker, 1);
-					SectoredRandomGrabArrayWithInt transRetryTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
-					int permTrackerSize = permRetryTracker.size();
-					int transTrackerSize = transRetryTracker.size();
-					if(permTrackerSize + transTrackerSize == 0) {
-						permRetryIndex++;
-						transRetryIndex++;
-						continue;
-					}
-					if(random.nextInt(permTrackerSize + transTrackerSize) > permTrackerSize) {
-						chosenTracker = permRetryTracker;
-						trackerParent = perm;
-						permRetryIndex++;
+				SectoredRandomGrabArray chosenTracker = null;
+				// If we can't find anything on perm (on the previous loop), try trans, and vice versa
+				if(triedTrans) trans = null;
+				if(triedPerm) perm = null;
+				if(perm == null && trans == null) continue outer;
+				else if(perm == null && trans != null) chosenTracker = trans;
+				else if(perm != null && trans == null) chosenTracker = perm;
+				else {
+					container.activate(perm, 1);
+					int permSize = perm.size();
+					int transSize = trans.size();
+					if(random.nextInt(permSize + transSize) > permSize) {
+						chosenTracker = perm;
+						triedPerm = true;
 					} else {
-						chosenTracker = transRetryTracker;
-						trackerParent = trans;
-						transRetryIndex++;
+						chosenTracker = trans;
+						triedTrans = true;
 					}
-				} else if(permRetryCount < transRetryCount) {
-					chosenTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
-					if(chosenTracker != null)
-						container.activate(chosenTracker, 1);
-					trackerParent = perm;
-					permRetryIndex++;
-				} else {
-					chosenTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
-					trackerParent = trans;
-					transRetryIndex++;
 				}
+				
 				if(logMINOR)
-					Logger.minor(this, "Got retry count tracker "+chosenTracker);
+					Logger.minor(this, "Got priority tracker "+chosenTracker);
 				SendableRequest req = (SendableRequest) chosenTracker.removeRandom(starter, container, context);
-				if(chosenTracker.isEmpty()) {
-					trackerParent.remove(chosenTracker.getNumber(), container);
-					if(chosenTracker.persistent())
-						chosenTracker.removeFrom(container);
-					if(trackerParent.isEmpty()) {
-						if(logMINOR) Logger.minor(this, "Should remove priority");
-					}
-				}
 				if(req == null) {
-					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+chosenTracker.getNumber()+" ("+chosenTracker+") of priority "+choosenPriorityClass);
+					if(logMINOR) Logger.minor(this, "No requests, priority "+choosenPriorityClass+" persistent = "+chosenTracker.persistent());
 					continue; // Try next retry count.
 				}
 				if(chosenTracker.persistent())
 					container.activate(req, 1); // FIXME
-				if(req.persistent() != trackerParent.persistent()) {
-					Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+trackerParent.persistent()+" for "+req);
+				if(req.persistent() != chosenTracker.persistent()) {
+					Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+chosenTracker.persistent()+" for "+req);
 					// FIXME fix it
 				}
 				if(req.getPriorityClass(container) != choosenPriorityClass) {
@@ -370,7 +336,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					}
 					if (altReq != null && altReq != req) {
 						int prio = altReq.getPriorityClass(container);
-						if(prio < choosenPriorityClass || (prio == choosenPriorityClass && ClientRequestSchedulerBase.fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber())) {
+						if(prio < choosenPriorityClass) {
 							// Use the recent one instead
 							if(logMINOR)
 								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
@@ -401,7 +367,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 							if(altReq != null) {
 								container.activate(altReq, 1);
 								int prio = altReq.getPriorityClass(container);
-								if((prio < choosenPriorityClass || (prio == choosenPriorityClass && ClientRequestSchedulerBase.fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
+								if((prio < choosenPriorityClass)
 										&& !altReq.isEmpty(container) && altReq != req) {
 									// Use the recent one instead
 									if(logMINOR)
@@ -423,7 +389,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				}
 				
 				// Now we have chosen a request.
-				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
+				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" (prio "+
 						req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
 				return req;
