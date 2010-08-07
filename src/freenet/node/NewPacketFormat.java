@@ -477,12 +477,11 @@ fragments:
 		
 		long sequenceNumber;
 		synchronized(this) {
+			if(nextSequenceNumber > highestReceivedAck + (NUM_SEQNUMS_TO_WATCH_FOR / 2)) {
+				//FIXME: Will result in busy looping until we receive a higher ack
+				return null;
+			}
 			sequenceNumber = nextSequenceNumber++;
-		}
-
-		if(sequenceNumber > highestReceivedAck + (NUM_SEQNUMS_TO_WATCH_FOR / 2)) {
-			//FIXME: Will result in busy looping until we receive a higher ack
-			return null;
 		}
 
 		packet.setSequenceNumber(sequenceNumber);
