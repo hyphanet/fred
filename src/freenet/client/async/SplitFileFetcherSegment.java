@@ -80,6 +80,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	final int[] dataRetries;
 	final int[] checkRetries;
 	final Vector<SplitFileFetcherSubSegment> subSegments;
+	private SplitFileFetcherSegmentGet getter;
 	final int minFetched;
 	final SplitFileFetcher parentFetcher;
 	final ClientRequester parent;
@@ -187,6 +188,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		dataCooldownTimes = new long[dataBlocks];
 		checkCooldownTimes = new long[checkBlocks];
 		subSegments = new Vector<SplitFileFetcherSubSegment>();
+		getter = new SplitFileFetcherSegmentGet(parent, this);
 		maxBlockLength = maxTempLength;
 		this.blockFetchContext = blockFetchContext;
 		this.recursionLevel = 0;
@@ -2241,6 +2243,17 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			return count;
 		}
+	}
+
+	public SplitFileFetcherSegmentGet makeGetter(ObjectContainer container,
+			ClientContext context) {
+		if(getter == null) {
+			getter = new SplitFileFetcherSegmentGet(parent, this);
+			System.out.println("Auto-migrated from subsegments to SegmentGet on "+this+" : "+getter);
+			getter.storeTo(container);
+			container.store(this);
+			return getter;
+		} else return getter;
 	}
 
 }

@@ -31,6 +31,7 @@ import freenet.node.SupportsBulkCallFailure;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.NativeThread;
 
 /**
  * A sub-segment of a segment of a splitfile being fetched.
@@ -791,20 +792,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	@Override
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(segment, 1);
-		}
-		if(cancelled) {
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Not requeueing as already cancelled");
-			return;
-		}
-		if(Logger.shouldLog(LogLevel.MINOR, this))
-			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		if(!segment.requeueAfterCooldown(key, time, container, context, this)) {
-			Logger.error(this, "Key was not wanted after cooldown: "+key+" for "+this+" in requeueAfterCooldown");
-		}
-		if(persistent)
-			container.deactivate(segment, 1);
+		queueMigrateToSegmentFetcher(container, context);
 	}
 
 	@Override
@@ -837,22 +825,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	public void reschedule(ObjectContainer container, ClientContext context) {
-		try {
-			if(persistent) {
-				container.activate(segment, 1);
-				container.activate(segment.blockFetchContext, 1);
-			}
-			// Wierd NPEs, test for why...
-			if(segment == null) {
-				String s = "Segment is null on "+this;
-				if(container != null)
-					s += " (persistent="+persistent+" but container non-null, active = "+container.ext().isActive(this)+" stored = "+container.ext().isStored(this);
-				throw new NullPointerException(s);
-			}
-			getScheduler(context).register(null, new SendableGet[] { this }, persistent, container, segment.blockFetchContext.blocks, true);
-		} catch (KeyListenerConstructionException e) {
-			Logger.error(this, "Impossible: "+e+" on "+this, e);
-		}
+		queueMigrateToSegmentFetcher(container, context);
 	}
 
 	public boolean removeBlockNum(int blockNum, ObjectContainer container, boolean callerActivatesAndSets) {
@@ -894,42 +867,36 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	@Override
 	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		queueMigrateToSegmentFetcher(container, context);
+		return null;
+	}
+
+	private void queueMigrateToSegmentFetcher(ObjectContainer container,
+			ClientContext context) {
 		if(persistent) {
-			container.activate(segment, 1);
-			container.activate(blockNums, 1);
-		}
-		Integer[] blockNumbers;
-		synchronized(this) {
-			blockNumbers = blockNums.toArray(new Integer[blockNums.size()]);
-		}
-		ArrayList<PersistentChosenBlock> blocks = new ArrayList<PersistentChosenBlock>();
-		Arrays.sort(blockNumbers);
-		int prevBlockNumber = -1;
-		for(int i=0;i<blockNumbers.length;i++) {
-			int blockNumber = blockNumbers[i];
-			if(blockNumber == prevBlockNumber) {
-				Logger.error(this, "Duplicate block number in makeBlocks() in "+this+": two copies of "+blockNumber);
-				continue;
+			try {
+				context.jobRunner.queue(new DBJob() {
+					
+					public boolean run(ObjectContainer container, ClientContext context) {
+						migrateToSegmentFetcher(container, context);
+						return false;
+					}
+					
+				}, NativeThread.NORM_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Ignore
 			}
-			prevBlockNumber = blockNumber;
-			ClientKey key = segment.getBlockKey(blockNumber, container);
-			if(key == null) {
-				if(logMINOR)
-					Logger.minor(this, "Block "+blockNumber+" is null, maybe race condition");
-				continue;
-			}
-			key = key.cloneKey();
-			Key k = key.getNodeKey(true);
-			PersistentChosenBlock block = new PersistentChosenBlock(false, request, new MySendableRequestItem(blockNumber), k, key, sched);
-			if(logMINOR) Logger.minor(this, "Created block "+block+" for block number "+blockNumber+" on "+this);
-			blocks.add(block);
+		} else {
+			migrateToSegmentFetcher(container, context);
 		}
-		blocks.trimToSize();
-		if(persistent) {
-			container.deactivate(segment, 1);
-			container.deactivate(blockNums, 1);
-		}
-		return blocks;
+	}
+
+	private void migrateToSegmentFetcher(ObjectContainer container,
+			ClientContext context) {
+		if(persistent) container.activate(segment, 1);
+		SplitFileFetcherSegmentGet getter = segment.makeGetter(container, context);
+		getter.reschedule(container, context);
+		kill(container, context, false, false);
 	}
 
 	@Override

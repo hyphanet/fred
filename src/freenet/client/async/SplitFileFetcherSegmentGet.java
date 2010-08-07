@@ -194,7 +194,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet {
 		reschedule(container, context);
 	}
 
-	private void reschedule(ObjectContainer container, ClientContext context) {
+	void reschedule(ObjectContainer container, ClientContext context) {
 		if(this.getParentGrabArray() != null) {
 			if(logMINOR) Logger.minor(this, "Not rescheduling as already scheduled on "+getParentGrabArray());
 			return;
@@ -307,6 +307,10 @@ public class SplitFileFetcherSegmentGet extends SendableGet {
 		List<PersistentChosenBlock> blocks = segment.makeBlocks(request, sched, container, context);
 		if(persistent) container.deactivate(segment, 1);
 		return blocks;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.store(this);
 	}
 
 }
