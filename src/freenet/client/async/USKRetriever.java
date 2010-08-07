@@ -4,7 +4,6 @@
 package freenet.client.async;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -29,7 +28,6 @@ import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
-import freenet.support.io.FileUtil;
 import freenet.support.Logger.LogLevel;
 
 /**

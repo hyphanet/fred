@@ -3,11 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -36,9 +34,7 @@ import freenet.client.filter.KnownUnsafeContentTypeException;
 import freenet.client.filter.MIMEType;
 import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
-import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.crypt.HashResult;
-import freenet.crypt.MultiHashInputStream;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -48,8 +44,6 @@ import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
-import freenet.support.io.Closer;
-import freenet.support.io.FileUtil;
 import freenet.support.io.NullBucket;
 
 /**

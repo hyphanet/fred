@@ -47,7 +47,6 @@ import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import freenet.support.io.FileUtil;
 
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
