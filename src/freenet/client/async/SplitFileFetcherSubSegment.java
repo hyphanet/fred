@@ -544,6 +544,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(blockNums, 1);
 		}
 		synchronized(segment) {
+			if(blockNums.isEmpty() && logMINOR)
+				Logger.minor(this, "Subsegment is empty, removing: "+this);
 			return cancelled || blockNums.isEmpty();
 		}
 	}
