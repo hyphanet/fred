@@ -25,7 +25,15 @@ public class LRUHashtable<K, V> {
      * overall improvement.
      */
 	private final DoublyLinkedListImpl<QItem<K, V>> list = new DoublyLinkedListImpl<QItem<K, V>>();
-    private final Hashtable<K, QItem<K, V>> hash = new Hashtable<K, QItem<K, V>>();
+    private final Hashtable<K, QItem<K, V>> hash;
+    
+    public LRUHashtable() {
+    	hash = new Hashtable<K, QItem<K, V>>();
+    }
+    
+    public LRUHashtable(int initialSize) {
+    	hash = new Hashtable<K, QItem<K, V>>(initialSize);
+    }
     
     /**
      *       push()ing an object that is already in
