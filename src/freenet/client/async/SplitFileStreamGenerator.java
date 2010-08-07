@@ -42,4 +42,8 @@ public class SplitFileStreamGenerator implements StreamGenerator {
 		}
 	}
 
+	public long size() {
+		return length;
+	}
+
 }

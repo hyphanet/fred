@@ -12,4 +12,5 @@ import com.db4o.ObjectContainer;
 public interface StreamGenerator {
 
 	public void writeTo(OutputStream os, ObjectContainer container, ClientContext context) throws IOException;
+	public long size();
 }

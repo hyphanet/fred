@@ -40,4 +40,8 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 		}
 	}
 
+	public long size() {
+		return bucket.size();
+	}
+
 }
