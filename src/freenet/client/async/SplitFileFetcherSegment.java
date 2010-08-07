@@ -1427,32 +1427,15 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.deactivate(parentFetcher, 1);
 	}
 
-	public SplitFileFetcherSubSegment schedule(ObjectContainer container, ClientContext context) {
+	public SendableGet schedule(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 		}
-		try {
-			SplitFileFetcherSubSegment seg = getSubSegment(0, container, false, null);
-			if(persistent)
-				container.activate(seg, 1);
-			seg.addAll(dataRetries.length+checkRetries.length, container, context, false);
-
-			if(logMINOR)
-				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
-			
-			synchronized(this) {
-				scheduled = true;
-			}
-			if(persistent)
-				container.store(this);
-			if(persistent)
-				container.deactivate(seg, 1);
-			return seg;
-		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t+" scheduling "+this, t);
-			fail(new FetchException(FetchException.INTERNAL_ERROR, t), container, context, true);
-			return null;
+		SplitFileFetcherSegmentGet get = makeGetter(container, context);
+		synchronized(this) {
+			scheduled = true;
 		}
+		return get;
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
