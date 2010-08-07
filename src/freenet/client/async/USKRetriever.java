@@ -79,7 +79,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, final ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(LogLevel.MINOR, this))
-			Logger.minor(this, "Success on "+this+" from "+state+" : mime type "+clientMetadata.getMIMEType());
+			Logger.minor(this, "Success on "+this+" from "+state+" : length "+streamGenerator.size()+"mime type "+clientMetadata.getMIMEType());
 		DecompressorThreadManager decompressorManager = null;
 		OutputStream output = null;
 		Bucket finalResult = null;
