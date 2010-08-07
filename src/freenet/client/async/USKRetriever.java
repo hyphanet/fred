@@ -99,6 +99,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		PipedInputStream pipeIn = null;
 		PipedOutputStream pipeOut = null;
 		try {
+			output = finalResult.getOutputStream();
 			// Decompress
 			if(decompressors != null) {
 				if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Decompressing...");
@@ -110,14 +111,13 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 				pipeOut = new PipedOutputStream(pipeIn);
 				decompressorManager = new DecompressorThreadManager(pipeIn, decompressors, maxLen);
 				pipeIn = decompressorManager.execute();
-				ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, null, null, finalResult, null, ctx);
+				ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, null, null, output, null, null);
 				worker.start();
 				streamGenerator.writeTo(pipeOut, container, context);
 				worker.waitFinished();
 				pipeOut.close();
 			} else {
 				try {
-					output = finalResult.getOutputStream();
 					streamGenerator.writeTo(output, container, context);
 					output.close();
 				} finally {

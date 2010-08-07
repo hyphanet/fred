@@ -39,14 +39,14 @@ class ClientGetWorkerThread extends Thread {
 		Logger.registerClass(ClientGetWorkerThread.class);
 	}
 
-	ClientGetWorkerThread(PipedInputStream input, FreenetURI uri, String mimeType, Bucket destination, HashResult[] hashes, FetchContext ctx) throws IOException {
+	ClientGetWorkerThread(PipedInputStream input, FreenetURI uri, String mimeType, OutputStream output, HashResult[] hashes, FetchContext ctx) throws IOException {
 		super("ClientGetWorkerThread");
 		this.input = input;
 		this.ctx = ctx;
 		this.uri = uri;
 		this.mimeType = mimeType;
 		this.hashes = hashes;
-		output = destination.getOutputStream();
+		this.output = output;
 	}
 
 	@Override

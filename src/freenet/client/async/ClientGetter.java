@@ -276,7 +276,8 @@ public class ClientGetter extends BaseClientGetter {
 
 		ClientGetWorkerThread worker = null;
 		try {
-			worker = new ClientGetWorkerThread(dataInput, uri, mimeType, finalResult, hashes, ctx);
+			OutputStream output = finalResult.getOutputStream();
+			worker = new ClientGetWorkerThread(dataInput, uri, mimeType, output, hashes, ctx);
 			worker.start();
 			streamGenerator.writeTo(dataOutput, container, context);
 
