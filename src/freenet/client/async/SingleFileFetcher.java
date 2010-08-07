@@ -1033,14 +1033,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					streamGenerator.writeTo(pipeOut, container, context);
 					decompressorManager.waitFinished();
 					worker.waitFinished();
-				} else {
-					try {
-						streamGenerator.writeTo(output, container, context);
-						output.close();
-					} finally {
-						Closer.close(output);
-					}
-				}
+				} else streamGenerator.writeTo(output, container, context);
+
+				output.close();
 				pipeOut.close();
 				pipeIn.close();
 			} catch (OutOfMemoryError e) {
