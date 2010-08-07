@@ -243,8 +243,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
 				continue; // Try next priority
 			}
-			int permRetryIndex = 0;
-			int transRetryIndex = 0;
 			boolean triedPerm = false;
 			boolean triedTrans = false;
 			while(true) {
