@@ -251,9 +251,13 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				if(triedTrans) trans = null;
 				if(triedPerm) perm = null;
 				if(perm == null && trans == null) continue outer;
-				else if(perm == null && trans != null) chosenTracker = trans;
-				else if(perm != null && trans == null) chosenTracker = perm;
-				else {
+				else if(perm == null && trans != null) {
+					chosenTracker = trans;
+					triedTrans = true;
+				} else if(perm != null && trans == null) {
+					chosenTracker = perm;
+					triedPerm = true;
+				} else {
 					container.activate(perm, 1);
 					int permSize = perm.size();
 					int transSize = trans.size();
@@ -271,7 +275,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				SendableRequest req = (SendableRequest) chosenTracker.removeRandom(starter, container, context);
 				if(req == null) {
 					if(logMINOR) Logger.minor(this, "No requests, priority "+choosenPriorityClass+" persistent = "+chosenTracker.persistent());
-					continue outer; // Try next priority.
+					continue;
 				}
 				if(chosenTracker.persistent())
 					container.activate(req, 1); // FIXME
@@ -303,7 +307,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						schedCore.innerRegister(req, random, container, null);
 					else
 						schedTransient.innerRegister(req, random, container, null);
-					continue; // Try the rest of the priority.
+					continue;
 				}
 				
 				// Check recentSuccesses
