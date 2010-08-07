@@ -1011,10 +1011,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		
 		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
-			InputStream input = null;
 			OutputStream output = null;
-			PipedInputStream pipeIn = null;
-			PipedOutputStream pipeOut = null;
+			PipedInputStream pipeIn = new PipedInputStream();
+			PipedOutputStream pipeOut = new PipedOutputStream();
 			Bucket data = null;
 			if(persistent) {
 				container.activate(decompressors, 5);
@@ -1024,35 +1023,26 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			try {
 				data = context.getBucketFactory(persistent).makeBucket(maxLen);
 				output = data.getOutputStream();
-				final OutputStream finalOutput = output;
-				final ClientGetState finalState = state;
-				final ObjectContainer finalContainer = container;
-				final ClientContext finalContext = context;
-				pipeIn = new PipedInputStream();
-				pipeOut = new PipedOutputStream(pipeIn);
 				if(decompressors != null) {
 					if(logMINOR) Logger.minor(this, "decompressing...");
+					pipeOut.connect(pipeIn);
 					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(pipeIn, decompressors, maxLen);
-					input = decompressorManager.execute();
-					final InputStream finalInput = input;
-					new Thread() {
-						public void run() {
-							try {
-								synchronized(finalOutput) {
-									FileUtil.copy(finalInput, finalOutput, -1);
-								}
-							} catch(IOException e) {
-								onFailure(new FetchException(FetchException.BUCKET_ERROR, e), finalState, finalContainer, finalContext);
-							}
-						}
-					}.start();
+					pipeIn = decompressorManager.execute();
+					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, null, null, output, null, null);
+					worker.start();
 					streamGenerator.writeTo(pipeOut, container, context);
-				} else streamGenerator.writeTo(output, container, context);
-				synchronized(finalOutput) {
-					pipeOut.close();
-					input.close();
-					output.close();
+					decompressorManager.waitFinished();
+					worker.waitFinished();
+				} else {
+					try {
+						streamGenerator.writeTo(output, container, context);
+						output.close();
+					} finally {
+						Closer.close(output);
+					}
 				}
+				pipeOut.close();
+				pipeIn.close();
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
@@ -1064,7 +1054,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				return;
 			} finally {
 				Closer.close(pipeOut);
-				Closer.close(input);
+				Closer.close(pipeIn);
 				Closer.close(output);
 			}
 
