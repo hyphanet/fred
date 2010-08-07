@@ -271,7 +271,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				SendableRequest req = (SendableRequest) chosenTracker.removeRandom(starter, container, context);
 				if(req == null) {
 					if(logMINOR) Logger.minor(this, "No requests, priority "+choosenPriorityClass+" persistent = "+chosenTracker.persistent());
-					continue; // Try next retry count.
+					continue outer; // Try next priority.
 				}
 				if(chosenTracker.persistent())
 					container.activate(req, 1); // FIXME
@@ -303,7 +303,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						schedCore.innerRegister(req, random, container, null);
 					else
 						schedTransient.innerRegister(req, random, container, null);
-					continue; // Try the next one on this retry count.
+					continue; // Try the rest of the priority.
 				}
 				
 				// Check recentSuccesses
