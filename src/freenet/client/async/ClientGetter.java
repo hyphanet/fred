@@ -292,9 +292,10 @@ public class ClientGetter extends BaseClientGetter {
 
 		if(decompressorManager != null) {
 			if(logMINOR) Logger.minor(this, "Waiting for decompression to finalize");
-			decompressorManager.waitFinished();
-			if(decompressorManager.getError() != null) {
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, decompressorManager.getError()), state, container, context);
+			try {
+				decompressorManager.waitFinished();
+			} catch(Throwable t) {
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 				return;
 			}
 		}

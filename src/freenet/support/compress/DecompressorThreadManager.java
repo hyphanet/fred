@@ -28,7 +28,7 @@ public class DecompressorThreadManager {
 	PipedOutputStream output = new PipedOutputStream();
 	final long maxLen;
 	private boolean finished = false;
-	private Exception error = null;
+	private Throwable error = null;
 
 	/** Creates a new DecompressorThreadManager
 	 * @param inputStream The stream that will be decompressed, if compressed
@@ -57,8 +57,8 @@ public class DecompressorThreadManager {
 	 * chaining the output of the previous to the next.
 	 * @return An InputStream from which uncompressed data may be read from
 	 */
-	public synchronized PipedInputStream execute() throws Exception{
-		if(getError() != null) throw getError();
+	public synchronized PipedInputStream execute() throws Throwable {
+		if(error != null) throw error;
 		if(threads.isEmpty()) {
 			onFinish();
 			return input;
@@ -72,9 +72,9 @@ public class DecompressorThreadManager {
 				new Thread(threadRunnable, "DecompressorThread"+count).start();
 				count++;
 			}
-			output.close();			
-		} catch(Exception e) {
-			onFailure(e);
+			output.close();
+		} catch(Throwable t) {
+			onFailure(t);
 		}
 		finally {
 			Closer.close(output);
@@ -87,8 +87,8 @@ public class DecompressorThreadManager {
 	 * decompression threads
 	 * @param e The thrown exception
 	 */
-	public synchronized void onFailure(Exception e) {
-		error = e;
+	public synchronized void onFailure(Throwable t) {
+		error = t;
 		onFinish();
 	}
 
@@ -100,7 +100,7 @@ public class DecompressorThreadManager {
 	}
 
 	/** Blocks until all threads have finished executing and cleaning up.*/
-	public synchronized void waitFinished() {
+	public synchronized void waitFinished() throws Throwable {
 		while(!finished) {
 			try {
 				wait();
@@ -108,12 +108,13 @@ public class DecompressorThreadManager {
 				//Do nothing
 			}
 		}
+		if(error != null) throw error;
 	}
 
 	/** Returns an exception which was thrown during decompression
 	 * @return Returns an exception which was caught during the decompression
 	 */
-	public synchronized Exception getError() {
+	public synchronized Throwable getError() {
 		return error;
 	}
 
