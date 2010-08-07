@@ -60,8 +60,9 @@ class ClientGetWorkerThread extends Thread {
 				input = hashStream;
 			}
 			//Filter the data, if we are supposed to
-			if(ctx.filterData){
+			if(ctx != null && ctx.filterData){
 				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
+				if(mimeType == null || uri == null || input == null || output == null) throw new IOException("Insufficient arguements to worker thread");
 				if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
 				// Send XHTML as HTML because we can't use web-pushing on XHTML.
 				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
