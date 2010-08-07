@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 
+import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.filter.ContentFilter;
@@ -18,7 +19,6 @@ import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
-import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -32,6 +32,7 @@ class ClientGetWorkerThread extends Thread {
 	private OutputStream output;
 	private boolean finished = false;
 	private Throwable error = null;
+	private ClientMetadata clientMetadata = null;
 
 	private static volatile boolean logMINOR;
 
@@ -69,7 +70,9 @@ class ClientGetWorkerThread extends Thread {
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
-				//clientMetadata = new ClientMetadata(detectedMIMEType);
+				synchronized(this) {
+					clientMetadata = new ClientMetadata(detectedMIMEType);
+				}
 			}
 			else {
 				if(logMINOR) Logger.minor(this, "Ignoring content filter. The final result has not been written. Writing now.");
@@ -92,6 +95,10 @@ class ClientGetWorkerThread extends Thread {
 			Closer.close(input);
 			Closer.close(output);
 		}
+	}
+
+	public synchronized ClientMetadata getClientMetadata() {
+		return clientMetadata;
 	}
 
 	public synchronized void setError(Throwable t) {

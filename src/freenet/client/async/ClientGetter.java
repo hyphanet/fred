@@ -269,6 +269,10 @@ public class ClientGetter extends BaseClientGetter {
 			if(logMINOR) Logger.minor(this, "Waiting for hashing, filtration, and writing to finish");
 			worker.waitFinished();
 
+			if(worker.getClientMetadata() != null) {
+				clientMetadata = worker.getClientMetadata();
+				result = new FetchResult(clientMetadata, finalResult);
+			}
 			dataOutput.close();
 			dataInput.close();
 			output.close();
