@@ -657,21 +657,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(segment, 1);
 			container.activate(blockNums, 1);
 		}
-		if(logMINOR)
-			Logger.minor(this, "Possibly removing from parent: "+this);
-		synchronized(segment) {
-			if(!blockNums.isEmpty()) {
-				if(persistent) container.deactivate(blockNums, 1);
-				return false;
-			}
-			if(logMINOR)
-				Logger.minor(this, "Definitely removing from parent: "+this);
-			if(!segment.maybeRemoveSeg(this, container)) {
-				if(persistent) container.deactivate(blockNums, 1);
-				return false;
-			}
-			cancelled = true;
-		}
+		segment.rescheduleGetter(container, context);
+		segment.removeSubSegment(this, container, context);
 		return true;
 	}
 
@@ -895,8 +882,10 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			ClientContext context) {
 		if(persistent) container.activate(segment, 1);
 		SplitFileFetcherSegmentGet getter = segment.makeGetter(container, context);
+		if(persistent) container.activate(getter, 1);
 		getter.reschedule(container, context);
 		segment.removeSubSegment(this, container, context);
+		if(persistent) container.deactivate(getter, 1);
 	}
 
 	@Override

@@ -303,7 +303,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				}
 				int blockNum = segment.getBlockNumber(key, container);
 				if(blockNum >= 0) {
-					ret.add(segment.getSubSegmentFor(blockNum, container));
+					ret.add(segment.makeGetter(container, context));
 				}
 				if(persistent)
 					container.deactivate(segment, 1);
