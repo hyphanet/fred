@@ -112,8 +112,10 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			if(transientOnly || schedCore == null)
 				result = null;
-			else
+			else {
 				result = schedCore.newPriorities[priority];
+				container.activate(result, 1);
+			}
 			if(result == null)
 				result = schedTransient.newPriorities[priority];
 			if(priority > maxPrio) {
@@ -255,6 +257,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					chosenTracker = trans;
 					triedTrans = true;
 				} else if(perm != null && trans == null) {
+					container.activate(perm, 1);
 					chosenTracker = perm;
 					triedPerm = true;
 				} else {
