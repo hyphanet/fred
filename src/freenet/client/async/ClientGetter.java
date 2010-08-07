@@ -44,6 +44,7 @@ import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
+import freenet.support.io.Closer;
 import freenet.support.io.NullBucket;
 
 /**
@@ -221,6 +222,7 @@ public class ClientGetter extends BaseClientGetter {
 
 		PipedOutputStream dataOutput = new PipedOutputStream();
 		PipedInputStream dataInput = new PipedInputStream();
+		OutputStream output = null;
 
 		DecompressorThreadManager decompressorManager = null;
 		ClientGetWorkerThread worker = null;
@@ -252,7 +254,7 @@ public class ClientGetter extends BaseClientGetter {
 				dataInput = decompressorManager.execute();
 			}
 
-			OutputStream output = finalResult.getOutputStream();
+			output = finalResult.getOutputStream();
 			worker = new ClientGetWorkerThread(dataInput, uri, mimeType, output, hashes, ctx);
 			worker.start();
 			streamGenerator.writeTo(dataOutput, container, context);
@@ -266,6 +268,10 @@ public class ClientGetter extends BaseClientGetter {
 
 			if(logMINOR) Logger.minor(this, "Waiting for hashing, filtration, and writing to finish");
 			worker.waitFinished();
+
+			dataOutput.close();
+			dataInput.close();
+			output.close();
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 			System.err.println("Failing above attempted fetch...");
@@ -340,6 +346,10 @@ public class ClientGetter extends BaseClientGetter {
 			data.free();
 			if(persistent()) data.removeFrom(container);
 			return;
+		} finally {
+			Closer.close(dataInput);
+			Closer.close(dataOutput);
+			Closer.close(output);
 		}
 
 			clientCallback.onSuccess(result, ClientGetter.this, container);
