@@ -592,7 +592,7 @@ final public class FileUtil {
 		return b;
 		*/
 
-		boolean success = false;
+		boolean success = true;
 		try {
 
 			String[] methods = {"setReadable", "setWritable", "setExecutable"};
@@ -607,15 +607,15 @@ final public class FileUtil {
 			}
 
 		} catch (NoSuchMethodException e) {
-			// pass
+			success = false;
 		} catch (java.lang.reflect.InvocationTargetException e) {
-			// pass
+			success = false;
 		} catch (IllegalAccessException e) {
-			// pass
+			success = false;
 		} catch (ExceptionInInitializerError e) {
-			// pass
+			success = false;
 		} catch (RuntimeException e) {
-			// pass
+			success = false;
 		}
 		return success;
 	}
