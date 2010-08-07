@@ -42,6 +42,7 @@ import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
+import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
@@ -305,6 +306,18 @@ public class ClientGetter extends BaseClientGetter {
 			//Impossible
 			Logger.error(this, "URISyntaxException converting a FreenetURI to a URI!: "+e, e);
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state/*Not really the state's fault*/, container, context);
+			if(finalResult != null && finalResult != returnBucket) {
+				finalResult.free();
+				if(persistent()) finalResult.removeFrom(container);
+			} else if(returnBucket != null && persistent())
+				returnBucket.storeTo(container); // Need to store the counter on FileBucket's so it can overwrite next time.
+			Bucket data = result.asBucket();
+			data.free();
+			if(persistent()) data.removeFrom(container);
+			return;
+		} catch(CompressionOutputSizeException e) {
+			Logger.error(this, "Caught "+e, e);
+			onFailure(new FetchException(FetchException.TOO_BIG, e), state, container, context);
 			if(finalResult != null && finalResult != returnBucket) {
 				finalResult.free();
 				if(persistent()) finalResult.removeFrom(container);
