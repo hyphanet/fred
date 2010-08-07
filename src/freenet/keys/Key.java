@@ -179,9 +179,8 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
             inputStream = inputBucket.getInputStream();
             try {
             	decompressor.decompress(inputStream, outputStream, maxLength, -1);
-			} catch (CompressionOutputSizeException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			}  catch (CompressionOutputSizeException e) {
+				throw new TooBigException("Too big");
 			}
             inputStream.close();
             outputStream.close();
