@@ -158,6 +158,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				Integer x = blockNums.get(i);
 				if(x == prev || x.equals(prev)) {
 					blockNums.remove(i);
+					if(logMINOR) Logger.minor(this, "Removing "+x+" (index "+i+") in cleanBlockNums on "+this);
 					i--;
 					if(persistent) container.delete(x);
 				} else prev = x;
@@ -194,6 +195,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 					if(segment.haveBlock(num, container)) {
 						// Maybe it found it a different way e.g. via cross-segment decode.
 						blockNums.remove(x);
+						if(logMINOR) Logger.minor(this, "Removing "+num+" (index "+x+") in getRandomBlockNum on "+this);
 						if(persistent) container.store(blockNums);
 						if(logMINOR) Logger.minor(this, "Already have block "+ret+" but was in blockNums on "+this);
 					} else
@@ -220,6 +222,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 					if(segment.haveBlock(num, container)) {
 						// Maybe it found it a different way e.g. via cross-segment decode.
 						blockNums.remove(x);
+						if(logMINOR) Logger.minor(this, "Removing "+num+" (index "+x+") in getRandomBlockNum on "+this);
 						if(persistent) container.store(blockNums);
 						x--;
 						if(logMINOR) Logger.minor(this, "Already have block "+ret+" but was in blockNums on "+this);
@@ -275,6 +278,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 					} else
 						Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys");
 					blockNums.remove(x);
+					if(logMINOR) Logger.minor(this, "Removing "+ret+" (index "+x+") in hasValidKeys (1) on "+this);
 					if(persistent) {
 						container.delete(ret);
 						if(!hasSet) {
@@ -304,6 +308,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 						if(segment.haveBlock(num, container)) {
 							// Maybe it found it a different way e.g. via cross-segment decode.
 							blockNums.remove(x);
+							if(logMINOR) Logger.minor(this, "Removing "+ret+" (index "+x+") in hasValidKeys (2) on "+this);
 							if(persistent) container.store(blockNums);
 							x--;
 							if(logMINOR) Logger.minor(this, "Already have block "+ret+" but was in blockNums on "+this);
@@ -689,6 +694,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				int num = token;
 				Key k = segment.getBlockNodeKey(num, container);
 				if(k != null && k.equals(key)) {
+					if(logMINOR) Logger.minor(this, "Removing "+num+" (index "+i+") in onGotKey on "+this);
 					blockNums.remove(i);
 					if(persistent) container.delete(token);
 					break;
