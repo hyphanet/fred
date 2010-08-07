@@ -1273,6 +1273,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent && sub != seg) container.deactivate(sub, 1);
 			}
 		}
+		if(seg != null && seg.possiblyRemoveFromParent(container, context))
+			seg.kill(container, context, true, true);
 	}
 	
 	/**
