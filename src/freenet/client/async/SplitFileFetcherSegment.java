@@ -359,7 +359,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					return -1;
 				}
 				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
-				setFoundKey(blockNo, container);
+				setFoundKey(blockNo, container, context);
 				if(persistent) {
 					data.storeTo(container);
 					container.store(dataBuckets[blockNo]);
@@ -391,7 +391,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 					return -1;
 				}
-				setFoundKey(blockNo, container);
+				setFoundKey(blockNo, container, context);
 				if(persistent) {
 					data.storeTo(container);
 					container.store(checkBuckets[checkNo]);
@@ -449,13 +449,23 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return res;
 	}
 	
-	private void setFoundKey(int blockNo, ObjectContainer container) {
+	private void setFoundKey(int blockNo, ObjectContainer container, ClientContext context) {
 		if(keys == null) migrateToKeys(container);
 		else {
 			if(persistent) container.activate(keys, 1);
 		}
-		foundKeys[blockNo] = true;
+		synchronized(this) {
+			if(foundKeys[blockNo]) return;
+			foundKeys[blockNo] = true;
+			// Don't remove from KeyListener if we have already removed this segment.
+			if(startedDecode) return;
+		}
 		if(persistent) container.store(this);
+		SplitFileFetcherKeyListener listener = parentFetcher.getListener();
+		if(listener == null)
+			Logger.error(this, "NO LISTENER FOR "+this, new Exception("error"));
+		else
+			listener.removeKey(keys.getNodeKey(blockNo, null, false), this, container, context);
 	}
 
 	private boolean haveFoundKey(int blockNo, ObjectContainer container) {
@@ -923,6 +933,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 		
 		// Encode any check blocks we don't have
 		try {
+			synchronized(this) {
+				if(encoderFinished) {
+					Logger.error(this, "Encoder finished in onDecodedSegment at end??? on "+this);
+					return; // Calling addToQueue now will NPE.
+				}
+			}
 		codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(persistent), this, false, parent.getPriorityClass(), persistent),
 				context.fecQueue, container);
 		if(persistent) {
@@ -1048,7 +1064,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					checkBuckets[i].removeFrom(container);
 				checkBuckets[i] = null;
-				setFoundKey(i+dataBuckets.length, container);
+				setFoundKey(i+dataBuckets.length, container, context);
 			}
 			if(logMINOR) {
 				if(allEncodedCorrectly) Logger.minor(this, "All encoded correctly on "+this);
@@ -1177,7 +1193,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Logger.error(this, "Block already finished: "+blockNo);
 				return;
 			}
-			setFoundKey(blockNo, container);
+			setFoundKey(blockNo, container, context);
 			// :(
 			boolean deactivateParent = false; // can get called from wierd places, don't deactivate parent if not necessary
 			if(persistent) {
@@ -1257,6 +1273,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent && sub != seg) container.deactivate(sub, 1);
 			}
 		}
+		if(seg != null && seg.possiblyRemoveFromParent(container, context))
+			seg.kill(container, context, true, true);
 	}
 	
 	/**
@@ -1374,9 +1392,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	void fail(FetchException e, ObjectContainer container, ClientContext context, boolean dontDeactivateParent) {
 		if(logMINOR) Logger.minor(this, "Failing segment "+this, e);
+		boolean alreadyDecoding = false;
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
+			alreadyDecoding = startedDecode;
 			this.failureException = e;
 			// Failure in decode is possible.
 			for(int i=0;i<checkBuckets.length;i++) {
@@ -1398,7 +1418,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.store(this);
 			container.activate(parentFetcher, 1);
 		}
-		parentFetcher.removeMyPendingKeys(this, container, context);
+		if(!alreadyDecoding)
+			parentFetcher.removeMyPendingKeys(this, container, context);
 		parentFetcher.segmentFinished(this, container, context);
 		if(persistent && !dontDeactivateParent)
 			container.deactivate(parentFetcher, 1);
@@ -1557,7 +1578,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(k.getNodeKey(false).equals(key)) {
 				if(getCooldownWakeup(i) > time) {
 					if(logMINOR)
-						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(dataCooldownTimes[i]-time)+"ms");
+						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(getCooldownWakeup(i)-time)+"ms");
 					return false;
 				}
 				int tries = getRetries(i);
@@ -1740,11 +1761,15 @@ public class SplitFileFetcherSegment implements FECCallback {
 		boolean killSeg = false;
 		FetchException fatal = null;
 		synchronized(this) {
-			if(finished || startedDecode || fetcherFinished) {
+			blockNum = this.getBlockNumber(key, container);
+			if(blockNum < 0) {
+				if(logMINOR) Logger.minor(this, "Rejecting block because not found");
 				return false;
 			}
-			blockNum = this.getBlockNumber(key, container);
-			if(blockNum < 0) return false;
+			if(finished || startedDecode || fetcherFinished) {
+				if(logMINOR) Logger.minor(this, "Rejecting block because "+(finished?"finished ":"")+(startedDecode?"started decode ":"")+(fetcherFinished?"fetcher finished ":""));
+				return false; // The block was present but we didn't want it.
+			}
 			if(logMINOR)
 				Logger.minor(this, "Found key for block "+blockNum+" on "+this+" in onGotKey() for "+key);
 			ClientCHK ckey = this.getBlockKey(blockNum, container);

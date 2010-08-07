@@ -262,16 +262,6 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 					Logger.minor(this, "Key "+key+" may be in segment "+segment);
 				// A segment can contain the same key twice if e.g. it isn't compressed and repeats itself.
 				while(segment.onGotKey(key, block, container, context)) {
-					synchronized(this) {
-						if(filter.checkFilter(saltedKey)) {
-							filter.removeKey(saltedKey);
-							keyCount--;
-						} else {
-							Logger.error(this, "Not removing key from splitfile filter because already removed!: "+key+" for "+this, new Exception("debug"));
-						}
-					}
-					// Update the persistent keyCount.
-					fetcher.setKeyCount(keyCount, container);
 					found = true;
 				}
 				if(persistent)
@@ -363,6 +353,31 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		}
 		scheduleWriteFilters(container, context);
 		return keyCount -= removeKeys.length;
+	}
+	
+	public synchronized void removeKey(Key key, SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
+		if(logMINOR)
+			Logger.minor(this, "Removing key "+key+" from bloom filter for "+segment);
+		if(logMINOR)
+			Logger.minor(this, "Removing key from bloom filter: "+key);
+		byte[] salted = context.getChkFetchScheduler().saltKey(persistent, key);
+		if(filter.checkFilter(salted)) {
+			filter.removeKey(salted);
+			keyCount--;
+		} else
+			// Huh??
+			Logger.error(this, "Removing key "+key+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!", new Exception("debug"));
+		boolean deactivateFetcher = false;
+		if(persistent) {
+			deactivateFetcher = !container.ext().isActive(fetcher);
+			if(deactivateFetcher) container.activate(fetcher, 1);
+		}
+		// Update the persistent keyCount.
+		fetcher.setKeyCount(keyCount, container);
+		if(deactivateFetcher)
+			container.deactivate(fetcher, 1);
+		// Don't save the bloom filter, to limit I/O.
+		// Frequent restarts will result in higher false positive rates.
 	}
 
 	private boolean writingBloomFilter;

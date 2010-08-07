@@ -37,7 +37,7 @@ public class RandomGrabArray implements RemoveRandom {
 	private final static int BLOCK_SIZE = 1024;
 	private final boolean persistent;
 	private final int hashCode;
-	private final RemoveRandomParent parent;
+	private RemoveRandomParent parent;
 
 	public RandomGrabArray(boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
 		this.blocks = new Block[] { new Block() };
@@ -545,4 +545,41 @@ public class RandomGrabArray implements RemoveRandom {
 		}
 		container.delete(this);
 	}
+
+	public void moveElementsTo(RandomGrabArray existingGrabber,
+			ObjectContainer container, boolean canCommit) {
+		for(int i=0;i<blocks.length;i++) {
+			Block block = blocks[i];
+			if(persistent) container.activate(block, 1);
+			for(int j=0;j<block.reqs.length;j++) {
+				RandomGrabArrayItem item = block.reqs[j];
+				if(item == null) continue;
+				if(persistent) container.activate(item, 1);
+				item.setParentGrabArray(null, container);
+				existingGrabber.add(item, container);
+				if(persistent) container.deactivate(item, 1);
+				block.reqs[j] = null;
+			}
+			if(persistent) {
+				container.store(block);
+				container.deactivate(block, 1);
+				if(canCommit) container.commit();
+			}
+			System.out.println("Moved block in RGA "+this);
+		}
+	}
+
+	public void moveElementsTo(RemoveRandom existingGrabber,
+			ObjectContainer container, boolean canCommit) {
+		if(existingGrabber instanceof RandomGrabArray)
+			moveElementsTo((RandomGrabArray)existingGrabber, container, canCommit);
+		else
+			throw new IllegalArgumentException("Expected RGA but got "+existingGrabber);
+	}
+	
+	public void setParent(RemoveRandomParent newParent, ObjectContainer container) {
+		this.parent = newParent;
+		if(persistent()) container.store(this);
+	}
+	
 }

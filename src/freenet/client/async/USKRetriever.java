@@ -21,6 +21,7 @@ import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -29,6 +30,7 @@ import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.Closer;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.NativeThread;
 
 /**
  * Poll a USK, and when a new slot is found, fetch it. 
@@ -75,9 +77,9 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		}
 	}
 
-	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, final ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(LogLevel.MINOR, this))
-			Logger.minor(this, "Success on "+this+" from "+state+" :"+" mime type "+clientMetadata.getMIMEType());
+			Logger.minor(this, "Success on "+this+" from "+state+" : mime type "+clientMetadata.getMIMEType());
 		DecompressorThreadManager decompressorManager = null;
 		OutputStream output = null;
 		Bucket finalResult = null;
@@ -139,9 +141,21 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			Closer.close(pipeOut);
 		}
 
-		FetchResult result = new FetchResult(clientMetadata, finalResult);
+		final FetchResult result = new FetchResult(clientMetadata, finalResult);
 		cb.onFound(origUSK, state.getToken(), result);
 		context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
+		context.mainExecutor.execute(new PrioRunnable() {
+
+			public void run() {
+				cb.onFound(origUSK, state.getToken(), result);
+			}
+
+			public int getPriority() {
+				return NativeThread.NORM_PRIORITY;
+			}
+			
+		});
+		
 	}
 
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {

@@ -466,7 +466,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			}
 			if(allDone) {
 				if(allSegmentsFinished) {
-					Logger.error(this, "Was already finished! (segmentFinished("+segment+ ')', new Exception("debug"));
+					if(logMINOR)
+						// Race condition. No problem.
+						Logger.minor(this, "Was already finished! (segmentFinished("+segment+ ')', new Exception("debug"));
 				} else {
 					allSegmentsFinished = true;
 					finish = true;
@@ -832,6 +834,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 	public void setCachedSegFilters(BinaryBloomFilter[] segmentFilters) {
 		this.cachedSegmentBloomFilters = segmentFilters;
+	}
+
+	public SplitFileFetcherKeyListener getListener() {
+		return tempListener;
 	}
 
 

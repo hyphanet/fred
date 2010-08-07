@@ -24,6 +24,7 @@ import freenet.node.SendableRequest;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
+import freenet.support.SectoredRandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
@@ -69,7 +70,14 @@ abstract class ClientRequestSchedulerBase {
 	 * 
 	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
 	 */
-	protected final SortedVectorByNumber[] priorities;
+	protected SortedVectorByNumber[] priorities;
+	/**
+	 * New structure:
+	 * array (by priority) -> // one element per possible priority
+	 * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
+	 * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
+	 */
+	protected SectoredRandomGrabArray[] newPriorities;
 	protected transient ClientRequestScheduler sched;
 	/** Transient even for persistent scheduler. */
 	protected transient ArrayList<KeyListener> keyListeners;
@@ -80,7 +88,8 @@ abstract class ClientRequestSchedulerBase {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
 		keyListeners = new ArrayList<KeyListener>();
-		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
+		priorities = null;
+		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		globalSalt = new byte[32];
 		random.nextBytes(globalSalt);
 	}
@@ -137,21 +146,14 @@ abstract class ClientRequestSchedulerBase {
 	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
-		// Priority
-		SortedVectorByNumber prio = priorities[priorityClass];
-		if(prio == null) {
-			prio = new SortedVectorByNumber(persistent());
-			priorities[priorityClass] = prio;
-			if(persistent())
-				container.store(this);
-		}
 		// Client
-		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(rc, container);
+		SectoredRandomGrabArray clientGrabber = (SectoredRandomGrabArray) newPriorities[priorityClass];
 		if(persistent()) container.activate(clientGrabber, 1);
 		if(clientGrabber == null) {
-			clientGrabber = new SectoredRandomGrabArrayWithInt(rc, persistent(), container, null);
-			prio.add(clientGrabber, container);
-			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass+" on "+clientGrabber+" for "+prio);
+			clientGrabber = new SectoredRandomGrabArray(persistent(), container, null);
+			newPriorities[priorityClass] = clientGrabber;
+			if(persistent()) container.store(this);
+			if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
 		}
 		// SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
 		// To avoid a race condition it is essential to mirror that here.
@@ -162,7 +164,7 @@ abstract class ClientRequestSchedulerBase {
 			if(requestGrabber == null) {
 				requestGrabber = new SectoredRandomGrabArrayWithObject(client, persistent(), container, clientGrabber);
 				if(logMINOR)
-					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : "+prio+" : prio="+priorityClass+", rc="+rc);
+					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass+", rc="+rc);
 				clientGrabber.addGrabber(client, requestGrabber, container);
 			}
 			requestGrabber.add(cr, req, container);
@@ -438,10 +440,70 @@ abstract class ClientRequestSchedulerBase {
 		else return list.toArray(new SendableGet[list.size()]);
 	}
 	
-	public void onStarted() {
+	public void onStarted(ObjectContainer container, ClientContext context) {
 		keyListeners = new ArrayList<KeyListener>();
+		if(newPriorities == null) {
+			newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
+			if(persistent()) container.store(this);
+			if(priorities != null)
+				migrateToNewPriorities(container, context);
+		}
 	}
 	
+	private void migrateToNewPriorities(ObjectContainer container,
+			ClientContext context) {
+		System.err.println("Migrating old priorities to new priorities ...");
+		for(int prio=0;prio<priorities.length;prio++) {
+			System.err.println("Priority "+prio);
+			SortedVectorByNumber retryList = priorities[prio];
+			if(retryList == null) continue;
+			if(persistent()) container.activate(retryList, 1);
+			if(!retryList.isEmpty()) {
+				while(retryList.count() > 0) {
+					int retryCount = retryList.getNumberByIndex(0);
+					System.err.println("Retry count "+retryCount+" for priority "+prio);
+					SectoredRandomGrabArrayWithInt retryTracker = (SectoredRandomGrabArrayWithInt) retryList.getByIndex(0);
+					if(retryTracker == null) {
+						System.out.println("Retry count is empty");
+						retryList.remove(retryCount, container);
+						continue; // Fault tolerance in migration is good!
+					}
+					if(persistent()) container.activate(retryTracker, 1);
+					// Move everything from the retryTracker to the new priority
+					if(newPriorities[prio] == null) {
+						newPriorities[prio] = new SectoredRandomGrabArray(persistent(), container, null);
+						if(persistent()) {
+							container.store(newPriorities[prio]);
+							container.store(this);
+						}
+					} else {
+						if(persistent())
+							container.activate(newPriorities[prio], 1);
+					}
+					SectoredRandomGrabArray newTopLevel = newPriorities[prio];
+					retryTracker.moveElementsTo(newTopLevel, container, true);
+					if(persistent()) {
+						container.deactivate(newTopLevel, 1);
+						retryTracker.removeFrom(container);
+					}
+					retryList.remove(retryCount, container);
+					if(persistent()) container.commit();
+					System.out.println("Migrated retry count "+retryCount+" on priority "+prio);
+				}
+			}
+			retryList.removeFrom(container);
+			priorities[prio] = null;
+			if(persistent()) container.commit();
+			System.out.println("Migrated priority "+prio);
+		}
+		if(persistent()) {
+			priorities = null;
+			container.store(this);
+			container.commit();
+			System.out.println("Migrated all priorities");
+		}
+	}
+
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -458,24 +520,20 @@ abstract class ClientRequestSchedulerBase {
 
 	public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
 		long total = 0;
-		for(int i=0;i<priorities.length;i++) {
-			SortedVectorByNumber prio = priorities[i];
+		for(int i=0;i<newPriorities.length;i++) {
+			SectoredRandomGrabArray prio = newPriorities[i];
+			container.activate(prio, 1);
 			if(prio == null || prio.isEmpty())
 				System.out.println("Priority "+i+" : empty");
 			else {
-				System.out.println("Priority "+i+" : "+prio.count());
-				for(int j=0;j<prio.count();j++) {
-					int frc = prio.getNumberByIndex(j);
-					System.out.println("Fixed retry count: "+frc);
-					SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(frc, container);
-					container.activate(clientGrabber, 1);
-					System.out.println("Clients: "+clientGrabber.size()+" for "+clientGrabber);
-					for(int k=0;k<clientGrabber.size();k++) {
-						Object client = clientGrabber.getClient(k);
+				System.out.println("Priority "+i+" : "+prio.size());
+					System.out.println("Clients: "+prio.size()+" for "+prio);
+					for(int k=0;k<prio.size();k++) {
+						Object client = prio.getClient(k);
 						container.activate(client, 1);
 						System.out.println("Client "+k+" : "+client);
 						container.deactivate(client, 1);
-						SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
+						SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) prio.getGrabber(client);
 						container.activate(requestGrabber, 1);
 						System.out.println("SRGA for client: "+requestGrabber);
 						for(int l=0;l<requestGrabber.size();l++) {
@@ -502,8 +560,7 @@ abstract class ClientRequestSchedulerBase {
 						}
 						container.deactivate(requestGrabber, 1);
 					}
-					container.deactivate(clientGrabber, 1);
-				}
+					container.deactivate(prio, 1);
 			}
 		}
 		return total;
