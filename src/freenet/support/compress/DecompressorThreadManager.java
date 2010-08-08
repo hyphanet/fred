@@ -75,8 +75,8 @@ public class DecompressorThreadManager {
 			output.close();
 		} catch(Throwable t) {
 			onFailure(t);
-		}
-		finally {
+			throw t;
+		} finally {
 			Closer.close(output);
 		}
 		return input;
