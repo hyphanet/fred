@@ -252,6 +252,7 @@ public class ContentFilter {
 					handler.readFilter.readFilter(input, output, charset, otherParams, filterCallback);
 				}
 				catch(EOFException e) {
+					Logger.error(ContentFilter.class, "EOFException caught: "+e,e);
 					throw new DataFilterException(l10n("EOFMessage"), l10n("EOFMessage"), l10n("EOFDescription"));
 				}
 				catch(IOException e) {
