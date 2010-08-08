@@ -88,7 +88,10 @@ public class NewPacketFormat implements PacketFormat {
 			}
 			if(s == null) continue;
 			packet = tryDecipherPacket(buf, offset, length, s);
-			if(packet != null) break;
+			if(packet != null) {
+				if(logMINOR) Logger.minor(this, "Decrypted packet with tracker " + i);
+				break;
+			}
 		}
 		if(packet == null) {
 			Logger.warning(this, "Could not decrypt received packet");
