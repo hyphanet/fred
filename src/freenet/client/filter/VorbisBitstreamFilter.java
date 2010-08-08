@@ -8,9 +8,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.LinkedList;
 
+import freenet.l10n.NodeL10n;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.CountedInputStream;
 
@@ -20,11 +22,12 @@ import freenet.support.Logger;
  * @author sajack
  */
 public class VorbisBitstreamFilter extends OggBitstreamFilter {
-	private final VorbisPacketFilter parser;
+	enum State {UNINITIALIZED, IDENTIFICATION_FOUND, COMMENT_FOUND, SETUP_FOUND};
+	static final byte[] magicNumber = new byte[] {0x76, 0x6f, 0x72, 0x62, 0x69, 0x73};
+	State currentState = State.UNINITIALIZED;
 
 	VorbisBitstreamFilter(OggPage page) {
 		super(page);
-		parser = new VorbisPacketFilter(page);
 	}
 
 	@Override
