@@ -47,15 +47,15 @@ public class ClientGetWorkerThread extends Thread {
 
 	 /**
 	 * @param input The stream to read the data from
+	 * @param output The final destination to which the data will be written
 	 * @param uri The URI of the fetched data. Needed for the ContentFilter. Optional.
 	 * @param mimeType MIME of the fetched data. The best guess is needed for the
 	 * ContentFilter. Optional.
-	 * @param output The final destination to which the data will be written
 	 * @param hashes Hashes of the fetched data, to be compared against. Optional.
 	 * @param ctx FetchContext containing variables needed by the ContentFilter. Optional.
 	 */
-	ClientGetWorkerThread(PipedInputStream input, FreenetURI uri, String mimeType,
-			OutputStream output, HashResult[] hashes, FetchContext ctx) {
+	ClientGetWorkerThread(PipedInputStream input, OutputStream output, FreenetURI uri,
+			String mimeType, HashResult[] hashes, FetchContext ctx) {
 		super("ClientGetWorkerThread");
 		this.input = input;
 		this.ctx = ctx;
