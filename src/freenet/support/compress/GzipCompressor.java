@@ -79,32 +79,32 @@ public class GzipCompressor implements Compressor {
 			bufSize = (int)maxLength;
 		byte[] buffer = new byte[bufSize];
 		while(true) {
-			int l = (int) Math.min(buffer.length, maxLength - written);
+			int expectedBytesRead = (int) Math.min(buffer.length, maxLength - written);
 			// We can over-read to determine whether we have over-read.
 			// We enforce maximum size this way.
 			// FIXME there is probably a better way to do this!
-			int x = gis.read(buffer, 0, buffer.length);
-			if(l < x) {
-				Logger.normal(this, "l="+l+", x="+x+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
+			int bytesRead = gis.read(buffer, 0, buffer.length);
+			if(expectedBytesRead < bytesRead) {
+				Logger.normal(this, "expectedBytesRead="+expectedBytesRead+", bytesRead="+bytesRead+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
 				if(maxCheckSizeBytes > 0) {
-					written += x;
+					written += bytesRead;
 					while(true) {
-						l = (int) Math.min(buffer.length, maxLength + maxCheckSizeBytes - written);
-						x = gis.read(buffer, 0, l);
-						if(x <= -1) throw new CompressionOutputSizeException(written);
-						if(x == 0) throw new IOException("Returned zero from read()");
-						written += x;
+						expectedBytesRead = (int) Math.min(buffer.length, maxLength + maxCheckSizeBytes - written);
+						bytesRead = gis.read(buffer, 0, expectedBytesRead);
+						if(bytesRead <= -1) throw new CompressionOutputSizeException(written);
+						if(bytesRead == 0) throw new IOException("Returned zero from read()");
+						written += bytesRead;
 					}
 				}
 				throw new CompressionOutputSizeException();
 			}
-			if(x <= -1) {
+			if(bytesRead <= -1) {
 				os.flush();
 				return written;
 			}
-			if(x == 0) throw new IOException("Returned zero from read()");
-			os.write(buffer, 0, x);
-			written += x;
+			if(bytesRead == 0) throw new IOException("Returned zero from read()");
+			os.write(buffer, 0, bytesRead);
+			written += bytesRead;
 		}
 	}
 
