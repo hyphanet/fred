@@ -258,7 +258,14 @@ public class ClientGetter extends BaseClientGetter {
 			output = finalResult.getOutputStream();
 			worker = new ClientGetWorkerThread(dataInput, output, uri, mimeType, hashes, ctx);
 			worker.start();
-			streamGenerator.writeTo(dataOutput, container, context);
+			try {
+				streamGenerator.writeTo(dataOutput, container, context);
+			} catch(IOException e) {
+				//Check if the worker thread caught an exception
+				worker.getError();
+				//If not, throw the original error
+				throw e;
+			}
 
 			if(logMINOR) Logger.minor(this, "Size of written data: "+result.asBucket().size());
 
