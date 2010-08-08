@@ -20,9 +20,11 @@ import freenet.support.io.FileUtil;
 public class SingleFileStreamGenerator implements StreamGenerator {
 
 	final private Bucket bucket;
+	final private boolean persistent;
 
-	SingleFileStreamGenerator(Bucket bucket) {
+	SingleFileStreamGenerator(Bucket bucket, boolean persistent) {
 		this.bucket = bucket;
+		this.persistent = persistent;
 	}
 
 	public void writeTo(OutputStream os, ObjectContainer container,
@@ -33,11 +35,12 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 			FileUtil.copy(data, os, -1);
 			data.close();
 			os.close();
+			if(persistent) bucket.removeFrom(container);
+			bucket.free();
 			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Stream completely generated", new Exception("debug"));
 		} finally {
 			Closer.close(bucket);
 			Closer.close(os);
-			bucket.free();
 		}
 	}
 

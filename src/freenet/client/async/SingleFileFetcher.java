@@ -325,7 +325,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			result.asBucket().free();
 			if(persistent) result.asBucket().removeFrom(container);
 		} else {
-			rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket()), result.getMetadata(), decompressors, this, container, context);
+			rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, this, container, context);
 		}
 	}
 
