@@ -133,7 +133,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
 		}
-		rcb.onSuccess(null, null, null, this, container, context);
+		rcb.onSuccess(new SingleFileStreamGenerator(data.asBucket()), data.getMetadata(), null, this, container, context);
 	}
 
 	@Override
