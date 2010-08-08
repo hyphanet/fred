@@ -77,10 +77,14 @@ public class OggFilter implements ContentDataFilter{
 			if(nextPage != null) data.write(nextPage.toArray());
 			DataInputStream in = new DataInputStream(new ByteArrayInputStream(data.toByteArray()));
 			while(true) {
-				subpage = OggPage.readPage(in);
+				OggPage.seekToPage(in);
+				in.mark(65307);
+				subpage = new OggPage(in);
 				if(subpage.headerValid()) {
 					pageCount++;
 				}
+				in.reset();
+				in.skip(1); //Break the lock on the current page
 			}
 		} catch(EOFException e) {
 			//We've ran out of data to read. Break.

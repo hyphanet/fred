@@ -102,7 +102,7 @@ public class OggPage {
 	byte[] segmentTable;
 	byte[] payload;
 
-	private OggPage(DataInputStream input) throws IOException {
+	OggPage(DataInputStream input) throws IOException {
 		version=input.readByte();
 		headerType = input.readByte();
 		input.readFully(granuelPosition);
@@ -120,21 +120,25 @@ public class OggPage {
 		input.read(payload);
 	}
 
-	/**Extracts the Ogg page from a physical bitstream
-	 * @param input a stream of data containing a physical bitstream
-	 * @return the next Ogg page in bitstream
-	 * @throws IOException
-	 */
-	public static OggPage readPage(DataInputStream input) throws IOException {
+	public static void seekToPage(DataInputStream input) throws IOException {
 		while(true) {
 			//Seek for magic number
 			if(input.readByte() != magicNumber[0]) continue;
 			if(input.readByte() != magicNumber[1]) continue;
 			if(input.readByte() != magicNumber[2]) continue;
 			if(input.readByte() != magicNumber[3]) continue;
-			return new OggPage(input);
+			return;
 		}
 		//If we've found all of the previous magic numbers, we've probably found a page
+	}
+	/**Extracts the Ogg page from a physical bitstream
+	 * @param input a stream of data containing a physical bitstream
+	 * @return the next Ogg page in bitstream
+	 * @throws IOException
+	 */
+	public static OggPage readPage(DataInputStream input) throws IOException {
+		seekToPage(input);
+		return new OggPage(input);
 	}
 
 	/**Checks some header values for sanity, and verifies this Page's
