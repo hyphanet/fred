@@ -788,6 +788,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				context.jobRunner.queue(new DBJob() {
 					
 					public boolean run(ObjectContainer container, ClientContext context) {
+						if(!container.ext().isStored(SplitFileFetcherSubSegment.this))
+							return false; // Already migrated
 						migrateToSegmentFetcher(container, context);
 						return false;
 					}
