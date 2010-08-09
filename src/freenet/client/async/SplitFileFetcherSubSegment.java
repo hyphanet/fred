@@ -255,85 +255,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	@Override
 	public boolean hasValidKeys(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(blockNums, 1);
-			container.activate(segment, 1);
-		}
-		boolean hasSet = false;
-		boolean retval = false;
-		synchronized(segment) {
-			int x = 0;
-			for(int i=0;i<10;i++) {
-				Integer ret;
-				if(blockNums.isEmpty()) {
-					break;
-				}
-				x = context.random.nextInt(blockNums.size());
-				ret = blockNums.get(x);
-				int block = ret;
-				Key key = segment.getBlockNodeKey(block, container);
-				if(key == null) {
-					if(segment.isFinishing(container) || segment.isFinished(container)) return false;
-					if(segment.haveBlock(block, container)) {
-						if(logMINOR) Logger.minor(this, "Already have block "+ret+" but was in blockNums on "+this+" in hasValidKeys");
-					} else
-						Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys");
-					blockNums.remove(x);
-					if(logMINOR) Logger.minor(this, "Removing "+ret+" (index "+x+") in hasValidKeys (1) on "+this);
-					if(persistent) {
-						container.delete(ret);
-						if(!hasSet) {
-							hasSet = true;
-							container.store(blockNums);
-						}
-					}
-					continue;
-				}
-				if(keys.hasKey(key)) {
-					continue;
-				}
-				retval = true;
-				break;
-			}
-			if(!retval) {
-				// Exhaustive search starting at a random slot.
-				for(int i=0;i<blockNums.size();i++) {
-					x++;
-					if(x >= blockNums.size()) x = 0;
-					Integer ret;
-					ret = blockNums.get(x);
-					int num = ret;
-					Key key = segment.getBlockNodeKey(num, container);
-					if(key == null) {
-						if(segment.isFinishing(container) || segment.isFinished(container)) break;
-						if(segment.haveBlock(num, container)) {
-							// Maybe it found it a different way e.g. via cross-segment decode.
-							blockNums.remove(x);
-							if(logMINOR) Logger.minor(this, "Removing "+ret+" (index "+x+") in hasValidKeys (2) on "+this);
-							if(persistent) container.store(blockNums);
-							x--;
-							if(logMINOR) Logger.minor(this, "Already have block "+ret+" but was in blockNums on "+this);
-						} else
-							Logger.error(this, "Key is null for block "+ret+" for "+this);
-						continue;
-					}
-					if(keys.hasKey(key)) {
-						continue;
-					}
-					if(logMINOR)
-						Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
-					retval = true;
-					break;
-				}
-			}
-		}
-		
-		if(persistent) {
-			container.deactivate(blockNums, 5);
-			container.deactivate(segment, 1);
-		}
-		return retval;
+		queueMigrateToSegmentFetcher(container, context);
+		return false;
 	}
 	
 	// SendableGet has a hashCode() and inherits equals(), which is consistent with the hashCode().
