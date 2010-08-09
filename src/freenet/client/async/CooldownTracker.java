@@ -1,5 +1,12 @@
 package freenet.client.async;
 
+import java.util.HashMap;
+import java.util.WeakHashMap;
+
+import com.db4o.ObjectContainer;
+
+import freenet.node.SendableGet;
+
 /** 
  * When a SendableGet is completed, we add it to the cooldown tracker. We 
  * will not retry that particular SendableGet for 30 minutes. The cooldown
@@ -18,6 +25,25 @@ package freenet.client.async;
  */ 
 public class CooldownTracker {
 	
-	// FIXME implement!
-
+	/** CooldownTrackerItem's by Db4o ID */
+	private final HashMap<Long, CooldownTrackerItem> trackerItemsPersistent = new HashMap<Long, CooldownTrackerItem>();
+	/** CooldownTrackerItem's by HasCooldownTrackerItem */
+	private final WeakHashMap<HasCooldownTrackerItem, CooldownTrackerItem> trackerItemsTransient = new WeakHashMap<HasCooldownTrackerItem, CooldownTrackerItem>();
+	
+	public synchronized CooldownTrackerItem make(HasCooldownTrackerItem parent, boolean persistent, ObjectContainer container) {
+		if(persistent) {
+			if(!container.ext().isStored(parent)) throw new IllegalArgumentException("Must store first!");
+			long uid = container.ext().getID(parent);
+			CooldownTrackerItem item = trackerItemsPersistent.get(uid);
+			if(item == null)
+				trackerItemsPersistent.put(uid, item = parent.makeCooldownTrackerItem());
+			return item;
+		} else {
+			CooldownTrackerItem item = trackerItemsTransient.get(parent);
+			if(item == null)
+				trackerItemsTransient.put(parent, item = parent.makeCooldownTrackerItem());
+			return item;
+		}
+	}
+	
 }

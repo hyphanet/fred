@@ -52,7 +52,7 @@ import freenet.support.io.MultiReaderBucket;
  * A single segment within a SplitFileFetcher.
  * This in turn controls a large number of SplitFileFetcherSubSegment's, which are registered on the ClientRequestScheduler.
  */
-public class SplitFileFetcherSegment implements FECCallback {
+public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerItem {
 
 	private static volatile boolean logMINOR;
 	
@@ -1263,6 +1263,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(persistent) container.store(this); // We don't call container.store(this) in each onNonFatalFailure because it takes much CPU time.
 		if(reschedule) rescheduleGetter(container, context);
 	}
+
+	static class MyCooldownTrackerItem implements CooldownTrackerItem {
+		int[] dataRetries;
+		int[] checkRetries;
+		long[] dataCooldownTimes;
+		long[] checkCooldownTimes;
+	}
 	
 	/**
 	 * Caller must set(this) iff returns true.
@@ -1274,6 +1281,18 @@ public class SplitFileFetcherSegment implements FECCallback {
 		boolean failed = false;
 		boolean cooldown = false;
 		ClientCHK key;
+		int[] dataRetries = this.dataRetries;
+		int[] checkRetries = this.checkRetries;
+		long[] dataCooldownTimes = this.dataCooldownTimes;
+		long[] checkCooldownTimes = this.checkCooldownTimes;
+		if(maxTries == -1) {
+			// Cooldown and retry counts entirely kept in RAM.
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			dataRetries = tracker.dataRetries;
+			checkRetries = tracker.checkRetries;
+			dataCooldownTimes = tracker.dataCooldownTimes;
+			checkCooldownTimes = tracker.checkCooldownTimes;
+		}
 		synchronized(this) {
 			if(isFinished(container)) return false;
 			if(blockNo < dataBuckets.length) {
@@ -1333,6 +1352,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return mustSchedule;
 	}
 	
+	private MyCooldownTrackerItem makeCooldownTrackerItem(
+			ObjectContainer container, ClientContext context) {
+		return (MyCooldownTrackerItem) context.cooldownTracker.make(this, persistent, container);
+	}
+
 	void fail(FetchException e, ObjectContainer container, ClientContext context, boolean dontDeactivateParent) {
 		if(logMINOR) Logger.minor(this, "Failing segment "+this, e);
 		boolean alreadyDecoding = false;
@@ -2109,6 +2133,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(persistent)
 			container.store(subSegments);
 		sub.kill(container, context, true, false);
+	}
+
+	public CooldownTrackerItem makeCooldownTrackerItem() {
+		return new MyCooldownTrackerItem();
 	}
 
 }

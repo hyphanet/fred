@@ -55,6 +55,7 @@ public class ClientContext {
 	public transient FilenameGenerator persistentFG;
 	public transient final RealCompressor rc;
 	public transient final DatastoreChecker checker;
+	public transient final CooldownTracker cooldownTracker;
 
 	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
@@ -81,6 +82,7 @@ public class ClientContext {
 		this.persistentFG = persistentFG;
 		this.rc = rc;
 		this.checker = checker;
+		this.cooldownTracker = new CooldownTracker();
 	}
 	
 	public void init(RequestStarterGroup starters) {
