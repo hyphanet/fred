@@ -336,7 +336,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(segment, 1);
 		}
 		synchronized(segment) {
-			segment.resetCooldownTimes(blockNums.toArray(new Integer[blockNums.size()]));
+			segment.resetCooldownTimes(container, context);
 		}
 	}
 
