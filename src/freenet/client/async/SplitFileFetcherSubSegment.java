@@ -338,6 +338,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		synchronized(segment) {
 			segment.resetCooldownTimes(container, context);
 		}
+		migrateToSegmentFetcher(container, context);
 	}
 
 	public void reschedule(ObjectContainer container, ClientContext context) {
