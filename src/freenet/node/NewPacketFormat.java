@@ -397,7 +397,7 @@ public class NewPacketFormat implements PacketFormat {
 			long firstAck = 0;
 			Iterator<Long> it = acks.iterator();
 			while (it.hasNext() && packet.getLength() < maxPacketSize) {
-				if(!packet.addAck(ack)) break;
+				if(!packet.addAck(it.next())) break;
 				++numAcks;
 				it.remove();
 			}
