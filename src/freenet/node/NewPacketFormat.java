@@ -211,13 +211,14 @@ public class NewPacketFormat implements PacketFormat {
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
 		if(watchListKey == null || !watchListKey.equals(sessionKey)) {
+			if(logMINOR) Logger.minor(this, "Creating watchlist");
+
 			watchListKey = sessionKey;
 			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
 			watchListPointer = 0;
 
 			long seqNum = watchListOffset;
 			for(int i = 0; i < seqNumWatchList.length; i++) {
-				if(logMINOR) Logger.minor(this, "seqNumWatchList[" + i + "] = " + seqNum);
 				seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
 			}
 		}
