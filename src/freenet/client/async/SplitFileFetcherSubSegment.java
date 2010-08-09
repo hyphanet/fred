@@ -93,34 +93,12 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	@Override
 	public SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
-		if(cancelled) return null;
-		return getRandomBlockNum(keys, context, container);
+		return null;
 	}
 	
 	@Override
 	public ClientKey getKey(Object token, ObjectContainer container) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(segment, 1);
-		}
-		synchronized(segment) {
-			if(cancelled) {
-				if(logMINOR)
-					Logger.minor(this, "Segment is finishing when getting key "+token+" on "+this);
-				return null;
-			}
-			ClientKey key = segment.getBlockKey(((MySendableRequestItem)token).x, container);
-			if(key == null) {
-				if(segment.isFinished(container)) {
-					Logger.error(this, "Segment finished but didn't tell us! "+this);
-				} else if(segment.isFinishing(container)) {
-					Logger.error(this, "Segment finishing but didn't tell us! "+this);
-				} else {
-					Logger.error(this, "Segment not finishing yet still returns null for getKey()!: "+token+" for "+this, new Exception("debug"));
-				}
-			}
-			return key;
-		}
+		throw new UnsupportedOperationException();
 	}
 	
 	/**
@@ -168,88 +146,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			if(blockNums.size() < initSize) {
 				Logger.error(this, "Cleaned block number list duplicates: was "+initSize+" now "+blockNums.size());
 			}
-		}
-	}
-
-	private SendableRequestItem getRandomBlockNum(KeysFetchingLocally keys, ClientContext context, ObjectContainer container) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(blockNums, 1);
-			container.activate(segment, 1);
-		}
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		synchronized(segment) {
-			if(blockNums.isEmpty()) {
-				if(logMINOR)
-					Logger.minor(this, "No blocks to remove");
-				return null;
-			}
-			int x = 0;
-			for(int i=0;i<10;i++) {
-				Integer ret;
-				if(blockNums.size() == 0) return null;
-				x = context.random.nextInt(blockNums.size());
-				ret = blockNums.get(x);
-				int num = ret;
-				Key key = segment.getBlockNodeKey(num, container);
-				if(key == null) {
-					if(segment.isFinishing(container) || segment.isFinished(container)) return null;
-					if(segment.haveBlock(num, container)) {
-						// Maybe it found it a different way e.g. via cross-segment decode.
-						blockNums.remove(x);
-						if(logMINOR) Logger.minor(this, "Removing "+num+" (index "+x+") in getRandomBlockNum on "+this);
-						if(persistent) container.store(blockNums);
-						if(logMINOR) Logger.minor(this, "Already have block "+ret+" but was in blockNums on "+this);
-					} else
-						Logger.error(this, "Key is null for block "+ret+" for "+this);
-					continue;
-				}
-				if(keys.hasKey(key)) {
-					continue;
-				}
-				if(logMINOR)
-					Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
-				return new MySendableRequestItem(num);
-			}
-			// Exhaustive search starting at a random slot.
-			for(int i=0;i<blockNums.size();i++) {
-				x++;
-				if(x == blockNums.size()) x = 0;
-				Integer ret;
-				ret = blockNums.get(x);
-				int num = ret;
-				Key key = segment.getBlockNodeKey(num, container);
-				if(key == null) {
-					if(segment.isFinishing(container) || segment.isFinished(container)) return null;
-					if(segment.haveBlock(num, container)) {
-						// Maybe it found it a different way e.g. via cross-segment decode.
-						blockNums.remove(x);
-						if(logMINOR) Logger.minor(this, "Removing "+num+" (index "+x+") in getRandomBlockNum on "+this);
-						if(persistent) container.store(blockNums);
-						x--;
-						if(logMINOR) Logger.minor(this, "Already have block "+ret+" but was in blockNums on "+this);
-					} else
-						Logger.error(this, "Key is null for block "+ret+" for "+this);
-					continue;
-				}
-				if(keys.hasKey(key)) {
-					continue;
-				}
-				if(logMINOR)
-					Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
-				return new MySendableRequestItem(num);
-			}
-			return null;
-		}
-	}
-	
-	private static class MySendableRequestItem implements SendableRequestItem {
-		final int x;
-		MySendableRequestItem(int x) {
-			this.x = x;
-		}
-		public void dump() {
-			// Ignore, we will be GC'ed
 		}
 	}
 
@@ -332,87 +228,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return false;
 	}
 	
-	public void addAll(int blocks, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
-		int[] list = new int[blocks];
-		for(int i=0;i<blocks;i++) list[i] = i;
-		addAll(list, container, context, dontComplainOnDupes);
-	}
-
-	public void addAll(int[] blocks, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
-		if(persistent) {
-//			container.activate(segment, 1);
-			container.activate(blockNums, 1);
-		}
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Adding "+blocks+" blocks to "+this);
-		synchronized(segment) {
-			if(cancelled)
-				throw new IllegalStateException("Adding blocks to already cancelled "+this);
-			for(int x=0;x<blocks.length;x++) {
-				int i = blocks[x];
-				Integer ii = Integer.valueOf(i);
-				if(blockNums.contains(ii)) {
-					if(!dontComplainOnDupes)
-						Logger.error(this, "Block numbers already contain block "+i);
-					else if(logMINOR)
-						Logger.minor(this, "Block numbers already contain block "+i);
-				} else {
-					blockNums.add(ii);
-				}
-			}
-		}
-		if(persistent)
-			container.store(blockNums);
-	}
-	
-	/**
-	 * @return True if the caller should schedule.
-	 */
-	public boolean add(int blockNo, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
-		if(persistent) {
-//			container.activate(segment, 1);
-			container.activate(blockNums, 1);
-		}
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this);
-		if(blockNo < 0) throw new IllegalArgumentException();
-		Integer i = Integer.valueOf(blockNo);
-		
-		boolean schedule = true;
-		synchronized(segment) {
-			if(cancelled)
-				throw new IllegalStateException("Adding block "+blockNo+" to already cancelled "+this);
-			if(blockNums.contains(i)) {
-				if(!dontComplainOnDupes)
-					Logger.error(this, "Block numbers already contain block "+blockNo);
-				else if(logMINOR)
-					Logger.minor(this, "Block numbers already contain block "+blockNo);
-			} else {
-				blockNums.add(i);
-			}
-			/**
-			 * Race condition:
-			 * 
-			 * Starter thread sees there is only one block on us, so removes us.
-			 * Another thread adds a block. We don't schedule as we now have two blocks.
-			 * Starter thread removes us.
-			 * Other blocks may be added later, but we are never rescheduled.
-			 * 
-			 * Fixing this by only removing the SendableRequest after we've removed the 
-			 * block is nontrivial with the current code.
-			 * So what we do here is simply check whether we are registered, instead of 
-			 * checking whether blockNums.size() > 1 as we used to.
-			 */
-			if(schedule && getParentGrabArray() != null) {
-				if(logMINOR) Logger.minor(this, "Already registered, not scheduling: "+blockNums.size()+" : "+blockNums);
-				schedule = false;
-			}
-		}
-		if(persistent)
-			container.store(blockNums);
-		return schedule;
-	}
-
 	@Override
 	public String toString() {
 		return super.toString()+":"+retryCount+"/"+segment+'('+(blockNums == null ? "null" : String.valueOf(blockNums.size()))+"),tempid="+objectHash(); 
@@ -495,12 +310,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	@Override
 	public long getCooldownWakeup(Object token, ObjectContainer container) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(segment, 1);
-		}
-		long ret = segment.getCooldownWakeup(((MySendableRequestItem)token).x);
-		return ret;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
