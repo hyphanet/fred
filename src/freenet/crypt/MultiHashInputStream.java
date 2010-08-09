@@ -65,7 +65,7 @@ public class MultiHashInputStream extends FilterInputStream {
 	/** Slow, you should buffer the stream to avoid this! */
 	@Override
 	public int read() throws IOException {
-		int ret = read();
+		int ret = in.read();
 		if(ret < 0) return ret;
 		byte[] b = new byte[] { (byte)ret };
 		for(Digester d : digesters)
