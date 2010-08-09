@@ -199,6 +199,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet {
 			if(logMINOR) Logger.minor(this, "Not rescheduling as already scheduled on "+getParentGrabArray());
 			return;
 		}
+		if(isCancelled(container)) return;
 		try {
 			getScheduler(context).register(null, new SendableGet[] { this }, persistent, container, getContextBlocks(container), true);
 		} catch (KeyListenerConstructionException e) {
