@@ -579,6 +579,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			Logger.error(this, "Migrating to segment fetcher on "+this+" but segment is null!");
 			if(container.ext().isStored(this))
 				Logger.error(this, "... and this is stored!");
+			if(container.ext().isActive(this))
+				Logger.error(this, "... and activated!");
 			return;
 		}
 		if(persistent) container.activate(segment, 1);
