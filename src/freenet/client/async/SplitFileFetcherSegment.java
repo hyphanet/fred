@@ -1237,7 +1237,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		RequestScheduler sched = context.getFetchScheduler(false);
-		if(seg != null) seg.removeBlockNum(blockNo, container, false);
+		if(seg != null) seg.kill(container, context, true, false);
 		if(onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries, callStore)) {
 			rescheduleGetter(container, context);
 		}
