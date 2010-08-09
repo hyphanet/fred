@@ -1,8 +1,5 @@
 package freenet.client.async;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 
@@ -10,16 +7,10 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
-import freenet.keys.CHKBlock;
-import freenet.keys.CHKVerifyException;
-import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
-import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
-import freenet.keys.KeyDecodeException;
-import freenet.keys.TooBigException;
 import freenet.node.BulkCallFailureItem;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
