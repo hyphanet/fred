@@ -19,6 +19,12 @@ import freenet.support.Logger;
  */
 public class PersistentSendableRequestSet implements SendableRequestSet {
 
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerClass(PlainManifestPutter.class);
+	}
+
 	private final ArrayList<SendableRequest> list;
 	
 	PersistentSendableRequestSet() {
@@ -49,6 +55,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 	}
 
 	public synchronized boolean removeRequest(SendableRequest req, ObjectContainer container) {
+		if(logMINOR) Logger.minor(this, "Removing "+req+" from "+this);
 		container.activate(list, 1);
 		boolean success = false;
 		while(true) {
