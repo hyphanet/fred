@@ -563,6 +563,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				public boolean run(ObjectContainer container, ClientContext context) {
 					if(!container.ext().isStored(SplitFileFetcherSubSegment.this))
 						return false; // Already migrated
+					container.activate(SplitFileFetcherSubSegment.this, 1);
 					migrateToSegmentFetcher(container, context);
 					return false;
 				}
