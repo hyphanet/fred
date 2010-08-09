@@ -263,172 +263,22 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	// SendableGet has a hashCode() and inherits equals(), which is consistent with the hashCode().
 	
 	public void onFailure(BulkCallFailureItem[] items, ObjectContainer container, ClientContext context) {
-		FetchException[] fetchExceptions = new FetchException[items.length];
-		int countFatal = 0;
-		if(persistent) {
-			container.activate(blockNums, 2);
-		}
-		for(int i=0;i<items.length;i++) {
-			fetchExceptions[i] = translateException(items[i].e);
-			if(fetchExceptions[i].isFatal()) countFatal++;
-			removeBlockNum(((MySendableRequestItem)items[i].token).x, container, true);
-		}
-		if(persistent) {
-			container.store(blockNums);
-			container.deactivate(blockNums, 2);
-			container.activate(segment, 1);
-			container.activate(parent, 1);
-			container.activate(segment.errors, 1);
-		}
-		if(parent.isCancelled()) {
-			if(Logger.shouldLog(LogLevel.MINOR, this)) 
-				Logger.minor(this, "Failing: cancelled");
-			// Fail the segment.
-			segment.fail(new FetchException(FetchException.CANCELLED), container, context, false);
-			// FIXME do we need to free the keyNum's??? Or will that happen later anyway?
-			return;
-		}
-		for(int i=0;i<fetchExceptions.length;i++)
-			segment.errors.inc(fetchExceptions[i].getMode());
-		if(persistent)
-			segment.errors.storeTo(container);
-		int nonFatalExceptions = items.length - countFatal;
-		int[] blockNumbers = new int[nonFatalExceptions];
-		if(countFatal > 0) {
-			FetchException[] newFetchExceptions = new FetchException[items.length - countFatal];
-			// Call the fatal callbacks directly.
-			int x = 0;
-			for(int i=0;i<items.length;i++) {
-				int blockNum = ((MySendableRequestItem)items[i].token).x;
-				if(fetchExceptions[i].isFatal()) {
-					segment.onFatalFailure(fetchExceptions[i], blockNum, this, container, context);
-				} else {
-					blockNumbers[x] = blockNum;
-					newFetchExceptions[x] = fetchExceptions[i];
-					x++;
-				}
-			}
-			fetchExceptions = newFetchExceptions;
-		} else {
-			for(int i=0;i<blockNumbers.length;i++)
-				blockNumbers[i] = ((MySendableRequestItem)items[i].token).x;
-		}
-		if(logMINOR) Logger.minor(this, "Calling segment.onNonFatalFailure with "+blockNumbers.length+" failed fetches");
-		segment.onNonFatalFailure(fetchExceptions, blockNumbers, this, container, context);
-
-		if(persistent) {
-			container.deactivate(segment, 1);
-			container.deactivate(parent, 1);
-			container.deactivate(segment.errors, 1);
-		}
+		throw new UnsupportedOperationException();
 	}
 	
-	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
-	private FetchException translateException(LowLevelGetException e) {
-		switch(e.code) {
-		case LowLevelGetException.DATA_NOT_FOUND:
-		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-			return new FetchException(FetchException.DATA_NOT_FOUND);
-		case LowLevelGetException.RECENTLY_FAILED:
-			return new FetchException(FetchException.RECENTLY_FAILED);
-		case LowLevelGetException.DECODE_FAILED:
-			return new FetchException(FetchException.BLOCK_DECODE_ERROR);
-		case LowLevelGetException.INTERNAL_ERROR:
-			return new FetchException(FetchException.INTERNAL_ERROR);
-		case LowLevelGetException.REJECTED_OVERLOAD:
-			return new FetchException(FetchException.REJECTED_OVERLOAD);
-		case LowLevelGetException.ROUTE_NOT_FOUND:
-			return new FetchException(FetchException.ROUTE_NOT_FOUND);
-		case LowLevelGetException.TRANSFER_FAILED:
-			return new FetchException(FetchException.TRANSFER_FAILED);
-		case LowLevelGetException.VERIFY_FAILED:
-			return new FetchException(FetchException.BLOCK_DECODE_ERROR);
-		case LowLevelGetException.CANCELLED:
-			return new FetchException(FetchException.CANCELLED);
-		default:
-			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			return new FetchException(FetchException.INTERNAL_ERROR, "Unknown error code: "+e.code);
-		}
-	}
-
 	// Translate it, then call the real onFailure
 	@Override
 	public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
-		if(logMINOR)
-			Logger.minor(this, "onFailure("+e+" , "+token+" on "+this);
-		onFailure(translateException(e), token, container, context);
+		throw new UnsupportedOperationException();
 	}
 
 	// Real onFailure
 	protected void onFailure(FetchException e, Object token, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(segment, 1);
-			container.activate(parent, 1);
-			container.activate(segment.errors, 1);
-		}
-		boolean forceFatal = false;
-		if(parent.isCancelled()) {
-			if(Logger.shouldLog(LogLevel.MINOR, this)) 
-				Logger.minor(this, "Failing: cancelled");
-			e = new FetchException(FetchException.CANCELLED);
-			forceFatal = true;
-		}
-		segment.errors.inc(e.getMode());
-		if(persistent)
-			segment.errors.storeTo(container);
-		if(e.isFatal() && token == null) {
-			segment.fail(e, container, context, false);
-		} else if(e.isFatal() || forceFatal) {
-			segment.onFatalFailure(e, ((MySendableRequestItem)token).x, this, container, context);
-		} else {
-			segment.onNonFatalFailure(e, ((MySendableRequestItem)token).x, this, container, context);
-		}
-		removeBlockNum(((MySendableRequestItem)token).x, container, false);
-		if(persistent) {
-			container.deactivate(segment, 1);
-			container.deactivate(parent, 1);
-			container.deactivate(segment.errors, 1);
-		}
+		throw new UnsupportedOperationException();
 	}
 	
 	protected void onSuccess(Bucket data, boolean fromStore, Integer token, int blockNo, ClientCHKBlock block, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(segment, 1);
-			container.activate(parent, 1);
-		}
-		if(parent.isCancelled()) {
-			data.free();
-			if(persistent) data.removeFrom(container);
-			onFailure(new FetchException(FetchException.CANCELLED), token, container, context);
-			return;
-		}
-		segment.onSuccess(data, blockNo, block, container, context, this);
-	}
-
-	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure
-	 * and return null.
-	 */
-	protected Bucket extract(ClientKeyBlock block, Object token, ObjectContainer container, ClientContext context) {
-		Bucket data;
-		try {
-			data = block.decode(context.getBucketFactory(persistent), (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
-		} catch (KeyDecodeException e1) {
-			if(Logger.shouldLog(LogLevel.MINOR, this))
-				Logger.minor(this, "Decode failure: "+e1, e1);
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), token, container, context);
-			return null;
-		} catch (TooBigException e) {
-			onFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), token, container, context);
-			return null;
-		} catch (IOException e) {
-			Logger.error(this, "Could not capture data - disk full?: "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), token, container, context);
-			return null;
-		}
-		if(Logger.shouldLog(LogLevel.MINOR, this))
-			Logger.minor(this, data == null ? "Could not decode: null" : ("Decoded "+data.size()+" bytes"));
-		return data;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -587,51 +437,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(segment, 1);
-			container.activate(blockNums, 1);
-		}
-		if(logMINOR) Logger.minor(this, "onGotKey("+key+")");
-		// Find and remove block if it is on this subsegment. However it may have been
-		// removed already.
-		int blockNo;
-		synchronized(segment) {
-			for(int i=0;i<blockNums.size();i++) {
-				Integer token = blockNums.get(i);
-				int num = token;
-				Key k = segment.getBlockNodeKey(num, container);
-				if(k != null && k.equals(key)) {
-					if(logMINOR) Logger.minor(this, "Removing "+num+" (index "+i+") in onGotKey on "+this);
-					blockNums.remove(i);
-					if(persistent) container.delete(token);
-					break;
-				}
-			}
-			blockNo = segment.getBlockNumber(key, container);
-		}
-		if(blockNo == -1) {
-			Logger.minor(this, "No block found for key "+key+" on "+this);
-			return;
-		}
-		Integer token = Integer.valueOf(blockNo);
-		ClientCHK ckey = segment.getBlockKey(blockNo, container);
-		ClientCHKBlock cb;
-		try {
-			cb = new ClientCHKBlock((CHKBlock)block, ckey);
-		} catch (CHKVerifyException e) {
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), token, container, context);
-			return;
-		}
-		Bucket data = extract(cb, token,  container, context);
-		if(data == null) return;
-		
-		if(!cb.isMetadata()) {
-			onSuccess(data, false, token, (token).intValue(), cb, container, context);
-		} else {
-			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, container, context);
-		}
-		
+		throw new UnsupportedOperationException();
 	}
 
 	/**
@@ -650,12 +456,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		Integer[] oldNums = null;
 		synchronized(segment) {
 			if(cancelledAlready) {
-				if(!cancelled) {
-					Logger.error(this, "Should be cancelled already! "+this, new Exception("error"));
+				if(!cancelled)
 					cancelled = true;
-				}
-				if(!blockNums.isEmpty())
-					Logger.error(this, "Block nums not empty! on "+this+" : "+blockNums, new Exception("error"));
 			} else {
 				if(cancelled) return;
 				cancelled = true;
@@ -740,43 +542,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	public void reschedule(ObjectContainer container, ClientContext context) {
 		// Don't schedule self, schedule segment fetcher.
 		migrateToSegmentFetcher(container, context);
-	}
-
-	public boolean removeBlockNum(int blockNum, ObjectContainer container, boolean callerActivatesAndSets) {
-		if(logMINOR) Logger.minor(this, "Removing block "+blockNum+" from "+this);
-		if(persistent && !callerActivatesAndSets)
-			container.activate(blockNums, 2);
-		boolean found = false;
-		synchronized(segment) {
-			for(int i=0;i<blockNums.size();i++) {
-				Integer token = blockNums.get(i);
-				int num = token;
-				if(num == blockNum) {
-					blockNums.remove(i);
-					if(persistent) container.delete(token);
-					if(logMINOR) Logger.minor(this, "Removed block "+blockNum+" from "+this);
-					found = true;
-					break;
-				}
-			}
-		}
-		if(persistent && !callerActivatesAndSets) {
-			container.store(blockNums);
-			container.deactivate(blockNums, 2);
-		}
-		return found;
-	}
-
-	public void removeBlockNums(int[] blockNos, ObjectContainer container) {
-		if(persistent)
-			container.activate(blockNums, 2);
-		boolean store = false;
-		for(int i=0;i<blockNos.length;i++)
-			store |= removeBlockNum(blockNos[i], container, true);
-		if(persistent) {
-			if(store) container.store(blockNums);
-			container.deactivate(blockNums, 2);
-		}
 	}
 
 	@Override
