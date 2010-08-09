@@ -1269,10 +1269,16 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 
 	static class MyCooldownTrackerItem implements CooldownTrackerItem {
-		int[] dataRetries;
-		int[] checkRetries;
-		long[] dataCooldownTimes;
-		long[] checkCooldownTimes;
+		MyCooldownTrackerItem(int data, int check) {
+			dataRetries = new int[data];
+			checkRetries = new int[check];
+			dataCooldownTimes = new long[data];
+			checkCooldownTimes = new long[check];
+		}
+		final int[] dataRetries;
+		final int[] checkRetries;
+		final long[] dataCooldownTimes;
+		final long[] checkCooldownTimes;
 	}
 	
 	/**
@@ -2188,7 +2194,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 
 	public CooldownTrackerItem makeCooldownTrackerItem() {
-		return new MyCooldownTrackerItem();
+		return new MyCooldownTrackerItem(dataBuckets.length, checkBuckets.length);
 	}
 
 	public int getMaxRetries(ObjectContainer container) {
