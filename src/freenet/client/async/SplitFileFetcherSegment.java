@@ -1953,6 +1953,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	public boolean hasValidKeys(SplitFileFetcherSegmentGet getter, 
 			KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
+		if(keys == null) migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(startedDecode || isFinishing(container)) return false;
