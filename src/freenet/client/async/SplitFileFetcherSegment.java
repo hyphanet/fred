@@ -886,6 +886,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			synchronized(this) {
 				finished = true;
 			}
+			if(persistent) container.store(this);
 			if(persistent) container.activate(parentFetcher, 1);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
 			if(persistent) container.deactivate(parentFetcher, 1);
@@ -918,6 +919,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					synchronized(this) {
 						finished = true;
 					}
+					if(persistent) container.store(this);
 					if(persistent) container.activate(parentFetcher, 1);
 					parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
 					if(persistent) container.deactivate(parentFetcher, 1);
@@ -1070,10 +1072,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(allEncodedCorrectly) Logger.minor(this, "All encoded correctly on "+this);
 				else Logger.minor(this, "Not encoded correctly on "+this);
 			}
+			finished = true;
 			if(persistent && !fetcherFinished) {
 				container.store(this);
 			}
-			finished = true;
 		}
 		if(logMINOR) Logger.minor(this, "Checked blocks.");
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
@@ -1683,7 +1685,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			finished = true;
 		}
 		if(persistent)
-			container.activate(this, 1);
+			container.store(this);
 		this.fail(new FetchException(FetchException.INTERNAL_ERROR, "FEC failure: "+t, t), container, context, false);
 	}
 
