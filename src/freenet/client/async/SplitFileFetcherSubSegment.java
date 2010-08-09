@@ -851,8 +851,13 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 	
 	public boolean objectCanUpdate(ObjectContainer container) {
-		if(blockNums == null)
+		if(blockNums == null) {
+			if(!container.ext().isActive(this)) {
+				Logger.error(this, "Not active and blockNums == null but trying to store", new Exception("error"));
+				return false;
+			}
 			throw new NullPointerException("Storing "+this+" but blockNums == null!");
+		}
 		if(segment == null)
 			throw new NullPointerException("Storing "+this+" but segment == null!");
 		return true;
