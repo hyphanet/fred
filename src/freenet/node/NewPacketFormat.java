@@ -223,12 +223,6 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		if(logMINOR) {
-			Logger.minor(this, "Highest received sequence number: " + highestReceivedSeqNum
-			                + ", watchlist length: " + seqNumWatchList.length + ", watchlist offset: "
-			                + watchListOffset);
-		}
-
 		if(highestReceivedSeqNum - (seqNumWatchList.length / 2) > watchListOffset) {
 			int moveBy = (int) ((highestReceivedSeqNum - (seqNumWatchList.length / 2)) - watchListOffset);
 			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
@@ -236,14 +230,11 @@ public class NewPacketFormat implements PacketFormat {
 
 			long seqNum = watchListOffset + seqNumWatchList.length;
 			for(int i = watchListPointer; i < (watchListPointer + moveBy); i++) {
-				if(logMINOR) Logger.minor(this, "seqNumWatchList[" + (i % seqNumWatchList.length) + "] = " + seqNum);
 				seqNumWatchList[i % seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
 			}
 
 			watchListPointer = (watchListPointer + moveBy) % seqNumWatchList.length;
 			watchListOffset += moveBy;
-			
-			if(logMINOR) Logger.minor(this, "Pointer is now " + watchListPointer + ", offset is " + watchListOffset + ", moveBy=" + moveBy);
 		}
 
 		long sequenceNumber = -1;
