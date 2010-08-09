@@ -391,10 +391,15 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			segmentActive = container.ext().isActive(segment);
 			if(!segmentActive) container.activate(segment, 1);
 		}
-		SplitFileFetcherSegmentGet getter = segment.makeGetter(container, context);
-		if(persistent) container.activate(getter, 1);
-		getter.reschedule(container, context);
-		if(persistent) container.deactivate(getter, 1);
+		boolean cancelled = isCancelled(container) || isEmpty(container);
+		if(!cancelled) {
+			SplitFileFetcherSegmentGet getter = segment.makeGetter(container, context);
+			if(persistent) container.activate(getter, 1);
+			getter.reschedule(container, context);
+			if(persistent) container.deactivate(getter, 1);
+		} else {
+			kill(container, context, true, false);
+		}
 		if(!segmentActive) container.deactivate(segment, 1);
 	}
 
