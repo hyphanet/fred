@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import com.db4o.ObjectContainer;
 
 import freenet.node.SendableRequest;
+import freenet.support.Logger;
 
 /**
  * Just as with SectoredRandomGrabArray, activation is a big deal, and we can
@@ -49,11 +50,18 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 
 	public synchronized boolean removeRequest(SendableRequest req, ObjectContainer container) {
 		container.activate(list, 1);
-		int idx = find(req);
-		if(idx == -1) return false;
-		list.remove(idx);
+		boolean success = false;
+		while(true) {
+			int idx = find(req);
+			if(idx == -1) break;
+			if(success)
+				Logger.error(this, "Request is in "+this+" twice or more : "+req);
+			success = true;
+			list.remove(idx);
+		}
+		if(!success) return false;
 		container.ext().store(list, 2);
-		return true;
+		return success;
 	}
 
 	public void removeFrom(ObjectContainer container) {
