@@ -1277,6 +1277,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			try {
 				parent.onTransition(state, SingleFileFetcher.this, container);
+				//FIXME: Pass an InputStream here, and save ourselves a Bucket
 				Metadata meta = Metadata.construct(finalData);
 				removeMetadata(container);
 				synchronized(SingleFileFetcher.this) {
