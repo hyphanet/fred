@@ -144,9 +144,9 @@ public class SplitFileFetcherSegmentGet extends SendableGet {
 		if(e.isFatal() && token == null) {
 			segment.fail(e, container, context, false);
 		} else if(e.isFatal() || forceFatal) {
-			segment.onFatalFailure(e, ((SplitFileFetcherSegmentSendableRequestItem)token).blockNum, null, container, context);
+			segment.onFatalFailure(e, ((SplitFileFetcherSegmentSendableRequestItem)token).blockNum, container, context);
 		} else {
-			segment.onNonFatalFailure(e, ((SplitFileFetcherSegmentSendableRequestItem)token).blockNum, null, container, context);
+			segment.onNonFatalFailure(e, ((SplitFileFetcherSegmentSendableRequestItem)token).blockNum, container, context);
 		}
 		if(persistent) {
 			container.deactivate(segment, 1);

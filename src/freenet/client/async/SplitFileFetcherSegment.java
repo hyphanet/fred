@@ -608,13 +608,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 				} else if(block == null) {
 					// Cross-segment, just return false.
 					Logger.error(this, "CROSS-SEGMENT DECODED/ENCODED BLOCK INVALID: "+blockNo, new Exception("error"));
-					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from cross-segment decode"), blockNo, null, container, context);
+					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from cross-segment decode"), blockNo, container, context);
 					data.free();
 					if(persistent) data.removeFrom(container);
 					return false;
 				} else {
 					Logger.error(this, "DATA BLOCK INVALID: "+blockNo, new Exception("error"));
-					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block"), blockNo, null, container, context);
+					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block"), blockNo, container, context);
 					data.free();
 					if(persistent) data.removeFrom(container);
 					return false;
@@ -1183,7 +1183,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal 
 	 * @param container */
-	public void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
+	public void onFatalFailure(FetchException e, int blockNo, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(this, 1);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
@@ -1220,25 +1220,20 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent) container.activate(errors, Integer.MAX_VALUE);
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, false);
 		}
-		else if(seg != null) {
-			if(seg.possiblyRemoveFromParent(container, context))
-				seg.kill(container, context, true, true);
-		}
 	}
 	/** A request has failed non-fatally, so the block may be retried 
 	 * @param container */
-	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
-		onNonFatalFailure(e, blockNo, seg, container, context, true);
+	public void onNonFatalFailure(FetchException e, int blockNo, ObjectContainer container, ClientContext context) {
+		onNonFatalFailure(e, blockNo, container, context, true);
 	}
 	
-	private void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, boolean callStore) {
+	private void onNonFatalFailure(FetchException e, int blockNo, ObjectContainer container, ClientContext context, boolean callStore) {
 		if(persistent) {
 			container.activate(blockFetchContext, 1);
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		RequestScheduler sched = context.getFetchScheduler(false);
-		if(seg != null) removeSubSegment(seg, container, context);
-		if(onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries, callStore)) {
+		if(onNonFatalFailure(e, blockNo, container, context, sched, maxTries, callStore)) {
 			rescheduleGetter(container, context);
 		}
 	}
@@ -1254,30 +1249,27 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(!getterActive) container.deactivate(getter, 1);
 	}
 
-	public void onNonFatalFailure(FetchException[] failures, int[] blockNos, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
+	public void onNonFatalFailure(FetchException[] failures, int[] blockNos, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(blockFetchContext, 1);
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		RequestScheduler sched = context.getFetchScheduler(false);
-		if(seg != null) removeSubSegment(seg, container, context);
 		boolean reschedule = false;
 		for(int i=0;i<failures.length;i++) {
-			if(onNonFatalFailure(failures[i], blockNos[i], seg, container, context, sched, maxTries, false))
+			if(onNonFatalFailure(failures[i], blockNos[i], container, context, sched, maxTries, false))
 				reschedule = true;
 		}
 		if(persistent) container.store(this); // We don't call container.store(this) in each onNonFatalFailure because it takes much CPU time.
 		if(reschedule) rescheduleGetter(container, context);
-		if(seg != null)
-			removeSubSegment(seg, container, context);
 	}
 	
 	/**
 	 * Caller must set(this) iff returns true.
 	 * @return True if the getter should be rescheduled.
 	 */
-	private boolean onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries, boolean callStore) {
-		if(logMINOR) Logger.minor(this, "Calling onNonFatalFailure for block "+blockNo+" on "+this+" from "+seg);
+	private boolean onNonFatalFailure(FetchException e, int blockNo, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries, boolean callStore) {
+		if(logMINOR) Logger.minor(this, "Calling onNonFatalFailure for block "+blockNo+" on "+this);
 		int tries;
 		boolean failed = false;
 		boolean cooldown = false;
@@ -1318,7 +1310,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 		}
 		if(failed) {
-			onFatalFailure(e, blockNo, seg, container, context);
+			onFatalFailure(e, blockNo, container, context);
 			if(logMINOR)
 				Logger.minor(this, "Not retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
 			return false;
@@ -1327,7 +1319,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(cooldown) {
 			// Registered to cooldown queue
 			if(logMINOR)
-				Logger.minor(this, "Added to cooldown queue: "+key+" for "+this+" was on segment "+seg);
+				Logger.minor(this, "Added to cooldown queue: "+key+" for "+this);
 		} else {
 			// If we are here we are going to retry
 			mustSchedule = true;
@@ -1674,7 +1666,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			errors.inc(fatal.mode);
 			if(persistent)
 				errors.storeTo(container);
-			this.onFatalFailure(fatal, blockNum, null, container, context);
+			this.onFatalFailure(fatal, blockNum, container, context);
 			return false;
 		} else if(data == null) {
 			return false; // Extract failed
@@ -1684,7 +1676,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					finishOnSuccess(onSuccessResult, container, context);
 				return true;
 			} else {
-				onFatalFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), blockNum, null, container, context);
+				onFatalFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), blockNum, container, context);
 				return true;
 			}
 		}
@@ -1744,7 +1736,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			errors.inc(FetchException.BLOCK_DECODE_ERROR);
 			if(persistent)
 				errors.storeTo(container);
-			this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), blockNum, null, container, context);
+			this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), blockNum, container, context);
 			return null;
 		} catch (TooBigException e) {
 			if(persistent)
@@ -1752,7 +1744,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			errors.inc(FetchException.TOO_BIG);
 			if(persistent)
 				errors.storeTo(container);
-			this.onFatalFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), blockNum, null, container, context);
+			this.onFatalFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), blockNum, container, context);
 			return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
@@ -1761,7 +1753,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			errors.inc(FetchException.BUCKET_ERROR);
 			if(persistent)
 				errors.storeTo(container);
-			this.onFatalFailure(new FetchException(FetchException.BUCKET_ERROR, e), blockNum, null, container, context);
+			this.onFatalFailure(new FetchException(FetchException.BUCKET_ERROR, e), blockNum, container, context);
 			return null;
 		}
 		if(logMINOR)
