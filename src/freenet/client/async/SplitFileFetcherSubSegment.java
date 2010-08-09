@@ -786,6 +786,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		assert(container != null);
 		assert(persistent);
 		if(!container.ext().isStored(this)) return;
+		if(logMINOR) Logger.minor(this, "Queueing migrate to segment fetcher for "+this);
 		try {
 			context.jobRunner.queue(new DBJob() {
 				
