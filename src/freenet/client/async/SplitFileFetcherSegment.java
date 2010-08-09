@@ -1882,6 +1882,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removing "+this);
+		context.cooldownTracker.remove(this, true, container);
 		freeDecodedData(container, true);
 		removeSubSegments(container, context, true);
 		container.delete(subSegments);
@@ -1926,6 +1927,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 	
 	public void fetcherFinished(ObjectContainer container, ClientContext context) {
+		context.cooldownTracker.remove(this, persistent, container);
 		synchronized(this) {
 			fetcherFinished = true;
 			fetcherHalfFinished = true;
@@ -1945,6 +1947,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 	
 	private void encoderFinished(ObjectContainer container, ClientContext context) {
+		context.cooldownTracker.remove(this, persistent, container);
 		boolean finish = false;
 		boolean half = false;
 		synchronized(this) {

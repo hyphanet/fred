@@ -46,4 +46,15 @@ public class CooldownTracker {
 		}
 	}
 	
+	public synchronized CooldownTrackerItem remove(HasCooldownTrackerItem parent, boolean persistent, ObjectContainer container) {
+		if(persistent) {
+			if(!container.ext().isStored(parent)) throw new IllegalArgumentException("Must store first!");
+			long uid = container.ext().getID(parent);
+			return trackerItemsPersistent.remove(uid);
+		} else {
+			return trackerItemsTransient.remove(parent);
+		}
+		
+	}
+	
 }
