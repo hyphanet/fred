@@ -1411,6 +1411,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		synchronized(this) {
 			scheduled = true;
 		}
+		if(persistent)
+			container.store(this);
 		if(persistent) container.activate(get, 1);
 		return get;
 	}
