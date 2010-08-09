@@ -258,10 +258,10 @@ public class NewPacketFormat implements PacketFormat {
 
 		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
 		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
-		IV[0] = (byte) (sequenceNumber >>> 24);
-		IV[1] = (byte) (sequenceNumber >>> 16);
-		IV[2] = (byte) (sequenceNumber >>> 8);
-		IV[3] = (byte) (sequenceNumber);
+		IV[IV.length - 4] = (byte) (sequenceNumber >>> 24);
+		IV[IV.length - 3] = (byte) (sequenceNumber >>> 16);
+		IV[IV.length - 2] = (byte) (sequenceNumber >>> 8);
+		IV[IV.length - 1] = (byte) (sequenceNumber);
 
 		ivCipher.encipher(IV, IV);
 
@@ -296,7 +296,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
 		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
-		System.arraycopy(seqNumBytes, 0, IV, 0, seqNumBytes.length);
+		System.arraycopy(seqNumBytes, 0, IV, IV.length - seqNumBytes.length, seqNumBytes.length);
 		ivCipher.encipher(IV, IV);
 
 		PCFBMode cipher = PCFBMode.create(sessionKey.sessionCipher, IV);
@@ -334,7 +334,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
 		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
-		System.arraycopy(data, HMAC_LENGTH, IV, 0, 4);
+		System.arraycopy(data, HMAC_LENGTH, IV, IV.length - 4, 4);
 		
 		ivCipher.encipher(IV, IV);
 
