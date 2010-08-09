@@ -1292,6 +1292,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			checkRetries = tracker.checkRetries;
 			dataCooldownTimes = tracker.dataCooldownTimes;
 			checkCooldownTimes = tracker.checkCooldownTimes;
+			callStore = false;
 		}
 		synchronized(this) {
 			if(isFinished(container)) return false;
