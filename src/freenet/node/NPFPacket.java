@@ -239,14 +239,22 @@ class NPFPacket {
 		return offset;
 	}
 
-	public int addAck(long ack) {
+	public boolean addAck(long ack) {
+		if(ack < 0) throw new IllegalArgumentException("Got negative ack: " + ack);
+		if(acks.contains(ack)) return true;
+		if(acks.size() >= 255) return false;
+
 		if(acks.size() == 0) {
-			length += 4;
-		} else {
-			length++;
+			length += 3;
+		} else if(ack < acks.first()) {
+			if((acks.first() - ack) > 255) return false;
+		} else if(ack > acks.last()) {
+			if((ack - acks.last()) > 255) return false;
 		}
 		acks.add(ack);
-		return length;
+		length++;
+
+		return true;
 	}
 
 	public int addMessageFragment(MessageFragment frag) {

@@ -396,18 +396,8 @@ public class NewPacketFormat implements PacketFormat {
 		synchronized(acks) {
 			long firstAck = 0;
 			Iterator<Long> it = acks.iterator();
-			while (it.hasNext() && numAcks < 256 && packet.getLength() < maxPacketSize) {
-				long ack = it.next();
-				if(numAcks == 0) {
-					firstAck = ack;
-				} else {
-					// Check that it can be compressed
-					long compressedAck = ack - firstAck;
-					if((compressedAck < 0) || (compressedAck > 255)) {
-						continue;
-					}
-				}
-				packet.addAck(ack);
+			while (it.hasNext() && packet.getLength() < maxPacketSize) {
+				if(!packet.addAck(ack)) break;
 				++numAcks;
 				it.remove();
 			}
