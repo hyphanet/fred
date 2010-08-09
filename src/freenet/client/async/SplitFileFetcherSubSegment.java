@@ -836,9 +836,19 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return super.hashCode();
 	}
 	
-	public boolean objectCanStore(ObjectContainer container) {
+	public boolean objectCanNew(ObjectContainer container) {
 		if(blockNums == null)
 			throw new NullPointerException("Storing "+this+" but blockNums == null!");
+		if(segment == null)
+			throw new NullPointerException("Storing "+this+" but segment == null!");
+		return true;
+	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(blockNums == null)
+			throw new NullPointerException("Storing "+this+" but blockNums == null!");
+		if(segment == null)
+			throw new NullPointerException("Storing "+this+" but segment == null!");
 		return true;
 	}
 	
