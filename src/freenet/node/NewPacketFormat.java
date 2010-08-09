@@ -50,9 +50,11 @@ public class NewPacketFormat implements PacketFormat {
 	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
 	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
 
-	//FIXME: Should be a better way to store it
-	private final HashMap<SessionKey, byte[][]> seqNumWatchLists = new HashMap<SessionKey, byte[][]>();
-	private final HashMap<SessionKey, Long> watchListOffsets = new HashMap<SessionKey, Long>();
+	private SessionKey watchListKey;
+	private byte[][] seqNumWatchList;
+	private int watchListPointer;
+	private long watchListOffset;
+
 	private long highestReceivedSeqNum = -1;
 	private volatile long highestReceivedAck = -1;
 	private final SparseBitmap finishedMessages = new SparseBitmap();
@@ -208,54 +210,56 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
-		byte[][] seqNumWatchList = seqNumWatchLists.get(sessionKey);
-		long watchListOffset = 0;
-		if(seqNumWatchList != null) watchListOffset = watchListOffsets.get(sessionKey);
-
-		if(seqNumWatchList == null || (highestReceivedSeqNum > watchListOffset + ((NUM_SEQNUMS_TO_WATCH_FOR * 3) / 4))) {
-
-			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][];
-
-			watchListOffset = (highestReceivedSeqNum == -1 ? 0 : highestReceivedSeqNum - (seqNumWatchList.length / 2));
-			if(logMINOR) Logger.minor(this, "Recreating watchlist from offset " + watchListOffset);
+		if(watchListKey == null || !watchListKey.equals(sessionKey)) {
+			watchListKey = sessionKey;
+			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
+			watchListPointer = 0;
 
 			long seqNum = watchListOffset;
 			for(int i = 0; i < seqNumWatchList.length; i++) {
-				byte[] seqNumBytes = new byte[4];
-				seqNumBytes[0] = (byte) (seqNum >>> 24);
-				seqNumBytes[1] = (byte) (seqNum >>> 16);
-				seqNumBytes[2] = (byte) (seqNum >>> 8);
-				seqNumBytes[3] = (byte) (seqNum);
-				seqNum++;
+				if(logMINOR) Logger.minor(this, "seqNumWatchList[" + i + "] = " + seqNum);
+				seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
+			}
+		}
 
-				BlockCipher ivCipher = sessionKey.ivCipher;
+		if(logMINOR) {
+			Logger.minor(this, "Highest received sequence number: " + highestReceivedSeqNum
+			                + ", watchlist length: " + seqNumWatchList.length + ", watchlist offset: "
+			                + watchListOffset);
+		}
 
-				byte[] IV = new byte[ivCipher.getBlockSize() / 8];
-				System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
-				System.arraycopy(seqNumBytes, 0, IV, 0, seqNumBytes.length);
+		if(highestReceivedSeqNum - (seqNumWatchList.length / 2) > watchListOffset) {
+			int moveBy = (int) ((highestReceivedSeqNum - (seqNumWatchList.length / 2)) - watchListOffset);
+			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
+			if(logMINOR) Logger.minor(this, "Moving pointer by " + moveBy);
 
-				ivCipher.encipher(IV, IV);
-
-				PCFBMode cipher = PCFBMode.create(sessionKey.sessionCipher, IV);
-				cipher.blockEncipher(seqNumBytes, 0, seqNumBytes.length);
-
-				seqNumWatchList[i] = seqNumBytes;
+			long seqNum = watchListOffset + seqNumWatchList.length;
+			for(int i = watchListPointer; i < (watchListPointer + moveBy); i++) {
+				if(logMINOR) Logger.minor(this, "seqNumWatchList[" + (i % seqNumWatchList.length) + "] = " + seqNum);
+				seqNumWatchList[i % seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
 			}
 
-			seqNumWatchLists.put(sessionKey, seqNumWatchList);
-			watchListOffsets.put(sessionKey, watchListOffset);
+			watchListPointer = (watchListPointer + moveBy) % seqNumWatchList.length;
+			watchListOffset += moveBy;
+			
+			if(logMINOR) Logger.minor(this, "Pointer is now " + watchListPointer + ", offset is " + watchListOffset + ", moveBy=" + moveBy);
 		}
 
 		long sequenceNumber = -1;
 		for(int i = 0; (i < seqNumWatchList.length) && (sequenceNumber == -1); i++) {
-			for(int j = 0; j < seqNumWatchList[i].length; j++) {
-				if(seqNumWatchList[i][j] != buf[offset + HMAC_LENGTH + j]) break;
-				if(j == (seqNumWatchList[i].length - 1)) sequenceNumber = watchListOffset + i;
+			int index = (watchListPointer + i) % seqNumWatchList.length;
+			for(int j = 0; j < seqNumWatchList[index].length; j++) {
+				if(seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) break;
+				if(j == (seqNumWatchList[index].length - 1)) {
+					sequenceNumber = watchListOffset + i;
+				}
 			}
 		}
 		if(sequenceNumber == -1) {
 			if(logMINOR) Logger.minor(this, "Dropping packet because it isn't on our watchlist");
 			return null;
+		} else {
+			if(logMINOR) Logger.minor(this, "Received packet matches sequence number " + sequenceNumber);
 		}
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
@@ -286,6 +290,27 @@ public class NewPacketFormat implements PacketFormat {
 		if(highestReceivedSeqNum < p.getSequenceNumber()) highestReceivedSeqNum = p.getSequenceNumber();
 
 		return p;
+	}
+
+	private byte[] encryptSequenceNumber(long seqNum, SessionKey sessionKey) {
+		byte[] seqNumBytes = new byte[4];
+		seqNumBytes[0] = (byte) (seqNum >>> 24);
+		seqNumBytes[1] = (byte) (seqNum >>> 16);
+		seqNumBytes[2] = (byte) (seqNum >>> 8);
+		seqNumBytes[3] = (byte) (seqNum);
+		seqNum++;
+		
+		BlockCipher ivCipher = sessionKey.ivCipher;
+
+		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
+		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
+		System.arraycopy(seqNumBytes, 0, IV, 0, seqNumBytes.length);
+		ivCipher.encipher(IV, IV);
+
+		PCFBMode cipher = PCFBMode.create(sessionKey.sessionCipher, IV);
+		cipher.blockEncipher(seqNumBytes, 0, seqNumBytes.length);
+		
+		return seqNumBytes;
 	}
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
