@@ -255,6 +255,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	@Override
 	public boolean hasValidKeys(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+		// This is safe because it won't be removed from the RGA.
 		queueMigrateToSegmentFetcher(container, context);
 		return false;
 	}
@@ -702,7 +703,9 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	@Override
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
-		queueMigrateToSegmentFetcher(container, context);
+		// We must complete this immediately or risk data loss.
+		// We are not being called by RGA so there is no problem.
+		migrateToSegmentFetcher(container, context);
 	}
 
 	@Override
@@ -735,7 +738,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	public void reschedule(ObjectContainer container, ClientContext context) {
-		queueMigrateToSegmentFetcher(container, context);
+		// Don't schedule self, schedule segment fetcher.
+		migrateToSegmentFetcher(container, context);
 	}
 
 	public boolean removeBlockNum(int blockNum, ObjectContainer container, boolean callerActivatesAndSets) {
@@ -777,6 +781,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	@Override
 	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		// This is safe because it won't be removed from the RGA.
 		queueMigrateToSegmentFetcher(container, context);
 		return null;
 	}
