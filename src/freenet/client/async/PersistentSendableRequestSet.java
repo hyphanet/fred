@@ -67,7 +67,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 			list.remove(idx);
 		}
 		if(!success) return false;
-		container.ext().store(list, 2);
+		container.ext().store(list, 1);
 		return success;
 	}
 
