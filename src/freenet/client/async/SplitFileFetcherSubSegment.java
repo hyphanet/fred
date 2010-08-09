@@ -783,28 +783,33 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	private void queueMigrateToSegmentFetcher(ObjectContainer container,
 			ClientContext context) {
-		if(persistent) {
-			try {
-				context.jobRunner.queue(new DBJob() {
-					
-					public boolean run(ObjectContainer container, ClientContext context) {
-						if(!container.ext().isStored(SplitFileFetcherSubSegment.this))
-							return false; // Already migrated
-						migrateToSegmentFetcher(container, context);
-						return false;
-					}
-					
-				}, NativeThread.NORM_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
-				// Ignore
-			}
-		} else {
-			migrateToSegmentFetcher(container, context);
+		assert(container != null);
+		assert(persistent);
+		if(!container.ext().isStored(this)) return;
+		try {
+			context.jobRunner.queue(new DBJob() {
+				
+				public boolean run(ObjectContainer container, ClientContext context) {
+					if(!container.ext().isStored(SplitFileFetcherSubSegment.this))
+						return false; // Already migrated
+					migrateToSegmentFetcher(container, context);
+					return false;
+				}
+				
+			}, NativeThread.NORM_PRIORITY, false);
+		} catch (DatabaseDisabledException e) {
+			// Ignore
 		}
 	}
 
 	private void migrateToSegmentFetcher(ObjectContainer container,
 			ClientContext context) {
+		if(segment == null) {
+			Logger.error(this, "Migrating to segment fetcher on "+this+" but segment is null!");
+			if(container.ext().isStored(this))
+				Logger.error(this, "... and this is stored!");
+			return;
+		}
 		if(persistent) container.activate(segment, 1);
 		SplitFileFetcherSegmentGet getter = segment.makeGetter(container, context);
 		if(persistent) container.activate(getter, 1);
