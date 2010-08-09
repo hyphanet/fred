@@ -360,7 +360,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					}
 					return -1;
 				}
-				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
 				setFoundKey(blockNo, container, context);
 				if(persistent) {
 					data.storeTo(container);
@@ -680,7 +679,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		for(int i=0;i<dataBuckets.length;i++) {
 			if(dataBuckets[i].getData() != null) {
 				data++;
-			} else if(crossCheckBlocks != 0) {
+			} else {
 				// Use flag to indicate that it the block needed to be decoded.
 				dataBuckets[i].flag = true;
 				if(persistent) dataBuckets[i].storeTo(container);
@@ -844,6 +843,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			Bucket data = dataBlockStatus[i].getData();
 			if(data == null) 
 				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
+			boolean heal = true;
 			try {
 				if(persistent && crossCheckBlocks != 0) {
 					// onFetched might deactivate blocks.
@@ -861,12 +861,19 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 						return;
 					}
 					// Disable healing.
-					dataRetries[i] = 0;
+					heal = false;
 					allDecodedCorrectly = false;
 				}
 			} catch (FetchException e) {
 				fail(e, container, context, false);
 				return;
+			}
+			if(heal) {
+				Bucket wrapper = queueHeal(data, container, context);
+				if(wrapper != data) {
+					assert(!persistent);
+					dataBuckets[i].replaceData(wrapper);
+				}
 			}
 		}
 		if(allDecodedCorrectly && logMINOR) Logger.minor(this, "All decoded correctly on "+this);
@@ -934,6 +941,14 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 		
 		// Encode any check blocks we don't have
+		for(int i=0;i<checkBuckets.length;i++) {
+			if(checkBuckets[i].getData() == null) {
+				// Use flag to indicate that it the block needed to be decoded.
+				checkBuckets[i].flag = true;
+				if(persistent) checkBuckets[i].storeTo(container);
+			}
+		}
+
 		try {
 			synchronized(this) {
 				if(encoderFinished) {
@@ -969,7 +984,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				Logger.error(this, "Decoded segment after encoder finished");
 			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
 			for(int i=0;i<dataBuckets.length;i++) {
-				boolean heal = false;
 				if(dataBuckets[i] == null) {
 					Logger.error(this, "Data bucket "+i+" is null in onEncodedSegment on "+this);
 					continue;
@@ -996,15 +1010,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					continue;
 				}
 				
-				if(dataRetries[i] > 0)
-					heal = true;
-				if(heal) {
-					Bucket wrapper = queueHeal(data, container, context);
-					if(wrapper != data) {
-						assert(!persistent);
-						dataBuckets[i].replaceData(wrapper);
-					}
-				}
 			}
 			boolean allEncodedCorrectly = true;
 			for(int i=0;i<checkBuckets.length;i++) {
@@ -1037,8 +1042,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					}
 					continue;
 				}
-				if(checkRetries[i] > 0)
-					heal = true;
+				heal = checkBuckets[i].flag;
 				try {
 					if(!maybeAddToBinaryBlob(data, null, i+dataBuckets.length, container, context, "FEC ENCODE")) {
 						heal = false;
@@ -1455,14 +1459,34 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 	}
 
-	public synchronized long getCooldownWakeup(int blockNum) {
+	public synchronized long getCooldownWakeup(int blockNum, int maxTries, ObjectContainer container, ClientContext context) {
+		long[] dataCooldownTimes = this.dataCooldownTimes;
+		long[] checkCooldownTimes = this.checkCooldownTimes;
+		if(maxTries == -1) {
+			// Cooldown and retry counts entirely kept in RAM.
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			dataCooldownTimes = tracker.dataCooldownTimes;
+			checkCooldownTimes = tracker.checkCooldownTimes;
+		}
 		if(blockNum < dataBuckets.length)
 			return dataCooldownTimes[blockNum];
 		else
 			return checkCooldownTimes[blockNum - dataBuckets.length];
 	}
 
-	private int getRetries(int blockNum) {
+	private int getRetries(int blockNum, ObjectContainer container, ClientContext context) {
+		return getRetries(blockNum, getMaxRetries(container), container, context);
+	}
+	
+	private int getRetries(int blockNum, int maxTries, ObjectContainer container, ClientContext context) {
+		int[] dataRetries = this.dataRetries;
+		int[] checkRetries = this.checkRetries;
+		if(maxTries == -1) {
+			// Cooldown and retry counts entirely kept in RAM.
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			dataRetries = tracker.dataRetries;
+			checkRetries = tracker.checkRetries;
+		}
 		if(blockNum < dataBuckets.length)
 			return dataRetries[blockNum];
 		else
@@ -1478,6 +1502,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		boolean notFound = true;
 		synchronized(this) {
 		if(isFinishing(container)) return false;
+		// FIXME need a more efficient way to get maxTries!
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		if(keys == null) 
 			migrateToKeys(container);
@@ -1488,14 +1516,14 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		for(int i : matches) {
 			ClientCHK k = keys.getKey(i, foundKeys, persistent);
 			if(k.getNodeKey(false).equals(key)) {
-				if(getCooldownWakeup(i) > time) {
+				if(getCooldownWakeup(i, maxTries, container, context) > time) {
 					if(logMINOR)
-						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(getCooldownWakeup(i)-time)+"ms");
+						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(getCooldownWakeup(i, maxTries, container, context)-time)+"ms");
 					return false;
 				}
 				if(foundKeys[i]) continue;
 				if(logMINOR)
-					Logger.minor(this, "Retrying after cooldown on "+this+": block "+i+" on "+this+" : tries="+getRetries(i)+"/"+maxTries);
+					Logger.minor(this, "Retrying after cooldown on "+this+": block "+i+" on "+this+" : tries="+getRetries(i, container, context)+"/"+maxTries);
 				
 				notFound = false;
 			} else {
@@ -1512,7 +1540,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		return true;
 	}
 
-	public synchronized long getCooldownWakeupByKey(Key key, ObjectContainer container) {
+	public synchronized long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
 		if(keys == null) 
 			migrateToKeys(container);
 		else {
@@ -1520,7 +1548,12 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 		int blockNo = keys.getBlockNumber((NodeCHK)key, foundKeys);
 		if(blockNo == -1) return -1;
-		return getCooldownWakeup(blockNo);
+		// FIXME need a more efficient way to get maxTries!
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
+		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
+		return getCooldownWakeup(blockNo, maxTries, container, context);
 	}
 
 	public synchronized int getBlockNumber(Key key, ObjectContainer container) {
@@ -1532,12 +1565,21 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		return keys.getBlockNumber((NodeCHK)key, foundKeys);
 	}
 
-	public synchronized Integer[] getKeyNumbersAtRetryLevel(int retryCount, ObjectContainer container) {
+	public synchronized Integer[] getKeyNumbersAtRetryLevel(int retryCount, ObjectContainer container, ClientContext context) {
 		Vector<Integer> v = new Vector<Integer>();
 		if(keys == null) 
 			migrateToKeys(container);
 		else {
 			if(persistent) container.activate(keys, 1);
+		}
+		int maxTries = getMaxRetries(container);
+		int[] dataRetries = this.dataRetries;
+		int[] checkRetries = this.checkRetries;
+		if(maxTries == -1) {
+			// Cooldown and retry counts entirely kept in RAM.
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			dataRetries = tracker.dataRetries;
+			checkRetries = tracker.checkRetries;
 		}
 		for(int i=0;i<dataRetries.length;i++) {
 			if(foundKeys[i]) continue;
@@ -1562,7 +1604,20 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 	}
 
-	public synchronized void resetCooldownTimes(ObjectContainer container) {
+	public synchronized void resetCooldownTimes(ObjectContainer container, ClientContext context) {
+		// FIXME need a more efficient way to get maxTries!
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
+		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
+		long[] dataCooldownTimes = this.dataCooldownTimes;
+		long[] checkCooldownTimes = this.checkCooldownTimes;
+		if(maxTries == -1) {
+			// Cooldown and retry counts entirely kept in RAM.
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			dataCooldownTimes = tracker.dataCooldownTimes;
+			checkCooldownTimes = tracker.checkCooldownTimes;
+		}
 		for(int i=0;i<dataCooldownTimes.length;i++)
 			dataCooldownTimes[i] = -1;
 		for(int i=0;i<checkCooldownTimes.length;i++)
@@ -1643,9 +1698,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		ClientCHKBlock cb = null;
 		int blockNum;
 		Bucket data = null;
-		SplitFileFetcherSubSegment seg;
 		short onSuccessResult = (short) -1;
-		boolean killSeg = false;
 		FetchException fatal = null;
 		synchronized(this) {
 			blockNum = this.getBlockNumber(key, container);
@@ -1660,7 +1713,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(logMINOR)
 				Logger.minor(this, "Found key for block "+blockNum+" on "+this+" in onGotKey() for "+key);
 			ClientCHK ckey = this.getBlockKey(blockNum, container);
-			int retryCount = getBlockRetryCount(blockNum);
 			try {
 				cb = new ClientCHKBlock((CHKBlock)block, ckey);
 			} catch (CHKVerifyException e) {
@@ -1705,13 +1757,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				return true;
 			}
 		}
-	}
-	
-	private int getBlockRetryCount(int blockNum) {
-		if(blockNum < dataRetries.length)
-			return dataRetries[blockNum];
-		blockNum -= dataRetries.length;
-		return checkRetries[blockNum];
 	}
 	
 	private synchronized MinimalSplitfileBlock getBlock(int blockNum) {
@@ -1972,11 +2017,16 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(persistent) container.activate(keys, 1);
 		}
 		long now = System.currentTimeMillis();
+		// FIXME need a more efficient way to get maxTries!
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
+		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
 		synchronized(this) {
 			if(startedDecode || isFinishing(container)) return false;
 			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
 				if(foundKeys[i]) continue;
-				if(getCooldownWakeup(i) > now) continue;
+				if(getCooldownWakeup(i, maxTries, container, context) > now) continue;
 				// Double check
 				if(getBlockBucket(i, container) != null) continue;
 				Key key = keys.getNodeKey(i, null, true);
@@ -2004,20 +2054,25 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		else {
 			if(persistent) container.activate(keys, 1);
 		}
+		// FIXME need a more efficient way to get maxTries!
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
+		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
 		synchronized(this) {
 			int minRetries = Integer.MAX_VALUE;
 			ArrayList<Integer> list = null;
 			if(startedDecode || isFinishing(container)) return null;
 			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
 				if(foundKeys[i]) continue;
-				if(getCooldownWakeup(i) > now) continue;
+				if(getCooldownWakeup(i, maxTries, container, context) > now) continue;
 				// Double check
 				if(getBlockBucket(i, container) != null) continue;
 				// Possible ...
 				Key key = keys.getNodeKey(i, null, true);
 				if(fetching.hasKey(key)) continue;
 				if(onlyLowestTries) {
-					int retryCount = this.getRetries(i);
+					int retryCount = this.getRetries(i, container, context);
 					if(retryCount > minRetries) {
 						// Ignore
 						continue;
@@ -2052,11 +2107,16 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		else {
 			if(persistent) container.activate(keys, 1);
 		}
+		// FIXME need a more efficient way to get maxTries!
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
+		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
 		synchronized(this) {
 			if(startedDecode || isFinishing(container)) return null;
 			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
 				if(foundKeys[i]) continue;
-				if(getCooldownWakeup(i) > now) continue;
+				if(getCooldownWakeup(i, maxTries, container, context) > now) continue;
 				// Double check
 				if(getBlockBucket(i, container) != null) continue;
 				// Possible ...
@@ -2088,11 +2148,12 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	public long countSendableKeys(ObjectContainer container, ClientContext context) {
 		int count = 0;
 		long now = System.currentTimeMillis();
+		int maxTries = getMaxRetries(container);
 		synchronized(this) {
 			if(startedDecode || isFinishing(container)) return 0;
 			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
 				if(foundKeys[i]) continue;
-				if(getCooldownWakeup(i) > now) continue;
+				if(getCooldownWakeup(i, maxTries, container, context) > now) continue;
 				// Double check
 				if(getBlockBucket(i, container) != null) continue;
 				count++;
@@ -2138,6 +2199,14 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 
 	public CooldownTrackerItem makeCooldownTrackerItem() {
 		return new MyCooldownTrackerItem();
+	}
+
+	public int getMaxRetries(ObjectContainer container) {
+		// FIXME need a more efficient way to get maxTries!
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
+		return blockFetchContext.maxSplitfileBlockRetries;
 	}
 
 }

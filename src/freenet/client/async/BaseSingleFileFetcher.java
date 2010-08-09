@@ -235,17 +235,17 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context);
 	
 	@Override
-	public long getCooldownWakeup(Object token, ObjectContainer container) {
+	public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
 		return cooldownWakeupTime;
 	}
 
 	@Override
-	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
+	public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
 		return cooldownWakeupTime;
 	}
 	
 	@Override
-	public synchronized void resetCooldownTimes(ObjectContainer container) {
+	public synchronized void resetCooldownTimes(ObjectContainer container, ClientContext context) {
 		cooldownWakeupTime = -1;
 		if(persistent)
 			container.store(this);

@@ -156,13 +156,13 @@ public class SplitFileFetcherSegmentGet extends SendableGet {
 	}
 
 	@Override
-	public long getCooldownWakeup(Object token, ObjectContainer container) {
+	public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
-		return segment.getCooldownWakeup(((SplitFileFetcherSegmentSendableRequestItem)token).blockNum);
+		return segment.getCooldownWakeup(((SplitFileFetcherSegmentSendableRequestItem)token).blockNum, segment.getMaxRetries(container), container, context);
 	}
 
 	@Override
-	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
+	public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
 		/* Only deactivate if was deactivated in the first place. 
 		 * See the removePendingKey() stack trace: Segment is the listener (getter) ! */
 		boolean activated = false;
@@ -171,7 +171,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet {
 			if(!activated)
 				container.activate(segment, 1);
 		}
-		long ret = segment.getCooldownWakeupByKey(key, container);
+		long ret = segment.getCooldownWakeupByKey(key, container, context);
 		if(persistent) {
 			if(!activated)
 				container.deactivate(segment, 1);
@@ -180,9 +180,9 @@ public class SplitFileFetcherSegmentGet extends SendableGet {
 	}
 
 	@Override
-	public void resetCooldownTimes(ObjectContainer container) {
+	public void resetCooldownTimes(ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
-		segment.resetCooldownTimes(container);
+		segment.resetCooldownTimes(container, context);
 	}
 
 	@Override

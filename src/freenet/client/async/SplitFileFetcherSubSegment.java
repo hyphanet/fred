@@ -105,7 +105,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		// j16sdiz (22-DEC-2008):
 		// ClientRequestSchedular.removePendingKeys() call this to get a list of request to be removed
 		// FIXME ClientRequestSchedular.removePendingKeys() is leaking, what's missing here?
-		return segment.getKeyNumbersAtRetryLevel(retryCount, container).length;
+		return segment.getKeyNumbersAtRetryLevel(retryCount, container, context).length;
 	}
 	
 	/**
@@ -300,7 +300,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public long getCooldownWakeup(Object token, ObjectContainer container) {
+	public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -312,7 +312,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
+	public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
 		/* Only deactivate if was deactivated in the first place. 
 		 * See the removePendingKey() stack trace: Segment is the listener (getter) ! */
 		boolean activated = false;
@@ -321,7 +321,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			if(!activated)
 				container.activate(segment, 1);
 		}
-		long ret = segment.getCooldownWakeupByKey(key, container);
+		long ret = segment.getCooldownWakeupByKey(key, container, context);
 		if(persistent) {
 			if(!activated)
 				container.deactivate(segment, 1);
@@ -330,7 +330,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public void resetCooldownTimes(ObjectContainer container) {
+	public void resetCooldownTimes(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);

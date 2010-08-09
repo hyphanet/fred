@@ -1002,12 +1002,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public long getCooldownWakeup(Object token, ObjectContainer container) {
+		public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
 			return -1;
 		}
 
 		@Override
-		public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
+		public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
 			return -1;
 		}
 
@@ -1032,7 +1032,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public void resetCooldownTimes(ObjectContainer container) {
+		public void resetCooldownTimes(ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 

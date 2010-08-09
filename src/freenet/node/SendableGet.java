@@ -75,12 +75,12 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @param token
 	 * @return
 	 */
-	public abstract long getCooldownWakeup(Object token, ObjectContainer container);
+	public abstract long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context);
 	
-	public abstract long getCooldownWakeupByKey(Key key, ObjectContainer container);
+	public abstract long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context);
 	
 	/** Reset the cooldown times when the request is reregistered. */
-	public abstract void resetCooldownTimes(ObjectContainer container);
+	public abstract void resetCooldownTimes(ObjectContainer container, ClientContext context);
 
 	/**
 	 * An internal error occurred, effecting this SendableGet, independantly of any ChosenBlock's.
