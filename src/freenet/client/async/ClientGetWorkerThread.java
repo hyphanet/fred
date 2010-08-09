@@ -9,11 +9,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import freenet.client.ClientMetadata;
-import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.filter.ContentFilter;
+import freenet.client.filter.FoundURICallback;
+import freenet.client.filter.TagReplacerCallback;
 import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.crypt.HashResult;
 import freenet.crypt.MultiHashInputStream;
@@ -29,10 +32,13 @@ import freenet.support.io.FileUtil;
 public class ClientGetWorkerThread extends Thread {
 
 	private InputStream input;
-	final private FreenetURI uri;
+	final private URI uri;
 	final private HashResult[] hashes;
-	final private FetchContext ctx;
-	private String mimeType;
+	final private boolean filterData;
+	final private String charset;
+	final private FoundURICallback prefetchHook;
+	final private TagReplacerCallback tagReplacer;
+	final private String mimeType;
 	private OutputStream output;
 	private boolean finished = false;
 	private Throwable error = null;
@@ -52,17 +58,28 @@ public class ClientGetWorkerThread extends Thread {
 	 * @param mimeType MIME of the fetched data. The best guess is needed for the
 	 * ContentFilter. Optional.
 	 * @param hashes Hashes of the fetched data, to be compared against. Optional.
-	 * @param ctx FetchContext containing variables needed by the ContentFilter. Optional.
+	 * @param filterData If true, the ContentFilter will be invoked
+	 * @param charset Charset to be passed to the ContentFilter.
+	 * Only needed if filterData is true.
+	 * @param prefetchHook Only needed if filterData is true.
+	 * @param tagReplacer Used for web-pushing. Only needed if filterData is true.
+	 * @throws URISyntaxException 
 	 */
 	ClientGetWorkerThread(PipedInputStream input, OutputStream output, FreenetURI uri,
-			String mimeType, HashResult[] hashes, FetchContext ctx) {
+			String mimeType, HashResult[] hashes, boolean filterData, String charset,
+			FoundURICallback prefetchHook, TagReplacerCallback tagReplacer) throws URISyntaxException {
 		super("ClientGetWorkerThread");
 		this.input = input;
-		this.ctx = ctx;
-		this.uri = uri;
+		if(uri != null) this.uri = uri.toURI("/");
+		else this.uri = null;
+		if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 		this.mimeType = mimeType;
 		this.hashes = hashes;
 		this.output = output;
+		this.filterData = filterData;
+		this.charset = charset;
+		this.prefetchHook = prefetchHook;
+		this.tagReplacer = tagReplacer;
 	}
 
 	@Override
@@ -76,13 +93,11 @@ public class ClientGetWorkerThread extends Thread {
 				input = hashStream;
 			}
 			//Filter the data, if we are supposed to
-			if(ctx != null && ctx.filterData){
-				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
+			if(filterData){
+				if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+prefetchHook+" tagReplacer: "+tagReplacer);
 				if(mimeType == null || uri == null || input == null || output == null) throw new IOException("Insufficient arguements to worker thread");
-				if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
 				// Send XHTML as HTML because we can't use web-pushing on XHTML.
-				if(mimeType != null && mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
-				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
+				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri, prefetchHook, tagReplacer, charset);
 
 				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
 				synchronized(this) {

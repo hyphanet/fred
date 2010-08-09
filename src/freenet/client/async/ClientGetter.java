@@ -256,7 +256,8 @@ public class ClientGetter extends BaseClientGetter {
 			}
 
 			output = finalResult.getOutputStream();
-			worker = new ClientGetWorkerThread(dataInput, output, uri, mimeType, hashes, ctx);
+			if(ctx.overrideMIME != null) mimeType = ctx.overrideMIME;
+			worker = new ClientGetWorkerThread(dataInput, output, uri, mimeType, hashes, ctx.filterData, ctx.charset, ctx.prefetchHook, ctx.tagReplacer);
 			worker.start();
 			try {
 				streamGenerator.writeTo(dataOutput, container, context);
