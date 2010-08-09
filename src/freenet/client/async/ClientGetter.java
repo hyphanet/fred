@@ -236,7 +236,6 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(returnBucket, 5);
 			container.activate(ctx, 1);
 			container.activate(state, 1);
-			state.removeFrom(container, context);
 			container.activate(clientCallback, 1);
 			if(hashes != null) container.activate(hashes, Integer.MAX_VALUE);
 		}
@@ -375,6 +374,9 @@ public class ClientGetter extends BaseClientGetter {
 			Closer.close(dataInput);
 			Closer.close(dataOutput);
 			Closer.close(output);
+			if(persistent()) {
+				state.removeFrom(container, context);
+			}
 		}
 
 			clientCallback.onSuccess(result, ClientGetter.this, container);
