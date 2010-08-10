@@ -213,6 +213,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		final int MAX_EXCLUDED = 10;
 		int excluded = 0;
 		while(true) {
+			if(grabArrays.length == 0) return null;
 			int x = context.fastWeakRandom.nextInt(grabArrays.length);
 			RemoveRandomWithObject rga = grabArrays[x];
 			long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
