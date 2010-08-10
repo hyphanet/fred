@@ -165,7 +165,7 @@ abstract class ClientRequestSchedulerBase {
 				requestGrabber = new SectoredRandomGrabArrayWithObject(client, persistent(), container, clientGrabber);
 				if(logMINOR)
 					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass+", rc="+rc);
-				clientGrabber.addGrabber(client, requestGrabber, container);
+				clientGrabber.addGrabber(client, requestGrabber, container, context);
 			}
 			requestGrabber.add(cr, req, container, context);
 		}

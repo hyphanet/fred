@@ -262,7 +262,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					triedTrans = true;
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, false, container, now);
 					if(cooldownTime > 0) {
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (transient) is in cooldown for another "+TimeUtil.formatTime(cooldownTime - now));
+						Logger.normal(this, "Priority "+choosenPriorityClass+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
 						continue outer;
 					}
 				} else if(perm != null && trans == null) {
@@ -270,7 +270,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					triedPerm = true;
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(perm, true, container, now);
 					if(cooldownTime > 0) {
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (persistent) is in cooldown for another "+TimeUtil.formatTime(cooldownTime - now));
+						Logger.normal(this, "Priority "+choosenPriorityClass+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
 						continue outer;
 					}
 					container.activate(perm, 1);
@@ -288,7 +288,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					}
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, choosePerm, container, now);
 					if(cooldownTime > 0) {
-						Logger.normal(this, "Priority "+choosenPriorityClass+" (perm="+choosePerm+") is in cooldown for another "+TimeUtil.formatTime(cooldownTime - now));
+						Logger.normal(this, "Priority "+choosenPriorityClass+" (perm="+choosePerm+") is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
 						continue outer;
 					}
 				}

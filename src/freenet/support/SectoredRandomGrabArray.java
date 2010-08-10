@@ -79,6 +79,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		rga.add(item, container, context);
 		if(persistent)
 			container.deactivate(rga, 1);
+		context.cooldownTracker.clearCachedWakeup(this, persistent, container);
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
 	}
@@ -121,13 +122,15 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	 * Put a grabber. This lets us use things other than RandomGrabArrayWithClient's, so don't mix calls
 	 * to add() with calls to getGrabber/addGrabber!
 	 */
-	public synchronized void addGrabber(Object client, RemoveRandomWithObject requestGrabber, ObjectContainer container) {
+	public synchronized void addGrabber(Object client, RemoveRandomWithObject requestGrabber, ObjectContainer container, ClientContext context) {
 		if(requestGrabber.getObject() != client)
 			throw new IllegalArgumentException("Client not equal to RemoveRandomWithObject's client: client="+client+" rr="+requestGrabber+" his object="+requestGrabber.getObject());
 		addElement(client, requestGrabber);
 		if(persistent) {
 			container.store(this);
 		}
+		if(context != null)
+			context.cooldownTracker.clearCachedWakeup(this, persistent, container);
 	}
 
 	public synchronized RemoveRandomReturn removeRandom(RandomGrabArrayItemExclusionList excluding, ObjectContainer container, ClientContext context, long now) {
@@ -517,7 +520,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			} else {
 				if(persistent) container.activate(grabber, 1);
 				grabber.setParent(newTopLevel, container);
-				newTopLevel.addGrabber(client, grabber, container);
+				newTopLevel.addGrabber(client, grabber, container, null);
 				if(persistent) container.deactivate(grabber, 1);
 			}
 			grabArrays[i] = null;
