@@ -166,6 +166,7 @@ abstract class ClientRequestSchedulerBase {
 				if(logMINOR)
 					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass+", rc="+rc);
 				clientGrabber.addGrabber(client, requestGrabber, container, context);
+				context.cooldownTracker.clearCachedWakeup(clientGrabber, persistent(), container);
 			}
 			requestGrabber.add(cr, req, container, context);
 		}
