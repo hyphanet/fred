@@ -9,6 +9,7 @@ import java.util.WeakHashMap;
 import com.db4o.ObjectContainer;
 
 import freenet.node.SendableGet;
+import freenet.node.Ticker;
 import freenet.support.Logger;
 
 /** 
@@ -205,6 +206,19 @@ public class CooldownTracker {
 		if(logMINOR) Logger.minor(this, "Removed "+removedPersistent+" persistent cooldown cache items and "+removedTransient+" transient cooldown cache items");
 	}
 	
+	private static final long MAINTENANCE_PERIOD = 10*60*1000;
+	
+	public void startMaintenance(final Ticker ticker) {
+		ticker.queueTimedJob(new Runnable() {
+
+			public void run() {
+				clearExpired(System.currentTimeMillis());
+				ticker.queueTimedJob(this, MAINTENANCE_PERIOD);
+			}
+			
+		}, MAINTENANCE_PERIOD);
+	}
+
 }
 
 class PersistentCooldownCacheItem extends CooldownCacheItem {

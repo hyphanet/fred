@@ -93,6 +93,7 @@ public class ClientContext {
 		this.sskInsertScheduler = starters.sskPutScheduler;
 		this.chkInsertScheduler = starters.chkPutScheduler;
 		this.fetching = chkFetchScheduler.fetchingKeys();
+		this.cooldownTracker.startMaintenance(ticker);
 	}
 
 	public ClientRequestScheduler getSskFetchScheduler() {
