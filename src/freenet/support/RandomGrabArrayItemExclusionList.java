@@ -10,8 +10,10 @@ import freenet.client.async.HasCooldownCacheItem;
 
 public interface RandomGrabArrayItemExclusionList {
 	
-	/** Can this item be excluded because of the cooldown queue, without activating it? */
-	public boolean excludeSummarily(HasCooldownCacheItem item, HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now);
+	/** Can this item be excluded because of the cooldown queue, without activating it? 
+	 * @return The time at which the item should have valid requests, or 0 if it is 
+	 * valid already. */
+	public long excludeSummarily(HasCooldownCacheItem item, HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now);
 	
 	/**
 	 * Whether this item can be returned right now.

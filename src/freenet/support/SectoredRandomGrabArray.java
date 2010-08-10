@@ -158,6 +158,8 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			x++;
 			if(x >= grabArrays.length) x = 0;
 			RemoveRandomWithObject rga = grabArrays[x];
+			if(excluding.excludeSummarily(rga, this, container, persistent, now))
+				continue;
 			if(persistent)
 				container.activate(rga, 1);
 			if(logMINOR)
@@ -207,6 +209,16 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		while(true) {
 			int x = context.fastWeakRandom.nextInt(grabArrays.length);
 			RemoveRandomWithObject rga = grabArrays[x];
+			if(excluding.excludeSummarily(rga, this, container, persistent, now)) {
+				excluded++;
+				if(excluded > MAX_EXCLUDED) {
+					Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
+					if(persistent)
+						container.deactivate(rga, 1);
+					return null;
+				}
+				continue;
+			}
 			if(persistent)
 				container.activate(rga, 1);
 			if(logMINOR)
@@ -265,8 +277,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		// Another simple common case
 		int x = context.fastWeakRandom.nextBoolean() ? 1 : 0;
 		RemoveRandomWithObject rga = grabArrays[x];
-		if(persistent)
-			container.activate(rga, 1);
 		RemoveRandomWithObject firstRGA = rga;
 		if(rga == null) {
 			Logger.error(this, "rga = null on "+this);
@@ -286,17 +296,8 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			}
 		}
 		RandomGrabArrayItem item = null;
-		RemoveRandomReturn val = rga.removeRandom(excluding, container, context, now);
-		if(val != null) {
-			if(val.item != null)
-				item = val.item;
-			else {
-				if(wakeupTime > val.wakeupTime) wakeupTime = val.wakeupTime;
-			}
-		}
-		if(item == null) {
-			x = 1-x;
-			rga = grabArrays[x];
+		RemoveRandomReturn val = null;
+		if(!excluding.excludeSummarily(rga, this, container, persistent, now)) {
 			if(persistent)
 				container.activate(rga, 1);
 			val = rga.removeRandom(excluding, container, context, now);
@@ -305,6 +306,29 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					item = val.item;
 				else {
 					if(wakeupTime > val.wakeupTime) wakeupTime = val.wakeupTime;
+				}
+			}
+		}
+		if(item == null) {
+			x = 1-x;
+			rga = grabArrays[x];
+			if(rga == null) {
+				Logger.error(this, "Other RGA is null later on on "+this);
+				grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
+				grabClients = new Object[] { grabClients[1-x] };
+				if(persistent) container.store(this);
+				return new RemoveRandomReturn(wakeupTime);
+			}
+			if(!excluding.excludeSummarily(rga, this, container, persistent, now)) {
+				if(persistent)
+					container.activate(rga, 1);
+				val = rga.removeRandom(excluding, container, context, now);
+				if(val != null) {
+					if(val.item != null)
+						item = val.item;
+					else {
+						if(wakeupTime > val.wakeupTime) wakeupTime = val.wakeupTime;
+					}
 				}
 			}
 			if(firstRGA.isEmpty() && rga.isEmpty()) {
@@ -342,11 +366,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				container.deactivate(rga, 1);
 			if(logMINOR)
 				Logger.minor(this, "Returning (two items only) "+item+" for "+rga);
-			if(item == null) {
-				if(grabArrays.length == 0)
-					return null; // Remove this as well
-				return new RemoveRandomReturn(wakeupTime);
-			} else return new RemoveRandomReturn(item);
+			return new RemoveRandomReturn(item);
 		}
 	}
 
@@ -358,6 +378,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		RemoveRandomWithObject rga = grabArrays[0];
 		if(persistent)
 			container.activate(rga, 1);
+		// Don't call excluding.excludeSummarily, because we need the wakeup time anyway.
 		RemoveRandomReturn val = rga.removeRandom(excluding, container, context, now);
 		RandomGrabArrayItem item = null;
 		if(val != null) { // val == null => remove it

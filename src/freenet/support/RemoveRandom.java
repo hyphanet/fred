@@ -3,8 +3,9 @@ package freenet.support;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.HasCooldownCacheItem;
 
-public interface RemoveRandom {
+public interface RemoveRandom extends HasCooldownCacheItem {
 
 	// OPTIMISE: Would a stack-trace-less exception be faster?
 	/** Either a RandomGrabArrayItem or the time at which we should try again. */
