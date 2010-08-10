@@ -948,10 +948,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * MUST be called from database thread!
 	 */
 	public long queueCooldown(ClientKey key, SendableGet getter, ObjectContainer container) {
-		if(getter.persistent())
-			return persistentCooldownQueue.add(key.getNodeKey(true), getter, container);
-		else
-			return transientCooldownQueue.add(key.getNodeKey(true), getter, null);
+		return System.currentTimeMillis() + COOLDOWN_PERIOD;
 	}
 
 	/**
