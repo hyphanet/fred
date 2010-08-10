@@ -159,6 +159,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				wrapper.assertSetData(data);
 				if(persistent) container.activate(data, Integer.MAX_VALUE);
 				if(!active) container.deactivate(seg, 1);
+				if(persistent) wrapper.storeTo(container);
 			} else {
 				// wrapper has no data, we want to decode it.
 				if(i < dataBlocks) needsDecode = true;
