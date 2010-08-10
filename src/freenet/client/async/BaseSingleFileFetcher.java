@@ -128,6 +128,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				}
 			} else {
 				context.cooldownTracker.clearCachedWakeup(this, persistent, container);
+				context.cooldownTracker.clearCachedWakeup(getParentGrabArray(), persistent, container);
 			}
 			return true; // We will retry in any case, maybe not just not yet. See requeueAfterCooldown(Key).
 		}
