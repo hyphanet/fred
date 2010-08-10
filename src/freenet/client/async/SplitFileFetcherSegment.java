@@ -1988,6 +1988,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		if(getter != null) {
 			getter.unregister(container, context, getPriorityClass(container));
 			if(persistent) getter.removeFrom(container);
+			getter = null;
 		}
 		boolean finish = false;
 		boolean half = false;
