@@ -127,12 +127,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					cooldownWakeupTime = sched.queueCooldown(key, this, container);
 					if(persistent)
 						container.deactivate(key, 5);
-					// Unregister as going to cooldown queue.
-					unregister(container, context, getPriorityClass(container));
 				}
-			} else {
-				unregister(container, context, getPriorityClass(container));
-				reschedule(container, context);
 			}
 			return true; // We will retry in any case, maybe not just not yet. See requeueAfterCooldown(Key).
 		}
