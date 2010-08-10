@@ -117,8 +117,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				long now = System.currentTimeMillis();
 				if(cooldownWakeupTime > now) {
 					Logger.error(this, "Already on the cooldown queue for "+this+" until "+freenet.support.TimeUtil.formatTime(cooldownWakeupTime - now), new Exception("error"));
-					// We must be registered ... unregister
-					unregister(container, context, getPriorityClass(container));
 				} else {
 					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
 					if(persistent)
@@ -128,6 +126,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					if(persistent)
 						container.deactivate(key, 5);
 				}
+			} else {
+				context.cooldownTracker.clearCachedWakeup(this, persistent, container);
 			}
 			return true; // We will retry in any case, maybe not just not yet. See requeueAfterCooldown(Key).
 		}
