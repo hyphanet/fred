@@ -377,7 +377,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					}
 					if (altReq != null && altReq != req) {
 						int prio = altReq.getPriorityClass(container);
-						if(prio < choosenPriorityClass) {
+						if(prio <= choosenPriorityClass) {
 							// Use the recent one instead
 							if(logMINOR)
 								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
@@ -417,7 +417,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 								container.activate(altReq, 1);
 								int prio = altReq.getPriorityClass(container);
 								boolean useRecent = false;
-								if(prio < choosenPriorityClass) {
+								if(prio <= choosenPriorityClass) {
 									if(altReq.getCooldownTime(container, context, now) != 0)
 										useRecent = true;
 								}
