@@ -1272,7 +1272,12 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				reschedule = true;
 		}
 		if(persistent) container.store(this); // We don't call container.store(this) in each onNonFatalFailure because it takes much CPU time.
-		if(reschedule) rescheduleGetter(container, context);
+		if(reschedule) {
+			rescheduleGetter(container, context);
+			// At least one request was rescheduled, so we have requests to send.
+			// Clear our cooldown cache entry and those of our parents.
+			context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
+		}
 	}
 
 	static class MyCooldownTrackerItem implements CooldownTrackerItem {
