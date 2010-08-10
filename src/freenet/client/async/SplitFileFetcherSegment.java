@@ -1244,16 +1244,19 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			// At least one request was rescheduled, so we have requests to send.
 			// Clear our cooldown cache entry and those of our parents.
 			makeGetter(container, context);
-			context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
-			// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
-			// We should wake up the parent as well even if this item is not in cooldown.
-			context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
-			rescheduleGetter(container, context);
+			if(getter != null) {
+				context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
+				// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
+				// We should wake up the parent as well even if this item is not in cooldown.
+				context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
+				rescheduleGetter(container, context);
+			}
 		}
 	}
 	
 	SplitFileFetcherSegmentGet rescheduleGetter(ObjectContainer container, ClientContext context) {
 		SplitFileFetcherSegmentGet getter = makeGetter(container, context);
+		if(getter == null) return null;
 		boolean getterActive = true;
 		if(persistent) {
 			getterActive = container.ext().isActive(getter);
@@ -1280,11 +1283,13 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			// At least one request was rescheduled, so we have requests to send.
 			// Clear our cooldown cache entry and those of our parents.
 			makeGetter(container, context);
-			context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
-			// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
-			// We should wake up the parent as well even if this item is not in cooldown.
-			context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
-			rescheduleGetter(container, context);
+			if(getter != null) {
+				context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
+				// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
+				// We should wake up the parent as well even if this item is not in cooldown.
+				context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
+				rescheduleGetter(container, context);
+			}
 		}
 	}
 
@@ -1335,8 +1340,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 						long now = System.currentTimeMillis();
 						if(dataCooldownTimes[blockNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" data block no "+blockNo, new Exception("error"));
-						else
-							dataCooldownTimes[blockNo] = sched.queueCooldown(key, makeGetter(container, context), container);
+						else {
+							SplitFileFetcherSegmentGet getter = makeGetter(container, context);
+							if(getter != null) dataCooldownTimes[blockNo] = sched.queueCooldown(key, getter, container);
+						}
 						cooldown = true;
 					}
 				}
@@ -1352,8 +1359,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 						long now = System.currentTimeMillis();
 						if(checkCooldownTimes[checkNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
-						else
-							checkCooldownTimes[checkNo] = sched.queueCooldown(key, makeGetter(container, context), container);
+						else {
+							SplitFileFetcherSegmentGet getter = makeGetter(container, context);
+							if(getter != null) checkCooldownTimes[checkNo] = sched.queueCooldown(key, getter, container);
+						}
 						cooldown = true;
 					}
 				}
@@ -1930,6 +1939,12 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			container.activate(keys, 1);
 			keys.removeFrom(container);
 		}
+		if(getter != null) {
+			container.activate(getter, 1);
+			Logger.error(this, "Getter still exists: "+getter+" for "+this);
+			getter.unregister(container, context, getPriorityClass(container));
+			getter.removeFrom(container);
+		}
 		container.delete(this);
 	}
 
@@ -1970,6 +1985,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	
 	private void encoderFinished(ObjectContainer container, ClientContext context) {
 		context.cooldownTracker.remove(this, persistent, container);
+		if(getter != null) {
+			getter.unregister(container, context, getPriorityClass(container));
+			getter.removeFrom(container);
+		}
 		boolean finish = false;
 		boolean half = false;
 		synchronized(this) {
@@ -2219,6 +2238,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 
 	public synchronized SplitFileFetcherSegmentGet makeGetter(ObjectContainer container, ClientContext context) {
+		if(finishing || startedDecode || finished) return null;
 		if(getter == null) {
 			boolean parentActive = true;
 			if(persistent) {

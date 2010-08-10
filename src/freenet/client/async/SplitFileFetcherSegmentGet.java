@@ -382,4 +382,8 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
         }
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
+
 }
