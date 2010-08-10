@@ -158,8 +158,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			x++;
 			if(x >= grabArrays.length) x = 0;
 			RemoveRandomWithObject rga = grabArrays[x];
-			if(excluding.excludeSummarily(rga, this, container, persistent, now))
+			long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
+			if(excludeTime > 0) {
+				if(wakeupTime > excludeTime) wakeupTime = excludeTime;
 				continue;
+			}
 			if(persistent)
 				container.activate(rga, 1);
 			if(logMINOR)
@@ -205,11 +208,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		/** Count of arrays that have items but didn't return anything because of exclusions */
 		final int MAX_EXCLUDED = 10;
 		int excluded = 0;
-		long wakeupTime = Long.MAX_VALUE;
 		while(true) {
 			int x = context.fastWeakRandom.nextInt(grabArrays.length);
 			RemoveRandomWithObject rga = grabArrays[x];
-			if(excluding.excludeSummarily(rga, this, container, persistent, now)) {
+			long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
+			if(excludeTime > 0) {
 				excluded++;
 				if(excluded > MAX_EXCLUDED) {
 					Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
@@ -229,9 +232,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(val != null) {
 				if(val.item != null)
 					item = val.item;
-				else {
-					if(wakeupTime > val.wakeupTime) wakeupTime = val.wakeupTime;
-				}
 			}
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
@@ -297,7 +297,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 		RandomGrabArrayItem item = null;
 		RemoveRandomReturn val = null;
-		if(!excluding.excludeSummarily(rga, this, container, persistent, now)) {
+		long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
+		if(excludeTime > 0) {
+			wakeupTime = excludeTime;
 			if(persistent)
 				container.activate(rga, 1);
 			val = rga.removeRandom(excluding, container, context, now);
@@ -319,7 +321,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				if(persistent) container.store(this);
 				return new RemoveRandomReturn(wakeupTime);
 			}
-			if(!excluding.excludeSummarily(rga, this, container, persistent, now)) {
+			excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
+			if(excludeTime > 0) {
+				if(wakeupTime < excludeTime) wakeupTime = excludeTime;
 				if(persistent)
 					container.activate(rga, 1);
 				val = rga.removeRandom(excluding, container, context, now);

@@ -285,9 +285,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		return true;
 	}
 
-	public boolean excludeSummarily(HasCooldownCacheItem item,
+	public long excludeSummarily(HasCooldownCacheItem item,
 			HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now) {
-		return core.clientContext.cooldownTracker.getCachedWakeup(item, persistent, container, now) != -1;
+		return core.clientContext.cooldownTracker.getCachedWakeup(item, persistent, container, now);
 	}
 
 }
