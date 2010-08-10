@@ -9,12 +9,14 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
+import freenet.node.BulkCallFailureItem;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
+import freenet.node.SupportsBulkCallFailure;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -29,7 +31,7 @@ import freenet.support.RandomGrabArrayItemExclusionList;
  * eventually only be concerned with FEC decoding and data buckets ...
  * @author toad
  */
-public class SplitFileFetcherSegmentGet extends SendableGet {
+public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsBulkCallFailure {
 	
 	public SplitFileFetcherSegmentGet(ClientRequester parent, SplitFileFetcherSegment segment) {
 		super(parent);
@@ -322,6 +324,62 @@ public class SplitFileFetcherSegmentGet extends SendableGet {
 		if(wakeTime > 0)
 			context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container);
 		return wakeTime;
+	}
+
+	public void onFailure(BulkCallFailureItem[] items,
+			ObjectContainer container, ClientContext context) {
+        FetchException[] fetchExceptions = new FetchException[items.length];
+        int countFatal = 0;
+        for(int i=0;i<items.length;i++) {
+        	fetchExceptions[i] = translateException(items[i].e);
+        	if(fetchExceptions[i].isFatal()) countFatal++;
+        }
+        if(persistent) {
+        	container.activate(segment, 1);
+        	container.activate(parent, 1);
+        	container.activate(segment.errors, 1);
+        }
+        if(parent.isCancelled()) {
+                if(Logger.shouldLog(LogLevel.MINOR, this))
+                        Logger.minor(this, "Failing: cancelled");
+                // Fail the segment.
+                segment.fail(new FetchException(FetchException.CANCELLED), container, context, false);
+                // FIXME do we need to free the keyNum's??? Or will that happen later anyway?
+                return;
+        }
+        for(int i=0;i<fetchExceptions.length;i++)
+        	segment.errors.inc(fetchExceptions[i].getMode());
+        if(persistent)
+        	segment.errors.storeTo(container);
+        int nonFatalExceptions = items.length - countFatal;
+        int[] blockNumbers = new int[nonFatalExceptions];
+        if(countFatal > 0) {
+        	FetchException[] newFetchExceptions = new FetchException[items.length - countFatal];
+        	// Call the fatal callbacks directly.
+        	int x = 0;
+        	for(int i=0;i<items.length;i++) {
+        		int blockNum = ((SplitFileFetcherSegmentSendableRequestItem)items[i].token).blockNum;
+        		if(fetchExceptions[i].isFatal()) {
+        			segment.onFatalFailure(fetchExceptions[i], blockNum, container, context);
+        		} else {
+        			blockNumbers[x] = blockNum;
+        			newFetchExceptions[x] = fetchExceptions[i];
+        			x++;
+        		}
+        	}
+        	fetchExceptions = newFetchExceptions;
+        } else {
+        	for(int i=0;i<blockNumbers.length;i++)
+        		blockNumbers[i] = ((SplitFileFetcherSegmentSendableRequestItem)items[i].token).blockNum;
+        }
+        if(logMINOR) Logger.minor(this, "Calling segment.onNonFatalFailure with "+blockNumbers.length+" failed fetches");
+        segment.onNonFatalFailure(fetchExceptions, blockNumbers, container, context);
+
+        if(persistent) {
+                container.deactivate(segment, 1);
+                container.deactivate(parent, 1);
+                container.deactivate(segment.errors, 1);
+        }
 	}
 
 }
