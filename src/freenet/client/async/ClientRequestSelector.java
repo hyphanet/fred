@@ -328,7 +328,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						if(baseRGA != null) {
 							if(chosenTracker.persistent())
 								container.activate(baseRGA, 1);
-							baseRGA.remove(req, container);
+							baseRGA.remove(req, container, context);
 						} else {
 							// Okay, it's been removed already. Cool.
 						}

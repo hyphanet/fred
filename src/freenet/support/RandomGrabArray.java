@@ -468,9 +468,11 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		}
 	}
 
-	public void remove(RandomGrabArrayItem it, ObjectContainer container) {
+	public void remove(RandomGrabArrayItem it, ObjectContainer container, ClientContext context) {
+		context.cooldownTracker.removeCachedWakeup(it, persistent, container);
 		if(logMINOR)
 			Logger.minor(this, "Removing "+it+" from "+this);
+		
 		boolean matched = false;
 		boolean empty = false;
 		synchronized(this) {

@@ -106,7 +106,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		if(arr != null) {
 			if(persistent)
 				container.activate(arr, 1);
-			arr.remove(this, container);
+			arr.remove(this, container, context);
 		} else {
 			// Should this be a higher priority?
 			if(Logger.shouldLog(LogLevel.MINOR, this))
