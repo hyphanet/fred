@@ -424,6 +424,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					container.store(this);
 				}
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
+				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container);
 				return new RemoveRandomReturn(wakeupTime);
 			} else if(valid == 1) {
 				ret = validItem;
