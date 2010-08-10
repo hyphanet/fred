@@ -376,9 +376,9 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
         segment.onNonFatalFailure(fetchExceptions, blockNumbers, container, context);
 
         if(persistent) {
-                container.deactivate(segment, 1);
-                container.deactivate(parent, 1);
-                container.deactivate(segment.errors, 1);
+        	container.deactivate(segment, 1);
+        	container.deactivate(parent, 1);
+        	container.deactivate(segment.errors, 1);
         }
 	}
 
