@@ -141,11 +141,63 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				if(ret == null) continue; // Go around loop again, it has reduced to 1 or 0.
 				return ret;
 			}
-			return removeRandomLimited(excluding, container, context, now);
+			RandomGrabArrayItem item = removeRandomLimited(excluding, container, context, now);
+			if(item != null)
+				return new RemoveRandomReturn(item);
+			else
+				return removeRandomExhaustive(excluding, container, context, now);
 		}
 	}
 
-	private RemoveRandomReturn removeRandomLimited(
+	private RemoveRandomReturn removeRandomExhaustive(
+			RandomGrabArrayItemExclusionList excluding,
+			ObjectContainer container, ClientContext context, long now) {
+		long wakeupTime = Long.MAX_VALUE;
+		int x = context.fastWeakRandom.nextInt(grabArrays.length);
+		for(int i=0;i<grabArrays.length;i++) {
+			x++;
+			if(x >= grabArrays.length) x = 0;
+			RemoveRandomWithObject rga = grabArrays[x];
+			if(persistent)
+				container.activate(rga, 1);
+			if(logMINOR)
+				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" on "+this);
+			
+			RandomGrabArrayItem item = null;
+			RemoveRandomReturn val = rga.removeRandom(excluding, container, context, now);
+			if(val != null) {
+				if(val.item != null)
+					item = val.item;
+				else {
+					if(wakeupTime > val.wakeupTime) wakeupTime = val.wakeupTime;
+				}
+			}
+			if(logMINOR)
+				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
+						" rga.isEmpty="+rga.isEmpty());
+			// Just because the item is cancelled does not necessarily mean the whole client is.
+			// E.g. a segment may return cancelled because it is decoding, that doesn't mean
+			// other segments are cancelled. So just go around the loop in that case.
+			if(rga.isEmpty()) {
+				if(logMINOR)
+					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
+				removeElement(x);
+				if(persistent) {
+					container.store(this);
+					rga.removeFrom(container);
+				}
+			}
+			if(persistent)
+				container.deactivate(rga, 1);
+			if(item == null) continue;
+			// No point calling getCooldownTime() again.
+			return new RemoveRandomReturn(item);
+
+		}
+		return new RemoveRandomReturn(wakeupTime);
+	}
+
+	private RandomGrabArrayItem removeRandomLimited(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
 		/** Count of arrays that have items but didn't return anything because of exclusions */
@@ -192,7 +244,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 						Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
 						if(persistent)
 							container.deactivate(rga, 1);
-						return new RemoveRandomReturn(wakeupTime);
+						return null;
 					}
 				}
 				if(persistent)
@@ -202,7 +254,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(persistent)
 				container.deactivate(rga, 1);
 			// No point calling getCooldownTime() again.
-			return new RemoveRandomReturn(item);
+			return item;
 		}
 	}
 
