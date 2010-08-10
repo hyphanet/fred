@@ -411,8 +411,10 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		if(logMINOR)
 			Logger.minor(this, "Returning (one item only) "+item+" for "+rga);
 		if(item == null) {
-			if(grabArrays.length == 0)
+			if(grabArrays.length == 0) {
+				if(logMINOR) Logger.minor(this, "Arrays are empty on "+this);
 				return null; // Remove this as well
+			}
 			context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container);
 			return new RemoveRandomReturn(wakeupTime);
 		} else return new RemoveRandomReturn(item);
