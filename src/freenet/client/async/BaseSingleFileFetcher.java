@@ -380,5 +380,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		parent.toNetwork(container, context);
 		if(deactivate) container.deactivate(parent, 1);
 	}
+	
+	public synchronized long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
+		if(cancelled || finished) return -1;
+		if(cooldownWakeupTime < now) return 0;
+		return cooldownWakeupTime;
+	}
 
 }

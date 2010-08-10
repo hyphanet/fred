@@ -237,7 +237,7 @@ public class PersistentChosenRequest {
 			// do not separate retries into separate SendableInsert's.
 			if(!container.ext().isActive(request))
 				container.activate(request, 1);
-			if((!request.isEmpty(container)) && (!request.isCancelled(container))) {
+			if((!((SendableInsert)request).isEmpty(container)) && (!request.isCancelled(container))) {
 				request.getScheduler(context).maybeAddToStarterQueue(request, container, null);
 				request.getScheduler(context).wakeStarter();
 			}

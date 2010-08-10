@@ -106,7 +106,7 @@ abstract class ClientRequestSchedulerBase {
 	 * FIXME: Either get rid of the debugging code and therefore get rid of maybeActive,
 	 * or make req a SendableRequest[] and register them all at once.
 	 */
-	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container, SendableRequest[] maybeActive) {
+	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context, SendableRequest[] maybeActive) {
 		if(isInsertScheduler && req instanceof BaseSendableGet)
 			throw new IllegalArgumentException("Adding a SendableGet to an insert scheduler!!");
 		if((!isInsertScheduler) && req instanceof SendableInsert)
@@ -123,7 +123,7 @@ abstract class ClientRequestSchedulerBase {
 		short prio = req.getPriorityClass(container);
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" retry "+retryCount+" for "+req.getClientRequest());
 		addToRequestsByClientRequest(req.getClientRequest(), req, container);
-		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(container), req.getClientRequest(), req, random, container);
+		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(container), req.getClientRequest(), req, random, container, context);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount);
 		if(persistent())
 			sched.maybeAddToStarterQueue(req, container, maybeActive);
@@ -143,7 +143,7 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 	
-	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
+	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		// Client
@@ -167,7 +167,7 @@ abstract class ClientRequestSchedulerBase {
 					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass+", rc="+rc);
 				clientGrabber.addGrabber(client, requestGrabber, container);
 			}
-			requestGrabber.add(cr, req, container);
+			requestGrabber.add(cr, req, container, context);
 		}
 	}
 
@@ -219,7 +219,7 @@ abstract class ClientRequestSchedulerBase {
 			//Remove from the starterQueue
 			if(persistent()) sched.removeFromStarterQueue(req, container, true);
 			// Then can do innerRegister() (not register()).
-			innerRegister(req, random, container, null);
+			innerRegister(req, random, container, context, null);
 			if(persistent())
 				container.deactivate(req, 1);
 		}

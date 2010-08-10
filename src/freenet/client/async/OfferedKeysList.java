@@ -256,4 +256,9 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		throw new UnsupportedOperationException();
 	}
 
+	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
+		if(isEmpty(container)) return Long.MAX_VALUE;
+		return 0;
+	}
+
 }

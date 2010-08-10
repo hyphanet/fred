@@ -244,10 +244,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 					container.deactivate(req, 1);
 					return;
 				}
-				schedCore.innerRegister(req, random, container, null);
+				schedCore.innerRegister(req, random, container, clientContext, null);
 				starter.wakeUp();
 		} else {
-			schedTransient.innerRegister(req, random, null, null);
+			schedTransient.innerRegister(req, random, null, clientContext, null);
 			starter.wakeUp();
 		}
 	}
@@ -289,7 +289,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			} else {
 				boolean anyValid = false;
 				for(int i=0;i<getters.length;i++) {
-					if(!(getters[i].isCancelled(null) || getters[i].isEmpty(null)))
+					if(!(getters[i].isCancelled(null) || getters[i].getCooldownTime(container, clientContext, System.currentTimeMillis()) != 0))
 						anyValid = true;
 				}
 				finishRegister(getters, false, container, anyValid, null);
@@ -325,7 +325,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			// Check the datastore before proceding.
 			for(SendableGet getter : getters) {
 				container.activate(getter, 1);
-				datastoreChecker.queuePersistentRequest(getter, blocks, container);
+				datastoreChecker.queuePersistentRequest(getter, blocks, container, clientContext);
 				container.deactivate(getter, 1);
 			}
 			
@@ -362,10 +362,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 					for(int i=0;i<getters.length;i++) {
 						SendableGet getter = getters[i];
 						container.activate(getter, 1);
-						if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
+						// Just check isCancelled, we have already checked the cooldown.
+						if(!(getter.isCancelled(container))) {
 							wereAnyValid = true;
 							getter.preRegister(container, clientContext, true);
-							schedCore.innerRegister(getter, random, container, getters);
+							schedCore.innerRegister(getter, random, container, clientContext, getters);
 						} else
 							getter.preRegister(container, clientContext, false);
 
@@ -383,13 +384,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 			// Register immediately.
 			for(int i=0;i<getters.length;i++) {
 				
-				if((!anyValid) || getters[i].isCancelled(null) || getters[i].isEmpty(null)) {
+				if((!anyValid) || getters[i].isCancelled(null)) {
 					getters[i].preRegister(container, clientContext, false);
 					continue;
 				} else
 					getters[i].preRegister(container, clientContext, true);
-				if(!getters[i].isEmpty(null))
-					schedTransient.innerRegister(getters[i], random, null, getters);
+				if(!getters[i].isCancelled(null))
+					schedTransient.innerRegister(getters[i], random, null, clientContext, getters);
 			}
 			starter.wakeUp();
 		}
@@ -637,10 +638,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(fillingRequestStarterQueue) return;
 			fillingRequestStarterQueue = true;
 		}
+		long now = System.currentTimeMillis();
 		try {
 		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 		long noLaterThan = Long.MAX_VALUE;
-		boolean checkCooldownQueue = System.currentTimeMillis() > nextQueueFillRequestStarterQueue;
+		boolean checkCooldownQueue = now > nextQueueFillRequestStarterQueue;
 		if((!isInsertScheduler) && checkCooldownQueue) {
 			if(persistentCooldownQueue != null)
 				noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
@@ -696,7 +698,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		boolean addedMore = false;
 		while(true) {
-			SendableRequest request = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
+			SendableRequest request = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container, now);
 			if(request == null) {
 				synchronized(ClientRequestScheduler.this) {
 					// Don't wake up for a while, but no later than the time we expect the next item to come off the cooldown queue

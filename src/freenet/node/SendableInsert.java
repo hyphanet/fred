@@ -57,4 +57,11 @@ public abstract class SendableInsert extends SendableRequest {
 	/** Encoded a key */
 	public abstract void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context);
 	
+	public abstract boolean isEmpty(ObjectContainer container);
+	
+	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
+		if(isEmpty(container)) return -1;
+		return 0;
+	}
+	
 }

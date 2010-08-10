@@ -18,6 +18,7 @@ import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.RandomGrabArrayItemExclusionList;
 
 /** This was going to be part of SplitFileFetcherSegment, but we can't add a new parent
  * class to the class hierarchy in db4o without quite a bit of work.
@@ -312,6 +313,15 @@ public class SplitFileFetcherSegmentGet extends SendableGet {
 
 	public void storeTo(ObjectContainer container) {
 		container.store(this);
+	}
+
+	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
+		if(persistent) container.activate(segment, 1);
+		HasCooldownCacheItem parentRGA = getParentGrabArray();
+		long wakeTime = segment.getCooldownTime(container, context, parentRGA, now);
+		if(wakeTime > 0)
+			context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container);
+		return wakeTime;
 	}
 
 }

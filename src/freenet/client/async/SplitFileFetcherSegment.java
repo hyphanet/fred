@@ -44,6 +44,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.RandomGrabArray;
+import freenet.support.RandomGrabArrayItemExclusionList;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.MultiReaderBucket;
@@ -2132,6 +2133,41 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			}
 			return list;
 		}
+	}
+	
+	public long getCooldownTime(ObjectContainer container, ClientContext context, HasCooldownCacheItem parentRGA, long now) {
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		// FIXME need a more efficient way to get maxTries!
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
+		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
+		KeysFetchingLocally fetching = context.fetching;
+		long cooldownWakeup = Long.MAX_VALUE;
+		synchronized(this) {
+			if(startedDecode || isFinishing(container)) return -1; // Remove
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) {
+					continue;
+				}
+				// Possible ...
+				long wakeup = getCooldownWakeup(i, maxTries, container, context);
+				if(wakeup > now) {
+					if(wakeup < cooldownWakeup) cooldownWakeup = wakeup;
+					continue;
+				}
+				Key key = keys.getNodeKey(i, null, true);
+				if(fetching.hasKey(key)) continue;
+				return 0; // Stuff to send right now.
+			}
+		}
+		return cooldownWakeup;
 	}
 
 	public long countAllKeys(ObjectContainer container, ClientContext context) {

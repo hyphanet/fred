@@ -1138,6 +1138,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public boolean isEmpty(ObjectContainer container) {
 			return done;
 		}
+
+		public long getCooldownTime(ObjectContainer container,
+				ClientContext context, long now) {
+			return 0;
+		}
 		
 	};
 

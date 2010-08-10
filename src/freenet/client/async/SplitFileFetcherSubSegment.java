@@ -21,6 +21,7 @@ import freenet.node.SendableRequestItem;
 import freenet.node.SupportsBulkCallFailure;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.RandomGrabArrayItemExclusionList;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 
@@ -452,6 +453,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		parent.toNetwork(container, context);
 		if(deactivate) container.deactivate(parent, 1);
+	}
+
+	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
+		queueMigrateToSegmentFetcher(container, context);
+		return Long.MAX_VALUE;
 	}
 
 }
