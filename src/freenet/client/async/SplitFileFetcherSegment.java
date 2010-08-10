@@ -1245,6 +1245,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			// Clear our cooldown cache entry and those of our parents.
 			makeGetter(container, context);
 			context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
+			// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
+			// We should wake up the parent as well even if this item is not in cooldown.
 			context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
 			rescheduleGetter(container, context);
 		}
@@ -1279,6 +1281,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			// Clear our cooldown cache entry and those of our parents.
 			makeGetter(container, context);
 			context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
+			// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
+			// We should wake up the parent as well even if this item is not in cooldown.
 			context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
 			rescheduleGetter(container, context);
 		}

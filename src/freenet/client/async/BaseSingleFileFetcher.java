@@ -128,6 +128,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				}
 			} else {
 				context.cooldownTracker.clearCachedWakeup(this, persistent, container);
+				// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
+				// We should wake up the parent as well even if this item is not in cooldown.
 				context.cooldownTracker.clearCachedWakeup(getParentGrabArray(), persistent, container);
 			}
 			return true; // We will retry in any case, maybe not just not yet. See requeueAfterCooldown(Key).
