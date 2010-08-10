@@ -271,6 +271,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	private RemoveRandomReturn removeRandomExhaustiveSearch(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
+		if(logMINOR) Logger.minor(this, "Doing exhaustive search and compaction on "+this);
 		boolean changedMe = false;
 		long wakeupTime = Long.MAX_VALUE;
 		RandomGrabArrayItem ret = null;
@@ -332,6 +333,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					}
 					long itemWakeTime = item.getCooldownTime(container, context, now);
 					if(itemWakeTime == -1 || broken) {
+						if(logMINOR) Logger.minor(this, "Removing "+item+" on "+this);
 						changedMe = true;
 						// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
 						reqsReading[offset] = null;
