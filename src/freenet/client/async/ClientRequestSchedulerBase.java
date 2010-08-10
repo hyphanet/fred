@@ -207,6 +207,11 @@ abstract class ClientRequestSchedulerBase {
 		if(reqs == null) return;
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
+			if(req == null) {
+				// We will get rid of SendableRequestSet soon, so this is low priority.
+				Logger.error(this, "Request "+i+" is null reregistering for "+request);
+				continue;
+			}
 			if(persistent())
 				container.activate(req, 1);
 			boolean isInsert = req.isInsert();
