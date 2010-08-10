@@ -1243,6 +1243,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		if(onNonFatalFailure(e, blockNo, container, context, sched, maxTries, callStore)) {
 			// At least one request was rescheduled, so we have requests to send.
 			// Clear our cooldown cache entry and those of our parents.
+			makeGetter(container, context);
 			context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
 			rescheduleGetter(container, context);
 		}
@@ -1275,6 +1276,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		if(reschedule) {
 			// At least one request was rescheduled, so we have requests to send.
 			// Clear our cooldown cache entry and those of our parents.
+			makeGetter(container, context);
 			context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
 			rescheduleGetter(container, context);
 		}
