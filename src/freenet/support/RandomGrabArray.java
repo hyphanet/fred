@@ -271,7 +271,8 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	private RemoveRandomReturn removeRandomExhaustiveSearch(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
-		if(logMINOR) Logger.minor(this, "Doing exhaustive search and compaction on "+this);
+		if(logMINOR && persistent) 
+			Logger.minor(this, "Doing exhaustive search and compaction on "+this);
 		boolean changedMe = false;
 		long wakeupTime = Long.MAX_VALUE;
 		RandomGrabArrayItem ret = null;
@@ -619,7 +620,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				container.activate(block, 1);
 				for(RandomGrabArrayItem item : block.reqs) {
 					if(item != null) {
-						Logger.error(this, "VALID ITEM WHILE DELETING BLOCK: "+item+" on "+this);
+						Logger.error(this, "VALID ITEM WHILE DELETING BLOCK: "+item+" on "+this, new Exception("error"));
 					}
 				}
 				container.delete(block);
