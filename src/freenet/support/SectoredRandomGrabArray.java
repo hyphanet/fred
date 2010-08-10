@@ -156,6 +156,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
 		long wakeupTime = Long.MAX_VALUE;
+		if(grabArrays.length == 0) return null;
 		int x = context.fastWeakRandom.nextInt(grabArrays.length);
 		for(int i=0;i<grabArrays.length;i++) {
 			x++;
