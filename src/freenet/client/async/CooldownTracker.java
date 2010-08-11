@@ -84,7 +84,7 @@ public class CooldownTracker {
 			return -1;
 		}
 		if(persistent) {
-			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
+			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!: "+toCheck);
 			long uid = container.ext().getID(toCheck);
 			CooldownCacheItem item = cacheItemsPersistent.get(uid);
 			if(item == null) return -1;

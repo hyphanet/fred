@@ -60,7 +60,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			if(logMINOR) Logger.minor(this, "Is finished already: "+req);
 			return;
 		}
-		req.setParentGrabArray(this, container);
+		req.setParentGrabArray(this, container); // will store() self
 		synchronized(this) {
 			int x = 0;
 			if(blocks.length == 1 && index < BLOCK_SIZE) {
