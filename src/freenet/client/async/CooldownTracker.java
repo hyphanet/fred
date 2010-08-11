@@ -79,6 +79,10 @@ public class CooldownTracker {
 	 * @return -1 if there is no cache, or a time before which the HasCooldownCacheItem is
 	 * guaranteed to have all of its keys in cooldown. */
 	public synchronized long getCachedWakeup(HasCooldownCacheItem toCheck, boolean persistent, ObjectContainer container, long now) {
+		if(toCheck == null) {
+			Logger.error(this, "Asked to check wakeup time for null!", new Exception("error"));
+			return -1;
+		}
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
 			long uid = container.ext().getID(toCheck);
