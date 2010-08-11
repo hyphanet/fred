@@ -195,6 +195,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		if(persistent)
 			container.activate(ret, 1);
 		oret = ret;
+		long itemWakeTime = -1;
 		boolean broken = false;
 		broken = persistent && ret.isStorageBroken(container);
 		if(broken) {
@@ -205,8 +206,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				// Ignore
 				container.delete(ret);
 			}
-		}
-		long itemWakeTime = ret.getCooldownTime(container, context, now);
+		} else itemWakeTime = ret.getCooldownTime(container, context, now);
 		if(broken || itemWakeTime == -1) {
 			if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 			ret = null;
@@ -323,6 +323,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					activated = true;
 					boolean broken = false;
 					broken = persistent && item.isStorageBroken(container);
+					long itemWakeTime = -1;
 					if(broken) {
 						Logger.error(this, "Storage broken on "+item);
 						try {
@@ -331,8 +332,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 							// Ignore
 							container.delete(item);
 						}
-					}
-					long itemWakeTime = item.getCooldownTime(container, context, now);
+					} else itemWakeTime = item.getCooldownTime(container, context, now);
 					if(itemWakeTime == -1 || broken) {
 						if(logMINOR) Logger.minor(this, "Removing "+item+" on "+this);
 						changedMe = true;
