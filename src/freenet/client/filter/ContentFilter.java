@@ -84,6 +84,18 @@ public class ContentFilter {
 				l10n("containerOggReadAdvice"),
 				l10n("containerOggWriteAdvice"), false, null, null, false));
 
+		/* FLAC - Needs filter
+		 * Lossless audio format. This data is sometimes encapsulated inside
+		 * of ogg containers. It is, however, not currently supported, and
+		 * is very dangerous, as it may specify URLs from which album art
+		 * will be dwonloaded from
+		 */
+		register(new MIMEType("audio/flac", "flac", new String[0], new String[0],
+				false, true, null, null, true, false, false, true, false, false,
+				l10n("audioFLACReadAdvice"),
+				l10n("audioFLACWriteAdvice"),
+				false, null, null, false));
+
 		// ICO needs filtering.
 		// Format is not the same as BMP iirc.
 		// DoS: http://www.kb.cert.org/vuls/id/290961
