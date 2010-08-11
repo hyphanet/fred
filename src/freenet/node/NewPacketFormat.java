@@ -1,6 +1,5 @@
 package freenet.node;
 
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -11,7 +10,6 @@ import java.util.Vector;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
-import freenet.crypt.SHA256;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
@@ -411,7 +409,6 @@ public class NewPacketFormat implements PacketFormat {
 
 		int numAcks = 0;
 		synchronized(acks) {
-			long firstAck = 0;
 			Iterator<Long> it = acks.iterator();
 			while (it.hasNext() && packet.getLength() < maxPacketSize) {
 				if(!packet.addAck(it.next())) break;
