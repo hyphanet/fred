@@ -92,11 +92,11 @@ public class PacketTracker {
 	final long trackerID;
 
 	/** Everything is clear to start with */
-	PacketTracker(PeerNode pn) {
-		this(pn, pn.node.random.nextLong() & Long.MAX_VALUE);
+	PacketTracker(PeerNode pn, int firstPacketNumber) {
+		this(pn, firstPacketNumber, pn.node.random.nextLong() & Long.MAX_VALUE);
 	}
 
-	PacketTracker(PeerNode pn, long tid) {
+	PacketTracker(PeerNode pn, int firstPacketNumber, long tid) {
 		trackerID = tid;
 		this.pn = pn;
 		ackQueue = new LinkedList<QueuedAck>();
@@ -109,7 +109,7 @@ public class PacketTracker {
 		packetsToResend = new HashSet<Integer>();
 		packetNumbersReceived = new ReceivedPacketNumbers(512);
 		isDeprecated = false;
-		nextPacketNumber = pn.node.random.nextInt(100 * 1000);
+		nextPacketNumber = firstPacketNumber;
 		createdTime = System.currentTimeMillis();
 	}
 
