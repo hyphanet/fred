@@ -286,13 +286,18 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		RemoveRandomWithObject firstRGA = rga;
 		if(rga == null) {
 			Logger.error(this, "rga = null on "+this);
-			if(container != null && !container.ext().isActive(this))
+			boolean cautious = false;
+			if(container != null && !container.ext().isActive(this)) {
 				Logger.error(this, "NOT ACTIVE!!");
+				cautious = true;
+			}
 			if(grabArrays[1-x] == null) {
 				Logger.error(this, "other rga is also null on "+this);
-				grabArrays = new RemoveRandomWithObject[0];
-				grabClients = new Object[0];
-				if(persistent) container.store(this);
+				if(!cautious) {
+					grabArrays = new RemoveRandomWithObject[0];
+					grabClients = new Object[0];
+					if(persistent) container.store(this);
+				}
 				return null;
 			} else {
 				RemoveRandomWithObject valid = grabArrays[1-x];
