@@ -89,7 +89,21 @@ public class OggFilter implements ContentDataFilter{
 		} catch(EOFException e) {
 			//We've ran out of data to read. Break.
 		}
-		return pageCount > 2;
+		return (pageCount > 2 || hasValidSubpage(page));
+	}
+
+	private boolean hasValidSubpage(OggPage page) throws IOException {
+		DataInputStream in = new DataInputStream(new ByteArrayInputStream(page.toArray()));
+		in.skip(1); //Break alignment with the first page
+		try {
+			while(true) {
+				OggPage subpage = OggPage.readPage(in);
+				if(subpage.headerValid()) return true;
+			}
+		} catch(EOFException e) {
+			//We've ran out of data to read. Break.
+		}
+		return false;
 	}
 
 	public void writeFilter(InputStream input, OutputStream output,
