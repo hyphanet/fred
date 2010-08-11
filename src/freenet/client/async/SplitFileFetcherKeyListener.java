@@ -324,14 +324,14 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		return persistent;
 	}
 
-	public void writeFilters(ObjectContainer container) throws IOException {
+	public void writeFilters(ObjectContainer container, String reason) throws IOException {
 		if(!persistent) return;
 		synchronized(this) {
 			if(killed) return;
 		}
 		filter.storeTo(container);
 		for(int i=0;i<segmentFilters.length;i++) {
-			System.out.println("Storing segment "+i+" filter to database for "+fetcher+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
+			System.out.println("Storing segment "+i+" filter to database ("+reason+") for "+fetcher+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
 			segmentFilters[i].storeTo(container);
 		}
 	}
@@ -352,7 +352,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				// Huh??
 				Logger.error(this, "Removing key "+removeKeys[i]+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!", new Exception("debug"));
 		}
-		scheduleWriteFilters(container, context);
+		scheduleWriteFilters(container, context, "killed segment "+segNo);
 		return keyCount -= removeKeys.length;
 	}
 	
@@ -383,7 +383,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 
 	private boolean writingBloomFilter;
 	
-	private void scheduleWriteFilters(ObjectContainer container, ClientContext context) {
+	private void scheduleWriteFilters(ObjectContainer container, ClientContext context, final String reason) {
 		synchronized(this) {
 			if(!persistent) return;
 			if(writingBloomFilter) return;
@@ -401,7 +401,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 							ClientContext context) {
 						synchronized(SplitFileFetcherKeyListener.this) {
 							try {
-								writeFilters(container);
+								writeFilters(container, reason);
 							} catch (IOException e) {
 								Logger.error(this, "Failed to write bloom filters, we will have more false positives on already-found blocks which aren't in the store: "+e, e);
 							} finally {
