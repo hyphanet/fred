@@ -7,7 +7,9 @@ package freenet.client.filter;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 
 import freenet.l10n.NodeL10n;
@@ -94,17 +96,20 @@ public class OggPage {
 	//Page header contained here
 	final byte version;
 	final byte headerType;
-	final byte[] granuelPosition = new byte[8];
-	final byte[] bitStreamSerial = new byte[4];
-	final byte[] pageSequenceNumber = new byte[4];
+	final byte[] granuelPosition;
+	final byte[] bitStreamSerial;
+	final byte[] pageSequenceNumber;
 	byte[] checksum = new byte[4];
 	byte segments;
 	byte[] segmentTable;
 	byte[] payload;
 
-	OggPage(DataInputStream input) throws IOException {
+	public OggPage(DataInputStream input) throws IOException {
 		version=input.readByte();
 		headerType = input.readByte();
+		this.granuelPosition = new byte[8];
+		this.bitStreamSerial = new byte[4];
+		this.pageSequenceNumber = new byte[4];
 		input.readFully(granuelPosition);
 		input.readFully(bitStreamSerial);
 		input.readFully(pageSequenceNumber);
@@ -120,6 +125,20 @@ public class OggPage {
 		input.read(payload);
 	}
 
+	public OggPage(OggPage oldPage, Collection<CodecPacket> packets) {
+		this.version = oldPage.version;
+		this.headerType = oldPage.headerType;
+		this.granuelPosition = oldPage.granuelPosition;
+		this.bitStreamSerial = oldPage.bitStreamSerial;
+		this.pageSequenceNumber = oldPage.pageSequenceNumber;
+		this.segments = (byte) packets.size(); 
+	}
+
+	/**Extracts the Ogg page from a physical bitstream
+	 * @param input a stream of data containing a physical bitstream
+	 * @return the next Ogg page in bitstream
+	 * @throws IOException
+	 */
 	public static void seekToPage(DataInputStream input) throws IOException {
 		while(true) {
 			//Seek for magic number
@@ -243,6 +262,17 @@ public class OggPage {
 		}	
 	}
 
+	public Collection<CodecPacket> asPackets() {
+		ArrayList<CodecPacket> packets = new ArrayList<CodecPacket>();
+		int bytesParsed = 0;
+		for(int i = 0; i < segments; i++) {
+			byte[] packetPayload = new byte[segmentTable[i]];
+			System.arraycopy(payload, bytesParsed, packetPayload, 0, segmentTable[i]);
+			packets.add(new CodecPacket(packetPayload));
+			bytesParsed += segmentTable[i];
+		}
+		return packets;
+	}
 	static private int byteToUnsigned(byte input) {
 		return (input & 0xff);
 	}

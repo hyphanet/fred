@@ -29,13 +29,13 @@ public class OggBitstreamFilter {
 	 * @return Whether page was properly validated
 	 * @throws IOException
 	 */
-	boolean parse(OggPage page) throws IOException {
+	OggPage parse(OggPage page) throws IOException {
 		if(!(page.getPageNumber() == lastPageSequenceNumber+1 || page.getPageNumber() == lastPageSequenceNumber)){
 			isValidStream = false;
 			throw new DataFilterException(l10n("MalformedTitle"), l10n("MalformedTitle"), l10n("MalformedMessage"));
 		}
 		lastPageSequenceNumber = page.getPageNumber();
-		return isValidStream;
+		return page;
 	}
 
 	/**Constructor method generating an appropriate Ogg bitstream parser.
@@ -45,13 +45,13 @@ public class OggBitstreamFilter {
 	 * unrecognized type
 	 */
 	public static OggBitstreamFilter getBitstreamFilter(OggPage page) {
-		for(int i = 0; i <= VorbisBitstreamFilter.magicNumber.length; i++) {
-			if(i == VorbisBitstreamFilter.magicNumber.length) return new VorbisBitstreamFilter(page);
-			if(page.payload[i+1] != VorbisBitstreamFilter.magicNumber[i]) break;
+		for(int i = 0; i <= VorbisPacketFilter.magicNumber.length; i++) {
+			if(i == VorbisPacketFilter.magicNumber.length) return new VorbisBitstreamFilter(page);
+			if(page.payload[i+1] != VorbisPacketFilter.magicNumber[i]) break;
 		}
-		for(int i = 0; i <= TheoraBitstreamFilter.magicNumber.length; i++) {
-			if(i == TheoraBitstreamFilter.magicNumber.length) return new TheoraBitstreamFilter(page);
-			if(page.payload[i+1] != TheoraBitstreamFilter.magicNumber[i]) break;
+		for(int i = 0; i <= TheoraPacketFilter.magicNumber.length; i++) {
+			if(i == TheoraPacketFilter.magicNumber.length) return new TheoraBitstreamFilter(page);
+			if(page.payload[i+1] != TheoraPacketFilter.magicNumber[i]) break;
 		}
 		return null;
 	}

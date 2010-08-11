@@ -54,8 +54,9 @@ public class OggFilter implements ContentDataFilter{
 				streamFilters.put(page.getSerial(), filter);
 			}
 			if(filter == null) continue;
+			page = filter.parse(page);
 			//Don't write a continuous pages unless they are all valid
-			if(page.headerValid() && filter.parse(page) && !hasValidSubpage(page, nextPage)) {
+			if(page != null && page.headerValid() && !hasValidSubpage(page, nextPage)) {
 				splitPages.add(page);
 				if(page.isFinalPacket()) {
 					while(!splitPages.isEmpty()) {
