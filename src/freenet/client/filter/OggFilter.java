@@ -78,12 +78,15 @@ public class OggFilter implements ContentDataFilter{
 	private boolean hasValidSubpage(OggPage page, OggPage nextPage) throws IOException {
 		OggPage subpage = null;
 		int pageCount = 0;
+		ByteArrayOutputStream data = null;
+		DataInputStream in = null;
 		try{
 			//Populate a byte array with all the data in which a subpage might hide
-			ByteArrayOutputStream data = new ByteArrayOutputStream();
+			data = new ByteArrayOutputStream();
 			data.write(page.toArray());
 			if(nextPage != null) data.write(nextPage.toArray());
-			DataInputStream in = new DataInputStream(new ByteArrayInputStream(data.toByteArray()));
+			in = new DataInputStream(new ByteArrayInputStream(data.toByteArray()));
+			data.close();
 			while(true) {
 				OggPage.seekToPage(in);
 				in.mark(65307);
@@ -96,6 +99,10 @@ public class OggFilter implements ContentDataFilter{
 			}
 		} catch(EOFException e) {
 			//We've ran out of data to read. Break.
+			in.close();
+		} finally {
+			Closer.close(data);
+			Closer.close(in);
 		}
 		return (pageCount > 2 || hasValidSubpage(page));
 	}
@@ -110,6 +117,9 @@ public class OggFilter implements ContentDataFilter{
 			}
 		} catch(EOFException e) {
 			//We've ran out of data to read. Break.
+			in.close();
+		} finally {
+			Closer.close(in);
 		}
 		return false;
 	}
