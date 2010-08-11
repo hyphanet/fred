@@ -312,25 +312,24 @@ public class NewPacketFormat implements PacketFormat {
 			Logger.warning(this, "No key for encrypting hash");
 			return false;
 		}
-		
-		int sequenceNumber = -1;
-		try {
-			sequenceNumber = sessionKey.packets.allocateOutgoingPacketNumberNeverBlock();
-		} catch(KeyChangedException e) {
-			return false;
-		} catch (WouldBlockException e) {
-			return false;
-		} catch (NotConnectedException e) {
-			return false;
-		}
 
-		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue(), sequenceNumber);
+		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue());
 		if(packet == null) return false;
 
 		//TODO: Do this properly
 		SentPacket sentPacket;
 		synchronized(sentPackets) {
 			sentPacket = sentPackets.get(packet.getSequenceNumber());
+		}
+		
+		try {
+			packet.setSequenceNumber(sessionKey.packets.allocateOutgoingPacketNumberNeverBlock());
+		} catch(KeyChangedException e) {
+			return false;
+		} catch (WouldBlockException e) {
+			return false;
+		} catch (NotConnectedException e) {
+			return false;
 		}
 
 		byte[] data = new byte[packet.getLength() + HMAC_LENGTH];
@@ -390,7 +389,7 @@ public class NewPacketFormat implements PacketFormat {
 		return true;
 	}
 
-	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, int sequenceNumber) {
+	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) {
 		//Mark packets as lost
 		synchronized(sentPackets) {
 			int avgRtt = averageRTT();
@@ -489,8 +488,6 @@ fragments:
 		}
 
 		if(packet.getLength() == 5) return null;
-		
-		packet.setSequenceNumber(sequenceNumber);
 
 		if(packet.getFragments().size() != 0) {
 			synchronized(sentPackets) {

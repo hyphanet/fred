@@ -7,7 +7,7 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat npf = new NewPacketFormat(null);
 		PeerMessageQueue pmq = new PeerMessageQueue();
 
-		NPFPacket p = npf.createPacket(1400, pmq, 0);
+		NPFPacket p = npf.createPacket(1400, pmq);
 		if(p != null) fail("Created packet from nothing");
 	}
 
@@ -25,7 +25,7 @@ public class NewPacketFormatTest extends TestCase {
 		                (byte) 0xEF }));
 		assertEquals(1, npf.handleDecryptedPacket(p).size());
 
-		p = npf.createPacket(1400, pmq, 0);
+		p = npf.createPacket(1400, pmq);
 		assertEquals(1, p.getAcks().size());
 	}
 
@@ -37,32 +37,38 @@ public class NewPacketFormatTest extends TestCase {
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
-		NPFPacket fragment1 = sender.createPacket(512, senderQueue, 0);
+		NPFPacket fragment1 = sender.createPacket(512, senderQueue);
+		fragment1.setSequenceNumber(0);
 		assertEquals(1, fragment1.getFragments().size());
 		receiver.handleDecryptedPacket(fragment1);
 		
-		NPFPacket fragment2 = sender.createPacket(512, senderQueue, 1);
+		NPFPacket fragment2 = sender.createPacket(512, senderQueue);
+		fragment2.setSequenceNumber(1);
 		assertEquals(1, fragment2.getFragments().size());
 		receiver.handleDecryptedPacket(fragment2);
 		
-		NPFPacket ack1 = receiver.createPacket(512, receiverQueue, 0);
+		NPFPacket ack1 = receiver.createPacket(512, receiverQueue);
+		ack1.setSequenceNumber(0);
 		assertEquals(2, ack1.getAcks().size());
 		sender.handleDecryptedPacket(ack1);
 		
-		NPFPacket fragment3 = sender.createPacket(512, senderQueue, 2);
+		NPFPacket fragment3 = sender.createPacket(512, senderQueue);
+		fragment3.setSequenceNumber(2);
 		assertEquals(1, fragment3.getFragments().size());
 		receiver.handleDecryptedPacket(fragment3);
-		receiver.createPacket(512, senderQueue, 1); //Sent, but lost
+		receiver.createPacket(512, senderQueue); //Sent, but lost
 		
 		try {
 			Thread.sleep(100); //RTT should be small 
 		} catch (InterruptedException e) { fail(); }
 		
-		NPFPacket resend1 = sender.createPacket(512, senderQueue, 3);
+		NPFPacket resend1 = sender.createPacket(512, senderQueue);
+		resend1.setSequenceNumber(3);
 		assertEquals(0, receiver.handleDecryptedPacket(resend1).size());
 		
 		//Make sure an ack is sent
-		NPFPacket ack2 = receiver.createPacket(512, receiverQueue, 2);
+		NPFPacket ack2 = receiver.createPacket(512, receiverQueue);
+		ack2.setSequenceNumber(2);
 		assertNotNull(ack2);
 		assertEquals(1, ack2.getAcks().size());
 		assertEquals(0, ack2.getFragments().size());
@@ -78,11 +84,14 @@ public class NewPacketFormatTest extends TestCase {
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
-		NPFPacket fragment1 = sender.createPacket(512, senderQueue, 1);
+		NPFPacket fragment1 = sender.createPacket(512, senderQueue);
+		fragment1.setSequenceNumber(1);
 		assertEquals(1, fragment1.getFragments().size());
-		NPFPacket fragment2 = sender.createPacket(512, senderQueue, 2);
+		NPFPacket fragment2 = sender.createPacket(512, senderQueue);
+		fragment2.setSequenceNumber(2);
 		assertEquals(1, fragment2.getFragments().size());
-		NPFPacket fragment3 = sender.createPacket(512, senderQueue, 3);
+		NPFPacket fragment3 = sender.createPacket(512, senderQueue);
+		fragment3.setSequenceNumber(3);
 		assertEquals(1, fragment3.getFragments().size());
 		
 		receiver.handleDecryptedPacket(fragment1);
@@ -100,11 +109,14 @@ public class NewPacketFormatTest extends TestCase {
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
-		NPFPacket fragment1 = sender.createPacket(512, senderQueue, 1);
+		NPFPacket fragment1 = sender.createPacket(512, senderQueue);
+		fragment1.setSequenceNumber(1);
 		assertEquals(1, fragment1.getFragments().size());
-		NPFPacket fragment2 = sender.createPacket(512, senderQueue, 2);
+		NPFPacket fragment2 = sender.createPacket(512, senderQueue);
+		fragment2.setSequenceNumber(2);
 		assertEquals(1, fragment2.getFragments().size());
-		NPFPacket fragment3 = sender.createPacket(512, senderQueue, 3);
+		NPFPacket fragment3 = sender.createPacket(512, senderQueue);
+		fragment3.setSequenceNumber(3);
 		assertEquals(1, fragment3.getFragments().size());
 		
 		receiver.handleDecryptedPacket(fragment3);
@@ -114,12 +126,16 @@ public class NewPacketFormatTest extends TestCase {
 
 	private void setUpRTT(long delay, NewPacketFormat sender, PeerMessageQueue senderQueue, NewPacketFormat receiver, PeerMessageQueue receiverQueue) {
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1], null, false, null, (short) 0));
-		receiver.handleDecryptedPacket(sender.createPacket(512, senderQueue, 0));
+		NPFPacket s = sender.createPacket(512, senderQueue);
+		s.setSequenceNumber(0);
+		receiver.handleDecryptedPacket(s);
 		try {
 			Thread.sleep(delay);
 		} catch(InterruptedException e) {
 
 		}
-		sender.handleDecryptedPacket(receiver.createPacket(512, receiverQueue, 0));
+		NPFPacket r = receiver.createPacket(512, receiverQueue);
+		r.setSequenceNumber(0);
+		sender.handleDecryptedPacket(r);
 	}
 }

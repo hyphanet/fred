@@ -1956,7 +1956,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
 			this.bootID = thisBootID;
-			int firstPacketNumber = negType == 5 ? 0 : node.random.nextInt(100 * 1000);
+			int firstPacketNumber = (negType == 5 ? 0 : node.random.nextInt(100 * 1000));
 			if(currentTracker != null && currentTracker.packets.trackerID == trackerID && !currentTracker.packets.isDeprecated()) {
 				if(isJFK4 && !jfk4SameAsOld)
 					Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
