@@ -189,7 +189,7 @@ class NPFPacket {
 
 		//Add fragments
 		Collections.sort(fragments, new MessageFragmentComparator());
-		long prevFragmentID = -1;
+		int prevFragmentID = -1;
 		for(MessageFragment fragment : fragments) {
 			if(fragment.shortMessage) buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x80);
 			if(fragment.isFragmented) buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x40);
@@ -203,7 +203,7 @@ class NPFPacket {
 				buf[offset + 3] = (byte) (fragment.messageID);
 				offset += 4;
 			} else {
-				long compressedMsgID = fragment.messageID - prevFragmentID;
+				int compressedMsgID = fragment.messageID - prevFragmentID;
 				buf[offset] = (byte) ((buf[offset] & 0xFF) | ((compressedMsgID >>> 8) & 0x0F));
 				buf[offset + 1] = (byte) (compressedMsgID);
 				offset += 2;
