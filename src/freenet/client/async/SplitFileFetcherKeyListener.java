@@ -331,7 +331,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		}
 		filter.storeTo(container);
 		for(int i=0;i<segmentFilters.length;i++) {
-			System.out.println("Storing segment "+i+" filter to database ("+reason+") for "+fetcher+" : k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
+			if(logMINOR)
+				Logger.minor(this, "Storing segment "+i+" filter to database ("+reason+") k="+segmentFilters[i].getK()+" size = "+segmentFilters[i].getSizeBytes()+" bytes = "+segmentFilters[i].getLength()+" elements, filled: "+segmentFilters[i].getFilledCount());
 			segmentFilters[i].storeTo(container);
 		}
 	}
