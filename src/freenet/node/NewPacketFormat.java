@@ -13,10 +13,12 @@ import freenet.crypt.PCFBMode;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.SparseBitmap;
+import freenet.support.WouldBlockException;
 
 public class NewPacketFormat implements PacketFormat {
 
@@ -42,7 +44,6 @@ public class NewPacketFormat implements PacketFormat {
 	private int nextRttPos;
 
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
-	private int nextSequenceNumber = 0;
 	private int nextMessageID = 0;
 
 	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
@@ -53,7 +54,6 @@ public class NewPacketFormat implements PacketFormat {
 	private int watchListPointer;
 	private int watchListOffset;
 
-	private int highestReceivedSeqNum = -1;
 	private volatile int highestReceivedAck = -1;
 	private final SparseBitmap finishedMessages = new SparseBitmap();
 
@@ -221,8 +221,8 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		if(highestReceivedSeqNum - (seqNumWatchList.length / 2) > watchListOffset) {
-			int moveBy = (int) ((highestReceivedSeqNum - (seqNumWatchList.length / 2)) - watchListOffset);
+		if(sessionKey.packets.highestReceivedIncomingSeqNumber() - (seqNumWatchList.length / 2) > watchListOffset) {
+			int moveBy = (int) ((sessionKey.packets.highestReceivedIncomingSeqNumber() - (seqNumWatchList.length / 2)) - watchListOffset);
 			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
 			if(logMINOR) Logger.minor(this, "Moving pointer by " + moveBy);
 
@@ -277,7 +277,7 @@ public class NewPacketFormat implements PacketFormat {
 		System.arraycopy(buf, offset + HMAC_LENGTH, payload, 0, length - HMAC_LENGTH);
 
 		NPFPacket p = NPFPacket.create(payload);
-		if(highestReceivedSeqNum < p.getSequenceNumber()) highestReceivedSeqNum = p.getSequenceNumber();
+		sessionKey.packets.receivedPacket(sequenceNumber);
 
 		return p;
 	}
@@ -306,7 +306,25 @@ public class NewPacketFormat implements PacketFormat {
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
-		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue());
+
+		SessionKey sessionKey = pn.getCurrentKeyTracker();
+		if(sessionKey == null) {
+			Logger.warning(this, "No key for encrypting hash");
+			return false;
+		}
+		
+		int sequenceNumber = -1;
+		try {
+			sequenceNumber = sessionKey.packets.allocateOutgoingPacketNumberNeverBlock();
+		} catch(KeyChangedException e) {
+			return false;
+		} catch (WouldBlockException e) {
+			return false;
+		} catch (NotConnectedException e) {
+			return false;
+		}
+
+		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue(), sequenceNumber);
 		if(packet == null) return false;
 
 		//TODO: Do this properly
@@ -317,16 +335,6 @@ public class NewPacketFormat implements PacketFormat {
 
 		byte[] data = new byte[packet.getLength() + HMAC_LENGTH];
 		packet.toBytes(data, HMAC_LENGTH);
-
-		SessionKey sessionKey = pn.getCurrentKeyTracker();
-		if(sessionKey == null) {
-			Logger.warning(this, "No key for encrypting hash");
-			if(sentPacket != null) sentPacket.lost();
-			synchronized(sentPackets) {
-				sentPacket = sentPackets.remove(packet.getSequenceNumber());
-			}
-			return false;
-		}
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
@@ -382,7 +390,7 @@ public class NewPacketFormat implements PacketFormat {
 		return true;
 	}
 
-	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) {
+	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, int sequenceNumber) {
 		//Mark packets as lost
 		synchronized(sentPackets) {
 			int avgRtt = averageRTT();
@@ -482,15 +490,6 @@ fragments:
 
 		if(packet.getLength() == 5) return null;
 		
-		int sequenceNumber;
-		synchronized(this) {
-			if(nextSequenceNumber > highestReceivedAck + (NUM_SEQNUMS_TO_WATCH_FOR / 2)) {
-				//FIXME: Will result in busy looping until we receive a higher ack
-				return null;
-			}
-			sequenceNumber = nextSequenceNumber++;
-		}
-
 		packet.setSequenceNumber(sequenceNumber);
 
 		if(packet.getFragments().size() != 0) {
