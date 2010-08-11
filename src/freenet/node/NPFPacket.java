@@ -294,7 +294,6 @@ class NPFPacket {
 	}
 
 	private static class MessageFragmentComparator implements Comparator<MessageFragment> {
-		@Override
 		public int compare(MessageFragment frag1, MessageFragment frag2) {
 			if(frag1.messageID < frag2.messageID) return -1;
 			if(frag1.messageID == frag2.messageID) return 0;
