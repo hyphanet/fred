@@ -252,6 +252,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			boolean triedPerm = false;
 			boolean triedTrans = false;
 			while(true) {
+				boolean persistent;
 				SectoredRandomGrabArray chosenTracker = null;
 				// If we can't find anything on perm (on the previous loop), try trans, and vice versa
 				if(triedTrans) trans = null;
@@ -265,6 +266,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						Logger.normal(this, "Priority "+choosenPriorityClass+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
 						continue outer;
 					}
+					persistent = false;
 				} else if(perm != null && trans == null) {
 					chosenTracker = perm;
 					triedPerm = true;
@@ -274,6 +276,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						continue outer;
 					}
 					container.activate(perm, 1);
+					persistent = true;
 				} else {
 					container.activate(perm, 1);
 					int permSize = perm.size();
@@ -282,9 +285,11 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					if(choosePerm) {
 						chosenTracker = perm;
 						triedPerm = true;
+						persistent = true;
 					} else {
 						chosenTracker = trans;
 						triedTrans = true;
+						persistent = false;
 					}
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, choosePerm, container, now);
 					if(cooldownTime > 0) {
@@ -295,7 +300,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				
 				if(logMINOR)
 					Logger.minor(this, "Got priority tracker "+chosenTracker);
-				RemoveRandomReturn val = chosenTracker.removeRandom(starter, container, context, now);
+				RemoveRandomReturn val = chosenTracker.removeRandom(starter, persistent ? container : null, context, now);
 				SendableRequest req;
 				if(val == null) {
 					Logger.normal(this, "Priority "+choosenPriorityClass+" returned null - nothing to schedule, should remove priority");
@@ -309,9 +314,13 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				} else {
 					req = (SendableRequest) val.item;
 				}
-				if(chosenTracker.persistent())
+				if(persistent)
 					container.activate(req, 1); // FIXME
-				if(req.persistent() != chosenTracker.persistent()) {
+				if(chosenTracker.persistent() != persistent) {
+					Logger.error(this, "Tracker.persistent()="+chosenTracker.persistent()+" but is in the queue for persistent="+persistent+" for "+chosenTracker);
+					// FIXME fix it
+				}
+				if(req.persistent() != persistent) {
 					Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+chosenTracker.persistent()+" for "+req);
 					// FIXME fix it
 				}
