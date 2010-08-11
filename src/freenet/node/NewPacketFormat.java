@@ -36,13 +36,13 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private final PeerNode pn;
-	private final LinkedList<Long> acks = new LinkedList<Long>();
-	private final HashMap<Long, SentPacket> sentPackets = new HashMap<Long, SentPacket>();
+	private final LinkedList<Integer> acks = new LinkedList<Integer>();
+	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
 	private final int[] lastRtts;
 	private int nextRttPos;
 
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
-	private long nextSequenceNumber = 0;
+	private int nextSequenceNumber = 0;
 	private int nextMessageID = 0;
 
 	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
@@ -51,10 +51,10 @@ public class NewPacketFormat implements PacketFormat {
 	private SessionKey watchListKey;
 	private byte[][] seqNumWatchList;
 	private int watchListPointer;
-	private long watchListOffset;
+	private int watchListOffset;
 
-	private long highestReceivedSeqNum = -1;
-	private volatile long highestReceivedAck = -1;
+	private int highestReceivedSeqNum = -1;
+	private volatile int highestReceivedAck = -1;
 	private final SparseBitmap finishedMessages = new SparseBitmap();
 
 	private int usedBuffer = 0;
@@ -113,7 +113,7 @@ public class NewPacketFormat implements PacketFormat {
 	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet) {
 		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
 
-		for(long ack : packet.getAcks()) {
+		for(int ack : packet.getAcks()) {
 			synchronized(sentPackets) {
 				SentPacket sent = sentPackets.remove(ack);
 				if(sent != null) {
@@ -215,7 +215,7 @@ public class NewPacketFormat implements PacketFormat {
 			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
 			watchListPointer = 0;
 
-			long seqNum = watchListOffset;
+			int seqNum = watchListOffset;
 			for(int i = 0; i < seqNumWatchList.length; i++) {
 				seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
 			}
@@ -226,7 +226,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
 			if(logMINOR) Logger.minor(this, "Moving pointer by " + moveBy);
 
-			long seqNum = watchListOffset + seqNumWatchList.length;
+			int seqNum = watchListOffset + seqNumWatchList.length;
 			for(int i = watchListPointer; i < (watchListPointer + moveBy); i++) {
 				seqNumWatchList[i % seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
 			}
@@ -235,7 +235,7 @@ public class NewPacketFormat implements PacketFormat {
 			watchListOffset += moveBy;
 		}
 
-		long sequenceNumber = -1;
+		int sequenceNumber = -1;
 		for(int i = 0; (i < seqNumWatchList.length) && (sequenceNumber == -1); i++) {
 			int index = (watchListPointer + i) % seqNumWatchList.length;
 			for(int j = 0; j < seqNumWatchList[index].length; j++) {
@@ -282,7 +282,7 @@ public class NewPacketFormat implements PacketFormat {
 		return p;
 	}
 
-	private byte[] encryptSequenceNumber(long seqNum, SessionKey sessionKey) {
+	private byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
 		byte[] seqNumBytes = new byte[4];
 		seqNumBytes[0] = (byte) (seqNum >>> 24);
 		seqNumBytes[1] = (byte) (seqNum >>> 16);
@@ -388,9 +388,9 @@ public class NewPacketFormat implements PacketFormat {
 			int avgRtt = averageRTT();
 			long curTime = System.currentTimeMillis();
 
-			Iterator<Map.Entry<Long, SentPacket>> it = sentPackets.entrySet().iterator();
+			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
 			while(it.hasNext()) {
-				Map.Entry<Long, SentPacket> e = it.next();
+				Map.Entry<Integer, SentPacket> e = it.next();
 				SentPacket s = e.getValue();
 				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * avgRtt)) {
 					if(logMINOR) {
@@ -409,7 +409,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		int numAcks = 0;
 		synchronized(acks) {
-			Iterator<Long> it = acks.iterator();
+			Iterator<Integer> it = acks.iterator();
 			while (it.hasNext() && packet.getLength() < maxPacketSize) {
 				if(!packet.addAck(it.next())) break;
 				++numAcks;
@@ -482,7 +482,7 @@ fragments:
 
 		if(packet.getLength() == 5) return null;
 		
-		long sequenceNumber;
+		int sequenceNumber;
 		synchronized(this) {
 			if(nextSequenceNumber > highestReceivedAck + (NUM_SEQNUMS_TO_WATCH_FOR / 2)) {
 				//FIXME: Will result in busy looping until we receive a higher ack

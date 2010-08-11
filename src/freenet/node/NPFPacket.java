@@ -21,8 +21,8 @@ class NPFPacket {
 		});
 	}
 
-	private long sequenceNumber;
-	private final SortedSet<Long> acks = new TreeSet<Long>();
+	private int sequenceNumber;
+	private final SortedSet<Integer> acks = new TreeSet<Integer>();
 	private final LinkedList<MessageFragment> fragments = new LinkedList<MessageFragment>();
 	private boolean error;
 	private int length = 5; //Sequence number (4), numAcks(1)
@@ -49,9 +49,9 @@ class NPFPacket {
 			return packet;
 		}
 
-		long prevAck = 0;
+		int prevAck = 0;
 		for(int i = 0; i < numAcks; i++) {
-			long ack = 0;
+			int ack = 0;
 			if(i == 0) {
 				ack = ((plaintext[offset] & 0xFF) << 24)
 				                | ((plaintext[offset + 1] & 0xFF) << 16)
@@ -170,8 +170,8 @@ class NPFPacket {
 
 		//Add acks
 		buf[offset++] = (byte) (acks.size());
-		long prevAck;
-		Iterator<Long> acksIterator = acks.iterator();
+		int prevAck;
+		Iterator<Integer> acksIterator = acks.iterator();
 		if(acksIterator.hasNext()) {
 			prevAck = acksIterator.next();
 			buf[offset] = (byte) (prevAck >>> 24);
@@ -181,7 +181,7 @@ class NPFPacket {
 			offset += 4;
 
 			while(acksIterator.hasNext()) {
-				long ack = acksIterator.next();
+				int ack = acksIterator.next();
 				buf[offset++] = (byte) (ack - prevAck);
 				prevAck = ack;
 			}
@@ -239,7 +239,7 @@ class NPFPacket {
 		return offset;
 	}
 
-	public boolean addAck(long ack) {
+	public boolean addAck(int ack) {
 		if(ack < 0) throw new IllegalArgumentException("Got negative ack: " + ack);
 		if(acks.contains(ack)) return true;
 		if(acks.size() >= 255) return false;
@@ -277,15 +277,15 @@ class NPFPacket {
 		return fragments;
         }
 
-	public long getSequenceNumber() {
+	public int getSequenceNumber() {
 		return sequenceNumber;
         }
 
-	public void setSequenceNumber(long sequenceNumber) {
+	public void setSequenceNumber(int sequenceNumber) {
 		this.sequenceNumber = sequenceNumber;
 	}
 
-	public SortedSet<Long> getAcks() {
+	public SortedSet<Integer> getAcks() {
 		return acks;
         }
 
