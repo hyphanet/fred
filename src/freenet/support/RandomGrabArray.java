@@ -83,7 +83,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					container.store(this);
 					container.deactivate(blocks[0], 1);
 				}
-				context.cooldownTracker.clearCachedWakeup(this, persistent, container);
+				context.cooldownTracker.clearCachedWakeup(this, persistent, container, false);
 				return;
 			}
 			int targetBlock = index / BLOCK_SIZE;

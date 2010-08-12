@@ -266,8 +266,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public synchronized void resetCooldownTimes(ObjectContainer container, ClientContext context) {
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 		tracker.cooldownWakeupTime = -1;
-		context.cooldownTracker.clearCachedWakeup(this, persistent, container);
-		context.cooldownTracker.clearCachedWakeup(getParentGrabArray(), persistent, container);
+		context.cooldownTracker.clearCachedWakeup(this, persistent, container, false);
+		context.cooldownTracker.clearCachedWakeup(getParentGrabArray(), persistent, container, false);
 	}
 
 	@Override

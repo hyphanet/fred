@@ -1637,8 +1637,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	public void resetCooldownTimes(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Resetting cooldown times on "+this);
 		if(getter != null) {
-			context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
-			context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
+			context.cooldownTracker.clearCachedWakeup(getter, persistent, container, false);
+			context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container, false);
 		}
 		context.getChkFetchScheduler().wakeStarter();
 		// FIXME need a more efficient way to get maxTries!
