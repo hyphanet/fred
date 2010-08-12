@@ -166,10 +166,10 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			ObjectContainer container, ClientContext context, long now) {
 		int excluded = 0;
 		boolean changedMe = false;
+		int lastActiveBlock = -1;
 		while(true) {
 		int i = context.fastWeakRandom.nextInt(index);
 		int blockNo = i / BLOCK_SIZE;
-		int lastActiveBlock = -1;
 		RandomGrabArrayItem ret, oret;
 		if(persistent && blockNo != lastActiveBlock) {
 			if(lastActiveBlock != -1)
