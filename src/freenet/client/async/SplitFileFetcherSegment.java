@@ -1426,6 +1426,13 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				checkBuckets[i] = null;
 			}
 		}
+		if(getter != null) {
+			container.activate(getter, 1);
+			getter.unregister(container, context, getPriorityClass(container));
+			getter.removeFrom(container);
+			getter = null;
+			if(persistent) container.store(this);
+		}
 		encoderFinished(container, context);
 		removeSubSegments(container, context, false);
 		if(persistent) {
@@ -1949,7 +1956,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		if(getter != null) {
 			container.activate(getter, 1);
 			Logger.error(this, "Getter still exists: "+getter+" for "+this);
-			getter.unregister(container, context, getPriorityClass(container));
+			// Unable to unregister because parent does not exist so we don't know the priority.
 			getter.removeFrom(container);
 		}
 		container.delete(this);
