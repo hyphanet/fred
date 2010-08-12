@@ -87,7 +87,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	/** Has the segment finished processing? Irreversible. */
 	private volatile boolean finished;
 	private boolean startedDecode;
-	/** Bucket to store the data retrieved, after it has been decoded */
+	/** Bucket to store the data retrieved, after it has been decoded.
+	 * FIXME remove eventually, needed for back compat for now. */
 	private Bucket decodedData;
 	/** Fetch context for block fetches */
 	final FetchContext blockFetchContext;
