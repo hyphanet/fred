@@ -854,7 +854,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			Bucket data = dataBlockStatus[i].getData();
 			if(data == null) 
 				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
-			boolean heal = true;
+			boolean heal = dataBuckets[i].flag;
 			try {
 				if(persistent && crossCheckBlocks != 0) {
 					// onFetched might deactivate blocks.
