@@ -90,8 +90,8 @@ public class ContentFilter {
 		 * is very dangerous, as it may specify URLs from which album art
 		 * will be dwonloaded from
 		 */
-		register(new MIMEType("audio/flac", "flac", new String[0], new String[0],
-				false, true, new FlacFilter(), null, true, true, false, true, false, false,
+		register(new MIMEType("audio/flac", "flac", new String[] {"application/x-flac"}, new String[0],
+				false, true, null, null, true, true, false, true, false, false,
 				l10n("audioFLACReadAdvice"),
 				l10n("audioFLACWriteAdvice"),
 				false, null, null, false));
