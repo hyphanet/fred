@@ -435,11 +435,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		// In the worst case, it will have Long.MAX_VALUE all the way up, in which case, if we go into
 		// cooldown, we will never come out. However in many cases the request will not
 		// be the limiting factor, so the propagation will stop before that.
-		clientContext.cooldownTracker.clearCachedWakeup(request, true, container, true);
+		if(container.ext().isStored(request)) // may have been removed already, in which case it will have been removed from the cache too
+			clientContext.cooldownTracker.clearCachedWakeup(request, true, container, true);
 		// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
 		// We should wake up the parent as well even if this item is not in cooldown.
 		RandomGrabArray rga = request.getParentGrabArray();
-		if(rga != null)
+		if(rga != null && container.ext().isStored(rga))
 			clientContext.cooldownTracker.clearCachedWakeup(rga, true, container, true);
 	}
 	
