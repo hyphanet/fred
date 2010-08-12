@@ -297,7 +297,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				// Compact the array.
 				RandomGrabArrayItem item;
 				if(offset == BLOCK_SIZE) {
-					offset = -1;
+					offset = 0;
 					if(persistent && changedMe)
 						container.store(blocks[blockNumReading]);
 					if(persistent && blockNumReading != blockNumWriting)
