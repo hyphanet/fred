@@ -1646,7 +1646,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			dataCooldownTimes[i] = -1;
 		for(int i=0;i<checkCooldownTimes.length;i++)
 			checkCooldownTimes[i] = -1;
-		if(persistent) container.store(this);
 	}
 
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
