@@ -110,7 +110,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		if(keys.size() == 1) {
 			// Shortcut the common case
 			Key k = keysList.get(0);
-			if(fetching.hasKey(k)) return null;
+			if(fetching.hasKey(k, null, false, null)) return null;
 			keys.remove(k);
 			keysList.setSize(0);
 			return new MySendableRequestItem(k);
@@ -121,7 +121,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			int ptr = random.nextInt(keysList.size());
 			// Avoid shuffling penalty by swapping the chosen element with the end.
 			Key k = keysList.get(ptr);
-			if(fetching.hasKey(k)) continue;
+			if(fetching.hasKey(k, null, false, null)) continue;
 			keysList.set(ptr, keysList.get(keysList.size()-1));
 			keysList.setSize(keysList.size()-1);
 			keys.remove(k);
@@ -137,7 +137,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		if(keys.size() == 1) {
 			// Shortcut the common case
 			Key k = keysList.get(0);
-			if(fetching.hasKey(k)) return false;
+			if(fetching.hasKey(k, null, false, null)) return false;
 			return true;
 		}
 		for(int i=0;i<10;i++) {
@@ -145,7 +145,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			if(keysList.isEmpty()) return false;
 			int ptr = random.nextInt(keysList.size());
 			Key k = keysList.get(ptr);
-			if(fetching.hasKey(k)) continue;
+			if(fetching.hasKey(k, null, false, null)) continue;
 			return true;
 		}
 		return false;

@@ -1,5 +1,7 @@
 package freenet.node;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.Key;
 
 public interface KeysFetchingLocally {
@@ -8,7 +10,7 @@ public interface KeysFetchingLocally {
 	 * Is this key currently being fetched locally?
 	 * LOCKING: This should be safe just about anywhere, the lock protecting it is always taken last.
 	 */
-	public boolean hasKey(Key key);
+	public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container);
 	
 	/**
 	 * Is this request:token pair being executed? This applies only to

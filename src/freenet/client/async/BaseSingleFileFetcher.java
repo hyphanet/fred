@@ -77,7 +77,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public SendableRequestItem chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
-		if(fetching.hasKey(key.getNodeKey(false))) return null;
+		if(fetching.hasKey(key.getNodeKey(false), this, persistent, container)) return null;
 		return keys[0];
 	}
 	
@@ -85,7 +85,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
-		return !fetching.hasKey(key.getNodeKey(false));
+		return !fetching.hasKey(key.getNodeKey(false), this, persistent, container);
 	}
 	
 	@Override

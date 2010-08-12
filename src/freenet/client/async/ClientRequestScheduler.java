@@ -1137,8 +1137,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return selector.addTransientInsertFetching(insert, token);
 	}
 	
-	public boolean hasFetchingKey(Key key) {
-		return selector.hasKey(key);
+	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container) {
+		return selector.hasKey(key, null, false, null);
 	}
 
 	public long countPersistentWaitingKeys(ObjectContainer container) {

@@ -1,6 +1,8 @@
 package freenet.client.async;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -41,6 +43,8 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		this.isInsertScheduler = isInsertScheduler;
 		if(!isInsertScheduler) {
 			keysFetching = new HashSet<Key>();
+			persistentRequestsWaitingForKeysFetching = new HashMap<Key, Long[]>();
+			transientRequestsWaitingForKeysFetching = new HashMap<Key, WeakReference<BaseSendableGet>[]>();
 			runningTransientInserts = null;
 			this.recentSuccesses = new ArrayList<RandomGrabArray>();
 		} else {
@@ -71,6 +75,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	 * LOCKING: Always lock this LAST.
 	 */
 	private transient HashSet<Key> keysFetching;
+	
+	private transient HashMap<Key, Long[]> persistentRequestsWaitingForKeysFetching;
+	private transient HashMap<Key, WeakReference<BaseSendableGet>[]> transientRequestsWaitingForKeysFetching;
 	
 	private static class RunningTransientInsert {
 		
@@ -571,21 +578,73 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 	
-	public boolean hasKey(Key key) {
+	public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container) {
 		if(keysFetching == null) {
 			throw new NullPointerException();
 		}
+		long pid = -1;
+		if(getterWaiting != null && persistent) {
+			pid = container.ext().getID(getterWaiting);
+		}
 		synchronized(keysFetching) {
-			return keysFetching.contains(key);
+			boolean ret = keysFetching.contains(key);
+			if(getterWaiting != null) {
+				if(persistent) {
+					Long[] waiting = persistentRequestsWaitingForKeysFetching.get(key);
+					if(waiting == null) {
+						persistentRequestsWaitingForKeysFetching.put(key, new Long[] { pid });
+					} else {
+						for(long l : waiting) {
+							if(l == pid) return ret;
+						}
+						Long[] newWaiting = new Long[waiting.length+1];
+						System.arraycopy(waiting, 0, newWaiting, 0, waiting.length);
+						newWaiting[waiting.length] = pid;
+						persistentRequestsWaitingForKeysFetching.put(key, newWaiting);
+					}
+				} else {
+					WeakReference<BaseSendableGet>[] waiting = transientRequestsWaitingForKeysFetching.get(key);
+					if(waiting == null) {
+						transientRequestsWaitingForKeysFetching.put(key, new WeakReference[] { new WeakReference<BaseSendableGet>(getterWaiting) });
+					} else {
+						for(WeakReference<BaseSendableGet> ref : waiting) {
+							if(ref.get() == getterWaiting) return ret;
+						}
+						WeakReference<BaseSendableGet>[] newWaiting = new WeakReference[waiting.length+1];
+						System.arraycopy(waiting, 0, newWaiting, 0, waiting.length);
+						newWaiting[waiting.length] = new WeakReference<BaseSendableGet>(getterWaiting);
+						transientRequestsWaitingForKeysFetching.put(key, newWaiting);
+					}
+				}
+			}
+			return ret;
 		}
 	}
 
 	public void removeFetchingKey(final Key key) {
+		Long[] persistentWaiting;
+		WeakReference<BaseSendableGet>[] transientWaiting;
 		if(logMINOR)
 			Logger.minor(this, "Removing from keysFetching: "+key);
 		if(key != null) {
 			synchronized(keysFetching) {
 				keysFetching.remove(key);
+				persistentWaiting = this.persistentRequestsWaitingForKeysFetching.remove(key);
+				transientWaiting = this.transientRequestsWaitingForKeysFetching.remove(key);
+			}
+			if(persistentWaiting != null || transientWaiting != null) {
+				CooldownTracker tracker = sched.clientContext.cooldownTracker;
+				if(persistentWaiting != null) {
+					for(Long l : persistentWaiting)
+						tracker.clearCachedWakeupPersistent(l);
+				}
+				if(transientWaiting != null) {
+					for(WeakReference<BaseSendableGet> ref : transientWaiting) {
+						BaseSendableGet get = ref.get();
+						if(get == null) continue;
+						tracker.clearCachedWakeup(get, false, null);
+					}
+				}
 			}
 		}
 	}

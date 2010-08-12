@@ -2070,7 +2070,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				// Double check
 				if(getBlockBucket(i, container) != null) continue;
 				Key key = keys.getNodeKey(i, null, true);
-				if(fetching.hasKey(key)) continue;
+				if(fetching.hasKey(key, getter, persistent, container)) continue;
 				return true;
 			}
 		}
@@ -2110,7 +2110,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				if(getBlockBucket(i, container) != null) continue;
 				// Possible ...
 				Key key = keys.getNodeKey(i, null, true);
-				if(fetching.hasKey(key)) continue;
+				if(fetching.hasKey(key, getter, persistent, container)) continue;
 				if(onlyLowestTries) {
 					int retryCount = this.getRetries(i, container, context);
 					if(retryCount > minRetries) {
@@ -2199,7 +2199,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					continue;
 				}
 				Key key = keys.getNodeKey(i, null, true);
-				if(fetching.hasKey(key)) continue;
+				if(fetching.hasKey(key, getter, persistent, container)) continue;
 				return 0; // Stuff to send right now.
 			}
 		}

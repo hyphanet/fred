@@ -34,7 +34,7 @@ public interface RequestScheduler {
 
 	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
 	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
-	public static final long COOLDOWN_PERIOD = 30*60*1000;
+	public static final long COOLDOWN_PERIOD = 60*1000;
 	/** The number of times a key can be requested before triggering the cooldown period. 
 	 * Note: If you don't want your requests to be subject to cooldown (e.g. in fproxy), make 
 	 * your max retry count less than this (and more than -1). */
@@ -59,7 +59,7 @@ public interface RequestScheduler {
 
 	public ChosenBlock grabRequest();
 
-	public void removeRunningRequest(SendableRequest request);
+	public void removeRunningRequest(SendableRequest request, ObjectContainer container);
 
 	/**
 	 * This only works for persistent requests, because transient requests are not
@@ -67,7 +67,16 @@ public interface RequestScheduler {
 	 */
 	public abstract boolean isRunningOrQueuedPersistentRequest(SendableRequest request);
 	
-	public boolean hasFetchingKey(Key key);
+	/**
+	 * Check whether a key is already being fetched. If it is, optionally remember who is
+	 * asking so we can wake them up (on the cooldown queue) when the key fetch completes.
+	 * @param key
+	 * @param getterWaiting
+	 * @param persistent
+	 * @param container
+	 * @return
+	 */
+	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container);
 
 	public void start(NodeClientCore core);
 

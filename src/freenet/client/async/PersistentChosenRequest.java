@@ -97,7 +97,9 @@ public class PersistentChosenRequest {
 		
 		for(PersistentChosenBlock block : candidates) {
 			Key key = block.key;
-			if(key != null && sched.hasFetchingKey(key)) {
+			// Only called by PersistentChosenRequest.
+			// We can safely pass in null here because we are not creating a cooldown.
+			if(key != null && sched.hasFetchingKey(key, null, false, null)) {
 				block.onDumped();
 				continue;
 			}
@@ -257,7 +259,7 @@ public class PersistentChosenRequest {
 					if(size == 1) ret = blocksNotStarted.remove(0);
 					else ret = blocksNotStarted.remove(random.nextInt(size));
 					Key key = ret.key;
-					if(key != null && sched.hasFetchingKey(key)) {
+					if(key != null && sched.hasFetchingKey(key, null, false, null)) {
 						// Already fetching; remove from list.
 						if(dumped == null) dumped = new ArrayList<PersistentChosenBlock>();
 						dumped.add(ret);
@@ -303,7 +305,7 @@ public class PersistentChosenRequest {
 			PersistentChosenBlock block = iter.next();
 			Key key = block.key;
 			if(key == null) continue;
-			if(sched.hasFetchingKey(key)) {
+			if(sched.hasFetchingKey(key, null, false, null)) {
 				iter.remove();
 				if(logMINOR) Logger.minor(this, "Pruned duplicate "+block+" from "+this);
 			}

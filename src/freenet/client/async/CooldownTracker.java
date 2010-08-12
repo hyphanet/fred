@@ -169,15 +169,7 @@ public class CooldownTracker {
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
 			long uid = container.ext().getID(toCheck);
-			boolean ret = false;
-			while(true) {
-				PersistentCooldownCacheItem item = cacheItemsPersistent.get(uid);
-				if(item == null) return ret;
-				ret = true;
-				cacheItemsPersistent.remove(uid);
-				uid = item.parentID;
-				if(uid == -1) return ret;
-			}
+			return clearCachedWakeupPersistent(uid);
 		} else {
 			boolean ret = false;
 			while(true) {
@@ -191,6 +183,20 @@ public class CooldownTracker {
 		}
 
 	}
+	
+	public synchronized boolean clearCachedWakeupPersistent(Long uid) {
+		boolean ret = false;
+		while(true) {
+			PersistentCooldownCacheItem item = cacheItemsPersistent.get(uid);
+			if(item == null) return ret;
+			ret = true;
+			cacheItemsPersistent.remove(uid);
+			uid = item.parentID;
+			if(uid == -1) return ret;
+		}
+	}
+
+
 	
 	/** Clear expired items from the cache */
 	public synchronized void clearExpired(long now) {
