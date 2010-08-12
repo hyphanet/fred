@@ -131,6 +131,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
 				// We should wake up the parent as well even if this item is not in cooldown.
 				context.cooldownTracker.clearCachedWakeup(getParentGrabArray(), persistent, container);
+				// Wake the CRS after clearing cache.
+				context.getFetchScheduler(isSSK()).wakeStarter();
 			}
 			return true; // We will retry in any case, maybe not just not yet. See requeueAfterCooldown(Key).
 		}

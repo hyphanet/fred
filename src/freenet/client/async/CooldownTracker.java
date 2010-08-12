@@ -153,6 +153,10 @@ public class CooldownTracker {
 	
 	/** The cached item has become fetchable unexpectedly. It should be cleared along with
 	 * all its ancestors.
+	 * 
+	 * CALLER SHOULD CALL wakeStarter() on the ClientRequestScheduler. We can't do that 
+	 * here because we don't know which scheduler to wake and will often be inside locks 
+	 * etc.
 	 * @param toCheck
 	 * @param persistent
 	 * @param container

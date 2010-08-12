@@ -170,6 +170,7 @@ abstract class ClientRequestSchedulerBase {
 			}
 			requestGrabber.add(cr, req, container, context);
 		}
+		sched.wakeStarter();
 	}
 
 	/**

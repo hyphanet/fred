@@ -75,4 +75,6 @@ public interface RequestScheduler {
 
 	public void removeTransientInsertFetching(SendableInsert insert, Object token);
 
+	public void wakeStarter();
+
 }

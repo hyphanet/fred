@@ -1248,10 +1248,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			// Clear our cooldown cache entry and those of our parents.
 			makeGetter(container, context);
 			if(getter != null) {
-				context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
-				// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
-				// We should wake up the parent as well even if this item is not in cooldown.
-				context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
 				rescheduleGetter(container, context);
 			}
 		}
@@ -1260,12 +1256,18 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	SplitFileFetcherSegmentGet rescheduleGetter(ObjectContainer container, ClientContext context) {
 		SplitFileFetcherSegmentGet getter = makeGetter(container, context);
 		if(getter == null) return null;
+		context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
+		// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
+		// We should wake up the parent as well even if this item is not in cooldown.
+		context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
 		boolean getterActive = true;
 		if(persistent) {
 			getterActive = container.ext().isActive(getter);
 			if(!getterActive) container.activate(getter, 1);
 		}
 		getter.reschedule(container, context);
+		// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
+		context.getChkFetchScheduler().wakeStarter();
 		if(!getterActive) container.deactivate(getter, 1);
 		return getter;
 	}
@@ -1287,10 +1289,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			// Clear our cooldown cache entry and those of our parents.
 			makeGetter(container, context);
 			if(getter != null) {
-				context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
-				// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
-				// We should wake up the parent as well even if this item is not in cooldown.
-				context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
 				rescheduleGetter(container, context);
 			}
 		}
@@ -1640,21 +1638,24 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		return v.toArray(new Integer[v.size()]);
 	}
 
-	public synchronized void resetCooldownTimes(ObjectContainer container, ClientContext context) {
+	public void resetCooldownTimes(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Resetting cooldown times on "+this);
 		if(getter != null)
 			context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
+		context.getChkFetchScheduler().wakeStarter();
 		// FIXME need a more efficient way to get maxTries!
 		if(persistent) {
 			container.activate(blockFetchContext, 1);
 		}
-		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-		long[] dataCooldownTimes = tracker.dataCooldownTimes;
-		long[] checkCooldownTimes = tracker.checkCooldownTimes;
-		for(int i=0;i<dataCooldownTimes.length;i++)
-			dataCooldownTimes[i] = -1;
-		for(int i=0;i<checkCooldownTimes.length;i++)
-			checkCooldownTimes[i] = -1;
+		synchronized(this) {
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			long[] dataCooldownTimes = tracker.dataCooldownTimes;
+			long[] checkCooldownTimes = tracker.checkCooldownTimes;
+			for(int i=0;i<dataCooldownTimes.length;i++)
+				dataCooldownTimes[i] = -1;
+			for(int i=0;i<checkCooldownTimes.length;i++)
+				checkCooldownTimes[i] = -1;
+		}
 	}
 
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
