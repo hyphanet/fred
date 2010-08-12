@@ -119,12 +119,11 @@ abstract class ClientRequestSchedulerBase {
 			Logger.normal(this, "Something wierd...");
 			Logger.normal(this, "Priority "+req.getPriorityClass(container));
 		}
-		int retryCount = req.getRetryCount();
 		short prio = req.getPriorityClass(container);
-		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" retry "+retryCount+" for "+req.getClientRequest());
+		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest());
 		addToRequestsByClientRequest(req.getClientRequest(), req, container);
-		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(container), req.getClientRequest(), req, random, container, context);
-		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount);
+		addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, random, container, context);
+		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
 		if(persistent())
 			sched.maybeAddToStarterQueue(req, container, maybeActive);
 	}
@@ -143,7 +142,7 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 	
-	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context) {
+	synchronized void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		// Client
@@ -164,7 +163,7 @@ abstract class ClientRequestSchedulerBase {
 			if(requestGrabber == null) {
 				requestGrabber = new SectoredRandomGrabArrayWithObject(client, persistent(), container, clientGrabber);
 				if(logMINOR)
-					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass+", rc="+rc);
+					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
 				clientGrabber.addGrabber(client, requestGrabber, container, context);
 				context.cooldownTracker.clearCachedWakeup(clientGrabber, persistent(), container, false);
 			}

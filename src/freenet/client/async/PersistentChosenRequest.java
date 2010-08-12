@@ -40,8 +40,6 @@ public class PersistentChosenRequest {
 	public transient final SendableRequest request;
 	/** Priority when we selected it */
 	public transient final short prio;
-	/** Retry count when we selected it */
-	public transient final int retryCount;
 	public transient final boolean localRequestOnly;
 	public transient final boolean ignoreStore;
 	public transient final boolean canWriteClientCache;
@@ -54,10 +52,9 @@ public class PersistentChosenRequest {
 	private boolean logMINOR;
 	private boolean finished;
 	
-	PersistentChosenRequest(SendableRequest req, short prio, int retryCount, ObjectContainer container, RequestScheduler sched, ClientContext context) throws NoValidBlocksException {
+	PersistentChosenRequest(SendableRequest req, short prio, ObjectContainer container, RequestScheduler sched, ClientContext context) throws NoValidBlocksException {
 		request = req;
 		this.prio = prio;
-		this.retryCount = retryCount;
 		if(req instanceof SendableGet) {
 			SendableGet sg = (SendableGet) req;
 			FetchContext ctx = sg.getContext(container);

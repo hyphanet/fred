@@ -168,11 +168,11 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
+	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, ClientContext context, ObjectContainer container) {
 		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
-			SelectorReturn r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, retryCount, context, container, now);
+			SelectorReturn r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, context, container, now);
 			SendableRequest req = null;
 			if(r != null && r.req != null) req = r.req;
 			if(req == null) continue;
@@ -255,7 +255,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 	}
 	
-	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container, long now) {
+	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, ClientContext context, ObjectContainer container, long now) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		if(schedCore == null) transientOnly = true;
@@ -443,7 +443,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						if(prio <= choosenPriorityClass) {
 							// Use the recent one instead
 							if(logMINOR)
-								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
+								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+") is better than "+req+" (prio="+req.getPriorityClass(container)+"), using that");
 							// Don't need to reregister, because removeRandom doesn't actually remove!
 							req = altReq;
 						} else {
@@ -487,7 +487,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 								if(useRecent) {
 									// Use the recent one instead
 									if(logMINOR)
-										Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
+										Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+") is better than "+req+" (prio="+req.getPriorityClass(container)+"), using that");
 									// Don't need to reregister, because removeRandom doesn't actually remove!
 									req = altReq;
 								} else {
@@ -506,7 +506,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				
 				// Now we have chosen a request.
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" (prio "+
-						req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
+						req.getPriorityClass(container)+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
 				return new SelectorReturn(req);
 				

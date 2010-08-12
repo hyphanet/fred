@@ -168,11 +168,6 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public int getRetryCount() {
-		return 0; // All keys have equal chance even if they've been tried before.
-	}
-
-	@Override
 	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
 		Logger.error(this, "Internal error: "+t, t);
 	}

@@ -187,11 +187,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public int getRetryCount() {
-		return retryCount;
-	}
-
-	@Override
 	public boolean isCancelled(ObjectContainer container) {
 		if(persistent) {
 			container.activate(parent, 1);

@@ -246,14 +246,6 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public int getRetryCount() {
-		// Retry count no longer involved in scheduling.
-		// Different blocks may have different retry counts.
-		// FIXME remove??? compute the lowest/highest/average?
-		return 0;
-	}
-
-	@Override
 	public SendableRequestItem chooseKey(KeysFetchingLocally keys,
 			ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);

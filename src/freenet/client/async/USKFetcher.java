@@ -1116,11 +1116,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public int getRetryCount() {
-			return 0;
-		}
-
-		@Override
 		public boolean isCancelled(ObjectContainer container) {
 			return done;
 		}

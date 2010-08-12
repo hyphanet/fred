@@ -44,8 +44,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** Get the priority class of the request. */
 	public abstract short getPriorityClass(ObjectContainer container);
 	
-	public abstract int getRetryCount();
-	
 	/** Choose a key to fetch. Removes the block number from any internal queues 
 	 * (but not the key itself, implementors must have a separate queue of block 
 	 * numbers and mapping of block numbers to keys).

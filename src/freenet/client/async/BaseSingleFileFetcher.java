@@ -159,11 +159,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public int getRetryCount() {
-		return retryCount;
-	}
-
-	@Override
 	public ClientRequester getClientRequest() {
 		return parent;
 	}

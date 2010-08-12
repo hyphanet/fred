@@ -399,13 +399,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
-	public ChosenBlock getBetterNonPersistentRequest(short prio, int retryCount) {
+	public ChosenBlock getBetterNonPersistentRequest(short prio) {
 		short fuzz = -1;
 		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
-		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, retryCount, clientContext, null);
+		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, clientContext, null);
 	}
 	
 	/**
@@ -479,24 +479,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 			PersistentChosenRequest reqGroup = null;
 			synchronized(starterQueue) {
 				short bestPriority = Short.MAX_VALUE;
-				int bestRetryCount = Integer.MAX_VALUE;
 				for(PersistentChosenRequest req : starterQueue) {
 					if(req.prio == RequestStarter.MINIMUM_PRIORITY_CLASS) {
-					    if(logDEBUG) Logger.debug(this, "Ignoring paused persistent request: "+req+" prio: "+req.prio+" retryCount: "+req.retryCount);
+					    if(logDEBUG) Logger.debug(this, "Ignoring paused persistent request: "+req+" prio: "+req.prio);
 					     continue; //Ignore paused requests
 					}
-					if(req.prio < bestPriority || 
-							(req.prio == bestPriority && req.retryCount < bestRetryCount)) {
+					if(req.prio < bestPriority) {
 						bestPriority = req.prio;
-						bestRetryCount = req.retryCount;
 						reqGroup = req;
 					}
 				}
 			}
 			if(reqGroup != null) {
 				// Try to find a better non-persistent request
-				if(logMINOR) Logger.minor(this, "Persistent request: "+reqGroup+" prio "+reqGroup.prio+" retryCount "+reqGroup.retryCount);
-				ChosenBlock better = getBetterNonPersistentRequest(reqGroup.prio, reqGroup.retryCount);
+				if(logMINOR) Logger.minor(this, "Persistent request: "+reqGroup+" prio "+reqGroup.prio);
+				ChosenBlock better = getBetterNonPersistentRequest(reqGroup.prio);
 				if(better != null) {
 					if(better.getPriority() > reqGroup.prio) {
 						Logger.error(this, "Selected "+better+" as better than "+reqGroup+" but isn't better!");
@@ -506,7 +503,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			if(reqGroup == null) {
 				queueFillRequestStarterQueue();
-				return getBetterNonPersistentRequest(Short.MAX_VALUE, Integer.MAX_VALUE);
+				return getBetterNonPersistentRequest(Short.MAX_VALUE);
 			}
 			ChosenBlock block;
 			int finalLength = 0;
@@ -582,7 +579,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		container.activate(request, 1);
 		PersistentChosenRequest chosen;
 		try {
-			chosen = new PersistentChosenRequest(request, request.getPriorityClass(container), request.getRetryCount(), container, ClientRequestScheduler.this, clientContext);
+			chosen = new PersistentChosenRequest(request, request.getPriorityClass(container), container, ClientRequestScheduler.this, clientContext);
 		} catch (NoValidBlocksException e) {
 			return false;
 		}
@@ -712,7 +709,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		boolean addedMore = false;
 		while(true) {
-			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container, now);
+			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, context, container, now);
 			SendableRequest request = null;
 			if(r != null && r.req != null) request = r.req;
 			else {
@@ -760,9 +757,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public void maybeAddToStarterQueue(SendableRequest req, ObjectContainer container, SendableRequest[] mightBeActive) {
 		short prio = req.getPriorityClass(container);
-		int retryCount = req.getRetryCount();
 		if(logMINOR)
-			Logger.minor(this, "Maybe adding to starter queue: prio="+prio+" retry count="+retryCount);
+			Logger.minor(this, "Maybe adding to starter queue: prio="+prio);
 		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		synchronized(starterQueue) {
 			boolean betterThanSome = false;
@@ -794,7 +790,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				} else if(logMINOR)
 					Logger.minor(this, "Ignoring active because just registered: "+old.request+" in maybeAddToStarterQueue for "+req);
 				size += old.sizeNotStarted();
-				if(old.prio > prio || (old.prio == prio && old.retryCount > retryCount))
+				if(old.prio > prio)
 					betterThanSome = true;
 				if(old.request == req) return;
 				prev = old;
@@ -819,7 +815,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				// If we can't, return.
 				PersistentChosenRequest worst = null;
 				short worstPrio = -1;
-				int worstRetryCount = -1;
 				int worstIndex = -1;
 				int worstLength = -1;
 				if(starterQueue.isEmpty()) {
@@ -829,13 +824,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int i=0;i<starterQueue.size();i++) {
 					PersistentChosenRequest req = starterQueue.get(i);
 					short prio = req.prio;
-					int retryCount = req.retryCount;
 					int size = req.sizeNotStarted();
 					length += size;
-					if(prio > worstPrio ||
-							(prio == worstPrio && retryCount > worstRetryCount)) {
+					if(prio > worstPrio) {
 						worstPrio = prio;
-						worstRetryCount = retryCount;
 						worst = req;
 						worstIndex = i;
 						worstLength = size;
