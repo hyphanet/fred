@@ -7,10 +7,14 @@ package freenet.client.filter;
 import java.util.Arrays;
 
 public class CodecPacket {
-	byte[] payload = null;
+	protected byte[] payload = null;
 
 	CodecPacket(byte[] payload) {
 		this.payload = payload;
+	}
+
+	public byte[] toArray() {
+		return payload;
 	}
 
 	@Override

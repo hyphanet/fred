@@ -91,7 +91,7 @@ public class ContentFilter {
 		 * will be dwonloaded from
 		 */
 		register(new MIMEType("audio/flac", "flac", new String[0], new String[0],
-				false, true, null, null, true, false, false, true, false, false,
+				false, true, new FlacFilter(), null, true, true, false, true, false, false,
 				l10n("audioFLACReadAdvice"),
 				l10n("audioFLACWriteAdvice"),
 				false, null, null, false));
