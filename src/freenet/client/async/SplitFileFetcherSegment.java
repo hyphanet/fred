@@ -121,6 +121,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	final byte[] forceCryptoKey;
 	final byte cryptoAlgorithm;
 	
+	private int maxRetries;
+	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
 	
@@ -1593,12 +1595,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 		int blockNo = keys.getBlockNumber((NodeCHK)key, foundKeys);
 		if(blockNo == -1) return -1;
-		// FIXME need a more efficient way to get maxTries!
-		if(persistent) {
-			container.activate(blockFetchContext, 1);
-		}
-		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
-		return getCooldownWakeup(blockNo, maxTries, container, context);
+		return getCooldownWakeup(blockNo, getMaxRetries(container), container, context);
 	}
 
 	public synchronized int getBlockNumber(Key key, ObjectContainer container) {
@@ -2062,11 +2059,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(persistent) container.activate(keys, 1);
 		}
 		long now = System.currentTimeMillis();
-		// FIXME need a more efficient way to get maxTries!
-		if(persistent) {
-			container.activate(blockFetchContext, 1);
-		}
-		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
+		int maxTries = getMaxRetries(container);
 		synchronized(this) {
 			if(startedDecode || isFinishing(container)) return false;
 			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
@@ -2099,11 +2092,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		else {
 			if(persistent) container.activate(keys, 1);
 		}
-		// FIXME need a more efficient way to get maxTries!
-		if(persistent) {
-			container.activate(blockFetchContext, 1);
-		}
-		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
+		int maxTries = getMaxRetries(container);
 		synchronized(this) {
 			int minRetries = Integer.MAX_VALUE;
 			ArrayList<Integer> list = null;
@@ -2152,11 +2141,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		else {
 			if(persistent) container.activate(keys, 1);
 		}
-		// FIXME need a more efficient way to get maxTries!
-		if(persistent) {
-			container.activate(blockFetchContext, 1);
-		}
-		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
+		int maxTries = getMaxRetries(container);
 		synchronized(this) {
 			if(startedDecode || isFinishing(container)) return null;
 			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
@@ -2182,11 +2167,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		else {
 			if(persistent) container.activate(keys, 1);
 		}
-		// FIXME need a more efficient way to get maxTries!
-		if(persistent) {
-			container.activate(blockFetchContext, 1);
-		}
-		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
+		int maxTries = getMaxRetries(container);
 		KeysFetchingLocally fetching = context.fetching;
 		long cooldownWakeup = Long.MAX_VALUE;
 		synchronized(this) {
@@ -2266,12 +2247,19 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		return new MyCooldownTrackerItem(dataBuckets.length, checkBuckets.length);
 	}
 
-	public int getMaxRetries(ObjectContainer container) {
-		// FIXME need a more efficient way to get maxTries!
+	public synchronized int getMaxRetries(ObjectContainer container) {
+		if(maxRetries != 0) return maxRetries;
+		boolean contextActive = true;
 		if(persistent) {
-			container.activate(blockFetchContext, 1);
+			contextActive = container.ext().isActive(blockFetchContext);
+			if(!contextActive) container.activate(blockFetchContext, 1);
 		}
-		return blockFetchContext.maxSplitfileBlockRetries;
+		maxRetries = blockFetchContext.maxSplitfileBlockRetries;
+		if(persistent) {
+			container.store(this);
+			if(!contextActive) container.deactivate(blockFetchContext, 1);
+		}
+		return maxRetries;
 	}
 
 }
