@@ -493,6 +493,8 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		context.cooldownTracker.removeCachedWakeup(it, persistent, container);
 		if(logMINOR)
 			Logger.minor(this, "Removing "+it+" from "+this);
+		if(logMINOR && container != null)
+			Logger.minor(this, "persistent="+persistent+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this));
 		
 		boolean matched = false;
 		boolean empty = false;
