@@ -683,9 +683,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			}
 		}
 		if(getter != null) {
-			container.activate(getter, 1);
+			if(persistent) container.activate(getter, 1);
 			getter.unregister(container, context, getPriorityClass(container));
-			getter.removeFrom(container);
+			if(persistent) getter.removeFrom(container);
 			getter = null;
 			if(persistent) container.store(this);
 		}
@@ -1425,9 +1425,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			}
 		}
 		if(getter != null) {
-			container.activate(getter, 1);
+			if(persistent) container.activate(getter, 1);
 			getter.unregister(container, context, getPriorityClass(container));
-			getter.removeFrom(container);
+			if(persistent) getter.removeFrom(container);
 			getter = null;
 			if(persistent) container.store(this);
 		}
