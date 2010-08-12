@@ -639,6 +639,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				for(RandomGrabArrayItem item : block.reqs) {
 					count++;
 					if(item != null) {
+						container.activate(item, 1); // For logging
 						if(count >= index)
 							Logger.error(this, "ITEM AT INDEX "+count+" : "+item+" EVEN THOUGH MAX INDEX IS "+index+" on "+this);
 						else
