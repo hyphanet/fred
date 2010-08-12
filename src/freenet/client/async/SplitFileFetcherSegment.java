@@ -152,7 +152,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	
 	private transient FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, SplitFileSegmentKeys keys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254, int crossCheckBlocks, byte cryptoAlgorithm, byte[] forceCryptoKey) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, SplitFileSegmentKeys keys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254, int crossCheckBlocks, byte cryptoAlgorithm, byte[] forceCryptoKey, int maxRetries) throws MetadataParseException, FetchException {
 		this.crossCheckBlocks = crossCheckBlocks;
 		this.keys = keys;
 		int dataBlocks = keys.getDataBlocks();
@@ -167,6 +167,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		this.errors = new FailureCodeTracker(false);
 		this.archiveContext = archiveContext;
 		this.splitfileType = splitfileType;
+		this.maxRetries = maxRetries;
 		this.parent = requester;
 		dataKeys = null;
 		checkKeys = null;
@@ -184,8 +185,13 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 		for(int i=0;i<checkBuckets.length;i++)
 			checkBuckets[i] = new MinimalSplitfileBlock(i+dataBuckets.length);
-		dataRetries = new int[dataBlocks];
-		checkRetries = new int[checkBlocks];
+		if(maxRetries != -1) {
+			dataRetries = new int[dataBlocks];
+			checkRetries = new int[checkBlocks];
+		} else {
+			dataRetries = null;
+			checkRetries = null;
+		}
 		subSegments = new Vector<SplitFileFetcherSubSegment>();
 		getter = new SplitFileFetcherSegmentGet(parent, this);
 		maxBlockLength = maxTempLength;
