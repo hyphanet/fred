@@ -133,7 +133,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 						container.activate(key, 5);
 					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK);
 					tracker.cooldownWakeupTime = sched.queueCooldown(key, this, container);
-					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown queue until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
+					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
 					if(persistent)
 						container.deactivate(key, 5);
 				}
