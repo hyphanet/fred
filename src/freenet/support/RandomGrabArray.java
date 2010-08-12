@@ -187,8 +187,11 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			if(excluding.excludeSummarily(ret, this, container, persistent, now) > 0) {
 				excluded++;
 				if(excluded > MAX_EXCLUDED) {
-					if(persistent && changedMe)
-						container.store(this);
+					if(persistent) {
+						if(changedMe)
+							container.store(this);
+						container.deactivate(blocks[blockNo], 1);
+					}
 					return null;
 				}
 				continue;
@@ -220,16 +223,22 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				if(persistent)
 					container.deactivate(ret, 1);
 				if(excluded > MAX_EXCLUDED) {
-					if(persistent && changedMe)
-						container.store(this);
+					if(persistent) {
+						if(changedMe)
+							container.store(this);
+						container.deactivate(blocks[blockNo], 1);
+					}
 					return null;
 				}
 				continue;
 			}
 			if(ret != null) {
 				if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret+" of "+index);
-				if(persistent && changedMe)
-					container.store(this);
+				if(persistent) {
+					if(changedMe)
+						container.store(this);
+					container.deactivate(blocks[blockNo], 1);
+				}
 				return ret;
 			}
 			// Remove an element.
@@ -249,8 +258,10 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				RandomGrabArrayItem[] r = new RandomGrabArrayItem[newSize];
 				System.arraycopy(blocks[0].reqs, 0, r, 0, r.length);
 				blocks[0].reqs = r;
-				if(persistent)
+				if(persistent) {
 					container.store(this);
+					container.deactivate(blocks[0], 1);
+				}
 			} else if(blocks.length > 1 &&
 					(((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1) < 
 					blocks.length) {
@@ -262,6 +273,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					container.store(this);
 					for(int x=newBlocks.length;x<blocks.length;x++)
 						container.delete(blocks[x]);
+					container.deactivate(blocks[blockNo], 1);
 				}
 				blocks = newBlocks;
 			}
