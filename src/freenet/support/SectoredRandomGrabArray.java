@@ -79,7 +79,8 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		rga.add(item, container, context);
 		if(persistent)
 			container.deactivate(rga, 1);
-		context.cooldownTracker.clearCachedWakeup(this, persistent, container, false);
+		if(context != null)
+			context.cooldownTracker.clearCachedWakeup(this, persistent, container, false);
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
 	}
