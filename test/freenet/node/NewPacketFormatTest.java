@@ -59,10 +59,11 @@ public class NewPacketFormatTest extends TestCase {
 		receiver.createPacket(512, senderQueue); //Sent, but lost
 		
 		try {
-			Thread.sleep(100); //RTT should be small 
+			Thread.sleep(1000); //RTT should be small 
 		} catch (InterruptedException e) { fail(); }
 		
 		NPFPacket resend1 = sender.createPacket(512, senderQueue);
+		if(resend1 == null) fail("No packet to resend");
 		resend1.setSequenceNumber(3);
 		assertEquals(0, receiver.handleDecryptedPacket(resend1).size());
 		

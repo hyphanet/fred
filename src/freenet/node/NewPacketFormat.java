@@ -392,7 +392,7 @@ public class NewPacketFormat implements PacketFormat {
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) {
 		//Mark packets as lost
 		synchronized(sentPackets) {
-			int avgRtt = averageRTT();
+			int avgRtt = Math.max(250, averageRTT());
 			long curTime = System.currentTimeMillis();
 
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
