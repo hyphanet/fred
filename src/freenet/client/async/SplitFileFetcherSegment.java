@@ -69,6 +69,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	final short splitfileType;
 	SplitFileSegmentKeys keys;
 	boolean[] foundKeys;
+	// FIXME remove eventually, needed for back compat for now
 	ClientCHK[] dataKeys;
 	ClientCHK[] checkKeys;
 	final MinimalSplitfileBlock[] dataBuckets;
