@@ -394,11 +394,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			if(index != target) {
 				changedMe = true;
 				index = target;
-				if(persistent) {
-					container.deactivate(blocks[blockNumReading], 1);
-					if(blockNumReading != blockNumWriting)
-						container.deactivate(blocks[blockNumWriting], 1);
-				}
 			}
 			// We reach this point if 1) the random number we picked last round is invalid because an item became cancelled or excluded
 			// or 2) we are on the first round anyway.
@@ -645,7 +640,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					count++;
 					if(item != null) {
 						if(count >= index)
-							Logger.error(this, "ITEM AT INDEX "+count+" EVEN THOUGH MAX INDEX IS "+index);
+							Logger.error(this, "ITEM AT INDEX "+count+" : "+item+" EVEN THOUGH MAX INDEX IS "+index+" on "+this);
 						else
 							Logger.error(this, "VALID ITEM WHILE DELETING BLOCK: "+item+" on "+this+" at index "+count+" of "+index, new Exception("error"));
 					}
