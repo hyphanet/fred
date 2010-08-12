@@ -78,6 +78,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					blocks[0].reqs = newReqs;
 				}
 				blocks[0].reqs[index++] = req;
+				if(logMINOR) Logger.minor(this, "Added "+req+" before index "+index);
 				if(persistent) {
 					container.store(blocks[0]);
 					container.store(this);
@@ -309,7 +310,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				}
 				item = reqsReading[offset];
 				if(item == null) {
-					if(logMINOR) Logger.minor(this, "Found null item at offset "+offset);
+					if(logMINOR) Logger.minor(this, "Found null item at offset "+offset+" i="+i+" block = "+blockNumReading+" on "+this);
 					continue;
 				}
 				boolean excludeItem = false;
