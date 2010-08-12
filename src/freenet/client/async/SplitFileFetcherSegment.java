@@ -384,7 +384,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					if(persistent) data.removeFrom(container);
 					return -1;
 				}
-				checkRetries[checkNo] = 0; // Prevent healing of successfully fetched block.
 				if(persistent)
 					container.activate(checkBuckets[checkNo], 1);
 				Bucket existingBlock = checkBuckets[checkNo].trySetData(data);
