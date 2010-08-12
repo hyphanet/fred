@@ -686,6 +686,13 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				if(persistent) dataBuckets[i].storeTo(container);
 			}
 		}
+		if(getter != null) {
+			container.activate(getter, 1);
+			getter.unregister(container, context, getPriorityClass(container));
+			getter.removeFrom(container);
+			getter = null;
+			if(persistent) container.store(this);
+		}
 		if(data == dataBuckets.length) {
 			if(logMINOR)
 				Logger.minor(this, "Already decoded");
