@@ -152,7 +152,7 @@ public class PersistentChosenRequest {
 	private void finish(ObjectContainer container, ClientContext context, boolean dumping, boolean alreadyActive) {
 		if(!container.ext().isStored(request)) {
 			if(logMINOR) Logger.minor(this, "Request apparently already deleted: "+request+" on "+this);
-			scheduler.removeRunningRequest(request);
+			scheduler.removeRunningRequest(request, container);
 			return;
 		}
 		if((!alreadyActive) && container.ext().isActive(request))
@@ -194,7 +194,7 @@ public class PersistentChosenRequest {
 			else if(logMINOR)
 				Logger.minor(this, "No finished blocks in finish() on "+this);
 			// Remove from running requests, we won't be called.
-			scheduler.removeRunningRequest(request);
+			scheduler.removeRunningRequest(request, container);
 			if(!alreadyActive)
 				container.deactivate(request, 1);
 			return;
@@ -231,7 +231,7 @@ public class PersistentChosenRequest {
 				}
 			}
 		}
-		scheduler.removeRunningRequest(request);
+		scheduler.removeRunningRequest(request, container);
 		if(request instanceof SendableInsert) {
 			// More blocks may have been added, because splitfile inserts
 			// do not separate retries into separate SendableInsert's.
@@ -282,7 +282,7 @@ public class PersistentChosenRequest {
 	public void onDumped(ClientRequestSchedulerCore core, ObjectContainer container, boolean reqAlreadyActive) {
 		if(logMINOR)
 			Logger.minor(this, "Dumping "+this);
-		scheduler.removeRunningRequest(request);
+		scheduler.removeRunningRequest(request, container);
 		boolean wasStarted;
 		PersistentChosenBlock[] blocks;
 		synchronized(this) {

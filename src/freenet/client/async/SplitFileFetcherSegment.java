@@ -1256,10 +1256,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	SplitFileFetcherSegmentGet rescheduleGetter(ObjectContainer container, ClientContext context) {
 		SplitFileFetcherSegmentGet getter = makeGetter(container, context);
 		if(getter == null) return null;
-		context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
-		// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
-		// We should wake up the parent as well even if this item is not in cooldown.
-		context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
 		boolean getterActive = true;
 		if(persistent) {
 			getterActive = container.ext().isActive(getter);

@@ -418,7 +418,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	private final transient ArrayList<SendableRequest> runningPersistentRequests = new ArrayList<SendableRequest> ();
 	
-	public void removeRunningRequest(SendableRequest request) {
+	public void removeRunningRequest(SendableRequest request, ObjectContainer container) {
 		synchronized(starterQueue) {
 			for(int i=0;i<runningPersistentRequests.size();i++) {
 				if(runningPersistentRequests.get(i) == request) {
@@ -429,6 +429,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 		}
+		// Because the request is no longer running, we need to clear the cooldown cache.
+		// In the worst case, it will have Long.MAX_VALUE all the way up, in which case, if we go into
+		// cooldown, we will never come out. However in many cases the request will not
+		// be the limiting factor, so the propagation will stop before that.
+		clientContext.cooldownTracker.clearCachedWakeup(request, true, container);
+		// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
+		// We should wake up the parent as well even if this item is not in cooldown.
+		clientContext.cooldownTracker.clearCachedWakeup(request.getParentGrabArray(), true, container);
 	}
 	
 	public boolean isRunningOrQueuedPersistentRequest(SendableRequest request) {

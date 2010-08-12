@@ -138,10 +138,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 						container.deactivate(key, 5);
 				}
 			} else {
-				context.cooldownTracker.clearCachedWakeup(this, persistent, container);
-				// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
-				// We should wake up the parent as well even if this item is not in cooldown.
-				context.cooldownTracker.clearCachedWakeup(getParentGrabArray(), persistent, container);
 				// Wake the CRS after clearing cache.
 				context.getFetchScheduler(isSSK()).wakeStarter();
 			}
@@ -270,6 +266,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public synchronized void resetCooldownTimes(ObjectContainer container, ClientContext context) {
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 		tracker.cooldownWakeupTime = -1;
+		context.cooldownTracker.clearCachedWakeup(this, persistent, container);
+		context.cooldownTracker.clearCachedWakeup(getParentGrabArray(), persistent, container);
 	}
 
 	@Override
