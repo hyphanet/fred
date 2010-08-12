@@ -47,7 +47,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	private static volatile boolean logDEBUG;
 	
 	static {
-		Logger.registerClass(BaseManifestPutter.class);
+		Logger.registerClass(BaseSingleFileFetcher.class);
 	}
 
 	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, boolean deleteFetchContext) {
