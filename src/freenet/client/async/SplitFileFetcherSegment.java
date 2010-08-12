@@ -1992,11 +1992,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	
 	private void encoderFinished(ObjectContainer container, ClientContext context) {
 		context.cooldownTracker.remove(this, persistent, container);
-		if(getter != null) {
-			getter.unregister(container, context, getPriorityClass(container));
-			if(persistent) getter.removeFrom(container);
-			getter = null;
-		}
 		boolean finish = false;
 		boolean half = false;
 		synchronized(this) {
