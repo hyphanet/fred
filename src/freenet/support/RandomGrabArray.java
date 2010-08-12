@@ -413,6 +413,9 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					if(blockNumReading != blockNumWriting)
 						container.store(blocks[blockNumWriting]);
 					container.store(this);
+					container.deactivate(blocks[blockNumReading], 1);
+					if(blockNumReading != blockNumWriting)
+						container.deactivate(blocks[blockNumWriting], 1);
 				}
 				return new RemoveRandomReturn(ret);
 			}
@@ -424,6 +427,9 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 							blocks = new Block[] { blocks[0] };
 						container.store(blocks[0]);
 						container.store(this);
+						container.deactivate(blocks[blockNumReading], 1);
+						if(blockNumReading != blockNumWriting)
+							container.deactivate(blocks[blockNumWriting], 1);
 					}
 				}
 				if(logMINOR) Logger.minor(this, "No valid or excluded items total "+index);
@@ -434,6 +440,9 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					if(blockNumReading != blockNumWriting)
 						container.store(blocks[blockNumWriting]);
 					container.store(this);
+					container.deactivate(blocks[blockNumReading], 1);
+					if(blockNumReading != blockNumWriting)
+						container.deactivate(blocks[blockNumWriting], 1);
 				}
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
 				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container);
@@ -446,6 +455,9 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					if(blockNumReading != blockNumWriting)
 						container.store(blocks[blockNumWriting]);
 					container.store(this);
+					container.deactivate(blocks[blockNumReading], 1);
+					if(blockNumReading != blockNumWriting)
+						container.deactivate(blocks[blockNumWriting], 1);
 				}
 				return new RemoveRandomReturn(ret);
 			} else {
