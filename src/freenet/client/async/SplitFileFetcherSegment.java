@@ -1493,7 +1493,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			container.store(this);
 		for(int i=0;i<deadSegs.length;i++) {
 			if(deadSegs[i] == null) {
-				Logger.error(this, "Subsegment "+i+" on "+this+" is null!");
+				Logger.error(this, "Subsegment "+i+" of "+deadSegs.length+" on "+this+" is null!");
 				continue;
 			}
 			if(persistent)
