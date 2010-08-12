@@ -1343,7 +1343,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 							Logger.error(this, "Already on the cooldown queue! for "+this+" data block no "+blockNo, new Exception("error"));
 						else {
 							SplitFileFetcherSegmentGet getter = makeGetter(container, context);
-							if(getter != null) dataCooldownTimes[blockNo] = sched.queueCooldown(key, getter, container);
+							if(getter != null) {
+								dataCooldownTimes[blockNo] = sched.queueCooldown(key, getter, container);
+								if(logMINOR) Logger.minor(this, "Putting data block "+blockNo+" into cooldown until "+(dataCooldownTimes[blockNo]-now));
+							}
 						}
 						cooldown = true;
 					}
@@ -1362,7 +1365,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 							Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
 						else {
 							SplitFileFetcherSegmentGet getter = makeGetter(container, context);
-							if(getter != null) checkCooldownTimes[checkNo] = sched.queueCooldown(key, getter, container);
+							if(getter != null) {
+								checkCooldownTimes[checkNo] = sched.queueCooldown(key, getter, container);
+								if(logMINOR) Logger.minor(this, "Putting check block "+blockNo+" into cooldown until "+(checkCooldownTimes[checkNo]-now));
+							}
 						}
 						cooldown = true;
 					}
