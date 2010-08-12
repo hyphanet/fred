@@ -704,7 +704,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			SendableRequest request = null;
 			if(r != null && r.req != null) request = r.req;
 			else {
-				if(r.wakeupTime > 0 && noLaterThan > r.wakeupTime) {
+				if(r != null && r.wakeupTime > 0 && noLaterThan > r.wakeupTime) {
 					noLaterThan = r.wakeupTime;
 					if(logMINOR) Logger.minor(this, "Waking up in "+TimeUtil.formatTime(noLaterThan - now)+" for cooldowns");
 				}
