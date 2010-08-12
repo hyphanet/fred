@@ -76,8 +76,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	ClientCHK[] checkKeys;
 	final MinimalSplitfileBlock[] dataBuckets;
 	final MinimalSplitfileBlock[] checkBuckets;
-	final long[] dataCooldownTimes;
-	final long[] checkCooldownTimes;
 	final int[] dataRetries;
 	final int[] checkRetries;
 	final Vector<SplitFileFetcherSubSegment> subSegments;
@@ -186,8 +184,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			checkBuckets[i] = new MinimalSplitfileBlock(i+dataBuckets.length);
 		dataRetries = new int[dataBlocks];
 		checkRetries = new int[checkBlocks];
-		dataCooldownTimes = new long[dataBlocks];
-		checkCooldownTimes = new long[checkBlocks];
 		subSegments = new Vector<SplitFileFetcherSubSegment>();
 		getter = new SplitFileFetcherSegmentGet(parent, this);
 		maxBlockLength = maxTempLength;
@@ -1325,15 +1321,13 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		ClientCHK key;
 		int[] dataRetries = this.dataRetries;
 		int[] checkRetries = this.checkRetries;
-		long[] dataCooldownTimes = this.dataCooldownTimes;
-		long[] checkCooldownTimes = this.checkCooldownTimes;
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		long[] dataCooldownTimes = tracker.dataCooldownTimes;
+		long[] checkCooldownTimes = tracker.checkCooldownTimes;
 		if(maxTries == -1) {
 			// Cooldown and retry counts entirely kept in RAM.
-			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 			dataRetries = tracker.dataRetries;
 			checkRetries = tracker.checkRetries;
-			dataCooldownTimes = tracker.dataCooldownTimes;
-			checkCooldownTimes = tracker.checkCooldownTimes;
 			callStore = false;
 		}
 		synchronized(this) {
@@ -1511,14 +1505,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 
 	public synchronized long getCooldownWakeup(int blockNum, int maxTries, ObjectContainer container, ClientContext context) {
-		long[] dataCooldownTimes = this.dataCooldownTimes;
-		long[] checkCooldownTimes = this.checkCooldownTimes;
-		if(maxTries == -1) {
-			// Cooldown and retry counts entirely kept in RAM.
-			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-			dataCooldownTimes = tracker.dataCooldownTimes;
-			checkCooldownTimes = tracker.checkCooldownTimes;
-		}
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		long[] dataCooldownTimes = tracker.dataCooldownTimes;
+		long[] checkCooldownTimes = tracker.checkCooldownTimes;
 		if(blockNum < dataBuckets.length)
 			return dataCooldownTimes[blockNum];
 		else
@@ -1650,15 +1639,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		if(persistent) {
 			container.activate(blockFetchContext, 1);
 		}
-		int maxTries = blockFetchContext.maxSplitfileBlockRetries;
-		long[] dataCooldownTimes = this.dataCooldownTimes;
-		long[] checkCooldownTimes = this.checkCooldownTimes;
-		if(maxTries == -1) {
-			// Cooldown and retry counts entirely kept in RAM.
-			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-			dataCooldownTimes = tracker.dataCooldownTimes;
-			checkCooldownTimes = tracker.checkCooldownTimes;
-		}
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		long[] dataCooldownTimes = tracker.dataCooldownTimes;
+		long[] checkCooldownTimes = tracker.checkCooldownTimes;
 		for(int i=0;i<dataCooldownTimes.length;i++)
 			dataCooldownTimes[i] = -1;
 		for(int i=0;i<checkCooldownTimes.length;i++)
