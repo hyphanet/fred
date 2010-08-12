@@ -256,7 +256,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(key != null) sched.removeFetchingKey(key);
 				else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert)
 					sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token);
-
+				// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
+				// so wake the starter thread.
+				wakeUp();
 			}
 		}
 		
