@@ -34,6 +34,7 @@ import freenet.node.SendableRequest;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
+import freenet.support.RandomGrabArray;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.StringCallback;
@@ -429,6 +430,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 		}
+		container.activate(request, 1);
 		// Because the request is no longer running, we need to clear the cooldown cache.
 		// In the worst case, it will have Long.MAX_VALUE all the way up, in which case, if we go into
 		// cooldown, we will never come out. However in many cases the request will not
@@ -436,7 +438,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		clientContext.cooldownTracker.clearCachedWakeup(request, true, container, true);
 		// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
 		// We should wake up the parent as well even if this item is not in cooldown.
-		clientContext.cooldownTracker.clearCachedWakeup(request.getParentGrabArray(), true, container, true);
+		RandomGrabArray rga = request.getParentGrabArray();
+		if(rga != null)
+			clientContext.cooldownTracker.clearCachedWakeup(rga, true, container, true);
 	}
 	
 	public boolean isRunningOrQueuedPersistentRequest(SendableRequest request) {
