@@ -308,8 +308,10 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					reqsReading = blocks[blockNumReading].reqs;
 				}
 				item = reqsReading[offset];
-				if(item == null)
+				if(item == null) {
+					if(logMINOR) Logger.minor(this, "Found null item at offset "+offset);
 					continue;
+				}
 				boolean excludeItem = false;
 				boolean activated = false;
 				long excludeTime = excluding.excludeSummarily(item, this, container, persistent, now);
