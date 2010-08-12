@@ -155,7 +155,7 @@ class NPFPacket {
 			offset += fragmentLength;
 
 			packet.fragments.add(new MessageFragment(shortMessage, isFragmented, firstFragment,
-			                messageID, fragmentLength, messageLength, fragmentOffset, fragmentData));
+			                messageID, fragmentLength, messageLength, fragmentOffset, fragmentData, null));
 		}
 
 		return packet;

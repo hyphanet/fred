@@ -138,7 +138,7 @@ public class MessageWrapper {
 
 		boolean isFragmented = !((start == 0) && (dataLength == item.buf.length));
 		return new MessageFragment(isShortMessage, isFragmented, start == 0, messageID, dataLength,
-		                item.buf.length, start, fragmentData);
+		                item.buf.length, start, fragmentData, this);
         }
 
 	public void onDisconnect() {

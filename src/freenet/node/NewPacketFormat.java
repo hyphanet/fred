@@ -316,12 +316,6 @@ public class NewPacketFormat implements PacketFormat {
 		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue());
 		if(packet == null) return false;
 
-		//TODO: Do this properly
-		SentPacket sentPacket;
-		synchronized(sentPackets) {
-			sentPacket = sentPackets.get(packet.getSequenceNumber());
-		}
-		
 		try {
 			packet.setSequenceNumber(sessionKey.packets.allocateOutgoingPacketNumberNeverBlock());
 		} catch(KeyChangedException e) {
@@ -367,15 +361,21 @@ public class NewPacketFormat implements PacketFormat {
 				                + packet.getAcks().size() + " acks");
 			}
 	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
-			if(sentPacket != null) sentPacket.sent();
                 } catch (LocalAddressException e) {
 	                Logger.error(this, "Caught exception while sending packet", e);
-			if(sentPacket != null) sentPacket.lost();
-			synchronized(sentPackets) {
-				sentPackets.remove(packet.getSequenceNumber());
-			}
 			return false;
                 }
+		
+		if(packet.getFragments().size() != 0) {
+			SentPacket sentPacket = new SentPacket(this);
+			sentPacket.sent();
+			for(MessageFragment frag : packet.getFragments()) {
+				sentPacket.addFragment(frag);
+			}
+			synchronized(sentPackets) {
+				sentPackets.put(packet.getSequenceNumber(), sentPacket);
+			}
+		}
 
 		pn.sentPacket();
 		pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
@@ -411,7 +411,6 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		SentPacket sentPacket = new SentPacket(this);
 		NPFPacket packet = new NPFPacket();
 
 		int numAcks = 0;
@@ -436,7 +435,6 @@ fragments:
 					MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
 					if(frag == null) continue;
 					packet.addMessageFragment(frag);
-					sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
 				}
 			}
 
@@ -472,7 +470,6 @@ fragments:
 					break;
 				}
 				packet.addMessageFragment(frag);
-				sentPacket.addFragment(wrapper, frag.fragmentOffset, frag.fragmentLength);
 
 				//Priority of the one we grabbed might be higher than i
 				HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
@@ -489,14 +486,6 @@ fragments:
 
 		if(packet.getLength() == 5) return null;
 
-		if(packet.getFragments().size() != 0) {
-			synchronized(sentPackets) {
-				sentPackets.put(packet.getSequenceNumber(), sentPacket);
-			}
-		}
-
-		sentPacket.sent();
-		
 		return packet;
 	}
 
@@ -556,11 +545,9 @@ fragments:
 			this.npf = npf;
 		}
 
-		public void addFragment(MessageWrapper source, int start, int length) {
-			if(length < 1) throw new IllegalArgumentException();
-
-			messages.add(source);
-			ranges.add(new int[] { start, start + length - 1 });
+		public void addFragment(MessageFragment frag) {
+			messages.add(frag.wrapper);
+			ranges.add(new int[] { frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1 });
 		}
 
 		public long acked() {

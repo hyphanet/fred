@@ -9,9 +9,11 @@ class MessageFragment {
 	int messageLength;
 	int fragmentOffset;
 	byte[] fragmentData;
+	MessageWrapper wrapper;
 
 	public MessageFragment(boolean shortMessage, boolean isFragmented, boolean firstFragment, int messageID,
-	                int fragmentLength, int messageLength, int fragmentOffset, byte[] fragmentData) {
+	                int fragmentLength, int messageLength, int fragmentOffset, byte[] fragmentData,
+	                MessageWrapper wrapper) {
 		this.shortMessage = shortMessage;
 		this.isFragmented = isFragmented;
 		this.firstFragment = firstFragment;
@@ -20,6 +22,7 @@ class MessageFragment {
 		this.messageLength = messageLength;
 		this.fragmentOffset = fragmentOffset;
 		this.fragmentData = fragmentData;
+		this.wrapper = wrapper;
 	}
 
 	public int length() {
