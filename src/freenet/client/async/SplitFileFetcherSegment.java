@@ -846,6 +846,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			}
 		}
 		boolean allDecodedCorrectly = true;
+		boolean allFromStore = !parent.sentToNetwork;
 		for(int i=0;i<dataBuckets.length;i++) {
 			if(persistent && crossCheckBlocks != 0) {
 				// onFetched might deactivate blocks.
@@ -855,6 +856,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(data == null) 
 				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
 			boolean heal = dataBuckets[i].flag;
+			if(allFromStore) heal = false;
 			try {
 				if(persistent && crossCheckBlocks != 0) {
 					// onFetched might deactivate blocks.
@@ -1025,6 +1027,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				
 			}
 			boolean allEncodedCorrectly = true;
+			boolean allFromStore = !parent.sentToNetwork;
 			for(int i=0;i<checkBuckets.length;i++) {
 				boolean heal = false;
 				// Check buckets will already be active because the FEC codec
@@ -1056,6 +1059,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					continue;
 				}
 				heal = checkBuckets[i].flag;
+				if(allFromStore) heal = false;
 				try {
 					if(!maybeAddToBinaryBlob(data, null, i+dataBuckets.length, container, context, "FEC ENCODE")) {
 						heal = false;
