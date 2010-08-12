@@ -75,6 +75,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	final MinimalSplitfileBlock[] checkBuckets;
 	final int[] dataRetries;
 	final int[] checkRetries;
+	// FIXME remove eventually, needed for back compat for now
 	final Vector<SplitFileFetcherSubSegment> subSegments;
 	private SplitFileFetcherSegmentGet getter;
 	final int minFetched;
