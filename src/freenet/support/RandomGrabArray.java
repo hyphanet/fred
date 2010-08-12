@@ -409,7 +409,9 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				ret = chosenItem;
 				if(logMINOR) Logger.minor(this, "Chosen random item "+ret+" out of "+valid+" total "+index);
 				if(persistent && changedMe) {
-					container.store(blocks[0]);
+					container.store(blocks[blockNumReading]);
+					if(blockNumReading != blockNumWriting)
+						container.store(blocks[blockNumWriting]);
 					container.store(this);
 				}
 				return new RemoveRandomReturn(ret);
@@ -417,6 +419,8 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			if(valid == 0 && exclude == 0) {
 				index = 0;
 				if(persistent) {
+					if(blocks.length != 0)
+						blocks = new Block[] { blocks[0] };
 					container.store(blocks[0]);
 					container.store(this);
 				}
@@ -424,7 +428,9 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				return null; // Caller should remove the whole RGA
 			} else if(valid == 0) {
 				if(persistent && changedMe) {
-					container.store(blocks[0]);
+					container.store(blocks[blockNumReading]);
+					if(blockNumReading != blockNumWriting)
+						container.store(blocks[blockNumWriting]);
 					container.store(this);
 				}
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
@@ -434,7 +440,9 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				ret = validItem;
 				if(logMINOR) Logger.minor(this, "No valid or excluded items apart from "+ret+" total "+index);
 				if(persistent && changedMe) {
-					container.store(blocks[0]);
+					container.store(blocks[blockNumReading]);
+					if(blockNumReading != blockNumWriting)
+						container.store(blocks[blockNumWriting]);
 					container.store(this);
 				}
 				return new RemoveRandomReturn(ret);
