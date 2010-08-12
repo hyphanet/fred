@@ -2,7 +2,9 @@ package freenet.support;
 
 import com.db4o.ObjectContainer;
 
-public interface RemoveRandomParent {
+import freenet.client.async.HasCooldownCacheItem;
+
+public interface RemoveRandomParent extends HasCooldownCacheItem {
 
 	/** If the specified RemoveRandom is empty, remove it.
 	 * LOCKING: Must be called with no locks held, particularly no locks on the

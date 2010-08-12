@@ -50,7 +50,8 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		if(persistent()) {
 			container.activate(succeeded, 1);
 		}
-		if(succeeded.isEmpty(container)) return;
+		if(succeeded.isCancelled(container)) return;
+		// Don't bother with getCooldownTime at this point.
 			if(logMINOR)
 				Logger.minor(this, "Recording successful fetch from "+succeeded);
 		synchronized(recentSuccesses) {

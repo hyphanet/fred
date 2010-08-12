@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
+import freenet.client.async.HasCooldownCacheItem;
 import freenet.client.async.TransientChosenBlock;
 import freenet.keys.Key;
 import freenet.support.LogThresholdCallback;
@@ -282,6 +283,11 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			return false;
 		Logger.normal(this, "Excluding (no valid keys): "+get);
 		return true;
+	}
+
+	public long excludeSummarily(HasCooldownCacheItem item,
+			HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now) {
+		return core.clientContext.cooldownTracker.getCachedWakeup(item, persistent, container, now);
 	}
 
 }

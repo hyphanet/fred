@@ -40,8 +40,6 @@ public class PersistentChosenRequest {
 	public transient final SendableRequest request;
 	/** Priority when we selected it */
 	public transient final short prio;
-	/** Retry count when we selected it */
-	public transient final int retryCount;
 	public transient final boolean localRequestOnly;
 	public transient final boolean ignoreStore;
 	public transient final boolean canWriteClientCache;
@@ -54,13 +52,12 @@ public class PersistentChosenRequest {
 	private boolean logMINOR;
 	private boolean finished;
 	
-	PersistentChosenRequest(SendableRequest req, short prio, int retryCount, ObjectContainer container, RequestScheduler sched, ClientContext context) throws NoValidBlocksException {
+	PersistentChosenRequest(SendableRequest req, short prio, ObjectContainer container, RequestScheduler sched, ClientContext context) throws NoValidBlocksException {
 		request = req;
 		this.prio = prio;
-		this.retryCount = retryCount;
 		if(req instanceof SendableGet) {
 			SendableGet sg = (SendableGet) req;
-			FetchContext ctx = sg.getContext();
+			FetchContext ctx = sg.getContext(container);
 			if(container != null)
 				container.activate(ctx, 1);
 			localRequestOnly = ctx.localRequestOnly;
@@ -97,7 +94,9 @@ public class PersistentChosenRequest {
 		
 		for(PersistentChosenBlock block : candidates) {
 			Key key = block.key;
-			if(key != null && sched.hasFetchingKey(key)) {
+			// Only called by PersistentChosenRequest.
+			// We can safely pass in null here because we are not creating a cooldown.
+			if(key != null && sched.hasFetchingKey(key, null, false, null)) {
 				block.onDumped();
 				continue;
 			}
@@ -152,7 +151,7 @@ public class PersistentChosenRequest {
 	private void finish(ObjectContainer container, ClientContext context, boolean dumping, boolean alreadyActive) {
 		if(!container.ext().isStored(request)) {
 			if(logMINOR) Logger.minor(this, "Request apparently already deleted: "+request+" on "+this);
-			scheduler.removeRunningRequest(request);
+			scheduler.removeRunningRequest(request, container);
 			return;
 		}
 		if((!alreadyActive) && container.ext().isActive(request))
@@ -194,7 +193,7 @@ public class PersistentChosenRequest {
 			else if(logMINOR)
 				Logger.minor(this, "No finished blocks in finish() on "+this);
 			// Remove from running requests, we won't be called.
-			scheduler.removeRunningRequest(request);
+			scheduler.removeRunningRequest(request, container);
 			if(!alreadyActive)
 				container.deactivate(request, 1);
 			return;
@@ -231,13 +230,13 @@ public class PersistentChosenRequest {
 				}
 			}
 		}
-		scheduler.removeRunningRequest(request);
+		scheduler.removeRunningRequest(request, container);
 		if(request instanceof SendableInsert) {
 			// More blocks may have been added, because splitfile inserts
 			// do not separate retries into separate SendableInsert's.
 			if(!container.ext().isActive(request))
 				container.activate(request, 1);
-			if((!request.isEmpty(container)) && (!request.isCancelled(container))) {
+			if((!((SendableInsert)request).isEmpty(container)) && (!request.isCancelled(container))) {
 				request.getScheduler(context).maybeAddToStarterQueue(request, container, null);
 				request.getScheduler(context).wakeStarter();
 			}
@@ -257,7 +256,7 @@ public class PersistentChosenRequest {
 					if(size == 1) ret = blocksNotStarted.remove(0);
 					else ret = blocksNotStarted.remove(random.nextInt(size));
 					Key key = ret.key;
-					if(key != null && sched.hasFetchingKey(key)) {
+					if(key != null && sched.hasFetchingKey(key, null, false, null)) {
 						// Already fetching; remove from list.
 						if(dumped == null) dumped = new ArrayList<PersistentChosenBlock>();
 						dumped.add(ret);
@@ -282,7 +281,7 @@ public class PersistentChosenRequest {
 	public void onDumped(ClientRequestSchedulerCore core, ObjectContainer container, boolean reqAlreadyActive) {
 		if(logMINOR)
 			Logger.minor(this, "Dumping "+this);
-		scheduler.removeRunningRequest(request);
+		scheduler.removeRunningRequest(request, container);
 		boolean wasStarted;
 		PersistentChosenBlock[] blocks;
 		synchronized(this) {
@@ -303,7 +302,7 @@ public class PersistentChosenRequest {
 			PersistentChosenBlock block = iter.next();
 			Key key = block.key;
 			if(key == null) continue;
-			if(sched.hasFetchingKey(key)) {
+			if(sched.hasFetchingKey(key, null, false, null)) {
 				iter.remove();
 				if(logMINOR) Logger.minor(this, "Pruned duplicate "+block+" from "+this);
 			}

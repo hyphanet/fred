@@ -298,6 +298,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		boolean pre1250 = (minCompatMode == CompatibilityMode.COMPAT_UNKNOWN || minCompatMode == CompatibilityMode.COMPAT_1250_EXACT);
 		
 		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
+		int maxRetries = blockFetchContext.maxSplitfileBlockRetries;
 		for(int i=0;i<segments.length;i++) {
 			// splitfile* will be overwritten, this is bad
 			// so copy them
@@ -308,7 +309,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					|| (checkBlocks > fetchContext.maxCheckBlocksPerSegment))
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
 			segments[i] = new SplitFileFetcherSegment(splitfileType, keys,
-					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, i, pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey());
+					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, i, pre1250, pre1254, crossCheckBlocks, metadata.getSplitfileCryptoAlgorithm(), metadata.getSplitfileCryptoKey(), maxRetries);
 			int data = keys.getDataBlocks();
 			int check = keys.getCheckBlocks();
 			for(int j=0;j<(data+check);j++) {
@@ -361,7 +362,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 
 		try {
-			tempListener.writeFilters(container);
+			tempListener.writeFilters(container, "construction");
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, "Unable to write Bloom filters for splitfile");
 		}

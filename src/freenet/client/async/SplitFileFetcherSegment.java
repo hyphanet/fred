@@ -7,7 +7,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Vector;
 
@@ -24,27 +25,24 @@ import freenet.client.FetchException;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
-import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
-import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.NodeCHK;
 import freenet.keys.TooBigException;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.RandomGrabArray;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.MultiReaderBucket;
 
@@ -52,7 +50,7 @@ import freenet.support.io.MultiReaderBucket;
  * A single segment within a SplitFileFetcher.
  * This in turn controls a large number of SplitFileFetcherSubSegment's, which are registered on the ClientRequestScheduler.
  */
-public class SplitFileFetcherSegment implements FECCallback {
+public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerItem {
 
 	private static volatile boolean logMINOR;
 	
@@ -71,15 +69,16 @@ public class SplitFileFetcherSegment implements FECCallback {
 	final short splitfileType;
 	SplitFileSegmentKeys keys;
 	boolean[] foundKeys;
+	// FIXME remove eventually, needed for back compat for now
 	ClientCHK[] dataKeys;
 	ClientCHK[] checkKeys;
 	final MinimalSplitfileBlock[] dataBuckets;
 	final MinimalSplitfileBlock[] checkBuckets;
-	final long[] dataCooldownTimes;
-	final long[] checkCooldownTimes;
 	final int[] dataRetries;
 	final int[] checkRetries;
+	// FIXME remove eventually, needed for back compat for now
 	final Vector<SplitFileFetcherSubSegment> subSegments;
+	private SplitFileFetcherSegmentGet getter;
 	final int minFetched;
 	final SplitFileFetcher parentFetcher;
 	final ClientRequester parent;
@@ -88,7 +87,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 	/** Has the segment finished processing? Irreversible. */
 	private volatile boolean finished;
 	private boolean startedDecode;
-	/** Bucket to store the data retrieved, after it has been decoded */
+	/** Bucket to store the data retrieved, after it has been decoded.
+	 * FIXME remove eventually, needed for back compat for now. */
 	private Bucket decodedData;
 	/** Fetch context for block fetches */
 	final FetchContext blockFetchContext;
@@ -121,6 +121,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 	final byte[] forceCryptoKey;
 	final byte cryptoAlgorithm;
 	
+	private int maxRetries;
+	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
 	
@@ -150,7 +152,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	private transient FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, SplitFileSegmentKeys keys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254, int crossCheckBlocks, byte cryptoAlgorithm, byte[] forceCryptoKey) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, SplitFileSegmentKeys keys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254, int crossCheckBlocks, byte cryptoAlgorithm, byte[] forceCryptoKey, int maxRetries) throws MetadataParseException, FetchException {
 		this.crossCheckBlocks = crossCheckBlocks;
 		this.keys = keys;
 		int dataBlocks = keys.getDataBlocks();
@@ -165,6 +167,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		this.errors = new FailureCodeTracker(false);
 		this.archiveContext = archiveContext;
 		this.splitfileType = splitfileType;
+		this.maxRetries = maxRetries;
 		this.parent = requester;
 		dataKeys = null;
 		checkKeys = null;
@@ -182,11 +185,15 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		for(int i=0;i<checkBuckets.length;i++)
 			checkBuckets[i] = new MinimalSplitfileBlock(i+dataBuckets.length);
-		dataRetries = new int[dataBlocks];
-		checkRetries = new int[checkBlocks];
-		dataCooldownTimes = new long[dataBlocks];
-		checkCooldownTimes = new long[checkBlocks];
-		subSegments = new Vector<SplitFileFetcherSubSegment>();
+		if(maxRetries != -1) {
+			dataRetries = new int[dataBlocks];
+			checkRetries = new int[checkBlocks];
+		} else {
+			dataRetries = null;
+			checkRetries = null;
+		}
+		subSegments = null;
+		getter = new SplitFileFetcherSegmentGet(parent, this);
 		maxBlockLength = maxTempLength;
 		this.blockFetchContext = blockFetchContext;
 		this.recursionLevel = 0;
@@ -358,7 +365,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 					return -1;
 				}
-				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
 				setFoundKey(blockNo, container, context);
 				if(persistent) {
 					data.storeTo(container);
@@ -606,13 +612,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 				} else if(block == null) {
 					// Cross-segment, just return false.
 					Logger.error(this, "CROSS-SEGMENT DECODED/ENCODED BLOCK INVALID: "+blockNo, new Exception("error"));
-					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from cross-segment decode"), blockNo, null, container, context);
+					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block from cross-segment decode"), blockNo, container, context);
 					data.free();
 					if(persistent) data.removeFrom(container);
 					return false;
 				} else {
 					Logger.error(this, "DATA BLOCK INVALID: "+blockNo, new Exception("error"));
-					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block"), blockNo, null, container, context);
+					onFatalFailure(new FetchException(FetchException.INTERNAL_ERROR, "Invalid block"), blockNo, container, context);
 					data.free();
 					if(persistent) data.removeFrom(container);
 					return false;
@@ -678,11 +684,18 @@ public class SplitFileFetcherSegment implements FECCallback {
 		for(int i=0;i<dataBuckets.length;i++) {
 			if(dataBuckets[i].getData() != null) {
 				data++;
-			} else if(crossCheckBlocks != 0) {
+			} else {
 				// Use flag to indicate that it the block needed to be decoded.
 				dataBuckets[i].flag = true;
 				if(persistent) dataBuckets[i].storeTo(container);
 			}
+		}
+		if(getter != null) {
+			if(persistent) container.activate(getter, 1);
+			getter.unregister(container, context, getPriorityClass(container));
+			if(persistent) getter.removeFrom(container);
+			getter = null;
+			if(persistent) container.store(this);
 		}
 		if(data == dataBuckets.length) {
 			if(logMINOR)
@@ -842,6 +855,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			Bucket data = dataBlockStatus[i].getData();
 			if(data == null) 
 				throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null in onDecodedSegment");
+			boolean heal = true;
 			try {
 				if(persistent && crossCheckBlocks != 0) {
 					// onFetched might deactivate blocks.
@@ -859,12 +873,19 @@ public class SplitFileFetcherSegment implements FECCallback {
 						return;
 					}
 					// Disable healing.
-					dataRetries[i] = 0;
+					heal = false;
 					allDecodedCorrectly = false;
 				}
 			} catch (FetchException e) {
 				fail(e, container, context, false);
 				return;
+			}
+			if(heal) {
+				Bucket wrapper = queueHeal(data, container, context);
+				if(wrapper != data) {
+					assert(!persistent);
+					dataBuckets[i].replaceData(wrapper);
+				}
 			}
 		}
 		if(allDecodedCorrectly && logMINOR) Logger.minor(this, "All decoded correctly on "+this);
@@ -934,6 +955,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		
 		// Encode any check blocks we don't have
+		for(int i=0;i<checkBuckets.length;i++) {
+			if(checkBuckets[i].getData() == null) {
+				// Use flag to indicate that it the block needed to be decoded.
+				checkBuckets[i].flag = true;
+				if(persistent) checkBuckets[i].storeTo(container);
+			}
+		}
+
 		try {
 			synchronized(this) {
 				if(encoderFinished) {
@@ -969,7 +998,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Logger.error(this, "Decoded segment after encoder finished");
 			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
 			for(int i=0;i<dataBuckets.length;i++) {
-				boolean heal = false;
 				if(dataBuckets[i] == null) {
 					Logger.error(this, "Data bucket "+i+" is null in onEncodedSegment on "+this);
 					continue;
@@ -996,15 +1024,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 					continue;
 				}
 				
-				if(dataRetries[i] > 0)
-					heal = true;
-				if(heal) {
-					Bucket wrapper = queueHeal(data, container, context);
-					if(wrapper != data) {
-						assert(!persistent);
-						dataBuckets[i].replaceData(wrapper);
-					}
-				}
 			}
 			boolean allEncodedCorrectly = true;
 			for(int i=0;i<checkBuckets.length;i++) {
@@ -1037,8 +1056,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 					continue;
 				}
-				if(checkRetries[i] > 0)
-					heal = true;
+				heal = checkBuckets[i].flag;
 				try {
 					if(!maybeAddToBinaryBlob(data, null, i+dataBuckets.length, container, context, "FEC ENCODE")) {
 						heal = false;
@@ -1183,7 +1201,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal 
 	 * @param container */
-	public void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
+	public void onFatalFailure(FetchException e, int blockNo, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(this, 1);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
@@ -1220,87 +1238,119 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent) container.activate(errors, Integer.MAX_VALUE);
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, false);
 		}
-		else if(seg != null) {
-			if(seg.possiblyRemoveFromParent(container, context))
-				seg.kill(container, context, true, true);
-		}
 	}
 	/** A request has failed non-fatally, so the block may be retried 
 	 * @param container */
-	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
-		onNonFatalFailure(e, blockNo, seg, container, context, true);
+	public void onNonFatalFailure(FetchException e, int blockNo, ObjectContainer container, ClientContext context) {
+		onNonFatalFailure(e, blockNo, container, context, true);
 	}
 	
-	private void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, boolean callStore) {
+	private void onNonFatalFailure(FetchException e, int blockNo, ObjectContainer container, ClientContext context, boolean callStore) {
 		if(persistent) {
 			container.activate(blockFetchContext, 1);
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		RequestScheduler sched = context.getFetchScheduler(false);
-		seg.removeBlockNum(blockNo, container, false);
-		SplitFileFetcherSubSegment sub = onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries, callStore);
-		if(sub != null) {
-			sub.reschedule(container, context);
-			if(persistent && sub != seg) container.deactivate(sub, 1);
-		}
-	}
-	
-	public void onNonFatalFailure(FetchException[] failures, int[] blockNos, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(blockFetchContext, 1);
-		}
-		int maxTries = blockFetchContext.maxNonSplitfileRetries;
-		RequestScheduler sched = context.getFetchScheduler(false);
-		HashSet<SplitFileFetcherSubSegment> toSchedule = null;
-		seg.removeBlockNums(blockNos, container);
-		for(int i=0;i<failures.length;i++) {
-			SplitFileFetcherSubSegment sub = 
-				onNonFatalFailure(failures[i], blockNos[i], seg, container, context, sched, maxTries, false);
-			if(sub != null) {
-				if(toSchedule == null)
-					toSchedule = new HashSet<SplitFileFetcherSubSegment>();
-				toSchedule.add(sub);
+		if(onNonFatalFailure(e, blockNo, container, context, sched, maxTries, callStore)) {
+			// At least one request was rescheduled, so we have requests to send.
+			// Clear our cooldown cache entry and those of our parents.
+			makeGetter(container, context);
+			if(getter != null) {
+				rescheduleGetter(container, context);
 			}
+		}
+	}
+	
+	SplitFileFetcherSegmentGet rescheduleGetter(ObjectContainer container, ClientContext context) {
+		SplitFileFetcherSegmentGet getter = makeGetter(container, context);
+		if(getter == null) return null;
+		boolean getterActive = true;
+		if(persistent) {
+			getterActive = container.ext().isActive(getter);
+			if(!getterActive) container.activate(getter, 1);
+		}
+		getter.reschedule(container, context);
+		context.cooldownTracker.clearCachedWakeup(getter, persistent, container, false);
+		// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
+		context.getChkFetchScheduler().wakeStarter();
+		if(!getterActive) container.deactivate(getter, 1);
+		return getter;
+	}
+
+	public void onNonFatalFailure(FetchException[] failures, int[] blockNos, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
+		int maxTries = blockFetchContext.maxNonSplitfileRetries;
+		RequestScheduler sched = context.getFetchScheduler(false);
+		boolean reschedule = false;
+		for(int i=0;i<failures.length;i++) {
+			if(onNonFatalFailure(failures[i], blockNos[i], container, context, sched, maxTries, false))
+				reschedule = true;
 		}
 		if(persistent) container.store(this); // We don't call container.store(this) in each onNonFatalFailure because it takes much CPU time.
-		if(toSchedule != null && !toSchedule.isEmpty()) {
-			for(SplitFileFetcherSubSegment sub : toSchedule) {
-				if(persistent)
-					if(!container.ext().isActive(sub)) {
-						// Inexplicable NPEs in reschedule() called from here, lets check this...
-						container.activate(sub, 1);
-						Logger.error(this, "Sub-segment somehow got deactivated?!", new Exception("error"));
-					}
-				sub.reschedule(container, context);
-				if(persistent && sub != seg) container.deactivate(sub, 1);
+		if(reschedule) {
+			// At least one request was rescheduled, so we have requests to send.
+			// Clear our cooldown cache entry and those of our parents.
+			makeGetter(container, context);
+			if(getter != null) {
+				rescheduleGetter(container, context);
 			}
 		}
+	}
+
+	static class MyCooldownTrackerItem implements CooldownTrackerItem {
+		MyCooldownTrackerItem(int data, int check) {
+			dataRetries = new int[data];
+			checkRetries = new int[check];
+			dataCooldownTimes = new long[data];
+			checkCooldownTimes = new long[check];
+		}
+		final int[] dataRetries;
+		final int[] checkRetries;
+		final long[] dataCooldownTimes;
+		final long[] checkCooldownTimes;
 	}
 	
 	/**
 	 * Caller must set(this) iff returns true.
+	 * @return True if the getter should be rescheduled.
 	 */
-	private SplitFileFetcherSubSegment onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries, boolean callStore) {
-		if(logMINOR) Logger.minor(this, "Calling onNonFatalFailure for block "+blockNo+" on "+this+" from "+seg);
+	private boolean onNonFatalFailure(FetchException e, int blockNo, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries, boolean callStore) {
+		if(logMINOR) Logger.minor(this, "Calling onNonFatalFailure for block "+blockNo+" on "+this);
 		int tries;
 		boolean failed = false;
 		boolean cooldown = false;
 		ClientCHK key;
-		SplitFileFetcherSubSegment sub = null;
+		int[] dataRetries = this.dataRetries;
+		int[] checkRetries = this.checkRetries;
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		long[] dataCooldownTimes = tracker.dataCooldownTimes;
+		long[] checkCooldownTimes = tracker.checkCooldownTimes;
+		if(maxTries == -1) {
+			// Cooldown and retry counts entirely kept in RAM.
+			dataRetries = tracker.dataRetries;
+			checkRetries = tracker.checkRetries;
+			callStore = false;
+		}
 		synchronized(this) {
-			if(isFinished(container)) return null;
+			if(isFinished(container)) return false;
 			if(blockNo < dataBuckets.length) {
 				key = this.getBlockKey(blockNo, container);
 				tries = ++dataRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
-					sub = getSubSegment(tries, container, false, seg);
 					if(tries % RequestScheduler.COOLDOWN_RETRIES == 0) {
 						long now = System.currentTimeMillis();
 						if(dataCooldownTimes[blockNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" data block no "+blockNo, new Exception("error"));
-						else
-							dataCooldownTimes[blockNo] = sched.queueCooldown(key, sub, container);
+						else {
+							SplitFileFetcherSegmentGet getter = makeGetter(container, context);
+							if(getter != null) {
+								dataCooldownTimes[blockNo] = sched.queueCooldown(key, getter, container);
+								if(logMINOR) Logger.minor(this, "Putting data block "+blockNo+" into cooldown until "+(dataCooldownTimes[blockNo]-now));
+							}
+						}
 						cooldown = true;
 					}
 				}
@@ -1312,82 +1362,49 @@ public class SplitFileFetcherSegment implements FECCallback {
 				tries = ++checkRetries[checkNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
-					sub = getSubSegment(tries, container, false, seg);
 					if(tries % RequestScheduler.COOLDOWN_RETRIES == 0) {
 						long now = System.currentTimeMillis();
 						if(checkCooldownTimes[checkNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
-						else
-							checkCooldownTimes[checkNo] = sched.queueCooldown(key, sub, container);
+						else {
+							SplitFileFetcherSegmentGet getter = makeGetter(container, context);
+							if(getter != null) {
+								checkCooldownTimes[checkNo] = sched.queueCooldown(key, getter, container);
+								if(logMINOR) Logger.minor(this, "Putting check block "+blockNo+" into cooldown until "+(checkCooldownTimes[checkNo]-now));
+							}
+						}
 						cooldown = true;
 					}
 				}
 			}
 		}
-		if(tries != seg.retryCount+1) {
-			Logger.error(this, "Failed on segment "+seg+" but tries for block "+blockNo+" (after increment) is "+tries);
-		}
 		if(failed) {
-			onFatalFailure(e, blockNo, seg, container, context);
+			onFatalFailure(e, blockNo, container, context);
 			if(logMINOR)
 				Logger.minor(this, "Not retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
-			return null;
+			return false;
 		}
 		boolean mustSchedule = false;
 		if(cooldown) {
 			// Registered to cooldown queue
 			if(logMINOR)
-				Logger.minor(this, "Added to cooldown queue: "+key+" for "+this+" was on segment "+seg+" now registered to "+sub);
+				Logger.minor(this, "Added to cooldown queue: "+key+" for "+this);
 		} else {
 			// If we are here we are going to retry
-			mustSchedule = sub.add(blockNo, container, context, false);
+			mustSchedule = true;
 			if(logMINOR)
-				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
+				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
 		}
 		if(persistent) {
 			if(callStore) container.store(this);
 			container.deactivate(key, 5);
 		}
-		if(mustSchedule) 
-			return sub;
-		else
-			return null;
+		return mustSchedule;
 	}
 	
-	private SplitFileFetcherSubSegment getSubSegment(int retryCount, ObjectContainer container, boolean noCreate, SplitFileFetcherSubSegment dontDeactivate) {
-		SplitFileFetcherSubSegment sub;
-		if(persistent)
-			container.activate(subSegments, 1);
-		SplitFileFetcherSubSegment ret = null;
-		int dupes = 0;
-		synchronized(this) {
-			for(int i=0;i<subSegments.size();i++) {
-				sub = subSegments.get(i);
-				if(persistent) container.activate(sub, 1);
-				if(sub.retryCount == retryCount) {
-					if(ret != null) {
-						Logger.error(this, "Duplicate subsegment (count="+dupes+"): "+ret+" and "+sub+" for retry count "+retryCount+" on "+this);
-						dupes++;
-					} else
-						ret = sub;
-				}
-				if(persistent && sub != ret && sub != dontDeactivate) container.deactivate(sub, 1);
-			}
-			if(ret != null) return ret;
-			if(noCreate) return null;
-			boolean deactivateParent = false;
-			if(persistent) {
-				deactivateParent = !container.ext().isActive(parent);
-				if(deactivateParent) container.activate(parent, 1);
-			}
-			sub = new SplitFileFetcherSubSegment(this, parent, retryCount);
-			if(deactivateParent)
-				container.deactivate(parent, 1);
-			subSegments.add(sub);
-		}
-		if(persistent)
-			container.ext().store(subSegments, 1);
-		return sub;
+	private MyCooldownTrackerItem makeCooldownTrackerItem(
+			ObjectContainer container, ClientContext context) {
+		return (MyCooldownTrackerItem) context.cooldownTracker.make(this, persistent, container);
 	}
 
 	void fail(FetchException e, ObjectContainer container, ClientContext context, boolean dontDeactivateParent) {
@@ -1412,6 +1429,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 				checkBuckets[i] = null;
 			}
 		}
+		if(getter != null) {
+			if(persistent) container.activate(getter, 1);
+			getter.unregister(container, context, getPriorityClass(container));
+			if(persistent) getter.removeFrom(container);
+			getter = null;
+			if(persistent) container.store(this);
+		}
 		encoderFinished(container, context);
 		removeSubSegments(container, context, false);
 		if(persistent) {
@@ -1425,32 +1449,18 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.deactivate(parentFetcher, 1);
 	}
 
-	public SplitFileFetcherSubSegment schedule(ObjectContainer container, ClientContext context) {
+	public SendableGet schedule(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 		}
-		try {
-			SplitFileFetcherSubSegment seg = getSubSegment(0, container, false, null);
-			if(persistent)
-				container.activate(seg, 1);
-			seg.addAll(dataRetries.length+checkRetries.length, container, context, false);
-
-			if(logMINOR)
-				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
-			
-			synchronized(this) {
-				scheduled = true;
-			}
-			if(persistent)
-				container.store(this);
-			if(persistent)
-				container.deactivate(seg, 1);
-			return seg;
-		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t+" scheduling "+this, t);
-			fail(new FetchException(FetchException.INTERNAL_ERROR, t), container, context, true);
-			return null;
+		SplitFileFetcherSegmentGet get = makeGetter(container, context);
+		synchronized(this) {
+			scheduled = true;
 		}
+		if(persistent)
+			container.store(this);
+		if(persistent) container.activate(get, 1);
+		return get;
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -1479,46 +1489,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		else return null;
 	}
 
-	/**
-	 * Double-check whether we need to remove a subsegment, and if so, remove it.
-	 * We need to do the check because there is no point removing the subsegment until all
-	 * its running requests have been removed (since request data structures will refer to it
-	 * anyway), and all the requests on the cooldown queue for it have been removed. In either
-	 * case we get duplicated structures in memory.
-	 * @return True if we removed the subsegment.
-	 */
-	public synchronized boolean maybeRemoveSeg(SplitFileFetcherSubSegment segment, ObjectContainer container) {
-		int retryCount = segment.retryCount;
-		boolean dontRemove = true;
-		for(int i=0;i<dataRetries.length;i++)
-			if(dataRetries[i] == retryCount) {
-				dontRemove = false;
-				break;
-			}
-		for(int i=0;i<checkRetries.length;i++)
-			if(checkRetries[i] == retryCount) {
-				dontRemove = false;
-				break;
-			}
-		if(isFinishing(container)) dontRemove = false;
-		if(dontRemove) return false;
-		if(logMINOR)
-			Logger.minor(this, "Removing sub segment: "+segment+" for retry count "+retryCount);
-		if(persistent) {
-			container.activate(subSegments, 1);
-		}
-		for(int i=0;i<subSegments.size();i++) {
-			if(segment.equals(subSegments.get(i))) {
-				subSegments.remove(i);
-				i--;
-			}
-		}
-		if(persistent)
-			container.store(subSegments);
-		return true;
-	}
-
 	private void removeSubSegments(ObjectContainer container, ClientContext context, boolean finishing) {
+		if(subSegments == null) return;
 		if(persistent)
 			container.activate(subSegments, 1);
 		SplitFileFetcherSubSegment[] deadSegs;
@@ -1529,6 +1501,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(persistent && deadSegs.length > 0)
 			container.store(this);
 		for(int i=0;i<deadSegs.length;i++) {
+			if(deadSegs[i] == null) {
+				Logger.error(this, "Subsegment "+i+" of "+deadSegs.length+" on "+this+" is null!");
+				continue;
+			}
 			if(persistent)
 				container.activate(deadSegs[i], 1);
 			deadSegs[i].kill(container, context, true, false);
@@ -1542,14 +1518,29 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 	}
 
-	public synchronized long getCooldownWakeup(int blockNum) {
+	public synchronized long getCooldownWakeup(int blockNum, int maxTries, ObjectContainer container, ClientContext context) {
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		long[] dataCooldownTimes = tracker.dataCooldownTimes;
+		long[] checkCooldownTimes = tracker.checkCooldownTimes;
 		if(blockNum < dataBuckets.length)
 			return dataCooldownTimes[blockNum];
 		else
 			return checkCooldownTimes[blockNum - dataBuckets.length];
 	}
 
-	private int getRetries(int blockNum) {
+	private int getRetries(int blockNum, ObjectContainer container, ClientContext context) {
+		return getRetries(blockNum, getMaxRetries(container), container, context);
+	}
+	
+	private int getRetries(int blockNum, int maxTries, ObjectContainer container, ClientContext context) {
+		int[] dataRetries = this.dataRetries;
+		int[] checkRetries = this.checkRetries;
+		if(maxTries == -1) {
+			// Cooldown and retry counts entirely kept in RAM.
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			dataRetries = tracker.dataRetries;
+			checkRetries = tracker.checkRetries;
+		}
 		if(blockNum < dataBuckets.length)
 			return dataRetries[blockNum];
 		else
@@ -1562,10 +1553,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 	public boolean requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment dontDeactivate) {
 		if(persistent)
 			container.activate(this, 1);
-		Vector<SplitFileFetcherSubSegment> v = null;
 		boolean notFound = true;
 		synchronized(this) {
 		if(isFinishing(container)) return false;
+		// FIXME need a more efficient way to get maxTries!
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		if(keys == null) 
 			migrateToKeys(container);
@@ -1576,19 +1570,15 @@ public class SplitFileFetcherSegment implements FECCallback {
 		for(int i : matches) {
 			ClientCHK k = keys.getKey(i, foundKeys, persistent);
 			if(k.getNodeKey(false).equals(key)) {
-				if(getCooldownWakeup(i) > time) {
+				if(getCooldownWakeup(i, maxTries, container, context) > time) {
 					if(logMINOR)
-						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(getCooldownWakeup(i)-time)+"ms");
+						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(getCooldownWakeup(i, maxTries, container, context)-time)+"ms");
 					return false;
 				}
-				int tries = getRetries(i);
-				SplitFileFetcherSubSegment sub = getSubSegment(tries, container, false, dontDeactivate);
+				if(foundKeys[i]) continue;
 				if(logMINOR)
-					Logger.minor(this, "Retrying after cooldown on "+this+": block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
-				if(v == null) v = new Vector<SplitFileFetcherSubSegment>();
-				// We always schedule. FIXME: only schedule if sub.add() returns true???
-				sub.add(i, container, context, true);
-				if(!v.contains(sub)) v.add(sub);
+					Logger.minor(this, "Retrying after cooldown on "+this+": block "+i+" on "+this+" : tries="+getRetries(i, container, context)+"/"+maxTries);
+				
 				notFound = false;
 			} else {
 				if(persistent)
@@ -1598,35 +1588,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(notFound) {
 			Logger.error(this, "requeueAfterCooldown: Key not found!: "+key+" on "+this);
-		}
-		if(v != null) {
-			for(int i=0;i<v.size();i++) {
-				SplitFileFetcherSubSegment sub = v.get(i);
-				if(persistent && sub != dontDeactivate)
-					container.activate(sub, 1);
-				RandomGrabArray rga = sub.getParentGrabArray();
-				if(rga == null) {
-					sub.reschedule(container, context);
-				} else {
-//					if(logMINOR) {
-						if(persistent)
-							container.activate(rga, 1);
-						if(!rga.contains(sub, container)) {
-							Logger.error(this, "Sub-segment has RGA but isn't registered to it!!: "+sub+" for "+rga);
-							sub.reschedule(container, context);
-						}
-						if(persistent)
-							container.deactivate(rga, 1);
-//					}
-				}
-				if(persistent && sub != dontDeactivate)
-					container.deactivate(sub, 1);
-			}
+		} else {
+			rescheduleGetter(container, context);
 		}
 		return true;
 	}
 
-	public synchronized long getCooldownWakeupByKey(Key key, ObjectContainer container) {
+	public synchronized long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
 		if(keys == null) 
 			migrateToKeys(container);
 		else {
@@ -1634,7 +1602,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		int blockNo = keys.getBlockNumber((NodeCHK)key, foundKeys);
 		if(blockNo == -1) return -1;
-		return getCooldownWakeup(blockNo);
+		return getCooldownWakeup(blockNo, getMaxRetries(container), container, context);
 	}
 
 	public synchronized int getBlockNumber(Key key, ObjectContainer container) {
@@ -1646,12 +1614,21 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return keys.getBlockNumber((NodeCHK)key, foundKeys);
 	}
 
-	public synchronized Integer[] getKeyNumbersAtRetryLevel(int retryCount, ObjectContainer container) {
+	public synchronized Integer[] getKeyNumbersAtRetryLevel(int retryCount, ObjectContainer container, ClientContext context) {
 		Vector<Integer> v = new Vector<Integer>();
 		if(keys == null) 
 			migrateToKeys(container);
 		else {
 			if(persistent) container.activate(keys, 1);
+		}
+		int maxTries = getMaxRetries(container);
+		int[] dataRetries = this.dataRetries;
+		int[] checkRetries = this.checkRetries;
+		if(maxTries == -1) {
+			// Cooldown and retry counts entirely kept in RAM.
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			dataRetries = tracker.dataRetries;
+			checkRetries = tracker.checkRetries;
 		}
 		for(int i=0;i<dataRetries.length;i++) {
 			if(foundKeys[i]) continue;
@@ -1666,13 +1643,25 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return v.toArray(new Integer[v.size()]);
 	}
 
-	public synchronized void resetCooldownTimes(Integer[] blockNums) {
-		for(int i=0;i<blockNums.length;i++) {
-			int blockNo = blockNums[i].intValue();
-			if(blockNo < dataCooldownTimes.length)
-				dataCooldownTimes[blockNo] = -1;
-			else
-				checkCooldownTimes[blockNo - dataCooldownTimes.length] = -1;
+	public void resetCooldownTimes(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Resetting cooldown times on "+this);
+		if(getter != null) {
+			context.cooldownTracker.clearCachedWakeup(getter, persistent, container, false);
+			context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container, false);
+		}
+		context.getChkFetchScheduler().wakeStarter();
+		// FIXME need a more efficient way to get maxTries!
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
+		synchronized(this) {
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			long[] dataCooldownTimes = tracker.dataCooldownTimes;
+			long[] checkCooldownTimes = tracker.checkCooldownTimes;
+			for(int i=0;i<dataCooldownTimes.length;i++)
+				dataCooldownTimes[i] = -1;
+			for(int i=0;i<checkCooldownTimes.length;i++)
+				checkCooldownTimes[i] = -1;
 		}
 	}
 
@@ -1724,13 +1713,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return parent.priorityClass;
 	}
 
-	public SendableGet getRequest(Key key, ObjectContainer container) {
-		int blockNum = this.getBlockNumber(key, container);
-		if(blockNum < 0) return null;
-		int retryCount = getBlockRetryCount(blockNum);
-		return getSubSegment(retryCount, container, false, null);
-	}
-
 	public boolean isCancelled(ObjectContainer container) {
 		return isFinishing(container);
 	}
@@ -1756,9 +1738,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		ClientCHKBlock cb = null;
 		int blockNum;
 		Bucket data = null;
-		SplitFileFetcherSubSegment seg;
 		short onSuccessResult = (short) -1;
-		boolean killSeg = false;
 		FetchException fatal = null;
 		synchronized(this) {
 			blockNum = this.getBlockNumber(key, container);
@@ -1773,24 +1753,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(logMINOR)
 				Logger.minor(this, "Found key for block "+blockNum+" on "+this+" in onGotKey() for "+key);
 			ClientCHK ckey = this.getBlockKey(blockNum, container);
-			int retryCount = getBlockRetryCount(blockNum);
-			seg = this.getSubSegment(retryCount, container, true, null);
-			if(persistent)
-				container.activate(seg, 1);
-			if(seg != null) {
-				seg.removeBlockNum(blockNum, container, false);
-				killSeg = seg.possiblyRemoveFromParent(container, context);
-			}
-			for(int i=0;i<subSegments.size();i++) {
-				SplitFileFetcherSubSegment checkSeg = subSegments.get(i);
-				if(checkSeg == seg) continue;
-				if(persistent)
-					container.activate(checkSeg, 1);
-				if(checkSeg.removeBlockNum(blockNum, container, false))
-					Logger.error(this, "Block number "+blockNum+" was registered to wrong subsegment "+checkSeg+" should be "+seg);
-				if(persistent)
-					container.deactivate(checkSeg, 1);
-			}
 			try {
 				cb = new ClientCHKBlock((CHKBlock)block, ckey);
 			} catch (CHKVerifyException e) {
@@ -1815,17 +1777,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 		}
-		if(killSeg)
-			seg.kill(container, context, true, true);
-		if(persistent)
-			container.deactivate(seg, 1);
 		if(fatal != null) {
 			if(persistent)
 				container.activate(errors, 1);
 			errors.inc(fatal.mode);
 			if(persistent)
 				errors.storeTo(container);
-			this.onFatalFailure(fatal, blockNum, null, container, context);
+			this.onFatalFailure(fatal, blockNum, container, context);
 			return false;
 		} else if(data == null) {
 			return false; // Extract failed
@@ -1835,17 +1793,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 					finishOnSuccess(onSuccessResult, container, context);
 				return true;
 			} else {
-				onFatalFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), blockNum, null, container, context);
+				onFatalFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), blockNum, container, context);
 				return true;
 			}
 		}
-	}
-	
-	private int getBlockRetryCount(int blockNum) {
-		if(blockNum < dataRetries.length)
-			return dataRetries[blockNum];
-		blockNum -= dataRetries.length;
-		return checkRetries[blockNum];
 	}
 	
 	private synchronized MinimalSplitfileBlock getBlock(int blockNum) {
@@ -1895,7 +1846,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			errors.inc(FetchException.BLOCK_DECODE_ERROR);
 			if(persistent)
 				errors.storeTo(container);
-			this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), blockNum, null, container, context);
+			this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), blockNum, container, context);
 			return null;
 		} catch (TooBigException e) {
 			if(persistent)
@@ -1903,7 +1854,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			errors.inc(FetchException.TOO_BIG);
 			if(persistent)
 				errors.storeTo(container);
-			this.onFatalFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), blockNum, null, container, context);
+			this.onFatalFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), blockNum, container, context);
 			return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
@@ -1912,7 +1863,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			errors.inc(FetchException.BUCKET_ERROR);
 			if(persistent)
 				errors.storeTo(container);
-			this.onFatalFailure(new FetchException(FetchException.BUCKET_ERROR, e), blockNum, null, container, context);
+			this.onFatalFailure(new FetchException(FetchException.BUCKET_ERROR, e), blockNum, container, context);
 			return null;
 		}
 		if(logMINOR)
@@ -1927,10 +1878,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	public void deactivateKeys(ObjectContainer container) {
 		container.deactivate(keys, 1);
-	}
-
-	public SplitFileFetcherSubSegment getSubSegmentFor(int blockNum, ObjectContainer container) {
-		return getSubSegment(getBlockRetryCount(blockNum), container, false, null);
 	}
 
 	public void freeDecodedData(ObjectContainer container, boolean noStore) {
@@ -1979,9 +1926,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removing "+this);
+		context.cooldownTracker.remove(this, true, container);
 		freeDecodedData(container, true);
 		removeSubSegments(container, context, true);
-		container.delete(subSegments);
+		if(subSegments != null) container.delete(subSegments);
 		if(dataKeys != null) {
 			for(int i=0;i<dataKeys.length;i++) {
 				if(dataKeys[i] != null) dataKeys[i].removeFrom(container);
@@ -2004,6 +1952,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.activate(keys, 1);
 			keys.removeFrom(container);
 		}
+		if(getter != null) {
+			container.activate(getter, 1);
+			Logger.error(this, "Getter still exists: "+getter+" for "+this);
+			// Unable to unregister because parent does not exist so we don't know the priority.
+			getter.removeFrom(container);
+		}
 		container.delete(this);
 	}
 
@@ -2023,6 +1977,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 	
 	public void fetcherFinished(ObjectContainer container, ClientContext context) {
+		context.cooldownTracker.remove(this, persistent, container);
 		synchronized(this) {
 			fetcherFinished = true;
 			fetcherHalfFinished = true;
@@ -2042,6 +1997,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 	
 	private void encoderFinished(ObjectContainer container, ClientContext context) {
+		context.cooldownTracker.remove(this, persistent, container);
 		boolean finish = false;
 		boolean half = false;
 		synchronized(this) {
@@ -2101,6 +2057,216 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	public final int realDataBlocks() {
 		return dataBuckets.length - crossCheckBlocks;
+	}
+
+	public boolean hasValidKeys(SplitFileFetcherSegmentGet getter, 
+			KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
+		if(keys == null) migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		long now = System.currentTimeMillis();
+		int maxTries = getMaxRetries(container);
+		synchronized(this) {
+			if(startedDecode || isFinishing(container)) return false;
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				if(getCooldownWakeup(i, maxTries, container, context) > now) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) continue;
+				Key key = keys.getNodeKey(i, null, true);
+				if(fetching.hasKey(key, getter, persistent, container)) continue;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 
+	 * @param fetching
+	 * @param onlyLowestTries If true, only return blocks of the lowest currently valid 
+	 * retry count. Otherwise return all blocks that we haven't either found or given up on.
+	 * @param container
+	 * @param context
+	 * @return
+	 */
+	public ArrayList<Integer> validBlockNumbers(KeysFetchingLocally fetching, boolean onlyLowestTries,
+			ObjectContainer container, ClientContext context) {
+		long now = System.currentTimeMillis();
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		int maxTries = getMaxRetries(container);
+		synchronized(this) {
+			int minRetries = Integer.MAX_VALUE;
+			ArrayList<Integer> list = null;
+			if(startedDecode || isFinishing(container)) return null;
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				if(getCooldownWakeup(i, maxTries, container, context) > now) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) continue;
+				// Possible ...
+				Key key = keys.getNodeKey(i, null, true);
+				if(fetching.hasKey(key, getter, persistent, container)) continue;
+				if(onlyLowestTries) {
+					int retryCount = this.getRetries(i, container, context);
+					if(retryCount > minRetries) {
+						// Ignore
+						continue;
+					}
+					if(retryCount < minRetries && list != null)
+						list.clear();
+				}
+				if(list == null) list = new ArrayList<Integer>();
+				list.add(i);
+			}
+			return list;
+		}
+	}
+
+	/** Separate method because we will need to create the Key anyway for checking against
+	 * the KeysFetchingLocally, and we can reuse that in the created Block. Yes we don't 
+	 * pass that in at the moment but we will in future. 
+	 * future.
+	 * @param request
+	 * @param sched
+	 * @param container
+	 * @param context
+	 * @return
+	 */
+	public List<PersistentChosenBlock> makeBlocks(
+			PersistentChosenRequest request, RequestScheduler sched,
+			ObjectContainer container, ClientContext context) {
+		long now = System.currentTimeMillis();
+		ArrayList<PersistentChosenBlock> list = null;
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		int maxTries = getMaxRetries(container);
+		synchronized(this) {
+			if(startedDecode || isFinishing(container)) return null;
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				if(getCooldownWakeup(i, maxTries, container, context) > now) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) continue;
+				// Possible ...
+				Key key = keys.getNodeKey(i, null, true);
+				// FIXME pass in the KeysFetchingLocally and check against it.
+				//if(fetching.hasKey(key)) continue;
+				if(list == null) list = new ArrayList<PersistentChosenBlock>();
+				ClientCHK ckey = keys.getKey(i, null, true); // FIXME Duplicates the routingKey field
+				list.add(new PersistentChosenBlock(false, request, new SplitFileFetcherSegmentSendableRequestItem(i), key, ckey, sched));
+			}
+			return list;
+		}
+	}
+	
+	public long getCooldownTime(ObjectContainer container, ClientContext context, HasCooldownCacheItem parentRGA, long now) {
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		int maxTries = getMaxRetries(container);
+		KeysFetchingLocally fetching = context.fetching;
+		long cooldownWakeup = Long.MAX_VALUE;
+		synchronized(this) {
+			if(startedDecode || isFinishing(container)) return -1; // Remove
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) {
+					continue;
+				}
+				// Possible ...
+				long wakeup = getCooldownWakeup(i, maxTries, container, context);
+				if(wakeup > now) {
+					if(wakeup < cooldownWakeup) cooldownWakeup = wakeup;
+					continue;
+				}
+				Key key = keys.getNodeKey(i, null, true);
+				if(fetching.hasKey(key, getter, persistent, container)) continue;
+				return 0; // Stuff to send right now.
+			}
+		}
+		return cooldownWakeup;
+	}
+
+	public long countAllKeys(ObjectContainer container, ClientContext context) {
+		int count = 0;
+		synchronized(this) {
+			if(startedDecode || isFinishing(container)) return 0;
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) continue;
+				count++;
+			}
+			return count;
+		}
+	}
+
+	public long countSendableKeys(ObjectContainer container, ClientContext context) {
+		int count = 0;
+		long now = System.currentTimeMillis();
+		int maxTries = getMaxRetries(container);
+		synchronized(this) {
+			if(startedDecode || isFinishing(container)) return 0;
+			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
+				if(foundKeys[i]) continue;
+				if(getCooldownWakeup(i, maxTries, container, context) > now) continue;
+				// Double check
+				if(getBlockBucket(i, container) != null) continue;
+				count++;
+			}
+			return count;
+		}
+	}
+
+	public synchronized SplitFileFetcherSegmentGet makeGetter(ObjectContainer container, ClientContext context) {
+		if(finishing || startedDecode || finished) return null;
+		if(getter == null) {
+			boolean parentActive = true;
+			if(persistent) {
+				parentActive = container.ext().isActive(parent);
+				if(!parentActive) container.activate(parent, 1);
+			}
+			getter = new SplitFileFetcherSegmentGet(parent, this);
+			if(!parentActive) container.deactivate(parent, 1);
+			System.out.println("Auto-migrated from subsegments to SegmentGet on "+this+" : "+getter);
+			getter.storeTo(container);
+			container.store(this);
+			this.removeSubSegments(container, context, false);
+			return getter;
+		} else {
+			return getter;
+		}
+	}
+
+	public CooldownTrackerItem makeCooldownTrackerItem() {
+		return new MyCooldownTrackerItem(dataBuckets.length, checkBuckets.length);
+	}
+
+	public synchronized int getMaxRetries(ObjectContainer container) {
+		if(maxRetries != 0) return maxRetries;
+		boolean contextActive = true;
+		if(persistent) {
+			contextActive = container.ext().isActive(blockFetchContext);
+			if(!contextActive) container.activate(blockFetchContext, 1);
+		}
+		maxRetries = blockFetchContext.maxSplitfileBlockRetries;
+		if(persistent) {
+			container.store(this);
+			if(!contextActive) container.deactivate(blockFetchContext, 1);
+		}
+		return maxRetries;
 	}
 
 }

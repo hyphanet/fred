@@ -1,6 +1,8 @@
 package freenet.client.async;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -21,9 +23,12 @@ import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
+import freenet.support.RemoveRandom.RemoveRandomReturn;
+import freenet.support.SectoredRandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
+import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 
 /** Chooses requests from both CRSCore and CRSNP */
@@ -38,6 +43,8 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		this.isInsertScheduler = isInsertScheduler;
 		if(!isInsertScheduler) {
 			keysFetching = new HashSet<Key>();
+			persistentRequestsWaitingForKeysFetching = new HashMap<Key, Long[]>();
+			transientRequestsWaitingForKeysFetching = new HashMap<Key, WeakReference<BaseSendableGet>[]>();
 			runningTransientInserts = null;
 			this.recentSuccesses = new ArrayList<RandomGrabArray>();
 		} else {
@@ -69,6 +76,9 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	 */
 	private transient HashSet<Key> keysFetching;
 	
+	private transient HashMap<Key, Long[]> persistentRequestsWaitingForKeysFetching;
+	private transient HashMap<Key, WeakReference<BaseSendableGet>[]> transientRequestsWaitingForKeysFetching;
+	
 	private static class RunningTransientInsert {
 		
 		final SendableInsert insert;
@@ -99,8 +109,10 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
-	private int removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container){
-		SortedVectorByNumber result = null;
+	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container, ClientContext context, long now){
+		SectoredRandomGrabArray result = null;
+		
+		long wakeupTime = Long.MAX_VALUE;
 		
 		short iteration = 0, priority;
 		// we loop to ensure we try every possibilities ( n + 1)
@@ -111,10 +123,30 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			if(transientOnly || schedCore == null)
 				result = null;
-			else
-				result = schedCore.priorities[priority];
-			if(result == null)
-				result = schedTransient.priorities[priority];
+			else {
+				result = schedCore.newPriorities[priority];
+				if(result != null) {
+					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
+					if(cooldownTime > 0) {
+						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+						Logger.normal(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						result = null;
+					} else {
+						container.activate(result, 1);
+					}
+				}
+			}
+			if(result == null) {
+				result = schedTransient.newPriorities[priority];
+				if(result != null) {
+					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, false, container, now);
+					if(cooldownTime > 0) {
+						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+						Logger.normal(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						result = null;
+					}
+				}
+			}
 			if(priority > maxPrio) {
 				fuzz++;
 				continue; // Don't return because first round may be higher with soft scheduling
@@ -129,23 +161,27 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 		
 		//FIXME: implement NONE
-		return -1;
+		return wakeupTime;
 	}
 	
 	// LOCKING: ClientRequestScheduler locks on (this) before calling. 
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
+	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, ClientContext context, ObjectContainer container) {
 		// If a block is already running it will return null. Try to find a valid block in that case.
+		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
-			SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, retryCount, context, container);
+			SelectorReturn r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, context, container, now);
+			SendableRequest req = null;
+			if(r != null && r.req != null) req = r.req;
+			if(req == null) continue;
 			if(isInsertScheduler && req instanceof SendableGet) {
 				IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
 				req.internalError(e, sched, container, context, req.persistent());
 				throw e;
 			}
-			ChosenBlock block = maybeMakeChosenRequest(req, container, context);
+			ChosenBlock block = maybeMakeChosenRequest(req, container, context, now);
 			if(block != null) return block;
 		}
 		return null;
@@ -153,9 +189,10 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	private int ctr;
 	
-	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context) {
+	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context, long now) {
 		if(req == null) return null;
-		if(req.isEmpty(container) || req.isCancelled(container)) return null;
+		if(req.isCancelled(container)) return null;
+		if(req.getCooldownTime(container, context, now) != 0) return null;
 		SendableRequestItem token = req.chooseKey(this, req.persistent() ? container : null, context);
 		if(token == null) {
 			return null;
@@ -182,7 +219,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			boolean forkOnCacheable;
 			if(req instanceof SendableGet) {
 				SendableGet sg = (SendableGet) req;
-				FetchContext ctx = sg.getContext();
+				FetchContext ctx = sg.getContext(container);
 				localRequestOnly = ctx.localRequestOnly;
 				ignoreStore = ctx.ignoreStore;
 				canWriteClientCache = ctx.canWriteClientCache;
@@ -205,7 +242,20 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 	}
 
-	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
+	public class SelectorReturn {
+		public final SendableRequest req;
+		public final long wakeupTime;
+		SelectorReturn(SendableRequest req) {
+			this.req = req;
+			this.wakeupTime = -1;
+		}
+		SelectorReturn(long wakeupTime) {
+			this.wakeupTime = wakeupTime;
+			this.req = null;
+		}
+	}
+	
+	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, ClientContext context, ObjectContainer container, long now) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		if(schedCore == null) transientOnly = true;
@@ -216,103 +266,117 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		boolean tryOfferedKeys = offeredKeys != null && (!notTransient) && random.nextBoolean();
 		if(tryOfferedKeys) {
 			if(offeredKeys.hasValidKeys(this, null, context))
-				return offeredKeys;
+				return new SelectorReturn(offeredKeys);
 		}
-		int choosenPriorityClass = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container);
+		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container, context, now);
+		if(l > Integer.MAX_VALUE) {
+			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
+			return null;
+		}
+		int choosenPriorityClass = (int)l;
 		if(choosenPriorityClass == -1) {
 			if((!notTransient) && !tryOfferedKeys) {
 				if(offeredKeys != null && offeredKeys.hasValidKeys(this, null, context))
-					return offeredKeys;
+					return new SelectorReturn(offeredKeys);
 			}
 			if(logMINOR)
 				Logger.minor(this, "Nothing to do");
 			return null;
 		}
+		long wakeupTime = Long.MAX_VALUE;
 		if(maxPrio >= RequestStarter.MINIMUM_PRIORITY_CLASS)
 			maxPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
-		for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
+outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
-			SortedVectorByNumber perm = null;
+			SectoredRandomGrabArray perm = null;
 			if(!transientOnly)
-				perm = schedCore.priorities[choosenPriorityClass];
-			SortedVectorByNumber trans = null;
+				perm = schedCore.newPriorities[choosenPriorityClass];
+			SectoredRandomGrabArray trans = null;
 			if(!notTransient)
-				trans = schedTransient.priorities[choosenPriorityClass];
+				trans = schedTransient.newPriorities[choosenPriorityClass];
 			if(perm == null && trans == null) {
 				if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
 				continue; // Try next priority
 			}
-			int permRetryIndex = 0;
-			int transRetryIndex = 0;
+			boolean triedPerm = false;
+			boolean triedTrans = false;
 			while(true) {
-				int permRetryCount = perm == null ? Integer.MAX_VALUE : perm.getNumberByIndex(permRetryIndex);
-				int transRetryCount = trans == null ? Integer.MAX_VALUE : trans.getNumberByIndex(transRetryIndex);
-				if(choosenPriorityClass == maxPrio) {
-					if(permRetryCount >= retryCount) {
-						permRetryCount = Integer.MAX_VALUE;
+				boolean persistent;
+				SectoredRandomGrabArray chosenTracker = null;
+				// If we can't find anything on perm (on the previous loop), try trans, and vice versa
+				if(triedTrans) trans = null;
+				if(triedPerm) perm = null;
+				if(perm == null && trans == null) continue outer;
+				else if(perm == null && trans != null) {
+					chosenTracker = trans;
+					triedTrans = true;
+					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, false, container, now);
+					if(cooldownTime > 0) {
+						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+						Logger.normal(this, "Priority "+choosenPriorityClass+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						continue outer;
 					}
-					if(transRetryCount >= retryCount) {
-						transRetryCount = Integer.MAX_VALUE;
+					persistent = false;
+				} else if(perm != null && trans == null) {
+					chosenTracker = perm;
+					triedPerm = true;
+					long cooldownTime = context.cooldownTracker.getCachedWakeup(perm, true, container, now);
+					if(cooldownTime > 0) {
+						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+						Logger.normal(this, "Priority "+choosenPriorityClass+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						continue outer;
 					}
-				}
-				if(permRetryCount == Integer.MAX_VALUE && transRetryCount == Integer.MAX_VALUE) {
-					if(logMINOR) Logger.minor(this, "No requests to run: ran out of retrycounts on chosen priority");
-					break; // Try next priority
-				}
-				SectoredRandomGrabArrayWithInt chosenTracker = null;
-				SortedVectorByNumber trackerParent = null;
-				if(permRetryCount == transRetryCount) {
-					// Choose between them.
-					SectoredRandomGrabArrayWithInt permRetryTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
-					if(permRetryTracker != null)
-						container.activate(permRetryTracker, 1);
-					SectoredRandomGrabArrayWithInt transRetryTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
-					int permTrackerSize = permRetryTracker.size();
-					int transTrackerSize = transRetryTracker.size();
-					if(permTrackerSize + transTrackerSize == 0) {
-						permRetryIndex++;
-						transRetryIndex++;
-						continue;
-					}
-					if(random.nextInt(permTrackerSize + transTrackerSize) > permTrackerSize) {
-						chosenTracker = permRetryTracker;
-						trackerParent = perm;
-						permRetryIndex++;
-					} else {
-						chosenTracker = transRetryTracker;
-						trackerParent = trans;
-						transRetryIndex++;
-					}
-				} else if(permRetryCount < transRetryCount) {
-					chosenTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
-					if(chosenTracker != null)
-						container.activate(chosenTracker, 1);
-					trackerParent = perm;
-					permRetryIndex++;
+					container.activate(perm, 1);
+					persistent = true;
 				} else {
-					chosenTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
-					trackerParent = trans;
-					transRetryIndex++;
-				}
-				if(logMINOR)
-					Logger.minor(this, "Got retry count tracker "+chosenTracker);
-				SendableRequest req = (SendableRequest) chosenTracker.removeRandom(starter, container, context);
-				if(chosenTracker.isEmpty()) {
-					trackerParent.remove(chosenTracker.getNumber(), container);
-					if(chosenTracker.persistent())
-						chosenTracker.removeFrom(container);
-					if(trackerParent.isEmpty()) {
-						if(logMINOR) Logger.minor(this, "Should remove priority");
+					container.activate(perm, 1);
+					int permSize = perm.size();
+					int transSize = trans.size();
+					boolean choosePerm = random.nextInt(permSize + transSize) > permSize;
+					if(choosePerm) {
+						chosenTracker = perm;
+						triedPerm = true;
+						persistent = true;
+					} else {
+						chosenTracker = trans;
+						triedTrans = true;
+						persistent = false;
+					}
+					long cooldownTime = context.cooldownTracker.getCachedWakeup(trans, choosePerm, container, now);
+					if(cooldownTime > 0) {
+						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+						Logger.normal(this, "Priority "+choosenPriorityClass+" (perm="+choosePerm+") is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						continue outer;
 					}
 				}
-				if(req == null) {
-					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+chosenTracker.getNumber()+" ("+chosenTracker+") of priority "+choosenPriorityClass);
-					continue; // Try next retry count.
+				
+				if(logMINOR)
+					Logger.minor(this, "Got priority tracker "+chosenTracker);
+				RemoveRandomReturn val = chosenTracker.removeRandom(starter, persistent ? container : null, context, now);
+				SendableRequest req;
+				if(val == null) {
+					Logger.normal(this, "Priority "+choosenPriorityClass+" returned null - nothing to schedule, should remove priority");
+					continue;
+				} else if(val.item == null) {
+					if(val.wakeupTime == -1)
+						Logger.normal(this, "Priority "+choosenPriorityClass+" returned cooldown time of -1 - nothing to schedule, should remove priority");
+					else {
+						Logger.normal(this, "Priority "+choosenPriorityClass+" returned cooldown time of "+(val.wakeupTime - now)+" = "+TimeUtil.formatTime(val.wakeupTime - now));
+						if(val.wakeupTime > 0 && val.wakeupTime < wakeupTime)
+							wakeupTime = val.wakeupTime;
+					}
+					continue;
+				} else {
+					req = (SendableRequest) val.item;
 				}
-				if(chosenTracker.persistent())
+				if(persistent)
 					container.activate(req, 1); // FIXME
-				if(req.persistent() != trackerParent.persistent()) {
-					Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+trackerParent.persistent()+" for "+req);
+				if(chosenTracker.persistent() != persistent) {
+					Logger.error(this, "Tracker.persistent()="+chosenTracker.persistent()+" but is in the queue for persistent="+persistent+" for "+chosenTracker);
+					// FIXME fix it
+				}
+				if(req.persistent() != persistent) {
+					Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+chosenTracker.persistent()+" for "+req);
 					// FIXME fix it
 				}
 				if(req.getPriorityClass(container) != choosenPriorityClass) {
@@ -328,7 +392,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 						if(baseRGA != null) {
 							if(chosenTracker.persistent())
 								container.activate(baseRGA, 1);
-							baseRGA.remove(req, container);
+							baseRGA.remove(req, container, context);
 						} else {
 							// Okay, it's been removed already. Cool.
 						}
@@ -336,10 +400,10 @@ class ClientRequestSelector implements KeysFetchingLocally {
 						Logger.error(this, "Could not find client grabber for client "+req.getClient(container)+" from "+chosenTracker);
 					}
 					if(req.persistent())
-						schedCore.innerRegister(req, random, container, null);
+						schedCore.innerRegister(req, random, container, context, null);
 					else
-						schedTransient.innerRegister(req, random, container, null);
-					continue; // Try the next one on this retry count.
+						schedTransient.innerRegister(req, random, container, context, null);
+					continue;
 				}
 				
 				// Check recentSuccesses
@@ -363,17 +427,23 @@ class ClientRequestSelector implements KeysFetchingLocally {
 							}
 						}
 					}
-					if(altReq != null && (altReq.isCancelled(container) || altReq.isEmpty(container))) {
+					if(altReq != null && (altReq.isCancelled(container))) {
 						if(logMINOR)
 							Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
 						altReq = null;
 					}
+					if(altReq != null && (l = altReq.getCooldownTime(container, context, now)) != 0) {
+						if(logMINOR) {
+							Logger.minor(this, "Ignoring recently succeeded item, cooldown time = "+l+((l > 0) ? " ("+TimeUtil.formatTime(l - now)+")" : ""));
+							altReq = null;
+						}
+					}
 					if (altReq != null && altReq != req) {
 						int prio = altReq.getPriorityClass(container);
-						if(prio < choosenPriorityClass || (prio == choosenPriorityClass && ClientRequestSchedulerBase.fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber())) {
+						if(prio <= choosenPriorityClass) {
 							// Use the recent one instead
 							if(logMINOR)
-								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
+								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+") is better than "+req+" (prio="+req.getPriorityClass(container)+"), using that");
 							// Don't need to reregister, because removeRandom doesn't actually remove!
 							req = altReq;
 						} else {
@@ -394,21 +464,33 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					}
 					if(altRGA != null) {
 						container.activate(altRGA, 1);
+						SendableRequest altReq = null;
 						if(container.ext().isStored(altRGA) && !altRGA.isEmpty()) {
 							if(logMINOR)
 								Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
-							SendableRequest altReq = (SendableRequest) altRGA.removeRandom(starter, container, context);
-							if(altReq != null) {
+							val = altRGA.removeRandom(starter, container, context, now);
+							if(val != null) {
+								if(val.item == null) {
+									if(logMINOR) Logger.minor(this, "Ignoring recently succeeded item, removeRandom returned cooldown time "+val.wakeupTime+((val.wakeupTime > 0) ? " ("+TimeUtil.formatTime(val.wakeupTime - now)+")" : ""));
+								} else {
+									altReq = (SendableRequest) val.item;
+								}
+							}
+							if(altReq != null && altReq != req) {
 								container.activate(altReq, 1);
 								int prio = altReq.getPriorityClass(container);
-								if((prio < choosenPriorityClass || (prio == choosenPriorityClass && ClientRequestSchedulerBase.fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
-										&& !altReq.isEmpty(container) && altReq != req) {
+								boolean useRecent = false;
+								if(prio <= choosenPriorityClass) {
+									if(altReq.getCooldownTime(container, context, now) != 0)
+										useRecent = true;
+								}
+								if(useRecent) {
 									// Use the recent one instead
 									if(logMINOR)
-										Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
+										Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+") is better than "+req+" (prio="+req.getPriorityClass(container)+"), using that");
 									// Don't need to reregister, because removeRandom doesn't actually remove!
 									req = altReq;
-								} else if(altReq != null) {
+								} else {
 									if(logMINOR)
 										Logger.minor(this, "Chosen (persistent) req "+req+" is better, reregistering recently succeeded "+altRGA+" for "+altReq);
 									synchronized(recentSuccesses) {
@@ -423,10 +505,10 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				}
 				
 				// Now we have chosen a request.
-				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
-						req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
+				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" (prio "+
+						req.getPriorityClass(container)+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
-				return req;
+				return new SelectorReturn(req);
 				
 			}
 		}
@@ -496,21 +578,74 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 	}
 	
-	public boolean hasKey(Key key) {
+	public boolean hasKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container) {
 		if(keysFetching == null) {
 			throw new NullPointerException();
 		}
+		long pid = -1;
+		if(getterWaiting != null && persistent) {
+			pid = container.ext().getID(getterWaiting);
+		}
 		synchronized(keysFetching) {
-			return keysFetching.contains(key);
+			boolean ret = keysFetching.contains(key);
+			if(!ret) return ret;
+			if(getterWaiting != null) {
+				if(persistent) {
+					Long[] waiting = persistentRequestsWaitingForKeysFetching.get(key);
+					if(waiting == null) {
+						persistentRequestsWaitingForKeysFetching.put(key, new Long[] { pid });
+					} else {
+						for(long l : waiting) {
+							if(l == pid) return true;
+						}
+						Long[] newWaiting = new Long[waiting.length+1];
+						System.arraycopy(waiting, 0, newWaiting, 0, waiting.length);
+						newWaiting[waiting.length] = pid;
+						persistentRequestsWaitingForKeysFetching.put(key, newWaiting);
+					}
+				} else {
+					WeakReference<BaseSendableGet>[] waiting = transientRequestsWaitingForKeysFetching.get(key);
+					if(waiting == null) {
+						transientRequestsWaitingForKeysFetching.put(key, new WeakReference[] { new WeakReference<BaseSendableGet>(getterWaiting) });
+					} else {
+						for(WeakReference<BaseSendableGet> ref : waiting) {
+							if(ref.get() == getterWaiting) return true;
+						}
+						WeakReference<BaseSendableGet>[] newWaiting = new WeakReference[waiting.length+1];
+						System.arraycopy(waiting, 0, newWaiting, 0, waiting.length);
+						newWaiting[waiting.length] = new WeakReference<BaseSendableGet>(getterWaiting);
+						transientRequestsWaitingForKeysFetching.put(key, newWaiting);
+					}
+				}
+			}
+			return true;
 		}
 	}
 
 	public void removeFetchingKey(final Key key) {
+		Long[] persistentWaiting;
+		WeakReference<BaseSendableGet>[] transientWaiting;
 		if(logMINOR)
 			Logger.minor(this, "Removing from keysFetching: "+key);
 		if(key != null) {
 			synchronized(keysFetching) {
 				keysFetching.remove(key);
+				persistentWaiting = this.persistentRequestsWaitingForKeysFetching.remove(key);
+				transientWaiting = this.transientRequestsWaitingForKeysFetching.remove(key);
+			}
+			if(persistentWaiting != null || transientWaiting != null) {
+				CooldownTracker tracker = sched.clientContext.cooldownTracker;
+				if(persistentWaiting != null) {
+					for(Long l : persistentWaiting)
+						tracker.clearCachedWakeupPersistent(l, true);
+				}
+				if(transientWaiting != null) {
+					for(WeakReference<BaseSendableGet> ref : transientWaiting) {
+						BaseSendableGet get = ref.get();
+						if(get == null) continue;
+						tracker.clearCachedWakeup(get, false, null, true);
+					}
+				}
 			}
 		}
 	}

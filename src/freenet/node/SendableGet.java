@@ -42,14 +42,11 @@ public abstract class SendableGet extends BaseSendableGet {
 	public abstract Key[] listKeys(ObjectContainer container);
 
 	/** Get the fetch context (settings) object. */
-	public abstract FetchContext getContext();
+	public abstract FetchContext getContext(ObjectContainer container);
 	
 	/** Called when/if the low-level request fails. */
 	public abstract void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context);
 	
-	/** Should the request ignore the datastore? */
-	public abstract boolean ignoreStore();
-
 	// Implementation
 
 	public SendableGet(ClientRequester parent) {
@@ -78,12 +75,12 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @param token
 	 * @return
 	 */
-	public abstract long getCooldownWakeup(Object token, ObjectContainer container);
+	public abstract long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context);
 	
-	public abstract long getCooldownWakeupByKey(Key key, ObjectContainer container);
+	public abstract long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context);
 	
 	/** Reset the cooldown times when the request is reregistered. */
-	public abstract void resetCooldownTimes(ObjectContainer container);
+	public abstract void resetCooldownTimes(ObjectContainer container, ClientContext context);
 
 	/**
 	 * An internal error occurred, effecting this SendableGet, independantly of any ChosenBlock's.

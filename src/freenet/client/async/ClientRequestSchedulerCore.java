@@ -96,7 +96,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	private final byte[] globalSalt;
 
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
-		super.onStarted();
+		super.onStarted(container, context);
 		System.err.println("insert scheduler: "+isInsertScheduler);
 		if(!isInsertScheduler) {
 			persistentCooldownQueue.setCooldownTime(cooldownTime);

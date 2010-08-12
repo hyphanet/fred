@@ -284,8 +284,8 @@ public class DatastoreChecker implements PrioRunnable {
 	 * stored and registered the HasKeyListener if any.
 	 * @param getter
 	 */
-	public void queuePersistentRequest(SendableGet getter, BlockSet blocks, ObjectContainer container) {
-		if(getter.isEmpty(container)) {
+	public void queuePersistentRequest(SendableGet getter, BlockSet blocks, ObjectContainer container, ClientContext context) {
+		if(getter.isCancelled(container)) { // We do not care about cooldowns here; we will check all keys regardless, so only ask isCancelled().
 			if(logMINOR) Logger.minor(this, "Request is empty, not checking store: "+getter);
 			return;
 		}

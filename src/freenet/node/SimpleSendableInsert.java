@@ -75,12 +75,6 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public int getRetryCount() {
-		// No retries.
-		return 0;
-	}
-
-	@Override
 	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
 		return new SendableRequestSender() {
 
