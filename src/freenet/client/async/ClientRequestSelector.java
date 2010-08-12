@@ -118,13 +118,15 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				result = null;
 			else {
 				result = schedCore.newPriorities[priority];
-				long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
-				if(cooldownTime > 0) {
-					if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-					Logger.normal(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
-					result = null;
-				} else {
-					container.activate(result, 1);
+				if(result != null) {
+					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
+					if(cooldownTime > 0) {
+						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+						Logger.normal(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						result = null;
+					} else {
+						container.activate(result, 1);
+					}
 				}
 			}
 			if(result == null) {
