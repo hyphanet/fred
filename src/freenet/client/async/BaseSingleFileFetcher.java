@@ -112,16 +112,17 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		int r;
 		if(maxRetries == -1)
-			tracker.retryCount++;
+			r = tracker.retryCount++;
 		else
-			retryCount++;
-		if(logMINOR)
+			r = retryCount++;
+		if(logMINOR && persistent)
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+") on "+this+" finished="+finished+" cancelled="+cancelled);
-		if((retryCount <= maxRetries) || (maxRetries == -1)) {
+		if((r <= maxRetries) || (maxRetries == -1)) {
 			if(persistent && maxRetries != -1)
 				container.store(this);
-			if(retryCount % RequestScheduler.COOLDOWN_RETRIES == 0) {
+			if(r % RequestScheduler.COOLDOWN_RETRIES == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
 				if(tracker.cooldownWakeupTime > now) {
