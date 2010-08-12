@@ -192,7 +192,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			dataRetries = null;
 			checkRetries = null;
 		}
-		subSegments = new Vector<SplitFileFetcherSubSegment>();
+		subSegments = null;
 		getter = new SplitFileFetcherSegmentGet(parent, this);
 		maxBlockLength = maxTempLength;
 		this.blockFetchContext = blockFetchContext;
@@ -1490,6 +1490,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 
 	private void removeSubSegments(ObjectContainer container, ClientContext context, boolean finishing) {
+		if(subSegments == null) return;
 		if(persistent)
 			container.activate(subSegments, 1);
 		SplitFileFetcherSubSegment[] deadSegs;
@@ -1928,7 +1929,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		context.cooldownTracker.remove(this, true, container);
 		freeDecodedData(container, true);
 		removeSubSegments(container, context, true);
-		container.delete(subSegments);
+		if(subSegments != null) container.delete(subSegments);
 		if(dataKeys != null) {
 			for(int i=0;i<dataKeys.length;i++) {
 				if(dataKeys[i] != null) dataKeys[i].removeFrom(container);
