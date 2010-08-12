@@ -114,9 +114,9 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 		int r;
 		if(maxRetries == -1)
-			r = tracker.retryCount++;
+			r = ++tracker.retryCount;
 		else
-			r = retryCount++;
+			r = ++retryCount;
 		if(logMINOR && persistent)
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+") on "+this+" finished="+finished+" cancelled="+cancelled);
 		if((r <= maxRetries) || (maxRetries == -1)) {
