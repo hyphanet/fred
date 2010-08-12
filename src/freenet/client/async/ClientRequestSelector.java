@@ -588,6 +588,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 		synchronized(keysFetching) {
 			boolean ret = keysFetching.contains(key);
+			if(!ret) return ret;
 			if(getterWaiting != null) {
 				if(persistent) {
 					Long[] waiting = persistentRequestsWaitingForKeysFetching.get(key);
@@ -595,7 +596,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						persistentRequestsWaitingForKeysFetching.put(key, new Long[] { pid });
 					} else {
 						for(long l : waiting) {
-							if(l == pid) return ret;
+							if(l == pid) return true;
 						}
 						Long[] newWaiting = new Long[waiting.length+1];
 						System.arraycopy(waiting, 0, newWaiting, 0, waiting.length);
@@ -608,7 +609,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						transientRequestsWaitingForKeysFetching.put(key, new WeakReference[] { new WeakReference<BaseSendableGet>(getterWaiting) });
 					} else {
 						for(WeakReference<BaseSendableGet> ref : waiting) {
-							if(ref.get() == getterWaiting) return ret;
+							if(ref.get() == getterWaiting) return true;
 						}
 						WeakReference<BaseSendableGet>[] newWaiting = new WeakReference[waiting.length+1];
 						System.arraycopy(waiting, 0, newWaiting, 0, waiting.length);
@@ -617,7 +618,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					}
 				}
 			}
-			return ret;
+			return true;
 		}
 	}
 
