@@ -278,14 +278,14 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		long wakeupTime = Long.MAX_VALUE;
 		RandomGrabArrayItem ret = null;
 		int random = -1;
-		if(persistent) container.activate(blocks[0], 1);
-		RandomGrabArrayItem[] reqsReading = blocks[0].reqs;
-		RandomGrabArrayItem[] reqsWriting = blocks[0].reqs;
-		int blockNumReading = 0;
-		int blockNumWriting = 0;
-		int offset = -1;
-		int writeOffset = -1;
 		while(true) {
+			if(persistent) container.activate(blocks[0], 1);
+			RandomGrabArrayItem[] reqsReading = blocks[0].reqs;
+			RandomGrabArrayItem[] reqsWriting = blocks[0].reqs;
+			int blockNumReading = 0;
+			int blockNumWriting = 0;
+			int offset = -1;
+			int writeOffset = -1;
 			int exclude = 0;
 			int valid = 0;
 			int validIndex = -1;
@@ -460,6 +460,15 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				return new RemoveRandomReturn(ret);
 			} else {
 				random = context.fastWeakRandom.nextInt(valid);
+				// Loop
+				if(persistent && blockNumReading != 0) {
+					if(changedMe) container.store(blocks[blockNumReading]);
+					container.deactivate(blocks[blockNumReading], 1);
+				}
+				if(persistent && blockNumWriting != 0 && blockNumWriting != blockNumReading) {
+					if(changedMe) container.store(blocks[blockNumWriting]);
+					container.deactivate(blocks[blockNumWriting], 1);
+				}
 			}
 		}
 	}
