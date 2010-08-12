@@ -102,8 +102,10 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
-	private int removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container){
+	private long removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container, ClientContext context, long now){
 		SectoredRandomGrabArray result = null;
+		
+		long wakeupTime = Long.MAX_VALUE;
 		
 		short iteration = 0, priority;
 		// we loop to ensure we try every possibilities ( n + 1)
@@ -116,10 +118,26 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				result = null;
 			else {
 				result = schedCore.newPriorities[priority];
-				container.activate(result, 1);
+				long cooldownTime = context.cooldownTracker.getCachedWakeup(result, true, container, now);
+				if(cooldownTime > 0) {
+					if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+					Logger.normal(this, "Priority "+priority+" (persistent) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+					result = null;
+				} else {
+					container.activate(result, 1);
+				}
 			}
-			if(result == null)
+			if(result == null) {
 				result = schedTransient.newPriorities[priority];
+				if(result != null) {
+					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, false, container, now);
+					if(cooldownTime > 0) {
+						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
+						Logger.normal(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						result = null;
+					}
+				}
+			}
 			if(priority > maxPrio) {
 				fuzz++;
 				continue; // Don't return because first round may be higher with soft scheduling
@@ -134,7 +152,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 		
 		//FIXME: implement NONE
-		return -1;
+		return wakeupTime;
 	}
 	
 	// LOCKING: ClientRequestScheduler locks on (this) before calling. 
@@ -241,7 +259,12 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			if(offeredKeys.hasValidKeys(this, null, context))
 				return new SelectorReturn(offeredKeys);
 		}
-		int choosenPriorityClass = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container);
+		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container, context, now);
+		if(l > Integer.MAX_VALUE) {
+			if(logMINOR) Logger.minor(this, "No priority available for the next "+TimeUtil.formatTime(l - now));
+			return null;
+		}
+		int choosenPriorityClass = (int)l;
 		if(choosenPriorityClass == -1) {
 			if((!notTransient) && !tryOfferedKeys) {
 				if(offeredKeys != null && offeredKeys.hasValidKeys(this, null, context))
@@ -400,7 +423,6 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 							Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
 						altReq = null;
 					}
-					long l;
 					if(altReq != null && (l = altReq.getCooldownTime(container, context, now)) != 0) {
 						if(logMINOR) {
 							Logger.minor(this, "Ignoring recently succeeded item, cooldown time = "+l+((l > 0) ? " ("+TimeUtil.formatTime(l - now)+")" : ""));
