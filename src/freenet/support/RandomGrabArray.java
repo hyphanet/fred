@@ -168,104 +168,104 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		boolean changedMe = false;
 		int lastActiveBlock = -1;
 		while(true) {
-		int i = context.fastWeakRandom.nextInt(index);
-		int blockNo = i / BLOCK_SIZE;
-		RandomGrabArrayItem ret, oret;
-		if(persistent && blockNo != lastActiveBlock) {
-			if(lastActiveBlock != -1)
-				container.deactivate(blocks[lastActiveBlock], 1);
-			lastActiveBlock = blockNo;
-			container.activate(blocks[blockNo], 1);
-		}
-		ret = blocks[blockNo].reqs[i % BLOCK_SIZE];
-		if(ret == null) {
-			Logger.error(this, "reqs["+i+"] = null");
-			remove(blockNo, i, container);
-			changedMe = true;
-			continue;
-		}
-		if(excluding.excludeSummarily(ret, this, container, persistent, now) > 0) {
-			excluded++;
-			if(excluded > MAX_EXCLUDED) {
-				if(persistent && changedMe)
-					container.store(this);
-				return null;
+			int i = context.fastWeakRandom.nextInt(index);
+			int blockNo = i / BLOCK_SIZE;
+			RandomGrabArrayItem ret, oret;
+			if(persistent && blockNo != lastActiveBlock) {
+				if(lastActiveBlock != -1)
+					container.deactivate(blocks[lastActiveBlock], 1);
+				lastActiveBlock = blockNo;
+				container.activate(blocks[blockNo], 1);
 			}
-			continue;
-		}
-		if(persistent)
-			container.activate(ret, 1);
-		oret = ret;
-		long itemWakeTime = -1;
-		boolean broken = false;
-		broken = persistent && ret.isStorageBroken(container);
-		if(broken) {
-			Logger.error(this, "Storage broken on "+ret);
-			try {
-				ret.removeFrom(container, context);
-			} catch (Throwable t) {
-				// Ignore
-				container.delete(ret);
+			ret = blocks[blockNo].reqs[i % BLOCK_SIZE];
+			if(ret == null) {
+				Logger.error(this, "reqs["+i+"] = null");
+				remove(blockNo, i, container);
+				changedMe = true;
+				continue;
 			}
-		} else itemWakeTime = ret.getCooldownTime(container, context, now);
-		if(broken || itemWakeTime == -1) {
-			if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
-			ret = null;
-			// Will be removed in the do{} loop
-			// Tell it that it's been removed first.
-			oret.setParentGrabArray(null, container);
-		}
-		if(ret != null && (itemWakeTime > 0 || excluding.exclude(ret, container, context))) {
-			excluded++;
+			if(excluding.excludeSummarily(ret, this, container, persistent, now) > 0) {
+				excluded++;
+				if(excluded > MAX_EXCLUDED) {
+					if(persistent && changedMe)
+						container.store(this);
+					return null;
+				}
+				continue;
+			}
 			if(persistent)
-				container.deactivate(ret, 1);
-			if(excluded > MAX_EXCLUDED) {
+				container.activate(ret, 1);
+			oret = ret;
+			long itemWakeTime = -1;
+			boolean broken = false;
+			broken = persistent && ret.isStorageBroken(container);
+			if(broken) {
+				Logger.error(this, "Storage broken on "+ret);
+				try {
+					ret.removeFrom(container, context);
+				} catch (Throwable t) {
+					// Ignore
+					container.delete(ret);
+				}
+			} else itemWakeTime = ret.getCooldownTime(container, context, now);
+			if(broken || itemWakeTime == -1) {
+				if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
+				ret = null;
+				// Will be removed in the do{} loop
+				// Tell it that it's been removed first.
+				oret.setParentGrabArray(null, container);
+			}
+			if(ret != null && (itemWakeTime > 0 || excluding.exclude(ret, container, context))) {
+				excluded++;
+				if(persistent)
+					container.deactivate(ret, 1);
+				if(excluded > MAX_EXCLUDED) {
+					if(persistent && changedMe)
+						container.store(this);
+					return null;
+				}
+				continue;
+			}
+			if(ret != null) {
+				if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret+" of "+index);
 				if(persistent && changedMe)
 					container.store(this);
-				return null;
+				return ret;
 			}
-			continue;
-		}
-		if(ret != null) {
-			if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret+" of "+index);
-			if(persistent && changedMe)
-				container.store(this);
-			return ret;
-		}
-		// Remove an element.
-		do {
-			changedMe = true;
-			remove(blockNo, i, container);
-			if(persistent && oret != null && ret == null) // if ret != null we will return it
-				container.deactivate(oret, 1);
-			oret = blocks[blockNo].reqs[i % BLOCK_SIZE];
-			// Check for nulls, but don't check for cancelled, since we'd have to activate.
-		} while (index > i && oret == null);
-		// Shrink array
-		if(blocks.length == 1 && index < blocks[0].reqs.length / 4) {
-			changedMe = true;
+			// Remove an element.
+			do {
+				changedMe = true;
+				remove(blockNo, i, container);
+				if(persistent && oret != null && ret == null) // if ret != null we will return it
+					container.deactivate(oret, 1);
+				oret = blocks[blockNo].reqs[i % BLOCK_SIZE];
+				// Check for nulls, but don't check for cancelled, since we'd have to activate.
+			} while (index > i && oret == null);
 			// Shrink array
-			int newSize = Math.max(index * 2, MIN_SIZE);
-			RandomGrabArrayItem[] r = new RandomGrabArrayItem[newSize];
-			System.arraycopy(blocks[0].reqs, 0, r, 0, r.length);
-			blocks[0].reqs = r;
-			if(persistent)
-				container.store(this);
-		} else if(blocks.length > 1 &&
-				(((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1) < 
-				blocks.length) {
-			if(logMINOR)
-				Logger.minor(this, "Shrinking blocks on "+this);
-			Block[] newBlocks = new Block[((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1];
-			System.arraycopy(blocks, 0, newBlocks, 0, newBlocks.length);
-			if(persistent) {
-				container.store(this);
-				for(int x=newBlocks.length;x<blocks.length;x++)
-					container.delete(blocks[x]);
+			if(blocks.length == 1 && index < blocks[0].reqs.length / 4) {
+				changedMe = true;
+				// Shrink array
+				int newSize = Math.max(index * 2, MIN_SIZE);
+				RandomGrabArrayItem[] r = new RandomGrabArrayItem[newSize];
+				System.arraycopy(blocks[0].reqs, 0, r, 0, r.length);
+				blocks[0].reqs = r;
+				if(persistent)
+					container.store(this);
+			} else if(blocks.length > 1 &&
+					(((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1) < 
+					blocks.length) {
+				if(logMINOR)
+					Logger.minor(this, "Shrinking blocks on "+this);
+				Block[] newBlocks = new Block[((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1];
+				System.arraycopy(blocks, 0, newBlocks, 0, newBlocks.length);
+				if(persistent) {
+					container.store(this);
+					for(int x=newBlocks.length;x<blocks.length;x++)
+						container.delete(blocks[x]);
+				}
+				blocks = newBlocks;
 			}
-			blocks = newBlocks;
-		}
-		return ret;
+			return ret;
 		}
 	}
 
