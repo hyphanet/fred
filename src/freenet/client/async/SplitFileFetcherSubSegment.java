@@ -225,24 +225,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return super.toString()+":"+retryCount+"/"+segment+'('+(blockNums == null ? "null" : String.valueOf(blockNums.size()))+"),tempid="+objectHash(); 
 	}
 
-	/**
-	 * If there are no more blocks, cancel the SubSegment, remove it from the segment,
-	 * and return true; the caller must call kill(,,true,true). Else return false.
-	 * @param container
-	 * @param context
-	 * @return
-	 */
-	public boolean possiblyRemoveFromParent(ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(segment, 1);
-			container.activate(blockNums, 1);
-		}
-		segment.rescheduleGetter(container, context);
-		segment.removeSubSegment(this, container, context);
-		return true;
-	}
-
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
 		throw new UnsupportedOperationException();
 	}

@@ -2262,22 +2262,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 	}
 
-	public void removeSubSegment(SplitFileFetcherSubSegment sub,
-			ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(subSegments, 1);
-		}
-		for(int i=0;i<subSegments.size();i++) {
-			if(sub.equals(subSegments.get(i))) {
-				subSegments.remove(i);
-				i--;
-			}
-		}
-		if(persistent)
-			container.store(subSegments);
-		sub.kill(container, context, true, false);
-	}
-
 	public CooldownTrackerItem makeCooldownTrackerItem() {
 		return new MyCooldownTrackerItem(dataBuckets.length, checkBuckets.length);
 	}
