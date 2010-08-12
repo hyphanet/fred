@@ -166,6 +166,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			INTERVAL = Calendar.YEAR;
 		else
 			throw new IntervalParseException("invalid interval " + intervalName);
+		System.out.println("Set interval to "+INTERVAL+" and multiplier to "+INTERVAL_MULTIPLIER);
 	}
 
 	public static class IntervalParseException extends Exception {
@@ -241,7 +242,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			if (baseFilename != null) {
 				latestFile = new File(baseFilename+"-latest.log");
 				previousFile = new File(baseFilename+"-previous.log");
-				findOldLogFiles();
 				gc = new GregorianCalendar();
 				switch (INTERVAL) {
 					case Calendar.YEAR :
@@ -263,6 +263,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					int x = gc.get(INTERVAL);
 					gc.set(INTERVAL, (x / INTERVAL_MULTIPLIER) * INTERVAL_MULTIPLIER);
 				}
+				findOldLogFiles(gc);
 				currentFilename = new File(getHourLogName(gc, -1, true));
 				synchronized(logFiles) {
 					if((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
@@ -505,21 +506,24 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	 *            not, redirect them to the log file
 	 * @exception IOException
 	 *                if the file couldn't be opened for append.
+	 * @throws IntervalParseException 
 	 */
 	public FileLoggerHook(
 		String filename,
 		String fmt,
 		String dfmt,
+		String logRotateInterval,
 		LogLevel threshold,
 		boolean assumeWorking,
 		boolean logOverwrite,
 		long maxOldLogfilesDiskUsage, int maxListSize)
-		throws IOException {
+		throws IOException, IntervalParseException {
 		this(
 			false,
 			filename,
 			fmt,
 			dfmt,
+			logRotateInterval,
 			threshold,
 			assumeWorking,
 			logOverwrite,
@@ -550,9 +554,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	/** Initialize oldLogFiles */
-	public void findOldLogFiles() {
-		GregorianCalendar gc = new GregorianCalendar();
+	public void findOldLogFiles(GregorianCalendar gc) {
 		File currentFilename = new File(getHourLogName(gc, -1, true));
+		System.out.println("Finding old log files. New log file is "+currentFilename);
 		File numericSameDateFilename;
 		int slashIndex = baseFilename.lastIndexOf(File.separatorChar);
 		File dir;
@@ -645,15 +649,17 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 		//If a compressed log file already exists for a given date,
 		//add a number to the end of the file that already exists
-		for(int a = 1; currentFilename != null && currentFilename.exists(); a++){
-			numericSameDateFilename = new File(getHourLogName(gc, a, true));
-			if(numericSameDateFilename != null && numericSameDateFilename.exists()){
-				currentFilename = numericSameDateFilename;
-			}
-			else{
-				FileUtil.renameTo(currentFilename, numericSameDateFilename);
-				currentFilename = numericSameDateFilename;
-				break;
+		if(currentFilename != null && currentFilename.exists()) {
+			System.out.println("Old log file exists for this time period: "+currentFilename);
+			for(int a = 1;; a++){
+				numericSameDateFilename = new File(getHourLogName(gc, a, true));
+				if(numericSameDateFilename == null || !numericSameDateFilename.exists()) {
+					if(numericSameDateFilename != null) {
+						System.out.println("Renaming to: "+numericSameDateFilename);
+						FileUtil.renameTo(currentFilename, numericSameDateFilename);
+					}
+					break;
+				}
 			}
 		}
 		if(oldFile != null) {
@@ -674,14 +680,16 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			String fmt,
 			String dfmt,
 			String threshold,
+			String logRotateInterval,
 			boolean assumeWorking,
 			boolean logOverwrite,
 			long maxOldLogFilesDiskUsage,
 			int maxListSize)
-			throws IOException, InvalidThresholdException {
+			throws IOException, InvalidThresholdException, IntervalParseException {
 			this(filename,
 				fmt,
 				dfmt,
+				logRotateInterval,
 				LogLevel.valueOf(threshold.toUpperCase()),
 				assumeWorking,
 				logOverwrite,
@@ -706,7 +714,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		OutputStream os,
 		String fmt,
 		String dfmt,
-		LogLevel threshold) {
+		LogLevel threshold) throws IntervalParseException {
 		this(new PrintStream(os), fmt, dfmt, threshold, true);
 		logStream = os;
 	}
@@ -715,7 +723,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			OutputStream os,
 			String fmt,
 			String dfmt,
-			String threshold) throws InvalidThresholdException {
+			String threshold) throws InvalidThresholdException, IntervalParseException {
 			this(new PrintStream(os), fmt, dfmt, LogLevel.valueOf(threshold.toUpperCase()), true);
 			logStream = os;
 		}
@@ -731,14 +739,15 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	 *            date format string
 	 * @param threshold
 	 *            Lowest logged priority
+	 * @throws IntervalParseException 
 	 */
 	public FileLoggerHook(
 		PrintStream stream,
 		String fmt,
 		String dfmt,
 		LogLevel threshold,
-		boolean overwrite) {
-		this(fmt, dfmt, threshold, overwrite, -1, 10000);
+		boolean overwrite) throws IntervalParseException {
+		this(fmt, dfmt, threshold, "HOUR", overwrite, -1, 10000);
 		logStream = stream;
 	}
 
@@ -759,12 +768,13 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		String baseFilename,
 		String fmt,
 		String dfmt,
+		String logRotateInterval,
 		LogLevel threshold,
 		boolean assumeWorking,
 		boolean logOverwrite,
 		long maxOldLogfilesDiskUsage, int maxListSize)
-		throws IOException {
-		this(fmt, dfmt, threshold, logOverwrite, maxOldLogfilesDiskUsage, maxListSize);
+		throws IOException, IntervalParseException {
+		this(fmt, dfmt, threshold, logRotateInterval, logOverwrite, maxOldLogfilesDiskUsage, maxListSize);
 		//System.err.println("Creating FileLoggerHook with threshold
 		// "+threshold);
 		if (!assumeWorking)
@@ -782,16 +792,18 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			String fmt,
 			String dfmt,
 			String threshold,
+			String logRotateInterval,
 			boolean assumeWorking,
 			boolean logOverwrite,
-			long maxOldLogFilesDiskUsage, int maxListSize) throws IOException, InvalidThresholdException{
-		this(rotate,baseFilename,fmt,dfmt,LogLevel.valueOf(threshold.toUpperCase()),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage,maxListSize);
+			long maxOldLogFilesDiskUsage, int maxListSize) throws IOException, InvalidThresholdException, IntervalParseException{
+		this(rotate,baseFilename,fmt,dfmt,logRotateInterval,LogLevel.valueOf(threshold.toUpperCase()),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage,maxListSize);
 	}
 
-	private FileLoggerHook(String fmt, String dfmt, LogLevel threshold, boolean overwrite, long maxOldLogfilesDiskUsage, int maxListSize) {
+	private FileLoggerHook(String fmt, String dfmt, LogLevel threshold, String logRotateInterval, boolean overwrite, long maxOldLogfilesDiskUsage, int maxListSize) throws IntervalParseException {
 		super(threshold);
 		this.maxOldLogfilesDiskUsage = maxOldLogfilesDiskUsage;
 		this.logOverwrite = overwrite;
+		setInterval(logRotateInterval);
 		
 		MAX_LIST_SIZE = maxListSize;
 		list = new ArrayBlockingQueue<byte[]>(MAX_LIST_SIZE);

@@ -226,11 +226,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public int getRetryCount() {
-		return retries;
-	}
-
-	@Override
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;

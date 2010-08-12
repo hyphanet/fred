@@ -638,6 +638,10 @@ public class FCPServer implements Runnable {
 			final MutableBoolean success = new MutableBoolean();
 			done.value = false;
 			core.clientContext.jobRunner.queue(new DBJob() {
+				
+				public String toString() {
+					return "FCP removeGlobalRequestBlocking";
+				}
 
 				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean succeeded = false;
@@ -677,6 +681,10 @@ public class FCPServer implements Runnable {
 		final MutableBoolean success = new MutableBoolean();
 		done.value = false;
 		core.clientContext.jobRunner.queue(new DBJob() {
+			
+			public String toString() {
+				return "FCP removeAllGlobalRequestsBlocking";
+			}
 
 			public boolean run(ObjectContainer container, ClientContext context) {
 				boolean succeeded = false;
@@ -720,6 +728,10 @@ public class FCPServer implements Runnable {
 		
 		final OutputWrapper ow = new OutputWrapper();
 		core.clientContext.jobRunner.queue(new DBJob() {
+			
+			public String toString() {
+				return "FCP makePersistentGlobalRequestBlocking";
+			}
 
 			public boolean run(ObjectContainer container, ClientContext context) {
 				NotAllowedException ne = null;
@@ -778,6 +790,10 @@ public class FCPServer implements Runnable {
 			}
 			final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
+				
+				public String toString() {
+					return "FCP modifyGlobalRequestBlocking";
+				}
 
 				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean success = false;
@@ -1000,6 +1016,10 @@ public class FCPServer implements Runnable {
 				final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 				
+				public String toString() {
+					return "FCP startBlocking";
+				}
+				
 				public boolean run(ObjectContainer container, ClientContext context) {
 					// Don't activate, it may not be stored yet.
 					try {
@@ -1050,6 +1070,10 @@ public class FCPServer implements Runnable {
 			}
 			final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
+				
+				public String toString() {
+					return "FCP restartBlocking";
+				}
 
 				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean success = false;
@@ -1103,6 +1127,10 @@ public class FCPServer implements Runnable {
 		final OutputWrapper ow = new OutputWrapper();
 		
 		core.clientContext.jobRunner.queue(new DBJob() {
+			
+			public String toString() {
+				return "FCP getCompletedRequestBlocking";
+			}
 
 			public boolean run(ObjectContainer container, ClientContext context) {
 				TempFetchResult result = null;

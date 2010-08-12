@@ -129,7 +129,7 @@ public class FECJob {
 	
 	public boolean activateForExecution(ObjectContainer container) {
 		if(logMINOR) {
-			Logger.minor(this, "Activating FECJob...");
+			Logger.minor(this, "Activating FECJob... "+this);
 			if(dataBlockStatus != null) {
 				for(int i=0;i<dataBlockStatus.length;i++)
 					Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (before activation)");
@@ -169,8 +169,11 @@ public class FECJob {
 			}
 		}
 		if(checkBlocks != null) {
-			for(int i=0;i<checkBlocks.length;i++)
+			for(int i=0;i<checkBlocks.length;i++) {
 				container.activate(checkBlocks[i], 1);
+				if(logMINOR)
+					Logger.minor(this, "Check bucket "+i+": "+checkBlocks[i]+" (after activation)");
+			}
 		}
 		if(!isADecodingJob) {
 			// First find the target
@@ -370,5 +373,13 @@ public class FECJob {
 			else
 				System.out.println("Does not have all data block statuses: "+dataCount+" of "+checkBlockStatus.length);
 		}
+	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		if(running) {
+			Logger.error(this, "Tried to deactivate but running == true!");
+			return false;
+		}
+		return true;
 	}
 }

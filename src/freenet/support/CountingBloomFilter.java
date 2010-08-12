@@ -9,6 +9,8 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 
+import com.db4o.ObjectContainer;
+
 /**
  * @author sdiz
  */
@@ -109,4 +111,5 @@ public class CountingBloomFilter extends BloomFilter {
 			lock.writeLock().unlock();
 		}
 	}
+
 }

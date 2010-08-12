@@ -148,8 +148,7 @@ public class FilePersistentConfig extends PersistentConfig {
 		try {
 			fos = new FileOutputStream(tempFilename);
 			synchronized(this) {
-				//fs.setHeader(header); // TODO put this back in the next stable build (after 1245)
-				// ie. after the lenient parser is more widely deployed
+				fs.setHeader(header);
 				fs.writeTo(fos);
 			}
 			fos.close();

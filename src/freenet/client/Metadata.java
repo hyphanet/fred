@@ -24,6 +24,8 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.async.BaseManifestPutter;
+import freenet.client.async.SplitFileFetcherSegment;
+import freenet.client.async.SplitFileSegmentKeys;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
@@ -155,6 +157,15 @@ public class Metadata implements Cloneable {
 	private boolean specifySplitfileKey;
 	/** As opposed to hashes of the final content. */
 	byte[] hashThisLayerOnly;
+	
+	int blocksPerSegment;
+	int checkBlocksPerSegment;
+	int segmentCount;
+	int deductBlocksFromSegments;
+	int crossCheckBlocks;
+	SplitFileSegmentKeys[] segments;
+	CompatibilityMode minCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
+	CompatibilityMode maxCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
 
 	// Manifests
 	/** Manifest entries by name */
@@ -165,7 +176,7 @@ public class Metadata implements Cloneable {
 	String targetName;
 
 	ClientMetadata clientMetadata;
-	private final HashResult[] hashes;
+	private HashResult[] hashes;
 	
 	
 	public final long topSize;
@@ -178,10 +189,39 @@ public class Metadata implements Cloneable {
 	@Override
 	public Object clone() {
 		try {
-			return super.clone();
+			Metadata meta = (Metadata) super.clone();
+			meta.finishClone(this);
+			return meta;
 		} catch (CloneNotSupportedException e) {
 			throw new Error("Yes it is!");
 		}
+	}
+	
+	/** Deep copy those fields that need to be deep copied after clone() */
+	private void finishClone(Metadata orig) {
+		if(orig.segments != null) {
+			segments = new SplitFileSegmentKeys[orig.segments.length];
+			for(int i=0;i<segments.length;i++) {
+				segments[i] = orig.segments[i].clone();
+			}
+		}
+		if(hashes != null) {
+			hashes = new HashResult[orig.hashes.length];
+			for(int i=0;i<hashes.length;i++)
+				hashes[i] = orig.hashes[i].clone();
+		}
+		if(manifestEntries != null) {
+			manifestEntries = new HashMap<String, Metadata>(orig.manifestEntries);
+			for(Map.Entry<String, Metadata> entry : manifestEntries.entrySet()) {
+				entry.setValue((Metadata)entry.getValue().clone());
+			}
+		}
+		if(resolvedURI != null)
+			resolvedURI = resolvedURI.clone();
+		if(simpleRedirectKey != null)
+			simpleRedirectKey = simpleRedirectKey.clone();
+		if(clientMetadata != null)
+			clientMetadata = clientMetadata.clone();
 	}
 
 	/** Parse a block of bytes into a Metadata structure.
@@ -409,30 +449,154 @@ public class Metadata implements Cloneable {
 				throw new MetadataParseException("Invalid number of check blocks: "+splitfileCheckBlocks);
 			if(splitfileCheckBlocks > MAX_SPLITFILE_BLOCKS)
 				throw new MetadataParseException("Too many splitfile check-blocks (soft limit to prevent memory DoS): "+splitfileCheckBlocks);
+			
+			// PARSE SPLITFILE PARAMETERS
+			
+			
+			crossCheckBlocks = 0;
+			
+			if(splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT) {
+				// Don't need to do much - just fetch everything and piece it together.
+				blocksPerSegment = -1;
+				checkBlocksPerSegment = -1;
+				segmentCount = 1;
+				deductBlocksFromSegments = 0;
+				if(splitfileCheckBlocks > 0) {
+					Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet "+splitfileCheckBlocks+" check blocks found!! : "+this);
+					throw new MetadataParseException("Splitfile type is non-redundant yet have "+splitfileCheckBlocks+" check blocks");
+				}
+			} else if(splitfileAlgorithm == Metadata.SPLITFILE_ONION_STANDARD) {
+				byte[] params = splitfileParams();
+				int checkBlocks;
+				if(getParsedVersion() == 0) {
+					if((params == null) || (params.length < 8))
+						throw new MetadataParseException("No splitfile params");
+					blocksPerSegment = Fields.bytesToInt(params, 0);
+					checkBlocks = Fields.bytesToInt(params, 4);
+					deductBlocksFromSegments = 0;
+					int countDataBlocks = splitfileBlocks;
+					int countCheckBlocks = splitfileCheckBlocks;
+					if(countDataBlocks == countCheckBlocks) {
+						// No extra check blocks, so before 1251.
+						if(blocksPerSegment == 128) {
+							// Is the last segment small enough that we can't have used even splitting?
+							int segs = (int)Math.ceil(((double)countDataBlocks) / 128);
+							int segSize = (int)Math.ceil(((double)countDataBlocks) / ((double)segs));
+							if(segSize == 128) {
+								// Could be either
+								minCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
+								maxCompatMode = CompatibilityMode.COMPAT_1250;
+							} else {
+								minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250_EXACT;
+							}
+						} else {
+							minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1250;
+						}
+					} else {
+						if(checkBlocks == 64) {
+							// Very old 128/64 redundancy.
+							minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_UNKNOWN;
+						} else {
+							// Extra block per segment in 1251.
+							minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1251;
+						}
+					}
+				} else {
+					minCompatMode = maxCompatMode = CompatibilityMode.COMPAT_1255;
+					if(params.length < 10)
+						throw new MetadataParseException("Splitfile parameters too short for version 1");
+					short paramsType = Fields.bytesToShort(params, 0);
+					if(paramsType == Metadata.SPLITFILE_PARAMS_SIMPLE_SEGMENT || paramsType == Metadata.SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS || paramsType == Metadata.SPLITFILE_PARAMS_CROSS_SEGMENT) {
+						blocksPerSegment = Fields.bytesToInt(params, 2);
+						checkBlocks = Fields.bytesToInt(params, 6);
+					} else
+						throw new MetadataParseException("Unknown splitfile params type "+paramsType);
+					if(paramsType == Metadata.SPLITFILE_PARAMS_SEGMENT_DEDUCT_BLOCKS || paramsType == Metadata.SPLITFILE_PARAMS_CROSS_SEGMENT) {
+						deductBlocksFromSegments = Fields.bytesToInt(params, 10);
+						if(paramsType == Metadata.SPLITFILE_PARAMS_CROSS_SEGMENT) {
+							crossCheckBlocks = Fields.bytesToInt(params, 14);
+						}
+					} else
+						deductBlocksFromSegments = 0;
+				}
+				
+				if(topCompatibilityMode != 0) {
+					// If we have top compatibility mode, then we can give a definitive answer immediately, with the splitfile key, with dontcompress, etc etc.
+					if(minCompatMode == CompatibilityMode.COMPAT_UNKNOWN ||
+							!(minCompatMode.ordinal() > topCompatibilityMode || maxCompatMode.ordinal() < topCompatibilityMode)) {
+						minCompatMode = maxCompatMode = CompatibilityMode.values()[topCompatibilityMode];
+					} else
+						throw new MetadataParseException("Top compatibility mode is incompatible with detected compatibility mode");
+				}
 
-			splitfileDataKeys = new ClientCHK[splitfileBlocks];
-			splitfileCheckKeys = new ClientCHK[splitfileCheckBlocks];
-			if(splitfileSingleCryptoKey == null) {
-				for(int i=0;i<splitfileDataKeys.length;i++)
-					if((splitfileDataKeys[i] = readCHK(dis)) == null)
-						throw new MetadataParseException("Null data key "+i);
-				for(int i=0;i<splitfileCheckKeys.length;i++)
-					if((splitfileCheckKeys[i] = readCHK(dis)) == null)
-						throw new MetadataParseException("Null check key: "+i);
+				// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
+				// Work around a bug around build 1135.
+				// We were splitting as (128,255), but we were then setting the checkBlocksPerSegment to 64.
+				// Detect this.
+				if(checkBlocks == 64 && blocksPerSegment == 128 &&
+						splitfileCheckBlocks == splitfileBlocks - (splitfileBlocks / 128)) {
+					Logger.normal(this, "Activating 1135 wrong check blocks per segment workaround for "+this);
+					checkBlocks = 127;
+				}
+				checkBlocksPerSegment = checkBlocks;
+
+				segmentCount = (splitfileBlocks / (blocksPerSegment + crossCheckBlocks)) +
+					(splitfileBlocks % (blocksPerSegment + crossCheckBlocks) == 0 ? 0 : 1);
+					
+				// Onion, 128/192.
+				// Will be segmented.
+			} else throw new MetadataParseException("Unknown splitfile format: "+splitfileAlgorithm);
+			
+			segments = new SplitFileSegmentKeys[segmentCount];
+			
+			if(segmentCount == 1) {
+				// splitfile* will be overwritten, this is bad
+				// so copy them
+				segments[0] = new SplitFileSegmentKeys(splitfileBlocks, splitfileCheckBlocks, splitfileSingleCryptoKey, splitfileSingleCryptoAlgorithm);
 			} else {
-				for(int i=0;i<splitfileDataKeys.length;i++) {
-					byte[] rkey = new byte[32];
-					dis.readFully(rkey);
-					splitfileDataKeys[i] = new ClientCHK(rkey, splitfileSingleCryptoKey, false, splitfileSingleCryptoAlgorithm, (short)-1);
+				int dataBlocksPtr = 0;
+				int checkBlocksPtr = 0;
+				for(int i=0;i<segments.length;i++) {
+					// Create a segment. Give it its keys.
+					int copyDataBlocks = blocksPerSegment + crossCheckBlocks;
+					int copyCheckBlocks = checkBlocksPerSegment;
+					if(i == segments.length - 1) {
+						// Always accept the remainder as the last segment, but do basic sanity checking.
+						// In practice this can be affected by various things: 1) On old splitfiles before full even 
+						// segment splitting with deductBlocksFromSegments (i.e. pre-1255), the last segment could be
+						// significantly smaller than the rest; 2) On 1251-1253, with partial even segment splitting,
+						// up to 131 data blocks per segment, cutting the check blocks if necessary, and with an extra
+						// check block if possible, the last segment could have *more* check blocks than the rest. 
+						copyDataBlocks = splitfileBlocks - dataBlocksPtr;
+						copyCheckBlocks = splitfileCheckBlocks - checkBlocksPtr;
+						if(copyCheckBlocks <= 0 || copyDataBlocks <= 0)
+							throw new MetadataParseException("Last segment has bogus block count: total data blocks "+splitfileBlocks+" total check blocks "+splitfileCheckBlocks+" segment size "+blocksPerSegment+" data "+checkBlocksPerSegment+" check "+crossCheckBlocks+" cross check blocks, deduct "+deductBlocksFromSegments+", segments "+segments.length);
+					} else if(segments.length - i <= deductBlocksFromSegments) {
+						// Deduct one data block from each of the last deductBlocksFromSegments segments.
+						// This ensures no segment is more than 1 block larger than any other.
+						// We do not shrink the check blocks.
+						copyDataBlocks--;
+					}
+					segments[i] = new SplitFileSegmentKeys(copyDataBlocks, copyCheckBlocks, splitfileSingleCryptoKey, splitfileSingleCryptoAlgorithm);
+					if(logMINOR) Logger.minor(this, "REQUESTING: Segment "+i+" of "+segments.length+" : "+copyDataBlocks+" data blocks "+copyCheckBlocks+" check blocks");
+					dataBlocksPtr += copyDataBlocks;
+					checkBlocksPtr += copyCheckBlocks;
 				}
-				for(int i=0;i<splitfileCheckKeys.length;i++) {
-					byte[] rkey = new byte[32];
-					dis.readFully(rkey);
-					splitfileCheckKeys[i] = new ClientCHK(rkey, splitfileSingleCryptoKey, false, splitfileSingleCryptoAlgorithm, (short)-1);
-				}
+				if(dataBlocksPtr != splitfileBlocks)
+					throw new MetadataParseException("Unable to allocate all data blocks to segments - buggy or malicious inserter");
+				if(checkBlocksPtr != splitfileCheckBlocks)
+					throw new MetadataParseException("Unable to allocate all check blocks to segments - buggy or malicious inserter");
 			}
+			
+			for(int i=0;i<segmentCount;i++) {
+				segments[i].readKeys(dis, false);
+			}
+			for(int i=0;i<segmentCount;i++) {
+				segments[i].readKeys(dis, true);
+			}
+		
 		}
-
+			
 		if(documentType == SIMPLE_MANIFEST) {
 			int manifestEntryCount = dis.readInt();
 			if(manifestEntryCount < 0)
@@ -1443,12 +1607,17 @@ public class Metadata implements Cloneable {
 			container.activate(clientMetadata, 1);
 			clientMetadata.removeFrom(container);
 		}
+		if(segments != null) {
+			for(int i=0;i<segments.length;i++)
+				segments[i].removeFrom(container);
+		}
 		container.delete(this);
 	}
 
 	public void clearSplitfileKeys() {
 		splitfileDataKeys = null;
 		splitfileCheckKeys = null;
+		segments = null;
 	}
 
 	public int countDocuments() {
@@ -1599,6 +1768,46 @@ public class Metadata implements Cloneable {
 
 	public short getTopCompatibilityCode() {
 		return topCompatibilityMode;
+	}
+
+	public CompatibilityMode getMinCompatMode() {
+		return minCompatMode;
+	}
+
+	public CompatibilityMode getMaxCompatMode() {
+		return maxCompatMode;
+	}
+
+	public int getCrossCheckBlocks() {
+		return crossCheckBlocks;
+	}
+
+	public int getCheckBlocksPerSegment() {
+		return checkBlocksPerSegment;
+	}
+
+	public int getDataBlocksPerSegment() {
+		return blocksPerSegment;
+	}
+
+	public int getSegmentCount() {
+		return segmentCount;
+	}
+
+	public SplitFileSegmentKeys[] grabSegmentKeys(ObjectContainer container) throws FetchException {
+		synchronized(this) {
+			if(segments == null && splitfileDataKeys != null && splitfileCheckKeys != null)
+				throw new FetchException(FetchException.INTERNAL_ERROR, "Please restart the download, need to re-parse metadata due to internal changes");
+			SplitFileSegmentKeys[] segs = segments;
+			segments = null;
+			if(container != null && container.ext().isStored(this))
+				container.store(this);
+			return segs;
+		}
+	}
+
+	public int getDeductBlocksFromSegments() {
+		return deductBlocksFromSegments;
 	}
 
 }

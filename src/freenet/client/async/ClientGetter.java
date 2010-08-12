@@ -113,7 +113,7 @@ public class ClientGetter extends BaseClientGetter {
 		super(priorityClass, clientContext);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
-		this.uri = uri;
+		this.uri = uri.clone();
 		this.ctx = ctx;
 		this.finished = false;
 		this.actx = new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels);

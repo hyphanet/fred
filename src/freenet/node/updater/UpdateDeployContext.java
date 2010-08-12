@@ -129,6 +129,17 @@ class UpdateDeployContext {
 		File oldConfig = new File("wrapper.conf");
 		File newConfig = new File("wrapper.conf.new");
 		
+		if(!oldConfig.exists()) {
+			File wrapperDir = new File("wrapper");
+			if(wrapperDir.exists() && wrapperDir.isDirectory()) {
+				File o = new File(wrapperDir, "wrapper.conf");
+				if(o.exists()) {
+					oldConfig = o;
+					newConfig = new File(wrapperDir, "wrapper.conf.new");
+				}
+			}
+		}
+		
 		FileInputStream fis = new FileInputStream(oldConfig);
 		BufferedInputStream bis = new BufferedInputStream(fis);
 		InputStreamReader isr = new InputStreamReader(bis);

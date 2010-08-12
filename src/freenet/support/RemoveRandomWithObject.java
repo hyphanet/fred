@@ -9,5 +9,5 @@ public interface RemoveRandomWithObject extends RemoveRandom {
 	public boolean isEmpty();
 
 	public void removeFrom(ObjectContainer container);
-	
+
 }

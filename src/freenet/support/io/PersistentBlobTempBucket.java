@@ -7,6 +7,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Query;
 
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -229,9 +231,12 @@ public class PersistentBlobTempBucket implements Bucket {
 				Logger.error(this, "Storing freed bucket "+this+" formerly for slot "+index, new Exception("error"));
 				if(tag != null) {
 					container.activate(tag, 1);
-					tag.bucket = null;
-					tag.isFree = true;
-					container.store(tag);
+					if(tag.bucket == this) {
+						Logger.error(this, "Clearing tag");
+						tag.bucket = null;
+						tag.isFree = true;
+						container.store(tag);
+					}
 					this.tag = null;
 				}
 				container.store(this);
@@ -241,8 +246,28 @@ public class PersistentBlobTempBucket implements Bucket {
 				if(!container.ext().isActive(this)) {
 					Logger.error(this, "NOT ACTIVE IN storeTo()!!", new Exception("error"));
 					container.activate(this, 1);
-					if(tag == null) {
-						throw new NullPointerException("Activated but tag still null!");
+				}
+			}
+			if(tag == null) {
+				Query q = container.query();
+				q.constrain(PersistentBlobTempBucketTag.class);
+				q.descend("index").constrain(index);
+				ObjectSet<PersistentBlobTempBucketTag> results = q.execute();
+				if(results.isEmpty())
+					Logger.error(this, "Tag not found");
+				else {
+					PersistentBlobTempBucketTag tag = results.next();
+					if(tag.bucket == null) {
+						Logger.error(this, "Found tag but is empty");
+						// Can we auto-repair???
+						throw new NullPointerException("Active but tag null! (Other tag is also null) shadow="+shadow+" freed="+freed+" persisted="+persisted+" stored="+container.ext().isStored(this)+" index="+index+" for "+this);
+					} else if(tag.bucket == this) {
+						// Auto-repair
+						this.tag = tag;
+						container.store(this);
+						Logger.error(this, "Found tag, was pointing to us, fixed");
+					} else {
+						throw new NullPointerException("Active but tag null, and other tag points to other bucket!: "+tag.bucket+" not "+this+" details: shadow="+shadow+" freed="+freed+" persisted="+persisted+" stored="+container.ext().isStored(this)+" index="+index);
 					}
 				}
 				throw new NullPointerException("Active but tag null! shadow="+shadow+" freed="+freed+" persisted="+persisted+" index="+index);

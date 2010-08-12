@@ -1374,14 +1374,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return putter.getPriorityClass();
 	}
 
-	@Override
-	public int getRetryCount() {
-		// No point scheduling inserts by retry count.
-		// FIXME: Either implement sub-segments to schedule by retry count,
-		// or (more likely imho) make the scheduler not care about retry counts for inserts.
-		return 0;
-	}
-
 	static class MySendableRequestSender implements SendableRequestSender {
 		private final String compressorDescriptor;
 		/** May be deactivated, not safe to just use. */

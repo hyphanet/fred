@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
+import freenet.client.async.HasCooldownCacheItem;
 import freenet.client.async.TransientChosenBlock;
 import freenet.keys.Key;
 import freenet.support.LogThresholdCallback;
@@ -255,7 +256,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(key != null) sched.removeFetchingKey(key);
 				else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert)
 					sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token);
-
+				// Something might be waiting for a request to complete (e.g. if we have two requests for the same key), 
+				// so wake the starter thread.
+				wakeUp();
 			}
 		}
 		
@@ -282,6 +285,11 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			return false;
 		Logger.normal(this, "Excluding (no valid keys): "+get);
 		return true;
+	}
+
+	public long excludeSummarily(HasCooldownCacheItem item,
+			HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now) {
+		return core.clientContext.cooldownTracker.getCachedWakeup(item, persistent, container, now);
 	}
 
 }

@@ -232,6 +232,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.no") });
 				
 				this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
+				return;
 			} else if(request.isPartSet("remove_request") && (request.getPartAsString("remove_request", 32).length() > 0)) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				if(logMINOR) Logger.minor(this, "Removing "+identifier);
@@ -852,10 +853,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		final String requestPath = request.getPath().substring(path().length());
 		
 		boolean countRequests = false;
+		boolean listFetchKeys = false;
 		
 		if (requestPath.length() > 0) {
 			if(requestPath.equals("countRequests.html") || requestPath.equals("/countRequests.html")) {
 				countRequests = true;
+			} else if(requestPath.equals("listFetchKeys.txt")) {
+				listFetchKeys = true;
 			} else {
 				/* okay, there is something in the path, check it. */
 				try {
@@ -884,6 +888,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		class OutputWrapper {
 			boolean done;
 			HTMLNode pageNode;
+			String plainText;
 		}
 		
 		final OutputWrapper ow = new OutputWrapper();
@@ -891,6 +896,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		final PageMaker pageMaker = ctx.getPageMaker();
 		
 		final boolean count = countRequests; 
+		final boolean keys = listFetchKeys;
 		
 		try {
 			core.clientContext.jobRunner.queue(new DBJob() {
@@ -901,6 +907,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 				public boolean run(ObjectContainer container, ClientContext context) {
 					HTMLNode pageNode = null;
+					String plainText = null;
 					try {
 						if(count) {
 							long queued = core.requestStarters.chkFetchScheduler.countPersistentWaitingKeys(container);
@@ -917,6 +924,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							infoboxContent.addChild("p", "Total awaiting CHKs: "+queued);
 							infoboxContent.addChild("p", "Total queued CHK requests: "+reallyQueued);
 							return false;
+						} else if(keys) {
+							try {
+								plainText = makeFetchKeysList(container, context);
+							} catch (DatabaseDisabledException e) {
+								plainText = null;
+							}
+							return false;
 						} else {
 							try {
 								pageNode = handleGetInner(pageMaker, container, context, request, ctx);
@@ -929,6 +943,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						synchronized(ow) {
 							ow.done = true;
 							ow.pageNode = pageNode;
+							ow.plainText = plainText;
 							ow.notifyAll();
 						}
 					}
@@ -941,10 +956,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		
 		HTMLNode pageNode;
+		String plainText;
 		synchronized(ow) {
 			while(true) {
 				if(ow.done) {
 					pageNode = ow.pageNode;
+					plainText = ow.plainText;
 					break;
 				}
 				try {
@@ -958,6 +975,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
 		if(pageNode != null)
 			writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
+		else if(plainText != null)
+			this.writeReply(ctx, 200, "text/plain", "OK", plainText);
 		else {
 			if(core.killedDatabase())
 				sendPersistenceDisabledError(ctx);
@@ -967,6 +986,24 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	}
 	
+	protected String makeFetchKeysList(ObjectContainer container,
+			ClientContext context) throws DatabaseDisabledException {
+		ClientRequest[] reqs = fcp.getGlobalRequests(container);
+
+		StringBuffer sb = new StringBuffer();
+		
+		for(int i=0;i<reqs.length;i++) {
+			ClientRequest req = reqs[i];
+			if(req instanceof ClientGet) {
+				ClientGet get = (ClientGet)req;
+				FreenetURI uri = get.getURI(container);
+				sb.append(uri.toString());
+				sb.append("\n");
+			}
+		}
+		return sb.toString();
+	}
+
 	private HTMLNode handleGetInner(PageMaker pageMaker, final ObjectContainer container, ClientContext context, final HTTPRequest request, ToadletContext ctx) throws DatabaseDisabledException {
 		
 		// First, get the queued requests, and separate them into different types.
@@ -1101,7 +1138,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}else if(sortBy.equals("size")){
 						result = (firstRequest.getTotalBlocks(container) - secondRequest.getTotalBlocks(container)) < 0 ? -1 : 1;
 					}else if(sortBy.equals("progress")){
-						result = (firstRequest.getFetchedBlocks(container) / firstRequest.getMinBlocks(container) - secondRequest.getFetchedBlocks(container) / secondRequest.getMinBlocks(container)) < 0 ? -1 : 1;
+						boolean firstFinalized = firstRequest.isTotalFinalized(container);
+						boolean secondFinalized = secondRequest.isTotalFinalized(container);
+						if(firstFinalized && !secondFinalized) 
+							result = 1;
+						else if(secondFinalized && !firstFinalized) 
+							result = -1;
+						else
+							result = (firstRequest.getFetchedBlocks(container) / firstRequest.getMinBlocks(container) - secondRequest.getFetchedBlocks(container) / secondRequest.getMinBlocks(container)) < 0 ? -1 : 1;
 					} else if (sortBy.equals("lastActivity")) {
 						result = (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, firstRequest.getLastActivity() - secondRequest.getLastActivity()));
 					}else

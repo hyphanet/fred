@@ -40,9 +40,9 @@ public class ClientCHK extends ClientKey {
     /* We use EXTRA_LENGTH above for consistency, rather than dis.read etc. Some code depends on this
      * being accurate. Change those uses if you like. */
     /** The length of the "extra" bytes in the key */
-    static final short EXTRA_LENGTH = 5;
+    public static final short EXTRA_LENGTH = 5;
     /** The length of the decryption key */
-    static final short CRYPTO_KEY_LENGTH = 32;
+    public static final short CRYPTO_KEY_LENGTH = 32;
     
     private ClientCHK(ClientCHK key) {
     	this.routingKey = new byte[key.routingKey.length];
@@ -80,6 +80,20 @@ public class ClientCHK extends ClientKey {
         hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(encKey) ^ compressionAlgorithm;
     }
 
+    public ClientCHK(byte[] routingKey, byte[] encKey, byte[] extra) throws MalformedURLException {
+    	this.routingKey = routingKey;
+    	this.cryptoKey = encKey;
+        if((extra == null) || (extra.length < 5))
+            throw new MalformedURLException("No extra bytes in CHK - maybe a 0.5 key?");
+        // byte 0 is reserved, for now
+        cryptoAlgorithm = extra[1];
+		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
+			throw new MalformedURLException("Invalid crypto algorithm");
+        controlDocument = (extra[2] & 0x02) != 0;
+        compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
+        hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(cryptoKey) ^ compressionAlgorithm;
+    }
+    
     /**
      * Create from a URI.
      */
@@ -149,6 +163,10 @@ public class ClientCHK extends ClientKey {
 		if(Arrays.equals(last, extra)) return last;
 		lastExtra = extra;
 		return extra;
+	}
+	
+	public static byte getCryptoAlgorithmFromExtra(byte[] extra) {
+		return extra[1];
 	}
 	
 	static HashSet<ByteArrayWrapper> standardExtras = new HashSet<ByteArrayWrapper>();
@@ -242,6 +260,10 @@ public class ClientCHK extends ClientKey {
 
 	public byte[] getRoutingKey() {
 		return routingKey;
+	}
+	
+	public byte[] getCryptoKey() {
+		return cryptoKey;
 	}
 	
 	public boolean objectCanNew(ObjectContainer container) {

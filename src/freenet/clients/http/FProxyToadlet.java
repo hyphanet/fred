@@ -397,12 +397,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	public void handleMethodGET(URI uri, HTTPRequest httprequest, ToadletContext ctx) 
 	throws ToadletContextClosedException, IOException, RedirectException {
-		handleMethodGET(uri, httprequest, ctx, 0);
+		innerHandleMethodGET(uri, httprequest, ctx, 0);
 	}
 	
 	static final int MAX_RECURSION = 5;
 	
-	public void handleMethodGET(URI uri, HTTPRequest httprequest, ToadletContext ctx, int recursion) 
+	private void innerHandleMethodGET(URI uri, HTTPRequest httprequest, ToadletContext ctx, int recursion) 
 			throws ToadletContextClosedException, IOException, RedirectException {
 
 		String ks = uri.getPath();
@@ -729,7 +729,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					String link = getLink(e.newURI, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
 					try {
 						uri = new URI(link);
-						handleMethodGET(uri, httprequest, ctx, recursion);
+						innerHandleMethodGET(uri, httprequest, ctx, recursion);
 						return;
 					} catch (URISyntaxException e1) {
 						Logger.error(this, "Caught "+e1+" parsing new link "+link, e1);
@@ -849,7 +849,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 
 				if((!e.isFatal() || filterException != null) && (ctx.isAllowedFullAccess() || !container.publicGatewayMode())) {
-					addDownloadOptions(ctx, optionList, key, mimeType, true, filterException != null, core);
+					addDownloadOptions(ctx, optionList, key, mimeType, filterException != null, filterException != null, core);
 					optionList.addChild("li").
 						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null),
 									httprequest.isParameterSet("forcedownload"))).addChild("#", l10n("retryNow"));

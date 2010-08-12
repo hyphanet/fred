@@ -63,7 +63,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 				if(!active) container.activate(seg, 1);
 			}
 			Bucket data = seg.getBucket(blockNumbers[i]);
-			wrapper.data = data;
+			wrapper.assertSetData(data);
 			if(persistent) container.activate(data, Integer.MAX_VALUE);
 			if(!active) container.deactivate(seg, 1);
 			decodeData[i] = wrapper;
@@ -106,11 +106,11 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 			if(persistent) container.activate(seg, 1);
 			seg.onEncodedCrossCheckBlock(blockNum, checkBlocks[i].getData(), container, context);
 			if(persistent) container.deactivate(seg, 1);
-			checkBlocks[i].setData(null);
+			checkBlocks[i].clearData();
 			if(persistent) container.delete(checkBlocks[i]);
 		}
 		for(int i=0;i<dataBlocks.length;i++) {
-			dataBlocks[i].setData(null);
+			dataBlocks[i].clearData();
 			if(persistent) container.delete(dataBlocks[i]);
 		}
 		System.out.println("Completed encode for cross segment "+this);

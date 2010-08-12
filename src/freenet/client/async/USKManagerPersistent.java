@@ -4,6 +4,8 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
 
+import freenet.support.Logger;
+
 /**
  * The persistent part of a USKManager.
  * @author toad
@@ -21,8 +23,15 @@ public class USKManagerPersistent {
 				return true;
 			}
 		});
-		while(set.hasNext())
-			set.next().start(manager, context, container);
+		while(set.hasNext()) {
+			try {
+				set.next().start(manager, context, container);
+			} catch (Throwable t) {
+				Logger.error(USKManagerPersistent.class, "USKFetcherTag failed to start - partially removed??? : "+t, t);
+				System.err.println("USKFetcherTag failed to start - partially removed??? : "+t);
+				t.printStackTrace();
+			}
+		}
 	}
 
 }

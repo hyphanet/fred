@@ -12,6 +12,7 @@ import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
@@ -55,6 +56,8 @@ public class ClientContext {
 	public transient FilenameGenerator persistentFG;
 	public transient final RealCompressor rc;
 	public transient final DatastoreChecker checker;
+	public transient final CooldownTracker cooldownTracker;
+	public transient KeysFetchingLocally fetching;
 
 	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
@@ -81,6 +84,7 @@ public class ClientContext {
 		this.persistentFG = persistentFG;
 		this.rc = rc;
 		this.checker = checker;
+		this.cooldownTracker = new CooldownTracker();
 	}
 	
 	public void init(RequestStarterGroup starters) {
@@ -88,6 +92,8 @@ public class ClientContext {
 		this.chkFetchScheduler = starters.chkFetchScheduler;
 		this.sskInsertScheduler = starters.sskPutScheduler;
 		this.chkInsertScheduler = starters.chkPutScheduler;
+		this.fetching = chkFetchScheduler.fetchingKeys();
+		this.cooldownTracker.startMaintenance(ticker);
 	}
 
 	public ClientRequestScheduler getSskFetchScheduler() {

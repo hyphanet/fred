@@ -461,11 +461,12 @@ public class PeerManager {
 	 * Find the node with the given Peer address.
 	 */
 	public PeerNode getByPeer(Peer peer) {
-		for(int i = 0; i < myPeers.length; i++) {
-			if(!myPeers[i].isRealConnection())
+		PeerNode[] peerList = myPeers;
+		for(int i = 0; i < peerList.length; i++) {
+			if(!peerList[i].isRealConnection())
 				continue;
-			if(peer.equals(myPeers[i].getPeer()))
-				return myPeers[i];
+			if(peer.equals(peerList[i].getPeer()))
+				return peerList[i];
 		}
 		return null;
 	}
@@ -475,8 +476,9 @@ public class PeerManager {
 	 */
 	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		PeerNode pn = node.createNewDarknetNode(noderef);
-		for(int i = 0; i < myPeers.length; i++) {
-			if(Arrays.equals(myPeers[i].identity, pn.identity))
+		PeerNode[] peerList = myPeers;
+		for(int i = 0; i < peerList.length; i++) {
+			if(Arrays.equals(peerList[i].identity, pn.identity))
 				return;
 		}
 		addPeer(pn);
@@ -1789,7 +1791,7 @@ public class PeerManager {
 		PeerNode[] conns = connectedPeers;
 		if(conns == null)
 			return 0;
-		return connectedPeers.length;
+		return conns.length;
 	}
 
 	public int countConnectedDarknetPeers() {

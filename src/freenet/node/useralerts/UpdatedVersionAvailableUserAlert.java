@@ -155,8 +155,8 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	
 	@Override
 	public boolean isValid() {
-		return updater.isEnabled() && (!updater.isBlown()) && updater.fetchingNewExtJar() || updater.fetchingNewMainJar() ||
-			updater.hasNewExtJar() || updater.hasNewMainJar();
+		return updater.isEnabled() && (!updater.isBlown()) && 
+			(updater.fetchingNewExtJar() || updater.fetchingNewMainJar() || updater.hasNewExtJar() || updater.hasNewMainJar());
 	}
 	
 	@Override

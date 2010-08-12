@@ -37,10 +37,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	protected final ClientContext mClientContext;
 	protected final TempBucketFactory mTBF;
 	
-	private Thread mThread;
-	
-	private volatile boolean isRunning = false;
-	private volatile boolean shutdownFinished = false;
+	private TrivialTicker mTicker;
 	
 	private final Collection<ClientGetter> mFetches = createFetchStorage();
 	private final Collection<BaseClientPutter> mInserts = createInsertStorage();
@@ -51,6 +48,8 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 		mClientContext = mNode.clientCore.clientContext;;
 		mTBF = mNode.clientCore.tempBucketFactory;
 		mName = myName;
+		
+		mTicker = new TrivialTicker(mNode.executor);
 	}
 	
 	/**
@@ -58,56 +57,26 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 * be called in the constructors of implementing classes.
 	 */
 	public void start() {
-		mNode.executor.execute(this, mName);
-		Logger.debug(this, "Started.");
+		Logger.debug(this, "Starting...");
+		mTicker.queueTimedJob(this, mName, getStartupDelay(), false, true);
 	}
 	
 	/** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
 	public abstract int getPriority();
 
 	public void run() {
-		isRunning = true;
-		mThread = Thread.currentThread();
-		
+		long sleepTime = 1 * 1000;
 		try {
-			Thread.sleep(getStartupDelay());
-		} catch (InterruptedException e) {
-			mThread.interrupt();
+			Logger.debug(this, "Loop running...");
+			iterate();
+			sleepTime = getSleepTime();
 		}
-		
-		try {
-			while(isRunning) {
-				Thread.interrupted();
-
-				try {
-					Logger.debug(this, "Loop running...");
-					iterate();
-					long sleepTime = getSleepTime();
-					Logger.debug(this, "Loop finished. Sleeping for " + (sleepTime/(1000*60)) + " minutes.");
-					Thread.sleep(sleepTime);
-				}
-				catch(InterruptedException e) {
-					mThread.interrupt();
-				}
-				catch(Exception e) {
-					Logger.error(this, "Error in iterate probably()", e);
-				}
-			}
+		catch(Exception e) {
+			Logger.error(this, "Error in iterate() or getSleepTime() probably", e);
 		}
-		
 		finally {
-			try {
-				abortAllTransfers();
-			}
-			catch(RuntimeException e) {
-				Logger.error(this, "SHOULD NOT HAPPEN, please report this exception", e);
-			}
-			finally {
-				synchronized (this) {
-					shutdownFinished = true;
-					notify();
-				}
-			}
+			Logger.debug(this, "Loop finished. Sleeping for " + (sleepTime/(1000*60)) + " minutes.");
+			mTicker.queueTimedJob(this, mName, sleepTime, false, true);
 		}
 	}
 	
@@ -115,7 +84,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	 * Wakes up the thread so that iterate() is called.
 	 */
 	public void nextIteration() {
-		mThread.interrupt();
+		mTicker.rescheduleTimedJob(this, mName, 0);
 	}
 	
 	protected void abortAllTransfers() {
@@ -194,18 +163,12 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	
 	public void terminate() {
 		Logger.debug(this, "Terminating...");
-		isRunning = false;
-		mThread.interrupt();
-		
-		synchronized(this) {
-			while(!shutdownFinished) {
-				try {
-					wait();
-				}
-				catch (InterruptedException e) {
-					Thread.interrupted();
-				}
-			}
+		mTicker.shutdown();
+		try {
+			abortAllTransfers();
+		}
+		catch(RuntimeException e) {
+			Logger.error(this, "Aborting all transfers failed", e);
 		}
 		Logger.debug(this, "Terminated.");
 	}

@@ -59,7 +59,7 @@ public interface RequestScheduler {
 
 	public ChosenBlock grabRequest();
 
-	public void removeRunningRequest(SendableRequest request);
+	public void removeRunningRequest(SendableRequest request, ObjectContainer container);
 
 	/**
 	 * This only works for persistent requests, because transient requests are not
@@ -67,12 +67,23 @@ public interface RequestScheduler {
 	 */
 	public abstract boolean isRunningOrQueuedPersistentRequest(SendableRequest request);
 	
-	public boolean hasFetchingKey(Key key);
+	/**
+	 * Check whether a key is already being fetched. If it is, optionally remember who is
+	 * asking so we can wake them up (on the cooldown queue) when the key fetch completes.
+	 * @param key
+	 * @param getterWaiting
+	 * @param persistent
+	 * @param container
+	 * @return
+	 */
+	public boolean hasFetchingKey(Key key, BaseSendableGet getterWaiting, boolean persistent, ObjectContainer container);
 
 	public void start(NodeClientCore core);
 
 	public boolean addTransientInsertFetching(SendableInsert insert, Object token);
 
 	public void removeTransientInsertFetching(SendableInsert insert, Object token);
+
+	public void wakeStarter();
 
 }

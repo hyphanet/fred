@@ -1,5 +1,7 @@
 package freenet.support.io;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -47,14 +49,32 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	private boolean freed;
 	final BucketFactory bf;
 	private transient DBJobRunner dbJobRunner;
+	private final boolean cacheWholeBucket;
 	
+	/**
+	 * Create a segmented bucket chain bucket. This is a chain of buckets. The chain
+	 * is divided into segments, stored in the database, so we can have an arbitrarily
+	 * large bucket.
+	 * @param blockSize How big should the individual buckets be? Normally this is 32768.
+	 * @param factory Factory to create the individual buckets. Normally this is a
+	 * PersistentBlobTempBucketFactory.
+	 * @param runner The database job runner. We need this to persist the segments.
+	 * We don't access the database except when moving between segments and closing
+	 * the file.
+	 * @param segmentSize2 How many blocks in a segment.
+	 * @param cacheWholeBucket If true, we will minimise small writes and seeking
+	 * by caching a whole 32KB sub-bucket at once. This should improve performance
+	 * on spinning disks, flash disks, RAID arrays and everything else, at the cost
+	 * of a buffer (on write) of size bucketSize. 
+	 */
 	public SegmentedBucketChainBucket(int blockSize, BucketFactory factory, 
-			DBJobRunner runner, int segmentSize2) {
+			DBJobRunner runner, int segmentSize2, boolean cacheWholeBucket) {
 		bucketSize = blockSize;
 		bf = factory;
 		dbJobRunner = runner;
 		segmentSize = segmentSize2;
 		segments = new ArrayList<SegmentedChainBucketSegment>();
+		this.cacheWholeBucket = cacheWholeBucket;
 	}
 
 	public Bucket createShadow() throws IOException {
@@ -142,6 +162,8 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			InputStream is = null;
 			private long bucketRead = 0;
 			private boolean closed;
+			// FIXME implement cacheWholeBucket for InputStream too.
+			// Reason this hasn't been done is I don't think we actually use SBCB.getInputStream(), at least not much.
 			
 			@Override
 			public int read() throws IOException {
@@ -270,9 +292,16 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			int segmentNo = 0;
 			int bucketNo = 0;
 			SegmentedChainBucketSegment seg = makeSegment(segmentNo, null);
-			OutputStream cur = seg.makeBucketStream(bucketNo, SegmentedBucketChainBucket.this);
+			OutputStream cur;
 			private long bucketLength;
 			private boolean closed;
+			private ByteArrayOutputStream baos;
+			{
+				if(cacheWholeBucket)
+					baos = new ByteArrayOutputStream((int)bucketSize);
+				else
+					cur = seg.makeBucketStream(bucketNo, SegmentedBucketChainBucket.this);
+			}
 
 			@Override
 			public void write(int arg0) throws IOException {
@@ -297,19 +326,29 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				if(closed) throw new IOException("Already closed");
 				while(length > 0) {
 					if(bucketLength == bucketSize) {
-						bucketNo++;
-						cur.close();
 						if(bucketNo == segmentSize) {
 							bucketNo = 0;
 							segmentNo++;
 							seg = makeSegment(segmentNo, seg);
 						}
-						cur = seg.makeBucketStream(bucketNo, SegmentedBucketChainBucket.this);
+						if(baos != null) {
+							OutputStream os = seg.makeBucketStream(bucketNo, SegmentedBucketChainBucket.this);
+							bucketNo++;
+							os.write(baos.toByteArray());
+							baos.reset();
+							os.close();
+						} else {
+							cur.close();
+							cur = seg.makeBucketStream(++bucketNo, SegmentedBucketChainBucket.this);
+						}
 						bucketLength = 0;
 					}
 					int left = (int)Math.min(Integer.MAX_VALUE, bucketSize - bucketLength);
 					int write = Math.min(left, length);
-					cur.write(buf, offset, write);
+					if(baos != null)
+						baos.write(buf, offset, write);
+					else
+						cur.write(buf, offset, write);
 					offset += write;
 					length -= write;
 					bucketLength += write;
@@ -324,7 +363,20 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				if(closed) return;
 				if(Logger.shouldLog(LogLevel.MINOR, this)) 
 					Logger.minor(this, "Closing "+this+" for "+SegmentedBucketChainBucket.this);
-				cur.close();
+				if(baos != null && baos.size() > 0) {
+					if(bucketNo == segmentSize) {
+						bucketNo = 0;
+						segmentNo++;
+						seg = makeSegment(segmentNo, seg);
+					}
+					OutputStream os = seg.makeBucketStream(bucketNo, SegmentedBucketChainBucket.this);
+					bucketNo++;
+					os.write(baos.toByteArray());
+					baos.reset();
+					os.close();
+				} else {
+					cur.close();
+				}
 				closed = true;
 				cur = null;
 				final SegmentedChainBucketSegment oldSeg = seg;

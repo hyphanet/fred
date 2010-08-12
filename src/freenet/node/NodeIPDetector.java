@@ -38,12 +38,14 @@ import freenet.support.transport.ip.IPUtil;
  */
 public class NodeIPDetector {
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -228,7 +230,7 @@ public class NodeIPDetector {
 			// FIXME use a standard mutable int object, we have one somewhere
 			for(int i=0;i<peerList.length;i++) {
 				if(!peerList[i].isConnected()) {
-					if(logMINOR) Logger.minor(this, "Not connected");
+					if(logDEBUG) Logger.minor(this, "Not connected");
 					continue;
 				}
 				if(!peerList[i].isRealConnection()) {
