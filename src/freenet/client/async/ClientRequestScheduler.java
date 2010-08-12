@@ -11,6 +11,7 @@ import com.db4o.ObjectSet;
 
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
+import freenet.client.async.ClientRequestSelector.SelectorReturn;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -33,6 +34,7 @@ import freenet.node.SendableRequest;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
+import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
@@ -698,7 +700,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		boolean addedMore = false;
 		while(true) {
-			SendableRequest request = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container, now);
+			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container, now);
+			SendableRequest request = null;
+			if(r != null && r.req != null) request = r.req;
+			else {
+				if(r.wakeupTime > 0 && noLaterThan > r.wakeupTime) {
+					noLaterThan = r.wakeupTime;
+					if(logMINOR) Logger.minor(this, "Waking up in "+TimeUtil.formatTime(noLaterThan - now)+" for cooldowns");
+				}
+			}
 			if(request == null) {
 				synchronized(ClientRequestScheduler.this) {
 					// Don't wake up for a while, but no later than the time we expect the next item to come off the cooldown queue
