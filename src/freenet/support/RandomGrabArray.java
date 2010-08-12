@@ -644,10 +644,10 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				for(RandomGrabArrayItem item : block.reqs) {
 					count++;
 					if(item != null) {
-						if(count > index)
+						if(count >= index)
 							Logger.error(this, "ITEM AT INDEX "+count+" EVEN THOUGH MAX INDEX IS "+index);
 						else
-							Logger.error(this, "VALID ITEM WHILE DELETING BLOCK: "+item+" on "+this, new Exception("error"));
+							Logger.error(this, "VALID ITEM WHILE DELETING BLOCK: "+item+" on "+this+" at index "+count+" of "+index, new Exception("error"));
 					}
 				}
 				container.delete(block);
