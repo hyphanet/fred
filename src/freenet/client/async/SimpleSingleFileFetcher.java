@@ -211,5 +211,5 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		if(persistent) container.activate(rcb, 1);
 		rcb.onFailure(new FetchException(FetchException.CANCELLED), this, container, context);
 	}
-	
+
 }

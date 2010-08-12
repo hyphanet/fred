@@ -9,6 +9,7 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
+import freenet.client.async.SplitFileFetcherSegment.MyCooldownTrackerItem;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
@@ -22,8 +23,16 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 
-public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener {
+public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener, HasCooldownTrackerItem {
+
+	public class MyCooldownTrackerItem implements CooldownTrackerItem {
+
+		public int retryCount;
+		public long cooldownWakeupTime;
+
+	}
 
 	final ClientKey key;
 	protected boolean cancelled;
@@ -33,9 +42,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	final FetchContext ctx;
 	protected boolean deleteFetchContext;
 	static final SendableRequestItem[] keys = new SendableRequestItem[] { NullSendableRequestItem.nullItem };
-	/** It is essential that we know when the cooldown will end, otherwise we cannot 
-	 * remove the key from the queue if we are killed before that */
-	long cooldownWakeupTime;
 	
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -55,7 +61,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		this.ctx = ctx;
 		if(ctx == null) throw new NullPointerException();
 		if(key == null) throw new NullPointerException();
-		cooldownWakeupTime = -1;
 	}
 
 	@Override
@@ -103,26 +108,31 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	/** Try again - returns true if we can retry */
 	protected boolean retry(ObjectContainer container, ClientContext context) {
-		retryCount++;
 		if(isEmpty(container))
 			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
+		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		if(maxRetries == -1)
+			tracker.retryCount++;
+		else
+			retryCount++;
 		if(logMINOR)
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+") on "+this+" finished="+finished+" cancelled="+cancelled);
-		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		if((retryCount <= maxRetries) || (maxRetries == -1)) {
-			if(persistent)
+			if(persistent && maxRetries != -1)
 				container.store(this);
 			if(retryCount % RequestScheduler.COOLDOWN_RETRIES == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
-				if(cooldownWakeupTime > now) {
-					Logger.error(this, "Already on the cooldown queue for "+this+" until "+freenet.support.TimeUtil.formatTime(cooldownWakeupTime - now), new Exception("error"));
+				if(tracker.cooldownWakeupTime > now) {
+					Logger.error(this, "Already on the cooldown queue for "+this+" until "+freenet.support.TimeUtil.formatTime(tracker.cooldownWakeupTime - now), new Exception("error"));
 				} else {
 					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
 					if(persistent)
 						container.activate(key, 5);
 					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK);
-					cooldownWakeupTime = sched.queueCooldown(key, this, container);
+					tracker.cooldownWakeupTime = sched.queueCooldown(key, this, container);
+					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown queue until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
 					if(persistent)
 						container.deactivate(key, 5);
 				}
@@ -140,6 +150,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return false;
 	}
 
+	private MyCooldownTrackerItem makeCooldownTrackerItem(
+			ObjectContainer container, ClientContext context) {
+		return (MyCooldownTrackerItem) context.cooldownTracker.make(this, persistent, container);
+	}
+
+	public CooldownTrackerItem makeCooldownTrackerItem() {
+		return new MyCooldownTrackerItem();
+	}
+	
 	@Override
 	public int getRetryCount() {
 		return retryCount;
@@ -236,24 +255,26 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	
 	@Override
 	public long getCooldownWakeup(Object token, ObjectContainer container, ClientContext context) {
-		return cooldownWakeupTime;
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		return tracker.cooldownWakeupTime;
 	}
 
 	@Override
 	public long getCooldownWakeupByKey(Key key, ObjectContainer container, ClientContext context) {
-		return cooldownWakeupTime;
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		return tracker.cooldownWakeupTime;
 	}
 	
 	@Override
 	public synchronized void resetCooldownTimes(ObjectContainer container, ClientContext context) {
-		cooldownWakeupTime = -1;
-		if(persistent)
-			container.store(this);
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		tracker.cooldownWakeupTime = -1;
 	}
 
 	@Override
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
-		if(cooldownWakeupTime > time) {
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		if(tracker.cooldownWakeupTime > time) {
 			if(logMINOR) Logger.minor(this, "Not requeueing as deadline has not passed yet");
 			return;
 		}
@@ -383,8 +404,9 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	
 	public synchronized long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
 		if(cancelled || finished) return -1;
-		if(cooldownWakeupTime < now) return 0;
-		return cooldownWakeupTime;
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		if(tracker.cooldownWakeupTime < now) return 0;
+		return tracker.cooldownWakeupTime;
 	}
 
 }
