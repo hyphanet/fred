@@ -162,6 +162,10 @@ public class CooldownTracker {
 	 * @param container
 	 */
 	public synchronized boolean clearCachedWakeup(HasCooldownCacheItem toCheck, boolean persistent, ObjectContainer container) {
+		if(toCheck == null) {
+			Logger.error(this, "Clearing cached wakeup for null", new Exception("error"));
+			return false;
+		}
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
 			long uid = container.ext().getID(toCheck);
