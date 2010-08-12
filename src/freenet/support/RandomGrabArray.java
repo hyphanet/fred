@@ -298,10 +298,10 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				RandomGrabArrayItem item;
 				if(offset == BLOCK_SIZE) {
 					offset = -1;
-					if(persistent && blockNumReading != blockNumWriting)
-						container.deactivate(blocks[blockNumReading], 1);
 					if(persistent && changedMe)
 						container.store(blocks[blockNumReading]);
+					if(persistent && blockNumReading != blockNumWriting)
+						container.deactivate(blocks[blockNumReading], 1);
 					blockNumReading++;
 					if(persistent && blockNumReading != blockNumWriting)
 						container.activate(blocks[blockNumReading], 1);
@@ -352,10 +352,10 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				writeOffset++;
 				if(writeOffset == BLOCK_SIZE) {
 					writeOffset = 0;
-					if(persistent && blockNumReading != blockNumWriting)
-						container.deactivate(blocks[blockNumWriting], 1);
 					if(persistent && changedMe)
 						container.store(blocks[blockNumWriting]);
+					if(persistent && blockNumReading != blockNumWriting)
+						container.deactivate(blocks[blockNumWriting], 1);
 					blockNumWriting++;
 					if(persistent && blockNumReading != blockNumWriting)
 						container.activate(blocks[blockNumWriting], 1);
