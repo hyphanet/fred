@@ -537,7 +537,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					for(int j=0;j<block.reqs.length;j++) {
 						if(x >= index) break;
 						x++;
-						if(block.reqs[i] == it) {
+						if(block.reqs[j] == it) {
 							int pullFrom = --index;
 							int idx = pullFrom % BLOCK_SIZE;
 							int endBlock = pullFrom / BLOCK_SIZE;
