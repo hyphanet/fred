@@ -54,8 +54,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		this.parent = parent;
 	}
 
-	/**
-	 * Add directly to a RandomGrabArrayWithClient under us. */
+	/** Add directly to a RandomGrabArrayWithClient under us. */
 	public synchronized void add(Object client, RandomGrabArrayItem item, ObjectContainer container, ClientContext context) {
 		if(item.persistent() != persistent) throw new IllegalArgumentException("item.persistent()="+item.persistent()+" but array.persistent="+persistent+" item="+item+" array="+this);
 		RandomGrabArrayWithClient rga;
