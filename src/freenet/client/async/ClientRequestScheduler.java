@@ -499,6 +499,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(better.getPriority() > reqGroup.prio) {
 						Logger.error(this, "Selected "+better+" as better than "+reqGroup+" but isn't better!");
 					}
+					if(logMINOR) Logger.minor(this, "Returning better: "+better);
 					return better;
 				}
 			}
@@ -511,6 +512,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			synchronized(starterQueue) {
 				block = reqGroup.grabNotStarted(clientContext.fastWeakRandom, this);
 				if(block == null) {
+					if(logMINOR) Logger.minor(this, "No block found on "+reqGroup);
 					for(int i=0;i<starterQueue.size();i++) {
 						if(starterQueue.get(i) == reqGroup) {
 							starterQueue.remove(i);
