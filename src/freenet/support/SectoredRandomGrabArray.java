@@ -244,10 +244,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			
 			RandomGrabArrayItem item = null;
 			RemoveRandomReturn val = rga.removeRandom(excluding, container, context, now);
-			if(val != null) {
-				if(val.item != null)
-					item = val.item;
-			}
+			if(val != null && val.item != null) item = val.item;
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
 						" rga.isEmpty="+rga.isEmpty(container));
