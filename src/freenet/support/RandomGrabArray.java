@@ -245,7 +245,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				// Check for nulls, but don't check for cancelled, since we'd have to activate.
 			} while (index > i && oret == null);
 			// Shrink array
-			if(blocks.length == 1 && index < blocks[0].reqs.length / 4) {
+			if(blocks.length == 1 && index < blocks[0].reqs.length / 4 && blocks[0].reqs.length > MIN_SIZE) {
 				changedMe = true;
 				// Shrink array
 				int newSize = Math.max(index * 2, MIN_SIZE);
