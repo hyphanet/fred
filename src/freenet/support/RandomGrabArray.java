@@ -4,7 +4,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.HasCooldownCacheItem;
-import freenet.support.Logger.LogLevel;
 
 /**
  * An array which supports very fast remove-and-return-a-random-element.

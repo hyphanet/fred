@@ -4,7 +4,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.HasCooldownCacheItem;
-import freenet.support.Logger.LogLevel;
 
 /**
  * Like RandomGrabArray, but there is an equal chance of any given client's requests being
