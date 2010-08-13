@@ -14,12 +14,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	private static volatile boolean logMINOR;
 	
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
+		Logger.registerClass(SectoredRandomGrabArray.class);
 	}
 	
 
