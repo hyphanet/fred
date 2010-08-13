@@ -529,6 +529,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					container.activate(existingGrabber, 1);
 				}
 				grabber.moveElementsTo(existingGrabber, container, canCommit);
+				grabber.removeFrom(container);
 				if(persistent) {
 					container.deactivate(grabber, 1);
 					container.deactivate(existingGrabber, 1);
