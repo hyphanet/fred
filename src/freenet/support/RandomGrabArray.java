@@ -421,18 +421,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				return new RemoveRandomReturn(ret);
 			}
 			if(valid == 0 && exclude == 0) {
-				if(index != 0) {
-					index = 0;
-					if(persistent) {
-						if(blocks.length != 0)
-							blocks = new Block[] { blocks[0] };
-						container.store(blocks[0]);
-						container.store(this);
-						container.deactivate(blocks[blockNumReading], 1);
-						if(blockNumReading != blockNumWriting)
-							container.deactivate(blocks[blockNumWriting], 1);
-					}
-				}
 				if(logMINOR) Logger.minor(this, "No valid or excluded items total "+index);
 				return null; // Caller should remove the whole RGA
 			} else if(valid == 0) {
