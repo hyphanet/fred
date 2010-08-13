@@ -332,7 +332,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					container.activate(perm, 1);
 					int permSize = perm.size();
 					int transSize = trans.size();
-					boolean choosePerm = random.nextInt(permSize + transSize) > permSize;
+					boolean choosePerm = random.nextInt(permSize + transSize) < permSize;
 					if(choosePerm) {
 						chosenTracker = perm;
 						triedPerm = true;
