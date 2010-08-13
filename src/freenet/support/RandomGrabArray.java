@@ -407,7 +407,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			if(chosenItem != null) {
 				if(persistent && validItem != null && validItem != chosenItem)
 					container.deactivate(validItem, 1);
-				changedMe = true;
 				ret = chosenItem;
 				if(logMINOR) Logger.minor(this, "Chosen random item "+ret+" out of "+valid+" total "+index);
 				if(persistent && changedMe) {
