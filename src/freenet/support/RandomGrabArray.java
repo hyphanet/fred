@@ -265,13 +265,14 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					Logger.minor(this, "Shrinking blocks on "+this);
 				Block[] newBlocks = new Block[newBlockCount];
 				System.arraycopy(blocks, 0, newBlocks, 0, newBlocks.length);
+				Block[] oldBlocks = blocks;
+				blocks = newBlocks;
 				if(persistent) {
 					container.store(this);
-					for(int x=newBlocks.length;x<blocks.length;x++)
-						container.delete(blocks[x]);
-					container.deactivate(blocks[blockNo], 1);
+					for(int x=newBlocks.length;x<oldBlocks.length;x++)
+						container.delete(oldBlocks[x]);
+					container.deactivate(oldBlocks[blockNo], 1);
 				}
-				blocks = newBlocks;
 			}
 			return ret;
 		}
