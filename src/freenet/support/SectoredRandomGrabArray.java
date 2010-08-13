@@ -248,9 +248,8 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
 						" rga.isEmpty="+rga.isEmpty(container));
-			// Just because the item is cancelled does not necessarily mean the whole client is.
-			// E.g. a segment may return cancelled because it is decoding, that doesn't mean
-			// other segments are cancelled. So just go around the loop in that case.
+			// If it is not empty but returns null we exclude it, and count the exclusion.
+			// If it is empty we remove it, and don't count the exclusion.
 			if(rga.isEmpty(container)) {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
