@@ -342,7 +342,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			}
 			excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
 			if(excludeTime > 0) {
-				if(wakeupTime < excludeTime) wakeupTime = excludeTime;
+				if(wakeupTime > excludeTime) wakeupTime = excludeTime;
 				rga = null;
 			} else {
 				if(persistent)
