@@ -396,10 +396,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					if(logMINOR)
 						Logger.minor(this, "Deactivating "+item);
 					container.deactivate(item, 1);
-					if(container.ext().isActive(item))
-						Logger.error(this, "Still active after deactivation: "+item);
-					else if(logMINOR)
-						Logger.minor(this, "Deactivated: "+item);
 				}
 			}
 			if(index != target) {
