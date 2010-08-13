@@ -244,6 +244,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				oret = blocks[blockNo].reqs[i % BLOCK_SIZE];
 				// Check for nulls, but don't check for cancelled, since we'd have to activate.
 			} while (index > i && oret == null);
+			int newBlockCount;
 			// Shrink array
 			if(blocks.length == 1 && index < blocks[0].reqs.length / 4 && blocks[0].reqs.length > MIN_SIZE) {
 				changedMe = true;
@@ -258,11 +259,11 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					container.deactivate(blocks[0], 1);
 				}
 			} else if(blocks.length > 1 &&
-					(((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1) < 
+					(newBlockCount = (((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1)) < 
 					blocks.length) {
 				if(logMINOR)
 					Logger.minor(this, "Shrinking blocks on "+this);
-				Block[] newBlocks = new Block[((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1];
+				Block[] newBlocks = new Block[newBlockCount];
 				System.arraycopy(blocks, 0, newBlocks, 0, newBlocks.length);
 				if(persistent) {
 					container.store(this);
