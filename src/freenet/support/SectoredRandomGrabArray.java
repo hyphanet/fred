@@ -316,6 +316,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
 		if(excludeTime > 0) {
 			wakeupTime = excludeTime;
+			rga = null;
+			firstRGA = null;
+		} else {
 			if(persistent)
 				container.activate(rga, 1);
 			val = rga.removeRandom(excluding, container, context, now);
@@ -354,7 +357,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					}
 				}
 			}
-			if(firstRGA.isEmpty() && (rga != null && rga.isEmpty())) {
+			if(firstRGA != null && firstRGA.isEmpty() && rga != null && rga.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Removing both on "+this+" : "+firstRGA+" and "+rga+" are empty");
 				grabArrays = new RemoveRandomWithObject[0];
 				grabClients = new Object[0];
@@ -363,7 +366,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					firstRGA.removeFrom(container);
 					rga.removeFrom(container);
 				}
-			} else if(firstRGA.isEmpty()) {
+			} else if(firstRGA != null && firstRGA.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Removing first: "+firstRGA+" is empty on "+this);;
 				if(persistent) {
 					container.activate(firstRGA, 1);
