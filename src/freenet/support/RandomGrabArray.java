@@ -14,12 +14,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	private static volatile boolean logMINOR;
 	
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
+		Logger.registerClass(RandomGrabArray.class);
 	}
 	
 	private static class Block {
