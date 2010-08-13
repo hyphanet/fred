@@ -401,11 +401,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		long wakeupTime = Long.MAX_VALUE;
 		// Optimise the common case
 		RemoveRandomWithObject rga = grabArrays[0];
-		if(persistent)
-			container.activate(rga, 1);
 		long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
 		if(excludeTime > 0)
 			return new RemoveRandomReturn(excludeTime);
+		if(persistent)
+			container.activate(rga, 1);
 		RemoveRandomReturn val = rga.removeRandom(excluding, container, context, now);
 		RandomGrabArrayItem item = null;
 		if(val != null) { // val == null => remove it
