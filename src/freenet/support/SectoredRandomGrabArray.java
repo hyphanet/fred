@@ -185,10 +185,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
 						" rga.isEmpty="+rga.isEmpty(container));
-			// Just because the item is cancelled does not necessarily mean the whole client is.
-			// E.g. a segment may return cancelled because it is decoding, that doesn't mean
-			// other segments are cancelled. So just go around the loop in that case.
-			if(rga.isEmpty(container)) {
+			if(item == null) {
+				if(persistent)
+					container.deactivate(rga, 1);
+				return new RemoveRandomReturn(item);
+			} else if(rga.isEmpty(container)) {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
 				removeElement(x);
@@ -196,13 +197,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					container.store(this);
 					rga.removeFrom(container);
 				}
+				if(persistent)
+					container.deactivate(rga, 1);
 			}
-			if(persistent)
-				container.deactivate(rga, 1);
-			if(item == null) continue;
-			// No point calling getCooldownTime() again.
-			return new RemoveRandomReturn(item);
-
 		}
 		context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container);
 		return new RemoveRandomReturn(wakeupTime);
