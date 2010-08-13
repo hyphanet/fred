@@ -845,6 +845,14 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				}
 			}
 		}
+		
+		int[] dataRetries = this.dataRetries;
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		if(getMaxRetries(container) == -1) {
+			// Cooldown and retry counts entirely kept in RAM.
+			dataRetries = tracker.dataRetries;
+		}
+		
 		boolean allDecodedCorrectly = true;
 		boolean allFromStore = !parent.sentToNetwork;
 		for(int i=0;i<dataBuckets.length;i++) {
@@ -880,6 +888,11 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			} catch (FetchException e) {
 				fail(e, container, context, false);
 				return;
+			}
+			if(heal) {
+				int base = dataRetries[i] == 0 ? 2 : 4;
+				if(context.fastWeakRandom.nextInt(base) != 0)
+					heal = false;
 			}
 			if(heal) {
 				Bucket wrapper = queueHeal(data, container, context);
@@ -1026,6 +1039,12 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				}
 				
 			}
+			int[] checkRetries = this.checkRetries;
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			if(getMaxRetries(container) == -1) {
+				// Cooldown and retry counts entirely kept in RAM.
+				checkRetries = tracker.checkRetries;
+			}
 			boolean allEncodedCorrectly = true;
 			boolean allFromStore = !parent.sentToNetwork;
 			for(int i=0;i<checkBuckets.length;i++) {
@@ -1072,12 +1091,16 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					return;
 				}
 				if(heal) {
+					int base = checkRetries[i] == 0 ? 2 : 4;
+					if(context.fastWeakRandom.nextInt(base) != 0)
+						heal = false;
+				}
+				if(heal) {
 					Bucket wrapper = queueHeal(data, container, context);
 					if(wrapper != data) {
 						assert(!persistent);
 						wrapper.free();
 					}
-
 					data.free();
 					if(persistent) data.removeFrom(container);
 					checkBuckets[i].clearData();
