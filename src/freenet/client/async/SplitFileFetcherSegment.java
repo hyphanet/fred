@@ -197,7 +197,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		maxBlockLength = maxTempLength;
 		this.blockFetchContext = blockFetchContext;
 		this.recursionLevel = 0;
-		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher+" : "+dataRetries.length+" data blocks "+checkRetries.length+" check blocks");
+		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher+" : "+dataBuckets.length+" data blocks "+checkBuckets.length+" check blocks");
 		this.pre1254 = pre1254;
 		this.cryptoAlgorithm = cryptoAlgorithm;
 		this.forceCryptoKey = forceCryptoKey;
