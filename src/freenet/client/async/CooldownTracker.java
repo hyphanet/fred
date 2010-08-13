@@ -232,7 +232,7 @@ public class CooldownTracker {
 			Map.Entry<HasCooldownCacheItem, TransientCooldownCacheItem> item = it2.next();
 			if(item.getValue().timeValid < now) {
 				removedTransient++;
-				it.remove();
+				it2.remove();
 			}
 		}
 		if(logMINOR) Logger.minor(this, "Removed "+removedPersistent+" persistent cooldown cache items and "+removedTransient+" transient cooldown cache items");
