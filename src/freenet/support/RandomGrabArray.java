@@ -281,7 +281,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	private RemoveRandomReturn removeRandomExhaustiveSearch(
 			RandomGrabArrayItemExclusionList excluding,
 			ObjectContainer container, ClientContext context, long now) {
-		if(logMINOR && persistent) 
+		if(logMINOR)
 			Logger.minor(this, "Doing exhaustive search and compaction on "+this);
 		boolean changedMe = false;
 		long wakeupTime = Long.MAX_VALUE;
