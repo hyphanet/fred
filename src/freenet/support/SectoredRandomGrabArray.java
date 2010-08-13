@@ -320,7 +320,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				}
 			}
 		}
-		if(item == null) {
+		if(item != null) {
+			if(persistent)
+				container.deactivate(rga, 1);
+			if(logMINOR)
+				Logger.minor(this, "Returning (two items only) "+item+" for "+rga);
+			return new RemoveRandomReturn(item);
+		} else {
 			x = 1-x;
 			rga = grabArrays[x];
 			if(rga == null) {
@@ -377,12 +383,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container);
 				return new RemoveRandomReturn(wakeupTime);
 			} else return new RemoveRandomReturn(item);
-		} else {
-			if(persistent)
-				container.deactivate(rga, 1);
-			if(logMINOR)
-				Logger.minor(this, "Returning (two items only) "+item+" for "+rga);
-			return new RemoveRandomReturn(item);
 		}
 	}
 
