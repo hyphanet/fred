@@ -250,7 +250,12 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 						" rga.isEmpty="+rga.isEmpty(container));
 			// If it is not empty but returns null we exclude it, and count the exclusion.
 			// If it is empty we remove it, and don't count the exclusion.
-			if(item == null) {
+			if(item != null) {
+				if(persistent)
+					container.deactivate(rga, 1);
+				// No point calling getCooldownTime() again.
+				return item;
+			} else {
 				if(rga.isEmpty(container)) {
 					if(logMINOR)
 						Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
@@ -273,10 +278,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					container.deactivate(rga, 1);
 				continue;
 			}
-			if(persistent)
-				container.deactivate(rga, 1);
-			// No point calling getCooldownTime() again.
-			return item;
 		}
 	}
 
