@@ -431,8 +431,12 @@ public class PersistentBlobTempBucketFactory {
 		notCommittedBlobs.remove(index);
 		bucket.onFree();
 		if(!bucket.persisted()) {
-			// If it hasn't been written to the database, it doesn't need to be removed, so removeFrom() won't be called.
-			freeSlots.put(index, bucket.getTag());
+			if(bucket.getTag() == null) {
+				Logger.error(this, "freeBucket but tag is null for "+bucket+" - not activated???", new Exception("error"));
+			} else {
+				// If it hasn't been written to the database, it doesn't need to be removed, so removeFrom() won't be called.
+				freeSlots.put(index, bucket.getTag());
+			}
 		}
 		PersistentBlobTempBucket shadow = shadows.get(index);
 		if(shadow != null) {
@@ -479,18 +483,26 @@ public class PersistentBlobTempBucketFactory {
 				}
 			}
 		}
-		container.activate(tag, 1);
-		// Probably best to store the tag even if the bucket was never persisted.
-		if(!bucket.freed()) {
-			Logger.error(this, "Removing bucket "+bucket+" for slot "+index+" but not freed!", new Exception("debug"));
-			notCommittedBlobs.put(index, bucket);
+		if(tag != null) {
+			container.activate(tag, 1);
+			// Probably best to store the tag even if the bucket was never persisted.
+			if(!bucket.freed()) {
+				Logger.error(this, "Removing bucket "+bucket+" for slot "+index+" but not freed!", new Exception("debug"));
+				notCommittedBlobs.put(index, bucket);
+			} else {
+				almostFreeSlots.put(index, tag);
+				notCommittedBlobs.remove(index);
+			}
+			tag.bucket = null;
+			tag.isFree = true;
+			container.store(tag);
 		} else {
-			almostFreeSlots.put(index, tag);
-			notCommittedBlobs.remove(index);
+			Logger.error(this, "Tag still null for "+bucket, new Exception("error"));
+			if(!bucket.freed()) {
+				Logger.error(this, "Removing bucket "+bucket+" for slot "+index+" but not freed!", new Exception("debug"));
+				notCommittedBlobs.put(index, bucket);
+			}
 		}
-		tag.bucket = null;
-		tag.isFree = true;
-		container.store(tag);
 		container.delete(bucket);
 		bucket.onRemove();
 		
@@ -836,7 +848,8 @@ public class PersistentBlobTempBucketFactory {
 				Map.Entry<Long,PersistentBlobTempBucketTag> entry = it.next();
 				Long slot = entry.getKey();
 				if(slot >= blocks) continue;
-				freeSlots.put(entry.getKey(), entry.getValue());
+				if(entry.getValue() != null)
+					freeSlots.put(entry.getKey(), entry.getValue());
 				freeNow++;
 			}
 		}
