@@ -575,9 +575,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			if(logMINOR) Logger.minor(this, "Not found: "+it+" on "+this);
 			return;
 		}
-		if(persistent) {
-			container.store(this);
-		}
+		if(persistent) container.store(this);
 		if(empty && parent != null) {
 			boolean active = true;
 			if(persistent) active = container.ext().isActive(parent);
