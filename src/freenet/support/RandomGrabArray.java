@@ -333,8 +333,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					if(persistent)
 						container.activate(item, 1);
 					activated = true;
-					boolean broken = false;
-					broken = persistent && item.isStorageBroken(container);
+					boolean broken = persistent && item.isStorageBroken(container);
 					long itemWakeTime = -1;
 					if(broken) {
 						Logger.error(this, "Storage broken on "+item);
