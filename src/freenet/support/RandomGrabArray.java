@@ -669,7 +669,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			for(Block block : blocks) {
 				container.activate(block, 1);
 				for(RandomGrabArrayItem item : block.reqs) {
-					count++;
 					if(item != null) {
 						container.activate(item, 1); // For logging
 						if(count >= index)
@@ -677,6 +676,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 						else
 							Logger.error(this, "VALID ITEM WHILE DELETING BLOCK: "+item+" on "+this+" at index "+count+" of "+index, new Exception("error"));
 					}
+					count++;
 				}
 				container.delete(block);
 			}
