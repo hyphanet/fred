@@ -529,7 +529,7 @@ abstract class ClientRequestSchedulerBase {
 		for(int i=0;i<newPriorities.length;i++) {
 			SectoredRandomGrabArray prio = newPriorities[i];
 			container.activate(prio, 1);
-			if(prio == null || prio.isEmpty())
+			if(prio == null || prio.isEmpty(container))
 				System.out.println("Priority "+i+" : empty");
 			else {
 				System.out.println("Priority "+i+" : "+prio.size());

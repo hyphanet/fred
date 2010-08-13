@@ -151,7 +151,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				fuzz++;
 				continue; // Don't return because first round may be higher with soft scheduling
 			}
-			if(((result != null) && (!result.isEmpty()))) {
+			if(((result != null) && (!result.isEmpty(container)))) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
@@ -465,7 +465,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					if(altRGA != null) {
 						container.activate(altRGA, 1);
 						SendableRequest altReq = null;
-						if(container.ext().isStored(altRGA) && !altRGA.isEmpty()) {
+						if(container.ext().isStored(altRGA) && !altRGA.isEmpty(container)) {
 							if(logMINOR)
 								Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
 							val = altRGA.removeRandom(starter, container, context, now);

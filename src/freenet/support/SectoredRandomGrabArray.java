@@ -184,11 +184,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			}
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
-						" rga.isEmpty="+rga.isEmpty());
+						" rga.isEmpty="+rga.isEmpty(container));
 			// Just because the item is cancelled does not necessarily mean the whole client is.
 			// E.g. a segment may return cancelled because it is decoding, that doesn't mean
 			// other segments are cancelled. So just go around the loop in that case.
-			if(rga.isEmpty()) {
+			if(rga.isEmpty(container)) {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
 				removeElement(x);
@@ -242,11 +242,11 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			}
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
-						" rga.isEmpty="+rga.isEmpty());
+						" rga.isEmpty="+rga.isEmpty(container));
 			// Just because the item is cancelled does not necessarily mean the whole client is.
 			// E.g. a segment may return cancelled because it is decoding, that doesn't mean
 			// other segments are cancelled. So just go around the loop in that case.
-			if(rga.isEmpty()) {
+			if(rga.isEmpty(container)) {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
 				removeElement(x);
@@ -256,7 +256,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				}
 			}
 			if(item == null) {
-				if(!rga.isEmpty()) {
+				if(!rga.isEmpty(container)) {
 					// Hmmm...
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
@@ -356,7 +356,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					}
 				}
 			}
-			if(firstRGA != null && firstRGA.isEmpty() && rga != null && rga.isEmpty()) {
+			if(firstRGA != null && firstRGA.isEmpty(container) && rga != null && rga.isEmpty(container)) {
 				if(logMINOR) Logger.minor(this, "Removing both on "+this+" : "+firstRGA+" and "+rga+" are empty");
 				grabArrays = new RemoveRandomWithObject[0];
 				grabClients = new Object[0];
@@ -365,7 +365,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					firstRGA.removeFrom(container);
 					rga.removeFrom(container);
 				}
-			} else if(firstRGA != null && firstRGA.isEmpty()) {
+			} else if(firstRGA != null && firstRGA.isEmpty(container)) {
 				if(logMINOR) Logger.minor(this, "Removing first: "+firstRGA+" is empty on "+this);
 				grabArrays = new RemoveRandomWithObject[] { rga };
 				grabClients = new Object[] { grabClients[x] };
@@ -413,7 +413,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				if(wakeupTime > val.wakeupTime) wakeupTime = val.wakeupTime;
 			}
 		}
-		if(rga.isEmpty()) {
+		if(rga.isEmpty(container)) {
 			if(logMINOR)
 				Logger.minor(this, "Removing only grab array (0) : "+rga);
 			grabArrays = new RemoveRandomWithObject[0];
@@ -453,7 +453,19 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		grabClients = newClients;
 	}
 
-	public synchronized boolean isEmpty() {
+	public synchronized boolean isEmpty(ObjectContainer container) {
+		if(container != null && !persistent) {
+			boolean stored = container.ext().isStored(this);
+			boolean active = container.ext().isActive(this);
+			if(stored && !active) {
+				Logger.error(this, "Not empty because not active on "+this);
+				return false;
+			} else if(!stored) {
+				Logger.error(this, "Not stored yet passed in container on "+this);
+			} else if(stored) {
+				throw new IllegalStateException("Stored but not persistent on "+this);
+			}
+		}
 		return grabArrays.length == 0;
 	}
 	

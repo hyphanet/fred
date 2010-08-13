@@ -602,7 +602,19 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		}
 	}
 
-	public synchronized boolean isEmpty() {
+	public synchronized boolean isEmpty(ObjectContainer container) {
+		if(container != null && !persistent) {
+			boolean stored = container.ext().isStored(this);
+			boolean active = container.ext().isActive(this);
+			if(stored && !active) {
+				Logger.error(this, "Not empty because not active on "+this);
+				return false;
+			} else if(!stored) {
+				Logger.error(this, "Not stored yet passed in container on "+this);
+			} else if(stored) {
+				throw new IllegalStateException("Stored but not persistent on "+this);
+			}
+		}
 		return index == 0;
 	}
 	

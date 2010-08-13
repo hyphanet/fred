@@ -6,7 +6,7 @@ public interface RemoveRandomWithObject extends RemoveRandom {
 
 	public Object getObject();
 
-	public boolean isEmpty();
+	public boolean isEmpty(ObjectContainer container);
 
 	public void removeFrom(ObjectContainer container);
 
