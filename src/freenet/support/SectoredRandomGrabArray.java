@@ -475,6 +475,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 
 	public void maybeRemove(RemoveRandom r, ObjectContainer container) {
 		int count = 0;
+		int finalSize;
 		synchronized(this) {
 			while(true) {
 				int found = -1;
@@ -492,6 +493,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					break;
 				}
 			}
+			finalSize = grabArrays.length;
 		}
 		if(count == 0) {
 			// This is not unusual, it was e.g. removed because of being empty.
@@ -500,6 +502,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		} else if(persistent) {
 			container.store(this);
 			r.removeFrom(container);
+			if(finalSize == 0 && parent != null) parent.maybeRemove(this, container);
 		}
 	}
 
