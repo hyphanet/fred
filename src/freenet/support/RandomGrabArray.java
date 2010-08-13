@@ -254,6 +254,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				blocks[0].reqs = r;
 				if(persistent) {
 					container.store(this);
+					container.store(blocks[0]);
 					container.deactivate(blocks[0], 1);
 				}
 			} else if(blocks.length > 1 &&
