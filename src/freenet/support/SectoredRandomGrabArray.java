@@ -218,6 +218,16 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(grabArrays.length == 0) return null;
 			int x = context.fastWeakRandom.nextInt(grabArrays.length);
 			RemoveRandomWithObject rga = grabArrays[x];
+			if(rga == null) {
+				// We handle this in the other cases so we should handle it here.
+				Logger.error(this, "Slot "+x+" is null for client "+grabClients[x]);
+				excluded++;
+				if(excluded > MAX_EXCLUDED) {
+					Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
+					return null;
+				}
+				continue;
+			}
 			long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
 			if(excludeTime > 0) {
 				excluded++;
