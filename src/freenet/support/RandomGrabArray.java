@@ -274,6 +274,8 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					container.deactivate(oldBlocks[blockNo], 1);
 				}
 			}
+			if(changedMe)
+				container.store(this);
 			return ret;
 		}
 	}
