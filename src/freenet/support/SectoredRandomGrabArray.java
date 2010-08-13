@@ -501,7 +501,10 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		} else if(persistent) {
 			container.store(this);
 			r.removeFrom(container);
-			if(finalSize == 0 && parent != null) parent.maybeRemove(this, container);
+			if(finalSize == 0 && parent != null) {
+				if(persistent) container.activate(parent, 1);
+				parent.maybeRemove(this, container);
+			}
 		}
 	}
 
