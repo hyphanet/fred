@@ -253,7 +253,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(item != null) {
 				if(persistent)
 					container.deactivate(rga, 1);
-				// No point calling getCooldownTime() again.
 				return item;
 			} else {
 				if(rga.isEmpty(container)) {
@@ -265,7 +264,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 						rga.removeFrom(container);
 					}
 				} else {
-					// Hmmm...
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
 						Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
