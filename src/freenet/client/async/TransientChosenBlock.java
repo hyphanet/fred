@@ -10,6 +10,7 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
+import freenet.support.RandomGrabArray;
 
 /**
  * A ChosenBlock which isn't persistent.
@@ -41,21 +42,38 @@ public class TransientChosenBlock extends ChosenBlock {
 	@Override
 	public void onFailure(LowLevelPutException e, ClientContext context) {
 		((SendableInsert) request).onFailure(e, token, null, context);
+		clearCooldown();
 	}
 
 	@Override
 	public void onInsertSuccess(ClientContext context) {
 		((SendableInsert) request).onSuccess(token, null, context);
+		clearCooldown();
 	}
 
 	@Override
 	public void onFailure(LowLevelGetException e, ClientContext context) {
 		((SendableGet) request).onFailure(e, token, null, context);
+		clearCooldown();
 	}
 
 	@Override
 	public void onFetchSuccess(ClientContext context) {
 		sched.succeeded((SendableGet)request, false);
+		clearCooldown();
+	}
+	
+	private void clearCooldown() {
+		// Because the request is no longer running, we need to clear the cooldown cache.
+		// In the worst case, it will have Long.MAX_VALUE all the way up, in which case, if we go into
+		// cooldown, we will never come out. However in many cases the request will not
+		// be the limiting factor, so the propagation will stop before that.
+		sched.getContext().cooldownTracker.clearCachedWakeup(request, false, null, true);
+		// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
+		// We should wake up the parent as well even if this item is not in cooldown.
+		RandomGrabArray rga = request.getParentGrabArray();
+		if(rga != null)
+			sched.getContext().cooldownTracker.clearCachedWakeup(rga, false, null, true);
 	}
 
 	@Override
