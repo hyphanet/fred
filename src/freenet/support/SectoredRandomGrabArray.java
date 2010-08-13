@@ -121,9 +121,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		if(requestGrabber.getObject() != client)
 			throw new IllegalArgumentException("Client not equal to RemoveRandomWithObject's client: client="+client+" rr="+requestGrabber+" his object="+requestGrabber.getObject());
 		addElement(client, requestGrabber);
-		if(persistent) {
-			container.store(this);
-		}
+		if(persistent) container.store(this);
 		if(context != null)
 			context.cooldownTracker.clearCachedWakeup(this, persistent, container, false);
 	}
