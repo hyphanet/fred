@@ -120,6 +120,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		// PRIO will do 0,1,2,3,4,5,6,0
 		// TWEAKED will do rand%6,0,1,2,3,4,5,6
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
+			boolean persistent = false;
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			if(transientOnly || schedCore == null)
 				result = null;
@@ -133,6 +134,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 						result = null;
 					} else {
 						container.activate(result, 1);
+						persistent = true;
 					}
 				}
 			}
@@ -151,7 +153,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				fuzz++;
 				continue; // Don't return because first round may be higher with soft scheduling
 			}
-			if(((result != null) && (!result.isEmpty(container)))) {
+			if(((result != null) && (!result.isEmpty(persistent ? container : null)))) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
