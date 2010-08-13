@@ -353,7 +353,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					}
 				}
 			}
-			if(firstRGA.isEmpty() && rga.isEmpty()) {
+			if(firstRGA.isEmpty() && (excludeTime <= 0 && rga.isEmpty())) {
 				grabArrays = new RemoveRandomWithObject[0];
 				grabClients = new Object[0];
 				if(persistent) {
