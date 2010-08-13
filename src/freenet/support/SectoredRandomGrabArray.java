@@ -341,6 +341,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
 			if(excludeTime > 0) {
 				if(wakeupTime < excludeTime) wakeupTime = excludeTime;
+				rga = null;
 			} else {
 				if(persistent)
 					container.activate(rga, 1);
@@ -353,7 +354,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 					}
 				}
 			}
-			if(firstRGA.isEmpty() && (excludeTime <= 0 && rga.isEmpty())) {
+			if(firstRGA.isEmpty() && (rga != null && rga.isEmpty())) {
 				if(logMINOR) Logger.minor(this, "Removing both on "+this+" : "+firstRGA+" and "+rga+" are empty");
 				grabArrays = new RemoveRandomWithObject[0];
 				grabClients = new Object[0];
