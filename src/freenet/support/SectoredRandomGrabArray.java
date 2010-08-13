@@ -412,7 +412,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			if(val.item != null)
 				item = val.item;
 			else {
-				if(wakeupTime > val.wakeupTime) wakeupTime = val.wakeupTime;
+				wakeupTime = val.wakeupTime;
 			}
 		}
 		if(rga.isEmpty(container)) {
