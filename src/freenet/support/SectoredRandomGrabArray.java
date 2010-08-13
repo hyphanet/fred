@@ -375,8 +375,8 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				}
 			}
 			if(persistent) {
-				container.deactivate(rga, 1);
-				container.deactivate(firstRGA, 1);
+				if(rga != null) container.deactivate(rga, 1);
+				if(firstRGA != null) container.deactivate(firstRGA, 1);
 			}
 			if(logMINOR)
 				Logger.minor(this, "Returning (two items only) "+item+" for "+rga);
