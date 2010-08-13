@@ -444,7 +444,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				Logger.error(this, "Not empty because not active on "+this);
 				return false;
 			} else if(!stored) {
-				Logger.error(this, "Not stored yet passed in container on "+this);
+				Logger.error(this, "Not stored yet passed in container on "+this, new Exception("debug"));
 			} else if(stored) {
 				throw new IllegalStateException("Stored but not persistent on "+this);
 			}
