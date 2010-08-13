@@ -250,17 +250,16 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 						" rga.isEmpty="+rga.isEmpty(container));
 			// If it is not empty but returns null we exclude it, and count the exclusion.
 			// If it is empty we remove it, and don't count the exclusion.
-			if(rga.isEmpty(container)) {
-				if(logMINOR)
-					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
-				removeElement(x);
-				if(persistent) {
-					container.store(this);
-					rga.removeFrom(container);
-				}
-			}
 			if(item == null) {
-				if(!rga.isEmpty(container)) {
+				if(rga.isEmpty(container)) {
+					if(logMINOR)
+						Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
+					removeElement(x);
+					if(persistent) {
+						container.store(this);
+						rga.removeFrom(container);
+					}
+				} else {
 					// Hmmm...
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
