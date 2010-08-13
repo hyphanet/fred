@@ -79,7 +79,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
 	}
 
-	private void addElement(Object client, RemoveRandomWithObject rga) {
+	private synchronized void addElement(Object client, RemoveRandomWithObject rga) {
 		int len = grabArrays.length;
 		RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[len+1];
 		System.arraycopy(grabArrays, 0, newArrays, 0, len);
