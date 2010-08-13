@@ -526,7 +526,8 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			}
 			RemoveRandomWithObject existingGrabber = newTopLevel.getGrabber(client);
 			if(persistent()) container.activate(client, 1);
-			System.out.println("Merging with existing grabber for client "+client);
+			if(existingGrabber != null)
+				System.out.println("Merging with existing grabber for client "+client);
 			if(persistent()) container.deactivate(client, 1);
 			if(existingGrabber != null) {
 				if(persistent) {
