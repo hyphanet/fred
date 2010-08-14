@@ -218,17 +218,20 @@ public class CooldownTracker {
 		while(true) {
 			PersistentCooldownCacheItem item = cacheItemsPersistent.get(uid);
 			if(item == null) return ret;
+			if(logMINOR) Logger.minor(this, "Clearing "+uid);
 			long time = item.timeValid;
 			if(ret) {
 				if(time == Long.MAX_VALUE || time > prevTime) {
-					Logger.error(this, "Cooldown time for parent object "+uid+" is later than cooldown time for child object!", new Exception("error"));
+					Logger.error(this, "Cooldown time "+time+" for parent object "+uid+" is later than cooldown time for child object!", new Exception("error"));
 					prevTime = time;
 				} else {
 					if(logMINOR) Logger.minor(this, "Not cascading, prev time is "+prevTime+" this time is "+time);
 					return ret;
 				}
-			} else
+			} else {
+				if(logMINOR && cascadeOnlyIfEqual) Logger.minor(this, "Checking on cascade: time: "+time);
 				prevTime = time;
+			}
 			ret = true;
 			cacheItemsPersistent.remove(uid);
 			uid = item.parentID;
