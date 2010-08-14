@@ -754,7 +754,15 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			}
 			if(persistent)
 				container.activate(parent, 1);
-			Bucket lastBlock = dataBuckets[dataBuckets.length-1].getData();
+			MinimalSplitfileBlock block = dataBuckets[dataBuckets.length-1];
+			if(block == null) {
+				synchronized(this) {
+					if(!finished)
+						Logger.error(this, "Last block wrapper is null yet not finished?!");
+					return;
+				}
+			}
+			Bucket lastBlock = block.getData();
 			if(lastBlock != null) {
 				if(persistent)
 					container.activate(lastBlock, 1);
