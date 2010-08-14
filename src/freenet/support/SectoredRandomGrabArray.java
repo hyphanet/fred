@@ -385,6 +385,15 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		long excludeTime = excluding.excludeSummarily(rga, this, container, persistent, now);
 		if(excludeTime > 0)
 			return new RemoveRandomReturn(excludeTime);
+		if(rga == null) {
+			Logger.error(this, "Only one entry and that is null; persistent="+persistent);
+			if(container == null) {
+				// We are sure
+				grabArrays = new RemoveRandomWithObject[0];
+				grabClients = new Object[0];
+			}
+			return null;
+		}
 		if(persistent)
 			container.activate(rga, 1);
 		RemoveRandomReturn val = rga.removeRandom(excluding, container, context, now);
