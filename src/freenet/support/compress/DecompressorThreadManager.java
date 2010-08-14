@@ -128,9 +128,9 @@ public class DecompressorThreadManager {
 		/**The compressor whose decompress method will be invoked*/
 		final Compressor compressor;
 		/**The stream compressed data will be read from*/
-		final InputStream input;
+		private InputStream input;
 		/**The stream decompressed data will be written*/
-		final PipedOutputStream output;
+		private PipedOutputStream output;
 		/**A upper limit to how much data may be decompressed. This is passed to the decompressor*/
 		final long maxLen;
 		/**The manager which created the thread*/
@@ -153,6 +153,9 @@ public class DecompressorThreadManager {
 					compressor.decompress(input, output, maxLen, maxLen * 4);
 					input.close();
 					output.close();
+					// Avoid relatively expensive repeated close on normal completion
+					input = null;
+					output = null;
 					if(isLast) manager.onFinish();
 				}
 			} catch (Exception e) {
