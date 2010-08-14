@@ -30,7 +30,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	private int index;
 	private final static int MIN_SIZE = 32;
 	private final static int BLOCK_SIZE = 1024;
-	private final boolean persistent;
+	protected final boolean persistent;
 	private final int hashCode;
 	private RemoveRandomParent parent;
 

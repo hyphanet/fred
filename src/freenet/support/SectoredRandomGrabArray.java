@@ -38,7 +38,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	 */
 	private RemoveRandomWithObject[] grabArrays;
 	private Object[] grabClients;
-	private final boolean persistent;
+	protected final boolean persistent;
 	private RemoveRandomParent parent;
 	
 	public SectoredRandomGrabArray(boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
@@ -552,6 +552,10 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			} else {
 				if(persistent) container.activate(grabber, 1);
 				grabber.setParent(newTopLevel, container);
+				if(grabber.getObject() == null && client != null) {
+					Logger.error(this, "Minor corruption on migration: client is "+client+" but grabber reports null, correcting");
+					grabber.setObject(client, container);
+				}
 				newTopLevel.addGrabber(client, grabber, container, null);
 				if(persistent) container.deactivate(grabber, 1);
 			}
