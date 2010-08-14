@@ -715,7 +715,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			FECQueue queue = context.fecQueue;
 			int count = 0;
 			synchronized(this) {
-				if(finished) return;
+				if(finished || encoderFinished) return;
 				// Double-check...
 				for(int i=0;i<dataBuckets.length;i++) {
 					Bucket d = dataBuckets[i].getData();
@@ -757,7 +757,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			MinimalSplitfileBlock block = dataBuckets[dataBuckets.length-1];
 			if(block == null) {
 				synchronized(this) {
-					if(!finished)
+					if(!finished || encoderFinished)
 						Logger.error(this, "Last block wrapper is null yet not finished?!");
 					return;
 				}
@@ -780,6 +780,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					// the last data block is too short.
 					fail(new FetchException(FetchException.INVALID_METADATA, "Last data block is not the standard size"), container, context, true);
 				}
+			}
+			synchronized(this) {
+				if(finished || encoderFinished) return;
 			}
 			if(codec == null)
 				codec = FECCodec.getCodec(splitfileType, dataBuckets.length, checkBuckets.length);
