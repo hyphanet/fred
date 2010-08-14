@@ -574,16 +574,17 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			this.progressMessage = null;
 			started = false;
 		}
-		if(pfm != null) {
-			container.activate(pfm, 1);
-			pfm.removeFrom(container);
-		}
-		if(progress != null) {
-			container.activate(progress, 1);
-			progress.removeFrom(container);
-		}
-		if(persistenceType == PERSIST_FOREVER)
+		if(persistenceType == PERSIST_FOREVER) {
+			if(pfm != null) {
+				container.activate(pfm, 1);
+				pfm.removeFrom(container);
+			}
+			if(progress != null) {
+				container.activate(progress, 1);
+				progress.removeFrom(container);
+			}
 			container.store(this);
+		}
 	}
 	
 }
