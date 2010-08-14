@@ -80,13 +80,11 @@ public class SparseBitmap implements Iterable<int[]> {
 					toAdd.add(new Range(end + 1, range.end));
 				}
 			} else if(range.start >= start && range.start <= end) {
-				if(range.end <= end) {
-					// Equal or inside
-					it.remove();
-				} else /* (range[1] > end) */ {
+				if(range.end > end) {
 					// Overlaps end
 					toAdd.add(new Range(end + 1, range.end));
 				}
+				//Else it is equal or inside
 			} else /* (range[0] > end) */ {
 				//Outside
 				continue;

@@ -125,4 +125,10 @@ public class SparseBitmapTest extends TestCase {
 		assertEquals(14, range[1]);
 		assertFalse(it.hasNext());
 	}
+
+	public void testIteratorDoubleRemove() {
+		SparseBitmap s = new SparseBitmap();
+		s.add(1, 2);
+		s.remove(0, 3);
+	}
 }
