@@ -1493,7 +1493,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			//Remove any blank entries
 			for(Iterator<Entry<String, Object>> it = h.entrySet().iterator(); it.hasNext();){
 				Map.Entry<String, Object> entry = it.next();
-				if(entry.getValue() == null || entry.getValue() == "" && pc.isXHTML){
+				if(entry.getValue() == null || entry.getValue().equals("") && pc.isXHTML){
 					it.remove();
 				}
 			}
