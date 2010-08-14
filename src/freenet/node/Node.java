@@ -1918,18 +1918,6 @@ public class Node implements TimeSkewDetectorCallback {
 				        return true;
 			        }
 		});
-
-		// HACK to prepare the extra-peer-data config option for removal
-		// FIXME TODO REMOVEME replace this with the code from dir-struct branch when this code is more well-deployed
-		String defaultExtraPeerDataDir = new File(nodeDir, "extra-peer-data-"+getDarknetPortNumber()).toString();
-		String currentExtraPeerDataDir = nodeConfig.getString("extraPeerDataDir");
-		System.out.println("NOTE: The configuration option node.extraPeerDataDir will removed in a future release.");
-		if (!currentExtraPeerDataDir.equals(defaultExtraPeerDataDir)) {
-			new File(currentExtraPeerDataDir).renameTo(new File(defaultExtraPeerDataDir));
-			nodeConfig.fixOldDefault("extraPeerDataDir", currentExtraPeerDataDir);
-			System.out.println("NOTE: That directory has been moved from " + currentExtraPeerDataDir + " to " + defaultExtraPeerDataDir);
-		}
-
 		extraPeerDataDir = new File(nodeConfig.getString("extraPeerDataDir"));
 		if(!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
 			String msg = "Could not find or create extra peer data directory";
@@ -2532,7 +2520,7 @@ public class Node implements TimeSkewDetectorCallback {
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this, lastVersion);
-
+		
 		shutdownHook.addLateJob(new NativeThread("Shutdown plugins", NativeThread.HIGH_PRIORITY, true) {
 			public void realRun() {
 				pluginManager.stop(30*1000); // FIXME make it configurable??
@@ -2675,7 +2663,7 @@ public class Node implements TimeSkewDetectorCallback {
 					Logger.debug(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
 			}
 		});
-
+		
 		// Make db4o throw an exception if we call store for something for which we do not have to call it, String or Date for example.
 		// This prevents us from writing code which is based on misunderstanding of db4o internals...
 		dbConfig.exceptionsOnNotStorable(true);
@@ -2686,7 +2674,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		File dbFileBackup = new File(dbFile.getPath()+".tmp");
 		File dbFileCryptBackup = new File(dbFileCrypt.getPath()+".tmp");
-
+		
 		if(dbFileBackup.exists() && !dbFile.exists()) {
 			if(!dbFileBackup.renameTo(dbFile)) {
 				throw new IOException("Database backup file "+dbFileBackup+" exists but cannot be renamed to "+dbFile+". Not loading database, please fix permissions problems!");
@@ -2697,7 +2685,7 @@ public class Node implements TimeSkewDetectorCallback {
 				throw new IOException("Database backup file "+dbFileCryptBackup+" exists but cannot be renamed to "+dbFileCrypt+". Not loading database, please fix permissions problems!");
 			}
 		}
-
+		
 		try {
 			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 				databaseKey = new byte[32];
@@ -2803,7 +2791,7 @@ public class Node implements TimeSkewDetectorCallback {
 				synchronized(this) {
 					databaseEncrypted = true;
 				}
-			} else if((dbFileCrypt.exists() && !dbFile.exists()) ||
+			} else if((dbFileCrypt.exists() && !dbFile.exists()) || 
 					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.NORMAL) ||
 					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH && databaseKey != null)) {
 				// Open encrypted, regardless of seclevel.
@@ -2980,12 +2968,12 @@ public class Node implements TimeSkewDetectorCallback {
 		synchronized(this) {
 			if(!defragDatabaseOnStartup) return;
 		}
-
+		
 		// Open it first, because defrag will throw if it needs to upgrade the file.
-
+		
 		ObjectContainer database = Db4o.openFile(dbConfig, databaseFile.toString());
 		while(!database.close());
-
+		
 		if(!databaseFile.exists()) return;
 		long length = databaseFile.length();
 		// Estimate approx 1 byte/sec.
@@ -2997,8 +2985,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		File tmpFile = new File(databaseFile.getPath()+".map");
 		FileUtil.secureDelete(tmpFile, random);
-
-
+		
+		
 
 		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
 		config.storedClassFilter(new AvailableClassFilter());
@@ -4408,8 +4396,8 @@ public class Node implements TimeSkewDetectorCallback {
 	 * CHKInsertSender running.
 	 * @param source The node that sent the InsertRequest, or null
 	 * if it originated locally.
-	 * @param ignoreLowBackoff
-	 * @param preferInsert
+	 * @param ignoreLowBackoff 
+	 * @param preferInsert 
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
@@ -4431,8 +4419,8 @@ public class Node implements TimeSkewDetectorCallback {
 	 * SSKInsertSender running.
 	 * @param source The node that sent the InsertRequest, or null
 	 * if it originated locally.
-	 * @param ignoreLowBackoff
-	 * @param preferInsert
+	 * @param ignoreLowBackoff 
+	 * @param preferInsert 
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
 			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
