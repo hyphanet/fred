@@ -683,13 +683,16 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				container.activate(checkBuckets[i], 1);
 		}
 		int data = 0;
-		for(int i=0;i<dataBuckets.length;i++) {
-			if(dataBuckets[i].getData() != null) {
-				data++;
-			} else {
-				// Use flag to indicate that it the block needed to be decoded.
-				dataBuckets[i].flag = true;
-				if(persistent) dataBuckets[i].storeTo(container);
+		synchronized(this) {
+			if(finished || encoderFinished) return;
+			for(int i=0;i<dataBuckets.length;i++) {
+				if(dataBuckets[i].getData() != null) {
+					data++;
+				} else {
+					// Use flag to indicate that it the block needed to be decoded.
+					dataBuckets[i].flag = true;
+					if(persistent) dataBuckets[i].storeTo(container);
+				}
 			}
 		}
 		if(getter != null) {
