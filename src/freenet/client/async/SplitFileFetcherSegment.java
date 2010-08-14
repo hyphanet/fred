@@ -553,6 +553,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		if(haveDataBlocks && count < dataBuckets.length) {
 			Logger.error(this, "haveDataBlocks is wrong: count is "+count);
 		} else if(haveDataBlocks && count >= dataBuckets.length) {
+			startedDecode = true;
 			return true;
 		}
 		if(lastBlockTruncated) count--;
