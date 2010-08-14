@@ -144,7 +144,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					long cooldownTime = context.cooldownTracker.getCachedWakeup(result, false, container, now);
 					if(cooldownTime > 0) {
 						if(cooldownTime < wakeupTime) wakeupTime = cooldownTime;
-						Logger.normal(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now));
+						Logger.normal(this, "Priority "+priority+" (transient) is in cooldown for another "+(cooldownTime - now)+" "+TimeUtil.formatTime(cooldownTime - now)+" : "+result);
 						result = null;
 					}
 				}

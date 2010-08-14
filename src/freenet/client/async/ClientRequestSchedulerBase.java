@@ -120,7 +120,7 @@ abstract class ClientRequestSchedulerBase {
 			Logger.normal(this, "Priority "+req.getPriorityClass(container));
 		}
 		short prio = req.getPriorityClass(container);
-		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest());
+		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" for "+req.getClientRequest()+" ssk="+this.isSSKScheduler+" insert="+this.isInsertScheduler);
 		addToRequestsByClientRequest(req.getClientRequest(), req, container);
 		addToGrabArray(prio, req.getClient(container), req.getClientRequest(), req, random, container, context);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio);
