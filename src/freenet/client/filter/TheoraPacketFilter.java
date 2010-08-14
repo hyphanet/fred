@@ -23,7 +23,6 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 		DataInputStream input = new DataInputStream(new ByteArrayInputStream(packet.payload));
 		boolean running = true;
 		byte[] magicHeader = null;
-		while(running) {
 			try {
 				switch(currentState) {
 				case UNINITIALIZED:
@@ -115,13 +114,14 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 						Closer.close(output);
 					}
 					currentState=State.COMMENT_FOUND;
+					break;
 				case COMMENT_FOUND:
+					break;
 				}
 			} catch(IOException e) {
 				if(logMINOR) Logger.minor(this, "In theora parser caught "+e, e);
 				throw e;
 			}
-		}
 
 		return packet;
 	}

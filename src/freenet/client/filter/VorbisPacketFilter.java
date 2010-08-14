@@ -84,8 +84,9 @@ public class VorbisPacketFilter implements CodecPacketFilter {
 			output.writeInt(0);
 			output.writeInt(0);
 			output.writeBoolean(true);
-			packet = new CodecPacket(data.toByteArray());
 			output.close();
+			packet = new CodecPacket(data.toByteArray());
+			Logger.minor(this, "Packet size: "+packet.payload.length);
 			currentState=State.COMMENT_FOUND;
 			break;
 		case COMMENT_FOUND:

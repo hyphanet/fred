@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import freenet.l10n.NodeL10n;
+import freenet.support.Logger;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
@@ -44,6 +45,7 @@ public class OggFilter implements ContentDataFilter{
 			try {
 				nextPage = OggPage.readPage(in);
 			} catch (EOFException e) {
+				nextPage = null;
 				running = false;
 			}
 			OggBitstreamFilter filter = null;
@@ -58,7 +60,7 @@ public class OggFilter implements ContentDataFilter{
 			//Don't write a continuous pages unless they are all valid
 			if(page != null && page.headerValid() && !hasValidSubpage(page, nextPage)) {
 				splitPages.add(page);
-				if(page.isFinalPacket()) {
+				if(nextPage == null || !nextPage.isPacketContinued()) {
 					while(!splitPages.isEmpty()) {
 						OggPage part = splitPages.remove();
 						out.write(part.toArray());

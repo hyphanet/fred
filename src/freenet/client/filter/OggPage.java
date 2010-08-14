@@ -4,6 +4,7 @@
 
 package freenet.client.filter;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -106,7 +107,9 @@ public class OggPage {
 
 	public OggPage(DataInputStream input) throws IOException {
 		version=input.readByte();
+		Logger.minor(this, "Version: "+version);
 		headerType = input.readByte();
+		Logger.minor(this, "Headertype: "+headerType);
 		this.granuelPosition = new byte[8];
 		this.bitStreamSerial = new byte[4];
 		this.pageSequenceNumber = new byte[4];
@@ -114,24 +117,53 @@ public class OggPage {
 		input.readFully(bitStreamSerial);
 		input.readFully(pageSequenceNumber);
 		input.readFully(checksum);
-		segments = input.readByte();
+		Logger.minor(this, "Checksum: "+Integer.toHexString(byteToUnsigned(checksum[0]))+Integer.toHexString(byteToUnsigned(checksum[1]))+Integer.toHexString(byteToUnsigned(checksum[2]))+Integer.toHexString(byteToUnsigned(checksum[3])));
+		segments = intToUnsignedByte(input.readUnsignedByte());
 		segmentTable = new byte[byteToUnsigned(segments)];
-		input.read(segmentTable);
+		input.readFully(segmentTable);
 		int payloadSize = 0;
 		for(int i = 0; i < byteToUnsigned(segments); i++) {
 			payloadSize += byteToUnsigned(segmentTable[i]);
 		}
 		payload = new byte[payloadSize];
-		input.read(payload);
+		input.readFully(payload);
+		Logger.minor(this, "Created page with "+segments+" segments");
 	}
 
-	public OggPage(OggPage oldPage, Collection<CodecPacket> packets) {
+	public OggPage(OggPage oldPage, Collection<CodecPacket> packets) throws IOException {
 		this.version = oldPage.version;
 		this.headerType = oldPage.headerType;
+		Logger.minor(this, "Header type: "+Integer.toBinaryString(this.headerType));
 		this.granuelPosition = oldPage.granuelPosition;
 		this.bitStreamSerial = oldPage.bitStreamSerial;
 		this.pageSequenceNumber = oldPage.pageSequenceNumber;
-		this.segments = (byte) packets.size(); 
+		this.segments = 0;
+		ArrayList<Byte> segmentSizes = new ArrayList<Byte>();
+		ByteArrayOutputStream payloadStream = new ByteArrayOutputStream();
+		for(CodecPacket packet : packets) {
+			int wholeSegments = packet.payload.length / 255;
+			int concludingPartialSegment = packet.payload.length % 255;
+			Logger.minor(this, "Whole segments: "+wholeSegments+" Partial: "+concludingPartialSegment);
+			for(int i = 0; i < wholeSegments; i++) {
+				segmentSizes.add(new Byte(intToUnsignedByte(255)));
+			}
+			if(concludingPartialSegment != 0) {
+				segmentSizes.add(new Byte(intToUnsignedByte(concludingPartialSegment)));
+			}
+			Logger.minor(this, "Writing packet sized: "+packet.payload.length);
+			payloadStream.write(packet.payload);
+		}
+		this.segments = intToUnsignedByte(segmentSizes.size());
+		this.segmentTable = new byte[byteToUnsigned(segments)];
+		Logger.minor(this, "SegmentSizes len: "+segmentSizes.size()+" SegmentTable size: "+segmentTable.length+" Segments: "+segments);
+		for(int i = 0; i < segmentSizes.size(); i++) {
+			this.segmentTable[i] = segmentSizes.get(i);
+		}
+
+		payloadStream.close();
+		this.payload = payloadStream.toByteArray();
+		Logger.minor(this, "Payload size: "+this.payload.length+"Made of "+packets.size()+" packets");
+		this.checksum = calculateCRC();
 	}
 
 	/**Extracts the Ogg page from a physical bitstream
@@ -259,20 +291,35 @@ public class OggPage {
 				segmentTable[segment] = intToUnsignedByte(remainder);
 				segment++;
 			}
-		}	
+		}
 	}
 
 	public Collection<CodecPacket> asPackets() {
+		Logger.minor(this, "Creating packets for "+byteToUnsigned(segments)+ " segments");
 		ArrayList<CodecPacket> packets = new ArrayList<CodecPacket>();
 		int bytesParsed = 0;
-		for(int i = 0; i < segments; i++) {
-			byte[] packetPayload = new byte[segmentTable[i]];
-			System.arraycopy(payload, bytesParsed, packetPayload, 0, segmentTable[i]);
-			packets.add(new CodecPacket(packetPayload));
-			bytesParsed += segmentTable[i];
+		int packetSize = 0;
+		for(int i = 0; i < segmentTable.length; i++) {
+			if((byteToUnsigned(segmentTable[i]) % 255 != 0) || byteToUnsigned(segmentTable[i]) == 0 || i == segmentTable.length-1) {
+				packetSize += byteToUnsigned(segmentTable[i]);
+				byte[] packetPayload = new byte[packetSize];
+				try {
+					System.arraycopy(payload, bytesParsed, packetPayload, 0, packetSize);
+				} catch(java.lang.ArrayIndexOutOfBoundsException e) {
+					Logger.error(this, "Error, Out of Bounds."+"Page sequence number: "+byteToUnsigned(this.pageSequenceNumber[0])+" "+byteToUnsigned(this.pageSequenceNumber[1])+" "+byteToUnsigned(this.pageSequenceNumber[2])+" "+byteToUnsigned(this.pageSequenceNumber[3])+" bytesParsed: "+bytesParsed+" packetSize: "+packetSize+" Payload length: "+payload.length, e);
+					throw e;
+				}
+
+				bytesParsed += packetSize;
+				packets.add(new CodecPacket(packetPayload));
+				packetSize = 0;
+			} else {
+				packetSize += 255;
+			}
 		}
 		return packets;
 	}
+
 	static private int byteToUnsigned(byte input) {
 		return (input & 0xff);
 	}
