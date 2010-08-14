@@ -95,6 +95,7 @@ public class FProxyFetchTracker implements Runnable {
 							|| progress.hasData()){
 						if(logMINOR) Logger.minor(this, "Found "+progress);
 						if(fctx != null && !progress.fetchContextEquivalent(fctx)) continue;
+						if(logMINOR) Logger.minor(this, "Using "+progress);
 						return progress;
 					} else
 						if(logMINOR) Logger.minor(this, "Skipping "+progress);

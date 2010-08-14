@@ -145,7 +145,7 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		boolean filtering = ctx.filterData;
 		if(logMINOR)
-			Logger.minor(this, "Starting "+this+" persistent="+persistent());
+			Logger.minor(this, "Starting "+this+" persistent="+persistent()+" for "+uri);
 		try {
 			// FIXME synchronization is probably unnecessary.
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
