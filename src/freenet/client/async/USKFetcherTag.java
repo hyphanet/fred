@@ -258,6 +258,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			}
 			}
 		} else {
+			if(callback instanceof USKFetcherTagCallback)
+				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
 			callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
 		}
 	}
