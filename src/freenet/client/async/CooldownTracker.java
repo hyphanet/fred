@@ -186,7 +186,7 @@ public class CooldownTracker {
 			while(true) {
 				TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
 				if(item == null) return ret;
-				if(logMINOR) Logger.minor(this, "Cleared "+toCheck);
+				if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
 				long time = item.timeValid;
 				if(ret) {
 					if(cascadeOnlyIfEqual && time != prevTime) {
