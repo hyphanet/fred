@@ -663,6 +663,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 
 	public void decode(ObjectContainer container, ClientContext context) {
+		// Concurrency issue: Only one thread can call decode(), because only on one thread
+		// will checkAndDecodeNow return true. However, it is possible for another thread
+		// to fail the download and remove the blocks in the meantime.
 		if(persistent)
 			container.activate(this, 1);
 		// Now decode
