@@ -230,6 +230,7 @@ public class ClientGetter extends BaseClientGetter {
 		Bucket finalResult = null;
 		FetchResult result = null;
 
+		// FIXME use the two max lengths separately.
 		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 
 		if(persistent()) {
@@ -374,9 +375,9 @@ public class ClientGetter extends BaseClientGetter {
 			Closer.close(dataInput);
 			Closer.close(dataOutput);
 			Closer.close(output);
-			if(persistent()) {
-				state.removeFrom(container, context);
-			}
+		}
+		if(persistent()) {
+			state.removeFrom(container, context);
 		}
 
 			clientCallback.onSuccess(result, ClientGetter.this, container);
