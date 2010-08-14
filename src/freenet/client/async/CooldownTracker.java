@@ -34,7 +34,7 @@ public class CooldownTracker {
 	private static volatile boolean logDEBUG;
 
 	static {
-		Logger.registerClass(ContainerInserter.class);
+		Logger.registerClass(CooldownTracker.class);
 	}
 
 	/** Persistent CooldownTrackerItem's by Db4o ID */
@@ -105,6 +105,7 @@ public class CooldownTracker {
 	}
 	
 	public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container) {
+		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck);
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
 			long uid = container.ext().getID(toCheck);
@@ -185,15 +186,27 @@ public class CooldownTracker {
 			while(true) {
 				TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
 				if(item == null) return ret;
+				if(logMINOR) Logger.minor(this, "Cleared "+toCheck);
 				long time = item.timeValid;
 				if(ret) {
-					if(cascadeOnlyIfEqual && time != prevTime) return ret;
-				} else
+					if(cascadeOnlyIfEqual && time != prevTime) {
+						if(time == Long.MAX_VALUE || time > prevTime) {
+							Logger.error(this, "Cooldown time "+time+" for parent object "+toCheck+" is later than cooldown time for child object "+prevTime+"!", new Exception("error"));
+							prevTime = time;
+						} else {
+							if(logMINOR) Logger.minor(this, "Not cascading, prev time is "+prevTime+" this time is "+time);
+							return ret;
+						}
+					}
+				} else {
+					if(logMINOR && cascadeOnlyIfEqual) Logger.minor(this, "Checking on cascade: time: "+time);
 					prevTime = time;
+				}
 				ret = true;
 				cacheItemsTransient.remove(toCheck);
 				toCheck = item.parent.get();
 				if(toCheck == null) return ret;
+				if(logMINOR) Logger.minor(this, "Parent is "+toCheck);
 			}
 		}
 
@@ -207,13 +220,20 @@ public class CooldownTracker {
 			if(item == null) return ret;
 			long time = item.timeValid;
 			if(ret) {
-				if(cascadeOnlyIfEqual && time != prevTime) return ret;
+				if(time == Long.MAX_VALUE || time > prevTime) {
+					Logger.error(this, "Cooldown time for parent object "+uid+" is later than cooldown time for child object!", new Exception("error"));
+					prevTime = time;
+				} else {
+					if(logMINOR) Logger.minor(this, "Not cascading, prev time is "+prevTime+" this time is "+time);
+					return ret;
+				}
 			} else
 				prevTime = time;
 			ret = true;
 			cacheItemsPersistent.remove(uid);
 			uid = item.parentID;
 			if(uid == -1) return ret;
+			if(logMINOR) Logger.minor(this, "Parent is "+uid);
 		}
 	}
 
