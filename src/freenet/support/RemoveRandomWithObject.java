@@ -10,4 +10,6 @@ public interface RemoveRandomWithObject extends RemoveRandom {
 
 	public void removeFrom(ObjectContainer container);
 
+	public void setObject(Object client, ObjectContainer container);
+
 }
