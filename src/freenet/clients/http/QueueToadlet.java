@@ -419,7 +419,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 				final String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
 				final CompatibilityMode cmode;
-				if(compatibilityMode == "")
+				if(compatibilityMode.equals(""))
 					cmode = CompatibilityMode.COMPAT_CURRENT;
 				else
 					cmode = CompatibilityMode.valueOf(compatibilityMode);
