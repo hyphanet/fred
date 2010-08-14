@@ -293,6 +293,10 @@ class NPFPacket {
 		return length;
 	}
 
+	public String toString() {
+		return "Packet " + sequenceNumber + ": " + length + " bytes, " + acks.size() + " acks, " + fragments.size() + " fragments";
+	}
+
 	private static class MessageFragmentComparator implements Comparator<MessageFragment> {
 		public int compare(MessageFragment frag1, MessageFragment frag2) {
 			if(frag1.messageID < frag2.messageID) return -1;
