@@ -510,7 +510,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 	}
 
-	private boolean checkAndDecodeNow(ObjectContainer container, int blockNo, boolean tooSmall, boolean haveDataBlocks) {
+	private synchronized boolean checkAndDecodeNow(ObjectContainer container, int blockNo, boolean tooSmall, boolean haveDataBlocks) {
 		boolean decodeNow = true;
 		// Double-check...
 		// This is somewhat defensive, but these things have happened, and caused stalls.
