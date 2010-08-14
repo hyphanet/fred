@@ -713,35 +713,37 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		
 		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
 			FECQueue queue = context.fecQueue;
-			// Double-check...
 			int count = 0;
-			for(int i=0;i<dataBuckets.length;i++) {
-				Bucket d = dataBuckets[i].getData();
-				if(d != null) {
-					boolean valid = false;
-					if(i == dataBuckets.length-1) {
-						if(ignoreLastDataBlock) {
-							boolean blockActive = true;
-							if(persistent) {
-								blockActive = container.ext().isActive(d);
-								if(!blockActive) container.activate(d, 1);
-							}
-							if(d.size() >= CHKBlock.DATA_LENGTH)
+			synchronized(this) {
+				// Double-check...
+				for(int i=0;i<dataBuckets.length;i++) {
+					Bucket d = dataBuckets[i].getData();
+					if(d != null) {
+						boolean valid = false;
+						if(i == dataBuckets.length-1) {
+							if(ignoreLastDataBlock) {
+								boolean blockActive = true;
+								if(persistent) {
+									blockActive = container.ext().isActive(d);
+									if(!blockActive) container.activate(d, 1);
+								}
+								if(d.size() >= CHKBlock.DATA_LENGTH)
+									valid = true;
+								if(!blockActive) container.deactivate(d, 1);
+							} else {
 								valid = true;
-							if(!blockActive) container.deactivate(d, 1);
+							}
 						} else {
 							valid = true;
 						}
-					} else {
-						valid = true;
+						if(valid)
+							count++;
 					}
-					if(valid)
+				}
+				for(int i=0;i<checkBuckets.length;i++) {
+					if(checkBuckets[i].getData() != null)
 						count++;
 				}
-			}
-			for(int i=0;i<checkBuckets.length;i++) {
-				if(checkBuckets[i].getData() != null)
-					count++;
 			}
 			if(count < dataBuckets.length) {
 				Logger.error(this, "Attempting to decode but only "+count+" of "+dataBuckets.length+" blocks available!", new Exception("error"));
