@@ -174,6 +174,7 @@ public class CooldownTracker {
 			Logger.error(this, "Clearing cached wakeup for null", new Exception("error"));
 			return false;
 		}
+		if(logMINOR) Logger.minor(this, "Clearing cached wakeup for "+toCheck);
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
 			long uid = container.ext().getID(toCheck);
@@ -185,7 +186,10 @@ public class CooldownTracker {
 				TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
 				if(item == null) return ret;
 				long time = item.timeValid;
-				if(cascadeOnlyIfEqual && time != prevTime) return ret;
+				if(ret) {
+					if(cascadeOnlyIfEqual && time != prevTime) return ret;
+				} else
+					prevTime = time;
 				ret = true;
 				cacheItemsTransient.remove(toCheck);
 				toCheck = item.parent.get();
@@ -202,7 +206,10 @@ public class CooldownTracker {
 			PersistentCooldownCacheItem item = cacheItemsPersistent.get(uid);
 			if(item == null) return ret;
 			long time = item.timeValid;
-			if(cascadeOnlyIfEqual && time != prevTime) return ret;
+			if(ret) {
+				if(cascadeOnlyIfEqual && time != prevTime) return ret;
+			} else
+				prevTime = time;
 			ret = true;
 			cacheItemsPersistent.remove(uid);
 			uid = item.parentID;
