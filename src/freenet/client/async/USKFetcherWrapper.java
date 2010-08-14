@@ -3,15 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.List;
+
 import com.db4o.ObjectContainer;
 
+import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
-import freenet.client.FetchResult;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.crypt.HashResult;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
+import freenet.support.compress.Compressor;
 
 /**
  * Wrapper for a backgrounded USKFetcher.
@@ -40,7 +43,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Do nothing
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore; we don't do anything with it because we are running in the background.
 	}
 

@@ -98,20 +98,6 @@ public class Bzip2Compressor implements Compressor {
 		
 	};
 
-	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
-		Bucket output;
-		if(preferred != null)
-			output = preferred;
-		else
-			output = bf.makeBucket(maxLength);
-		InputStream is = data.getInputStream();
-		OutputStream os = output.getOutputStream();
-		decompress(is, os, maxLength, maxCheckSizeLength);
-		os.close();
-		is.close();
-		return output;
-	}
-
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		CBZip2InputStream bz2is = new CBZip2InputStream(new BufferedInputStream(is));
 		long written = 0;
@@ -120,29 +106,29 @@ public class Bzip2Compressor implements Compressor {
 			bufSize = (int)maxLength;
 		byte[] buffer = new byte[bufSize];
 		while(true) {
-			int l = (int) Math.min(buffer.length, maxLength - written);
+			int expectedBytesRead = (int) Math.min(buffer.length, maxLength - written);
 			// We can over-read to determine whether we have over-read.
 			// We enforce maximum size this way.
 			// FIXME there is probably a better way to do this!
-			int x = bz2is.read(buffer, 0, buffer.length);
-			if(l < x) {
-				Logger.normal(this, "l="+l+", x="+x+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
+			int bytesRead = bz2is.read(buffer, 0, buffer.length);
+			if(expectedBytesRead < bytesRead) {
+				Logger.normal(this, "expectedBytesRead="+expectedBytesRead+", bytesRead="+bytesRead+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
 				if(maxCheckSizeBytes > 0) {
-					written += x;
+					written += bytesRead;
 					while(true) {
-						l = (int) Math.min(buffer.length, maxLength + maxCheckSizeBytes - written);
-						x = bz2is.read(buffer, 0, l);
-						if(x <= -1) throw new CompressionOutputSizeException(written);
-						if(x == 0) throw new IOException("Returned zero from read()");
-						written += x;
+						expectedBytesRead = (int) Math.min(buffer.length, maxLength + maxCheckSizeBytes - written);
+						bytesRead = bz2is.read(buffer, 0, expectedBytesRead);
+						if(bytesRead <= -1) throw new CompressionOutputSizeException(written);
+						if(bytesRead == 0) throw new IOException("Returned zero from read()");
+						written += bytesRead;
 					}
 				}
 				throw new CompressionOutputSizeException();
 			}
-			if(x <= -1) return written;
-			if(x == 0) throw new IOException("Returned zero from read()");
-			os.write(buffer, 0, x);
-			written += x;
+			if(bytesRead <= -1) return written;
+			if(bytesRead == 0) throw new IOException("Returned zero from read()");
+			os.write(buffer, 0, bytesRead);
+			written += bytesRead;
 		}
 	}
 
@@ -153,7 +139,8 @@ public class Bzip2Compressor implements Compressor {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream(output.length);
 		int bytes = 0;
 		try {
-			bytes = (int)decompress(bais, baos, output.length, -1);
+			decompress(bais, baos, output.length, -1);
+			bytes = baos.size();
 		} catch (IOException e) {
 			// Impossible
 			throw new Error("Got IOException: " + e.getMessage(), e);

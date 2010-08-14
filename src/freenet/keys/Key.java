@@ -6,6 +6,8 @@ package freenet.keys;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
@@ -169,12 +171,21 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
             COMPRESSOR_TYPE decompressor = COMPRESSOR_TYPE.getCompressorByMetadataID(compressionAlgorithm);
             if (decompressor==null)
             	throw new CHKDecodeException("Unknown compression algorithm: "+compressionAlgorithm);
+            InputStream inputStream = null;
+            OutputStream outputStream = null;
             Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, outputLength-(shortLength?2:4));
+            Bucket outputBucket = bf.makeBucket(maxLength);
+            outputStream = outputBucket.getOutputStream();
+            inputStream = inputBucket.getInputStream();
             try {
-				return decompressor.decompress(inputBucket, bf, maxLength, -1, null);
-			} catch (CompressionOutputSizeException e) {
+            	decompressor.decompress(inputStream, outputStream, maxLength, -1);
+			}  catch (CompressionOutputSizeException e) {
 				throw new TooBigException("Too big");
 			}
+            inputStream.close();
+            outputStream.close();
+            inputBucket.free();
+            return outputBucket;
         } else {
         	return BucketTools.makeImmutableBucket(bf, output, outputLength);
         }

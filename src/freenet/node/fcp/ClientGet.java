@@ -989,35 +989,23 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			finished = false;
 			redirect =
 				getFailedMessage == null ? null : getFailedMessage.redirectURI;
-			if(persistenceType == PERSIST_FOREVER && getFailedMessage != null) {
-				container.activate(getFailedMessage, 1);
+			if(persistenceType == PERSIST_FOREVER && getFailedMessage != null)
 				getFailedMessage.removeFrom(container);
-			}
 			this.getFailedMessage = null;
-			if(persistenceType == PERSIST_FOREVER && allDataPending != null) {
-				container.activate(allDataPending, 1);
+			if(persistenceType == PERSIST_FOREVER && allDataPending != null)
 				allDataPending.removeFrom(container);
-			}
 			this.allDataPending = null;
-			if(persistenceType == PERSIST_FOREVER && postFetchProtocolErrorMessage != null) {
-				container.activate(postFetchProtocolErrorMessage, 1);
+			if(persistenceType == PERSIST_FOREVER && postFetchProtocolErrorMessage != null)
 				postFetchProtocolErrorMessage.removeFrom(container);
-			}
 			this.postFetchProtocolErrorMessage = null;
-			if(persistenceType == PERSIST_FOREVER && progressPending != null) {
-				container.activate(progressPending, 1);
+			if(persistenceType == PERSIST_FOREVER && progressPending != null)
 				progressPending.removeFrom(container);
-			}
 			this.progressPending = null;
-			if(persistenceType == PERSIST_FOREVER && compatMessage != null) {
-				container.activate(compatMessage, 1);
+			if(persistenceType == PERSIST_FOREVER && compatMessage != null)
 				compatMessage.removeFrom(container);
-			}
 			compatMessage = null;
-			if(persistenceType == PERSIST_FOREVER && expectedHashes != null) {
-				container.activate(expectedHashes, 1);
+			if(persistenceType == PERSIST_FOREVER && expectedHashes != null)
 				expectedHashes.removeFrom(container);
-			}
 				expectedHashes = null;
 			started = false;
 			if(persistenceType == PERSIST_FOREVER) {

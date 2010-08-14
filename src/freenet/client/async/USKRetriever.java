@@ -3,11 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
+import java.util.List;
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
+import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -18,6 +24,11 @@ import freenet.keys.USK;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
+import freenet.support.api.Bucket;
+import freenet.support.compress.Compressor;
+import freenet.support.compress.DecompressorThreadManager;
+import freenet.support.io.Closer;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
@@ -66,9 +77,72 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		}
 	}
 
-	public void onSuccess(final FetchResult result, final ClientGetState state, ObjectContainer container, ClientContext context) {
+	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, final ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(LogLevel.MINOR, this))
-			Logger.minor(this, "Success on "+this+" from "+state+" : length "+result.size()+" mime type "+result.getMimeType());
+			Logger.minor(this, "Success on "+this+" from "+state+" : length "+streamGenerator.size()+"mime type "+clientMetadata.getMIMEType());
+		DecompressorThreadManager decompressorManager = null;
+		OutputStream output = null;
+		Bucket finalResult = null;
+		long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+		try {
+			finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
+		} catch (IOException e) {
+			Logger.error(this, "Caught "+e, e);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state, container, context);
+			return;
+		} catch(Throwable t) {
+			Logger.error(this, "Caught "+t, t);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			return;
+		}
+
+		PipedInputStream pipeIn = null;
+		PipedOutputStream pipeOut = null;
+		try {
+			output = finalResult.getOutputStream();
+			// Decompress
+			if(decompressors != null) {
+				if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Decompressing...");
+				if(persistent()) {
+					container.activate(decompressors, 5);
+					container.activate(ctx, 1);
+				}
+				pipeIn = new PipedInputStream();
+				pipeOut = new PipedOutputStream(pipeIn);
+				decompressorManager = new DecompressorThreadManager(pipeIn, decompressors, maxLen);
+				pipeIn = decompressorManager.execute();
+				ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null);
+				worker.start();
+				streamGenerator.writeTo(pipeOut, container, context);
+				worker.waitFinished();
+				pipeOut.close();
+			} else {
+				try {
+					streamGenerator.writeTo(output, container, context);
+					output.close();
+				} finally {
+					Closer.close(output);
+				}
+			}
+		} catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
+			System.err.println("Failing above attempted fetch...");
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+			return;
+		} catch(IOException e) {
+			Logger.error(this, "Caught "+e, e);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+			return;
+		} finally {
+			Closer.close(output);
+			Closer.close(pipeOut);
+		}
+
+		final FetchResult result = new FetchResult(clientMetadata, finalResult);
+		cb.onFound(origUSK, state.getToken(), result);
 		context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 		context.mainExecutor.execute(new PrioRunnable() {
 

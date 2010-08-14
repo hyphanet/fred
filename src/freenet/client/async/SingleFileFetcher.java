@@ -5,6 +5,9 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -36,9 +39,11 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.Compressor;
+import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
@@ -294,34 +299,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
 		}
-		if(!decompressors.isEmpty()) {
-			Bucket data = result.asBucket();
-			while(!decompressors.isEmpty()) {
-				COMPRESSOR_TYPE c = decompressors.removeLast();
-				try {
-					long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-					if(logMINOR)
-						Logger.minor(this, "Decompressing "+data+" size "+data.size()+" max length "+maxLen);
-					Bucket out = decompressors.isEmpty() ? returnBucket : null;
-					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, out);
-					if(logMINOR)
-						Logger.minor(this, "Decompressed to "+data+" size "+data.size());
-				} catch (IOException e) {
-					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
-					return;
-				} catch (CompressionOutputSizeException e) {
-					if(logMINOR)
-						Logger.minor(this, "Too big: limit="+ctx.maxOutputLength+" temp="+ctx.maxTempLength);
-					onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, (rcb == parent), result.getMimeType()), false, container, context);
-					return;
-				}
-			}
-			result = new FetchResult(result, data);
-			if(persistent) {
-				container.store(this);
-				container.store(decompressors);
-			}
-		}
 		if((!ctx.ignoreTooManyPathComponents) && (!metaStrings.isEmpty()) && isFinal) {
 			// Some meta-strings left
 			if(addedMetaStrings > 0) {
@@ -348,7 +325,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			result.asBucket().free();
 			if(persistent) result.asBucket().removeFrom(container);
 		} else {
-			rcb.onSuccess(result, this, container, context);
+			rcb.onSuccess(new SingleFileStreamGenerator(result.asBucket(), persistent), result.getMetadata(), decompressors, this, container, context);
 		}
 	}
 
@@ -1022,18 +999,62 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		/** For activation we need to know whether we are persistent even though the parent may not have been activated yet */
 		private final boolean persistent;
 		private HashResult[] hashes;
+		private final FetchContext ctx;
 		
 		ArchiveFetcherCallback(boolean wasFetchingFinalData, String element, ArchiveExtractCallback cb) {
 			this.wasFetchingFinalData = wasFetchingFinalData;
 			this.element = element;
 			this.callback = cb;
 			this.persistent = SingleFileFetcher.this.persistent;
+			this.ctx = SingleFileFetcher.this.ctx;
 		}
 		
-		public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+			OutputStream output = null;
+			PipedInputStream pipeIn = new PipedInputStream();
+			PipedOutputStream pipeOut = new PipedOutputStream();
+			Bucket data = null;
+			if(persistent) {
+				container.activate(decompressors, 5);
+				container.activate(ctx, 2);
+			}
+			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+			try {
+				data = context.getBucketFactory(persistent).makeBucket(maxLen);
+				output = data.getOutputStream();
+				if(decompressors != null) {
+					if(logMINOR) Logger.minor(this, "decompressing...");
+					pipeOut.connect(pipeIn);
+					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(pipeIn, decompressors, maxLen);
+					pipeIn = decompressorManager.execute();
+					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null);
+					worker.start();
+					streamGenerator.writeTo(pipeOut, container, context);
+					decompressorManager.waitFinished();
+					worker.waitFinished();
+				} else streamGenerator.writeTo(output, container, context);
+
+				output.close();
+				pipeOut.close();
+				pipeIn.close();
+			} catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
+				System.err.println("Failing above attempted fetch...");
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+				return;
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t, t);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				return;
+			} finally {
+				Closer.close(pipeOut);
+				Closer.close(pipeIn);
+				Closer.close(output);
+			}
+
 			if(!persistent) {
 				// Run directly - we are running on some thread somewhere, don't worry about it.
-				innerSuccess(result, container, context);
+				innerSuccess(data, container, context);
 			} else {
 				boolean wasActive;
 				// We are running on the database thread.
@@ -1047,7 +1068,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent)
 					container.activate(actx, 1);
 				ah.activateForExecution(container);
-				ah.extractPersistentOffThread(result.asBucket(), true, actx, element, callback, container, context);
+				ah.extractPersistentOffThread(data, true, actx, element, callback, container, context);
 				if(!wasActive)
 					container.deactivate(SingleFileFetcher.this, 1);
 				if(state != null)
@@ -1062,13 +1083,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 		}
 
-		private void innerSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
+		private void innerSuccess(Bucket data, ObjectContainer container, ClientContext context) {
 			try {
 				if(hashes != null) {
 					InputStream is = null;
 					try {
 						if(persistent()) container.activate(hashes, Integer.MAX_VALUE);
-						is = result.asBucket().getInputStream();
+						is = data.getInputStream();
 						MultiHashInputStream hasher = new MultiHashInputStream(is, HashResult.makeBitmask(hashes));
 						byte[] buf = new byte[32768];
 						while(hasher.read(buf) > 0);
@@ -1086,7 +1107,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						Closer.close(is);
 					}
 				}
-				ah.extractToCache(result.asBucket(), actx, element, callback, context.archiveManager, container, context);
+				ah.extractToCache(data, actx, element, callback, context.archiveManager, container, context);
 			} catch (ArchiveFailureException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 				return;
@@ -1094,8 +1115,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 				return;
 			} finally {
-				result.asBucket().free();
-				if(persistent) result.asBucket().removeFrom(container);
+				data.free();
+				if(persistent) data.removeFrom(container);
 			}
 			if(callback != null) return;
 			innerWrapHandleMetadata(true, container, context);
@@ -1198,12 +1219,56 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	class MultiLevelMetadataCallback implements GetCompletionCallback {
 		
 		private final boolean persistent;
+		private final FetchContext ctx;
 		
 		MultiLevelMetadataCallback() {
 			this.persistent = SingleFileFetcher.this.persistent;
+			this.ctx = SingleFileFetcher.this.ctx;
 		}
 		
-		public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+		public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
+			OutputStream output = null;
+			PipedInputStream pipeIn = new PipedInputStream();
+			PipedOutputStream pipeOut = new PipedOutputStream();
+			Bucket finalData = null;
+			if(persistent) {
+				container.activate(decompressors, 5);
+				container.activate(ctx, 2);
+			}
+			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+			try {
+				finalData = context.getBucketFactory(persistent).makeBucket(maxLen);
+				output = finalData.getOutputStream();
+				if(decompressors != null) {
+					if(logMINOR) Logger.minor(this, "decompressing...");
+					pipeIn.connect(pipeOut);
+					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(pipeIn, decompressors, maxLen);
+					pipeIn = decompressorManager.execute();
+					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null);
+					worker.start();
+					streamGenerator.writeTo(pipeOut, container, context);
+					decompressorManager.waitFinished();
+					worker.waitFinished();
+				} else streamGenerator.writeTo(output, container, context);
+
+				pipeOut.close();
+				pipeIn.close();
+				output.close();
+			} catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
+				System.err.println("Failing above attempted fetch...");
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+				return;
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t, t);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				return;
+			} finally {
+				Closer.close(pipeOut);
+				Closer.close(pipeIn);
+				Closer.close(output);
+			}
+
 			boolean wasActive = true;
 			if(persistent) {
 				wasActive = container.ext().isActive(SingleFileFetcher.this);
@@ -1212,7 +1277,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			try {
 				parent.onTransition(state, SingleFileFetcher.this, container);
-				Metadata meta = Metadata.construct(result.asBucket());
+				//FIXME: Pass an InputStream here, and save ourselves a Bucket
+				Metadata meta = Metadata.construct(finalData);
 				removeMetadata(container);
 				synchronized(SingleFileFetcher.this) {
 					metadata = meta;
@@ -1224,13 +1290,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				innerWrapHandleMetadata(true, container, context);
 			} catch (MetadataParseException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
+				return;
 			} catch (IOException e) {
 				// Bucket error?
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
+				return;
 			} finally {
-				result.asBucket().free();
+				finalData.free();
 				if(persistent)
-					result.asBucket().removeFrom(container);
+					finalData.removeFrom(container);
 			}
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);

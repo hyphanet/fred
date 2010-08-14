@@ -66,10 +66,6 @@ public class JPEGFilter implements ContentDataFilter {
 			FilterCallback cb, boolean deleteComments, boolean deleteExif)
 	throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		long length = input.available();
-		if(length < 6) {
-			throwError(l10n("tooShortTitle"), l10n("tooShort"));
-		}
 		CountedInputStream cis = new CountedInputStream(input);
 		DataInputStream dis = new DataInputStream(cis);
 		assertHeader(dis, soi);
@@ -195,8 +191,6 @@ public class JPEGFilter implements ContentDataFilter {
 					int thumbY = dis.readUnsignedByte();
 					if(dos != null) dos.writeByte(thumbY);
 					int thumbLen = thumbX * thumbY * 3;
-					if(thumbLen > length-cis.count())
-						throwError("Invalid header", "There should be "+thumbLen+" bytes of thumbnail but there are only "+(length-cis.count())+" bytes left in the file.");
 					if(dos != null) {
 						byte[] buf = new byte[thumbLen];
 						dis.readFully(buf);
