@@ -715,6 +715,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			FECQueue queue = context.fecQueue;
 			int count = 0;
 			synchronized(this) {
+				if(finished) return;
 				// Double-check...
 				for(int i=0;i<dataBuckets.length;i++) {
 					Bucket d = dataBuckets[i].getData();
