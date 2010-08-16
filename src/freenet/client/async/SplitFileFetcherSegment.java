@@ -673,6 +673,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		// Now decode
 		if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 
+		// Determine this early on so it is before segmentFinished or encoderFinished - maximum chance of still having parentFetcher.
+		createdBeforeRestart = createdBeforeRestart(container);
+		
 		if(persistent)
 			container.store(this);
 		
@@ -915,7 +918,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				// 100% chance if we had to retry since startup, 5% chance otherwise.
 				if(dataRetries[i] != 0) {
 					// FIXME 10% chance if started before restart.
-					int odds = persistent ? 10 : 20;
+					int odds = createdBeforeRestart ? 10 : 20;
 					if(context.fastWeakRandom.nextInt(odds) != 0)
 						heal = false;
 				}
@@ -1024,6 +1027,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 	}
 
+	// Set at decode time, before calling segmentFinished or encoderFinished.
+	private boolean createdBeforeRestart;
+
 	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
 		try {
 		if(persistent) {
@@ -1120,7 +1126,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					// 100% chance if we had to retry since startup, 5% chance otherwise.
 					if(checkRetries[i] != 0) {
 						// FIXME 10% chance if started before restart.
-						int odds = persistent ? 10 : 20;
+						int odds = createdBeforeRestart ? 10 : 20;
 						if(context.fastWeakRandom.nextInt(odds) != 0)
 							heal = false;
 					}
@@ -1164,6 +1170,20 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(persistent)
 				encoderFinished(container, context);
 		}
+	}
+
+	private boolean createdBeforeRestart(ObjectContainer container) {
+		SplitFileFetcher f = parentFetcher;
+		if(f == null) {
+			Logger.error(this, "Created before restart returning false because parent fetcher already gone");
+			return false;
+		}
+		SplitFileFetcherKeyListener listener = f.getListener();
+		if(listener == null) {
+			Logger.error(this, "Created before restart return false because no listener");
+			return false;
+		}
+		return listener.loadedOnStartup;
 	}
 
 	boolean isCollectingBinaryBlob() {
