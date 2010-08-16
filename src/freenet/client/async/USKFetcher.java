@@ -1148,7 +1148,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return completed || cancelled;
 	}
 
-	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException {
+	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context, boolean onStartup) throws KeyListenerConstructionException {
 		return this;
 	}
 

@@ -343,7 +343,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return Collections.singletonList(block);
 	}
 
-	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context) {
+	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context, boolean onStartup) {
 		if(persistent) {
 			container.activate(key, 5);
 			container.activate(parent, 1);
