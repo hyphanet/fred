@@ -55,7 +55,6 @@ public class NewPacketFormat implements PacketFormat {
 	private int watchListOffset;
 
 	private volatile int highestReceivedAck = -1;
-	private final SparseBitmap finishedMessages = new SparseBitmap();
 
 	private int usedBuffer = 0;
 	private int usedBufferOtherSide = 0;
@@ -132,10 +131,6 @@ public class NewPacketFormat implements PacketFormat {
 			dontAck = true;
 		}
 		for(MessageFragment fragment : packet.getFragments()) {
-			synchronized(finishedMessages) {
-				if(finishedMessages.contains(fragment.messageID, fragment.messageID)) continue;
-			}
-
 			PartiallyReceivedBuffer recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
 			if(recvBuffer == null) {
@@ -188,9 +183,6 @@ public class NewPacketFormat implements PacketFormat {
 					if(logMINOR) Logger.minor(this, "Removed " + recvBuffer.messageLength + " from buffer. Total is now " + usedBuffer);
 				}
 
-				synchronized(finishedMessages) {
-					finishedMessages.add(fragment.messageID, fragment.messageID);
-				}
 				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Completed");
 			} else {
 				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": " + recvMap);
