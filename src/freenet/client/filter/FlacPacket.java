@@ -56,6 +56,40 @@ class FlacMetadataBlock extends FlacPacket {
 		}
 	}
 
+	public void setMetadataBlockType(BlockType type) {
+		switch(type) {
+		case STREAMINFO:
+			this.header.block_type = 0;
+			break;
+		case PADDING:
+			this.header.block_type = 1;
+			break;
+		case APPLICATION:
+			this.header.block_type = 2;
+			break;
+		case SEEKTABLE:
+			this.header.block_type = 3;
+			break;
+		case VORBIS_COMMENT:
+			this.header.block_type = 4;
+			break;
+		case CUESHEET:
+			this.header.block_type = 5;
+			break;
+		case PICTURE:
+			this.header.block_type = 6;
+			break;
+		}
+	}
+
+	public FlacMetadataBlockHeader getHeader() {
+		FlacMetadataBlockHeader newHeader = new FlacMetadataBlockHeader();
+		newHeader.lastMetadataBlock = this.header.lastMetadataBlock;
+		newHeader.block_type = this.header.block_type;
+		newHeader.length = this.header.length;
+		return newHeader;
+	}
+
 	public int getLength() {
 		return 4+header.length;
 	}

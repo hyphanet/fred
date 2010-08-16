@@ -3,8 +3,10 @@ package freenet.client.filter;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import freenet.client.filter.FlacMetadataBlock.BlockType;
+import freenet.client.filter.FlacMetadataBlock.FlacMetadataBlockHeader;
 import freenet.crypt.HashResult;
 import freenet.crypt.HashType;
 import freenet.support.Logger;
@@ -49,7 +51,36 @@ public class FlacPacketFilter  implements CodecPacketFilter {
 			md5sum = new HashResult(HashType.MD5, hash);
 			currentState = State.STREAMINFO_FOUND;
 			break;
+		case STREAMINFO_FOUND:
+			if(!(packet instanceof FlacMetadataBlock)) throw new DataFilterException(null, null, null);
+			if(((FlacMetadataBlock)packet).isLastMetadataBlock()) currentState = State.METADATA_FOUND;
+			byte[] payload;
+			FlacMetadataBlockHeader header;
+			switch(((FlacMetadataBlock)packet).getMetadataBlockType()) {
+			case APPLICATION:
+				payload = new byte[packet.payload.length];
+				Arrays.fill(payload, (byte) 0);
+				header = ((FlacMetadataBlock)packet).getHeader();
+				packet = new FlacMetadataBlock(header.toInt(), payload);
+				((FlacMetadataBlock)packet).setMetadataBlockType(BlockType.PADDING);
+				break;
+			case VORBIS_COMMENT:
+				payload = new byte[packet.payload.length];
+				Arrays.fill(payload, (byte) 0);
+				header = ((FlacMetadataBlock)packet).getHeader();
+				packet = new FlacMetadataBlock(header.toInt(), payload);
+				((FlacMetadataBlock)packet).setMetadataBlockType(BlockType.PADDING);
+				break;
+			case PICTURE:
+				payload = new byte[packet.payload.length];
+				Arrays.fill(payload, (byte) 0);
+				header = ((FlacMetadataBlock)packet).getHeader();
+				packet = new FlacMetadataBlock(header.toInt(), payload);
+				((FlacMetadataBlock)packet).setMetadataBlockType(BlockType.PADDING);
+				break;
+			}
 	}
+		if(packet instanceof FlacMetadataBlock) Logger.minor(this, "Returning packet of type"+((FlacMetadataBlock)packet).getMetadataBlockType());
 		return packet;
 	}
 }
