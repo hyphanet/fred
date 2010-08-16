@@ -127,6 +127,25 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, receiver.handleDecryptedPacket(fragment1).size());
 	}
 
+	public void testResendAlreadyCompleted() {
+		NewPacketFormat sender = new NewPacketFormat(null);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
+		NewPacketFormat receiver = new NewPacketFormat(null);
+
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0));
+
+		NPFPacket packet1 = sender.createPacket(512, senderQueue);
+		packet1.setSequenceNumber(0);
+		assertEquals(1, receiver.handleDecryptedPacket(packet1).size());
+
+		//Receiving the same packet twice should work
+		assertEquals(0, receiver.handleDecryptedPacket(packet1).size());
+
+		//Same message, new sequence number ie. resend
+		packet1.setSequenceNumber(1);
+		assertEquals(0, receiver.handleDecryptedPacket(packet1).size());
+	}
+
 	private void setUpRTT(long delay, NewPacketFormat sender, PeerMessageQueue senderQueue, NewPacketFormat receiver, PeerMessageQueue receiverQueue) {
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1], null, false, null, (short) 0));
 		NPFPacket s = sender.createPacket(512, senderQueue);
