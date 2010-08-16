@@ -1442,15 +1442,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					num = block.blockNum;
 					if(block.persistent) {
 						req.setGeneratedKey(key);
-					} else if(!req.localRequestOnly) {
-						context.mainExecutor.execute(new Runnable() {
-
-							public void run() {
-								seg.onEncode(num, key, null, context);
-							}
-
-						}, "Got URI");
-
+					} else {
+						seg.onEncode(num, key, null, context);
 					}
 					if(req.localRequestOnly)
 						try {
@@ -1466,27 +1459,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					return true;
 				}
 				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded");
-				if(req.localRequestOnly) {
-					// Must run on-thread or we will have exploding threads.
-					// Plus must run before onInsertSuccess().
-					if(!block.persistent)
-						seg.onEncode(num, key, null, context);
-					req.onInsertSuccess(context);
-				} else if(!block.persistent) {
-					// Must run after onEncode.
-					context.mainExecutor.execute(new Runnable() {
-
-						public void run() {
-							// Make absolutely sure even if we run the two jobs out of order.
-							// Overhead for double-checking should be very low.
-							seg.onEncode(num, key, null, context);
-							req.onInsertSuccess(context);
-						}
-
-					}, "Succeeded");
-				} else {
-					req.onInsertSuccess(context);
-				}
+				req.onInsertSuccess(context);
 				return true;
 			}
 
