@@ -29,7 +29,7 @@ public class FlacFilter implements ContentDataFilter {
 		State currentState = State.UNINITIALIZED;
 		short frameHeader = 0;
 		for(byte magicCharacter : magicNumber) {
-			if(magicCharacter != in.readByte()) throw new DataFilterException(l10n(""), l10n(""), l10n(""));
+			if(magicCharacter != in.readByte()) throw new DataFilterException(l10n("InvalidFLACStreamTitle"), l10n("InvalidFLACStreamTitle"), l10n("InvalidFLACStreamMessage"));
 		}
 		output.write(magicNumber);
 
@@ -113,6 +113,6 @@ public class FlacFilter implements ContentDataFilter {
 	}
 
 	private static String l10n(String key) {
-		return NodeL10n.getBase().getString("FlacFilter."+key);
+		return NodeL10n.getBase().getString("FLAC."+key);
 	}
 }
