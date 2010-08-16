@@ -145,7 +145,7 @@ public class NewPacketFormat implements PacketFormat {
 				}
 			} else {
 				int upperBound = messageWindowPtrReceived + MSG_WINDOW_SIZE;
-				if(!((fragment.messageID > messageWindowPtrReceived) && (fragment.messageID < upperBound))) {
+				if(!((fragment.messageID >= messageWindowPtrReceived) && (fragment.messageID < upperBound))) {
 					if(logMINOR) Logger.minor(this, "Received message outside window, acking");
 					continue;
 				}
