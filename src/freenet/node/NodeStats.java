@@ -23,6 +23,7 @@ import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SizeUtil;
 import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
@@ -271,15 +272,20 @@ public class NodeStats implements Persistable {
 
 		int defaultThreadLimit;
 		long memoryLimit = Runtime.getRuntime().maxMemory();
-		if(memoryLimit > 0 && memoryLimit < 128*1024*1024)
+		System.out.println("Memory is "+SizeUtil.formatSize(memoryLimit)+" ("+memoryLimit+" bytes)");
+		if(memoryLimit > 0 && memoryLimit < 100*1024*1024) {
 			defaultThreadLimit = 200;
-		else if(memoryLimit > 0 && memoryLimit < 192*1024*1024)
+			System.out.println("Severe memory pressure, setting 200 thread limit. Freenet may not work well!");
+		} else if(memoryLimit > 0 && memoryLimit < 160*1024*1024) {
 			defaultThreadLimit = 300;
+			System.out.println("Moderate memory pressure, setting 300 thread limit. Increase your memory limit in wrapper.conf if possible.");
 		// FIXME: reinstate this once either we raise the default or memory autodetection works on Windows.
 //		else if(memoryLimit > 0 && memoryLimit < 256*1024*1024)
 //			defaultThreadLimit = 400;
-		else
+		} else {
+			System.out.println("Setting standard 500 thread limit. This should be enough for most nodes but more memory is usually a good thing.");
 			defaultThreadLimit = 500;
+		}
 		statsConfig.register("threadLimit", defaultThreadLimit, sortOrder++, true, true, "NodeStat.threadLimit", "NodeStat.threadLimitLong",
 				new IntCallback() {
 					@Override
