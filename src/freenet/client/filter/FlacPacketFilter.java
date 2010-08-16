@@ -80,7 +80,7 @@ public class FlacPacketFilter  implements CodecPacketFilter {
 				break;
 			}
 	}
-		if(packet instanceof FlacMetadataBlock) Logger.minor(this, "Returning packet of type"+((FlacMetadataBlock)packet).getMetadataBlockType());
+		if(packet instanceof FlacMetadataBlock && logMINOR) Logger.minor(this, "Returning packet of type"+((FlacMetadataBlock)packet).getMetadataBlockType());
 		return packet;
 	}
 }
