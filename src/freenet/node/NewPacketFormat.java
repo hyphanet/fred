@@ -150,6 +150,9 @@ public class NewPacketFormat implements PacketFormat {
 					continue;
 				}
 			}
+			synchronized(receivedMessages) {
+				if(receivedMessages.contains(fragment.messageID, fragment.messageID)) continue;
+			}
 
 			PartiallyReceivedBuffer recvBuffer = receiveBuffers.get(fragment.messageID);
 			SparseBitmap recvMap = receiveMaps.get(fragment.messageID);
