@@ -210,7 +210,7 @@ public class NewPacketFormat implements PacketFormat {
 					receivedMessages.add(fragment.messageID, fragment.messageID);
 
 					int oldWindow = messageWindowPtrReceived;
-					while(receivedMessages.contains(messageWindowPtrReceived + 1, messageWindowPtrReceived + 1)) {
+					while(receivedMessages.contains(messageWindowPtrReceived, messageWindowPtrReceived)) {
 						messageWindowPtrReceived++;
 						if(messageWindowPtrReceived == NUM_MESSAGE_IDS) messageWindowPtrReceived = 0;
 					}
