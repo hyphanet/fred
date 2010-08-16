@@ -1178,7 +1178,13 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			Logger.error(this, "Created before restart returning false because parent fetcher already gone");
 			return false;
 		}
+		boolean active = true;
+		if(persistent) {
+			active = container.ext().isActive(parentFetcher);
+			if(!active) container.activate(f, 1);
+		}
 		SplitFileFetcherKeyListener listener = f.getListener();
+		if(!active) container.deactivate(f, 1);
 		if(listener == null) {
 			Logger.error(this, "Created before restart return false because no listener");
 			return false;
