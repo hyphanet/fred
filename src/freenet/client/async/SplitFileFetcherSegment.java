@@ -912,9 +912,11 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				return;
 			}
 			if(heal) {
-				int base = dataRetries[i] == 0 ? 2 : 4;
-				if(context.fastWeakRandom.nextInt(base) != 0)
-					heal = false;
+				// 100% chance if we had to retry since startup, 5% chance otherwise.
+				if(dataRetries[i] != 0) {
+					if(context.fastWeakRandom.nextInt(20) != 0)
+						heal = false;
+				}
 			}
 			if(heal) {
 				Bucket wrapper = queueHeal(data, container, context);
@@ -1113,9 +1115,11 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					return;
 				}
 				if(heal) {
-					int base = checkRetries[i] == 0 ? 2 : 4;
-					if(context.fastWeakRandom.nextInt(base) != 0)
-						heal = false;
+					// 100% chance if we had to retry since startup, 5% chance otherwise.
+					if(checkRetries[i] != 0) {
+						if(context.fastWeakRandom.nextInt(20) != 0)
+							heal = false;
+					}
 				}
 				if(heal) {
 					Bucket wrapper = queueHeal(data, container, context);
