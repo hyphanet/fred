@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.Logger;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 

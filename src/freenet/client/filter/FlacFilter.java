@@ -10,6 +10,7 @@ import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**Filters native FLAC data.
  * Format details may be found at <a href="http://flac.sourceforge.net/format.html"> http://flac.sourceforge.net/format.html</a>
@@ -19,11 +20,10 @@ public class FlacFilter implements ContentDataFilter {
 	static final byte[] magicNumber = new byte[] {0x66, 0x4C, 0x61, 0x43};
 	enum State {UNINITIALIZED, STREAMINFO_FOUND, METADATA_FOUND, STREAM_FINISHED};
 
-
-
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
+		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this.getClass());
 		FlacPacketFilter parser = new FlacPacketFilter();
 		DataInputStream in = new DataInputStream(input);
 		State currentState = State.UNINITIALIZED;
@@ -36,23 +36,21 @@ public class FlacFilter implements ContentDataFilter {
 		//Grab packets
 		while(currentState != State.STREAM_FINISHED) {
 			CodecPacket packet = null;
-			Logger.minor(this, "Main loop");
 			try {
 				if(currentState == State.METADATA_FOUND) frameHeader = (short) (in.readUnsignedShort() & 0x0000FFFF);
 				byte[] payload = null;
 				switch(currentState) {
 				case UNINITIALIZED:
-					Logger.minor(this, "Reading metadata packet!");
+					if(logMINOR) Logger.minor(this, "Reading metadata packet");
 					int header = in.readInt();
-					Logger.minor(this, "Header = "+Integer.toHexString(header));
 					payload = new byte[header & 0x00FFFFFF];
-					Logger.minor(this, "About to read "+payload.length);
+					if(logMINOR) Logger.minor(this, "About to read "+payload.length+" bytes");
 					in.readFully(payload);
 					packet = new FlacMetadataBlock(header, payload);
-					Logger.minor(this, ((FlacMetadataBlock)packet).getMetadataBlockType()+" packet read");
+					if(logMINOR) Logger.minor(this, ((FlacMetadataBlock)packet).getMetadataBlockType()+" packet read");
 					break;
 				case METADATA_FOUND:
-					Logger.minor(this, "Reading audio packet");
+					if(logMINOR) Logger.minor(this, "Reading audio packet");
 					boolean firstHalfOfSyncHeaderFound = false;
 					ArrayList<Byte> buffer = new ArrayList<Byte>();
 					int data = 0;
@@ -63,7 +61,6 @@ public class FlacFilter implements ContentDataFilter {
 						try {
 							data = in.readUnsignedByte();
 						} catch(EOFException e) {
-							Logger.minor(this, "Got EOF in subloop");
 							currentState = State.STREAM_FINISHED;
 							running = false;
 							frameHeader = 0;
@@ -103,7 +100,6 @@ public class FlacFilter implements ContentDataFilter {
 				packet = parser.parse(packet);
 				if(packet != null) output.write(packet.toArray());
 			} catch(EOFException e) {
-				Logger.minor(this, "Got EOF"+e,e);
 				return;
 			}
 		}
