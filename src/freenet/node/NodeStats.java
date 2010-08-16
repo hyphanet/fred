@@ -245,7 +245,7 @@ public class NodeStats implements Persistable {
 	
 
 
-	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, File nodeDir) throws NodeInitException {
+	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, File nodeDir, int lastVersion) throws NodeInitException {
 		this.node = node;
 		this.peers = node.peers;
 		this.hardRandom = node.random;
@@ -272,6 +272,7 @@ public class NodeStats implements Persistable {
 
 		int defaultThreadLimit;
 		long memoryLimit = Runtime.getRuntime().maxMemory();
+		
 		System.out.println("Memory is "+SizeUtil.formatSize(memoryLimit)+" ("+memoryLimit+" bytes)");
 		if(memoryLimit > 0 && memoryLimit < 100*1024*1024) {
 			defaultThreadLimit = 200;
@@ -301,6 +302,10 @@ public class NodeStats implements Persistable {
 						threadLimit = val;
 					}
 		},false);
+		
+		if(lastVersion > 0 && lastVersion < 1270 && memoryLimit > 160*1024*1024 && memoryLimit < 192*1024*1024)
+			statsConfig.fixOldDefault("threadLimit", "300");
+		
 		threadLimit = statsConfig.getInt("threadLimit");
 		
 		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
