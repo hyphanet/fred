@@ -746,7 +746,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		freeBucketsArray(container, checkBlocks);
 	}
 
-	private boolean onEncode(int x, ClientCHK key, ObjectContainer container, ClientContext context) {
+	private boolean onEncode(int x, ClientCHK key, ObjectContainer container, final ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Encoded block "+x+" on "+this);
 		synchronized (this) {
 			if (finished) {
@@ -792,7 +792,17 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.activate(parent, 1);
 			container.store(this);
 		}
-		parent.segmentHasURIs(this, container, context);
+		if(!persistent) {
+			context.mainExecutor.execute(new Runnable() {
+
+				public void run() {
+					parent.segmentHasURIs(SplitFileInserterSegment.this, null, context);
+				}
+				
+			});
+		} else {
+			parent.segmentHasURIs(this, container, context);
+		}
 		if(persistent)
 			container.deactivate(parent, 1);
 		return true;
@@ -1231,7 +1241,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	@Override
-	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
+	public void onSuccess(Object keyNum, ObjectContainer container, final ClientContext context) {
 		BlockItem block = (BlockItem) keyNum;
 		int blockNum = block.blockNum;
 		int completed;
@@ -1305,11 +1315,34 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		if(persistent) container.deactivate(putter, 1);
 		if(completed == dataBlocks.length + checkBlocks.length) {
 			if(persistent) container.activate(parent, 1);
-			finish(container, context, parent);
+			// This could be quite heavy. Run it off-thread.
+			// Note that it's not safe to do this for persistent requests for consistency reasons.
+			// But for persistent requests this is not called on the request sender anyway.
+			if(!persistent) {
+				context.mainExecutor.execute(new Runnable() {
+
+					public void run() {
+						finish(null, context, parent);
+					}
+					
+				});
+			} else {
+				finish(container, context, parent);
+			}
 			if(persistent) container.deactivate(parent, 1);
 		} else if(succeeded == dataBlocks.length) {
 			if(persistent) container.activate(parent, 1);
-			parent.segmentFetchable(this, container);
+			if(!persistent) {
+				context.mainExecutor.execute(new Runnable() {
+
+					public void run() {
+						parent.segmentFetchable(SplitFileInserterSegment.this, null);
+					}
+					
+				});
+			} else {
+				parent.segmentFetchable(this, container);
+			}
 			if(persistent) container.deactivate(parent, 1);
 		}
 	}
