@@ -35,8 +35,9 @@ public class FlacPacketFilter  implements CodecPacketFilter {
 		case UNINITIALIZED:
 			if(!(packet instanceof FlacMetadataBlock) && ((FlacMetadataBlock) packet).getMetadataBlockType() != BlockType.STREAMINFO) {
 				streamValid = false;
-				//return null;
+				return null;
 			}
+			if(((FlacMetadataBlock)packet).isLastMetadataBlock()) currentState = State.METADATA_FOUND;
 			minimumBlockSize = input.readUnsignedShort();
 			maximumBlockSize = input.readUnsignedShort();
 			minimumFrameSize = (input.readUnsignedShort() << 8) | input.readUnsignedByte();
@@ -52,7 +53,6 @@ public class FlacPacketFilter  implements CodecPacketFilter {
 			currentState = State.STREAMINFO_FOUND;
 			break;
 		case STREAMINFO_FOUND:
-			if(!(packet instanceof FlacMetadataBlock)) throw new DataFilterException(null, null, null);
 			if(((FlacMetadataBlock)packet).isLastMetadataBlock()) currentState = State.METADATA_FOUND;
 			byte[] payload;
 			FlacMetadataBlockHeader header;
