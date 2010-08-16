@@ -70,6 +70,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * filters use the global salt. */
 	private final byte[] localSalt;
 	private boolean killed;
+	/** If true, we were loaded on startup. If false, we were created since then. */
+	final boolean loadedOnStartup;
 
 	/**
 	 * Caller must create bloomFile, but it may be empty.
@@ -77,8 +79,9 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * should be created from scratch.
 	 * @throws IOException 
 	 */
-	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter, CountingBloomFilter cachedMainFilter, BinaryBloomFilter[] cachedSegFilters, ObjectContainer container) throws IOException {
+	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter, CountingBloomFilter cachedMainFilter, BinaryBloomFilter[] cachedSegFilters, ObjectContainer container, boolean onStartup) throws IOException {
 		fetcher = parent;
+		this.loadedOnStartup = onStartup;
 		this.persistent = persistent;
 		this.keyCount = keyCount;
 		assert(localSalt.length == 32);

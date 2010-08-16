@@ -164,7 +164,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			container.activate(l, 1);
 			try {
 				if(l.isCancelled(container)) continue;
-				KeyListener listener = l.makeKeyListener(container, context);
+				KeyListener listener = l.makeKeyListener(container, context, true);
 				if(listener != null) {
 					if(listener.isSSK())
 						context.getSskFetchScheduler().addPersistentPendingKeys(listener);
@@ -279,7 +279,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		} else {
 			final KeyListener listener;
 			if(hasListener != null) {
-				listener = hasListener.makeKeyListener(container, clientContext);
+				listener = hasListener.makeKeyListener(container, clientContext, false);
 				if(listener != null)
 					schedTransient.addPendingKeys(listener);
 				else
@@ -309,7 +309,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				return;
 			}
 			container.store(hasListener);
-			listener = hasListener.makeKeyListener(container, clientContext);
+			listener = hasListener.makeKeyListener(container, clientContext, false);
 			schedCore.addPendingKeys(listener);
 		} else
 			listener = null;
