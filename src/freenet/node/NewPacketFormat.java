@@ -26,6 +26,8 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int NUM_RTTS_TO_LOOSE = 2;
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
 	private static final int MAX_BUFFER_SIZE = 256 * 1024;
+	private static final int MSG_WINDOW_SIZE = 65536;
+	private static final int NUM_MESSAGE_IDS = 268435456;
 
 	private static volatile boolean logMINOR;
 	static {
@@ -45,9 +47,13 @@ public class NewPacketFormat implements PacketFormat {
 
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private int nextMessageID = 0;
+	private int messageWindowPtrAcked = 0;
+	private final SparseBitmap ackedMessages = new SparseBitmap();
 
 	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
 	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
+	private int messageWindowPtrReceived = 0;
+	private final SparseBitmap receivedMessages= new SparseBitmap();
 
 	private SessionKey watchListKey;
 	private byte[][] seqNumWatchList;
@@ -181,6 +187,23 @@ public class NewPacketFormat implements PacketFormat {
 				synchronized(bufferUsageLock) {
 					usedBuffer -= recvBuffer.messageLength;
 					if(logMINOR) Logger.minor(this, "Removed " + recvBuffer.messageLength + " from buffer. Total is now " + usedBuffer);
+				}
+
+				synchronized(receivedMessages) {
+					receivedMessages.add(fragment.messageID, fragment.messageID);
+
+					int oldWindow = messageWindowPtrReceived;
+					while(receivedMessages.contains(messageWindowPtrReceived + 1, messageWindowPtrReceived + 1)) {
+						messageWindowPtrReceived++;
+						if(messageWindowPtrReceived == NUM_MESSAGE_IDS) messageWindowPtrReceived = 0;
+					}
+
+					if(messageWindowPtrReceived < oldWindow) {
+						receivedMessages.remove(oldWindow, NUM_MESSAGE_IDS - 1);
+						receivedMessages.remove(0, messageWindowPtrReceived);
+					} else {
+						receivedMessages.remove(oldWindow, messageWindowPtrReceived);
+					}
 				}
 
 				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Completed");
@@ -501,7 +524,9 @@ fragments:
 	private int getMessageID() {
 		int messageID;
 		synchronized(this) {
+			if(nextMessageID > ((messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS)) return -1;
 			messageID = nextMessageID++;
+			if(nextMessageID == NUM_MESSAGE_IDS) nextMessageID = 0;
 		}
 		return messageID;
 	}
@@ -558,7 +583,27 @@ fragments:
 					synchronized(started) {
 						removed = started.remove(wrapper.getMessageID());
 					}
-					if(removed != null) completedMessagesSize += wrapper.getLength();
+
+					if(removed != null) {
+						completedMessagesSize += wrapper.getLength();
+
+						synchronized(npf.ackedMessages) {
+							npf.ackedMessages.add(wrapper.getMessageID(), wrapper.getMessageID());
+
+							int oldWindow = npf.messageWindowPtrAcked;
+							while(npf.ackedMessages.contains(npf.messageWindowPtrAcked + 1, npf.messageWindowPtrAcked + 1)) {
+								npf.messageWindowPtrAcked++;
+								if(npf.messageWindowPtrAcked == NUM_MESSAGE_IDS) npf.messageWindowPtrAcked = 0;
+							}
+
+							if(npf.messageWindowPtrAcked < oldWindow) {
+								npf.ackedMessages.remove(oldWindow, NUM_MESSAGE_IDS - 1);
+								npf.ackedMessages.remove(0, npf.messageWindowPtrAcked);
+							} else {
+								npf.ackedMessages.remove(oldWindow, npf.messageWindowPtrAcked);
+							}
+						}
+					}
 				}
 			}
 
