@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.LinkedList;
 
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -18,10 +17,8 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 
 	public CodecPacket parse(CodecPacket packet) throws IOException {
 		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		LinkedList<Integer> theoraPacketLengths = new LinkedList<Integer>();
 		//Assemble the Theora packets
 		DataInputStream input = new DataInputStream(new ByteArrayInputStream(packet.payload));
-		boolean running = true;
 		byte[] magicHeader = null;
 			try {
 				switch(currentState) {
@@ -76,7 +73,6 @@ public class TheoraPacketFilter implements CodecPacketFilter {
 					if(Res != 0) return null;
 
 					currentState = State.IDENTIFICATION_FOUND;
-					running = false;
 					break;
 
 				case IDENTIFICATION_FOUND:
