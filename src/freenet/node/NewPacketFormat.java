@@ -139,7 +139,7 @@ public class NewPacketFormat implements PacketFormat {
 		for(MessageFragment fragment : packet.getFragments()) {
 			if(messageWindowPtrReceived + MSG_WINDOW_SIZE > NUM_MESSAGE_IDS) {
 				int upperBound = (messageWindowPtrReceived + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS;
-				if((fragment.messageID > upperBound) && (fragment.messageID < messageWindowPtrReceived)) {
+				if((fragment.messageID > upperBound) || (fragment.messageID < messageWindowPtrReceived)) {
 					if(logMINOR) Logger.minor(this, "Received message outside window, acking");
 					continue;
 				}
