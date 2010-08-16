@@ -251,7 +251,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		if(sessionKey.packets.highestReceivedIncomingSeqNumber() - (seqNumWatchList.length / 2) > watchListOffset) {
-			int moveBy = (int) ((sessionKey.packets.highestReceivedIncomingSeqNumber() - (seqNumWatchList.length / 2)) - watchListOffset);
+			int moveBy = (sessionKey.packets.highestReceivedIncomingSeqNumber() - (seqNumWatchList.length / 2)) - watchListOffset;
 			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
 			if(logMINOR) Logger.minor(this, "Moving pointer by " + moveBy);
 
