@@ -17,6 +17,8 @@ import freenet.support.Logger;
  */
 public class FlacFilter implements ContentDataFilter {
 	static final byte[] magicNumber = new byte[] {0x66, 0x4C, 0x61, 0x43};
+	enum State {UNINITIALIZED, STREAMINFO_FOUND, METADATA_FOUND, STREAM_FINISHED};
+
 
 
 	public void readFilter(InputStream input, OutputStream output,
@@ -24,7 +26,7 @@ public class FlacFilter implements ContentDataFilter {
 			FilterCallback cb) throws DataFilterException, IOException {
 		FlacPacketFilter parser = new FlacPacketFilter();
 		DataInputStream in = new DataInputStream(input);
-		FlacPacketFilter.State currentState = FlacPacketFilter.State.UNINITIALIZED;
+		State currentState = State.UNINITIALIZED;
 		short frameHeader = 0;
 		for(byte magicCharacter : magicNumber) {
 			if(magicCharacter != in.readByte()) throw new DataFilterException(l10n(""), l10n(""), l10n(""));
@@ -32,11 +34,11 @@ public class FlacFilter implements ContentDataFilter {
 		output.write(magicNumber);
 
 		//Grab packets
-		while(currentState != FlacPacketFilter.State.STREAM_FINISHED) {
+		while(currentState != State.STREAM_FINISHED) {
 			CodecPacket packet = null;
 			Logger.minor(this, "Main loop");
 			try {
-				if(currentState == FlacPacketFilter.State.METADATA_FOUND) frameHeader = (short) (in.readUnsignedShort() & 0x0000FFFF);
+				if(currentState == State.METADATA_FOUND) frameHeader = (short) (in.readUnsignedShort() & 0x0000FFFF);
 				byte[] payload = null;
 				switch(currentState) {
 				case UNINITIALIZED:
@@ -62,7 +64,7 @@ public class FlacFilter implements ContentDataFilter {
 							data = in.readUnsignedByte();
 						} catch(EOFException e) {
 							Logger.minor(this, "Got EOF in subloop");
-							currentState = FlacPacketFilter.State.STREAM_FINISHED;
+							currentState = State.STREAM_FINISHED;
 							running = false;
 							frameHeader = 0;
 							payload = new byte[buffer.size()];
@@ -95,8 +97,8 @@ public class FlacFilter implements ContentDataFilter {
 						buffer.add(new Byte((byte) (data&0xFF)));
 					}
 				}
-				if(currentState == FlacPacketFilter.State.UNINITIALIZED && packet instanceof FlacMetadataBlock && ((FlacMetadataBlock) packet).isLastMetadataBlock()) {
-					currentState = FlacPacketFilter.State.METADATA_FOUND;
+				if(currentState == State.UNINITIALIZED && packet instanceof FlacMetadataBlock && ((FlacMetadataBlock) packet).isLastMetadataBlock()) {
+					currentState = State.METADATA_FOUND;
 				}
 				packet = parser.parse(packet);
 				if(packet != null) output.write(packet.toArray());
