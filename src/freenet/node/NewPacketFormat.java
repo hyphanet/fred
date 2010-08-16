@@ -608,7 +608,7 @@ fragments:
 							npf.ackedMessages.add(wrapper.getMessageID(), wrapper.getMessageID());
 
 							int oldWindow = npf.messageWindowPtrAcked;
-							while(npf.ackedMessages.contains(npf.messageWindowPtrAcked + 1, npf.messageWindowPtrAcked + 1)) {
+							while(npf.ackedMessages.contains(npf.messageWindowPtrAcked, npf.messageWindowPtrAcked)) {
 								npf.messageWindowPtrAcked++;
 								if(npf.messageWindowPtrAcked == NUM_MESSAGE_IDS) npf.messageWindowPtrAcked = 0;
 							}
