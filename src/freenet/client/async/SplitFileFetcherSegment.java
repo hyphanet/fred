@@ -914,7 +914,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(heal) {
 				// 100% chance if we had to retry since startup, 5% chance otherwise.
 				if(dataRetries[i] != 0) {
-					if(context.fastWeakRandom.nextInt(20) != 0)
+					// FIXME 10% chance if started before restart.
+					int odds = persistent ? 10 : 20;
+					if(context.fastWeakRandom.nextInt(odds) != 0)
 						heal = false;
 				}
 			}
@@ -1117,7 +1119,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				if(heal) {
 					// 100% chance if we had to retry since startup, 5% chance otherwise.
 					if(checkRetries[i] != 0) {
-						if(context.fastWeakRandom.nextInt(20) != 0)
+						// FIXME 10% chance if started before restart.
+						int odds = persistent ? 10 : 20;
+						if(context.fastWeakRandom.nextInt(odds) != 0)
 							heal = false;
 					}
 				}
