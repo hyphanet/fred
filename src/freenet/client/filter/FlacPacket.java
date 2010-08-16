@@ -16,14 +16,14 @@ class FlacMetadataBlock extends FlacPacket {
 
 	FlacMetadataBlock(int header, byte[] payload) {
 		super(payload);
-		this.header.lastMetadataBlock = (header & 0x80) == 1 ? true : false;
-		this.header.block_type = (byte) (header & 0x7F);
+		this.header.lastMetadataBlock = ((header & 0x80000000) >>> 31) == 1 ? true : false;
+		this.header.block_type = (byte) ((header & 0x7F000000) >>> 24);
 		this.header.length = (header & 0x00FFFFFF);
 	}
 
 	@Override
 	public byte[] toArray() {
-		ByteBuffer bb = ByteBuffer.allocate(32+getLength());
+		ByteBuffer bb = ByteBuffer.allocate(getLength());
 		bb.putInt(header.toInt());
 		bb.put(payload);
 		return bb.array();
@@ -57,7 +57,7 @@ class FlacMetadataBlock extends FlacPacket {
 	}
 
 	public int getLength() {
-		return header.length;
+		return 4+header.length;
 	}
 
 	class FlacMetadataBlockHeader {
