@@ -28,6 +28,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int MAX_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
+	private static final long NUM_SEQNUMS = 4294967296l;
 
 	private static volatile boolean logMINOR;
 	static {
@@ -315,9 +316,18 @@ public class NewPacketFormat implements PacketFormat {
 		System.arraycopy(buf, offset + HMAC_LENGTH, payload, 0, length - HMAC_LENGTH);
 
 		NPFPacket p = NPFPacket.create(payload);
-		if(highestReceivedSequenceNumber < sequenceNumber) highestReceivedSequenceNumber = sequenceNumber;
+
+		if(seqNumGreaterThan(sequenceNumber, highestReceivedSequenceNumber)) {
+			highestReceivedSequenceNumber = sequenceNumber;
+		}
 
 		return p;
+	}
+
+	private boolean seqNumGreaterThan(long i1, long i2) {
+		//2147483648 (2^31) is half the window of possible numbers, so this returns true if the distance from
+		//i2->i1 is smaller than i1->i2. See RFC1982 for details and limitations (SERIAL_BITS = 32).
+		return (((i1 < i2) && ((i2 - i1) > 2147483648l)) || ((i1 > i2) && (i1 - i2 < 2147483648l)));
 	}
 
 	private byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
