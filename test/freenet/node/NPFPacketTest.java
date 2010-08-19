@@ -299,7 +299,7 @@ public class NPFPacketTest extends TestCase {
 
 	private void checkPacket(NPFPacket packet, byte[] correctData) {
 		byte[] data = new byte[packet.getLength()];
-		packet.toBytes(data, 0);
+		packet.toBytes(data, 0, null);
 
 		assertEquals(data.length, correctData.length);
 		for(int i = 0; i < data.length; i++) {

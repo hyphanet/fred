@@ -367,7 +367,7 @@ public class NewPacketFormat implements PacketFormat {
 		packet.setSequenceNumber(getSequenceNumber());
 
 		byte[] data = new byte[packet.getLength() + HMAC_LENGTH];
-		packet.toBytes(data, HMAC_LENGTH);
+		packet.toBytes(data, HMAC_LENGTH, pn.node.fastWeakRandom);
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
 

@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -74,14 +75,19 @@ class NPFPacket {
 
 		int prevFragmentID = -1;
 		while(offset < plaintext.length) {
+			boolean shortMessage = (plaintext[offset] & 0x80) != 0;
+			boolean isFragmented = (plaintext[offset] & 0x40) != 0;
+			boolean firstFragment = (plaintext[offset] & 0x20) != 0;
+
+			if(!isFragmented && !firstFragment) {
+				//Remainder of packet is padding
+				break;
+			}
+
 			if(plaintext.length < (offset + 2)) {
 				packet.error = true;
 				return packet;
 			}
-
-			boolean shortMessage = (plaintext[offset] & 0x80) != 0;
-			boolean isFragmented = (plaintext[offset] & 0x40) != 0;
-			boolean firstFragment = (plaintext[offset] & 0x20) != 0;
 
 			int messageID = -1;
 			if((plaintext[offset] & 0x10) != 0) {
@@ -96,13 +102,6 @@ class NPFPacket {
 				offset += 2;
 			}
 			prevFragmentID = messageID;
-
-			if(!isFragmented && !firstFragment) {
-				Logger.warning(NPFPacket.class, "Received unfragmented message, but the fragment wasn't"
-				                + " the first");
-				packet.error = true;
-				break;
-			}
 
 			int requiredLength = offset
 			                + (shortMessage ? 1 : 2)
@@ -161,7 +160,7 @@ class NPFPacket {
 		return packet;
 	}
 
-	public int toBytes(byte[] buf, int offset) {
+	public int toBytes(byte[] buf, int offset, Random paddingGen) {
 		buf[offset] = (byte) (sequenceNumber >>> 24);
 		buf[offset + 1] = (byte) (sequenceNumber >>> 16);
 		buf[offset + 2] = (byte) (sequenceNumber >>> 8);
@@ -234,6 +233,15 @@ class NPFPacket {
 
 			System.arraycopy(fragment.fragmentData, 0, buf, offset, fragment.fragmentLength);
 			offset += fragment.fragmentLength;
+		}
+
+		if(offset < buf.length) {
+			//More room, so add padding
+			byte[] padding = new byte[buf.length - offset];
+			paddingGen.nextBytes(padding);
+			System.arraycopy(padding, 0, buf, offset, padding.length);
+
+			buf[offset] = (byte) (buf[offset] & 0x9F); //Make sure firstFragment and isFragmented isn't set
 		}
 
 		return offset;
