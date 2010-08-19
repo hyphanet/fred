@@ -45,11 +45,13 @@ public class NewPacketFormat implements PacketFormat {
 	private final int[] lastRtts;
 	private int nextRttPos;
 
+	private int nextSequenceNumber = 0;
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private int nextMessageID = 0;
 	private int messageWindowPtrAcked = 0; //The first message id that hasn't been acked by the receiver
 	private final SparseBitmap ackedMessages = new SparseBitmap();
 
+	private int highestReceivedSequenceNumber = -1;
 	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
 	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
 	private int messageWindowPtrReceived = 0; //The first message id that hasn't been fully received
@@ -253,8 +255,12 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
-		if(sessionKey.packets.highestReceivedIncomingSeqNumber() - (seqNumWatchList.length / 2) > watchListOffset) {
-			int moveBy = (sessionKey.packets.highestReceivedIncomingSeqNumber() - (seqNumWatchList.length / 2)) - watchListOffset;
+		int highestReceivedSeqNum;
+		synchronized(this) {
+			highestReceivedSeqNum = highestReceivedSequenceNumber;
+		}
+		if(highestReceivedSeqNum - (seqNumWatchList.length / 2) > watchListOffset) {
+			int moveBy = (highestReceivedSeqNum - (seqNumWatchList.length / 2)) - watchListOffset;
 			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
 			if(logMINOR) Logger.minor(this, "Moving pointer by " + moveBy);
 
@@ -309,7 +315,7 @@ public class NewPacketFormat implements PacketFormat {
 		System.arraycopy(buf, offset + HMAC_LENGTH, payload, 0, length - HMAC_LENGTH);
 
 		NPFPacket p = NPFPacket.create(payload);
-		sessionKey.packets.receivedPacket(sequenceNumber);
+		if(highestReceivedSequenceNumber < sequenceNumber) highestReceivedSequenceNumber = sequenceNumber;
 
 		return p;
 	}
@@ -348,15 +354,7 @@ public class NewPacketFormat implements PacketFormat {
 		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue());
 		if(packet == null) return false;
 
-		try {
-			packet.setSequenceNumber(sessionKey.packets.allocateOutgoingPacketNumberNeverBlock());
-		} catch(KeyChangedException e) {
-			return false;
-		} catch (WouldBlockException e) {
-			return false;
-		} catch (NotConnectedException e) {
-			return false;
-		}
+		packet.setSequenceNumber(getSequenceNumber());
 
 		byte[] data = new byte[packet.getLength() + HMAC_LENGTH];
 		packet.toBytes(data, HMAC_LENGTH);
@@ -536,6 +534,12 @@ fragments:
 			usedBufferOtherSide -= messageSize;
 			if(logMINOR) Logger.minor(this, "Removed " + messageSize + " from remote buffer. Total is now " + usedBufferOtherSide);
 		}
+	}
+
+	private synchronized int getSequenceNumber() {
+		int seqNum = nextSequenceNumber++;
+		if(nextSequenceNumber < 0) nextSequenceNumber = 0;
+		return seqNum;
 	}
 
 	private int getMessageID() {
