@@ -137,9 +137,8 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		return false;
 	}
 
-	/** Must be called when we retry a block. Persistent is passed in because this method
-	 * can be called without activating the object first. */
-	public void clearCooldown(ClientContext context, boolean persistent) {
+	/** Must be called when we retry a block. */
+	public void clearCooldown(ObjectContainer container, ClientContext context) {
 		// The request is no longer running, therefore presumably it can be selected, or it's been removed.
 		// Stuff that uses the cooldown queue will set or clear depending on whether we retry, but
 		// we clear here for stuff that doesn't use it.

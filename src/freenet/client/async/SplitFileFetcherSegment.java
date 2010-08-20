@@ -1350,7 +1350,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(!getterActive) container.activate(getter, 1);
 		}
 		getter.reschedule(container, context);
-		getter.clearCooldown(context, persistent);
+		getter.clearCooldown(container, context);
 		if(!getterActive) container.deactivate(getter, 1);
 		return getter;
 	}
