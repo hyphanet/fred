@@ -12,6 +12,7 @@ import com.db4o.query.Query;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
+import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
@@ -456,7 +457,16 @@ public class DatastoreChecker implements PrioRunnable {
 							return false;
 						}
 						container.activate(get, 1);
-						scheduler.finishRegister(new SendableGet[] { get }, true, container, valid, it);
+						try {
+							scheduler.finishRegister(new SendableGet[] { get }, true, container, valid, it);
+						} catch (Throwable t) {
+							Logger.error(this, "Failed to register "+get+": "+t, t);
+							try {
+								get.onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "Internal error: "+t, t), null, container, context);
+							} catch (Throwable t1) {
+								Logger.error(this, "Failed to fail: "+t, t);
+							}
+						}
 						container.deactivate(get, 1);
 						loader.run(container, context);
 						return false;
