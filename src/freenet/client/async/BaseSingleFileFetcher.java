@@ -27,7 +27,7 @@ import freenet.support.TimeUtil;
 
 public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener, HasCooldownTrackerItem {
 
-	public class MyCooldownTrackerItem implements CooldownTrackerItem {
+	public static class MyCooldownTrackerItem implements CooldownTrackerItem {
 
 		public int retryCount;
 		public long cooldownWakeupTime;
