@@ -28,7 +28,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int MAX_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
-	private static final long NUM_SEQNUMS = 4294967296l;
+	private static final long NUM_SEQNUMS = 2147483648l;
 
 	private static volatile boolean logMINOR;
 	static {
