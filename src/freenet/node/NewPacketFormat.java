@@ -244,7 +244,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
 		if(watchListKey == null || !watchListKey.equals(sessionKey)) {
-			if(logMINOR) Logger.minor(this, "Creating watchlist");
+			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + watchListOffset);
 
 			watchListKey = sessionKey;
 			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
