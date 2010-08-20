@@ -120,12 +120,17 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
-		if(fetcher != null) fetcher.cancel(null, context);
+		USKFetcher f = fetcher;
+		if(f != null) fetcher.cancel(null, context);
 		synchronized(this) {
+			if(finished) {
+				if(logMINOR) Logger.minor(this, "Already cancelled "+this);
+				return;
+			}
 			finished = true;
 		}
-		if(logMINOR) Logger.minor(this, "Cancelled "+this);
-		// onCancelled() will removeFrom(), so we do NOT want to store(this)
+		if(f != null)
+			Logger.error(this, "cancel() for "+fetcher+" did not set finished on "+this+" ???");
 	}
 
 	public long getToken() {
