@@ -653,8 +653,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		uskManager.onFinished(this);
 		SendableGet storeChecker;
 		synchronized(this) {
-			if(cancelled) Logger.error(this, "Already cancelled");
-			if(completed) Logger.error(this, "Already completed");
+			if(cancelled) Logger.error(this, "Already cancelled "+this);
+			if(completed) Logger.error(this, "Already completed "+this);
 			cancelled = true;
 			attempts = runningAttempts.values().toArray(new USKAttempt[runningAttempts.size()]);
 			polling = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
