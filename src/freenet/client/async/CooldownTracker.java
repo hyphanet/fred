@@ -103,8 +103,12 @@ public class CooldownTracker {
 			return item.timeValid;
 		}
 	}
-	
+
 	public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container) {
+		setCachedWakeup(wakeupTime, toCheck, parent, persistent, container, false);
+	}
+	
+	public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container, boolean dontLogOnClearingParents) {
 		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck);
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
@@ -119,6 +123,25 @@ public class CooldownTracker {
 					item.timeValid = wakeupTime;
 				item.parentID = parentUID;
 			}
+			if(parentUID != -1) {
+				// All items above this should have a wakeup time no later than this.
+				while(true) {
+					PersistentCooldownCacheItem checkParent = cacheItemsPersistent.get(parentUID);
+					if(checkParent == null) break;
+					if(checkParent.timeValid < item.timeValid) break;
+					else if(checkParent.timeValid > item.timeValid) {
+						if(!dontLogOnClearingParents)
+							Logger.error(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid, new Exception("debug"));
+						else {
+							if(logMINOR) 
+								Logger.minor(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid);
+						}
+						checkParent.timeValid = item.timeValid;
+					}
+					parentUID = checkParent.parentID;
+					if(parentUID < 0) break;
+				}
+			}
 		} else {
 			TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
 			if(item == null) {
@@ -131,6 +154,25 @@ public class CooldownTracker {
 						item.parent = null;
 					else
 						item.parent = new WeakReference<HasCooldownCacheItem>(parent);
+				}
+			}
+			if(parent != null) {
+				// All items above this should have a wakeup time no later than this.
+				while(true) {
+					TransientCooldownCacheItem checkParent = cacheItemsTransient.get(parent);
+					if(checkParent == null) break;
+					if(checkParent.timeValid < item.timeValid) break;
+					else if(checkParent.timeValid > item.timeValid) {
+						if(!dontLogOnClearingParents)
+							Logger.error(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid, new Exception("debug"));
+						else {
+							if(logMINOR) 
+								Logger.minor(this, "Corrected parent timeValid from "+checkParent.timeValid+" to "+item.timeValid);
+						}
+						checkParent.timeValid = item.timeValid;
+					}
+					parent = checkParent.parent.get();
+					if(parent == null) break;
 				}
 			}
 		}
