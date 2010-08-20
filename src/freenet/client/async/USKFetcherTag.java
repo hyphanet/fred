@@ -168,6 +168,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				// Impossible.
 			}
 		} else {
+			if(callback instanceof USKFetcherTagCallback)
+				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
 			callback.onCancelled(container, context);
 		}
 	}
@@ -210,6 +212,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			}
 			}
 		} else {
+			if(callback instanceof USKFetcherTagCallback)
+				((USKFetcherTagCallback)callback).setTag(USKFetcherTag.this, container, context);
 			callback.onFailure(container, context);
 		}
 	}
