@@ -273,7 +273,7 @@ public class NewPacketFormat implements PacketFormat {
 			}
 
 			watchListPointer = (watchListPointer + moveBy) % seqNumWatchList.length;
-			watchListOffset += moveBy;
+			watchListOffset = (int) ((watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
 		int sequenceNumber = -1;
