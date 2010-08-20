@@ -2067,9 +2067,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				if(!startedDecode) {
 					if(logMINOR) Logger.minor(this, "Never started decode, completing immediately on "+this);
 					encoderFinished = true;
-					container.store(this);
+					if(persistent) container.store(this);
 				} else {
-					container.store(this);
+					if(persistent) container.store(this);
 					if(logMINOR) Logger.minor(this, "Fetcher finished but encoder not finished on "+this);
 					return;
 				}
