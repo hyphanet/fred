@@ -1049,11 +1049,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void removeFetchingKey(Key key) {
+		// Don't need to call clearCooldown(), because selector will do it for each request blocked on the key.
 		selector.removeFetchingKey(key);
 	}
 
 	public void removeTransientInsertFetching(SendableInsert insert, Object token) {
 		selector.removeTransientInsertFetching(insert, token);
+		// Must remove here, because blocks selection and therefore creates cooldown cache entries.
+		insert.clearCooldown(clientContext);
 	}
 	
 	public void callFailure(final SendableGet get, final LowLevelGetException e, int prio, boolean persistent) {
