@@ -430,7 +430,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 		}
-		container.activate(request, 1);
 		// We *DO* need to call clearCooldown here because it only becomes runnable for persistent requests after it has been removed from starterQueue.
 		request.clearCooldown(clientContext);
 	}
