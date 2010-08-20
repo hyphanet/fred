@@ -56,6 +56,9 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		}
 		req.setParentGrabArray(this, container); // will store() self
 		synchronized(this) {
+			if(context != null) {
+				context.cooldownTracker.clearCachedWakeup(this, persistent, container);
+			}
 			int x = 0;
 			if(blocks.length == 1 && index < BLOCK_SIZE) {
 				if(persistent) container.activate(blocks[0], 1);
@@ -78,7 +81,6 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 					container.store(this);
 					container.deactivate(blocks[0], 1);
 				}
-				if(context != null) context.cooldownTracker.clearCachedWakeup(this, persistent, container);
 				return;
 			}
 			int targetBlock = index / BLOCK_SIZE;
