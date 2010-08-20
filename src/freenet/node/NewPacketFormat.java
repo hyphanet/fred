@@ -265,9 +265,10 @@ public class NewPacketFormat implements PacketFormat {
 			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
 			if(logMINOR) Logger.minor(this, "Moving pointer by " + moveBy);
 
-			int seqNum = watchListOffset + seqNumWatchList.length;
+			int seqNum = (int) ((watchListOffset + seqNumWatchList.length) % NUM_SEQNUMS);
 			for(int i = watchListPointer; i < (watchListPointer + moveBy); i++) {
 				seqNumWatchList[i % seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
+				if(seqNum == NUM_SEQNUMS) seqNum = 0;
 			}
 
 			watchListPointer = (watchListPointer + moveBy) % seqNumWatchList.length;
