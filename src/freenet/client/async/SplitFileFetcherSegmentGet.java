@@ -314,7 +314,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		HasCooldownCacheItem parentRGA = getParentGrabArray();
 		long wakeTime = segment.getCooldownTime(container, context, parentRGA, now);
 		if(wakeTime > 0)
-			context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container);
+			context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container, true);
 		return wakeTime;
 	}
 
