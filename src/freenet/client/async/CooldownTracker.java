@@ -231,7 +231,8 @@ public class CooldownTracker {
 				if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
 				long time = item.timeValid;
 				if(ret) {
-					if(cascadeOnlyIfEqual && time != prevTime) {
+					// Always cascade if Long.MAX_VALUE i.e. all requests sent, waiting for one to finish.
+					if(cascadeOnlyIfEqual && time != prevTime && time != Long.MAX_VALUE) {
 						if(time == Long.MAX_VALUE || time > prevTime) {
 							Logger.error(this, "Cooldown time "+time+" for parent object "+toCheck+" is later than cooldown time for child object "+prevTime+"!", new Exception("error"));
 							prevTime = time;
