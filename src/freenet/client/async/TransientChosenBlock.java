@@ -42,31 +42,23 @@ public class TransientChosenBlock extends ChosenBlock {
 	@Override
 	public void onFailure(LowLevelPutException e, ClientContext context) {
 		((SendableInsert) request).onFailure(e, token, null, context);
-		clearCooldown();
 	}
 
 	@Override
 	public void onInsertSuccess(ClientContext context) {
 		((SendableInsert) request).onSuccess(token, null, context);
-		clearCooldown();
 	}
 
 	@Override
 	public void onFailure(LowLevelGetException e, ClientContext context) {
 		((SendableGet) request).onFailure(e, token, null, context);
-		// Getters use the cooldown queue so will clear or set as appropriate.
 	}
 
 	@Override
 	public void onFetchSuccess(ClientContext context) {
 		sched.succeeded((SendableGet)request, false);
-		// Getters use the cooldown queue so will clear or set as appropriate.
 	}
 	
-	private void clearCooldown() {
-		request.clearCooldown(sched.getContext());
-	}
-
 	@Override
 	public short getPriority() {
 		return request.getPriorityClass(null);
