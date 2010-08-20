@@ -183,12 +183,6 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public void resetCooldownTimes(ObjectContainer container, ClientContext context) {
-		if(persistent) container.activate(segment, 1);
-		segment.resetCooldownTimes(container, context);
-	}
-
-	@Override
 	public void requeueAfterCooldown(Key key, long time,
 			ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);

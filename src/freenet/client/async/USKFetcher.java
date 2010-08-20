@@ -1034,11 +1034,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public void resetCooldownTimes(ObjectContainer container, ClientContext context) {
-			// Ignore
-		}
-
-		@Override
 		public boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 			return true;
 		}

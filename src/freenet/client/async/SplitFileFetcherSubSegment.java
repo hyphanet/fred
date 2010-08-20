@@ -307,18 +307,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return ret;
 	}
 
-	@Override
-	public void resetCooldownTimes(ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(segment, 1);
-		}
-		synchronized(segment) {
-			segment.resetCooldownTimes(container, context);
-		}
-		migrateToSegmentFetcher(container, context);
-	}
-
 	public void reschedule(ObjectContainer container, ClientContext context) {
 		// Don't schedule self, schedule segment fetcher.
 		migrateToSegmentFetcher(container, context);
