@@ -639,13 +639,13 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				CooldownTracker tracker = sched.clientContext.cooldownTracker;
 				if(persistentWaiting != null) {
 					for(Long l : persistentWaiting)
-						tracker.clearCachedWakeupPersistent(l, true);
+						tracker.clearCachedWakeupPersistent(l);
 				}
 				if(transientWaiting != null) {
 					for(WeakReference<BaseSendableGet> ref : transientWaiting) {
 						BaseSendableGet get = ref.get();
 						if(get == null) continue;
-						tracker.clearCachedWakeup(get, false, null, true);
+						tracker.clearCachedWakeup(get, false, null);
 					}
 				}
 			}

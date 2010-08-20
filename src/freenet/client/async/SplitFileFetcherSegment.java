@@ -1350,7 +1350,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(!getterActive) container.activate(getter, 1);
 		}
 		getter.reschedule(container, context);
-		context.cooldownTracker.clearCachedWakeup(getter, persistent, container, false);
+		context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
 		// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
 		context.getChkFetchScheduler().wakeStarter();
 		if(!getterActive) container.deactivate(getter, 1);
@@ -1726,8 +1726,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	public void resetCooldownTimes(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Resetting cooldown times on "+this);
 		if(getter != null) {
-			context.cooldownTracker.clearCachedWakeup(getter, persistent, container, false);
-			context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container, false);
+			context.cooldownTracker.clearCachedWakeup(getter, persistent, container);
+			context.cooldownTracker.clearCachedWakeup(getter.getParentGrabArray(), persistent, container);
 		}
 		context.getChkFetchScheduler().wakeStarter();
 		// FIXME need a more efficient way to get maxTries!

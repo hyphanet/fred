@@ -203,16 +203,8 @@ public class CooldownTracker {
 	 * @param toCheck
 	 * @param persistent
 	 * @param container
-	 * @param cascadeOnlyIfEqual Only remove the items above this one if they are 
-	 * dependant on this one i.e. their time is equal to it. If we are removing a cooldown
-	 * because we are adding a request, we should always cascade; but if we are removing 
-	 * it because a request is finished, we should cascade only if the request was the 
-	 * limiting factor. Note that this means for a request which is retries, we must be 
-	 * called with cascadeOnlyIfEqual = true initially on completion, and then again with
-	 * cascadeOnlyIfEqual = false on retrying the block. Whereas if we decide to cooldown
-	 * we would call setCachedWakeup instead.
 	 */
-	public synchronized boolean clearCachedWakeup(HasCooldownCacheItem toCheck, boolean persistent, ObjectContainer container, boolean cascadeOnlyIfEqual) {
+	public synchronized boolean clearCachedWakeup(HasCooldownCacheItem toCheck, boolean persistent, ObjectContainer container) {
 		if(toCheck == null) {
 			Logger.error(this, "Clearing cached wakeup for null", new Exception("error"));
 			return false;
@@ -221,30 +213,13 @@ public class CooldownTracker {
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
 			long uid = container.ext().getID(toCheck);
-			return clearCachedWakeupPersistent(uid, cascadeOnlyIfEqual);
+			return clearCachedWakeupPersistent(uid);
 		} else {
 			boolean ret = false;
-			long prevTime = Long.MAX_VALUE;
 			while(true) {
 				TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
 				if(item == null) return ret;
 				if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
-				long time = item.timeValid;
-				if(ret) {
-					// Always cascade if Long.MAX_VALUE i.e. all requests sent, waiting for one to finish.
-					if(cascadeOnlyIfEqual && time != prevTime && time != Long.MAX_VALUE) {
-						if(time == Long.MAX_VALUE || time > prevTime) {
-							Logger.error(this, "Cooldown time "+time+" for parent object "+toCheck+" is later than cooldown time for child object "+prevTime+"!", new Exception("error"));
-							prevTime = time;
-						} else {
-							if(logMINOR) Logger.minor(this, "Not cascading, prev time is "+prevTime+" this time is "+time);
-							return ret;
-						}
-					}
-				} else {
-					if(logMINOR && cascadeOnlyIfEqual) Logger.minor(this, "Checking on cascade: time: "+time);
-					prevTime = time;
-				}
 				ret = true;
 				cacheItemsTransient.remove(toCheck);
 				toCheck = item.parent.get();
@@ -255,28 +230,12 @@ public class CooldownTracker {
 
 	}
 	
-	public synchronized boolean clearCachedWakeupPersistent(Long uid, boolean cascadeOnlyIfEqual) {
+	public synchronized boolean clearCachedWakeupPersistent(Long uid) {
 		boolean ret = false;
-		long prevTime = Long.MAX_VALUE;
 		while(true) {
 			PersistentCooldownCacheItem item = cacheItemsPersistent.get(uid);
 			if(item == null) return ret;
 			if(logMINOR) Logger.minor(this, "Clearing "+uid);
-			long time = item.timeValid;
-			if(ret) {
-				if(cascadeOnlyIfEqual && time != prevTime) {
-					if(time == Long.MAX_VALUE || time > prevTime) {
-						Logger.error(this, "Cooldown time "+time+" for parent object "+uid+" is later than cooldown time for child object!", new Exception("error"));
-						prevTime = time;
-					} else {
-						if(logMINOR) Logger.minor(this, "Not cascading, prev time is "+prevTime+" this time is "+time);
-						return ret;
-					}
-				}
-			} else {
-				if(logMINOR && cascadeOnlyIfEqual) Logger.minor(this, "Checking on cascade: time: "+time);
-				prevTime = time;
-			}
 			ret = true;
 			cacheItemsPersistent.remove(uid);
 			uid = item.parentID;
