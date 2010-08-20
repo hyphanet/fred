@@ -64,10 +64,10 @@ public class TransientChosenBlock extends ChosenBlock {
 	}
 	
 	private void clearCooldown() {
-		// Because the request is no longer running, we need to clear the cooldown cache.
-		// In the worst case, it will have Long.MAX_VALUE all the way up, in which case, if we go into
-		// cooldown, we will never come out. However in many cases the request will not
-		// be the limiting factor, so the propagation will stop before that.
+		// The request is no longer running, therefore presumably it can be selected, or it's been removed.
+		// Stuff that uses the cooldown queue will set or clear depending on whether we retry, but
+		// we clear here for stuff that doesn't use it.
+		// Note also that the performance cost of going over that particular part of the tree again should be very low.
 		sched.getContext().cooldownTracker.clearCachedWakeup(request, false, null);
 		// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
 		// We should wake up the parent as well even if this item is not in cooldown.

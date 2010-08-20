@@ -431,10 +431,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		container.activate(request, 1);
-		// Because the request is no longer running, we need to clear the cooldown cache.
-		// In the worst case, it will have Long.MAX_VALUE all the way up, in which case, if we go into
-		// cooldown, we will never come out. However in many cases the request will not
-		// be the limiting factor, so the propagation will stop before that.
+		// The request is no longer running, therefore presumably it can be selected, or it's been removed.
+		// Stuff that uses the cooldown queue will set or clear depending on whether we retry, but
+		// we clear here for stuff that doesn't use it.
+		// Note also that the performance cost of going over that particular part of the tree again should be very low.
 		if(container.ext().isStored(request)) // may have been removed already, in which case it will have been removed from the cache too
 			clientContext.cooldownTracker.clearCachedWakeup(request, true, container);
 		// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
