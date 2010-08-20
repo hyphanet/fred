@@ -2045,6 +2045,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	public void fetcherHalfFinished(ObjectContainer container) {
 		boolean finish = false;
 		synchronized(this) {
+			if(fetcherHalfFinished) return;
 			fetcherHalfFinished = true;
 			finish = encoderFinished;
 		}
@@ -2059,6 +2060,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	public void fetcherFinished(ObjectContainer container, ClientContext context) {
 		context.cooldownTracker.remove(this, persistent, container);
 		synchronized(this) {
+			if(fetcherFinished) return;
 			fetcherFinished = true;
 			fetcherHalfFinished = true;
 			if(!encoderFinished) {
