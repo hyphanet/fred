@@ -1351,8 +1351,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		}
 		getter.reschedule(container, context);
 		getter.clearCooldown(context);
-		// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
-		context.getChkFetchScheduler().wakeStarter();
 		if(!getterActive) container.deactivate(getter, 1);
 		return getter;
 	}

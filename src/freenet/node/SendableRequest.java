@@ -149,6 +149,8 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		RandomGrabArray rga = getParentGrabArray();
 		if(rga != null)
 			context.cooldownTracker.clearCachedWakeup(rga, false, null);
+		// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
+		context.getChkFetchScheduler().wakeStarter();
 	}
 
 }
