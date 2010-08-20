@@ -319,17 +319,19 @@ public class NewPacketFormat implements PacketFormat {
 
 		NPFPacket p = NPFPacket.create(payload);
 
-		if(seqNumGreaterThan(sequenceNumber, highestReceivedSequenceNumber)) {
+		if(seqNumGreaterThan(sequenceNumber, highestReceivedSequenceNumber, 32)) {
 			highestReceivedSequenceNumber = sequenceNumber;
 		}
 
 		return p;
 	}
 
-	private boolean seqNumGreaterThan(long i1, long i2) {
-		//2147483648 (2^31) is half the window of possible numbers, so this returns true if the distance from
-		//i2->i1 is smaller than i1->i2. See RFC1982 for details and limitations (SERIAL_BITS = 32).
-		return (((i1 < i2) && ((i2 - i1) > 2147483648l)) || ((i1 > i2) && (i1 - i2 < 2147483648l)));
+	private boolean seqNumGreaterThan(long i1, long i2, int serialBits) {
+		//halfValue is half the window of possible numbers, so this returns true if the distance from
+		//i2->i1 is smaller than i1->i2. See RFC1982 for details and limitations.
+
+		long halfValue = (long) Math.pow(2, serialBits - 1);
+		return (((i1 < i2) && ((i2 - i1) > halfValue)) || ((i1 > i2) && (i1 - i2 < halfValue)));
 	}
 
 	private byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
@@ -557,7 +559,7 @@ fragments:
 	private int getMessageID() {
 		int messageID;
 		synchronized(this) {
-			if(nextMessageID > ((messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS)) return -1;
+			if(seqNumGreaterThan(nextMessageID, (messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS, 28)) return -1;
 			messageID = nextMessageID++;
 			if(nextMessageID == NUM_MESSAGE_IDS) nextMessageID = 0;
 		}
