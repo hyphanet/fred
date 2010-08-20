@@ -137,6 +137,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		return false;
 	}
 
+	/** Must be called when we retry a block. */
 	public void clearCooldown(ClientContext context) {
 		// The request is no longer running, therefore presumably it can be selected, or it's been removed.
 		// Stuff that uses the cooldown queue will set or clear depending on whether we retry, but
