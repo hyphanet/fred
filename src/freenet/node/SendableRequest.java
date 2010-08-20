@@ -137,4 +137,17 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		return false;
 	}
 
+	public void clearCooldown(ClientContext context) {
+		// The request is no longer running, therefore presumably it can be selected, or it's been removed.
+		// Stuff that uses the cooldown queue will set or clear depending on whether we retry, but
+		// we clear here for stuff that doesn't use it.
+		// Note also that the performance cost of going over that particular part of the tree again should be very low.
+		context.cooldownTracker.clearCachedWakeup(this, false, null);
+		// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
+		// We should wake up the parent as well even if this item is not in cooldown.
+		RandomGrabArray rga = getParentGrabArray();
+		if(rga != null)
+			context.cooldownTracker.clearCachedWakeup(rga, false, null);
+	}
+
 }
