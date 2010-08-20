@@ -516,6 +516,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		} finally {
 			if(!cbWasActive) container.deactivate(cb, 1);
 		}
+		if(crossCheckBlocks != 0 && !persistent) finishSegments(container, context);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException {
