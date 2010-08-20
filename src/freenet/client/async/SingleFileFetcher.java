@@ -1054,6 +1054,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 			if(!persistent) {
 				// Run directly - we are running on some thread somewhere, don't worry about it.
+				parent.onTransition(state, SingleFileFetcher.this, container);
 				innerSuccess(data, container, context);
 			} else {
 				boolean wasActive;
@@ -1313,7 +1314,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent) {
 				wasActive = container.ext().isActive(SingleFileFetcher.this);
 				container.activate(SingleFileFetcher.this, 1);
+				container.activate(parent, 1);
 			}
+			parent.onTransition(state, SingleFileFetcher.this, container);
 			// Pass it on; fetcher is assumed to have retried as appropriate already, so this is fatal.
 			SingleFileFetcher.this.onFailure(e, true, container, context);
 			if(!wasActive)
