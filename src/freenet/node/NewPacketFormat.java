@@ -261,8 +261,8 @@ public class NewPacketFormat implements PacketFormat {
 		synchronized(this) {
 			highestReceivedSeqNum = highestReceivedSequenceNumber;
 		}
-		if(highestReceivedSeqNum - (seqNumWatchList.length / 2) > watchListOffset) {
-			int moveBy = (highestReceivedSeqNum - (seqNumWatchList.length / 2)) - watchListOffset;
+		if(highestReceivedSeqNum > (watchListOffset + (seqNumWatchList.length / 2)) % NUM_SEQNUMS) {
+			int moveBy = (int) (highestReceivedSeqNum - ((watchListOffset + (seqNumWatchList.length / 2)) % NUM_SEQNUMS));
 			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
 			if(logMINOR) Logger.minor(this, "Moving pointer by " + moveBy);
 
