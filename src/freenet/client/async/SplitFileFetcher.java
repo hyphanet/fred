@@ -744,12 +744,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		clientMetadata.removeFrom(container);
 		container.activate(decompressors, 1);
 		container.delete(decompressors);
-		for(int i=0;i<segments.length;i++) {
-			SplitFileFetcherSegment segment = segments[i];
-			segments[i] = null;
-			container.activate(segment, 1);
-			segment.fetcherFinished(container, context);
-		}
+		finishSegments(container, context);
 		if(crossCheckBlocks != 0) {
 			for(int i=0;i<crossSegments.length;i++) {
 				SplitFileFetcherCrossSegment segment = crossSegments[i];
@@ -773,6 +768,16 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			cachedSegmentBloomFilters[i].removeFrom(container);
 		}
 		container.delete(this);
+	}
+
+	private void finishSegments(ObjectContainer container, ClientContext context) {
+		for(int i=0;i<segments.length;i++) {
+			SplitFileFetcherSegment segment = segments[i];
+			segments[i] = null;
+			if(persistent) container.activate(segment, 1);
+			if(segment != null)
+				segment.fetcherFinished(container, context);
+		}
 	}
 
 	public boolean objectCanUpdate(ObjectContainer container) {
@@ -822,7 +827,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 		if(!toRemove) return false;
 		if(allGone) {
-			innerRemoveFrom(container, context);
+			if(persistent)
+				innerRemoveFrom(container, context);
+			else
+				finishSegments(container, context);
 			return true;
 		} else if(persistent)
 			container.store(this);

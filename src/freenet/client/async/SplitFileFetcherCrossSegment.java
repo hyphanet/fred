@@ -98,13 +98,10 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 				finishedEncoding = true;
 			}
 			if(logMINOR) Logger.minor(this, "Finished as nothing to encode/decode in onFetched on "+this);
-			if(persistent) {
-				if(bye)
-					onFinished(container, context);
-				else
-					container.store(this);
-			}
-			
+			if(bye)
+				onFinished(container, context);
+			else if(persistent)
+				container.store(this);
 		}
 	}
 
@@ -264,9 +261,7 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			}
 		}
 		if(bye) {
-			if(persistent) {
-				onFinished(container, context);
-			}
+			onFinished(container, context);
 		} else {
 			// Try an encode now.
 			if(!decodeOrEncode(null, container, context)) {
@@ -276,12 +271,10 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 					finishedEncoding = true;
 				}
 				if(logMINOR) Logger.minor(this, "Finished as nothing to encode/decode in decoded segment on "+this);
-				if(persistent) {
-					if(bye)
-						onFinished(container, context);
-					else
-						container.store(this);
-				}
+				if(bye)
+					onFinished(container, context);
+				else if(persistent)
+					container.store(this);
 			}
 		}
 	}
@@ -339,11 +332,9 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 			bye = shouldRemove;
 		}
 		if(logMINOR) Logger.minor(this, "Finished encoding on "+this);
-		if(persistent) {
-			if(bye) onFinished(container, context);
-			else
-				container.store(this);
-		}
+		if(bye) onFinished(container, context);
+		else if(persistent)
+			container.store(this);
 	}
 
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
@@ -375,10 +366,11 @@ public class SplitFileFetcherCrossSegment implements FECCallback {
 		SplitFileFetcher fetcher = getFetcher(container);
 		if(fetcher == null) return;
 		boolean active = container.ext().isActive(fetcher);
-		if(!active) container.activate(fetcher, 1);
-		if(!fetcher.onFinishedCrossSegment(container, context, this))
-			container.store(this);
-		if(!active) container.deactivate(fetcher, 1);
+		if(persistent && !active) container.activate(fetcher, 1);
+		if(!fetcher.onFinishedCrossSegment(container, context, this)) {
+			if(persistent) container.store(this);
+		}
+		if(persistent && !active) container.deactivate(fetcher, 1);
 	}
 
 	/** Notify that the splitfile has finished. We can skip encodes and decodes if possible. */
