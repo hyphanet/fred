@@ -117,7 +117,7 @@ public class CooldownTracker {
 			long parentUID = parent == null ? -1 : container.ext().getID(parent);
 			PersistentCooldownCacheItem item = cacheItemsPersistent.get(uid);
 			if(item == null) {
-				cacheItemsPersistent.put(uid, new PersistentCooldownCacheItem(wakeupTime, parentUID));
+				cacheItemsPersistent.put(uid, item = new PersistentCooldownCacheItem(wakeupTime, parentUID));
 			} else {
 				if(item.timeValid < wakeupTime)
 					item.timeValid = wakeupTime;
@@ -145,7 +145,7 @@ public class CooldownTracker {
 		} else {
 			TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
 			if(item == null) {
-				cacheItemsTransient.put(toCheck, new TransientCooldownCacheItem(wakeupTime, parent));
+				cacheItemsTransient.put(toCheck, item = new TransientCooldownCacheItem(wakeupTime, parent));
 			} else {
 				if(item.timeValid < wakeupTime)
 					item.timeValid = wakeupTime;
