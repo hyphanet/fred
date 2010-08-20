@@ -57,6 +57,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 		req.setParentGrabArray(this, container); // will store() self
 		synchronized(this) {
 			if(context != null) {
+				context.cooldownTracker.clearCachedWakeup(req, persistent, container);
 				context.cooldownTracker.clearCachedWakeup(this, persistent, container);
 			}
 			int x = 0;
