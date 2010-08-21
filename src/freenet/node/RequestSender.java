@@ -1099,6 +1099,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		break;
             	}
             	
+            	if(logMINOR) Logger.minor(this, "Waiting for status change on "+this);
                 wait(deadline - now);
                 now = System.currentTimeMillis(); // Is used in the next iteration so needed even without the logging
                 
