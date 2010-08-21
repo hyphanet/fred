@@ -267,7 +267,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 		boolean tryOfferedKeys = offeredKeys != null && (!notTransient) && random.nextBoolean();
 		if(tryOfferedKeys) {
-			if(offeredKeys.hasValidKeys(this, null, context))
+			if(offeredKeys.getCooldownTime(container, context, now) == 0)
 				return new SelectorReturn(offeredKeys);
 		}
 		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container, context, now);
@@ -278,7 +278,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		int choosenPriorityClass = (int)l;
 		if(choosenPriorityClass == -1) {
 			if((!notTransient) && !tryOfferedKeys) {
-				if(offeredKeys != null && offeredKeys.hasValidKeys(this, null, context))
+				if(offeredKeys != null && offeredKeys.getCooldownTime(container, context, now) == 0)
 					return new SelectorReturn(offeredKeys);
 			}
 			if(logMINOR)

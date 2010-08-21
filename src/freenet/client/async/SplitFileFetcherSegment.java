@@ -2139,29 +2139,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		return dataBuckets.length - crossCheckBlocks;
 	}
 
-	public boolean hasValidKeys(SplitFileFetcherSegmentGet getter, 
-			KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
-		if(keys == null) migrateToKeys(container);
-		else {
-			if(persistent) container.activate(keys, 1);
-		}
-		long now = System.currentTimeMillis();
-		int maxTries = getMaxRetries(container);
-		synchronized(this) {
-			if(startedDecode || isFinishing(container)) return false;
-			for(int i=0;i<dataBuckets.length+checkBuckets.length;i++) {
-				if(foundKeys[i]) continue;
-				if(getCooldownWakeup(i, maxTries, container, context) > now) continue;
-				// Double check
-				if(getBlockBucket(i, container) != null) continue;
-				Key key = keys.getNodeKey(i, null, true);
-				if(fetching.hasKey(key, getter, persistent, container)) continue;
-				return true;
-			}
-		}
-		return false;
-	}
-
 	/**
 	 * 
 	 * @param fetching

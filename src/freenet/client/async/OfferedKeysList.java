@@ -132,26 +132,6 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public synchronized boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
-		assert(keysList.size() == keys.size());
-		if(keys.size() == 1) {
-			// Shortcut the common case
-			Key k = keysList.get(0);
-			if(fetching.hasKey(k, null, false, null)) return false;
-			return true;
-		}
-		for(int i=0;i<10;i++) {
-			// Pick a random key
-			if(keysList.isEmpty()) return false;
-			int ptr = random.nextInt(keysList.size());
-			Key k = keysList.get(ptr);
-			if(fetching.hasKey(k, null, false, null)) continue;
-			return true;
-		}
-		return false;
-	}
-
-	@Override
 	public RequestClient getClient(ObjectContainer container) {
 		return this;
 	}

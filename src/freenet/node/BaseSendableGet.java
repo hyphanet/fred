@@ -15,8 +15,6 @@ public abstract class BaseSendableGet extends SendableRequest {
 	/** Get a numbered key to fetch. */
 	public abstract Key getNodeKey(SendableRequestItem token, ObjectContainer container);
 	
-	public abstract boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context);
-
 	/** Called after checking the datastore and before registering the request to be 
 	 * sent. Some gets may want to cancel here, some may want to send an event to FCP. 
 	 * @param toNetwork If true, we are actually going to send requests (unless we

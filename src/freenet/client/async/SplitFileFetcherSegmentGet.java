@@ -214,13 +214,6 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public boolean hasValidKeys(KeysFetchingLocally fetching,
-			ObjectContainer container, ClientContext context) {
-		if(persistent) container.activate(segment, 1);
-		return segment.hasValidKeys(this, fetching, container, context);
-	}
-
-	@Override
 	public void preRegister(ObjectContainer container, ClientContext context,
 			boolean toNetwork) {
 		if(!toNetwork) return;

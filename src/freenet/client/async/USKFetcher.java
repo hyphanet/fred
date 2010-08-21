@@ -1034,11 +1034,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
-			return true;
-		}
-
-		@Override
 		public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
 			unregister(container, context, getPriorityClass(container));
 			USKAttempt[] attempts;
