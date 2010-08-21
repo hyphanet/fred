@@ -354,7 +354,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 				}
 			} else if(firstRGA != null && firstRGA.isEmpty(container)) {
 				if(logMINOR) Logger.minor(this, "Removing first: "+firstRGA+" is empty on "+this);
-				grabArrays = new RemoveRandomWithObject[] { rga };
+				grabArrays = new RemoveRandomWithObject[] { grabArrays[x] }; // don't use RGA, it may be nulled out
 				grabClients = new Object[] { grabClients[x] };
 				if(persistent) {
 					container.store(this);
