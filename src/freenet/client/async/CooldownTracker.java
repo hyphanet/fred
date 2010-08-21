@@ -109,7 +109,7 @@ public class CooldownTracker {
 	}
 	
 	public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container, boolean dontLogOnClearingParents) {
-		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck);
+		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck+" parent is "+parent);
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
 			long uid = container.ext().getID(toCheck);

@@ -270,23 +270,26 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		}
 	}
 
-	public boolean exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context) {
+	/** Can this item be excluded, based on e.g. already running requests? It must have 
+	 * been activated already if it is persistent.
+	 */
+	public long exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context, long now) {
 		if(sched.isRunningOrQueuedPersistentRequest((SendableRequest)item)) {
 			Logger.normal(this, "Excluding already-running request: "+item, new Exception("debug"));
-			return true;
+			return Long.MAX_VALUE;
 		}
-		if(isInsert) return false;
+		if(isInsert) return -1;
 		if(!(item instanceof BaseSendableGet)) {
 			Logger.error(this, "On a request scheduler, exclude() called with "+item, new Exception("error"));
-			return false;
+			return -1;
 		}
 		BaseSendableGet get = (BaseSendableGet) item;
-		if(get.hasValidKeys(sched.fetchingKeys(), container, context))
-			return false;
-		Logger.normal(this, "Excluding (no valid keys): "+get);
-		return true;
+		return get.getCooldownTime(container, context, now);
 	}
 
+	/** Can this item be excluded based solely on the cooldown queue?
+	 * @return -1 if the item can be run now, or the time at which it is on the cooldown queue until.
+	 */
 	public long excludeSummarily(HasCooldownCacheItem item,
 			HasCooldownCacheItem parent, ObjectContainer container, boolean persistent, long now) {
 		return core.clientContext.cooldownTracker.getCachedWakeup(item, persistent, container, now);

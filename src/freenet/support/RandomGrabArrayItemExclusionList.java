@@ -18,6 +18,6 @@ public interface RandomGrabArrayItemExclusionList {
 	/**
 	 * Whether this item can be returned right now.
 	 */
-	public boolean exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context);
+	public long exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context, long now);
 
 }

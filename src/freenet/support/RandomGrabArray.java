@@ -215,7 +215,9 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 				// Tell it that it's been removed first.
 				oret.setParentGrabArray(null, container);
 			}
-			if(ret != null && (itemWakeTime > 0 || excluding.exclude(ret, container, context))) {
+			if(itemWakeTime == 0)
+				itemWakeTime = excluding.exclude(ret, container, context, now);
+			if(ret != null && itemWakeTime > 0) {
 				excluded++;
 				if(persistent)
 					container.deactivate(ret, 1);
@@ -362,8 +364,13 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 						if(itemWakeTime < wakeupTime) wakeupTime = itemWakeTime;
 						excludeItem = true;
 					}
-					if(!excludeItem)
-						excludeItem = excluding.exclude(item, container, context);
+					if(!excludeItem) {
+						itemWakeTime = excluding.exclude(item, container, context, now);
+						if(itemWakeTime > 0) {
+							if(itemWakeTime < wakeupTime) wakeupTime = itemWakeTime;
+							excludeItem = true;
+						}
+					}
 				}
 				writeOffset++;
 				if(writeOffset == BLOCK_SIZE) {
