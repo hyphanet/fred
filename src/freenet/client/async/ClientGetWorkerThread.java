@@ -136,6 +136,7 @@ public class ClientGetWorkerThread extends Thread {
 
 	/** Stores the exception and awakens blocked threads. */
 	public synchronized void setError(Throwable t) {
+		if(error != null) return;
 		error = t;
 		onFinish();
 	}
