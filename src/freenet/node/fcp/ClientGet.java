@@ -32,6 +32,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.BucketTools;
 import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
@@ -385,12 +386,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
 					data.free();
 					if(persistenceType == PERSIST_FOREVER) data.removeFrom(container);
-					if(data == returnBucket) {
-						returnBucket = getBucket(container);
-						if(persistenceType == PERSIST_FOREVER && container.ext().isStored(this)) {
-							returnBucket.storeTo(container);
-							container.store(this);
-						}
+					returnBucket = getBucket(container);
+					if(persistenceType == PERSIST_FOREVER && container.ext().isStored(this)) {
+						returnBucket.storeTo(container);
+						container.store(this);
 					}
 					return; // Already failed - bucket error maybe??
 				}
@@ -409,10 +408,31 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					failed = false;
 				}
 			}
-			if(failed) {
-				Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data, new Exception("debug"));
-				// Caller guarantees that data == returnBucket
+			if(data instanceof FileBucket) {
+				Logger.error(this, "Returned bucket "+data+" in onSuccess, expected "+returnBucket, new Exception("error"));
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null, container);
+				return;
+			}
+			// Something wierd happened, recreate returnBucket ...
+			returnBucket.free();
+			if(persistenceType == PERSIST_FOREVER)
+				returnBucket.removeFrom(container);
+			returnBucket = getBucket(container);
+			if(persistenceType == PERSIST_FOREVER && container.ext().isStored(this)) {
+				returnBucket.storeTo(container);
+				container.store(this);
+			}
+
+			Logger.error(this, "Data returned to wrong bucket "+data+" expected "+returnBucket+" in "+this, new Exception("error"));
+			try {
+				BucketTools.copy(data, returnBucket);
+			} catch (IOException e) {
+				data.free();
+				returnBucket.free();
+				if(persistenceType == PERSIST_FOREVER) {
+					data.removeFrom(container);
+				}
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket and then failed to copy", e), null, container);
 				return;
 			}
 		}
