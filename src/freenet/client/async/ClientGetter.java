@@ -246,6 +246,7 @@ public class ClientGetter extends BaseClientGetter {
 		try {
 			if(returnBucket == null) finalResult = context.getBucketFactory(persistent()).makeBucket(maxLen);
 			else finalResult = returnBucket;
+			if(logMINOR) Logger.minor(this, "Writing final data to "+finalResult+" return bucket is "+returnBucket);
 			dataOutput .connect(dataInput);
 			result = new FetchResult(clientMetadata, finalResult);
 
