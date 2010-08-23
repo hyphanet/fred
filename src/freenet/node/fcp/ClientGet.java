@@ -386,11 +386,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
 					data.free();
 					if(persistenceType == PERSIST_FOREVER) data.removeFrom(container);
-					returnBucket = getBucket(container);
-					if(persistenceType == PERSIST_FOREVER && container.ext().isStored(this)) {
-						returnBucket.storeTo(container);
-						container.store(this);
-					}
 					return; // Already failed - bucket error maybe??
 				}
 				if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && returnBucket == null) {
