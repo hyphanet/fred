@@ -414,6 +414,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				return;
 			}
 			// Something wierd happened, recreate returnBucket ...
+			if(tempFile.exists()) tempFile.delete();
 			returnBucket.free();
 			if(persistenceType == PERSIST_FOREVER)
 				returnBucket.removeFrom(container);
