@@ -202,8 +202,10 @@ public class ClientGetter extends BaseClientGetter {
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
-		if(persistent())
+		if(persistent()) {
 			container.activate(uri, 5);
+			container.activate(clientMetadata, Integer.MAX_VALUE);
+		}
 		if(!closeBinaryBlobStream(container, context)) return;
 		String mimeType;
 		synchronized(this) {
