@@ -268,13 +268,15 @@ public class ClientGetter extends BaseClientGetter {
 				throw e;
 			}
 
+			// An error will propagate backwards, so wait for the worker first.
+			
+			if(logMINOR) Logger.minor(this, "Waiting for hashing, filtration, and writing to finish");
+			worker.waitFinished();
+
 			if(decompressorManager != null) {
 				if(logMINOR) Logger.minor(this, "Waiting for decompression to finalize");
 				decompressorManager.waitFinished();
 			}
-
-			if(logMINOR) Logger.minor(this, "Waiting for hashing, filtration, and writing to finish");
-			worker.waitFinished();
 
 			if(worker.getClientMetadata() != null) {
 				clientMetadata = worker.getClientMetadata();
