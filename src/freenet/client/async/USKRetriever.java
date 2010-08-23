@@ -142,7 +142,6 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		}
 
 		final FetchResult result = new FetchResult(clientMetadata, finalResult);
-		cb.onFound(origUSK, state.getToken(), result);
 		context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 		context.mainExecutor.execute(new PrioRunnable() {
 
