@@ -87,8 +87,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	private boolean allSegmentsFinished;
 	/** Override length. If this is positive, truncate the splitfile to this length. */
 	private final long overrideLength;
-	/** Preferred bucket to return data in */
-	private final Bucket returnBucket;
 	private boolean finished;
 	private long token;
 	final boolean persistent;
@@ -150,7 +148,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
 			FetchContext newCtx, boolean deleteFetchContext, List<? extends Compressor> decompressors2, ClientMetadata clientMetadata,
-			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, boolean topDontCompress, short topCompatibilityMode, ObjectContainer container, ClientContext context) throws FetchException, MetadataParseException {
+			ArchiveContext actx, int recursionLevel, long token2, boolean topDontCompress, short topCompatibilityMode, ObjectContainer container, ClientContext context) throws FetchException, MetadataParseException {
 		this.persistent = parent2.persistent();
 		this.deleteFetchContext = deleteFetchContext;
 		if(logMINOR)
@@ -159,7 +157,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(hash == 0) hash = 1;
 		this.hashCode = hash;
 		this.finished = false;
-		this.returnBucket = returnBucket;
 		this.fetchContext = newCtx;
 		if(newCtx == null)
 			throw new NullPointerException();
