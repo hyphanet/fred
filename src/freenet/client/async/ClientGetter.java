@@ -268,8 +268,6 @@ public class ClientGetter extends BaseClientGetter {
 				throw e;
 			}
 
-			if(logMINOR) Logger.minor(this, "Size of written data: "+result.asBucket().size());
-
 			if(decompressorManager != null) {
 				if(logMINOR) Logger.minor(this, "Waiting for decompression to finalize");
 				decompressorManager.waitFinished();
