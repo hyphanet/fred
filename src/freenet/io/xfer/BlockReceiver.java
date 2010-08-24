@@ -31,11 +31,13 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
+import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.node.Ticker;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.NativeThread;
 import freenet.support.math.MedianMeanRunningAverage;
 
 /**
@@ -117,8 +119,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	private long startTime;
 	
-	private AsyncMessageFilterCallback notificationWaiter = new AsyncMessageFilterCallback() {
-		
+	private AsyncMessageFilterCallback notificationWaiter = new SlowAsyncMessageFilterCallback() {
+
 		private boolean completed;
 		
 		public void onMatched(Message m1) {
@@ -265,6 +267,10 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		
 		public void onRestarted(PeerContext ctx) {
 			complete(new RetrievalException(RetrievalException.SENDER_DISCONNECTED));
+		}
+
+		public int getPriority() {
+			return NativeThread.NORM_PRIORITY;
 		}
 		
 	};
