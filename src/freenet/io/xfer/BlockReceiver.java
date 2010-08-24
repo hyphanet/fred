@@ -171,10 +171,11 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				if (missing.size() > 0) {
 					consecutiveMissingPacketReports++;
 				}
-
 			}
-			if(m1.getSpec().equals(DMT.allSent))
+			if(m1.getSpec().equals(DMT.allSent)) {
 				onTimeout();
+				return;
+			}
 		}
 		
 		private void complete(RetrievalException retrievalException) {
