@@ -197,18 +197,24 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 						"Sender unresponsive to resend requests"));
 				return;
 			}
-			try {
 			LinkedList<Integer> missing = new LinkedList<Integer>();
+			try {
 			for (int x = 0; x < _prb.getNumPackets(); x++) {
 				if (!_prb.isReceived(x)) {
 					missing.add(x);
 				}
 			}
-			consecutiveMissingPacketReports++;
 			} catch (AbortedException e) {
 				// We didn't cause it?!
 				Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e);
 				complete(new RetrievalException(RetrievalException.UNKNOWN, "Aborted?"));
+				return;
+			}
+			consecutiveMissingPacketReports++;
+			try {
+				waitNotification();
+			} catch (DisconnectedException e) {
+				onDisconnect(null);
 				return;
 			}
 		}
