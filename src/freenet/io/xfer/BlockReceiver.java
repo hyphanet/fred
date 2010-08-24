@@ -115,6 +115,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	private BlockReceiverCompletion callback;
 	
+	private long startTime;
+	
 	private AsyncMessageFilterCallback notificationWaiter = new AsyncMessageFilterCallback() {
 		
 		private boolean completed;
@@ -177,6 +179,29 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				return;
 			}
 			try {
+				if(_prb.allReceived()) {
+					_usm.send(_sender, DMT.createAllReceived(_uid), _ctr);
+					discardEndTime=System.currentTimeMillis()+CLEANUP_TIMEOUT;
+					discardFilter=relevantMessages();
+					maybeResetDiscardFilter();
+					long endTime = System.currentTimeMillis();
+					long transferTime = (endTime - startTime);
+					if(logMINOR) {
+						synchronized(avgTimeTaken) {
+							avgTimeTaken.report(transferTime);
+							Logger.minor(this, "Block transfer took "+transferTime+"ms - average is "+avgTimeTaken);
+						}
+					}
+					complete(_prb.getBlock());
+				}
+			} catch (AbortedException e1) {
+				// We didn't cause it?!
+				Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e1);
+				complete(new RetrievalException(RetrievalException.UNKNOWN, "Aborted?"));
+			} catch (NotConnectedException e1) {
+				complete(new RetrievalException(RetrievalException.SENDER_DISCONNECTED));
+			}
+			try {
 				waitNotification();
 			} catch (DisconnectedException e) {
 				onDisconnect(null);
@@ -192,7 +217,15 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			_prb.abort(retrievalException.getReason(), retrievalException.toString());
 			callback.blockReceiveFailed(retrievalException);
 		}
-		
+
+		private void complete(byte[] ret) {
+			synchronized(this) {
+				if(completed) return;
+				completed = true;
+			}
+			callback.blockReceived(ret);
+		}
+
 		public boolean shouldTimeout() {
 			return false;
 		}
@@ -237,15 +270,18 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	};
 	
 	private void waitNotification() throws DisconnectedException {
+		_usm.addAsyncFilter(relevantMessages(), notificationWaiter);
+	}
+	
+	private MessageFilter relevantMessages() {
 		MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
 		MessageFilter mfAllSent = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
 		MessageFilter mfSendAborted = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
-		MessageFilter relevantMessages=mfPacketTransmit.or(mfAllSent.or(mfSendAborted));
-		_usm.addAsyncFilter(relevantMessages, notificationWaiter);
+		return mfPacketTransmit.or(mfAllSent.or(mfSendAborted));
 	}
-	
+
 	public void receive(BlockReceiverCompletion callback) {
-		final long startTime = System.currentTimeMillis();
+		startTime = System.currentTimeMillis();
 		this.callback = callback;
 		try {
 			waitNotification();
