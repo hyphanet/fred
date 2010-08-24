@@ -125,8 +125,14 @@ public class FCPConnectionHandler implements Closeable {
 			uskSubscriptions2 = uskSubscriptions.values().toArray(new SubscribeUSK[uskSubscriptions.size()]);
 			dupe = killedDupe;
 		}
-		for(int i=0;i<requests.length;i++)
+		for(int i=0;i<requests.length;i++) {
+			if(requests[i] == null) {
+				// No idea why this happens. Convert it into a log error.
+				Logger.error(this, "Request "+i+" is null when closing");
+				continue;
+			}
 			requests[i].onLostConnection(null, server.core.clientContext);
+		}
 		for(SubscribeUSK sub : uskSubscriptions2)
 			sub.unsubscribe();
 		if(!dupe) {
