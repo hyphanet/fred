@@ -4,6 +4,6 @@ package freenet.io.comm;
 public interface SlowAsyncMessageFilterCallback extends
 		AsyncMessageFilterCallback {
 
-	public int priority();
+	public int getPriority();
 	
 }
