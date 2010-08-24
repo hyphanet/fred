@@ -52,6 +52,7 @@ public final class MessageFilter {
     private Message _message;
     private long _oldBootID;
     private AsyncMessageFilterCallback _callback;
+    private ByteCounter _ctr;
     private boolean _setTimeout = false;
 
     private MessageFilter() {
@@ -172,8 +173,9 @@ public final class MessageFilter {
 		return this;
 	}
 
-	public MessageFilter setAsyncCallback(AsyncMessageFilterCallback cb) {
+	public MessageFilter setAsyncCallback(AsyncMessageFilterCallback cb, ByteCounter ctr) {
 		_callback = cb;
+		_ctr = ctr;
 		return this;
 	}
 	
@@ -295,6 +297,7 @@ public final class MessageFilter {
     		cb = _callback;
     		_droppedConnection = ctx;
     		notifyAll();
+    		_ctr = null;
     	}
     	if(cb != null) {
     		if(cb instanceof SlowAsyncMessageFilterCallback) {
@@ -327,6 +330,7 @@ public final class MessageFilter {
     		_droppedConnection = ctx;
     		cb = _callback;
     		notifyAll();
+    		_ctr = null;
     	}
     	if(cb != null) {
     		if(cb instanceof SlowAsyncMessageFilterCallback) {
@@ -359,6 +363,7 @@ public final class MessageFilter {
 		synchronized(this) {
 			msg = _message;
 			cb = _callback;
+			ctr = _ctr;
 			// Clear matched before calling callback in case we are re-added.
 			if(_callback != null)
 				clearMatched();
@@ -378,6 +383,8 @@ public final class MessageFilter {
 				}, "Slow callback for "+cb);
 			else
 				cb.onMatched(msg);
+			if(ctr != null)
+				ctr.receivedBytes(msg._receivedByteCount);
 		}
 	}
 

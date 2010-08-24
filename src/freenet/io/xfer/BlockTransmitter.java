@@ -574,8 +574,8 @@ public class BlockTransmitter {
 			mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
 			
 			try {
-				_usm.addAsyncFilter(mfAllReceived, cbAllReceived);
-				_usm.addAsyncFilter(mfSendAborted, cbSendAborted);
+				_usm.addAsyncFilter(mfAllReceived, cbAllReceived, _ctr);
+				_usm.addAsyncFilter(mfSendAborted, cbSendAborted, _ctr);
 			} catch (DisconnectedException e) {
 				onDisconnect();
 			}

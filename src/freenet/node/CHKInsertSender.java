@@ -60,7 +60,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						//synch-version: this.receivedNotice(waitForReceivedNotification(this));
 						//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
 						try {
-							node.usm.addAsyncFilter(getNotificationMessageFilter(), BackgroundTransfer.this);
+							node.usm.addAsyncFilter(getNotificationMessageFilter(), BackgroundTransfer.this, null);
 						} catch (DisconnectedException e) {
 							// Normal
 							if(logMINOR)

@@ -307,8 +307,8 @@ public class MessageCore {
 	    }
 	}
 
-	public void addAsyncFilter(MessageFilter filter, AsyncMessageFilterCallback callback) throws DisconnectedException {
-		filter.setAsyncCallback(callback);
+	public void addAsyncFilter(MessageFilter filter, AsyncMessageFilterCallback callback, ByteCounter ctr) throws DisconnectedException {
+		filter.setAsyncCallback(callback, ctr);
 		if(filter.matched()) {
 			Logger.error(this, "addAsyncFilter() on a filter which is already matched: "+filter, new Exception("error"));
 			filter.clearMatched();

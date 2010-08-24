@@ -298,7 +298,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	};
 	
 	private void waitNotification() throws DisconnectedException {
-		_usm.addAsyncFilter(relevantMessages(), notificationWaiter);
+		_usm.addAsyncFilter(relevantMessages(), notificationWaiter, _ctr);
 	}
 	
 	private MessageFilter relevantMessages() {
@@ -327,7 +327,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		if (timeleft>0) {
 			try {
 				discardFilter.setTimeout((int)timeleft);
-				_usm.addAsyncFilter(discardFilter, this);
+				_usm.addAsyncFilter(discardFilter, this, _ctr);
 			} catch (DisconnectedException e) {
 				//ignore
 			}

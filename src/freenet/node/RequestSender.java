@@ -1214,7 +1214,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	MessageFilter mf = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
     	
     	try {
-			node.usm.addAsyncFilter(mf, new NullAsyncMessageFilterCallback());
+			node.usm.addAsyncFilter(mf, new NullAsyncMessageFilterCallback(), this);
 		} catch (DisconnectedException e) {
 			// Fine by me.
 		}

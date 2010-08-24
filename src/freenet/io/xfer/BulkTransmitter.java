@@ -99,7 +99,7 @@ public class BulkTransmitter {
 						public void onRestarted(PeerContext ctx) {
 							// Ignore
 						}
-			});
+			}, ctr);
 			prb.usm.addAsyncFilter(MessageFilter.create().setNoTimeout().setSource(peer).setType(DMT.FNPBulkReceivedAll).setField(DMT.UID, uid),
 					new AsyncMessageFilterCallback() {
 						public void onMatched(Message m) {
@@ -122,7 +122,7 @@ public class BulkTransmitter {
 						public void onRestarted(PeerContext ctx) {
 							// Ignore
 						}
-			});
+			}, ctr);
 		} catch (DisconnectedException e) {
 			cancel("Disconnected");
 			throw e;
