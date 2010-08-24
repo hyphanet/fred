@@ -119,9 +119,14 @@ public class FCPConnectionHandler implements Closeable {
 		boolean dupe;
 		SubscribeUSK[] uskSubscriptions2;
 		synchronized(this) {
+			if(isClosed) {
+				Logger.error(this, "Already closed: "+this, new Exception("debug"));
+				return;
+			}
 			isClosed = true;
 			requests = new ClientRequest[requestsByIdentifier.size()];
 			requests = requestsByIdentifier.values().toArray(requests);
+			requestsByIdentifier.clear();
 			uskSubscriptions2 = uskSubscriptions.values().toArray(new SubscribeUSK[uskSubscriptions.size()]);
 			dupe = killedDupe;
 		}
