@@ -27,6 +27,7 @@ import java.util.Vector;
 
 import freenet.node.PeerNode;
 import freenet.node.Ticker;
+import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
@@ -49,6 +50,7 @@ public class MessageCore {
 	}
 
 	private Dispatcher _dispatcher;
+	private Executor _executor;
 	/** _filters serves as lock for both */
 	private final LinkedList<MessageFilter> _filters = new LinkedList<MessageFilter>();
 	private final LinkedList<Message> _unclaimed = new LinkedList<Message>();
@@ -62,8 +64,9 @@ public class MessageCore {
 		return startedTime;
 	}
 
-	public MessageCore() {
+	public MessageCore(Executor executor) {
 		_timedOutFilters = new Vector<MessageFilter>(32);
+		_executor = executor;
 	}
 
 	/**
@@ -134,7 +137,7 @@ public class MessageCore {
 		
 		for(MessageFilter f : _timedOutFilters) {
 			f.setMessage(null);
-			f.onTimedOut();
+			f.onTimedOut(_executor);
 		}
 		_timedOutFilters.clear();
 		
@@ -184,7 +187,7 @@ public class MessageCore {
 		}
 		if(match != null) {
 			match.setMessage(m);
-			match.onMatched();
+			match.onMatched(_executor);
 		}
 		// Feed unmatched messages to the dispatcher
 		if ((!matched) && (_dispatcher != null)) {
@@ -247,7 +250,7 @@ public class MessageCore {
 			}
 			if(match != null) {
 				match.setMessage(m);
-				match.onMatched();
+				match.onMatched(_executor);
 			}
 		}
 		long tEnd = System.currentTimeMillis();
@@ -277,7 +280,7 @@ public class MessageCore {
 	    }
 	    if(droppedFilters != null) {
 	    	for(MessageFilter mf : droppedFilters) {
-		        mf.onDroppedConnection(ctx);
+		        mf.onDroppedConnection(ctx, _executor);
 	    	}
 	    }
 	}
@@ -299,7 +302,7 @@ public class MessageCore {
 	    }
 	    if(droppedFilters != null) {
 	    	for(MessageFilter mf : droppedFilters) {
-		        mf.onRestartedConnection(ctx);
+		        mf.onRestartedConnection(ctx, _executor);
 	    	}
 	    }
 	}
@@ -370,7 +373,7 @@ public class MessageCore {
 		}
 		if(ret != null) {
 			filter.setMessage(ret);
-			filter.onMatched();
+			filter.onMatched(_executor);
 			filter.clearMatched();
 		}
 	}
@@ -393,7 +396,7 @@ public class MessageCore {
 		filter.onStartWaiting(true);
 		Message ret = null;
 		if(filter.anyConnectionsDropped()) {
-			filter.onDroppedConnection(filter.droppedConnection());
+			filter.onDroppedConnection(filter.droppedConnection(), _executor);
 			throw new DisconnectedException();
 		}
 		// Check to see whether the filter matches any of the recently _unclaimed messages
@@ -483,7 +486,7 @@ public class MessageCore {
 		}
 		// Matched a packet, unclaimed or after wait
 		filter.setMessage(ret);
-		filter.onMatched();
+		filter.onMatched(_executor);
 		filter.clearMatched();
 
 		// Probably get rid...

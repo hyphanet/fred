@@ -32,6 +32,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.RetrievalException;
+import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.node.PrioRunnable;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.node.Ticker;
@@ -403,7 +404,7 @@ public class BlockTransmitter {
 	private MessageFilter mfAllReceived;
 	private MessageFilter mfSendAborted;
 	
-	private AsyncMessageFilterCallback cbAllReceived = new AsyncMessageFilterCallback() {
+	private AsyncMessageFilterCallback cbAllReceived = new SlowAsyncMessageFilterCallback() {
 
 		public void onMatched(Message m) {
 			if(logMINOR) {
@@ -443,10 +444,14 @@ public class BlockTransmitter {
 		public void onRestarted(PeerContext ctx) {
 			BlockTransmitter.this.onDisconnect();
 		}
+
+		public int priority() {
+			return NativeThread.NORM_PRIORITY;
+		}
 		
 	};
 	
-	private AsyncMessageFilterCallback cbSendAborted = new AsyncMessageFilterCallback() {
+	private AsyncMessageFilterCallback cbSendAborted = new SlowAsyncMessageFilterCallback() {
 
 		public void onMatched(Message msg) {
 			if(abortHandler.onAbort())
@@ -491,6 +496,10 @@ public class BlockTransmitter {
 
 		public void onRestarted(PeerContext ctx) {
 			BlockTransmitter.this.onDisconnect();
+		}
+
+		public int priority() {
+			return NativeThread.NORM_PRIORITY;
 		}
 		
 	};

@@ -1347,7 +1347,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Determine where to bind to
 
-		usm = new MessageCore();
+		usm = new MessageCore(executor);
 
 		// FIXME maybe these configs should actually be under a node.ip subconfig?
 		ipDetector = new NodeIPDetector(this);
