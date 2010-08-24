@@ -118,7 +118,7 @@ public class BlockTransmitter {
 		
 		public void schedule(long delay) {
 			if(_sendComplete) return;
-			_ticker.queueTimedJob(this, delay);
+			_ticker.queueTimedJob(this, "BlockTransmitter block sender", delay, false, false);
 		}
 
 		/** @return True . */
