@@ -176,6 +176,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				onTimeout();
 				return;
 			}
+			try {
+				waitNotification();
+			} catch (DisconnectedException e) {
+				onDisconnect(null);
+				return;
+			}
 		}
 		
 		private void complete(RetrievalException retrievalException) {
