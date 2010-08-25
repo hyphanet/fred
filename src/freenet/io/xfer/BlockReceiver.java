@@ -131,7 +131,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				if (desc.indexOf("Upstream")<0)
 					desc="Upstream transmit error: "+desc;
 				_prb.abort(m1.getInt(DMT.REASON), desc);
-				synchronized(this) {
+				synchronized(BlockReceiver.this) {
 					senderAborted = true;
 				}
 				complete(new RetrievalException(m1.getInt(DMT.REASON), desc));
