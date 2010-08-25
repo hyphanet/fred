@@ -52,7 +52,7 @@ public class NewPacketFormat implements PacketFormat {
 	private int messageWindowPtrAcked = nextMessageID; //The first message id that hasn't been acked by the receiver
 	private final SparseBitmap ackedMessages = new SparseBitmap();
 
-	private int highestReceivedSequenceNumber = -1;
+	private int highestReceivedSequenceNumber = nextSequenceNumber - 1;
 	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
 	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
 	private int messageWindowPtrReceived = nextMessageID; //The first message id that hasn't been fully received
