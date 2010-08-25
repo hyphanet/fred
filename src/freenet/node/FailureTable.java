@@ -475,7 +475,7 @@ public class FailureTable implements OOMHook {
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	final BlockTransmitter bt =
-        		new BlockTransmitter(node.usm, source, uid, prb, senderCounter);
+        		new BlockTransmitter(node.usm, source, uid, prb, senderCounter, BlockTransmitter.NEVER_CASCADE);
         	node.executor.execute(new PrioRunnable() {
 
 				public int getPriority() {

@@ -77,8 +77,10 @@ public class BlockTransmitter {
 	final int PACKET_SIZE;
 	private boolean asyncExitStatus;
 	private boolean asyncExitStatusSet;
+	private final ReceiverAbortHandler abortHandler;
 	
-	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr) {
+	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler) {
+		this.abortHandler = abortHandler;
 		_usm = usm;
 		_destination = destination;
 		_uid = uid;
@@ -180,6 +182,30 @@ public class BlockTransmitter {
 		}
 	}
 	
+	public interface ReceiverAbortHandler {
+		
+		/** @return True to cancel the PRB and thus cascade the cancel to the downstream
+		 * transfer, false otherwise. */
+		public boolean onAbort();
+		
+	}
+	
+	public static final ReceiverAbortHandler ALWAYS_CASCADE = new ReceiverAbortHandler() {
+
+		public boolean onAbort() {
+			return true;
+		}
+		
+	};
+	
+	public static final ReceiverAbortHandler NEVER_CASCADE = new ReceiverAbortHandler() {
+
+		public boolean onAbort() {
+			return false;
+		}
+		
+	};
+	
 	public boolean send(Executor executor) {
 		long startTime = System.currentTimeMillis();
 		PartiallyReceivedBlock.PacketReceivedListener myListener=null;
@@ -266,11 +292,8 @@ public class BlockTransmitter {
 					
 					return true;
 				} else if (msg.getSpec().equals(DMT.sendAborted)) {
-					// Overloaded: receiver no longer wants the data
-					// Do NOT abort PRB, it's none of its business.
-					// And especially, we don't want a downstream node to 
-					// be able to abort our sends to all the others!
-					//They aborted, don't need to send an aborted back :)
+					if(abortHandler.onAbort())
+						_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
 					return false;
 				} else {
 					Logger.error(this, "Transmitter received unknown message type: "+msg.getSpec().getName());

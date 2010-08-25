@@ -13,6 +13,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.BlockTransmitter;
+import freenet.io.xfer.BlockTransmitter.ReceiverAbortHandler;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.CHKBlock;
@@ -219,7 +220,16 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 			PartiallyReceivedBlock prb = rs.getPRB();
 			bt =
-				new BlockTransmitter(node.usm, source, uid, prb, this);
+				new BlockTransmitter(node.usm, source, uid, prb, this, new ReceiverAbortHandler() {
+
+					public boolean onAbort() {
+						if(node.hasKey(key, false, false)) return true; // Don't want it
+						if(node.failureTable.peersWantKey(key)) return false; // Want it
+						// FIXME what if we want it? is it safe to check the scheduler?
+						return true;
+					}
+					
+				});
 			node.addTransferringRequestHandler(uid);
 			bt.sendAsync(node.executor);
 		} catch(NotConnectedException e) {
@@ -467,7 +477,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			PartiallyReceivedBlock prb =
 				new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
 			BlockTransmitter bt =
-				new BlockTransmitter(node.usm, source, uid, prb, this);
+				new BlockTransmitter(node.usm, source, uid, prb, this, BlockTransmitter.NEVER_CASCADE);
 			node.addTransferringRequestHandler(uid);
 			source.sendAsync(df, null, this);
 			if(bt.send(node.executor)) {
