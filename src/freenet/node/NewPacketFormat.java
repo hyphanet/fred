@@ -269,8 +269,17 @@ public class NewPacketFormat implements PacketFormat {
 			} else {
 				moveBy = ((int) (NUM_SEQNUMS - oldHighestReceived)) + highestReceivedSeqNum;
 			}
-			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
-			if(logMINOR) Logger.minor(this, "Moving pointer by " + moveBy);
+
+			if(moveBy > seqNumWatchList.length) {
+				Logger.warning(this, "Moving watchlist pointer by " + moveBy);
+			} else if(moveBy < 0) {
+				//Tends to happen on startup when not starting at seqnum 0 and highestReceived has been
+				//set wrong and then go away, so log at minor and ignore it for now
+				if(logMINOR) Logger.minor(this, "Tried moving watchlist pointer by " + moveBy);
+				moveBy = 0;
+			} else {
+				if(logMINOR) Logger.minor(this, "Moving watchlist pointer by " + moveBy);
+			}
 
 			int seqNum = (int) ((0l + watchListOffset + seqNumWatchList.length) % NUM_SEQNUMS);
 			for(int i = watchListPointer; i < (watchListPointer + moveBy); i++) {
