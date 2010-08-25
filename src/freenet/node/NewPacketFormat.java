@@ -261,7 +261,7 @@ public class NewPacketFormat implements PacketFormat {
 		synchronized(this) {
 			highestReceivedSeqNum = highestReceivedSequenceNumber;
 		}
-		int oldHighestReceived = (int) ((watchListOffset + (seqNumWatchList.length / 2)) % NUM_SEQNUMS);
+		int oldHighestReceived = (int) ((0l + watchListOffset + (seqNumWatchList.length / 2)) % NUM_SEQNUMS);
 		if(highestReceivedSeqNum > oldHighestReceived) {
 			int moveBy = highestReceivedSeqNum - oldHighestReceived;
 			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
@@ -283,7 +283,7 @@ public class NewPacketFormat implements PacketFormat {
 			for(int j = 0; j < seqNumWatchList[index].length; j++) {
 				if(seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) break;
 				if(j == (seqNumWatchList[index].length - 1)) {
-					sequenceNumber = (int) ((watchListOffset + i) % NUM_SEQNUMS);
+					sequenceNumber = (int) ((0l + watchListOffset + i) % NUM_SEQNUMS);
 				}
 			}
 		}
