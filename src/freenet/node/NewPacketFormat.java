@@ -263,7 +263,12 @@ public class NewPacketFormat implements PacketFormat {
 		}
 		int oldHighestReceived = (int) ((0l + watchListOffset + (seqNumWatchList.length / 2)) % NUM_SEQNUMS);
 		if(seqNumGreaterThan(highestReceivedSeqNum, oldHighestReceived, 31)) {
-			int moveBy = highestReceivedSeqNum - oldHighestReceived;
+			int moveBy;
+			if(highestReceivedSeqNum > oldHighestReceived) {
+				moveBy = highestReceivedSeqNum - oldHighestReceived;
+			} else {
+				moveBy = ((int) (NUM_SEQNUMS - oldHighestReceived)) + highestReceivedSeqNum;
+			}
 			if(moveBy > seqNumWatchList.length) throw new RuntimeException();
 			if(logMINOR) Logger.minor(this, "Moving pointer by " + moveBy);
 
