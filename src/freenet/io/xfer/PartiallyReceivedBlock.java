@@ -21,6 +21,7 @@ package freenet.io.xfer;
 import java.util.LinkedList;
 
 import freenet.support.Buffer;
+import freenet.support.Logger;
 
 /**
  * @author ian
@@ -158,6 +159,7 @@ public class PartiallyReceivedBlock {
 	public synchronized void abort(int reason, String description) {
 		if(_aborted) return;
 		if(_receivedCount == _packets) return;
+		Logger.normal(this, "Aborting PRB: "+reason+" : "+description, new Exception("debug"));
 		_aborted = true;
 		_abortReason = reason;
 		_abortDescription = description;
