@@ -388,8 +388,18 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public synchronized long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
 		if(cancelled || finished) return -1;
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-		if(tracker.cooldownWakeupTime < now) return 0;
-		return tracker.cooldownWakeupTime;
+		long wakeTime = tracker.cooldownWakeupTime;
+		if(wakeTime <= now) wakeTime = 0;
+		KeysFetchingLocally fetching = context.fetching;
+		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null, container), this, cancelled, container)) {
+			wakeTime = Long.MAX_VALUE;
+			tracker.cooldownWakeupTime = wakeTime;
+		}
+		if(wakeTime == 0)
+			return 0;
+		HasCooldownCacheItem parentRGA = getParentGrabArray();
+		context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container, true);
+		return wakeTime;
 	}
 
 }
