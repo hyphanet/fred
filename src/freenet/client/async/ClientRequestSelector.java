@@ -193,10 +193,17 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context, long now) {
 		if(req == null) return null;
-		if(req.isCancelled(container)) return null;
-		if(req.getCooldownTime(container, context, now) != 0) return null;
+		if(req.isCancelled(container)) {
+			if(logMINOR) Logger.minor(this, "Request is cancelled: "+req);
+			return null;
+		}
+		if(req.getCooldownTime(container, context, now) != 0) {
+			if(logMINOR) Logger.minor(this, "Request is in cooldown: "+req);
+			return null;
+		}
 		SendableRequestItem token = req.chooseKey(this, req.persistent() ? container : null, context);
 		if(token == null) {
+			if(logMINOR) Logger.minor(this, "Choose key returned null: "+req);
 			return null;
 		} else {
 			Key key;
