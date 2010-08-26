@@ -187,6 +187,7 @@
 				<attribute name="Built-By" value="${user.name}"/>
 				<attribute name="Required-Ext-Version" value="${minExtVersion}"/>
 				<attribute name="Recommended-Ext-Version" value="${recommendedExtVersion}"/>
+				<attribute name="Class-Path" value="freenet-ext.jar" />
 				<section name="common">
 					<attribute name="Specification-Title" value="Freenet"/>
 					<attribute name="Specification-Version" value="0.7.5"/>
