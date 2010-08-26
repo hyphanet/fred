@@ -224,8 +224,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		} catch(NotConnectedException e) {
 		    throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
 		} catch(AbortedException e) {
-			// We didn't cause it?!
-			Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e);
+			// Possible if cancelled the transfer.
+			Logger.normal(this, "Caught in receive: "+e+" : "+_prb._abortReason+" : "+_prb._abortDescription);
 			throw new RetrievalException(RetrievalException.UNKNOWN, "Aborted?");
 		} finally {
 			try {
