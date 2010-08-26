@@ -608,7 +608,8 @@ public class NodeStats implements Persistable {
 					(DEFAULT_TRANSITION_PERIOD - time) * DEFAULT_OVERHEAD) / DEFAULT_TRANSITION_PERIOD;
 				if(logMINOR) Logger.minor(this, "Adjusted overhead fraction: "+overheadFraction);
 			}
-		} else if(overheadFraction < MIN_OVERHEAD) {
+		}
+		if(overheadFraction < MIN_OVERHEAD) {
 			// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
 			// Also, if things have broken, our overhead might be above our bandwidth limit,
 			// especially on a slow node.
