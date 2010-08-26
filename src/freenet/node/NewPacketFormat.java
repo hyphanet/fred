@@ -401,10 +401,6 @@ public class NewPacketFormat implements PacketFormat {
 			} else {
 				paddedLen = ((packetLength + 63) / 64) * 64;
 				paddedLen += pn.node.fastWeakRandom.nextInt(64);
-				// FIXME get rid of this, we shouldn't be sending packets anywhere near this size unless
-				// we've done PMTU...
-				if(packetLength <= 1280 && paddedLen > 1280)
-					paddedLen = 1280;
 				if(packetLength <= maxPacketSize && paddedLen > maxPacketSize)
 					paddedLen = maxPacketSize;
 			}
