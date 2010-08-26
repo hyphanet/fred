@@ -291,16 +291,22 @@ public class NewPacketFormat implements PacketFormat {
 			watchListOffset = (int) ((0l + watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
-		int sequenceNumber = -1;
-		for(int i = 0; (i < seqNumWatchList.length) && (sequenceNumber == -1); i++) {
+		for(int i = 0; i < seqNumWatchList.length; i++) {
 			int index = (watchListPointer + i) % seqNumWatchList.length;
 			for(int j = 0; j < seqNumWatchList[index].length; j++) {
 				if(seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) break;
 				if(j == (seqNumWatchList[index].length - 1)) {
-					sequenceNumber = (int) ((0l + watchListOffset + i) % NUM_SEQNUMS);
+					NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey,
+					                (int) ((0l + watchListOffset + i) % NUM_SEQNUMS));
+					if(p != null) return p;
 				}
 			}
 		}
+
+		return null;
+	}
+
+	private NPFPacket decipherFromSeqnum(byte[] buf, int offset, int length, SessionKey sessionKey, int sequenceNumber) {
 		if(sequenceNumber == -1) {
 			if(logMINOR) Logger.minor(this, "Dropping packet because it isn't on our watchlist");
 			return null;
