@@ -593,23 +593,23 @@ public class NodeStats implements Persistable {
 		/** The fraction of output bytes which are used for requests */
 		// FIXME consider using a shorter average
 		// FIXME what happens when the bwlimit changes?
-		double overheadFraction = ((double)(Math.max(totalSent,((node.getOutputBandwidthLimit() * uptime) / 1000.0)) - totalOverhead)) / totalSent;
+		double nonOverheadFraction = ((double)(Math.max(totalSent,((node.getOutputBandwidthLimit() * uptime) / 1000.0)) - totalOverhead)) / totalSent;
 		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Output rate: "+(totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+overheadFraction);
+		if(logMINOR) Logger.minor(this, "Output rate: "+(totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+nonOverheadFraction);
 		if(timeFirstAnyConnections > 0) {
 			long time = now - timeFirstAnyConnections;
 			if(time < DEFAULT_ONLY_PERIOD) {
-				overheadFraction = DEFAULT_OVERHEAD;
-				if(logMINOR) Logger.minor(this, "Adjusted overhead fraction: "+overheadFraction);
+				nonOverheadFraction = DEFAULT_OVERHEAD;
+				if(logMINOR) Logger.minor(this, "Adjusted non-overhead fraction: "+nonOverheadFraction);
 			} else if(time < DEFAULT_ONLY_PERIOD + DEFAULT_TRANSITION_PERIOD) {
 				time -= DEFAULT_ONLY_PERIOD;
-				overheadFraction = (time * overheadFraction + 
+				nonOverheadFraction = (time * nonOverheadFraction + 
 					(DEFAULT_TRANSITION_PERIOD - time) * DEFAULT_OVERHEAD) / DEFAULT_TRANSITION_PERIOD;
-				if(logMINOR) Logger.minor(this, "Adjusted overhead fraction: "+overheadFraction);
+				if(logMINOR) Logger.minor(this, "Adjusted non-overhead fraction: "+nonOverheadFraction);
 			}
 		}
-		if(overheadFraction < MIN_OVERHEAD) {
+		if(nonOverheadFraction < MIN_OVERHEAD) {
 			// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
 			// Also, if things have broken, our overhead might be above our bandwidth limit,
 			// especially on a slow node.
@@ -617,8 +617,8 @@ public class NodeStats implements Persistable {
 			// So impose a minimum of 20% of the bandwidth limit.
 			// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
 			// and we don't accept any requests because of that, so it remains that way...
-			Logger.error(this, "Overhead fraction is "+overheadFraction+" - assuming this is self-inflicted and using default");
-			overheadFraction = MIN_OVERHEAD;
+			Logger.error(this, "Non-overhead fraction is "+nonOverheadFraction+" - assuming this is self-inflicted and using default");
+			nonOverheadFraction = MIN_OVERHEAD;
 		}
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
@@ -936,7 +936,7 @@ public class NodeStats implements Persistable {
 		
 		// Do we have the bandwidth?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
-		int expectedSent = (int)Math.max(expected / overheadFraction, 0);
+		int expectedSent = (int)Math.max(expected / nonOverheadFraction, 0);
 		if(logMINOR)
 			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
