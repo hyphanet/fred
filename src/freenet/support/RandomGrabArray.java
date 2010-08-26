@@ -1,5 +1,7 @@
 package freenet.support;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
@@ -693,6 +695,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 	// At present it is only called on startup so this is okay.
 	public void moveElementsTo(RandomGrabArray existingGrabber,
 			ObjectContainer container, boolean canCommit) {
+		WrapperManager.signalStarting(5*60*1000);
 		for(int i=0;i<blocks.length;i++) {
 			Block block = blocks[i];
 			if(persistent) container.activate(block, 1);
