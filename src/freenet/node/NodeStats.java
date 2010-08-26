@@ -570,7 +570,7 @@ public class NodeStats implements Persistable {
 	 * overhead the worst case is that more stuff succeeds than expected and we have a few 
 	 * timeouts (because output bandwidth liability was assuming a lower overhead than 
 	 * actually happens) - but this should be very rare. */
-	static final double MIN_OVERHEAD = 0.5;
+	static final double MIN_NON_OVERHEAD = 0.5;
 	
 	/* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert) {
@@ -609,7 +609,7 @@ public class NodeStats implements Persistable {
 				if(logMINOR) Logger.minor(this, "Adjusted non-overhead fraction: "+nonOverheadFraction);
 			}
 		}
-		if(nonOverheadFraction < MIN_OVERHEAD) {
+		if(nonOverheadFraction < MIN_NON_OVERHEAD) {
 			// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
 			// Also, if things have broken, our overhead might be above our bandwidth limit,
 			// especially on a slow node.
@@ -618,7 +618,7 @@ public class NodeStats implements Persistable {
 			// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
 			// and we don't accept any requests because of that, so it remains that way...
 			Logger.error(this, "Non-overhead fraction is "+nonOverheadFraction+" - assuming this is self-inflicted and using default");
-			nonOverheadFraction = MIN_OVERHEAD;
+			nonOverheadFraction = MIN_NON_OVERHEAD;
 		}
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
