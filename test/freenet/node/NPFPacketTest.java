@@ -297,6 +297,21 @@ public class NPFPacketTest extends TestCase {
 		checkPacket(p, correctData);
 	}
 
+	public void testLength() {
+		NPFPacket p = new NPFPacket();
+
+		p.addMessageFragment(new MessageFragment(true, false, true, 0, 10, 10, 0, new byte[10], null));
+		assertEquals(20, p.getLength()); //Seqnum (4), numAcks (1), msgID (4), length (1), data (10)
+
+		p.addMessageFragment(new MessageFragment(true, false, true, 5000, 10, 10, 0, new byte[10], null));
+		assertEquals(35, p.getLength()); // + msgID (4), length (1), data (10)
+
+		//This fragment adds 13, but the next won't need a full message id anymore, so this should only add 11
+		//bytes
+		p.addMessageFragment(new MessageFragment(true, false, true, 2500, 10, 10, 0, new byte[10], null));
+		assertEquals(46, p.getLength());
+	}
+
 	private void checkPacket(NPFPacket packet, byte[] correctData) {
 		byte[] data = new byte[packet.getLength()];
 		packet.toBytes(data, 0, null);
