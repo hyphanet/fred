@@ -387,9 +387,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		String append = incognito ? "&incognito=true" : "";
 		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.BROWSER_WARNING+append).addChild("#", NodeL10n.getBase().getString("FirstTimeWizardToadlet.clickContinue"));
 
-		HTMLNode thirdParagraph = welcomeInfoboxContent.addChild("p");
-		thirdParagraph.addChild("a", "href", "?step="+WIZARD_STEP.FINAL).addChild("#", l10n("skipWizard"));
-
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
