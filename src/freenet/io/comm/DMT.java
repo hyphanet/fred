@@ -28,6 +28,7 @@ import freenet.keys.NodeSSK;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Fields;
+import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 
 /**
@@ -199,6 +200,8 @@ public class DMT {
 		Message msg = new Message(missingPacketNotification);
 		msg.set(UID, uid);
 		msg.set(MISSING, missing);
+		if(missing.size() == 0)
+			Logger.error(DMT.class, "Creating missing packet notification for "+uid+" with no missing packets!", new Exception("error"));
 		return msg;
 	}
 	
