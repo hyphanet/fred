@@ -391,15 +391,14 @@ public class NewPacketFormat implements PacketFormat {
 
 		packet.setSequenceNumber(getSequenceNumber());
 
-		int paddedLen = packet.getLength();
+		int paddedLen = packet.getLength() + HMAC_LENGHT;
 		if(pn.crypto.config.paddDataPackets()) {
-			int packetLength = packet.getLength();
+			int packetLength = paddedLen;
 			if(logMINOR) Logger.minor(this, "Pre-padding length: " + packetLength);
 
 			if(packetLength < 64) {
 				paddedLen = 64 + pn.node.fastWeakRandom.nextInt(32);
 			} else {
-				packetLength += HMAC_LENGTH;
 				paddedLen = ((packetLength + 63) / 64) * 64;
 				paddedLen += pn.node.fastWeakRandom.nextInt(64);
 				// FIXME get rid of this, we shouldn't be sending packets anywhere near this size unless
@@ -408,11 +407,10 @@ public class NewPacketFormat implements PacketFormat {
 					paddedLen = 1280;
 				if(packetLength <= maxPacketSize && paddedLen > maxPacketSize)
 					paddedLen = maxPacketSize;
-				paddedLen -= HMAC_LENGTH;
 			}
 		}
 
-		byte[] data = new byte[paddedLen + HMAC_LENGTH];
+		byte[] data = new byte[paddedLen];
 		packet.toBytes(data, HMAC_LENGTH, pn.node.fastWeakRandom);
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
