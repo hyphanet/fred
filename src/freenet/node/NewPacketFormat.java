@@ -253,7 +253,7 @@ public class NewPacketFormat implements PacketFormat {
 			int seqNum = watchListOffset;
 			for(int i = 0; i < seqNumWatchList.length; i++) {
 				seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
-				if(seqNum == NUM_SEQNUMS) seqNum = 0;
+				if((seqNum == NUM_SEQNUMS) || (seqNum < 0)) seqNum = 0;
 			}
 		}
 
