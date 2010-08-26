@@ -187,7 +187,6 @@ class NPFPacket {
 		}
 
 		//Add fragments
-		Collections.sort(fragments, new MessageFragmentComparator());
 		int prevFragmentID = -1;
 		for(MessageFragment fragment : fragments) {
 			if(fragment.shortMessage) buf[offset] = (byte) ((buf[offset] & 0xFF) | 0x80);
@@ -265,14 +264,23 @@ class NPFPacket {
 		return true;
 	}
 
+	int oldMsgIDLength;
 	public int addMessageFragment(MessageFragment frag) {
 		length += frag.length();
+		fragments.add(frag);
+		Collections.sort(fragments, new MessageFragmentComparator());
 
-		if(fragments.size() == 0 || (frag.messageID - fragments.get(fragments.size() - 1).messageID >= 4096)) {
-			length += 2;
+		int msgIDLength = 0;
+		int prevMessageID = -1;
+		for(MessageFragment fragment : fragments) {
+			if((prevMessageID == -1) || (fragment.messageID - prevMessageID >= 4096)) {
+				msgIDLength += 2;
+			}
+			prevMessageID = fragment.messageID;
 		}
 
-		fragments.add(frag);
+		length += (msgIDLength - oldMsgIDLength);
+		oldMsgIDLength = msgIDLength;
 
 		return length;
 	}
