@@ -601,9 +601,6 @@ public class NodeStats implements Persistable {
 			long totalSent = total[0];
 			long totalOverhead = getSentOverhead();
 			long uptime = node.getUptime();
-			/** The fraction of output bytes which are used for requests */
-			// FIXME consider using a shorter average
-			// FIXME what happens when the bwlimit changes?
 			
 			long now = System.currentTimeMillis();
 			
