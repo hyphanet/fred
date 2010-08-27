@@ -587,6 +587,27 @@ public class NodeStats implements Persistable {
 	 * actually happens) - but this should be very rare. */
 	static final double MIN_NON_OVERHEAD = 0.5;
 	
+	/** Stats to send to a single peer so it can determine whether we are likely to reject 
+	 * a request. */
+	public class PeerLoadStats {
+		
+		PeerNode peer;
+		/** These do not include those from the peer */
+		int numOtherCHKRequests;
+		int numOtherSSKRequests;
+		int numOtherCHKInserts;
+		int numOtherSSKInserts;
+		int numOtherCHKOffered;
+		int numOtherSSKOffered;
+		double outputBandwidthLowerLimit;
+		double outputBandwidthUpperLimit;
+		double outputBandwidthPeerLimit;
+		double inputBandwidthLowerLimit;
+		double inputBandwidthUpperLimit;
+		double inputBandwidthPeerLimit;
+		
+	}
+	
 	/* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert) {
 		if(logMINOR) dumpByteCostAverages();
