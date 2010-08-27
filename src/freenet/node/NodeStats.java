@@ -718,6 +718,20 @@ public class NodeStats implements Persistable {
 			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
 		}
 		
+		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
+		// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
+		// Also, if things have broken, our overhead might be above our bandwidth limit,
+		// especially on a slow node.
+		
+		// So impose a minimum of 20% of the bandwidth limit.
+		// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
+		// and we don't accept any requests because of that, so it remains that way...
+		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
+		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
+		
+		double bandwidthAvailableOutput = outputAvailablePerSecond * limit;
+		// 90 seconds at full power; we have to leave some time for the search as well
+		
 		if(preferInsert) {
 			// Allow some extra inserts.
 			numRemoteCHKInserts--;
@@ -748,21 +762,7 @@ public class NodeStats implements Persistable {
 			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
 			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
 		}
-		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
-		// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
-		// Also, if things have broken, our overhead might be above our bandwidth limit,
-		// especially on a slow node.
-		
-		// So impose a minimum of 20% of the bandwidth limit.
-		// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
-		// and we don't accept any requests because of that, so it remains that way...
-		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
-		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
-		
-		double bandwidthAvailableOutput = outputAvailablePerSecond * limit;
-		// 90 seconds at full power; we have to leave some time for the search as well
 		if(logMINOR) Logger.minor(this, "90 second limit: "+bandwidthAvailableOutput+" expected output liability: "+bandwidthLiabilityOutput);
-		
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutput) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Output bandwidth liability", isLocal);
