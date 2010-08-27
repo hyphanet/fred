@@ -762,45 +762,14 @@ public class NodeStats implements Persistable {
 		long totalSent = total[0];
 		long totalOverhead = getSentOverhead();
 		long uptime = node.getUptime();
-		double sentOverheadPerSecond = (totalOverhead*1000.0) / (uptime);
 		/** The fraction of output bytes which are used for requests */
 		// FIXME consider using a shorter average
 		// FIXME what happens when the bwlimit changes?
-		double totalCouldSend = Math.max(totalSent,
-				((double)((node.getOutputBandwidthLimit() * uptime))/1000.0));
-		double nonOverheadFraction = (totalCouldSend - totalOverhead) / totalCouldSend;
 		
-		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Output rate: "+(totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+nonOverheadFraction);
-		if(timeFirstAnyConnections > 0) {
-			long time = now - timeFirstAnyConnections;
-			if(time < DEFAULT_ONLY_PERIOD) {
-				nonOverheadFraction = DEFAULT_OVERHEAD;
-				if(logMINOR) Logger.minor(this, "Adjusted non-overhead fraction: "+nonOverheadFraction);
-			} else if(time < DEFAULT_ONLY_PERIOD + DEFAULT_TRANSITION_PERIOD) {
-				time -= DEFAULT_ONLY_PERIOD;
-				nonOverheadFraction = (time * nonOverheadFraction + 
-					(DEFAULT_TRANSITION_PERIOD - time) * DEFAULT_OVERHEAD) / DEFAULT_TRANSITION_PERIOD;
-				if(logMINOR) Logger.minor(this, "Adjusted non-overhead fraction: "+nonOverheadFraction);
-			}
-		}
-		if(nonOverheadFraction < MIN_NON_OVERHEAD) {
-			// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
-			// Also, if things have broken, our overhead might be above our bandwidth limit,
-			// especially on a slow node.
-
-			// So impose a minimum of 20% of the bandwidth limit.
-			// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
-			// and we don't accept any requests because of that, so it remains that way...
-			Logger.warning(this, "Non-overhead fraction is "+nonOverheadFraction+" - assuming this is self-inflicted and using default");
-			nonOverheadFraction = MIN_NON_OVERHEAD;
-		}
-		if(nonOverheadFraction > 1.0) {
-			Logger.error(this, "Non-overhead fraction is >1.0!!!");
-			nonOverheadFraction = 1.0;
-		}
-
+		
+		double nonOverheadFraction = getNonOverheadFraction(totalSent, totalOverhead, uptime, now);
+		
 		// If no recent reports, no packets have been sent; correct the average downwards.
 		double pingTime;
 		pingTime = nodePinger.averagePingTime();
@@ -867,27 +836,17 @@ public class NodeStats implements Persistable {
 			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
 		}
 		
-		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
-		
-		// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
-		// Also, if things have broken, our overhead might be above our bandwidth limit,
-		// especially on a slow node.
-
-		// So impose a minimum of 20% of the bandwidth limit.
-		// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
-		// and we don't accept any requests because of that, so it remains that way...
-		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
-		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
-		
 		ByteCountersSnapshot byteCountersSent = new ByteCountersSnapshot(false);
 		
-		String ret = checkBandwidthLiability(outputAvailablePerSecond, byteCountersSent, requestsSnapshot, false, limit,
+		// Multiply by limit: X seconds at full power should be able to clear the transfers even if all the requests succeed.
+		
+		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), byteCountersSent, requestsSnapshot, false, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply);  
 		if(ret != null) return ret;
 		
 		ByteCountersSnapshot byteCountersReceived = new ByteCountersSnapshot(true);
 		
-		ret = checkBandwidthLiability(node.getInputBandwidthLimit(), byteCountersReceived, requestsSnapshot, true, limit,
+		ret = checkBandwidthLiability(node.getInputBandwidthLimit() * limit, byteCountersReceived, requestsSnapshot, true, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply);  
 		if(ret != null) return ret;
 		
@@ -934,14 +893,62 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 	
-	private String checkBandwidthLiability(double outputAvailablePerSecond,
+	private double getNonOverheadFraction(long totalSent, long totalOverhead,
+			long uptime, long now) {
+		
+		double nonOverheadFraction = ((double)(Math.max(totalSent,((node.getOutputBandwidthLimit() * uptime) / 1000.0)) - totalOverhead)) / totalSent;
+		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
+		if(timeFirstAnyConnections > 0) {
+			long time = now - timeFirstAnyConnections;
+			if(time < DEFAULT_ONLY_PERIOD) {
+				nonOverheadFraction = DEFAULT_OVERHEAD;
+				if(logMINOR) Logger.minor(this, "Adjusted non-overhead fraction: "+nonOverheadFraction);
+			} else if(time < DEFAULT_ONLY_PERIOD + DEFAULT_TRANSITION_PERIOD) {
+				time -= DEFAULT_ONLY_PERIOD;
+				nonOverheadFraction = (time * nonOverheadFraction + 
+					(DEFAULT_TRANSITION_PERIOD - time) * DEFAULT_OVERHEAD) / DEFAULT_TRANSITION_PERIOD;
+				if(logMINOR) Logger.minor(this, "Adjusted non-overhead fraction: "+nonOverheadFraction);
+			}
+		}
+		if(nonOverheadFraction < MIN_NON_OVERHEAD) {
+			// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
+			// Also, if things have broken, our overhead might be above our bandwidth limit,
+			// especially on a slow node.
+			
+			// So impose a minimum of 20% of the bandwidth limit.
+			// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
+			// and we don't accept any requests because of that, so it remains that way...
+			Logger.error(this, "Non-overhead fraction is "+nonOverheadFraction+" - assuming this is self-inflicted and using default");
+			nonOverheadFraction = MIN_NON_OVERHEAD;
+		}
+		return nonOverheadFraction;
+	}
+
+	private double getOutputBandwidthUpperLimit(long totalSent, long totalOverhead, long uptime, long limit, double nonOverheadFraction) {
+		double sentOverheadPerSecond = (totalOverhead*1000.0) / (uptime);
+		
+		if(logMINOR) Logger.minor(this, "Output rate: "+(totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+nonOverheadFraction);
+		
+		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
+		
+		// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
+		// Also, if things have broken, our overhead might be above our bandwidth limit,
+		// especially on a slow node.
+		
+		// So impose a minimum of 20% of the bandwidth limit.
+		// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
+		// and we don't accept any requests because of that, so it remains that way...
+		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
+		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
+		
+		return outputAvailablePerSecond * limit;
+	}
+
+	private String checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
 			ByteCountersSnapshot byteCountersSent,
 			RunningRequestsSnapshot requestsSnapshot, boolean input, long limit,
 			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply) {
 		String name = input ? "Input" : "Output";
-		double bandwidthAvailableOutputUpperLimit = outputAvailablePerSecond * limit;
-		// 90 seconds at full power; we have to leave some time for the search as well
-		
 		double bandwidthAvailableOutputLowerLimit = bandwidthAvailableOutputUpperLimit / 2;
 		
 		double bandwidthLiabilityOutput = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersSent);
