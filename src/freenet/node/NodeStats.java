@@ -698,7 +698,7 @@ public class NodeStats implements Persistable {
 		if(logMINOR)
 			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
 		
-		long limit = 90;
+		long limit = 120;
 		
 		// Allow a bit more if the data is in the store and can therefore be served immediately.
 		// This should improve performance.
