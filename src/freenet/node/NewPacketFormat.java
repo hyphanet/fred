@@ -296,6 +296,7 @@ public class NewPacketFormat implements PacketFormat {
 			for(int j = 0; j < seqNumWatchList[index].length; j++) {
 				if(seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) break;
 				if(j == (seqNumWatchList[index].length - 1)) {
+					if(logMINOR) Logger.minor(this, "Received packet matches sequence number " + sequenceNumber);
 					NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey,
 					                (int) ((0l + watchListOffset + i) % NUM_SEQNUMS));
 					if(p != null) return p;
@@ -307,13 +308,6 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private NPFPacket decipherFromSeqnum(byte[] buf, int offset, int length, SessionKey sessionKey, int sequenceNumber) {
-		if(sequenceNumber == -1) {
-			if(logMINOR) Logger.minor(this, "Dropping packet because it isn't on our watchlist");
-			return null;
-		} else {
-			if(logMINOR) Logger.minor(this, "Received packet matches sequence number " + sequenceNumber);
-		}
-
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
 		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
