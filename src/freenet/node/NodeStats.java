@@ -846,6 +846,7 @@ public class NodeStats implements Persistable {
 		}
 		
 		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
+		
 		// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
 		// Also, if things have broken, our overhead might be above our bandwidth limit,
 		// especially on a slow node.
@@ -856,99 +857,17 @@ public class NodeStats implements Persistable {
 		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
 		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
 		
-		double bandwidthAvailableOutputUpperLimit = outputAvailablePerSecond * limit;
-		// 90 seconds at full power; we have to leave some time for the search as well
-		
-		double bandwidthAvailableOutputLowerLimit = bandwidthAvailableOutputUpperLimit / 2;
-		
 		ByteCountersSnapshot byteCountersSent = new ByteCountersSnapshot(false);
 		
-		double bandwidthLiabilityOutput = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersSent);
-		
-		// If over the upper limit, reject.
-		
-		if(logMINOR) Logger.minor(this, "90 second limit: "+bandwidthAvailableOutputUpperLimit+" expected output liability: "+bandwidthLiabilityOutput);
-		if(bandwidthLiabilityOutput > bandwidthAvailableOutputUpperLimit) {
-			pInstantRejectIncoming.report(1.0);
-			rejected("Output bandwidth liability", isLocal);
-			return "Output bandwidth liability ("+bandwidthLiabilityOutput+" > "+bandwidthAvailableOutputUpperLimit+")";
-		}
-		
-		if(bandwidthLiabilityOutput > bandwidthAvailableOutputLowerLimit) {
-			
-			// Fair sharing between peers.
-			
-			int peers = node.peers.countConnectedPeers();
-			
-			double thisAllocation;
-			
-			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-			if(RequestStarter.LOCAL_REQUESTS_COMPETE_FAIRLY) {
-				thisAllocation = bandwidthAvailableOutputLowerLimit / (peers + 1);
-			} else {
-				double totalAllocation = bandwidthAvailableOutputLowerLimit;
-				// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-				double localAllocation = totalAllocation * 0.5;
-				if(source == null)
-					thisAllocation = localAllocation;
-				else {
-					totalAllocation -= localAllocation;
-					thisAllocation = totalAllocation / peers;
-				}
-			}
-			
-			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent);
-			if(peerUsedBytes > thisAllocation) {
-				rejected("Output bandwidth liability: fairness between peers", isLocal);
-				return "Output bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
-			}
-			
-			// Fair sharing between request types.
-			// The old mechanism incremented each request type, so that we would only accept
-			// a request of a given type if there was enough space for one of each type without exceeding the limit.
-			// I suspect this didn't do anything, since it's effectively just a lower limit, resulting in the smallest 
-			// requests continuing to be largely accepted and largely exclude the larger ones.
-			// Also the old mechanism wasn't compatible with fair sharing between peers anyway.
-			
-			// So lets do something different. Reject if the given type is using 75%+ of the upper limit.
-			
-			double typeUsed;
-			
-			if(isInsert) {
-				if(isSSK) {
-					typeUsed = (requestsSnapshot.numRemoteSSKInserts + requestsSnapshot.numLocalSSKInserts) * successfulSskInsertBytesSentAverage.currentValue();
-				} else {
-					typeUsed = (requestsSnapshot.numRemoteCHKInserts + requestsSnapshot.numLocalCHKInserts) * successfulChkInsertBytesSentAverage.currentValue();
-				}
-			} else {
-				if(isSSK) {
-					typeUsed = (requestsSnapshot.numRemoteSSKRequests + requestsSnapshot.numLocalSSKRequests) * successfulSskFetchBytesSentAverage.currentValue();
-				} else {
-					typeUsed = (requestsSnapshot.numRemoteCHKRequests + requestsSnapshot.numLocalCHKRequests) * successfulChkFetchBytesSentAverage.currentValue();
-				}
-			}
-			
-			if(typeUsed > 0.75 * bandwidthAvailableOutputUpperLimit) {
-				rejected("Output bandwidth liability: fairness between types", isLocal);
-				return "Output bandwidth liability: fairness between types for "+(isSSK?"SSK":"CHK")+" "+(isInsert?"insert":"request"+" (running "+typeUsed+" threshold 75% of "+bandwidthAvailableOutputUpperLimit+")");
-			}
-			
-		}
+		String ret = checkBandwidthLiability(outputAvailablePerSecond, byteCountersSent, requestsSnapshot, false, limit,
+				source, isLocal, isSSK, isInsert, isOfferReply);  
+		if(ret != null) return ret;
 		
 		ByteCountersSnapshot byteCountersReceived = new ByteCountersSnapshot(true);
 		
-		double bandwidthLiabilityInput = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersReceived);
-		
-		double bandwidthAvailableInput =
-			node.getInputBandwidthLimit() * limit; // 90 seconds at full power; avoid integer overflow
-		if(bandwidthAvailableInput < 0){
-			Logger.error(this, "Negative available bandwidth: "+bandwidthAvailableInput+" node.ibwlimit="+node.getInputBandwidthLimit()+" node.obwlimit="+node.getOutputBandwidthLimit()+" node.inputLimitDefault="+node.inputLimitDefault);
-		}
-		if(bandwidthLiabilityInput > bandwidthAvailableInput) {
-			pInstantRejectIncoming.report(1.0);
-			rejected("Input bandwidth liability", isLocal);
-			return "Input bandwidth liability ("+bandwidthLiabilityInput+" > "+bandwidthAvailableInput+")";
-		}
+		ret = checkBandwidthLiability(node.getInputBandwidthLimit(), byteCountersReceived, requestsSnapshot, true, limit,
+				source, isLocal, isSSK, isInsert, isOfferReply);  
+		if(ret != null) return ret;
 		
 		// Do we have the bandwidth?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
@@ -993,6 +912,90 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 	
+	private String checkBandwidthLiability(double outputAvailablePerSecond,
+			ByteCountersSnapshot byteCountersSent,
+			RunningRequestsSnapshot requestsSnapshot, boolean input, long limit,
+			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply) {
+		String name = input ? "Input" : "Output";
+		double bandwidthAvailableOutputUpperLimit = outputAvailablePerSecond * limit;
+		// 90 seconds at full power; we have to leave some time for the search as well
+		
+		double bandwidthAvailableOutputLowerLimit = bandwidthAvailableOutputUpperLimit / 2;
+		
+		double bandwidthLiabilityOutput = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersSent);
+		
+		// If over the upper limit, reject.
+		
+		if(logMINOR) Logger.minor(this, "90 second limit: "+bandwidthAvailableOutputUpperLimit+" expected output liability: "+bandwidthLiabilityOutput);
+		if(bandwidthLiabilityOutput > bandwidthAvailableOutputUpperLimit) {
+			pInstantRejectIncoming.report(1.0);
+			rejected(name+" bandwidth liability", isLocal);
+			return name+" bandwidth liability ("+bandwidthLiabilityOutput+" > "+bandwidthAvailableOutputUpperLimit+")";
+		}
+		
+		if(bandwidthLiabilityOutput > bandwidthAvailableOutputLowerLimit) {
+			
+			// Fair sharing between peers.
+			
+			int peers = node.peers.countConnectedPeers();
+			
+			double thisAllocation;
+			
+			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
+			if(RequestStarter.LOCAL_REQUESTS_COMPETE_FAIRLY) {
+				thisAllocation = bandwidthAvailableOutputLowerLimit / (peers + 1);
+			} else {
+				double totalAllocation = bandwidthAvailableOutputLowerLimit;
+				// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
+				double localAllocation = totalAllocation * 0.5;
+				if(source == null)
+					thisAllocation = localAllocation;
+				else {
+					totalAllocation -= localAllocation;
+					thisAllocation = totalAllocation / peers;
+				}
+			}
+			
+			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent);
+			if(peerUsedBytes > thisAllocation) {
+				rejected(name+" bandwidth liability: fairness between peers", isLocal);
+				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
+			}
+			
+			// Fair sharing between request types.
+			// The old mechanism incremented each request type, so that we would only accept
+			// a request of a given type if there was enough space for one of each type without exceeding the limit.
+			// I suspect this didn't do anything, since it's effectively just a lower limit, resulting in the smallest 
+			// requests continuing to be largely accepted and largely exclude the larger ones.
+			// Also the old mechanism wasn't compatible with fair sharing between peers anyway.
+			
+			// So lets do something different. Reject if the given type is using 75%+ of the upper limit.
+			
+			double typeUsed;
+			
+			if(isInsert) {
+				if(isSSK) {
+					typeUsed = (requestsSnapshot.numRemoteSSKInserts + requestsSnapshot.numLocalSSKInserts) * successfulSskInsertBytesSentAverage.currentValue();
+				} else {
+					typeUsed = (requestsSnapshot.numRemoteCHKInserts + requestsSnapshot.numLocalCHKInserts) * successfulChkInsertBytesSentAverage.currentValue();
+				}
+			} else {
+				if(isSSK) {
+					typeUsed = (requestsSnapshot.numRemoteSSKRequests + requestsSnapshot.numLocalSSKRequests) * successfulSskFetchBytesSentAverage.currentValue();
+				} else {
+					typeUsed = (requestsSnapshot.numRemoteCHKRequests + requestsSnapshot.numLocalCHKRequests) * successfulChkFetchBytesSentAverage.currentValue();
+				}
+			}
+			
+			if(typeUsed > 0.75 * bandwidthAvailableOutputUpperLimit) {
+				rejected(name+" bandwidth liability: fairness between types", isLocal);
+				return name+" bandwidth liability: fairness between types for "+(isSSK?"SSK":"CHK")+" "+(isInsert?"insert":"request"+" (running "+typeUsed+" threshold 75% of "+bandwidthAvailableOutputUpperLimit+")");
+			}
+			
+		}
+		return null;
+	}
+
 	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters) {
 		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source);
 		
