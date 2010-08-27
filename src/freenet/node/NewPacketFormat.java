@@ -418,10 +418,10 @@ public class NewPacketFormat implements PacketFormat {
 		ivCipher.encipher(IV, IV);
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
-		payloadCipher.blockEncipher(data, HMAC_LENGTH, packet.getLength());
+		payloadCipher.blockEncipher(data, HMAC_LENGTH, paddedLen - HMAC_LENGTH);
 
 		//Add hash
-		byte[] text = new byte[packet.getLength()];
+		byte[] text = new byte[paddedLen - HMAC_LENGTH];
 		System.arraycopy(data, HMAC_LENGTH, text, 0, text.length);
 
 		byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text, HMAC_LENGTH);
