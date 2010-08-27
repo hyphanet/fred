@@ -713,6 +713,35 @@ public class NodeStats implements Persistable {
 		public void log() {
 			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
 		}
+
+		public double calculate(boolean ignoreLocalVsRemoteBandwidthLiability,
+				ByteCountersSnapshot byteCountersSent) {
+			
+			if(ignoreLocalVsRemoteBandwidthLiability) {
+				return 
+					byteCountersSent.successfulChkFetchBytes * (numRemoteCHKRequests + numLocalCHKRequests) +
+					byteCountersSent.successfulSskFetchBytes * (numRemoteSSKRequests + numLocalSSKRequests) +
+					byteCountersSent.successfulChkInsertBytes * (numRemoteCHKInserts + numLocalCHKInserts) +
+					byteCountersSent.successfulSskInsertBytes * (numRemoteSSKInserts + numLocalSSKInserts);
+			} else {
+			return
+				byteCountersSent.successfulChkFetchBytes * numRemoteCHKRequests +
+				// Local requests don't relay data, so use the local average
+				byteCountersSent.localChkFetchBytes * numLocalCHKRequests +
+				byteCountersSent.successfulSskFetchBytes * numRemoteSSKRequests +
+				// Local requests don't relay data, so use the local average
+				byteCountersSent.localSskFetchBytes * numLocalSSKRequests +
+				// Inserts are the same for remote as local for sent bytes
+				byteCountersSent.successfulChkInsertBytes * numRemoteCHKInserts +
+				byteCountersSent.successfulChkInsertBytes * numLocalCHKInserts +
+				// Inserts are the same for remote as local for sent bytes
+				byteCountersSent.successfulSskInsertBytes * numRemoteSSKInserts +
+				byteCountersSent.successfulSskInsertBytes * numLocalSSKInserts +
+				byteCountersSent.successfulChkOfferReplyBytes * numCHKOfferReplies +
+				byteCountersSent.successfulSskOfferReplyBytes * numSSKOfferReplies;
+			}
+			
+		}
 		
 	}
 	
@@ -856,30 +885,7 @@ public class NodeStats implements Persistable {
 		
 		ByteCountersSnapshot byteCountersSent = new ByteCountersSnapshot(false);
 		
-		double bandwidthLiabilityOutput;
-		if(ignoreLocalVsRemoteBandwidthLiability) {
-			bandwidthLiabilityOutput = 
-				byteCountersSent.successfulChkFetchBytes * (requestsSnapshot.numRemoteCHKRequests + requestsSnapshot.numLocalCHKRequests) +
-				byteCountersSent.successfulSskFetchBytes * (requestsSnapshot.numRemoteSSKRequests + requestsSnapshot.numLocalSSKRequests) +
-				byteCountersSent.successfulChkInsertBytes * (requestsSnapshot.numRemoteCHKInserts + requestsSnapshot.numLocalCHKInserts) +
-				byteCountersSent.successfulSskInsertBytes * (requestsSnapshot.numRemoteSSKInserts + requestsSnapshot.numLocalSSKInserts);
-		} else {
-		bandwidthLiabilityOutput =
-			byteCountersSent.successfulChkFetchBytes * requestsSnapshot.numRemoteCHKRequests +
-			// Local requests don't relay data, so use the local average
-			byteCountersSent.localChkFetchBytes * requestsSnapshot.numLocalCHKRequests +
-			byteCountersSent.successfulSskFetchBytes * requestsSnapshot.numRemoteSSKRequests +
-			// Local requests don't relay data, so use the local average
-			byteCountersSent.localSskFetchBytes * requestsSnapshot.numLocalSSKRequests +
-			// Inserts are the same for remote as local for sent bytes
-			byteCountersSent.successfulChkInsertBytes * requestsSnapshot.numRemoteCHKInserts +
-			byteCountersSent.successfulChkInsertBytes * requestsSnapshot.numLocalCHKInserts +
-			// Inserts are the same for remote as local for sent bytes
-			byteCountersSent.successfulSskInsertBytes * requestsSnapshot.numRemoteSSKInserts +
-			byteCountersSent.successfulSskInsertBytes * requestsSnapshot.numLocalSSKInserts +
-			byteCountersSent.successfulChkOfferReplyBytes * requestsSnapshot.numCHKOfferReplies +
-			byteCountersSent.successfulSskOfferReplyBytes * requestsSnapshot.numSSKOfferReplies;
-		}
+		double bandwidthLiabilityOutput = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersSent);
 		
 		// If over the upper limit, reject.
 		
