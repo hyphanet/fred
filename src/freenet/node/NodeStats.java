@@ -956,29 +956,11 @@ public class NodeStats implements Persistable {
 			}
 			
 		}
-
-		double bandwidthLiabilityInput;
-		if(ignoreLocalVsRemoteBandwidthLiability) {
-			bandwidthLiabilityInput =
-				successfulChkFetchBytesReceivedAverage.currentValue() * (requestsSnapshot.numRemoteCHKRequests + requestsSnapshot.numLocalCHKRequests - 1) +
-				successfulSskFetchBytesReceivedAverage.currentValue() * (requestsSnapshot.numRemoteSSKRequests + requestsSnapshot.numLocalSSKRequests - 1) +
-				successfulChkInsertBytesReceivedAverage.currentValue() * (requestsSnapshot.numRemoteCHKInserts + requestsSnapshot.numLocalCHKInserts - 1) +
-				successfulSskInsertBytesReceivedAverage.currentValue() * (requestsSnapshot.numRemoteSSKInserts + requestsSnapshot.numLocalSSKInserts - 1);
-		} else {
-		bandwidthLiabilityInput =
-			// For receiving data, local requests are the same as remote ones
-			successfulChkFetchBytesReceivedAverage.currentValue() * requestsSnapshot.numRemoteCHKRequests +
-			successfulChkFetchBytesReceivedAverage.currentValue() * requestsSnapshot.numLocalCHKRequests +
-			successfulSskFetchBytesReceivedAverage.currentValue() * requestsSnapshot.numRemoteSSKRequests +
-			successfulSskFetchBytesReceivedAverage.currentValue() * requestsSnapshot.numLocalSSKRequests +
-			// Local inserts don't receive the data to relay, so use the local variant
-			successfulChkInsertBytesReceivedAverage.currentValue() * requestsSnapshot.numRemoteCHKInserts +
-			localChkInsertBytesReceivedAverage.currentValue() * requestsSnapshot.numLocalCHKInserts +
-			successfulSskInsertBytesReceivedAverage.currentValue() * requestsSnapshot.numRemoteSSKInserts +
-			localSskInsertBytesReceivedAverage.currentValue() * requestsSnapshot.numLocalSSKInserts +
-			successfulChkOfferReplyBytesReceivedAverage.currentValue() * requestsSnapshot.numCHKOfferReplies +
-			successfulSskOfferReplyBytesReceivedAverage.currentValue() * requestsSnapshot.numSSKOfferReplies;
-		}
+		
+		ByteCountersSnapshot byteCountersReceived = new ByteCountersSnapshot(true);
+		
+		double bandwidthLiabilityInput = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersReceived);
+		
 		double bandwidthAvailableInput =
 			node.getInputBandwidthLimit() * limit; // 90 seconds at full power; avoid integer overflow
 		if(bandwidthAvailableInput < 0){
