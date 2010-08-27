@@ -792,10 +792,6 @@ public class NodeStats implements Persistable {
 		long totalSent = total[0];
 		long totalOverhead = getSentOverhead();
 		long uptime = node.getUptime();
-		/** The fraction of output bytes which are used for requests */
-		// FIXME consider using a shorter average
-		// FIXME what happens when the bwlimit changes?
-		
 		long now = System.currentTimeMillis();
 		
 		double nonOverheadFraction = getNonOverheadFraction(totalSent, totalOverhead, uptime, now);
@@ -929,6 +925,10 @@ public class NodeStats implements Persistable {
 
 	private double getNonOverheadFraction(long totalSent, long totalOverhead,
 			long uptime, long now) {
+		
+		/** The fraction of output bytes which are used for requests */
+		// FIXME consider using a shorter average
+		// FIXME what happens when the bwlimit changes?
 		
 		double nonOverheadFraction = ((double)(Math.max(totalSent,((node.getOutputBandwidthLimit() * uptime) / 1000.0)) - totalOverhead)) / totalSent;
 		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
