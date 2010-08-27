@@ -612,6 +612,49 @@ public class NodeStats implements Persistable {
 		
 	}
 	
+	/** This is per direction. */
+	class ByteCountersSnapshot {
+		
+		public ByteCountersSnapshot(boolean input) {
+			this.input = input;
+			if(input) {
+				successfulChkFetchBytes = successfulChkFetchBytesSentAverage.currentValue();
+				successfulSskFetchBytes = successfulSskFetchBytesSentAverage.currentValue();
+				successfulChkInsertBytes = successfulChkInsertBytesSentAverage.currentValue();
+				successfulSskInsertBytes = successfulSskInsertBytesSentAverage.currentValue();
+				localChkFetchBytes = localChkFetchBytesSentAverage.currentValue();
+				localSskFetchBytes = localSskFetchBytesSentAverage.currentValue();
+				localChkInsertBytes = localChkInsertBytesSentAverage.currentValue();
+				localSskInsertBytes = localSskInsertBytesSentAverage.currentValue();
+				successfulChkOfferReplyBytes = successfulChkOfferReplyBytesSentAverage.currentValue();
+				successfulSskOfferReplyBytes = successfulSskOfferReplyBytesSentAverage.currentValue();
+			} else {
+				successfulChkFetchBytes = successfulChkFetchBytesReceivedAverage.currentValue();
+				successfulSskFetchBytes = successfulSskFetchBytesReceivedAverage.currentValue();
+				successfulChkInsertBytes = successfulChkInsertBytesReceivedAverage.currentValue();
+				successfulSskInsertBytes = successfulSskInsertBytesReceivedAverage.currentValue();
+				localChkFetchBytes = localChkFetchBytesReceivedAverage.currentValue();
+				localSskFetchBytes = localSskFetchBytesReceivedAverage.currentValue();
+				localChkInsertBytes = localChkInsertBytesReceivedAverage.currentValue();
+				localSskInsertBytes = localSskInsertBytesReceivedAverage.currentValue();
+				successfulChkOfferReplyBytes = successfulChkOfferReplyBytesReceivedAverage.currentValue();
+				successfulSskOfferReplyBytes = successfulSskOfferReplyBytesReceivedAverage.currentValue();
+			}
+		}
+		final boolean input;
+		final double successfulChkFetchBytes;
+		final double successfulSskFetchBytes;
+		final double successfulChkInsertBytes;
+		final double successfulSskInsertBytes;
+		final double localChkFetchBytes;
+		final double localSskFetchBytes;
+		final double localChkInsertBytes;
+		final double localSskInsertBytes;
+		final double successfulChkOfferReplyBytes;
+		final double successfulSskOfferReplyBytes;
+
+	}
+	
 	/* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert) {
 		if(logMINOR) dumpByteCostAverages();
@@ -770,29 +813,31 @@ public class NodeStats implements Persistable {
 		
 		double bandwidthAvailableOutputLowerLimit = bandwidthAvailableOutputUpperLimit / 2;
 		
+		ByteCountersSnapshot byteCountersSent = new ByteCountersSnapshot(false);
+		
 		double bandwidthLiabilityOutput;
 		if(ignoreLocalVsRemoteBandwidthLiability) {
 			bandwidthLiabilityOutput = 
-				successfulChkFetchBytesSentAverage.currentValue() * (numRemoteCHKRequests + numLocalCHKRequests) +
-				successfulSskFetchBytesSentAverage.currentValue() * (numRemoteSSKRequests + numLocalSSKRequests) +
-				successfulChkInsertBytesSentAverage.currentValue() * (numRemoteCHKInserts + numLocalCHKInserts) +
-				successfulSskInsertBytesSentAverage.currentValue() * (numRemoteSSKInserts + numLocalSSKInserts);
+				byteCountersSent.successfulChkFetchBytes * (numRemoteCHKRequests + numLocalCHKRequests) +
+				byteCountersSent.successfulSskFetchBytes * (numRemoteSSKRequests + numLocalSSKRequests) +
+				byteCountersSent.successfulChkInsertBytes * (numRemoteCHKInserts + numLocalCHKInserts) +
+				byteCountersSent.successfulSskInsertBytes * (numRemoteSSKInserts + numLocalSSKInserts);
 		} else {
 		bandwidthLiabilityOutput =
-			successfulChkFetchBytesSentAverage.currentValue() * numRemoteCHKRequests +
+			byteCountersSent.successfulChkFetchBytes * numRemoteCHKRequests +
 			// Local requests don't relay data, so use the local average
-			localChkFetchBytesSentAverage.currentValue() * numLocalCHKRequests +
-			successfulSskFetchBytesSentAverage.currentValue() * numRemoteSSKRequests +
+			byteCountersSent.localChkFetchBytes * numLocalCHKRequests +
+			byteCountersSent.successfulSskFetchBytes * numRemoteSSKRequests +
 			// Local requests don't relay data, so use the local average
-			localSskFetchBytesSentAverage.currentValue() * numLocalSSKRequests +
+			byteCountersSent.localSskFetchBytes * numLocalSSKRequests +
 			// Inserts are the same for remote as local for sent bytes
-			successfulChkInsertBytesSentAverage.currentValue() * numRemoteCHKInserts +
-			successfulChkInsertBytesSentAverage.currentValue() * numLocalCHKInserts +
+			byteCountersSent.successfulChkInsertBytes * numRemoteCHKInserts +
+			byteCountersSent.successfulChkInsertBytes * numLocalCHKInserts +
 			// Inserts are the same for remote as local for sent bytes
-			successfulSskInsertBytesSentAverage.currentValue() * numRemoteSSKInserts +
-			successfulSskInsertBytesSentAverage.currentValue() * numLocalSSKInserts +
-			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
-			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
+			byteCountersSent.successfulSskInsertBytes * numRemoteSSKInserts +
+			byteCountersSent.successfulSskInsertBytes * numLocalSSKInserts +
+			byteCountersSent.successfulChkOfferReplyBytes * numCHKOfferReplies +
+			byteCountersSent.successfulSskOfferReplyBytes * numSSKOfferReplies;
 		}
 		
 		// If over the upper limit, reject.
@@ -827,7 +872,7 @@ public class NodeStats implements Persistable {
 				}
 			}
 			
-			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply);
+			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent);
 			if(peerUsedBytes > thisAllocation) {
 				rejected("Output bandwidth liability: fairness between peers", isLocal);
 				return "Output bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
@@ -1073,7 +1118,7 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 	
-	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply) {
+	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters) {
 		int numLocalCHKRequests = node.countRequests(source, true, false, false, false);
 		int numLocalSSKRequests = node.countRequests(source, true, true, false, false);
 		int numLocalCHKInserts = node.countRequests(source, true, false, true, false);
@@ -1106,26 +1151,26 @@ public class NodeStats implements Persistable {
 		
 		if(ignoreLocalVsRemoteBandwidthLiability) {
 			return
-				successfulChkFetchBytesSentAverage.currentValue() * (numRemoteCHKRequests + numLocalCHKRequests) +
-				successfulSskFetchBytesSentAverage.currentValue() * (numRemoteSSKRequests + numLocalSSKRequests) +
-				successfulChkInsertBytesSentAverage.currentValue() * (numRemoteCHKInserts + numLocalCHKInserts) +
-				successfulSskInsertBytesSentAverage.currentValue() * (numRemoteSSKInserts + numLocalSSKInserts);
+			byteCounters.successfulChkFetchBytes * (numRemoteCHKRequests + numLocalCHKRequests) +
+			byteCounters.successfulSskFetchBytes * (numRemoteSSKRequests + numLocalSSKRequests) +
+			byteCounters.successfulChkInsertBytes * (numRemoteCHKInserts + numLocalCHKInserts) +
+			byteCounters.successfulSskInsertBytes * (numRemoteSSKInserts + numLocalSSKInserts);
 		} else {
 			return
-			successfulChkFetchBytesSentAverage.currentValue() * numRemoteCHKRequests +
+			byteCounters.successfulChkFetchBytes * numRemoteCHKRequests +
 			// Local requests don't relay data, so use the local average
-			localChkFetchBytesSentAverage.currentValue() * numLocalCHKRequests +
-			successfulSskFetchBytesSentAverage.currentValue() * numRemoteSSKRequests +
+			byteCounters.localChkFetchBytes * numLocalCHKRequests +
+			byteCounters.successfulSskFetchBytes * numRemoteSSKRequests +
 			// Local requests don't relay data, so use the local average
-			localSskFetchBytesSentAverage.currentValue() * numLocalSSKRequests +
+			byteCounters.localSskFetchBytes * numLocalSSKRequests +
 			// Inserts are the same for remote as local for sent bytes
-			successfulChkInsertBytesSentAverage.currentValue() * numRemoteCHKInserts +
-			successfulChkInsertBytesSentAverage.currentValue() * numLocalCHKInserts +
+			byteCounters.successfulChkInsertBytes * numRemoteCHKInserts +
+			byteCounters.successfulChkInsertBytes * numLocalCHKInserts +
 			// Inserts are the same for remote as local for sent bytes
-			successfulSskInsertBytesSentAverage.currentValue() * numRemoteSSKInserts +
-			successfulSskInsertBytesSentAverage.currentValue() * numLocalSSKInserts +
-			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
-			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
+			byteCounters.successfulSskInsertBytes * numRemoteSSKInserts +
+			byteCounters.successfulSskInsertBytes * numLocalSSKInserts +
+			byteCounters.successfulChkOfferReplyBytes * numCHKOfferReplies +
+			byteCounters.successfulSskOfferReplyBytes * numSSKOfferReplies;
 		}
 	}
 
