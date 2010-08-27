@@ -275,7 +275,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
 		boolean isSSK = key instanceof NodeSSK;
-		OfferReplyTag tag = new OfferReplyTag(isSSK);
+		OfferReplyTag tag = new OfferReplyTag(isSSK, source);
 		node.lockUID(uid, isSSK, false, true, false, tag);
 		boolean needPubKey;
 		try {
@@ -369,7 +369,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
         short htl = m.getShort(DMT.HTL);
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
-        final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE);
+        final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source);
 		if(!node.lockUID(id, isSSK, false, false, false, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
@@ -427,7 +427,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		}
-		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE);
+		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source);
 		if(!node.lockUID(id, isSSK, true, false, false, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);

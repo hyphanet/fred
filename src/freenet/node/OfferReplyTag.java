@@ -11,8 +11,8 @@ public class OfferReplyTag extends UIDTag {
 
 	final boolean ssk;
 	
-	public OfferReplyTag(boolean isSSK) {
-		super();
+	public OfferReplyTag(boolean isSSK, PeerNode source) {
+		super(source);
 		ssk = isSSK;
 	}
 
