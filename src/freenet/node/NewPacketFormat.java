@@ -391,7 +391,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		packet.setSequenceNumber(getSequenceNumber());
 
-		int paddedLen = packet.getLength() + HMAC_LENGHT;
+		int paddedLen = packet.getLength() + HMAC_LENGTH;
 		if(pn.crypto.config.paddDataPackets()) {
 			int packetLength = paddedLen;
 			if(logMINOR) Logger.minor(this, "Pre-padding length: " + packetLength);
