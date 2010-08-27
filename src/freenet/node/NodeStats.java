@@ -595,20 +595,53 @@ public class NodeStats implements Persistable {
 	 * a request. */
 	public class PeerLoadStats {
 		
-		PeerNode peer;
+		final PeerNode peer;
 		/** These do not include those from the peer */
-		int numOtherCHKRequests;
-		int numOtherSSKRequests;
-		int numOtherCHKInserts;
-		int numOtherSSKInserts;
-		int numOtherCHKOffered;
-		int numOtherSSKOffered;
-		double outputBandwidthLowerLimit;
-		double outputBandwidthUpperLimit;
-		double outputBandwidthPeerLimit;
-		double inputBandwidthLowerLimit;
-		double inputBandwidthUpperLimit;
-		double inputBandwidthPeerLimit;
+		final int numOtherCHKRequests;
+		final int numOtherSSKRequests;
+		final int numOtherCHKInserts;
+		final int numOtherSSKInserts;
+		final int numOtherCHKOffered;
+		final int numOtherSSKOffered;
+		final double outputBandwidthLowerLimit;
+		final double outputBandwidthUpperLimit;
+		final double outputBandwidthPeerLimit;
+		final double inputBandwidthLowerLimit;
+		final double inputBandwidthUpperLimit;
+		final double inputBandwidthPeerLimit;
+		
+		public PeerLoadStats(PeerNode peer) {
+			this.peer = peer;
+			long[] total = node.collector.getTotalIO();
+			long totalSent = total[0];
+			long totalOverhead = getSentOverhead();
+			long uptime = node.getUptime();
+			/** The fraction of output bytes which are used for requests */
+			// FIXME consider using a shorter average
+			// FIXME what happens when the bwlimit changes?
+			
+			long now = System.currentTimeMillis();
+			
+			double nonOverheadFraction = getNonOverheadFraction(totalSent, totalOverhead, uptime, now);
+			
+			outputBandwidthUpperLimit = getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, BANDWIDTH_LIABILITY_LIMIT_SECONDS, nonOverheadFraction);
+			outputBandwidthLowerLimit = outputBandwidthUpperLimit / 2;
+			
+			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(BANDWIDTH_LIABILITY_LIMIT_SECONDS);
+			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
+			
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit);
+			
+			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node);
+			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer);
+			numOtherCHKRequests = runningGlobal.numRemoteCHKRequests + runningGlobal.numLocalCHKRequests - (runningLocal.numRemoteCHKRequests + runningLocal.numLocalCHKRequests);
+			numOtherSSKRequests = runningGlobal.numRemoteSSKRequests + runningGlobal.numLocalSSKRequests - (runningLocal.numRemoteSSKRequests + runningLocal.numLocalSSKRequests);
+			numOtherCHKInserts = runningGlobal.numRemoteCHKInserts + runningGlobal.numLocalCHKInserts - (runningLocal.numRemoteCHKInserts + runningLocal.numLocalCHKInserts);
+			numOtherSSKInserts = runningGlobal.numRemoteSSKInserts + runningGlobal.numLocalSSKInserts - (runningLocal.numRemoteSSKInserts + runningLocal.numLocalSSKInserts);
+			numOtherCHKOffered = runningGlobal.numCHKOfferReplies - runningLocal.numCHKOfferReplies;
+			numOtherSSKOffered = runningGlobal.numSSKOfferReplies - runningLocal.numSSKOfferReplies;
+		}
 		
 	}
 	
@@ -970,24 +1003,7 @@ public class NodeStats implements Persistable {
 			
 			// Fair sharing between peers.
 			
-			int peers = node.peers.countConnectedPeers();
-			
-			double thisAllocation;
-			
-			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-			if(RequestStarter.LOCAL_REQUESTS_COMPETE_FAIRLY) {
-				thisAllocation = bandwidthAvailableOutputLowerLimit / (peers + 1);
-			} else {
-				double totalAllocation = bandwidthAvailableOutputLowerLimit;
-				// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
-				double localAllocation = totalAllocation * 0.5;
-				if(source == null)
-					thisAllocation = localAllocation;
-				else {
-					totalAllocation -= localAllocation;
-					thisAllocation = totalAllocation / peers;
-				}
-			}
+			double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit);
 			
 			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent);
 			if(peerUsedBytes > thisAllocation) {
@@ -1027,6 +1043,31 @@ public class NodeStats implements Persistable {
 			
 		}
 		return null;
+	}
+
+	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit) {
+		
+		int peers = node.peers.countConnectedPeers();
+		
+		double thisAllocation;
+		
+		// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
+		if(RequestStarter.LOCAL_REQUESTS_COMPETE_FAIRLY) {
+			thisAllocation = bandwidthAvailableOutputLowerLimit / (peers + 1);
+		} else {
+			double totalAllocation = bandwidthAvailableOutputLowerLimit;
+			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
+			double localAllocation = totalAllocation * 0.5;
+			if(source == null)
+				thisAllocation = localAllocation;
+			else {
+				totalAllocation -= localAllocation;
+				thisAllocation = totalAllocation / peers;
+			}
+		}
+		
+		return thisAllocation;
+		
 	}
 
 	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters) {
