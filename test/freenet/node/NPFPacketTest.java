@@ -216,7 +216,7 @@ public class NPFPacketTest extends TestCase {
 		NPFPacket r = NPFPacket.create(packet);
 		assertFalse(r.getError());
 		assertEquals(1, r.getFragments().size());
-		
+
 		MessageFragment f = r.getFragments().get(0);
 		assertEquals(0, f.fragmentLength);
 		assertEquals(0, f.fragmentData.length);

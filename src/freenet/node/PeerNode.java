@@ -2076,7 +2076,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			node.peers.addConnectedPeer(this);
 			maybeOnConnect();
 		}
-		
+
 		if(!wasARekey) {
 			if(negType != 5) {
 				packetFormat = new FNPWrapper(this);

@@ -111,7 +111,7 @@ public class NewPacketFormat implements PacketFormat {
 		pn.verified(s);
 
 		if(packet.getAcks().size() > 0) pn.getThrottle().notifyOfPacketAcknowledged();
-		
+
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet);
 		for(byte[] buffer : finished) {
 			processFullyReceived(buffer);
@@ -235,7 +235,7 @@ public class NewPacketFormat implements PacketFormat {
 		if(!dontAck) {
 			synchronized(acks) {
 				acks.add(packet.getSequenceNumber());
-                        }
+			}
 		}
 
 
@@ -356,7 +356,7 @@ public class NewPacketFormat implements PacketFormat {
 		seqNumBytes[2] = (byte) (seqNum >>> 8);
 		seqNumBytes[3] = (byte) (seqNum);
 		seqNum++;
-		
+
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
 		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
@@ -366,7 +366,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		PCFBMode cipher = PCFBMode.create(sessionKey.sessionCipher, IV);
 		cipher.blockEncipher(seqNumBytes, 0, seqNumBytes.length);
-		
+
 		return seqNumBytes;
 	}
 
@@ -408,7 +408,7 @@ public class NewPacketFormat implements PacketFormat {
 		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
 		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
 		System.arraycopy(data, HMAC_LENGTH, IV, IV.length - 4, 4);
-		
+
 		ivCipher.encipher(IV, IV);
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
@@ -434,12 +434,12 @@ public class NewPacketFormat implements PacketFormat {
 				                + data.length + " bytes) with fragments " + fragments + " and "
 				                + packet.getAcks().size() + " acks");
 			}
-	                pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
-                } catch (LocalAddressException e) {
-	                Logger.error(this, "Caught exception while sending packet", e);
+			pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
+		} catch (LocalAddressException e) {
+			Logger.error(this, "Caught exception while sending packet", e);
 			return false;
-                }
-		
+		}
+
 		if(packet.getFragments().size() != 0) {
 			SentPacket sentPacket = new SentPacket(this);
 			sentPacket.sent();

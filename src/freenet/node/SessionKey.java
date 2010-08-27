@@ -32,7 +32,7 @@ public class SessionKey {
 	public final BlockCipher ivCipher;
 	public final byte[] ivNonce;
 	public final byte[] hmacKey;
-	
+
 	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher cipher, byte[] sessionKey,
 	                BlockCipher ivCipher, byte[] ivNonce, byte[] hmacKey) {
 		this.pn = parent;

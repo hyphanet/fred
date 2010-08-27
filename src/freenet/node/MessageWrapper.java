@@ -7,7 +7,7 @@ public class MessageWrapper {
 	private final MessageItem item;
 	private final boolean isShortMessage;
 	private final int messageID;
-	
+
 	//Sorted lists of non-overlapping ranges
 	private final SparseBitmap acks = new SparseBitmap();
 	private final SparseBitmap sent = new SparseBitmap();
@@ -106,7 +106,7 @@ public class MessageWrapper {
 		int end = Integer.MAX_VALUE;
 
 		synchronized(sent) {
-	                for(int[] range : sent) {
+			for(int[] range : sent) {
 				if(range[0] == start) {
 					start = range[1] + 1;
 				} else if (range[0] - start > 0) {
@@ -118,7 +118,7 @@ public class MessageWrapper {
 		if(start >= item.buf.length) {
 			return null;
 		}
-		
+
 		int dataLength = maxLength
 		                - 2 //Message id + flags
 		                - (isShortMessage ? 1 : 2); //Fragment length
@@ -126,7 +126,7 @@ public class MessageWrapper {
 		if(isFragmented(dataLength)) {
 			dataLength -= (isShortMessage ? 1 : 3); //Message length / fragment offset
 		}
-		
+
 		dataLength = Math.min(end - start, dataLength);
 		dataLength = Math.min(item.buf.length - start, dataLength);
 		if(dataLength <= 0) return null;
@@ -139,7 +139,7 @@ public class MessageWrapper {
 		boolean isFragmented = !((start == 0) && (dataLength == item.buf.length));
 		return new MessageFragment(isShortMessage, isFragmented, start == 0, messageID, dataLength,
 		                item.buf.length, start, fragmentData, this);
-        }
+	}
 
 	public void onDisconnect() {
 		item.onDisconnect();

@@ -42,32 +42,32 @@ public class NewPacketFormatTest extends TestCase {
 		fragment1.setSequenceNumber(0);
 		assertEquals(1, fragment1.getFragments().size());
 		receiver.handleDecryptedPacket(fragment1);
-		
+
 		NPFPacket fragment2 = sender.createPacket(512, senderQueue);
 		fragment2.setSequenceNumber(1);
 		assertEquals(1, fragment2.getFragments().size());
 		receiver.handleDecryptedPacket(fragment2);
-		
+
 		NPFPacket ack1 = receiver.createPacket(512, receiverQueue);
 		ack1.setSequenceNumber(0);
 		assertEquals(2, ack1.getAcks().size());
 		sender.handleDecryptedPacket(ack1);
-		
+
 		NPFPacket fragment3 = sender.createPacket(512, senderQueue);
 		fragment3.setSequenceNumber(2);
 		assertEquals(1, fragment3.getFragments().size());
 		receiver.handleDecryptedPacket(fragment3);
 		receiver.createPacket(512, senderQueue); //Sent, but lost
-		
+
 		try {
-			Thread.sleep(1000); //RTT should be small 
+			Thread.sleep(1000); //RTT should be small
 		} catch (InterruptedException e) { fail(); }
-		
+
 		NPFPacket resend1 = sender.createPacket(512, senderQueue);
 		if(resend1 == null) fail("No packet to resend");
 		resend1.setSequenceNumber(3);
 		assertEquals(0, receiver.handleDecryptedPacket(resend1).size());
-		
+
 		//Make sure an ack is sent
 		NPFPacket ack2 = receiver.createPacket(512, receiverQueue);
 		ack2.setSequenceNumber(2);
@@ -96,7 +96,7 @@ public class NewPacketFormatTest extends TestCase {
 		NPFPacket fragment3 = sender.createPacket(512, senderQueue);
 		fragment3.setSequenceNumber(3);
 		assertEquals(1, fragment3.getFragments().size());
-		
+
 		receiver.handleDecryptedPacket(fragment1);
 		receiver.handleDecryptedPacket(fragment3);
 		assertEquals(1, receiver.handleDecryptedPacket(fragment2).size());
@@ -121,7 +121,7 @@ public class NewPacketFormatTest extends TestCase {
 		NPFPacket fragment3 = sender.createPacket(512, senderQueue);
 		fragment3.setSequenceNumber(3);
 		assertEquals(1, fragment3.getFragments().size());
-		
+
 		receiver.handleDecryptedPacket(fragment3);
 		receiver.handleDecryptedPacket(fragment2);
 		assertEquals(1, receiver.handleDecryptedPacket(fragment1).size());
