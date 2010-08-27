@@ -809,37 +809,33 @@ public class NodeStats implements Persistable {
 			}
 			
 			// Fair sharing between request types.
-			// The old mechanism interferes with fair sharing between peers, so we implement fair sharing between request types similarly to between peers.
-			// If we are overall below the lower limit, we allow any number of each type.
-			// But if we are overall above the lower limit, we only allow any given type to have its fair share of the lower limit.
-			// Hence we allow some burstiness for single types or peers, but not too much.
-			double perGroup = 
-				successfulChkFetchBytesSentAverage.currentValue() +
-				successfulSskFetchBytesSentAverage.currentValue() +
-				successfulChkInsertBytesSentAverage.currentValue() +
-				successfulSskInsertBytesSentAverage.currentValue();
+			// The old mechanism incremented each request type, so that we would only accept
+			// a request of a given type if there was enough space for one of each type without exceeding the limit.
+			// I suspect this didn't do anything, since it's effectively just a lower limit, resulting in the smallest 
+			// requests continuing to be largely accepted and largely exclude the larger ones.
+			// Also the old mechanism wasn't compatible with fair sharing between peers anyway.
 			
-			int threshold = (int)Math.ceil(bandwidthAvailableOutputLowerLimit / perGroup);
+			// So lets do something different. Reject if the given type is using 75%+ of the upper limit.
 			
-			int current;
+			double typeUsed;
 			
 			if(isInsert) {
 				if(isSSK) {
-					current = numRemoteSSKInserts + numLocalSSKInserts;
+					typeUsed = (numRemoteSSKInserts + numLocalSSKInserts) * successfulSskInsertBytesSentAverage.currentValue();
 				} else {
-					current = numRemoteCHKInserts + numLocalCHKInserts;
+					typeUsed = (numRemoteCHKInserts + numLocalCHKInserts) * successfulChkInsertBytesSentAverage.currentValue();
 				}
 			} else {
 				if(isSSK) {
-					current = numRemoteSSKRequests + numLocalSSKRequests;
+					typeUsed = (numRemoteSSKRequests + numLocalSSKRequests) * successfulSskFetchBytesSentAverage.currentValue();
 				} else {
-					current = numRemoteCHKRequests + numLocalCHKRequests;
+					typeUsed = (numRemoteCHKRequests + numLocalCHKRequests) * successfulChkFetchBytesSentAverage.currentValue();
 				}
 			}
 			
-			if(current > threshold) {
+			if(typeUsed > 0.75 * bandwidthAvailableOutputUpperLimit) {
 				rejected("Output bandwidth liability: fairness between types", isLocal);
-				return "Output bandwidth liability: fairness between types for "+(isSSK?"SSK":"CHK")+" "+(isInsert?"insert":"request"+" (running "+current+" threshold "+threshold+")");
+				return "Output bandwidth liability: fairness between types for "+(isSSK?"SSK":"CHK")+" "+(isInsert?"insert":"request"+" (running "+typeUsed+" threshold 75% of "+bandwidthAvailableOutputUpperLimit+")");
 			}
 			
 		}
