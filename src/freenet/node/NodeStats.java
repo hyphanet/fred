@@ -688,32 +688,21 @@ public class NodeStats implements Persistable {
 		// Successful cluster timeout protection.
 		// Reject request if the result of all our current requests completing simultaneously would be that
 		// some of them timeout.
-
-		// Never reject a CHK and accept an SSK. Because if we do that, we would be constantly accepting SSKs, as there
-		// would never be enough space for a CHK. So we add 1 to each type of request's count before computing the
-		// bandwidth liability. Thus, if we have exactly enough space for 1 SSK and 1 CHK, we can accept either, and
-		// when one of either type completes, we can accept one of either type again: We never let SSKs drain the
-		// "bucket" and block CHKs.
-
-		int numLocalCHKRequests = node.getNumLocalCHKRequests() + 1;
-		int numLocalSSKRequests = node.getNumLocalSSKRequests() + 1;
-		int numLocalCHKInserts = node.getNumLocalCHKInserts() + 1;
-		int numLocalSSKInserts = node.getNumLocalSSKInserts() + 1;
-		int numRemoteCHKRequests = node.getNumRemoteCHKRequests() + 1;
-		int numRemoteSSKRequests = node.getNumRemoteSSKRequests() + 1;
-		int numRemoteCHKInserts = node.getNumRemoteCHKInserts() + 1;
-		int numRemoteSSKInserts = node.getNumRemoteSSKInserts() + 1;
-		int numCHKOfferReplies = node.getNumCHKOfferReplies() + 1;
-		int numSSKOfferReplies = node.getNumSSKOfferReplies() + 1;
-
+		
+		int numLocalCHKRequests = node.getNumLocalCHKRequests();
+		int numLocalSSKRequests = node.getNumLocalSSKRequests();
+		int numLocalCHKInserts = node.getNumLocalCHKInserts();
+		int numLocalSSKInserts = node.getNumLocalSSKInserts();
+		int numRemoteCHKRequests = node.getNumRemoteCHKRequests();
+		int numRemoteSSKRequests = node.getNumRemoteSSKRequests();
+		int numRemoteCHKInserts = node.getNumRemoteCHKInserts();
+		int numRemoteSSKInserts = node.getNumRemoteSSKInserts();
+		int numCHKOfferReplies = node.getNumCHKOfferReplies();
+		int numSSKOfferReplies = node.getNumSSKOfferReplies();
+		
 		if(!isLocal) {
 			// If not local, is already locked.
 			// So we need to decrement the relevant value, to counteract this and restore the SSK:CHK balance.
-
-			// FIXME this is really a hack.
-			// We should track the number of requests of each type we've accepted recently, and if there is not
-			// enough space for 1 of each type, accept according to a target ratio.
-			// This would be 1/1/1/1 initially, but if preferInsert is set, maybe 1/1/2/2 or 1/1/3/3.
 			if(isOfferReply) {
 				if(isSSK) numSSKOfferReplies--;
 				else numCHKOfferReplies--;
@@ -750,23 +739,19 @@ public class NodeStats implements Persistable {
 		// and we don't accept any requests because of that, so it remains that way...
 		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
 		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
-
-		double bandwidthAvailableOutput = outputAvailablePerSecond * limit;
+		
+		double bandwidthAvailableOutputUpperLimit = outputAvailablePerSecond * limit;
 		// 90 seconds at full power; we have to leave some time for the search as well
-
-		if(preferInsert) {
-			// Allow some extra inserts.
-			numRemoteCHKInserts--;
-			numRemoteSSKInserts--;
-		}
-
+		
+		double bandwidthAvailableOutputLowerLimit = bandwidthAvailableOutputUpperLimit / 2;
+		
 		double bandwidthLiabilityOutput;
 		if(ignoreLocalVsRemoteBandwidthLiability) {
-			bandwidthLiabilityOutput =
-				successfulChkFetchBytesSentAverage.currentValue() * (numRemoteCHKRequests + numLocalCHKRequests - 1) +
-				successfulSskFetchBytesSentAverage.currentValue() * (numRemoteSSKRequests + numLocalSSKRequests - 1) +
-				successfulChkInsertBytesSentAverage.currentValue() * (numRemoteCHKInserts + numLocalCHKInserts - 1) +
-				successfulSskInsertBytesSentAverage.currentValue() * (numRemoteSSKInserts + numLocalSSKInserts - 1);
+			bandwidthLiabilityOutput = 
+				successfulChkFetchBytesSentAverage.currentValue() * (numRemoteCHKRequests + numLocalCHKRequests) +
+				successfulSskFetchBytesSentAverage.currentValue() * (numRemoteSSKRequests + numLocalSSKRequests) +
+				successfulChkInsertBytesSentAverage.currentValue() * (numRemoteCHKInserts + numLocalCHKInserts) +
+				successfulSskInsertBytesSentAverage.currentValue() * (numRemoteSSKInserts + numLocalSSKInserts);
 		} else {
 		bandwidthLiabilityOutput =
 			successfulChkFetchBytesSentAverage.currentValue() * numRemoteCHKRequests +
@@ -784,11 +769,79 @@ public class NodeStats implements Persistable {
 			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
 			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
 		}
-		if(logMINOR) Logger.minor(this, "90 second limit: "+bandwidthAvailableOutput+" expected output liability: "+bandwidthLiabilityOutput);
-		if(bandwidthLiabilityOutput > bandwidthAvailableOutput) {
+		
+		// If over the upper limit, reject.
+		
+		if(logMINOR) Logger.minor(this, "90 second limit: "+bandwidthAvailableOutputUpperLimit+" expected output liability: "+bandwidthLiabilityOutput);
+		if(bandwidthLiabilityOutput > bandwidthAvailableOutputUpperLimit) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Output bandwidth liability", isLocal);
-			return "Output bandwidth liability ("+bandwidthLiabilityOutput+" > "+bandwidthAvailableOutput+")";
+			return "Output bandwidth liability ("+bandwidthLiabilityOutput+" > "+bandwidthAvailableOutputUpperLimit+")";
+		}
+		
+		if(bandwidthLiabilityOutput > bandwidthAvailableOutputLowerLimit) {
+			
+			// Fair sharing between peers.
+			
+			int peers = node.peers.countConnectedPeers();
+			
+			double thisAllocation;
+			
+			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
+			if(RequestStarter.LOCAL_REQUESTS_COMPETE_FAIRLY) {
+				thisAllocation = bandwidthAvailableOutputLowerLimit / (peers + 1);
+			} else {
+				double totalAllocation = bandwidthAvailableOutputLowerLimit;
+				// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
+				double localAllocation = totalAllocation * 0.5;
+				if(source == null)
+					thisAllocation = localAllocation;
+				else {
+					totalAllocation -= localAllocation;
+					thisAllocation = totalAllocation / peers;
+				}
+			}
+			
+			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply);
+			if(peerUsedBytes > thisAllocation) {
+				rejected("Output bandwidth liability: fairness between peers", isLocal);
+				return "Output bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
+			}
+			
+			// Fair sharing between request types.
+			// The old mechanism interferes with fair sharing between peers, so we implement fair sharing between request types similarly to between peers.
+			// If we are overall below the lower limit, we allow any number of each type.
+			// But if we are overall above the lower limit, we only allow any given type to have its fair share of the lower limit.
+			// Hence we allow some burstiness for single types or peers, but not too much.
+			double perGroup = 
+				successfulChkFetchBytesSentAverage.currentValue() +
+				successfulSskFetchBytesSentAverage.currentValue() +
+				successfulChkInsertBytesSentAverage.currentValue() +
+				successfulSskInsertBytesSentAverage.currentValue();
+			
+			int threshold = (int)Math.ceil(bandwidthAvailableOutputLowerLimit / perGroup);
+			
+			int current;
+			
+			if(isInsert) {
+				if(isSSK) {
+					current = numRemoteSSKInserts + numLocalSSKInserts;
+				} else {
+					current = numRemoteCHKInserts + numLocalCHKInserts;
+				}
+			} else {
+				if(isSSK) {
+					current = numRemoteSSKRequests + numLocalSSKRequests;
+				} else {
+					current = numRemoteCHKRequests + numLocalCHKRequests;
+				}
+			}
+			
+			if(current > threshold) {
+				rejected("Output bandwidth liability: fairness between types", isLocal);
+				return "Output bandwidth liability: fairness between types for "+(isSSK?"SSK":"CHK")+" "+(isInsert?"insert":"request"+" (running "+current+" threshold "+threshold+")");
+			}
+			
 		}
 
 		double bandwidthLiabilityInput;
@@ -997,6 +1050,62 @@ public class NodeStats implements Persistable {
 
 		// Accept
 		return null;
+	}
+	
+	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply) {
+		int numLocalCHKRequests = node.countRequests(source, true, false, false, false);
+		int numLocalSSKRequests = node.countRequests(source, true, true, false, false);
+		int numLocalCHKInserts = node.countRequests(source, true, false, true, false);
+		int numLocalSSKInserts = node.countRequests(source, true, true, true, false);
+		int numRemoteCHKRequests = node.countRequests(source, false, false, false, false);
+		int numRemoteSSKRequests = node.countRequests(source, false, true, false, false);
+		int numRemoteCHKInserts = node.countRequests(source, false, false, true, false);
+		int numRemoteSSKInserts = node.countRequests(source, false, true, true, false);
+		int numCHKOfferReplies = node.countRequests(source, false, false, false, true);
+		int numSSKOfferReplies = node.countRequests(source, false, true, false, true);
+		
+		if(source != null) {
+			// If not local, is already locked.
+			// So we need to decrement the relevant value, to counteract this and restore the SSK:CHK balance.
+			if(isOfferReply) {
+				if(isSSK) numSSKOfferReplies--;
+				else numCHKOfferReplies--;
+			} else {
+				if(isInsert) {
+					if(isSSK) numRemoteSSKInserts--;
+					else numRemoteCHKInserts--;
+				} else {
+					if(isSSK) numRemoteSSKRequests--;
+					else numRemoteCHKRequests--;
+				}
+			}
+		}
+		
+		// FIXME pass in the averages for consistency and speed
+		
+		if(ignoreLocalVsRemoteBandwidthLiability) {
+			return
+				successfulChkFetchBytesSentAverage.currentValue() * (numRemoteCHKRequests + numLocalCHKRequests) +
+				successfulSskFetchBytesSentAverage.currentValue() * (numRemoteSSKRequests + numLocalSSKRequests) +
+				successfulChkInsertBytesSentAverage.currentValue() * (numRemoteCHKInserts + numLocalCHKInserts) +
+				successfulSskInsertBytesSentAverage.currentValue() * (numRemoteSSKInserts + numLocalSSKInserts);
+		} else {
+			return
+			successfulChkFetchBytesSentAverage.currentValue() * numRemoteCHKRequests +
+			// Local requests don't relay data, so use the local average
+			localChkFetchBytesSentAverage.currentValue() * numLocalCHKRequests +
+			successfulSskFetchBytesSentAverage.currentValue() * numRemoteSSKRequests +
+			// Local requests don't relay data, so use the local average
+			localSskFetchBytesSentAverage.currentValue() * numLocalSSKRequests +
+			// Inserts are the same for remote as local for sent bytes
+			successfulChkInsertBytesSentAverage.currentValue() * numRemoteCHKInserts +
+			successfulChkInsertBytesSentAverage.currentValue() * numLocalCHKInserts +
+			// Inserts are the same for remote as local for sent bytes
+			successfulSskInsertBytesSentAverage.currentValue() * numRemoteSSKInserts +
+			successfulSskInsertBytesSentAverage.currentValue() * numLocalSSKInserts +
+			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
+			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
+		}
 	}
 
 	/** @return True if we should reject the request.

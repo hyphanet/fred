@@ -9,9 +9,15 @@ package freenet.node;
 public abstract class UIDTag {
 	
 	final long createdTime;
+	// FIXME weak reference? purge on drop?
+	// weak reference has the disadvantage that if it's cleared it would be counted as local?
+	// Maybe we could compare to the local vs remote on the subclass?
+	// in theory when disconnect we will remove it anyway, so i guess it's not a big deal?
+	final PeerNode source;
 	
-	UIDTag() {
+	UIDTag(PeerNode source) {
 		createdTime = System.currentTimeMillis();
+		this.source = source;
 	}
 
 	public abstract void logStillPresent(Long uid);

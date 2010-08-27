@@ -19,8 +19,8 @@ public class InsertTag extends UIDTag {
 	START start;
 	private Throwable handlerThrew;
 	
-	InsertTag(boolean ssk, START start) {
-		super();
+	InsertTag(boolean ssk, START start, PeerNode source) {
+		super(source);
 		this.start = start;
 		this.ssk = ssk;
 	}

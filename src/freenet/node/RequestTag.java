@@ -30,8 +30,8 @@ public class RequestTag extends UIDTag {
 	String abortedDownstreamDesc;
 	boolean handlerDisconnected;
 
-	public RequestTag(boolean isSSK, START start) {
-		super();
+	public RequestTag(boolean isSSK, START start, PeerNode source) {
+		super(source);
 		this.start = start;
 		this.isSSK = isSSK;
 	}

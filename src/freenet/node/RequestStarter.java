@@ -59,7 +59,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
 	/** If true, local requests are subject to shouldRejectRequest(). If false, they are only subject to the token
 	 * buckets and the thread limit. FIXME make configurable. */
-	private static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
+	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
 	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));

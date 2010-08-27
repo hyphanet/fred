@@ -4539,6 +4539,35 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
+	public synchronized int countRequests(boolean local, boolean ssk, boolean insert, boolean offer) {
+		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
+		return map.size();
+	}
+	
+	public synchronized int countRequests(PeerNode source, boolean local, boolean ssk, boolean insert, boolean offer) {
+		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
+		if((source == null) != local) return 0;
+		if(source == null) return map.size();
+		else {
+			int count = 0;
+			for(UIDTag tag : map.values()) {
+				if(tag.source == source) count++;
+			}
+			return count;
+		}
+	}
+	
+	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
+			boolean insert, boolean offer) {
+		if(offer)
+			return getOfferTracker(ssk);
+		else if(insert)
+			return getInsertTracker(ssk, local);
+		else
+			return getRequestTracker(ssk, local);
+	}
+
+
 	private HashMap<Long, RequestTag> getRequestTracker(boolean ssk, boolean local) {
 		if(ssk) {
 			return local ? runningLocalSSKGetUIDs : runningSSKGetUIDs;
