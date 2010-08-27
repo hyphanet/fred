@@ -846,7 +846,7 @@ public class NodeStats implements Persistable {
 		
 		ByteCountersSnapshot byteCountersReceived = new ByteCountersSnapshot(true);
 		
-		ret = checkBandwidthLiability(node.getInputBandwidthLimit() * limit, byteCountersReceived, requestsSnapshot, true, limit,
+		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), byteCountersReceived, requestsSnapshot, true, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply);  
 		if(ret != null) return ret;
 		
@@ -893,6 +893,10 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 	
+	private double getInputBandwidthUpperLimit(long limit) {
+		return node.getInputBandwidthLimit() * limit;
+	}
+
 	private double getNonOverheadFraction(long totalSent, long totalOverhead,
 			long uptime, long now) {
 		
