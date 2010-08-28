@@ -4445,7 +4445,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			else
 				lastSentAllocationOutput = thisAllocation;
 			countAllocationNotices++;
-			if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this);
+			if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+thisAllocation+" for "+input);
 		}
 		PeerLoadStats stats = node.nodeStats.createPeerLoadStats(this);
 		Message msg = DMT.createFNPPeerLoadStatus(stats);
@@ -4454,6 +4454,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		} catch (NotConnectedException e) {
 			// Ignore
 		}
+	}
+
+	public void reportLoadStatus(PeerLoadStats stat) {
+		if(logMINOR) Logger.minor(this, "Got load status : "+stat);
+		// TODO Auto-generated method stub
 	}
 
 }

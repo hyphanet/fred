@@ -18,6 +18,7 @@ import freenet.io.comm.Peer;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
+import freenet.node.NodeStats.PeerLoadStats;
 import freenet.store.BlockMetadata;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
@@ -241,8 +242,16 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handleOfferKey(m, source);
 		} else if(spec == DMT.FNPGetOfferedKey) {
 			return handleGetOfferedKey(m, source);
+		} else if(spec == DMT.FNPPeerLoadStatusByte || spec == DMT.FNPPeerLoadStatusShort || spec == DMT.FNPPeerLoadStatusInt) {
+			return handlePeerLoadStatus(m, source);
 		}
 		return false;
+	}
+
+	private boolean handlePeerLoadStatus(Message m, PeerNode source) {
+		PeerLoadStats stat = node.nodeStats.parseLoadStats(source, m);
+		source.reportLoadStatus(stat);
+		return true;
 	}
 
 	private boolean handleUptime(Message m, PeerNode source) {
