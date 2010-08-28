@@ -15,6 +15,8 @@ import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
+import freenet.io.comm.MessageType;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
@@ -620,6 +622,11 @@ public class NodeStats implements Persistable {
 		public final double inputBandwidthUpperLimit;
 		public final double inputBandwidthPeerLimit;
 		
+		public String toString() {
+			return peer.toString()+":output:{lower="+outputBandwidthLowerLimit+",upper="+outputBandwidthUpperLimit+",this="+outputBandwidthPeerLimit+"},input:lower="+inputBandwidthLowerLimit+",upper="+inputBandwidthUpperLimit+",peer="+inputBandwidthPeerLimit+"},requests:"+
+				numOtherCHKRequests+","+numOtherSSKRequests+","+numOtherCHKInserts+","+numOtherSSKInserts+","+numOtherCHKOffered+","+numOtherSSKOffered;
+		}
+		
 		public PeerLoadStats(PeerNode peer) {
 			this.peer = peer;
 			long[] total = node.collector.getTotalIO();
@@ -648,6 +655,38 @@ public class NodeStats implements Persistable {
 			numOtherSSKInserts = runningGlobal.numRemoteSSKInserts + runningGlobal.numLocalSSKInserts - (runningLocal.numRemoteSSKInserts + runningLocal.numLocalSSKInserts);
 			numOtherCHKOffered = runningGlobal.numCHKOfferReplies - runningLocal.numCHKOfferReplies;
 			numOtherSSKOffered = runningGlobal.numSSKOfferReplies - runningLocal.numSSKOfferReplies;
+		}
+
+		public PeerLoadStats(PeerNode source, Message m) {
+			peer = source;
+			if(m.getSpec() == DMT.FNPPeerLoadStatusInt) {
+				numOtherCHKRequests = m.getInt(DMT.OTHER_RUNNING_CHK_REQUESTS);
+				numOtherCHKInserts = m.getInt(DMT.OTHER_RUNNING_CHK_INSERTS);
+				numOtherCHKOffered = m.getInt(DMT.OTHER_RUNNING_CHK_OFFERS);
+				numOtherSSKRequests = m.getInt(DMT.OTHER_RUNNING_SSK_REQUESTS);
+				numOtherSSKInserts = m.getInt(DMT.OTHER_RUNNING_SSK_INSERTS);
+				numOtherSSKOffered = m.getInt(DMT.OTHER_RUNNING_SSK_OFFERS);
+			} else if(m.getSpec() == DMT.FNPPeerLoadStatusShort) {
+				numOtherCHKRequests = m.getShort(DMT.OTHER_RUNNING_CHK_REQUESTS) & 0xFFFF;
+				numOtherCHKInserts = m.getShort(DMT.OTHER_RUNNING_CHK_INSERTS) & 0xFFFF;
+				numOtherCHKOffered = m.getShort(DMT.OTHER_RUNNING_CHK_OFFERS) & 0xFFFF;
+				numOtherSSKRequests = m.getShort(DMT.OTHER_RUNNING_SSK_REQUESTS) & 0xFFFF;
+				numOtherSSKInserts = m.getShort(DMT.OTHER_RUNNING_SSK_INSERTS) & 0xFFFF;
+				numOtherSSKOffered = m.getShort(DMT.OTHER_RUNNING_SSK_OFFERS) & 0xFFFF;
+			} else if(m.getSpec() == DMT.FNPPeerLoadStatusByte) {
+				numOtherCHKRequests = m.getByte(DMT.OTHER_RUNNING_CHK_REQUESTS) & 0xFF;
+				numOtherCHKInserts = m.getByte(DMT.OTHER_RUNNING_CHK_INSERTS) & 0xFF;
+				numOtherCHKOffered = m.getByte(DMT.OTHER_RUNNING_CHK_OFFERS) & 0xFF;
+				numOtherSSKRequests = m.getByte(DMT.OTHER_RUNNING_SSK_REQUESTS) & 0xFF;
+				numOtherSSKInserts = m.getByte(DMT.OTHER_RUNNING_SSK_INSERTS) & 0xFF;
+				numOtherSSKOffered = m.getByte(DMT.OTHER_RUNNING_SSK_OFFERS) & 0xFF;
+			} else throw new IllegalArgumentException();
+			outputBandwidthLowerLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_LOWER_LIMIT);
+			outputBandwidthUpperLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_UPPER_LIMIT);
+			outputBandwidthPeerLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_PEER_LIMIT);
+			inputBandwidthLowerLimit = m.getInt(DMT.INPUT_BANDWIDTH_LOWER_LIMIT);
+			inputBandwidthUpperLimit = m.getInt(DMT.INPUT_BANDWIDTH_UPPER_LIMIT);
+			inputBandwidthPeerLimit = m.getInt(DMT.INPUT_BANDWIDTH_PEER_LIMIT);
 		}
 		
 	}
@@ -2733,5 +2772,9 @@ public class NodeStats implements Persistable {
 	
 	public PeerLoadStats createPeerLoadStats(PeerNode peer) {
 		return new PeerLoadStats(peer);
+	}
+
+	public PeerLoadStats parseLoadStats(PeerNode source, Message m) {
+		return new PeerLoadStats(source, m);
 	}
 }
