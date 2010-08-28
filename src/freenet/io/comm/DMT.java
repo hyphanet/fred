@@ -25,6 +25,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
+import freenet.node.NodeStats.PeerLoadStats;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Fields;
@@ -1575,4 +1576,102 @@ public class DMT {
 		return new Message(FNPRejectIsSoft);
 	}
 	
+	// New load management
+	
+	public static final MessageType FNPPeerLoadStatusByte = new MessageType("FNPPeerLoadStatusByte", PRIORITY_HIGH) {{
+		addField(OTHER_RUNNING_CHK_REQUESTS, Byte.class);
+		addField(OTHER_RUNNING_SSK_REQUESTS, Byte.class);
+		addField(OTHER_RUNNING_CHK_INSERTS, Byte.class);
+		addField(OTHER_RUNNING_SSK_INSERTS, Byte.class);
+		addField(OTHER_RUNNING_CHK_OFFERS, Byte.class);
+		addField(OTHER_RUNNING_SSK_OFFERS, Byte.class);
+		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
+		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
+		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
+		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
+		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+	}};
+	
+	public static final MessageType FNPPeerLoadStatusShort = new MessageType("FNPPeerLoadStatusByte", PRIORITY_HIGH) {{
+		addField(OTHER_RUNNING_CHK_REQUESTS, Short.class);
+		addField(OTHER_RUNNING_SSK_REQUESTS, Short.class);
+		addField(OTHER_RUNNING_CHK_INSERTS, Short.class);
+		addField(OTHER_RUNNING_SSK_INSERTS, Short.class);
+		addField(OTHER_RUNNING_CHK_OFFERS, Short.class);
+		addField(OTHER_RUNNING_SSK_OFFERS, Short.class);
+		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
+		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
+		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
+		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
+		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+	}};
+	
+	public static final MessageType FNPPeerLoadStatusInt = new MessageType("FNPPeerLoadStatusByte", PRIORITY_HIGH) {{
+		addField(OTHER_RUNNING_CHK_REQUESTS, Integer.class);
+		addField(OTHER_RUNNING_SSK_REQUESTS, Integer.class);
+		addField(OTHER_RUNNING_CHK_INSERTS, Integer.class);
+		addField(OTHER_RUNNING_SSK_INSERTS, Integer.class);
+		addField(OTHER_RUNNING_CHK_OFFERS, Integer.class);
+		addField(OTHER_RUNNING_SSK_OFFERS, Integer.class);
+		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
+		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
+		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
+		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
+		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+	}};
+	
+	public static final Message createFNPPeerLoadStatus(PeerLoadStats stats) {
+		Message msg;
+		if(stats.numOtherCHKInserts < 256 && stats.numOtherCHKRequests < 256 && stats.numOtherCHKOffered < 256 &&
+				stats.numOtherSSKInserts < 256 && stats.numOtherSSKRequests < 256 && stats.numOtherSSKOffered < 256) {
+			msg = new Message(FNPPeerLoadStatusByte);
+			msg.set(OTHER_RUNNING_CHK_REQUESTS, (byte)stats.numOtherCHKRequests);
+			msg.set(OTHER_RUNNING_CHK_INSERTS, (byte)stats.numOtherCHKInserts);
+			msg.set(OTHER_RUNNING_CHK_OFFERS, (byte)stats.numOtherCHKOffered);
+			msg.set(OTHER_RUNNING_SSK_REQUESTS, (byte)stats.numOtherSSKRequests);
+			msg.set(OTHER_RUNNING_SSK_INSERTS, (byte)stats.numOtherSSKInserts);
+			msg.set(OTHER_RUNNING_SSK_OFFERS, (byte)stats.numOtherSSKOffered);
+		} else if(stats.numOtherCHKInserts < 65536 && stats.numOtherCHKRequests < 65536 && stats.numOtherCHKOffered < 65536 &&
+				stats.numOtherSSKInserts < 65536 && stats.numOtherSSKRequests < 65536 && stats.numOtherSSKOffered < 65536) {
+			msg = new Message(FNPPeerLoadStatusShort);
+			msg.set(OTHER_RUNNING_CHK_REQUESTS, (short)stats.numOtherCHKRequests);
+			msg.set(OTHER_RUNNING_CHK_INSERTS, (short)stats.numOtherCHKInserts);
+			msg.set(OTHER_RUNNING_CHK_OFFERS, (short)stats.numOtherCHKOffered);
+			msg.set(OTHER_RUNNING_SSK_REQUESTS, (short)stats.numOtherSSKRequests);
+			msg.set(OTHER_RUNNING_SSK_INSERTS, (short)stats.numOtherSSKInserts);
+			msg.set(OTHER_RUNNING_SSK_OFFERS, (short)stats.numOtherSSKOffered);
+		} else {
+			msg = new Message(FNPPeerLoadStatusInt);
+			msg.set(OTHER_RUNNING_CHK_REQUESTS, stats.numOtherCHKRequests);
+			msg.set(OTHER_RUNNING_CHK_INSERTS, stats.numOtherCHKInserts);
+			msg.set(OTHER_RUNNING_CHK_OFFERS, stats.numOtherCHKOffered);
+			msg.set(OTHER_RUNNING_SSK_REQUESTS, stats.numOtherSSKRequests);
+			msg.set(OTHER_RUNNING_SSK_INSERTS, stats.numOtherSSKInserts);
+			msg.set(OTHER_RUNNING_SSK_OFFERS, stats.numOtherSSKOffered);
+		}
+		msg.set(OUTPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.outputBandwidthLowerLimit);
+		msg.set(OUTPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.outputBandwidthUpperLimit);
+		msg.set(OUTPUT_BANDWIDTH_PEER_LIMIT, (int)stats.outputBandwidthPeerLimit);
+		msg.set(INPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.inputBandwidthLowerLimit);
+		msg.set(INPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.inputBandwidthUpperLimit);
+		msg.set(INPUT_BANDWIDTH_PEER_LIMIT, (int)stats.inputBandwidthPeerLimit);
+		return msg;
+	}
+	
+	public static final String OTHER_RUNNING_CHK_REQUESTS = "otherRunningCHKRequests";
+	public static final String OTHER_RUNNING_SSK_REQUESTS = "otherRunningSSKRequests";
+	public static final String OTHER_RUNNING_CHK_INSERTS = "otherRunningCHKInserts";
+	public static final String OTHER_RUNNING_SSK_INSERTS = "otherRunningSSKInserts";
+	public static final String OTHER_RUNNING_CHK_OFFERS = "otherRunningCHKOffers";
+	public static final String OTHER_RUNNING_SSK_OFFERS = "otherRunningSSKOffers";
+	
+	public static final String OUTPUT_BANDWIDTH_LOWER_LIMIT = "outputBandwidthLowerLimit";
+	public static final String OUTPUT_BANDWIDTH_UPPER_LIMIT = "outputBandwidthUpperLimit";
+	public static final String OUTPUT_BANDWIDTH_PEER_LIMIT = "outputBandwidthPeerLimit";
+	public static final String INPUT_BANDWIDTH_LOWER_LIMIT = "inputBandwidthLowerLimit";
+	public static final String INPUT_BANDWIDTH_UPPER_LIMIT = "inputBandwidthUpperLimit";
+	public static final String INPUT_BANDWIDTH_PEER_LIMIT = "inputBandwidthPeerLimit";
 }

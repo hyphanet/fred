@@ -604,20 +604,20 @@ public class NodeStats implements Persistable {
 	 * a request. */
 	public class PeerLoadStats {
 		
-		final PeerNode peer;
+		public final PeerNode peer;
 		/** These do not include those from the peer */
-		final int numOtherCHKRequests;
-		final int numOtherSSKRequests;
-		final int numOtherCHKInserts;
-		final int numOtherSSKInserts;
-		final int numOtherCHKOffered;
-		final int numOtherSSKOffered;
-		final double outputBandwidthLowerLimit;
-		final double outputBandwidthUpperLimit;
-		final double outputBandwidthPeerLimit;
-		final double inputBandwidthLowerLimit;
-		final double inputBandwidthUpperLimit;
-		final double inputBandwidthPeerLimit;
+		public final int numOtherCHKRequests;
+		public final int numOtherSSKRequests;
+		public final int numOtherCHKInserts;
+		public final int numOtherSSKInserts;
+		public final int numOtherCHKOffered;
+		public final int numOtherSSKOffered;
+		public final double outputBandwidthLowerLimit;
+		public final double outputBandwidthUpperLimit;
+		public final double outputBandwidthPeerLimit;
+		public final double inputBandwidthLowerLimit;
+		public final double inputBandwidthUpperLimit;
+		public final double inputBandwidthPeerLimit;
 		
 		public PeerLoadStats(PeerNode peer) {
 			this.peer = peer;
