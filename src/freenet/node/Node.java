@@ -4542,11 +4542,15 @@ public class Node implements TimeSkewDetectorCallback {
 		} else {
 			// FIXME improve efficiency!
 			int count = 0;
-			for(UIDTag tag : map.values()) {
+			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
+				UIDTag tag = entry.getValue();
 				if(offer) {
 					if(tag.currentlyFetchingOfferedKeyFrom(source)) count++;
 				} else {
-					if(tag.currentlyRoutingTo(source)) count++;
+					if(tag.currentlyRoutingTo(source)) {
+						if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+						count++;
+					}
 				}
 			}
 			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count);
