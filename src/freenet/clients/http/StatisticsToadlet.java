@@ -978,7 +978,9 @@ public class StatisticsToadlet extends Toadlet {
 			opennetSizeEstimate48h = stats.getOpennetSizeEstimate(now - (48 * 60 * 60 * 1000)); // 48 hours
 		}
 		
-		double routingMissDistance =  stats.routingMissDistance.currentValue();
+		double routingMissDistanceLocal =  stats.routingMissDistanceLocal.currentValue();
+		double routingMissDistanceRemote =  stats.routingMissDistanceRemote.currentValue();
+		double routingMissDistanceOverall =  stats.routingMissDistanceOverall.currentValue();
 		double backedOffPercent =  stats.backedOffPercent.currentValue();
 		overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
 		overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
@@ -1001,7 +1003,9 @@ public class StatisticsToadlet extends Toadlet {
 		}
 		overviewList.addChild("li", "nodeUptimeSession:\u00a0" + TimeUtil.formatTime(nodeUptimeSeconds * 1000));
 		overviewList.addChild("li", "nodeUptimeTotal:\u00a0" + TimeUtil.formatTime(nodeUptimeTotal));
-		overviewList.addChild("li", "routingMissDistance:\u00a0" + fix1p4.format(routingMissDistance));
+		overviewList.addChild("li", "routingMissDistanceLocal:\u00a0" + fix1p4.format(routingMissDistanceLocal));
+		overviewList.addChild("li", "routingMissDistanceRemote:\u00a0" + fix1p4.format(routingMissDistanceRemote));
+		overviewList.addChild("li", "routingMissDistanceOverall:\u00a0" + fix1p4.format(routingMissDistanceOverall));
 		overviewList.addChild("li", "backedOffPercent:\u00a0" + fix3p1pct.format(backedOffPercent));
 		overviewList.addChild("li", "pInstantReject:\u00a0" + fix3p1pct.format(stats.pRejectIncomingInstantly()));
 		overviewList.addChild("li", "unclaimedFIFOSize:\u00a0" + node.getUnclaimedFIFOSize());

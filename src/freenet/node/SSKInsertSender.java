@@ -190,7 +190,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             // Route it
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null);
             
             if(next == null) {
                 // Backtrack

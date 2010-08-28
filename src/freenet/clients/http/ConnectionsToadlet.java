@@ -254,7 +254,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					networkSizeEstimateRecent = stats.getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
 				}
 				DecimalFormat fix4 = new DecimalFormat("0.0000");
-				double routingMissDistance =  stats.routingMissDistance.currentValue();
+				double routingMissDistanceLocal =  stats.routingMissDistanceLocal.currentValue();
+				double routingMissDistanceRemote =  stats.routingMissDistanceRemote.currentValue();
+				double routingMissDistanceOverall =  stats.routingMissDistanceOverall.currentValue();
 				double backedOffPercent =  stats.backedOffPercent.currentValue();
 				String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 				
@@ -274,7 +276,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					overviewList.addChild("li", "darknetSizeEstimateRecent:\u00a0" + networkSizeEstimateRecent + "\u00a0nodes");
 				}
 				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
-				overviewList.addChild("li", "routingMissDistance:\u00a0" + fix4.format(routingMissDistance));
+				overviewList.addChild("li", "routingMissDistanceLocal:\u00a0" + fix4.format(routingMissDistanceLocal));
+				overviewList.addChild("li", "routingMissDistanceRemote:\u00a0" + fix4.format(routingMissDistanceRemote));
+				overviewList.addChild("li", "routingMissDistanceOverall:\u00a0" + fix4.format(routingMissDistanceOverall));
 				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix1.format(backedOffPercent));
 				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(stats.pRejectIncomingInstantly()));
 				nextTableCell = overviewTableRow.addChild("td");
