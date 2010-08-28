@@ -296,9 +296,9 @@ public class NewPacketFormat implements PacketFormat {
 			for(int j = 0; j < seqNumWatchList[index].length; j++) {
 				if(seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) break;
 				if(j == (seqNumWatchList[index].length - 1)) {
+					int sequenceNumber = (int) ((0l + watchListOffset + i) % NUM_SEQNUMS);
 					if(logMINOR) Logger.minor(this, "Received packet matches sequence number " + sequenceNumber);
-					NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey,
-					                (int) ((0l + watchListOffset + i) % NUM_SEQNUMS));
+					NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 					if(p != null) return p;
 				}
 			}
