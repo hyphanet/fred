@@ -602,6 +602,25 @@ public class NodeStats implements Persistable {
 		public final double inputBandwidthUpperLimit;
 		public final double inputBandwidthPeerLimit;
 		
+		public boolean equals(Object o) {
+			if(!(o instanceof PeerLoadStats)) return false;
+			PeerLoadStats s = (PeerLoadStats)o;
+			if(s.peer != peer) return false;
+			if(s.numOtherCHKRequests != numOtherCHKRequests) return false;
+			if(s.numOtherSSKRequests != numOtherSSKRequests) return false;
+			if(s.numOtherCHKInserts != numOtherCHKInserts) return false;
+			if(s.numOtherSSKInserts != numOtherSSKInserts) return false;
+			if(s.numOtherCHKOffered != numOtherCHKOffered) return false;
+			if(s.numOtherSSKOffered != numOtherSSKOffered) return false;
+			if(s.outputBandwidthLowerLimit != outputBandwidthLowerLimit) return false;
+			if(s.outputBandwidthUpperLimit != outputBandwidthUpperLimit) return false;
+			if(s.outputBandwidthPeerLimit != outputBandwidthPeerLimit) return false;
+			if(s.inputBandwidthLowerLimit != inputBandwidthLowerLimit) return false;
+			if(s.inputBandwidthUpperLimit != inputBandwidthUpperLimit) return false;
+			if(s.inputBandwidthPeerLimit != inputBandwidthPeerLimit) return false;
+			return true;
+		}
+		
 		public String toString() {
 			return peer.toString()+":output:{lower="+outputBandwidthLowerLimit+",upper="+outputBandwidthUpperLimit+",this="+outputBandwidthPeerLimit+"},input:lower="+inputBandwidthLowerLimit+",upper="+inputBandwidthUpperLimit+",peer="+inputBandwidthPeerLimit+"},requests:"+
 				numOtherCHKRequests+","+numOtherSSKRequests+","+numOtherCHKInserts+","+numOtherSSKInserts+","+numOtherCHKOffered+","+numOtherSSKOffered;
