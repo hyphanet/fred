@@ -4461,18 +4461,25 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public class IncomingLoadSummaryStats {
 		public IncomingLoadSummaryStats(int totalRequests,
 				double outputBandwidthPeerLimit,
-				double inputBandwidthPeerLimit, double usedOutput,
+				double inputBandwidthPeerLimit,
+				double outputBandwidthTotalLimit,
+				double inputBandwidthTotalLimit,
+				double usedOutput,
 				double usedInput) {
 			runningRequestsTotal = totalRequests;
-			capacityOutputBytes = (int)outputBandwidthPeerLimit;
-			capacityInputBytes = (int)inputBandwidthPeerLimit;
+			peerCapacityOutputBytes = (int)outputBandwidthPeerLimit;
+			peerCapacityInputBytes = (int)inputBandwidthPeerLimit;
+			totalCapacityOutputBytes = (int)outputBandwidthTotalLimit;
+			totalCapacityInputBytes = (int)inputBandwidthTotalLimit;
 			usedCapacityOutputBytes = (int) usedOutput;
 			usedCapacityInputBytes = (int) usedInput;
 		}
 		
 		public final int runningRequestsTotal;
-		public final int capacityOutputBytes;
-		public final int capacityInputBytes;
+		public final int peerCapacityOutputBytes;
+		public final int peerCapacityInputBytes;
+		public final int totalCapacityOutputBytes;
+		public final int totalCapacityInputBytes;
 		public final int usedCapacityOutputBytes;
 		public final int usedCapacityInputBytes;
 	}
@@ -4489,6 +4496,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean ignoreLocalVsRemoteBandwidthLiability = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 		return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
 				loadStats.outputBandwidthPeerLimit, loadStats.inputBandwidthPeerLimit,
+				loadStats.outputBandwidthUpperLimit, loadStats.inputBandwidthUpperLimit,
 				runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput),
 				runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput));
 	}
