@@ -1593,7 +1593,7 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
 	}};
 	
-	public static final MessageType FNPPeerLoadStatusShort = new MessageType("FNPPeerLoadStatusByte", PRIORITY_HIGH) {{
+	public static final MessageType FNPPeerLoadStatusShort = new MessageType("FNPPeerLoadStatusShort", PRIORITY_HIGH) {{
 		addField(OTHER_RUNNING_CHK_REQUESTS, Short.class);
 		addField(OTHER_RUNNING_SSK_REQUESTS, Short.class);
 		addField(OTHER_RUNNING_CHK_INSERTS, Short.class);
@@ -1608,7 +1608,7 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
 	}};
 	
-	public static final MessageType FNPPeerLoadStatusInt = new MessageType("FNPPeerLoadStatusByte", PRIORITY_HIGH) {{
+	public static final MessageType FNPPeerLoadStatusInt = new MessageType("FNPPeerLoadStatusInt", PRIORITY_HIGH) {{
 		addField(OTHER_RUNNING_CHK_REQUESTS, Integer.class);
 		addField(OTHER_RUNNING_SSK_REQUESTS, Integer.class);
 		addField(OTHER_RUNNING_CHK_INSERTS, Integer.class);
