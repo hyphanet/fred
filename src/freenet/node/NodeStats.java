@@ -617,8 +617,8 @@ public class NodeStats implements Persistable {
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(BANDWIDTH_LIABILITY_LIMIT_SECONDS);
 			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, true);
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, false);
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true);
 			
 			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node);
 			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer);
@@ -969,6 +969,10 @@ public class NodeStats implements Persistable {
 		
 		double bandwidthLiabilityOutput = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersSent);
 		
+		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
+		
+		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input);
+		
 		// If over the upper limit, reject.
 		
 		if(logMINOR) Logger.minor(this, "90 second limit: "+bandwidthAvailableOutputUpperLimit+" expected output liability: "+bandwidthLiabilityOutput);
@@ -981,8 +985,6 @@ public class NodeStats implements Persistable {
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutputLowerLimit) {
 			
 			// Fair sharing between peers.
-			
-			double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input);
 			
 			if(logMINOR)
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation);
