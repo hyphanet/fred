@@ -952,17 +952,9 @@ public class NodeStats implements Persistable {
 		
 		if(logMINOR) Logger.minor(this, "Output rate: "+(totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+nonOverheadFraction);
 		
-		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
+		double outputAvailablePerSecond = node.getOutputBandwidthLimit() * nonOverheadFraction;
 		
-		// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
-		// Also, if things have broken, our overhead might be above our bandwidth limit,
-		// especially on a slow node.
-		
-		// So impose a minimum of 20% of the bandwidth limit.
-		// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
-		// and we don't accept any requests because of that, so it remains that way...
 		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
-		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
 		
 		return outputAvailablePerSecond * limit;
 	}
