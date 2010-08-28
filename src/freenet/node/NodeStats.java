@@ -741,16 +741,16 @@ public class NodeStats implements Persistable {
 		}
 		
 		RunningRequestsSnapshot(Node node, PeerNode source) {
-			numLocalCHKRequests = node.countRequests(true, false, false, false);
-			numLocalSSKRequests = node.countRequests(true, true, false, false);
-			numLocalCHKInserts = node.countRequests(true, false, true, false);
-			numLocalSSKInserts = node.countRequests(true, true, true, false);
-			numRemoteCHKRequests = node.countRequests(false, false, false, false);
-			numRemoteSSKRequests = node.countRequests(false, true, false, false);
-			numRemoteCHKInserts = node.countRequests(false, false, true, false);
-			numRemoteSSKInserts = node.countRequests(false, true, true, false);
-			numCHKOfferReplies = node.countRequests(false, false, false, true);
-			numSSKOfferReplies = node.countRequests(false, true, false, true);
+			numLocalCHKRequests = node.countRequests(source, true, false, false, false);
+			numLocalSSKRequests = node.countRequests(source, true, true, false, false);
+			numLocalCHKInserts = node.countRequests(source, true, false, true, false);
+			numLocalSSKInserts = node.countRequests(source, true, true, true, false);
+			numRemoteCHKRequests = node.countRequests(source, false, false, false, false);
+			numRemoteSSKRequests = node.countRequests(source, false, true, false, false);
+			numRemoteCHKInserts = node.countRequests(source, false, false, true, false);
+			numRemoteSSKInserts = node.countRequests(source, false, true, true, false);
+			numCHKOfferReplies = node.countRequests(source, false, false, false, true);
+			numSSKOfferReplies = node.countRequests(source, false, true, false, true);
 		}
 
 		public void decrement(boolean isSSK, boolean isInsert,
