@@ -4405,7 +4405,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// FIXME review constants, how often are allocations actually sent?
 		synchronized(this) {
 			int last = input ? lastSentAllocationInput : lastSentAllocationOutput;
-			if(last == thisAllocation) return;
 			long now = System.currentTimeMillis();
 			if(now - timeLastSentAllocationNotice > 5000) {
 				if(logMINOR) Logger.minor(this, "Last sent allocation "+TimeUtil.formatTime(now - timeLastSentAllocationNotice));
