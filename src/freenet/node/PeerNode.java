@@ -4462,9 +4462,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 
+	private PeerLoadStats lastIncomingLoadStats;
+	
 	public void reportLoadStatus(PeerLoadStats stat) {
 		if(logMINOR) Logger.minor(this, "Got load status : "+stat);
-		// TODO Auto-generated method stub
+		synchronized(this) {
+			lastIncomingLoadStats = stat;
+		}
+	}
+	
+	public synchronized PeerLoadStats getLastIncomingLoadStats() {
+		return lastIncomingLoadStats;
 	}
 
 }
