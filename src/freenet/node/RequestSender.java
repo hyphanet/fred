@@ -70,6 +70,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private short htl;
     private final short origHTL;
     final long uid;
+    final RequestTag origTag;
     final Node node;
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
@@ -167,7 +168,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      * @param key The key to request. Its public key should have been looked up
      * already; RequestSender will not look it up.
      */
-    public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n,
+    public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, RequestTag tag, Node n,
             PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
     	startTime = System.currentTimeMillis();
@@ -176,6 +177,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         this.htl = htl;
         this.origHTL = htl;
         this.uid = uid;
+        this.origTag = tag;
         this.node = n;
         this.source = source;
         this.tryOffersOnly = offersOnly;
@@ -232,6 +234,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         		if(logMINOR) Logger.minor(this, "Restarted node");
         		continue;
         	}
+        	origTag.addRoutedTo(pn, true);
         	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
         	try {
 				pn.sendAsync(msg, null, this);
@@ -239,6 +242,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
 				offers.deleteLastOffer();
+	        	origTag.removeFetchingOfferedKeyFrom(pn);
 				continue;
 			}
         	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPRejectedOverload);
@@ -254,6 +258,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					continue;
 				}
         		if(reply == null) {
@@ -265,12 +270,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			if(logMINOR)
         				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
         			offers.keepLastOffer();
+    	        	origTag.removeFetchingOfferedKeyFrom(pn);
         			continue;
         		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
         			// Fatal, delete it.
         			if(logMINOR)
         				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
         			offers.deleteLastOffer();
+    	        	origTag.removeFetchingOfferedKeyFrom(pn);
         			continue;
         		} else if(reply.getSpec() == DMT.FNPCHKDataFound) {
         			headers = ((ShortBuffer)reply.getObject(DMT.BLOCK_HEADERS)).getData();
@@ -363,6 +370,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 						if(logMINOR)
 							Logger.minor(this, "Disconnected: "+pn+" getting data for offer for "+key);
 						offers.deleteLastOffer();
+			        	origTag.removeFetchingOfferedKeyFrom(pn);
 						continue;
 					}
 					if(dataMessage == null) {
@@ -500,6 +508,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             // See comments below when handling FNPRecentlyFailed for why we need this.
             long timeSentRequest = System.currentTimeMillis();
 			
+            origTag.addRoutedTo(next, false);
+            
             try {
             	//This is the first contact to this node, it is more likely to timeout
 				/*
@@ -516,6 +526,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	next.sendSync(req, this);
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
+	        	origTag.removeRoutingTo(next);
             	continue;
             }
             
@@ -548,6 +559,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                     if(logMINOR) Logger.minor(this, "first part got "+msg);
                 } catch (DisconnectedException e) {
                     Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
+                    origTag.removeRoutingTo(next);
                     break;
                 }
                 
@@ -566,6 +578,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		next.successNotOverload();
             		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
             		// Find another node to route to
+            		origTag.removeRoutingTo(next);
             		break;
             	}
             	
@@ -579,6 +592,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	            		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
 						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
+						origTag.removeRoutingTo(next);
 						break;
 					}
 					//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
@@ -627,6 +641,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		msg = node.usm.waitFor(mf, this);
             	} catch (DisconnectedException e) {
             		Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
+            		origTag.removeRoutingTo(next);
             		break;
             	}
             	
@@ -724,6 +739,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		if(newHtl < htl) htl = newHtl;
             		next.successNotOverload();
             		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+            		origTag.removeRoutingTo(next);
             		break;
             	}
             	
@@ -739,6 +755,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 						// Node in trouble suddenly??
 						Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
 						// Give up on this one, try another
+						origTag.removeRoutingTo(next);
 						break;
 					}
 					//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.

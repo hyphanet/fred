@@ -17,7 +17,9 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
 import freenet.l10n.NodeL10n;
+import freenet.node.NodeStats.ByteCountersSnapshot;
 import freenet.node.NodeStats.PeerLoadStats;
+import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.stats.NodeStoreStats;
 import freenet.node.stats.StatsNotAvailableException;
@@ -647,7 +649,7 @@ public class NodeStats implements Persistable {
 			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true);
 			
 			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node);
-			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer);
+			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false);
 			numOtherCHKRequests = runningGlobal.numRemoteCHKRequests + runningGlobal.numLocalCHKRequests - (runningLocal.numRemoteCHKRequests + runningLocal.numLocalCHKRequests);
 			numOtherSSKRequests = runningGlobal.numRemoteSSKRequests + runningGlobal.numLocalSSKRequests - (runningLocal.numRemoteSSKRequests + runningLocal.numLocalSSKRequests);
 			numOtherCHKInserts = runningGlobal.numRemoteCHKInserts + runningGlobal.numLocalCHKInserts - (runningLocal.numRemoteCHKInserts + runningLocal.numLocalCHKInserts);
@@ -759,17 +761,23 @@ public class NodeStats implements Persistable {
 			numSSKOfferReplies = node.getNumSSKOfferReplies();
 		}
 		
-		RunningRequestsSnapshot(Node node, PeerNode source) {
-			numLocalCHKRequests = node.countRequests(source, true, false, false, false);
-			numLocalSSKRequests = node.countRequests(source, true, true, false, false);
-			numLocalCHKInserts = node.countRequests(source, true, false, true, false);
-			numLocalSSKInserts = node.countRequests(source, true, true, true, false);
-			numRemoteCHKRequests = node.countRequests(source, false, false, false, false);
-			numRemoteSSKRequests = node.countRequests(source, false, true, false, false);
-			numRemoteCHKInserts = node.countRequests(source, false, false, true, false);
-			numRemoteSSKInserts = node.countRequests(source, false, true, true, false);
-			numCHKOfferReplies = node.countRequests(source, false, false, false, true);
-			numSSKOfferReplies = node.countRequests(source, false, true, false, true);
+		/**
+		 * @param node
+		 * @param source
+		 * @param requestsToNode If true, count requests sent to the node and currently
+		 * running. If false, count requests originated by the node.
+		 */
+		RunningRequestsSnapshot(Node node, PeerNode source, boolean requestsToNode) {
+			numLocalCHKRequests = node.countRequests(source, requestsToNode, true, false, false, false);
+			numLocalSSKRequests = node.countRequests(source, requestsToNode, true, true, false, false);
+			numLocalCHKInserts = node.countRequests(source, requestsToNode, true, false, true, false);
+			numLocalSSKInserts = node.countRequests(source, requestsToNode, true, true, true, false);
+			numRemoteCHKRequests = node.countRequests(source, requestsToNode, false, false, false, false);
+			numRemoteSSKRequests = node.countRequests(source, requestsToNode, false, true, false, false);
+			numRemoteCHKInserts = node.countRequests(source, requestsToNode, false, false, true, false);
+			numRemoteSSKInserts = node.countRequests(source, requestsToNode, false, true, true, false);
+			numCHKOfferReplies = node.countRequests(source, requestsToNode, false, false, false, true);
+			numSSKOfferReplies = node.countRequests(source, requestsToNode, false, true, false, true);
 		}
 
 		public void decrement(boolean isSSK, boolean isInsert,
@@ -819,6 +827,13 @@ public class NodeStats implements Persistable {
 				byteCountersSent.successfulSskOfferReplyBytes * numSSKOfferReplies;
 			}
 			
+		}
+
+		public int totalRequests() {
+			return numLocalCHKRequests + numLocalSSKRequests + numLocalCHKInserts + 
+				numLocalSSKInserts + numRemoteCHKRequests + numRemoteSSKRequests + 
+				numRemoteCHKInserts + numRemoteSSKInserts + numCHKOfferReplies + 
+				numSSKOfferReplies;
 		}
 		
 	}
@@ -1118,7 +1133,7 @@ public class NodeStats implements Persistable {
 	}
 
 	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters) {
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source);
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source, false);
 		
 		if(source != null) {
 			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply);
@@ -2711,5 +2726,17 @@ public class NodeStats implements Persistable {
 
 	public PeerLoadStats parseLoadStats(PeerNode source, Message m) {
 		return new PeerLoadStats(source, m);
+	}
+
+	public ByteCountersSnapshot getByteCounters(boolean input) {
+		return new ByteCountersSnapshot(input);
+	}
+
+	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode) {
+		return new RunningRequestsSnapshot(node, peerNode, true);
+	}
+	
+	public boolean ignoreLocalVsRemoteBandwidthLiability() {
+		return ignoreLocalVsRemoteBandwidthLiability;
 	}
 }

@@ -3964,7 +3964,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * a RequestSender, unless the HTL is 0, in which case NULL.
 	 * RequestSender.
 	 */
-	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, boolean localOnly, boolean ignoreStore, boolean offersOnly, boolean canReadClientCache, boolean canWriteClientCache) {
+	public Object makeRequestSender(Key key, short htl, long uid, RequestTag tag, PeerNode source, boolean localOnly, boolean ignoreStore, boolean offersOnly, boolean canReadClientCache, boolean canWriteClientCache) {
 		boolean canWriteDatastore = canWriteDatastoreRequest(htl);
 		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+getDarknetPortNumber());
 		// In store?
@@ -3992,7 +3992,7 @@ public class Node implements TimeSkewDetectorCallback {
 			return null;
 		}
 
-		sender = new RequestSender(key, null, htl, uid, this, source, offersOnly, canWriteClientCache, canWriteDatastore);
+		sender = new RequestSender(key, null, htl, uid, tag, this, source, offersOnly, canWriteClientCache, canWriteDatastore);
 		sender.start();
 		if(logMINOR) Logger.minor(this, "Created new sender: "+sender);
 		return sender;
@@ -4411,11 +4411,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @param ignoreLowBackoff
 	 * @param preferInsert
 	 */
-	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
+	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, InsertTag tag, PeerNode source,
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		CHKInsertSender is = null;
-		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
+		is = new CHKInsertSender(key, uid, tag, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 		is.start();
 		// CHKInsertSender adds itself to insertSenders
 		return is;
@@ -4434,7 +4434,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @param ignoreLowBackoff
 	 * @param preferInsert
 	 */
-	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
+	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, InsertTag tag, PeerNode source,
 			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
 		NodeSSK key = block.getKey();
 		if(key.getPubKey() == null) {
@@ -4444,7 +4444,7 @@ public class Node implements TimeSkewDetectorCallback {
 		getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), false, canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		SSKInsertSender is = null;
-		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
+		is = new SSKInsertSender(block, uid, tag, htl, source, this, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 		is.start();
 		return is;
 	}
@@ -4528,14 +4528,25 @@ public class Node implements TimeSkewDetectorCallback {
 		return map.size();
 	}
 	
-	public synchronized int countRequests(PeerNode source, boolean local, boolean ssk, boolean insert, boolean offer) {
-		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
-		if((source == null) != local) return 0;
-		if(source == null) return map.size();
-		else {
+	public synchronized int countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer) {
+		if(!requestsToNode) {
+			HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
+			if((source == null) != local) return 0;
+			if(source == null) return map.size();
 			int count = 0;
 			for(UIDTag tag : map.values()) {
 				if(tag.source == source) count++;
+			}
+			return count;
+		} else {
+			// FIXME improve efficiency!
+			int count = 0;
+			for(UIDTag tag : runningUIDs.values()) {
+				if(offer) {
+					if(tag.currentlyFetchingOfferedKeyFrom(source)) count++;
+				} else {
+					if(tag.currentlyRoutingTo(source)) count++;
+				}
 			}
 			return count;
 		}

@@ -900,7 +900,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 */
 	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl) {
 		try {
-			Object o = node.makeRequestSender(key, htl, uid, null, false, false, offersOnly, canReadClientCache, canWriteClientCache);
+			Object o = node.makeRequestSender(key, htl, uid, tag, null, false, false, offersOnly, canReadClientCache, canWriteClientCache);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
 				node.unlockUID(uid, isSSK, false, true, false, true, tag);
@@ -952,7 +952,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, localOnly, ignoreStore, false, true, canWriteClientCache);
+			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache);
 			if(o instanceof CHKBlock)
 				try {
 					tag.setServedFromDatastore();
@@ -1073,7 +1073,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-			Object o = node.makeRequestSender(key.getNodeKey(true), node.maxHTL(), uid, null, localOnly, ignoreStore, false, true, canWriteClientCache);
+			Object o = node.makeRequestSender(key.getNodeKey(true), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache);
 			if(o instanceof SSKBlock)
 				try {
 					tag.setServedFromDatastore();
@@ -1207,7 +1207,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			long startTime = System.currentTimeMillis();
 			is = node.makeInsertSender(block.getKey(),
-				node.maxHTL(), uid, null, headers, prb, false, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
+				node.maxHTL(), uid, tag, null, headers, prb, false, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 			boolean hasReceivedRejectedOverload = false;
 			// Wait for status
 			while(true) {
@@ -1330,7 +1330,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			if(altBlock != null && !altBlock.equals(block))
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			is = node.makeInsertSender(block,
-				node.maxHTL(), uid, null, false, canWriteClientCache, false, forkOnCacheable, preferInsert, ignoreLowBackoff);
+				node.maxHTL(), uid, tag, null, false, canWriteClientCache, false, forkOnCacheable, preferInsert, ignoreLowBackoff);
 			boolean hasReceivedRejectedOverload = false;
 			// Wait for status
 			while(true) {

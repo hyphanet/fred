@@ -86,6 +86,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				this.receivedNotice(false);
 				pn.localRejectedOverload("TransferFailedInsert");
 			}
+			// REDFLAG: Load limiting:
+			// No confirmation that it has finished, and it won't finish immediately on the transfer finishing.
+			// So don't try to thisTag.removeRoutingTo(next), just assume it keeps running until the whole insert finishes.
 		}
 		
 		private void completedTransfer(boolean success) {
@@ -170,13 +173,14 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 	}
 	
-	CHKInsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
+	CHKInsertSender(NodeCHK myKey, long uid, InsertTag tag, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore,
             boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
         this.origUID = uid;
         this.uid = uid;
+        this.origTag = tag;
         this.headers = headers;
         this.htl = htl;
         this.source = source;
@@ -206,6 +210,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     final NodeCHK myKey;
     final double target;
     final long origUID;
+    final InsertTag origTag;
     long uid;
     private InsertTag forkedRequestTag;
     short htl;
@@ -383,6 +388,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             mfRejectedOverload.clearOr();
             MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
             
+            InsertTag thisTag = forkedRequestTag;
+            if(forkedRequestTag == null) thisTag = origTag;
+            
+            thisTag.addRoutedTo(next, false);
+            
             // Send to next node
             
             try {
@@ -402,6 +412,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				next.sendAsync(req, null, this);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
+				thisTag.removeRoutingTo(next);
 				continue;
 			}
 			synchronized (this) {
@@ -424,6 +435,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for Accepted");
+					thisTag.removeRoutingTo(next);
 					break;
 				}
 				
@@ -447,6 +459,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						if(logMINOR) Logger.minor(this,
 										"Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
+						thisTag.removeRoutingTo(next);
 						break;
 					} else {
 						forwardRejectedOverload();
@@ -457,6 +470,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				if (msg.getSpec() == DMT.FNPRejectedLoop) {
 					next.successNotOverload();
 					// Loop - we don't want to send the data to this one
+					thisTag.removeRoutingTo(next);
 					break;
 				}
 				

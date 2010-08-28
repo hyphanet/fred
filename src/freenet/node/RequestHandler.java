@@ -175,7 +175,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			passedInKeyBlock = null; // For GC
 			return;
 		} else
-			o = node.makeRequestSender(key, htl, uid, source, false, true, false, false, false);
+			o = node.makeRequestSender(key, htl, uid, tag, source, false, true, false, false, false);
 
 		if(o == null) { // ran out of htl?
 			Message dnf = DMT.createFNPDataNotFound(uid);
