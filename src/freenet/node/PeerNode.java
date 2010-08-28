@@ -4448,6 +4448,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+thisAllocation+" for "+input);
 		}
 		PeerLoadStats stats = node.nodeStats.createPeerLoadStats(this);
+		synchronized(this) {
+			lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
+			lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
+		}
 		Message msg = DMT.createFNPPeerLoadStatus(stats);
 		try {
 			sendAsync(msg, null, node.nodeStats.allocationNoticesCounter);
