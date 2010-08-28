@@ -61,6 +61,7 @@ import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
+import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.support.Base64;
@@ -4392,6 +4393,37 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public synchronized ConnectionType getAddedReason() {
 		return null;
+	}
+	
+	private int lastSentAllocationInput;
+	private int lastSentAllocationOutput;
+	private long timeLastSentAllocationNotice;
+	private long countAllocationNotices;
+
+	public void onSetPeerAllocation(boolean input, int thisAllocation) {
+		boolean mustSend = false;
+		// FIXME review constants, how often are allocations actually sent?
+		synchronized(this) {
+			int last = input ? lastSentAllocationInput : lastSentAllocationOutput;
+			if(last == thisAllocation) return;
+			long now = System.currentTimeMillis();
+			if(now - timeLastSentAllocationNotice > 5000) mustSend = true;
+			else {
+				if(thisAllocation > last * 1.05) mustSend = true;
+				else if(thisAllocation < last * 0.9) mustSend = true;
+			}
+			if(!mustSend) return;
+			timeLastSentAllocationNotice = now;
+			countAllocationNotices++;
+			if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this);
+		}
+		PeerLoadStats stats = node.nodeStats.createPeerLoadStats(this);
+		Message msg = DMT.createFNPPeerLoadStatus(stats);
+		try {
+			sendAsync(msg, null, node.nodeStats.allocationNoticesCounter);
+		} catch (NotConnectedException e) {
+			// Ignore
+		}
 	}
 
 	void removeUIDsFromMessageQueues(Long[] list) {
