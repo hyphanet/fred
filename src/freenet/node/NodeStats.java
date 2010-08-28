@@ -991,6 +991,9 @@ public class NodeStats implements Persistable {
 			
 			double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit);
 			
+			if(logMINOR)
+				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation);
+			
 			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent);
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal);
