@@ -4399,6 +4399,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private int lastSentAllocationOutput;
 	private long timeLastSentAllocationNotice;
 	private long countAllocationNotices;
+	private PeerLoadStats lastFullStats;
 
 	public void onSetPeerAllocation(boolean input, int thisAllocation) {
 		boolean mustSend = false;
@@ -4431,6 +4432,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
 			lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
+			if(lastFullStats != null && lastFullStats.equals(stats)) return;
+			lastFullStats = stats;
 		}
 		Message msg = DMT.createFNPPeerLoadStatus(stats);
 		try {
