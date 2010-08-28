@@ -211,7 +211,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		if(logMINOR) Logger.minor(this, "Got block for "+key+" for "+uid);
 		
         if(htl > 0)
-            sender = node.makeInsertSender(block, htl, uid, source, false, false, canWriteDatastore, forkOnCacheable, preferInsert, ignoreLowBackoff);
+            sender = node.makeInsertSender(block, htl, uid, tag, source, false, false, canWriteDatastore, forkOnCacheable, preferInsert, ignoreLowBackoff);
         
         boolean receivedRejectedOverload = false;
         

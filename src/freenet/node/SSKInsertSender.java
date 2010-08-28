@@ -41,6 +41,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     final NodeSSK myKey;
     final double target;
     final long origUID;
+    final InsertTag origTag;
     long uid;
     short htl;
     final PeerNode source;
@@ -82,7 +83,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     /** Could not get off the node at all! */
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
-    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
+    SSKInsertSender(SSKBlock block, long uid, InsertTag tag, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
     	logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     	this.fromStore = fromStore;
     	this.node = node;
@@ -90,6 +91,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	this.htl = htl;
     	this.origUID = uid;
     	this.uid = uid;
+    	this.origTag = tag;
     	myKey = block.getKey();
     	data = block.getRawData();
     	headers = block.getRawHeaders();
@@ -222,12 +224,18 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             mfRejectedOverload.clearOr();
             MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
 
+            InsertTag thisTag = forkedRequestTag;
+            if(forkedRequestTag == null) thisTag = origTag;
+            
+            thisTag.addRoutedTo(next, false);
+            
             // Send to next node
             
             try {
 				next.sendAsync(request, null, this);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
+				thisTag.removeRoutingTo(next);
 				continue;
 			}
             sentRequest = true;
@@ -247,6 +255,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for Accepted");
+					thisTag.removeRoutingTo(next);
 					break;
 				}
 				
@@ -265,6 +274,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						next.localRejectedOverload("ForwardRejectedOverload3");
 						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
+						thisTag.removeRoutingTo(next);
 						break;
 					} else {
 						forwardRejectedOverload();
@@ -275,6 +285,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				if (msg.getSpec() == DMT.FNPRejectedLoop) {
 					next.successNotOverload();
 					// Loop - we don't want to send the data to this one
+					thisTag.removeRoutingTo(next);
 					break;
 				}
 				
@@ -302,6 +313,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				next.sendThrottledMessage(dataMsg, data.length, this, SSKInsertHandler.DATA_INSERT_TIMEOUT, false, null);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
+				thisTag.removeRoutingTo(next);
 				continue;
 			} catch (WaitedTooLongException e) {
 				Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
@@ -310,6 +322,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				// Impossible
 			} catch (PeerRestartedException e) {
 				if(logMINOR) Logger.minor(this, "Peer restarted: "+next);
+				thisTag.removeRoutingTo(next);
 				continue;
 			}
             
@@ -395,6 +408,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						if(logMINOR) Logger.minor(this,
 								"Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
+						thisTag.removeRoutingTo(next);
 						break;
 					} else {
 						forwardRejectedOverload();
@@ -409,6 +423,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						htl = newHtl;
 					// Finished as far as this node is concerned
 					next.successNotOverload();
+					thisTag.removeRoutingTo(next);
 					break;
 				}
 
@@ -425,6 +440,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					}
 					Logger.error(this, "SSK insert rejected! Reason="
 							+ DMT.getDataInsertRejectedReason(reason));
+					thisTag.removeRoutingTo(next);
 					break; // What else can we do?
 				}
 				

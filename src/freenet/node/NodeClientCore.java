@@ -1249,7 +1249,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			long startTime = System.currentTimeMillis();
 			is = node.makeInsertSender(block.getKey(),
-				node.maxHTL(), uid, null, headers, prb, false, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
+				node.maxHTL(), uid, tag, null, headers, prb, false, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 			boolean hasReceivedRejectedOverload = false;
 			// Wait for status
 			while(true) {
@@ -1372,7 +1372,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			if(altBlock != null && !altBlock.equals(block))
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			is = node.makeInsertSender(block,
-				node.maxHTL(), uid, null, false, canWriteClientCache, false, forkOnCacheable, preferInsert, ignoreLowBackoff);
+				node.maxHTL(), uid, tag, null, false, canWriteClientCache, false, forkOnCacheable, preferInsert, ignoreLowBackoff);
 			boolean hasReceivedRejectedOverload = false;
 			// Wait for status
 			while(true) {

@@ -30,6 +30,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.NodeStats;
 import freenet.node.PeerManager;
 import freenet.node.PeerNode;
+import freenet.node.PeerNode.IncomingLoadSummaryStats;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
 import freenet.support.Fields;
@@ -826,7 +827,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", TimeUtil.formatTime(peerNodeStatus.getClockDelta()));
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", peerNodeStatus.getReportedUptimePercentage()+"%");
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getMessageQueueLengthBytes())+":"+TimeUtil.formatTime(peerNodeStatus.getMessageQueueLengthTime()));
-			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.incomingLoadAllocationPeerOutputLimit)+":"+SizeUtil.formatSize(peerNodeStatus.incomingLoadAllocationPeerInputLimit));
+			IncomingLoadSummaryStats loadStats = peerNodeStatus.incomingLoadStats;
+			if(loadStats == null)
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
+			else
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStats.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStats.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStats.capacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStats.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStats.capacityInputBytes));
 		}
 		
 		if(endCols != null) {

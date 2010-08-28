@@ -61,7 +61,9 @@ import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
+import freenet.node.NodeStats.ByteCountersSnapshot;
 import freenet.node.NodeStats.PeerLoadStats;
+import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.support.Base64;
@@ -4454,6 +4456,41 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			lastIncomingLoadStats = stat;
 		}
+	}
+	
+	public class IncomingLoadSummaryStats {
+		public IncomingLoadSummaryStats(int totalRequests,
+				double outputBandwidthPeerLimit,
+				double inputBandwidthPeerLimit, double usedOutput,
+				double usedInput) {
+			runningRequestsTotal = totalRequests;
+			capacityOutputBytes = (int)outputBandwidthPeerLimit;
+			capacityInputBytes = (int)inputBandwidthPeerLimit;
+			usedCapacityOutputBytes = (int) usedOutput;
+			usedCapacityInputBytes = (int) usedInput;
+		}
+		
+		public final int runningRequestsTotal;
+		public final int capacityOutputBytes;
+		public final int capacityInputBytes;
+		public final int usedCapacityOutputBytes;
+		public final int usedCapacityInputBytes;
+	}
+	
+	public IncomingLoadSummaryStats getIncomingLoadStats() {
+		PeerLoadStats loadStats;
+		synchronized(this) {
+			if(lastIncomingLoadStats == null) return null;
+			loadStats = lastIncomingLoadStats;
+		}
+		ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
+		ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
+		RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(this);
+		boolean ignoreLocalVsRemoteBandwidthLiability = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+		return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
+				loadStats.outputBandwidthPeerLimit, loadStats.inputBandwidthPeerLimit,
+				runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput),
+				runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput));
 	}
 	
 	public synchronized PeerLoadStats getLastIncomingLoadStats() {
