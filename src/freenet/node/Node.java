@@ -4529,8 +4529,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public synchronized int countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer) {
+		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
 		if(!requestsToNode) {
-			HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
 			if((source == null) != local) return 0;
 			if(source == null) return map.size();
 			int count = 0;
@@ -4541,7 +4541,7 @@ public class Node implements TimeSkewDetectorCallback {
 		} else {
 			// FIXME improve efficiency!
 			int count = 0;
-			for(UIDTag tag : runningUIDs.values()) {
+			for(UIDTag tag : map.values()) {
 				if(offer) {
 					if(tag.currentlyFetchingOfferedKeyFrom(source)) count++;
 				} else {
