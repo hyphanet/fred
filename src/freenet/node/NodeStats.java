@@ -709,6 +709,10 @@ public class NodeStats implements Persistable {
 			inputBandwidthUpperLimit = m.getInt(DMT.INPUT_BANDWIDTH_UPPER_LIMIT);
 			inputBandwidthPeerLimit = m.getInt(DMT.INPUT_BANDWIDTH_PEER_LIMIT);
 		}
+
+		public RunningRequestsSnapshot getOtherRunningRequests() {
+			return new RunningRequestsSnapshot(this);
+		}
 		
 	}
 	
@@ -798,6 +802,20 @@ public class NodeStats implements Persistable {
 			numRemoteSSKInserts = node.countRequests(source, requestsToNode, false, true, true, false);
 			numCHKOfferReplies = node.countRequests(source, requestsToNode, false, false, false, true);
 			numSSKOfferReplies = node.countRequests(source, requestsToNode, false, true, false, true);
+		}
+
+		public RunningRequestsSnapshot(PeerLoadStats stats) {
+			// Assume they are all remote.
+			this.numRemoteCHKInserts = stats.numOtherCHKInserts;
+			this.numRemoteCHKRequests = stats.numOtherCHKRequests;
+			this.numRemoteSSKInserts = stats.numOtherSSKInserts;
+			this.numRemoteSSKRequests = stats.numOtherSSKRequests;
+			this.numCHKOfferReplies = stats.numOtherCHKOffered;
+			this.numSSKOfferReplies = stats.numOtherSSKOffered;
+			this.numLocalCHKInserts = 0;
+			this.numLocalSSKInserts = 0;
+			this.numLocalCHKRequests = 0;
+			this.numLocalSSKRequests = 0;
 		}
 
 		public void decrement(boolean isSSK, boolean isInsert,
