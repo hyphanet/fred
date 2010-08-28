@@ -15,6 +15,7 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.l10n.NodeL10n;
+import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.stats.NodeStoreStats;
 import freenet.node.stats.StatsNotAvailableException;
@@ -616,8 +617,8 @@ public class NodeStats implements Persistable {
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(BANDWIDTH_LIABILITY_LIMIT_SECONDS);
 			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit);
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit);
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, true);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, false);
 			
 			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node);
 			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer);
@@ -981,7 +982,7 @@ public class NodeStats implements Persistable {
 			
 			// Fair sharing between peers.
 			
-			double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit);
+			double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input);
 			
 			if(logMINOR)
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation);
@@ -1026,7 +1027,7 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 
-	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit) {
+	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input) {
 		
 		int peers = node.peers.countConnectedPeers();
 		
@@ -1045,6 +1046,11 @@ public class NodeStats implements Persistable {
 				totalAllocation -= localAllocation;
 				thisAllocation = totalAllocation / peers;
 			}
+		}
+		
+		if(source != null) {
+			// FIXME tell local as well somehow?
+			source.onSetPeerAllocation(input, (int)thisAllocation);
 		}
 		
 		return thisAllocation;
@@ -2125,6 +2131,35 @@ public class NodeStats implements Persistable {
 	public long getNodeToNodeBytesSent() {
 		return nodeToNodeSentBytes;
 	}
+	
+	private long allocationNoticesCounterBytesReceived;
+	private long allocationNoticesCounterBytesSent;
+	
+	final ByteCounter allocationNoticesCounter = new ByteCounter() {
+		
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				allocationNoticesCounterBytesReceived += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				allocationNoticesCounterBytesSent += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			// Ignore
+		}
+		
+	};
+	
+	public long getAllocationNoticesBytesSent() {
+		return allocationNoticesCounterBytesSent;
+	}
+
+	
 
 	private long notificationOnlySentBytes;
 	
@@ -2608,5 +2643,9 @@ public class NodeStats implements Persistable {
 		}
 		
 		return result;
+	}
+
+	public PeerLoadStats createPeerLoadStats(PeerNode peer) {
+		return new PeerLoadStats(peer);
 	}
 }
