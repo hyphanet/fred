@@ -4407,13 +4407,24 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			int last = input ? lastSentAllocationInput : lastSentAllocationOutput;
 			if(last == thisAllocation) return;
 			long now = System.currentTimeMillis();
-			if(now - timeLastSentAllocationNotice > 5000) mustSend = true;
-			else {
-				if(thisAllocation > last * 1.05) mustSend = true;
-				else if(thisAllocation < last * 0.9) mustSend = true;
+			if(now - timeLastSentAllocationNotice > 5000) {
+				if(logMINOR) Logger.minor(this, "Last sent allocation "+TimeUtil.formatTime(now - timeLastSentAllocationNotice));
+				mustSend = true;
+			} else {
+				if(thisAllocation > last * 1.05) {
+					if(logMINOR) Logger.minor(this, "Last allocation was "+last+" this is "+thisAllocation);
+					mustSend = true;
+				} else if(thisAllocation < last * 0.9) { 
+					if(logMINOR) Logger.minor(this, "Last allocation was "+last+" this is "+thisAllocation);
+					mustSend = true;
+				}
 			}
 			if(!mustSend) return;
 			timeLastSentAllocationNotice = now;
+			if(input)
+				lastSentAllocationInput = thisAllocation;
+			else
+				lastSentAllocationOutput = thisAllocation;
 			countAllocationNotices++;
 			if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this);
 		}
