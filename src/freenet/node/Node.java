@@ -4544,8 +4544,9 @@ public class Node implements TimeSkewDetectorCallback {
 		return map.size();
 	}
 	
-	public synchronized int countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer) {
+	public int countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
+		synchronized(map) {
 		if(!requestsToNode) {
 			if((source == null) != local) return 0;
 			if(source == null) return map.size();
@@ -4566,6 +4567,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count);
 			return count;
+		}
 		}
 	}
 	
