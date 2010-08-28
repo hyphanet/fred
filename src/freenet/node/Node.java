@@ -4564,6 +4564,7 @@ public class Node implements TimeSkewDetectorCallback {
 					if(tag.currentlyRoutingTo(source)) count++;
 				}
 			}
+			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count);
 			return count;
 		}
 	}
