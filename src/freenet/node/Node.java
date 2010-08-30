@@ -4480,7 +4480,12 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, UIDTag tag) {
-		completed(uid);
+		unlockUID(uid, ssk, insert, canFail, offerReply, local, tag, false);
+	}
+	
+	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, UIDTag tag, boolean noRecord) {
+		if(!noRecord)
+			completed(uid);
 
 		if(offerReply) {
 			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk);
