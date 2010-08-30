@@ -507,6 +507,9 @@ peerLoop:
 	
 			long startedTryingPeer = System.currentTimeMillis();
 			
+			boolean waitedForLoadManagement = false;
+			boolean retriedForLoadManagement = false;
+			
 loadWaiterLoop:
 			
             while(!triedAll) {
@@ -527,6 +530,7 @@ loadWaiterLoop:
             		} else {
             			if(logMINOR)
             				Logger.minor(this, "Cannot send to "+next);
+            			waitedForLoadManagement = true;
             			expectedAcceptState = next.waitRouteTo(origTag, false);
             			if(expectedAcceptState == null) {
             				// Broken due to low capacity???
@@ -643,6 +647,7 @@ acceptWaiterLoop:
 								// FIXME recalculate with broader check, allow a few percent etc.
 								if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
 									Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
+								retriedForLoadManagement = true;
 								continue loadWaiterLoop;
 							} else {
 								next.localRejectedOverload("ForwardRejectedOverload");
@@ -676,7 +681,8 @@ acceptWaiterLoop:
             }
             
             long now = System.currentTimeMillis();
-            if(logMINOR) Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(now-startedTryingPeer));
+            if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
+            	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(now-startedTryingPeer)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement);
             
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
