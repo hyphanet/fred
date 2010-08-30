@@ -4595,7 +4595,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// FIXME maybe wait a bit, check the other side's version first???
 				return RequestLikelyAcceptedState.UNKNOWN;
 			}
+			long startedWaitTime = System.currentTimeMillis();
 			while(true) {
+				// FIXME require some slack if returning LIKELY
 				// Requests already running to this node
 				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(this);
 				// Requests running from its other peers
@@ -4603,6 +4605,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
 				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState);
 				if(acceptState.ordinal() <= worstAcceptable.ordinal()) {
+					long now = System.currentTimeMillis();
+					if(logMINOR) Logger.minor(this, "Waited "+TimeUtil.formatTime((now-startedWaitTime))+" for right acceptance state");
 					tag.addRoutedTo(this, offeredKey);
 					return acceptState;
 				}
