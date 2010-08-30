@@ -594,6 +594,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 					// Non-fatal - probably still have time left
 					forwardRejectedOverload();
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
+						
+						if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
+							Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
+						// FIXME soft rejects, only check then, but don't backoff if sane
+						// FIXME recalculate with broader check, allow a few percent etc.
+						
 						if(logMINOR) Logger.minor(this, "Is local");
 						next.localRejectedOverload("ForwardRejectedOverload");
 	            		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
