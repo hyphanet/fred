@@ -417,6 +417,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 return;
             }
             
+            RequestLikelyAcceptedState expectedAcceptState = 
+            	next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.UNLIKELY, false);
+            
+            if(logMINOR && expectedAcceptState != null) 
+            	Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState);
+            
             synchronized(this) {
             	lastNode = next;
             }
