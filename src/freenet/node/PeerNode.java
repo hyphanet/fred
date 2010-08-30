@@ -2927,6 +2927,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			setLastBackoffReason(reason);
 		}
 		setPeerNodeStatus(now);
+		failSlotWaiters();
 	}
 
 	/**
