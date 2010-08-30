@@ -4544,6 +4544,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** This should be held while making changes to the number of requests routed to this peer. */
 	private final Object routedToLock = new Object();
 	
+	private long waitingCount;
+	private long waitedCount;
+	
 	public RequestLikelyAcceptedState tryRouteTo(RequestTag tag,
 			RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 		ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
@@ -4596,6 +4599,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				return RequestLikelyAcceptedState.UNKNOWN;
 			}
 			long startedWaitTime = System.currentTimeMillis();
+			long token = -1;
 			while(true) {
 				// FIXME require some slack if returning LIKELY
 				// Requests already running to this node
@@ -4610,12 +4614,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					tag.addRoutedTo(this, offeredKey);
 					return acceptState;
 				}
-				// Wait.
-				if(logMINOR) Logger.minor(this, "Waiting for new information in waitRouteTo() on "+this+" min acceptable is "+worstAcceptable);
-				try {
-					routedToLock.wait();
-				} catch (InterruptedException e) {
-					// Ignore
+				if(token == -1)
+					token = waitingCount++;
+				while(true) {
+					// Wait.
+					if(logMINOR) Logger.minor(this, "Waiting for new information in waitRouteTo() on "+this+" min acceptable is "+worstAcceptable+" token "+token);
+					try {
+						routedToLock.wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+					waitedCount++;
+					if(waitedCount >= token) break;
 				}
 			}
 		}
