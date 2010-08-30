@@ -505,8 +505,10 @@ peerLoop:
 			
 			int tryCount = 0;
 	
+			long startedTryingPeer = System.currentTimeMillis();
+			
 loadWaiterLoop:
-				
+			
             while(!triedAll) {
             	
             	RequestLikelyAcceptedState expectedAcceptState;
@@ -673,7 +675,8 @@ acceptWaiterLoop:
             	continue peerLoop;
             }
             
-            if(logMINOR) Logger.minor(this, "Took "+tryCount+" tries");
+            long now = System.currentTimeMillis();
+            if(logMINOR) Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(now-startedTryingPeer));
             
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
