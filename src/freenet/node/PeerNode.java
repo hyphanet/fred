@@ -4729,33 +4729,33 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	private int slotWaiterTypeCounter = 0;
 
+	/** Call holding routedToLock */
 	private void maybeNotifySlotWaiter() {
-		while(true) {
-			if(slotWaiters.isEmpty()) return;
-			// Should be safe to collect these here, just a little expensive.
-			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
-			ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
-			ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
-			PeerLoadStats loadStats = lastIncomingLoadStats;
-			// Requests already running to this node
-			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(this);
-			// Requests running from its other peers
-			RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
-			RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
-			if(acceptState == null) return;
-			for(int i=0;i<RequestType.values().length;i++) {
+		for(int i=0;i<RequestType.values().length;i++) {
+			RequestType type = RequestType.values()[i];
+			LinkedHashSet<SlotWaiter> list = slotWaiters.get(type);
+			if(list == null) continue;
+			if(list.isEmpty()) continue;
+			Iterator<SlotWaiter> it = list.iterator();
+			SlotWaiter slot = it.next();
+			while(true) {
+				if(slotWaiters.isEmpty()) return;
 				slotWaiterTypeCounter++;
 				if(slotWaiterTypeCounter == RequestType.values().length)
 					slotWaiterTypeCounter = 0;
-				RequestType type = RequestType.values()[i];
-				LinkedHashSet<SlotWaiter> list = slotWaiters.get(type);
-				if(list == null) continue;
-				if(list.isEmpty()) continue;
-				Iterator<SlotWaiter> it = list.iterator();
-				SlotWaiter slot = it.next();
+				// Should be safe to collect these here, just a little expensive.
+				boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+				ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
+				ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
+				PeerLoadStats loadStats = lastIncomingLoadStats;
+				// Requests already running to this node
+				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(this);
+				// Requests running from its other peers
+				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
+				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
+				if(acceptState == null) return;
 				it.remove();
 				slot.onWaited(this, acceptState);
-				break;
 			}
 		}
 	}
