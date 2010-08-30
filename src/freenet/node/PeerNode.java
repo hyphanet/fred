@@ -4532,16 +4532,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	enum RequestLikelyAcceptedState {
 		GUARANTEED, // guaranteed to be accepted, under the per-peer guaranteed limit
 		LIKELY, // likely to be accepted even though above the per-peer guaranteed limit, as overall is below the overall lower limit
-		UNLIKELY // not likely to be accepted; peer is over the per-peer guaranteed limit, and global is over the overall lower limit
+		UNLIKELY, // not likely to be accepted; peer is over the per-peer guaranteed limit, and global is over the overall lower limit
+		UNKNOWN // no data but accepting anyway
 	}
 	
 	/** This should be held while making changes to the number of requests routed to this peer. */
 	private final Object routedToLock = new Object();
 	
-	public boolean tryRouteTo(UIDTag tag, RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
+	public RequestLikelyAcceptedState tryRouteTo(UIDTag tag, RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 		ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
 		ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
-		boolean noStats = false;
 		PeerLoadStats loadStats;
 		synchronized(this) {
 			loadStats = lastIncomingLoadStats;
@@ -4550,13 +4550,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(routedToLock) {
 			if((!offeredKey) && tag.hasRoutedTo(this)) {
 				Logger.error(this, "Already routed to "+this);
-				return false;
+				return null;
 			}
 			if(loadStats == null) {
 				Logger.error(this, "Accepting because no load stats from "+this);
 				tag.addRoutedTo(this, offeredKey);
 				// FIXME maybe wait a bit, check the other side's version first???
-				return true;
+				return RequestLikelyAcceptedState.UNKNOWN;
 			}
 			// Requests already running to this node
 			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(this);
@@ -4564,9 +4564,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 			RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
 			if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState);
-			if(acceptState.ordinal() > worstAcceptable.ordinal()) return false;
+			if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
 			tag.addRoutedTo(this, offeredKey);
-			return true;
+			return acceptState;
 		}
 	}
 
