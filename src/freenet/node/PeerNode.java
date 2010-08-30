@@ -4627,12 +4627,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				tag.removeFetchingOfferedKeyFrom(this);
 			else
 				tag.removeRoutingTo(this);
+			if(logMINOR) Logger.minor(this, "No longer routing to "+tag);
 			routedToLock.notifyAll();
 		}
 	}
 	
 	public void postUnlock(UIDTag tag) {
 		synchronized(routedToLock) {
+			if(logMINOR) Logger.minor(this, "Unlocked "+tag);
 			routedToLock.notifyAll();
 		}
 	}
