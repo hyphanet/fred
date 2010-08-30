@@ -502,6 +502,8 @@ peerLoop:
             long timeSentRequest = -1;
             
 			msg = null;
+			
+			int tryCount = 0;
 	
 loadWaiterLoop:
 				
@@ -551,6 +553,8 @@ loadWaiterLoop:
             	timeSentRequest = System.currentTimeMillis();
             	
             	origTag.addRoutedTo(next, false);
+            	
+            	tryCount++;
             	
             	try {
             		//This is the first contact to this node, it is more likely to timeout
@@ -668,7 +672,9 @@ acceptWaiterLoop:
             	// Try another node
             	continue peerLoop;
             }
-
+            
+            if(logMINOR) Logger.minor(this, "Took "+tryCount+" tries");
+            
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
             // Otherwise, must be Accepted
