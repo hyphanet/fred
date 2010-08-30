@@ -501,10 +501,10 @@ peerLoop:
             
             long timeSentRequest = -1;
             
-loadWaiterLoop:
-			
 			msg = null;
 	
+loadWaiterLoop:
+				
             while(!triedAll) {
             	
             	RequestLikelyAcceptedState expectedAcceptState;
@@ -629,20 +629,23 @@ acceptWaiterLoop:
 						forwardRejectedOverload();
 						if (msg.getBoolean(DMT.IS_LOCAL)) {
 							
-							if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
-								Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
-							// FIXME soft rejects, only check then, but don't backoff if sane
-							// FIXME recalculate with broader check, allow a few percent etc.
-							
-							// FIXME if it's a soft reject, have another go after waiting.
-							
 							if(logMINOR) Logger.minor(this, "Is local");
-							next.localRejectedOverload("ForwardRejectedOverload");
-							node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-							if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
-							// Give up on this one, try another
-							next.noLongerRoutingTo(origTag, false);
-							continue peerLoop;
+							
+							if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
+								if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
+								// FIXME sanity check based on new data. Backoff if not plausible.
+								// FIXME recalculate with broader check, allow a few percent etc.
+								if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
+									Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
+								continue loadWaiterLoop;
+							} else {
+								next.localRejectedOverload("ForwardRejectedOverload");
+								node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+								if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+								// Give up on this one, try another
+								next.noLongerRoutingTo(origTag, false);
+								continue peerLoop;
+							}
 						}
 						//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
 						continue peerLoop;
