@@ -31,6 +31,7 @@ import freenet.node.FailureTable.BlockOffer;
 import freenet.node.FailureTable.OfferList;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerNode.RequestLikelyAcceptedState;
+import freenet.node.PeerNode.SlotWaiter;
 import freenet.store.KeyCollisionException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -535,7 +536,14 @@ loadWaiterLoop:
             			if(logMINOR)
             				Logger.minor(this, "Cannot send to "+next);
             			waitedForLoadManagement = true;
-            			expectedAcceptState = next.waitRouteTo(origTag, type, false);
+            			SlotWaiter waiter = next.createSlotWaiter(origTag, type, false);
+            			next.queueSlotWaiter(waiter);
+            			long startTime = System.currentTimeMillis();
+            			if(waiter.waitForAny() != null) {
+            				long endTime = System.currentTimeMillis();
+            				if(logMINOR) Logger.minor(this, "Waited for "+TimeUtil.formatTime(endTime-startTime));
+            			}
+            			expectedAcceptState = waiter.getAcceptedState();
             			if(expectedAcceptState == null) {
             				// Broken due to low capacity???
             				Logger.error(this, "Unable to route even after waiting to "+next);

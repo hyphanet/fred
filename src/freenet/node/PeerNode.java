@@ -4767,16 +4767,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return RequestLikelyAcceptedState.UNLIKELY;
 	}
 
-	public RequestLikelyAcceptedState waitRouteTo(RequestTag origTag, RequestType type,
-			boolean offeredKey) {
-		SlotWaiter slot = new SlotWaiter(origTag, type, this, offeredKey);
-		queueSlotWaiter(slot);
-		long startTime = System.currentTimeMillis();
-		if(slot.waitForAny() != null) {
-			long endTime = System.currentTimeMillis();
-			if(logMINOR) Logger.minor(this, "Waited for "+TimeUtil.formatTime(endTime-startTime));
-		}
-		return slot.getAcceptedState();
+	SlotWaiter createSlotWaiter(RequestTag tag, RequestType type, boolean offeredKey) {
+		return new SlotWaiter(tag, type, this, offeredKey);
 	}
-
+	
 }
