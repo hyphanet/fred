@@ -46,6 +46,15 @@ import freenet.support.math.TrivialRunningAverage;
  * to stuff required to implement that. */
 public class NodeStats implements Persistable {
 
+	public static enum RequestType {
+		CHK_REQUEST,
+		SSK_REQUEST,
+		CHK_INSERT,
+		SSK_INSERT,
+		CHK_OFFER_FETCH,
+		SSK_OFFER_FETCH;
+	}
+	
 	/** Sub-max ping time. If ping is greater than this, we reject some requests. */
 	public static final long DEFAULT_SUB_MAX_PING_TIME = 700;
 	/** Maximum overall average ping time. If ping is greater than this,
