@@ -4578,8 +4578,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 	
-	// FIXME on disconnect?
 	// FIXME on capacity changing so that we should add another node???
+	// FIXME on backoff so that we should add another node???
 	
 	public static class SlotWaiter {
 		
