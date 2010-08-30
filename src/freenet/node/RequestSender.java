@@ -495,8 +495,6 @@ peerLoop:
                 return;
             }
             
-            boolean triedLikely = false;
-            boolean triedLikelyAgain = false;
             boolean triedAll = false;
             
             Message msg = null;
@@ -516,34 +514,23 @@ loadWaiterLoop:
             		triedAll = true;
             		expectedAcceptState = RequestLikelyAcceptedState.UNKNOWN;
             	} else {
-            		RequestLikelyAcceptedState minAcceptable = 
-            			triedLikely ? RequestLikelyAcceptedState.GUARANTEED :
-            				RequestLikelyAcceptedState.LIKELY;
             		expectedAcceptState = 
-            			next.tryRouteTo(origTag, minAcceptable, false);
+            			next.tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
             		
             		if(expectedAcceptState != null) {
             			if(logMINOR)
             				Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState);
-            			if(expectedAcceptState == RequestLikelyAcceptedState.LIKELY) {
-            				if(triedLikely) {
-            					if(triedLikelyAgain) triedAll = true;
-            					else triedLikelyAgain = true;
-            				} else {
-            					triedLikely = true;
-            				}
-            			}
             		} else {
             			if(logMINOR)
-            				Logger.minor(this, "Cannot send to "+next+" : does not meet threshold "+minAcceptable);
-            			expectedAcceptState = next.waitRouteTo(origTag, minAcceptable, false);
+            				Logger.minor(this, "Cannot send to "+next);
+            			expectedAcceptState = next.waitRouteTo(origTag, false);
             			if(expectedAcceptState == null) {
             				// Broken due to low capacity???
             				Logger.error(this, "Unable to route even after waiting to "+next);
             				// Try another peer
             				continue peerLoop;
             			}
-            			
+            			triedAll = true;
             		}
             		// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
             	}
