@@ -4547,9 +4547,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** This should be held while making changes to the number of requests routed to this peer. */
 	private final Object routedToLock = new Object();
 	
-	private long waitingCount;
-	private long waitedCount;
-	
 	public RequestLikelyAcceptedState tryRouteTo(RequestTag tag,
 			RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 		ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
