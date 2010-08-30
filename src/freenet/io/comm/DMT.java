@@ -1582,6 +1582,14 @@ public class DMT {
 		
 	}
 	
+	public static final MessageType FNPRejectIsSoft = new MessageType("FNPRejectIsSoft", PRIORITY_HIGH) {{
+		// No fields???
+	}};
+	
+	public static final Message createFNPRejectIsSoft() {
+		return new Message(FNPRejectIsSoft);
+	}
+	
 	// New load management
 	
 	public static final MessageType FNPPeerLoadStatusByte = new MessageType("FNPPeerLoadStatusByte", PRIORITY_HIGH) {{

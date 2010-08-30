@@ -10,6 +10,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.HasCooldownCacheItem;
 import freenet.client.async.TransientChosenBlock;
 import freenet.keys.Key;
+import freenet.node.NodeStats.RejectReason;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -154,7 +155,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 							}
 					} while(now < sleepUntil);
 				}
-				String reason;
+				RejectReason reason;
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
 					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT)) != null) {
 						if(logMINOR)

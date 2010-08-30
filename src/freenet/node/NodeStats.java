@@ -870,15 +870,29 @@ public class NodeStats implements Persistable {
 		
 	}
 	
+	static class RejectReason {
+		public final String name;
+		/** If true, rejected because of preemptive bandwidth limiting, i.e. "soft", at least somewhat predictable, can be retried.
+		 * If false, hard rejection, should backoff and not retry. */
+		public final boolean soft;
+		RejectReason(String n, boolean s) {
+			name = n;
+			soft = s;
+		}
+		public String toString() {
+			return (soft ? "SOFT" : "HARD") + ":" + name;
+		}
+	}
+	
 	/* return reject reason as string if should reject, otherwise return null */
-	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert) {
+	public RejectReason shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert) {
 		if(logMINOR) dumpByteCostAverages();
 		
 		int threadCount = getActiveThreadCount();
 		if(threadLimit < threadCount) {
 			pInstantRejectIncoming.report(1.0);
 			rejected(">threadLimit", isLocal);
-			return ">threadLimit ("+threadCount+'/'+threadLimit+')';
+			return new RejectReason(">threadLimit ("+threadCount+'/'+threadLimit+')', false);
 		}
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
@@ -902,14 +916,14 @@ public class NodeStats implements Persistable {
 				} else {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">MAX_PING_TIME", isLocal);
-					return ">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
+					return new RejectReason(">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
 			} else if(pingTime > subMaxPingTime) {
 				double x = ((pingTime - subMaxPingTime)) / (maxPingTime - subMaxPingTime);
 				if(randomLessThan(x, preferInsert)) {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">SUB_MAX_PING_TIME", isLocal);
-					return ">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
+					return new RejectReason(">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
 				}
 			}
 		
@@ -920,14 +934,14 @@ public class NodeStats implements Persistable {
 				} else {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">MAX_THROTTLE_DELAY", isLocal);
-					return ">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
+					return new RejectReason(">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')', false);
 				}
 			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
 				double x = ((bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
 				if(randomLessThan(x, preferInsert)) {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">SUB_MAX_THROTTLE_DELAY", isLocal);
-					return ">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
+					return new RejectReason(">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')', false);
 				}
 			}
 			
@@ -963,13 +977,13 @@ public class NodeStats implements Persistable {
 		
 		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), byteCountersSent, requestsSnapshot, false, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply);  
-		if(ret != null) return ret;
+		if(ret != null) return new RejectReason(ret, true);
 		
 		ByteCountersSnapshot byteCountersReceived = new ByteCountersSnapshot(true);
 		
 		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), byteCountersReceived, requestsSnapshot, true, limit,
 				source, isLocal, isSSK, isInsert, isOfferReply);  
-		if(ret != null) return ret;
+		if(ret != null) return new RejectReason(ret, true);
 		
 		// Do we have the bandwidth?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
@@ -979,7 +993,7 @@ public class NodeStats implements Persistable {
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Insufficient output bandwidth", isLocal);
-			return "Insufficient output bandwidth";
+			return new RejectReason("Insufficient output bandwidth", false);
 		}
 		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
 		int expectedReceived = (int)Math.max(expected, 0);
@@ -989,17 +1003,17 @@ public class NodeStats implements Persistable {
 			requestOutputThrottle.recycle(expectedSent);
 			pInstantRejectIncoming.report(1.0);
 			rejected("Insufficient input bandwidth", isLocal);
-			return "Insufficient input bandwidth";
+			return new RejectReason("Insufficient input bandwidth", false);
 		}
 
 		if(source != null) {
 			if(source.getMessageQueueLengthBytes() > MAX_PEER_QUEUE_BYTES) {
 				rejected(">MAX_PEER_QUEUE_BYTES", isLocal);
-				return "Too many message bytes queued for peer";
+				return new RejectReason("Too many message bytes queued for peer", false);
 			}
 			if(source.getProbableSendQueueTime() > MAX_PEER_QUEUE_TIME) {
 				rejected(">MAX_PEER_QUEUE_TIME", isLocal);
-				return "Peer's queue will take too long to transfer";
+				return new RejectReason("Peer's queue will take too long to transfer", false);
 			}
 		}
 		
