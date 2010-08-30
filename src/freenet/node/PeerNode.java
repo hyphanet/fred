@@ -4560,10 +4560,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 		synchronized(routedToLock) {
-			if((!offeredKey) && tag.hasRoutedTo(this)) {
-				Logger.error(this, "Already routed to "+this);
-				return null;
-			}
 			if(loadStats == null) {
 				Logger.error(this, "Accepting because no load stats from "+this);
 				tag.addRoutedTo(this, offeredKey);
