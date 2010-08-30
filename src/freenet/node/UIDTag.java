@@ -79,4 +79,17 @@ public abstract class UIDTag {
 		currentlyRoutingTo.remove(next);
 	}
 
+	public void postUnlock() {
+		PeerNode[] peers;
+		synchronized(this) {
+			if(routedTo != null)
+				peers = routedTo.toArray(new PeerNode[routedTo.size()]);
+			else
+				peers = null;
+		}
+		if(peers != null)
+			for(PeerNode p : peers)
+				p.postUnlock(this);
+	}
+
 }

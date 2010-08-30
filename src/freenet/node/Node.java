@@ -4493,8 +4493,9 @@ public class Node implements TimeSkewDetectorCallback {
 			innerUnlock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		}
 
+		UIDTag oldTag;
 		synchronized(runningUIDs) {
-			UIDTag oldTag = runningUIDs.get(uid);
+			oldTag = runningUIDs.get(uid);
 			if(oldTag == null) {
 				if(canFail) return;
 				throw new IllegalStateException("Could not unlock "+uid+ "! : ssk="+ssk+" insert="+insert+" canFail="+canFail+" offerReply="+offerReply+" local="+local);
@@ -4506,6 +4507,7 @@ public class Node implements TimeSkewDetectorCallback {
 				runningUIDs.remove(uid);
 			}
 		}
+		oldTag.postUnlock();
 	}
 
 	private<T extends UIDTag> void innerUnlock(HashMap<Long, T> map, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean canFail) {

@@ -412,7 +412,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				next.sendAsync(req, null, this);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			}
 			synchronized (this) {
@@ -435,7 +435,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for Accepted");
-					thisTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(thisTag, false);
 					break;
 				}
 				
@@ -459,7 +459,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						if(logMINOR) Logger.minor(this,
 										"Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
-						thisTag.removeRoutingTo(next);
+						next.noLongerRoutingTo(thisTag, false);
 						break;
 					} else {
 						forwardRejectedOverload();
@@ -470,7 +470,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				if (msg.getSpec() == DMT.FNPRejectedLoop) {
 					next.successNotOverload();
 					// Loop - we don't want to send the data to this one
-					thisTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(thisTag, false);
 					break;
 				}
 				

@@ -66,6 +66,7 @@ import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
+import freenet.node.PeerNode.RequestLikelyAcceptedState;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -4468,8 +4469,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	public void reportLoadStatus(PeerLoadStats stat) {
 		if(logMINOR) Logger.minor(this, "Got load status : "+stat);
-		synchronized(this) {
+		synchronized(routedToLock) {
 			lastIncomingLoadStats = stat;
+			routedToLock.notifyAll();
 		}
 	}
 	
@@ -4507,7 +4509,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	public IncomingLoadSummaryStats getIncomingLoadStats() {
 		PeerLoadStats loadStats;
-		synchronized(this) {
+		synchronized(routedToLock) {
 			if(lastIncomingLoadStats == null) return null;
 			loadStats = lastIncomingLoadStats;
 		}
@@ -4536,10 +4538,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		UNKNOWN // no data but accepting anyway
 	}
 	
+	// FIXME add LOW_CAPACITY/BROKEN. Set this when the published capacity is way below the median.
+	// FIXME will need to calculate the median first!
+	
 	/** This should be held while making changes to the number of requests routed to this peer. */
 	private final Object routedToLock = new Object();
 	
-	public RequestLikelyAcceptedState tryRouteTo(UIDTag tag, RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
+	public RequestLikelyAcceptedState tryRouteTo(RequestTag tag,
+			RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 		ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
 		ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
 		PeerLoadStats loadStats;
@@ -4567,6 +4573,63 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
 			tag.addRoutedTo(this, offeredKey);
 			return acceptState;
+		}
+	}
+	
+	public RequestLikelyAcceptedState waitRouteTo(UIDTag tag, RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
+		ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
+		ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
+		PeerLoadStats loadStats;
+		synchronized(this) {
+			loadStats = lastIncomingLoadStats;
+		}
+		boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+		synchronized(routedToLock) {
+			if((!offeredKey) && tag.hasRoutedTo(this)) {
+				Logger.error(this, "Already routed to "+this);
+				return null;
+			}
+			if(loadStats == null) {
+				Logger.error(this, "Accepting because no load stats from "+this);
+				tag.addRoutedTo(this, offeredKey);
+				// FIXME maybe wait a bit, check the other side's version first???
+				return RequestLikelyAcceptedState.UNKNOWN;
+			}
+			while(true) {
+				// Requests already running to this node
+				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(this);
+				// Requests running from its other peers
+				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
+				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
+				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState);
+				if(acceptState.ordinal() <= worstAcceptable.ordinal()) {
+					tag.addRoutedTo(this, offeredKey);
+					return acceptState;
+				}
+				// Wait.
+				if(logMINOR) Logger.minor(this, "Waiting for new information in waitRouteTo() on "+this+" min acceptable is "+worstAcceptable);
+				try {
+					routedToLock.wait();
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+		}
+	}
+	
+	public void noLongerRoutingTo(UIDTag tag, boolean offeredKey) {
+		synchronized(routedToLock) {
+			if(offeredKey)
+				tag.removeFetchingOfferedKeyFrom(this);
+			else
+				tag.removeRoutingTo(this);
+			routedToLock.notifyAll();
+		}
+	}
+	
+	public void postUnlock(UIDTag tag) {
+		synchronized(routedToLock) {
+			routedToLock.notifyAll();
 		}
 	}
 
@@ -4598,7 +4661,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		else
 			return RequestLikelyAcceptedState.UNLIKELY;
 	}
-	
+
 	
 
 }

@@ -243,7 +243,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
 				offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
+				pn.noLongerRoutingTo(origTag, true);
 				continue;
 			}
         	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPRejectedOverload);
@@ -259,7 +259,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
 					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 					continue;
 				}
         		if(reply == null) {
@@ -271,14 +271,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			if(logMINOR)
         				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
         			offers.keepLastOffer();
-    	        	origTag.removeFetchingOfferedKeyFrom(pn);
+    				pn.noLongerRoutingTo(origTag, true);
         			continue;
         		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
         			// Fatal, delete it.
         			if(logMINOR)
         				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
         			offers.deleteLastOffer();
-    	        	origTag.removeFetchingOfferedKeyFrom(pn);
+    				pn.noLongerRoutingTo(origTag, true);
         			continue;
         		} else if(reply.getSpec() == DMT.FNPCHKDataFound) {
         			headers = ((ShortBuffer)reply.getObject(DMT.BLOCK_HEADERS)).getData();
@@ -371,7 +371,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 						if(logMINOR)
 							Logger.minor(this, "Disconnected: "+pn+" getting data for offer for "+key);
 						offers.deleteLastOffer();
-			        	origTag.removeFetchingOfferedKeyFrom(pn);
+						pn.noLongerRoutingTo(origTag, true);
 						continue;
 					}
 					if(dataMessage == null) {
@@ -441,6 +441,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
         int highHTLFailureCount = 0;
         boolean starting = true;
+peerLoop:
         while(true) {
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
             if((!starting) && (!canWriteStorePrev)) {
@@ -494,135 +495,188 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 return;
             }
             
-            RequestLikelyAcceptedState expectedAcceptState = 
-            	next.tryRouteTo(origTag, RequestLikelyAcceptedState.UNKNOWN, false);
-            
-            if(logMINOR && expectedAcceptState != null) 
-            	Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState);
-            
-            synchronized(this) {
-            	lastNode = next;
-            }
-			
-            if(logMINOR) Logger.minor(this, "Routing request to "+next);
-            nodesRoutedTo.add(next);
-            
-            Message req = createDataRequest();
-            
-            // Not possible to get an accurate time for sending, guaranteed to be not later than the time of receipt.
-            // Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.
-            // So take it from when we first started to try to send the request.
-            // See comments below when handling FNPRecentlyFailed for why we need this.
-            long timeSentRequest = System.currentTimeMillis();
-			
-            origTag.addRoutedTo(next, false);
-            
-            try {
-            	//This is the first contact to this node, it is more likely to timeout
-				/*
-				 * using sendSync could:
-				 *   make ACCEPTED_TIMEOUT more accurate (as it is measured from the send-time),
-				 *   use a lot of our time that we have to fulfill this request (simply waiting on the send queue, or longer if the node just went down),
-				 * using sendAsync could:
-				 *   make ACCEPTED_TIMEOUT much more likely,
-				 *   leave many hanging-requests/unclaimedFIFO items,
-				 *   potentially make overloaded peers MORE overloaded (we make a request and promptly forget about them).
-				 * 
-				 * Don't use sendAsync().
-				 */
-            	next.sendSync(req, this);
-            } catch (NotConnectedException e) {
-            	Logger.minor(this, "Not connected");
-	        	origTag.removeRoutingTo(next);
-            	continue;
-            }
-            
-            synchronized(this) {
-            	hasForwarded = true;
-            }
+            boolean triedLikely = false;
+            boolean triedLikelyAgain = false;
+            boolean triedAll = false;
             
             Message msg = null;
             
-            while(true) {
+            long timeSentRequest = -1;
+            
+loadWaiterLoop:
+			
+			msg = null;
+	
+            while(!triedAll) {
             	
-                /**
-                 * What are we waiting for?
-                 * FNPAccepted - continue
-                 * FNPRejectedLoop - go to another node
-                 * FNPRejectedOverload - propagate back to source, go to another node if local
-                 */
-                
-                MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
-                MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
-                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
-
-                // mfRejectedOverload must be the last thing in the or
-                // So its or pointer remains null
-                // Otherwise we need to recreate it below
-                MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
-                
-                try {
-                    msg = node.usm.waitFor(mf, this);
-                    if(logMINOR) Logger.minor(this, "first part got "+msg);
-                } catch (DisconnectedException e) {
-                    Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
-                    origTag.removeRoutingTo(next);
-                    break;
-                }
-                
-            	if(msg == null) {
-            		if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
-            		// Timeout waiting for Accepted
-            		next.localRejectedOverload("AcceptedTimeout");
-            		forwardRejectedOverload();
-            		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-            		// Try next node
-            		break;
+            	RequestLikelyAcceptedState expectedAcceptState;
+            	
+            	if(next.getLastIncomingLoadStats() == null) {
+            		// No stats, old style, just go for it.
+            		triedAll = true;
+            		expectedAcceptState = RequestLikelyAcceptedState.UNKNOWN;
+            	} else {
+            		RequestLikelyAcceptedState minAcceptable = 
+            			triedLikely ? RequestLikelyAcceptedState.GUARANTEED :
+            				RequestLikelyAcceptedState.LIKELY;
+            		expectedAcceptState = 
+            			next.tryRouteTo(origTag, minAcceptable, false);
+            		
+            		if(expectedAcceptState != null) {
+            			if(logMINOR)
+            				Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState);
+            			if(expectedAcceptState == RequestLikelyAcceptedState.LIKELY) {
+            				if(triedLikely) {
+            					if(triedLikelyAgain) triedAll = true;
+            					else triedLikelyAgain = true;
+            				} else {
+            					triedLikely = true;
+            				}
+            			}
+            		} else {
+            			if(logMINOR)
+            				Logger.minor(this, "Cannot send to "+next+" : does not meet threshold "+minAcceptable);
+            			expectedAcceptState = next.waitRouteTo(origTag, minAcceptable, false);
+            			if(expectedAcceptState == null) {
+            				// Broken due to low capacity???
+            				Logger.error(this, "Unable to route even after waiting to "+next);
+            				// Try another peer
+            				continue peerLoop;
+            			}
+            			
+            		}
+            		// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
             	}
             	
-            	if(msg.getSpec() == DMT.FNPRejectedLoop) {
-            		if(logMINOR) Logger.minor(this, "Rejected loop");
-            		next.successNotOverload();
-            		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-            		// Find another node to route to
-            		origTag.removeRoutingTo(next);
-            		break;
+            	synchronized(this) {
+            		lastNode = next;
             	}
             	
-            	if(msg.getSpec() == DMT.FNPRejectedOverload) {
-            		if(logMINOR) Logger.minor(this, "Rejected: overload");
-					// Non-fatal - probably still have time left
-					forwardRejectedOverload();
-					if (msg.getBoolean(DMT.IS_LOCAL)) {
-						
-						if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
-							Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
-						// FIXME soft rejects, only check then, but don't backoff if sane
-						// FIXME recalculate with broader check, allow a few percent etc.
-						
-						if(logMINOR) Logger.minor(this, "Is local");
-						next.localRejectedOverload("ForwardRejectedOverload");
-	            		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
-						// Give up on this one, try another
-						origTag.removeRoutingTo(next);
-						break;
+            	if(logMINOR) Logger.minor(this, "Routing request to "+next);
+            	nodesRoutedTo.add(next);
+            	
+            	Message req = createDataRequest();
+            	
+            	// Not possible to get an accurate time for sending, guaranteed to be not later than the time of receipt.
+            	// Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.
+            	// So take it from when we first started to try to send the request.
+            	// See comments below when handling FNPRecentlyFailed for why we need this.
+            	timeSentRequest = System.currentTimeMillis();
+            	
+            	origTag.addRoutedTo(next, false);
+            	
+            	try {
+            		//This is the first contact to this node, it is more likely to timeout
+            		/*
+            		 * using sendSync could:
+            		 *   make ACCEPTED_TIMEOUT more accurate (as it is measured from the send-time),
+            		 *   use a lot of our time that we have to fulfill this request (simply waiting on the send queue, or longer if the node just went down),
+            		 * using sendAsync could:
+            		 *   make ACCEPTED_TIMEOUT much more likely,
+            		 *   leave many hanging-requests/unclaimedFIFO items,
+            		 *   potentially make overloaded peers MORE overloaded (we make a request and promptly forget about them).
+            		 * 
+            		 * Don't use sendAsync().
+            		 */
+            		next.sendSync(req, this);
+            	} catch (NotConnectedException e) {
+            		Logger.minor(this, "Not connected");
+            		next.noLongerRoutingTo(origTag, false);
+            		continue peerLoop;
+            	}
+            	
+            	synchronized(this) {
+            		hasForwarded = true;
+            	}
+            	
+acceptWaiterLoop:	
+				while(true) {
+					
+					/**
+					 * What are we waiting for?
+					 * FNPAccepted - continue
+					 * FNPRejectedLoop - go to another node
+					 * FNPRejectedOverload - propagate back to source, go to another node if local
+					 */
+					
+					MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
+					MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
+					MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
+					
+					// mfRejectedOverload must be the last thing in the or
+					// So its or pointer remains null
+					// Otherwise we need to recreate it below
+					MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+					
+					try {
+						msg = node.usm.waitFor(mf, this);
+						if(logMINOR) Logger.minor(this, "first part got "+msg);
+					} catch (DisconnectedException e) {
+						Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
+						next.noLongerRoutingTo(origTag, false);
+						continue peerLoop;
 					}
-					//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
-					continue;
-            	}
+					
+					if(msg == null) {
+						if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
+						// Timeout waiting for Accepted
+						next.localRejectedOverload("AcceptedTimeout");
+						forwardRejectedOverload();
+						node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+						// Try next node
+						continue peerLoop;
+					}
+					
+					if(msg.getSpec() == DMT.FNPRejectedLoop) {
+						if(logMINOR) Logger.minor(this, "Rejected loop");
+						next.successNotOverload();
+						node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+						// Find another node to route to
+						next.noLongerRoutingTo(origTag, false);
+						continue peerLoop;
+					}
+					
+					if(msg.getSpec() == DMT.FNPRejectedOverload) {
+						if(logMINOR) Logger.minor(this, "Rejected: overload");
+						// Non-fatal - probably still have time left
+						forwardRejectedOverload();
+						if (msg.getBoolean(DMT.IS_LOCAL)) {
+							
+							if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
+								Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
+							// FIXME soft rejects, only check then, but don't backoff if sane
+							// FIXME recalculate with broader check, allow a few percent etc.
+							
+							// FIXME if it's a soft reject, have another go after waiting.
+							
+							if(logMINOR) Logger.minor(this, "Is local");
+							next.localRejectedOverload("ForwardRejectedOverload");
+							node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+							if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+							// Give up on this one, try another
+							next.noLongerRoutingTo(origTag, false);
+							continue peerLoop;
+						}
+						//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
+						continue peerLoop;
+					}
+					
+					if(msg.getSpec() != DMT.FNPAccepted) {
+						Logger.error(this, "Unrecognized message: "+msg);
+						continue peerLoop;
+					}
+					
+					break; // Got Accepted
+					
+				} // acceptWaiterLoop
             	
-            	if(msg.getSpec() != DMT.FNPAccepted) {
-            		Logger.error(this, "Unrecognized message: "+msg);
-            		continue;
-            	}
-            	
-            	break;
-            }
+            	break; // Got Accepted
+            
+            } // loadWaiterLoop
             
             if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) {
             	// Try another node
-            	continue;
+            	continue peerLoop;
             }
 
             if(logMINOR) Logger.minor(this, "Got Accepted");
@@ -654,8 +708,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		msg = node.usm.waitFor(mf, this);
             	} catch (DisconnectedException e) {
             		Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
-            		origTag.removeRoutingTo(next);
-            		break;
+                	next.noLongerRoutingTo(origTag, false);
+            		continue peerLoop;
             	}
             	
             	if(logMINOR) Logger.minor(this, "second part got "+msg);
@@ -752,7 +806,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		if(newHtl < htl) htl = newHtl;
             		next.successNotOverload();
             		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-            		origTag.removeRoutingTo(next);
+                	next.noLongerRoutingTo(origTag, false);
             		break;
             	}
             	
@@ -768,7 +822,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 						// Node in trouble suddenly??
 						Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
 						// Give up on this one, try another
-						origTag.removeRoutingTo(next);
+		            	next.noLongerRoutingTo(origTag, false);
 						break;
 					}
 					//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.
