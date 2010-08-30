@@ -18,6 +18,8 @@ import freenet.io.comm.Peer;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
+import freenet.node.NodeStats.PeerLoadStats;
+import freenet.node.NodeStats.RejectReason;
 import freenet.store.BlockMetadata;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
@@ -280,11 +282,13 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		boolean needPubKey;
 		try {
 		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
-		String reject = 
+		RejectReason reject = 
 			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false, false);
 		if(reject != null) {
 			Logger.normal(this, "Rejecting FNPGetOfferedKey from "+source+" for "+key+" : "+reject);
 			Message rejected = DMT.createFNPRejectedOverload(uid, true);
+			if(reject.soft)
+				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
 				source.sendAsync(rejected, null, node.failureTable.senderCounter);
 			} catch (NotConnectedException e) {
@@ -391,11 +395,13 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		BlockMetadata meta = new BlockMetadata();
 		KeyBlock block = node.fetch(key, false, false, false, false, meta);
 		
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null && !meta.isOldBlock(), false);
+		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null && !meta.isOldBlock(), false);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting "+(isSSK ? "SSK" : "CHK")+" request from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
+			if(rejectReason.soft)
+				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
 				source.sendAsync(rejected, null, ctr);
 			} catch (NotConnectedException e) {
@@ -451,10 +457,12 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(preference != null)
 			preferInsert = preference.getBoolean(DMT.PREFER_INSERT);
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false, preferInsert);
+		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false, preferInsert);
 		if(rejectReason != null) {
 			Logger.normal(this, "Rejecting insert from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
+			if(rejectReason.soft)
+				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
 				source.sendAsync(rejected, null, ctr);
 			} catch (NotConnectedException e) {
