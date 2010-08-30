@@ -1114,36 +1114,8 @@ public class NodeStats implements Persistable {
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
 			}
 			
-			// Fair sharing between request types.
-			// The old mechanism incremented each request type, so that we would only accept
-			// a request of a given type if there was enough space for one of each type without exceeding the limit.
-			// I suspect this didn't do anything, since it's effectively just a lower limit, resulting in the smallest 
-			// requests continuing to be largely accepted and largely exclude the larger ones.
-			// Also the old mechanism wasn't compatible with fair sharing between peers anyway.
-			
-			// So lets do something different. Reject if the given type is using 75%+ of the upper limit.
-			
-			double typeUsed;
-			
-			if(isInsert) {
-				if(isSSK) {
-					typeUsed = (requestsSnapshot.numRemoteSSKInserts + requestsSnapshot.numLocalSSKInserts) * successfulSskInsertBytesSentAverage.currentValue();
-				} else {
-					typeUsed = (requestsSnapshot.numRemoteCHKInserts + requestsSnapshot.numLocalCHKInserts) * successfulChkInsertBytesSentAverage.currentValue();
-				}
-			} else {
-				if(isSSK) {
-					typeUsed = (requestsSnapshot.numRemoteSSKRequests + requestsSnapshot.numLocalSSKRequests) * successfulSskFetchBytesSentAverage.currentValue();
-				} else {
-					typeUsed = (requestsSnapshot.numRemoteCHKRequests + requestsSnapshot.numLocalCHKRequests) * successfulChkFetchBytesSentAverage.currentValue();
-				}
-			}
-			
-			if(typeUsed > 0.75 * bandwidthAvailableOutputUpperLimit) {
-				rejected(name+" bandwidth liability: fairness between types", isLocal);
-				return name+" bandwidth liability: fairness between types for "+(isSSK?"SSK":"CHK")+" "+(isInsert?"insert":"request"+" (running "+typeUsed+" threshold 75% of "+bandwidthAvailableOutputUpperLimit+")");
-			}
-			
+			// Fair sharing between types should be implemented on the sender.
+			// Implementing it here will interfere with fair sharing between peers' predictability: It can cause failures even when a peer is within its guaranteed allocation, and these failures can be caused by outside, unpredictable factors (i.e. actions of other peers).
 		}
 		return null;
 	}
