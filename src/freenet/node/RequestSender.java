@@ -441,6 +441,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
         int highHTLFailureCount = 0;
         boolean starting = true;
+        
+        NodeStats.RequestType type =
+        	(key instanceof NodeSSK) ? NodeStats.RequestType.SSK_REQUEST : NodeStats.RequestType.CHK_REQUEST;
+        
 peerLoop:
         while(true) {
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
@@ -531,7 +535,7 @@ loadWaiterLoop:
             			if(logMINOR)
             				Logger.minor(this, "Cannot send to "+next);
             			waitedForLoadManagement = true;
-            			expectedAcceptState = next.waitRouteTo(origTag, false);
+            			expectedAcceptState = next.waitRouteTo(origTag, type, false);
             			if(expectedAcceptState == null) {
             				// Broken due to low capacity???
             				Logger.error(this, "Unable to route even after waiting to "+next);

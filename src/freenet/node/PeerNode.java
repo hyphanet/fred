@@ -15,6 +15,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -66,6 +67,7 @@ import freenet.keys.Key;
 import freenet.keys.USK;
 import freenet.node.NodeStats.ByteCountersSnapshot;
 import freenet.node.NodeStats.PeerLoadStats;
+import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
@@ -4585,9 +4587,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		private RequestLikelyAcceptedState acceptedState;
 		final UIDTag tag;
 		final boolean offeredKey;
+		final RequestType requestType;
 		
-		SlotWaiter(UIDTag tag, PeerNode initial, boolean offeredKey) {
+		SlotWaiter(UIDTag tag, RequestType type, PeerNode initial, boolean offeredKey) {
 			this.tag = tag;
+			this.requestType = type;
 			this.offeredKey = offeredKey;
 			this.waitingFor = new HashSet<PeerNode>();
 			this.waitingFor.add(initial);
@@ -4634,14 +4638,24 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 	}
 	
-	private final LinkedHashSet<SlotWaiter> slotWaiters = new LinkedHashSet<SlotWaiter>();
+	private final EnumMap<RequestType,LinkedHashSet<SlotWaiter>> slotWaiters = new EnumMap<RequestType,LinkedHashSet<SlotWaiter>>(RequestType.class);
 	
 	void queueSlotWaiter(SlotWaiter waiter) {
 		synchronized(routedToLock) {
-			slotWaiters.add(waiter);
+			makeSlotWaiters(waiter.requestType).add(waiter);
+			slotWaiters.get(waiter.requestType).add(waiter);
 		}
 	}
 	
+	private LinkedHashSet<SlotWaiter> makeSlotWaiters(RequestType requestType) {
+		LinkedHashSet<SlotWaiter> slots = slotWaiters.get(requestType);
+		if(slots == null) {
+			slots = new LinkedHashSet<SlotWaiter>();
+			slotWaiters.put(requestType, slots);
+		}
+		return slots;
+	}
+
 	void unqueueSlotWaiter(SlotWaiter waiter) {
 		synchronized(routedToLock) {
 			slotWaiters.remove(waiter);
@@ -4665,6 +4679,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			maybeNotifySlotWaiter();
 		}
 	}
+	
+	private int slotWaiterTypeCounter = 0;
 
 	private void maybeNotifySlotWaiter() {
 		while(true) {
@@ -4680,10 +4696,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 			RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
 			if(acceptState == null) return;
-			Iterator<SlotWaiter> it = slotWaiters.iterator();
-			SlotWaiter slot = it.next();
-			it.remove();
-			slot.onWaited(this, acceptState);
+			for(int i=0;i<RequestType.values().length;i++) {
+				slotWaiterTypeCounter++;
+				if(slotWaiterTypeCounter == RequestType.values().length)
+					slotWaiterTypeCounter = 0;
+				RequestType type = RequestType.values()[i];
+				LinkedHashSet<SlotWaiter> list = slotWaiters.get(type);
+				if(list == null) continue;
+				if(list.isEmpty()) continue;
+				Iterator<SlotWaiter> it = list.iterator();
+				SlotWaiter slot = it.next();
+				it.remove();
+				slot.onWaited(this, acceptState);
+				break;
+			}
 		}
 	}
 
@@ -4716,9 +4742,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return RequestLikelyAcceptedState.UNLIKELY;
 	}
 
-	public RequestLikelyAcceptedState waitRouteTo(RequestTag origTag,
+	public RequestLikelyAcceptedState waitRouteTo(RequestTag origTag, RequestType type,
 			boolean offeredKey) {
-		SlotWaiter slot = new SlotWaiter(origTag, this, offeredKey);
+		SlotWaiter slot = new SlotWaiter(origTag, type, this, offeredKey);
 		queueSlotWaiter(slot);
 		long startTime = System.currentTimeMillis();
 		if(slot.waitForAny() != null) {
