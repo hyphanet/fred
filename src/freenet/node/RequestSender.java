@@ -410,7 +410,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 loadWaiterLoop:
             while(true) {
             	
-            	DO action = waitForAccepted();
+            	DO action = waitForAccepted(expectedAcceptState);
             	// Here FINISHED means accepted, WAIT means try again (soft reject).
             	if(action == DO.WAIT) {
 					//retriedForLoadManagement = true;
@@ -858,7 +858,7 @@ loadWaiterLoop:
 	}
 
 	/** Here FINISHED means accepted, WAIT means try again (soft reject). */
-    private DO waitForAccepted() {
+    private DO waitForAccepted(RequestLikelyAcceptedState expectedAcceptState) {
     	while(true) {
     		
     		Message msg;
@@ -901,6 +901,11 @@ loadWaiterLoop:
     			if (msg.getBoolean(DMT.IS_LOCAL)) {
     				
     				if(logMINOR) Logger.minor(this, "Is local");
+  
+					if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
+						Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
+					// FIXME soft rejects, only check then, but don't backoff if sane
+					// FIXME recalculate with broader check, allow a few percent etc.
     				
     				// FIXME new load management introduces soft rejects and waiting.
 //    				if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
