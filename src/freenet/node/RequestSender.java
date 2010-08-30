@@ -537,18 +537,37 @@ loadWaiterLoop:
             				Logger.minor(this, "Cannot send to "+next);
             			waitedForLoadManagement = true;
             			SlotWaiter waiter = next.createSlotWaiter(origTag, type, false);
-            			next.queueSlotWaiter(waiter);
-            			long startTime = System.currentTimeMillis();
-            			if(waiter.waitForAny() != null) {
-            				long endTime = System.currentTimeMillis();
-            				if(logMINOR) Logger.minor(this, "Waited for "+TimeUtil.formatTime(endTime-startTime));
-            			}
-            			expectedAcceptState = waiter.getAcceptedState();
-            			if(expectedAcceptState == null) {
-            				// Broken due to low capacity???
-            				Logger.error(this, "Unable to route even after waiting to "+next);
-            				// Try another peer
-            				continue peerLoop;
+            			while(true) {
+            				next.queueSlotWaiter(waiter);
+            				long startTime = System.currentTimeMillis();
+            				PeerNode waited = waiter.waitForAny();
+            				if(waited == null) {
+            					
+            					// Disconnected, low capacity, or backed off.
+            					// In any case, add another peer.
+            					
+            					// Route it
+            					next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+            							key, htl, 0, source == null);
+            					
+            					if(next == null) {
+            						if (logMINOR && rejectOverloads>0)
+            							Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
+            						// Backtrack
+            						finish(ROUTE_NOT_FOUND, null, false);
+            						node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
+            						return;
+            					} else {
+            						if(logMINOR) Logger.minor(this, "Adding new peer to the wait list: "+next);
+            						// Add the new peer to the list
+            						continue;
+            					}
+            				} else {
+            					next = waited;
+            					long endTime = System.currentTimeMillis();
+            					if(logMINOR) Logger.minor(this, "Sending to "+next+ " after waited for "+TimeUtil.formatTime(endTime-startTime));
+            					break;
+            				}
             			}
             		}
             		// FIXME only report for routing accuracy purposes at this point, not in closerPeer().

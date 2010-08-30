@@ -4653,10 +4653,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private final EnumMap<RequestType,LinkedHashSet<SlotWaiter>> slotWaiters = new EnumMap<RequestType,LinkedHashSet<SlotWaiter>>(RequestType.class);
 	
 	void queueSlotWaiter(SlotWaiter waiter) {
+		boolean noLoadStats = false;
 		synchronized(routedToLock) {
-			makeSlotWaiters(waiter.requestType).add(waiter);
-			slotWaiters.get(waiter.requestType).add(waiter);
+			noLoadStats = (this.lastIncomingLoadStats == null);
+			if(!noLoadStats) {
+				makeSlotWaiters(waiter.requestType).add(waiter);
+				slotWaiters.get(waiter.requestType).add(waiter);
+				return;
+			}
 		}
+		if(logMINOR) Logger.minor(this, "Not waiting for "+this+" as no load stats");
+		waiter.onWaited(this, RequestLikelyAcceptedState.UNKNOWN);
 	}
 	
 	private LinkedHashSet<SlotWaiter> makeSlotWaiters(RequestType requestType) {
