@@ -535,6 +535,7 @@ loadWaiterLoop:
             			triedAll = true;
             		}
             		// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
+            		// In fact, we should report only after Accepted.
             	}
             	
             	synchronized(this) {
