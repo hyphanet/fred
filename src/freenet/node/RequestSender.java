@@ -495,7 +495,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             }
             
             RequestLikelyAcceptedState expectedAcceptState = 
-            	next.tryRouteTo(origTag, RequestLikelyAcceptedState.UNLIKELY, false);
+            	next.tryRouteTo(origTag, RequestLikelyAcceptedState.UNKNOWN, false);
             
             if(logMINOR && expectedAcceptState != null) 
             	Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState);
