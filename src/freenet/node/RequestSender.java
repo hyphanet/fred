@@ -30,6 +30,7 @@ import freenet.keys.SSKVerifyException;
 import freenet.node.FailureTable.BlockOffer;
 import freenet.node.FailureTable.OfferList;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.PeerNode.RequestLikelyAcceptedState;
 import freenet.store.KeyCollisionException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -492,6 +493,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
                 return;
             }
+            
+            next.tryRouteTo(origTag, RequestLikelyAcceptedState.UNLIKELY, false);
             
             synchronized(this) {
             	lastNode = next;

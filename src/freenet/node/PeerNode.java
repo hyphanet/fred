@@ -4528,5 +4528,77 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized PeerLoadStats getLastIncomingLoadStats() {
 		return lastIncomingLoadStats;
 	}
+	
+	enum RequestLikelyAcceptedState {
+		GUARANTEED, // guaranteed to be accepted, under the per-peer guaranteed limit
+		LIKELY, // likely to be accepted even though above the per-peer guaranteed limit, as overall is below the overall lower limit
+		UNLIKELY // not likely to be accepted; peer is over the per-peer guaranteed limit, and global is over the overall lower limit
+	}
+	
+	/** This should be held while making changes to the number of requests routed to this peer. */
+	private final Object routedToLock = new Object();
+	
+	public boolean tryRouteTo(UIDTag tag, RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
+		ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
+		ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
+		boolean noStats = false;
+		PeerLoadStats loadStats;
+		synchronized(this) {
+			loadStats = lastIncomingLoadStats;
+		}
+		boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+		synchronized(routedToLock) {
+			if((!offeredKey) && tag.hasRoutedTo(this)) {
+				Logger.error(this, "Already routed to "+this);
+				return false;
+			}
+			if(loadStats == null) {
+				Logger.error(this, "Accepting because no load stats from "+this);
+				tag.addRoutedTo(this, offeredKey);
+				// FIXME maybe wait a bit, check the other side's version first???
+				return true;
+			}
+			// Requests already running to this node
+			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(this);
+			// Requests running from its other peers
+			RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
+			RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
+			if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState);
+			if(acceptState.ordinal() > worstAcceptable.ordinal()) return false;
+			tag.addRoutedTo(this, offeredKey);
+			return true;
+		}
+	}
+
+	/** LOCKING: Call inside routedToLock 
+	 * @param otherRunningRequests 
+	 * @param runningRequests 
+	 * @param byteCountersInput 
+	 * @param byteCountersOutput */
+	private RequestLikelyAcceptedState getRequestLikelyAcceptedState(ByteCountersSnapshot byteCountersOutput, ByteCountersSnapshot byteCountersInput, RunningRequestsSnapshot runningRequests, RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, PeerLoadStats stats) {
+		RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedState(byteCountersOutput, false, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+		RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedState(byteCountersInput, true, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+		if(inputState.ordinal() > outputState.ordinal())
+			return inputState;
+		else
+			return outputState;
+	}
+
+	private RequestLikelyAcceptedState getRequestLikelyAcceptedState(
+			ByteCountersSnapshot byteCounters, boolean input,
+			RunningRequestsSnapshot runningRequests,
+			RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
+			PeerLoadStats stats) {
+		double ourUsage = runningRequests.calculate(ignoreLocalVsRemote, byteCounters);
+		if(ourUsage < stats.peerLimit(input))
+			return RequestLikelyAcceptedState.GUARANTEED;
+		double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, byteCounters);
+		if(ourUsage + theirUsage < stats.lowerLimit(input))
+			return RequestLikelyAcceptedState.LIKELY;
+		else
+			return RequestLikelyAcceptedState.UNLIKELY;
+	}
+	
+	
 
 }
