@@ -547,7 +547,11 @@ loadWaiterLoop:
             					// In any case, add another peer.
             					
             					// Route it
-            					next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+            					// Nodes we were waiting for that then became backed off will have been removed from the list.
+            					HashSet<PeerNode> exclude = waiter.waitingForList();
+            					exclude.addAll(nodesRoutedTo);
+            					// will have been removed from the list.
+            					next = node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
             							key, htl, 0, source == null);
             					
             					if(next == null) {

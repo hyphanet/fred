@@ -1228,7 +1228,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		OpennetManager om = node.getOpennet();
 		if(om != null)
 			om.onDisconnect(this);
-		failSlotWaiters();
+		failSlotWaiters(true);
 		return ret;
 	}
 
@@ -2927,7 +2927,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			setLastBackoffReason(reason);
 		}
 		setPeerNodeStatus(now);
-		failSlotWaiters();
+		failSlotWaiters(true);
 	}
 
 	/**
@@ -4590,6 +4590,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		final UIDTag tag;
 		final boolean offeredKey;
 		final RequestType requestType;
+		private boolean failed;
 		
 		SlotWaiter(UIDTag tag, RequestType type, PeerNode initial, boolean offeredKey) {
 			this.tag = tag;
@@ -4623,25 +4624,38 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(p != peer) p.unqueueSlotWaiter(this);
 		}
 		
-		/** Peer disconnected e.g. */
-		void onFailed(PeerNode peer) {
+		/** Some sort of failure.
+		 * @param reallyFailed If true, we can't route to the node, or should reconsider 
+		 * routing to it, due to e.g. backoff or disconnection. If false, this is 
+		 * something like the node is now regarded as low capacity so we should consider
+		 * other nodes, but still allow this one.
+		 */
+		void onFailed(PeerNode peer, boolean reallyFailed) {
 			synchronized(this) {
 				if(acceptedBy != null) return;
-				if(!waitingFor.contains(peer)) return;
-				waitingFor.remove(peer);
-				if(!waitingFor.isEmpty()) return;
+				if(reallyFailed) {
+					waitingFor.remove(peer);
+					if(!waitingFor.isEmpty()) return;
+				}
+				failed = true;
 			}
-			
+		}
+		
+		public HashSet<PeerNode> waitingForList() {
+			synchronized(this) {
+				return new HashSet<PeerNode>(waitingFor);
+			}
 		}
 		
 		public synchronized PeerNode waitForAny() {
-			while(acceptedBy == null && !waitingFor.isEmpty()) {
+			while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
 				try {
 					wait();
 				} catch (InterruptedException e) {
 					// Ignore
 				}
 			}
+			failed = false;
 			return acceptedBy;
 		}
 		
@@ -4682,7 +4696,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 	
-	private void failSlotWaiters() {
+	private void failSlotWaiters(boolean reallyFailed) {
 		for(RequestType type : RequestType.values()) {
 			LinkedHashSet<SlotWaiter> slots; 
 			synchronized(routedToLock) {
@@ -4691,7 +4705,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				slotWaiters.remove(type);
 			}
 			for(SlotWaiter w : slots)
-				w.onFailed(this);
+				w.onFailed(this, reallyFailed);
 		}
 	}
 	
