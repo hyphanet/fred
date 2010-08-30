@@ -4729,24 +4729,29 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	private int slotWaiterTypeCounter = 0;
 
-	/** Call holding routedToLock */
 	private void maybeNotifySlotWaiter() {
-		for(int i=0;i<RequestType.values().length;i++) {
-			RequestType type = RequestType.values()[i];
-			LinkedHashSet<SlotWaiter> list = slotWaiters.get(type);
-			if(list == null) continue;
-			if(list.isEmpty()) continue;
-			Iterator<SlotWaiter> it = list.iterator();
-			SlotWaiter slot = it.next();
-			while(true) {
-				if(slotWaiters.isEmpty()) return;
+		ByteCountersSnapshot byteCountersOutput = null;
+		ByteCountersSnapshot byteCountersInput = null;
+		boolean ignoreLocalVsRemote = false;
+		while(true) {
+			if(slotWaiters.isEmpty()) return;
+			boolean foundNone = true;
+			for(int i=0;i<RequestType.values().length;i++) {
 				slotWaiterTypeCounter++;
 				if(slotWaiterTypeCounter == RequestType.values().length)
 					slotWaiterTypeCounter = 0;
+				RequestType type = RequestType.values()[i];
+				LinkedHashSet<SlotWaiter> list = slotWaiters.get(type);
+				if(list == null) continue;
+				if(list.isEmpty()) continue;
+				Iterator<SlotWaiter> it = list.iterator();
+				foundNone = false;
 				// Should be safe to collect these here, just a little expensive.
-				boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
-				ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
-				ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
+				if(byteCountersOutput == null) {
+					ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+					byteCountersOutput = node.nodeStats.getByteCounters(false);
+					byteCountersInput = node.nodeStats.getByteCounters(true);
+				}
 				PeerLoadStats loadStats = lastIncomingLoadStats;
 				// Requests already running to this node
 				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(this);
@@ -4754,10 +4759,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
 				if(acceptState == null) return;
-				if(acceptState == RequestLikelyAcceptedState.UNLIKELY) return;
+				SlotWaiter slot = it.next();
 				it.remove();
 				slot.onWaited(this, acceptState);
 			}
+			if(foundNone) return;
 		}
 	}
 
