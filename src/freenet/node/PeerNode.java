@@ -1228,6 +1228,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		OpennetManager om = node.getOpennet();
 		if(om != null)
 			om.onDisconnect(this);
+		failSlotWaiters();
 		return ret;
 	}
 
@@ -4621,8 +4622,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(p != peer) p.unqueueSlotWaiter(this);
 		}
 		
+		/** Peer disconnected e.g. */
+		void onFailed(PeerNode peer) {
+			synchronized(this) {
+				if(acceptedBy != null) return;
+				if(!waitingFor.contains(peer)) return;
+				waitingFor.remove(peer);
+				if(!waitingFor.isEmpty()) return;
+			}
+			
+		}
+		
 		public synchronized PeerNode waitForAny() {
-			while(acceptedBy == null) {
+			while(acceptedBy == null && !waitingFor.isEmpty()) {
 				try {
 					wait();
 				} catch (InterruptedException e) {
@@ -4659,6 +4671,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	void unqueueSlotWaiter(SlotWaiter waiter) {
 		synchronized(routedToLock) {
 			slotWaiters.remove(waiter);
+		}
+	}
+	
+	private void failSlotWaiters() {
+		for(RequestType type : RequestType.values()) {
+			LinkedHashSet<SlotWaiter> slots; 
+			synchronized(routedToLock) {
+				slots = slotWaiters.get(type);
+				if(slots == null) continue;
+				slotWaiters.remove(type);
+			}
+			for(SlotWaiter w : slots)
+				w.onFailed(this);
 		}
 	}
 	
