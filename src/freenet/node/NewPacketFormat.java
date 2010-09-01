@@ -354,7 +354,6 @@ public class NewPacketFormat implements PacketFormat {
 		seqNumBytes[1] = (byte) (seqNum >>> 16);
 		seqNumBytes[2] = (byte) (seqNum >>> 8);
 		seqNumBytes[3] = (byte) (seqNum);
-		seqNum++;
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
