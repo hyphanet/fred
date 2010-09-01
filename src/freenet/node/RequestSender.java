@@ -59,7 +59,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
     static final int GET_OFFER_TIMEOUT = 10000;
-    static final int FETCH_TIMEOUT = 120000;
+    static final int FETCH_TIMEOUT_BULK = 600*1000;
+    static final int FETCH_TIMEOUT_REALTIME = 60*1000;
+    final int fetchTimeout;
     /** Wait up to this long to get a path folding reply */
     static final int OPENNET_TIMEOUT = 120000;
     /** One in this many successful requests is randomly reinserted.
@@ -114,6 +116,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private PeerNode successFrom;
     private PeerNode lastNode;
     private final long startTime;
+    final boolean realTimeFlag;
     
     static String getStatusString(int status) {
     	switch(status) {
@@ -169,11 +172,17 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      * RequestSender constructor.
      * @param key The key to request. Its public key should have been looked up
      * already; RequestSender will not look it up.
+     * @param realTimeFlag If enabled,  
      */
     public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, RequestTag tag, Node n,
-            PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore) {
+            PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore, boolean realTimeFlag) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
     	startTime = System.currentTimeMillis();
+    	this.realTimeFlag = realTimeFlag;
+    	if(realTimeFlag)
+    		fetchTimeout = FETCH_TIMEOUT_REALTIME;
+    	else
+    		fetchTimeout = FETCH_TIMEOUT_BULK;
         this.key = key;
         this.pubKey = pubKey;
         this.htl = htl;
@@ -728,15 +737,15 @@ acceptWaiterLoop:
             String lastMessage=null;
             while(true) {
             	
-                MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataNotFound);
-                MessageFilter mfRF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRecentlyFailed);
-                MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
-                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
+                MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(fetchTimeout).setType(DMT.FNPDataNotFound);
+                MessageFilter mfRF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(fetchTimeout).setType(DMT.FNPRecentlyFailed);
+                MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(fetchTimeout).setType(DMT.FNPRouteNotFound);
+                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(fetchTimeout).setType(DMT.FNPRejectedOverload);
                 
-                MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKPubKey);
-            	MessageFilter mfRealDFCHK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
-            	MessageFilter mfAltDFSSKHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
-            	MessageFilter mfAltDFSSKData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
+                MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(fetchTimeout).setType(DMT.FNPSSKPubKey);
+            	MessageFilter mfRealDFCHK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(fetchTimeout).setType(DMT.FNPCHKDataFound);
+            	MessageFilter mfAltDFSSKHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(fetchTimeout).setType(DMT.FNPSSKDataFoundHeaders);
+            	MessageFilter mfAltDFSSKData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(fetchTimeout).setType(DMT.FNPSSKDataFoundData);
                 MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload)));
                 if(key instanceof NodeCHK) {
                 	mf = mfRealDFCHK.or(mf);
@@ -1639,6 +1648,10 @@ acceptWaiterLoop:
 
 	public boolean abortedDownstreamTransfers() {
 		return sentAbortDownstreamTransfers;
+	}
+
+	public long fetchTimeout() {
+		return fetchTimeout;
 	}
 
 }

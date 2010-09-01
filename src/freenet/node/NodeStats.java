@@ -591,8 +591,12 @@ public class NodeStats implements Persistable {
 	static final double MIN_NON_OVERHEAD = 0.5;
 	
 	/** All requests must be able to complete in this many seconds given the bandwidth
-	 * available, even if they all succeed. */
-	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS = 120;
+	 * available, even if they all succeed. Bulk requests. */
+	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK = 180;
+	/** All requests must be able to complete in this many seconds given the bandwidth
+	 * available, even if they all succeed. Realtime requests - separate from bulk 
+	 * requests, given higher priority but expected to be bursty and lower capacity. */
+	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME = 60;
 	
 	/** Stats to send to a single peer so it can determine whether we are likely to reject 
 	 * a request. */
@@ -637,7 +641,7 @@ public class NodeStats implements Persistable {
 				numOtherCHKRequests+","+numOtherSSKRequests+","+numOtherCHKInserts+","+numOtherSSKInserts+","+numOtherCHKOffered+","+numOtherSSKOffered;
 		}
 		
-		public PeerLoadStats(PeerNode peer) {
+		public PeerLoadStats(PeerNode peer, boolean realTimeFlag) {
 			this.peer = peer;
 			long[] total = node.collector.getTotalIO();
 			long totalSent = total[0];
@@ -648,17 +652,19 @@ public class NodeStats implements Persistable {
 			
 			double nonOverheadFraction = getNonOverheadFraction(totalSent, totalOverhead, uptime, now);
 			
-			outputBandwidthUpperLimit = getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, BANDWIDTH_LIABILITY_LIMIT_SECONDS, nonOverheadFraction);
+			int limit = realTimeFlag ? BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME : BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK;
+			
+			outputBandwidthUpperLimit = getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction);
 			outputBandwidthLowerLimit = outputBandwidthUpperLimit / 2;
 			
-			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(BANDWIDTH_LIABILITY_LIMIT_SECONDS);
+			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(limit);
 			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
 			
 			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false);
 			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true);
 			
-			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node);
-			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false);
+			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node, realTimeFlag);
+			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false, realTimeFlag);
 			numOtherCHKRequests = runningGlobal.numRemoteCHKRequests + runningGlobal.numLocalCHKRequests - (runningLocal.numRemoteCHKRequests + runningLocal.numLocalCHKRequests);
 			numOtherSSKRequests = runningGlobal.numRemoteSSKRequests + runningGlobal.numLocalSSKRequests - (runningLocal.numRemoteSSKRequests + runningLocal.numLocalSSKRequests);
 			numOtherCHKInserts = runningGlobal.numRemoteCHKInserts + runningGlobal.numLocalCHKInserts - (runningLocal.numRemoteCHKInserts + runningLocal.numLocalCHKInserts);
@@ -775,17 +781,17 @@ public class NodeStats implements Persistable {
 		int numCHKOfferReplies;
 		int numSSKOfferReplies;
 		
-		RunningRequestsSnapshot(Node node) {
-			numLocalCHKRequests = node.getNumLocalCHKRequests();
-			numLocalSSKRequests = node.getNumLocalSSKRequests();
-			numLocalCHKInserts = node.getNumLocalCHKInserts();
-			numLocalSSKInserts = node.getNumLocalSSKInserts();
-			numRemoteCHKRequests = node.getNumRemoteCHKRequests();
-			numRemoteSSKRequests = node.getNumRemoteSSKRequests();
-			numRemoteCHKInserts = node.getNumRemoteCHKInserts();
-			numRemoteSSKInserts = node.getNumRemoteSSKInserts();
-			numCHKOfferReplies = node.getNumCHKOfferReplies();
-			numSSKOfferReplies = node.getNumSSKOfferReplies();
+		RunningRequestsSnapshot(Node node, boolean realTimeFlag) {
+			numLocalCHKRequests = node.getNumLocalCHKRequests(realTimeFlag);
+			numLocalSSKRequests = node.getNumLocalSSKRequests(realTimeFlag);
+			numLocalCHKInserts = node.getNumLocalCHKInserts(realTimeFlag);
+			numLocalSSKInserts = node.getNumLocalSSKInserts(realTimeFlag);
+			numRemoteCHKRequests = node.getNumRemoteCHKRequests(realTimeFlag);
+			numRemoteSSKRequests = node.getNumRemoteSSKRequests(realTimeFlag);
+			numRemoteCHKInserts = node.getNumRemoteCHKInserts(realTimeFlag);
+			numRemoteSSKInserts = node.getNumRemoteSSKInserts(realTimeFlag);
+			numCHKOfferReplies = node.getNumCHKOfferReplies(realTimeFlag);
+			numSSKOfferReplies = node.getNumSSKOfferReplies(realTimeFlag);
 		}
 		
 		/**
@@ -794,17 +800,17 @@ public class NodeStats implements Persistable {
 		 * @param requestsToNode If true, count requests sent to the node and currently
 		 * running. If false, count requests originated by the node.
 		 */
-		RunningRequestsSnapshot(Node node, PeerNode source, boolean requestsToNode) {
-			numLocalCHKRequests = node.countRequests(source, requestsToNode, true, false, false, false);
-			numLocalSSKRequests = node.countRequests(source, requestsToNode, true, true, false, false);
-			numLocalCHKInserts = node.countRequests(source, requestsToNode, true, false, true, false);
-			numLocalSSKInserts = node.countRequests(source, requestsToNode, true, true, true, false);
-			numRemoteCHKRequests = node.countRequests(source, requestsToNode, false, false, false, false);
-			numRemoteSSKRequests = node.countRequests(source, requestsToNode, false, true, false, false);
-			numRemoteCHKInserts = node.countRequests(source, requestsToNode, false, false, true, false);
-			numRemoteSSKInserts = node.countRequests(source, requestsToNode, false, true, true, false);
-			numCHKOfferReplies = node.countRequests(source, requestsToNode, false, false, false, true);
-			numSSKOfferReplies = node.countRequests(source, requestsToNode, false, true, false, true);
+		RunningRequestsSnapshot(Node node, PeerNode source, boolean requestsToNode, boolean realTimeFlag) {
+			numLocalCHKRequests = node.countRequests(source, requestsToNode, true, false, false, false, realTimeFlag);
+			numLocalSSKRequests = node.countRequests(source, requestsToNode, true, true, false, false, realTimeFlag);
+			numLocalCHKInserts = node.countRequests(source, requestsToNode, true, false, true, false, realTimeFlag);
+			numLocalSSKInserts = node.countRequests(source, requestsToNode, true, true, true, false, realTimeFlag);
+			numRemoteCHKRequests = node.countRequests(source, requestsToNode, false, false, false, false, realTimeFlag);
+			numRemoteSSKRequests = node.countRequests(source, requestsToNode, false, true, false, false, realTimeFlag);
+			numRemoteCHKInserts = node.countRequests(source, requestsToNode, false, false, true, false, realTimeFlag);
+			numRemoteSSKInserts = node.countRequests(source, requestsToNode, false, true, true, false, realTimeFlag);
+			numCHKOfferReplies = node.countRequests(source, requestsToNode, false, false, false, true, realTimeFlag);
+			numSSKOfferReplies = node.countRequests(source, requestsToNode, false, true, false, true, realTimeFlag);
 		}
 
 		public RunningRequestsSnapshot(PeerLoadStats stats) {
@@ -894,7 +900,7 @@ public class NodeStats implements Persistable {
 	}
 	
 	/* return reject reason as string if should reject, otherwise return null */
-	public RejectReason shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert) {
+	public RejectReason shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert, boolean realTimeFlag) {
 		if(logMINOR) dumpByteCostAverages();
 		
 		int threadCount = getActiveThreadCount();
@@ -960,7 +966,7 @@ public class NodeStats implements Persistable {
 		// Reject request if the result of all our current requests completing simultaneously would be that
 		// some of them timeout.
 		
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node);
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, realTimeFlag);
 		
 		if(!isLocal) {
 			// If not local, is already locked.
@@ -971,7 +977,7 @@ public class NodeStats implements Persistable {
 		if(logMINOR)
 			requestsSnapshot.log();
 		
-		long limit = BANDWIDTH_LIABILITY_LIMIT_SECONDS;
+		long limit = realTimeFlag ? BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME : BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK;
 		
 		// Allow a bit more if the data is in the store and can therefore be served immediately.
 		// This should improve performance.
@@ -985,13 +991,13 @@ public class NodeStats implements Persistable {
 		// Multiply by limit: X seconds at full power should be able to clear the transfers even if all the requests succeed.
 		
 		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), byteCountersSent, requestsSnapshot, false, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply);  
+				source, isLocal, isSSK, isInsert, isOfferReply, realTimeFlag);  
 		if(ret != null) return new RejectReason(ret, true);
 		
 		ByteCountersSnapshot byteCountersReceived = new ByteCountersSnapshot(true);
 		
 		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), byteCountersReceived, requestsSnapshot, true, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply);  
+				source, isLocal, isSSK, isInsert, isOfferReply, realTimeFlag);  
 		if(ret != null) return new RejectReason(ret, true);
 		
 		// Do we have the bandwidth?
@@ -1091,7 +1097,7 @@ public class NodeStats implements Persistable {
 	private String checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
 			ByteCountersSnapshot byteCountersSent,
 			RunningRequestsSnapshot requestsSnapshot, boolean input, long limit,
-			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply) {
+			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean realTimeFlag) {
 		String name = input ? "Input" : "Output";
 		double bandwidthAvailableOutputLowerLimit = bandwidthAvailableOutputUpperLimit / 2;
 		
@@ -1117,7 +1123,7 @@ public class NodeStats implements Persistable {
 			if(logMINOR)
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation);
 			
-			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent);
+			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent, realTimeFlag);
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
@@ -1159,8 +1165,8 @@ public class NodeStats implements Persistable {
 		
 	}
 
-	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters) {
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source, false);
+	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters, boolean realTimeFlag) {
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source, false, realTimeFlag);
 		
 		if(source != null) {
 			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply);
@@ -2747,8 +2753,8 @@ public class NodeStats implements Persistable {
 		return result;
 	}
 
-	public PeerLoadStats createPeerLoadStats(PeerNode peer) {
-		return new PeerLoadStats(peer);
+	public PeerLoadStats createPeerLoadStats(PeerNode peer, boolean realTimeFlag) {
+		return new PeerLoadStats(peer, realTimeFlag);
 	}
 
 	public PeerLoadStats parseLoadStats(PeerNode source, Message m) {
@@ -2759,8 +2765,8 @@ public class NodeStats implements Persistable {
 		return new ByteCountersSnapshot(input);
 	}
 
-	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode) {
-		return new RunningRequestsSnapshot(node, peerNode, true);
+	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, boolean realTimeFlag) {
+		return new RunningRequestsSnapshot(node, peerNode, true, realTimeFlag);
 	}
 	
 	public boolean ignoreLocalVsRemoteBandwidthLiability() {

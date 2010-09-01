@@ -469,7 +469,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					
         			headers = ((ShortBuffer) msg.getObject(DMT.BLOCK_HEADERS)).getData();
         			// Wait for the data
-        			MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(RequestSender.FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
+        			MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(RequestSender.FETCH_TIMEOUT_REALTIME).setType(DMT.FNPSSKDataFoundData);
         			Message dataMessage;
         			try {
 						dataMessage = node.usm.waitFor(mfData, this);

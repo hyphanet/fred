@@ -654,17 +654,29 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** HashSet of currently running request UIDs */
 	private final HashMap<Long,UIDTag> runningUIDs;
-	private final HashMap<Long,RequestTag> runningCHKGetUIDs;
-	private final HashMap<Long,RequestTag> runningLocalCHKGetUIDs;
-	private final HashMap<Long,RequestTag> runningSSKGetUIDs;
-	private final HashMap<Long,RequestTag> runningLocalSSKGetUIDs;
-	private final HashMap<Long,InsertTag> runningCHKPutUIDs;
-	private final HashMap<Long,InsertTag> runningLocalCHKPutUIDs;
-	private final HashMap<Long,InsertTag> runningSSKPutUIDs;
-	private final HashMap<Long,InsertTag> runningLocalSSKPutUIDs;
-	private final HashMap<Long,OfferReplyTag> runningCHKOfferReplyUIDs;
-	private final HashMap<Long,OfferReplyTag> runningSSKOfferReplyUIDs;
+	private final HashMap<Long,RequestTag> runningCHKGetUIDsBulk;
+	private final HashMap<Long,RequestTag> runningLocalCHKGetUIDsBulk;
+	private final HashMap<Long,RequestTag> runningSSKGetUIDsBulk;
+	private final HashMap<Long,RequestTag> runningLocalSSKGetUIDsBulk;
+	private final HashMap<Long,InsertTag> runningCHKPutUIDsBulk;
+	private final HashMap<Long,InsertTag> runningLocalCHKPutUIDsBulk;
+	private final HashMap<Long,InsertTag> runningSSKPutUIDsBulk;
+	private final HashMap<Long,InsertTag> runningLocalSSKPutUIDsBulk;
+	private final HashMap<Long,OfferReplyTag> runningCHKOfferReplyUIDsBulk;
+	private final HashMap<Long,OfferReplyTag> runningSSKOfferReplyUIDsBulk;
 
+	private final HashMap<Long,RequestTag> runningCHKGetUIDsRT;
+	private final HashMap<Long,RequestTag> runningLocalCHKGetUIDsRT;
+	private final HashMap<Long,RequestTag> runningSSKGetUIDsRT;
+	private final HashMap<Long,RequestTag> runningLocalSSKGetUIDsRT;
+	private final HashMap<Long,InsertTag> runningCHKPutUIDsRT;
+	private final HashMap<Long,InsertTag> runningLocalCHKPutUIDsRT;
+	private final HashMap<Long,InsertTag> runningSSKPutUIDsRT;
+	private final HashMap<Long,InsertTag> runningLocalSSKPutUIDsRT;
+	private final HashMap<Long,OfferReplyTag> runningCHKOfferReplyUIDsRT;
+	private final HashMap<Long,OfferReplyTag> runningSSKOfferReplyUIDsRT;
+
+	
 	/** Semi-unique ID for swap requests. Used to identify us so that the
 	 * topology can be reconstructed. */
 	public long swapIdentifier;
@@ -1088,16 +1100,27 @@ public class Node implements TimeSkewDetectorCallback {
 		transferringRequestSenders = new HashMap<NodeCHK, RequestSender>();
 		transferringRequestHandlers = new HashSet<Long>();
 		runningUIDs = new HashMap<Long,UIDTag>();
-		runningCHKGetUIDs = new HashMap<Long,RequestTag>();
-		runningLocalCHKGetUIDs = new HashMap<Long,RequestTag>();
-		runningSSKGetUIDs = new HashMap<Long,RequestTag>();
-		runningLocalSSKGetUIDs = new HashMap<Long,RequestTag>();
-		runningCHKPutUIDs = new HashMap<Long,InsertTag>();
-		runningLocalCHKPutUIDs = new HashMap<Long,InsertTag>();
-		runningSSKPutUIDs = new HashMap<Long,InsertTag>();
-		runningLocalSSKPutUIDs = new HashMap<Long,InsertTag>();
-		runningCHKOfferReplyUIDs = new HashMap<Long,OfferReplyTag>();
-		runningSSKOfferReplyUIDs = new HashMap<Long,OfferReplyTag>();
+		runningCHKGetUIDsRT = new HashMap<Long,RequestTag>();
+		runningLocalCHKGetUIDsRT = new HashMap<Long,RequestTag>();
+		runningSSKGetUIDsRT = new HashMap<Long,RequestTag>();
+		runningLocalSSKGetUIDsRT = new HashMap<Long,RequestTag>();
+		runningCHKPutUIDsRT = new HashMap<Long,InsertTag>();
+		runningLocalCHKPutUIDsRT = new HashMap<Long,InsertTag>();
+		runningSSKPutUIDsRT = new HashMap<Long,InsertTag>();
+		runningLocalSSKPutUIDsRT = new HashMap<Long,InsertTag>();
+		runningCHKOfferReplyUIDsRT = new HashMap<Long,OfferReplyTag>();
+		runningSSKOfferReplyUIDsRT = new HashMap<Long,OfferReplyTag>();
+
+		runningCHKGetUIDsBulk = new HashMap<Long,RequestTag>();
+		runningLocalCHKGetUIDsBulk = new HashMap<Long,RequestTag>();
+		runningSSKGetUIDsBulk = new HashMap<Long,RequestTag>();
+		runningLocalSSKGetUIDsBulk = new HashMap<Long,RequestTag>();
+		runningCHKPutUIDsBulk = new HashMap<Long,InsertTag>();
+		runningLocalCHKPutUIDsBulk = new HashMap<Long,InsertTag>();
+		runningSSKPutUIDsBulk = new HashMap<Long,InsertTag>();
+		runningLocalSSKPutUIDsBulk = new HashMap<Long,InsertTag>();
+		runningCHKOfferReplyUIDsBulk = new HashMap<Long,OfferReplyTag>();
+		runningSSKOfferReplyUIDsBulk = new HashMap<Long,OfferReplyTag>();
 
 		this.securityLevels = new SecurityLevels(this, config);
 
@@ -3964,7 +3987,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * a RequestSender, unless the HTL is 0, in which case NULL.
 	 * RequestSender.
 	 */
-	public Object makeRequestSender(Key key, short htl, long uid, RequestTag tag, PeerNode source, boolean localOnly, boolean ignoreStore, boolean offersOnly, boolean canReadClientCache, boolean canWriteClientCache) {
+	public Object makeRequestSender(Key key, short htl, long uid, RequestTag tag, PeerNode source, boolean localOnly, boolean ignoreStore, boolean offersOnly, boolean canReadClientCache, boolean canWriteClientCache, boolean realTimeFlag) {
 		boolean canWriteDatastore = canWriteDatastoreRequest(htl);
 		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+getDarknetPortNumber());
 		// In store?
@@ -3992,7 +4015,7 @@ public class Node implements TimeSkewDetectorCallback {
 			return null;
 		}
 
-		sender = new RequestSender(key, null, htl, uid, tag, this, source, offersOnly, canWriteClientCache, canWriteDatastore);
+		sender = new RequestSender(key, null, htl, uid, tag, this, source, offersOnly, canWriteClientCache, canWriteDatastore, realTimeFlag);
 		sender.start();
 		if(logMINOR) Logger.minor(this, "Created new sender: "+sender);
 		return sender;
@@ -4449,20 +4472,20 @@ public class Node implements TimeSkewDetectorCallback {
 		return is;
 	}
 
-	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, UIDTag tag) {
+	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag) {
 		synchronized(runningUIDs) {
 			if(runningUIDs.containsKey(uid)) return false; // Already present.
 			runningUIDs.put(uid, tag);
 		}
 		// If these are switched around, we must remember to remove from both.
 		if(offerReply) {
-			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk);
+			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk, realTimeFlag);
 			innerLock(map, (OfferReplyTag)tag, uid, ssk, insert, offerReply, local);
 		} else if(insert) {
-			HashMap<Long,InsertTag> map = getInsertTracker(ssk,local);
+			HashMap<Long,InsertTag> map = getInsertTracker(ssk,local, realTimeFlag);
 			innerLock(map, (InsertTag)tag, uid, ssk, insert, offerReply, local);
 		} else {
-			HashMap<Long,RequestTag> map = getRequestTracker(ssk,local);
+			HashMap<Long,RequestTag> map = getRequestTracker(ssk,local, realTimeFlag);
 			innerLock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local);
 		}
 		return true;
@@ -4479,22 +4502,22 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, UIDTag tag) {
-		unlockUID(uid, ssk, insert, canFail, offerReply, local, tag, false);
+	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag) {
+		unlockUID(uid, ssk, insert, canFail, offerReply, local, realTimeFlag, tag, false);
 	}
 	
-	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, UIDTag tag, boolean noRecord) {
+	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag, boolean noRecord) {
 		if(!noRecord)
 			completed(uid);
 
 		if(offerReply) {
-			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk);
+			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk, realTimeFlag);
 			innerUnlock(map, (OfferReplyTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		} else if(insert) {
-			HashMap<Long,InsertTag> map = getInsertTracker(ssk,local);
+			HashMap<Long,InsertTag> map = getInsertTracker(ssk,local, realTimeFlag);
 			innerUnlock(map, (InsertTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		} else {
-			HashMap<Long,RequestTag> map = getRequestTracker(ssk,local);
+			HashMap<Long,RequestTag> map = getRequestTracker(ssk,local, realTimeFlag);
 			innerUnlock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		}
 
@@ -4530,13 +4553,13 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public synchronized int countRequests(boolean local, boolean ssk, boolean insert, boolean offer) {
-		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
+	public synchronized int countRequests(boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag) {
+		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		return map.size();
 	}
 	
-	public int countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer) {
-		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
+	public int countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, boolean realTimeFlag) {
+		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer, realTimeFlag);
 		synchronized(map) {
 		if(!requestsToNode) {
 			if((source == null) != local) return 0;
@@ -4567,34 +4590,53 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
-			boolean insert, boolean offer) {
+			boolean insert, boolean offer, boolean realTimeFlag) {
 		if(offer)
-			return getOfferTracker(ssk);
+			return getOfferTracker(ssk, realTimeFlag);
 		else if(insert)
-			return getInsertTracker(ssk, local);
+			return getInsertTracker(ssk, local, realTimeFlag);
 		else
-			return getRequestTracker(ssk, local);
+			return getRequestTracker(ssk, local, realTimeFlag);
 	}
 
 
-	private HashMap<Long, RequestTag> getRequestTracker(boolean ssk, boolean local) {
-		if(ssk) {
-			return local ? runningLocalSSKGetUIDs : runningSSKGetUIDs;
+	private HashMap<Long, RequestTag> getRequestTracker(boolean ssk, boolean local, boolean realTimeFlag) {
+		if(realTimeFlag) {
+			if(ssk) {
+				return local ? runningLocalSSKGetUIDsRT : runningSSKGetUIDsRT;
+			} else {
+				return local ? runningLocalCHKGetUIDsRT : runningCHKGetUIDsRT;
+			}
 		} else {
-			return local ? runningLocalCHKGetUIDs : runningCHKGetUIDs;
+			if(ssk) {
+				return local ? runningLocalSSKGetUIDsBulk : runningSSKGetUIDsBulk;
+			} else {
+				return local ? runningLocalCHKGetUIDsBulk : runningCHKGetUIDsBulk;
+			}
 		}
 	}
 
-	private HashMap<Long, InsertTag> getInsertTracker(boolean ssk, boolean local) {
-		if(ssk) {
-			return local ? runningLocalSSKPutUIDs : runningSSKPutUIDs;
+	private HashMap<Long, InsertTag> getInsertTracker(boolean ssk, boolean local, boolean realTimeFlag) {
+		if(realTimeFlag) {
+			if(ssk) {
+				return local ? runningLocalSSKPutUIDsRT : runningSSKPutUIDsRT;
+			} else {
+				return local ? runningLocalCHKPutUIDsRT : runningCHKPutUIDsRT;
+			}
 		} else {
-			return local ? runningLocalCHKPutUIDs : runningCHKPutUIDs;
+			if(ssk) {
+				return local ? runningLocalSSKPutUIDsBulk : runningSSKPutUIDsBulk;
+			} else {
+				return local ? runningLocalCHKPutUIDsBulk : runningCHKPutUIDsBulk;
+			}
 		}
 	}
 
-	private HashMap<Long, OfferReplyTag> getOfferTracker(boolean ssk) {
-		return ssk ? runningSSKOfferReplyUIDs : runningCHKOfferReplyUIDs;
+	private HashMap<Long, OfferReplyTag> getOfferTracker(boolean ssk, boolean realTimeFlag) {
+		if(realTimeFlag)
+			return ssk ? runningSSKOfferReplyUIDsRT : runningCHKOfferReplyUIDsRT;
+		else
+			return ssk ? runningSSKOfferReplyUIDsBulk : runningCHKOfferReplyUIDsBulk;
 	}
 
 	static final int TIMEOUT = 10 * 60 * 1000;
@@ -4606,16 +4648,26 @@ public class Node implements TimeSkewDetectorCallback {
 	private Runnable deadUIDChecker = new Runnable() {
 		public void run() {
 			try {
-				checkUIDs(runningLocalSSKGetUIDs);
-				checkUIDs(runningLocalCHKGetUIDs);
-				checkUIDs(runningLocalSSKPutUIDs);
-				checkUIDs(runningLocalCHKPutUIDs);
-				checkUIDs(runningSSKGetUIDs);
-				checkUIDs(runningCHKGetUIDs);
-				checkUIDs(runningSSKPutUIDs);
-				checkUIDs(runningCHKPutUIDs);
-				checkUIDs(runningSSKOfferReplyUIDs);
-				checkUIDs(runningCHKOfferReplyUIDs);
+				checkUIDs(runningLocalSSKGetUIDsRT);
+				checkUIDs(runningLocalCHKGetUIDsRT);
+				checkUIDs(runningLocalSSKPutUIDsRT);
+				checkUIDs(runningLocalCHKPutUIDsRT);
+				checkUIDs(runningSSKGetUIDsRT);
+				checkUIDs(runningCHKGetUIDsRT);
+				checkUIDs(runningSSKPutUIDsRT);
+				checkUIDs(runningCHKPutUIDsRT);
+				checkUIDs(runningSSKOfferReplyUIDsRT);
+				checkUIDs(runningCHKOfferReplyUIDsRT);
+				checkUIDs(runningLocalSSKGetUIDsBulk);
+				checkUIDs(runningLocalCHKGetUIDsBulk);
+				checkUIDs(runningLocalSSKPutUIDsBulk);
+				checkUIDs(runningLocalCHKPutUIDsBulk);
+				checkUIDs(runningSSKGetUIDsBulk);
+				checkUIDs(runningCHKGetUIDsBulk);
+				checkUIDs(runningSSKPutUIDsBulk);
+				checkUIDs(runningCHKPutUIDsBulk);
+				checkUIDs(runningSSKOfferReplyUIDsBulk);
+				checkUIDs(runningCHKOfferReplyUIDsBulk);
 			} finally {
 				getTicker().queueTimedJob(this, 60*1000);
 			}
@@ -4667,64 +4719,48 @@ public class Node implements TimeSkewDetectorCallback {
 		return sb.toString();
 	}
 
-	public int getNumSSKRequests() {
-		return runningSSKGetUIDs.size() + runningLocalSSKGetUIDs.size();
-	}
-
-	public int getNumCHKRequests() {
-		return runningCHKGetUIDs.size() + runningLocalCHKGetUIDs.size();
-	}
-
-	public int getNumSSKInserts() {
-		return runningSSKPutUIDs.size() + runningLocalSSKPutUIDs.size();
-	}
-
-	public int getNumCHKInserts() {
-		return runningCHKPutUIDs.size() + runningLocalCHKPutUIDs.size();
-	}
-
-	public int getNumLocalSSKRequests() {
-		return runningLocalSSKGetUIDs.size();
-	}
-
-	public int getNumLocalCHKRequests() {
-		return runningLocalCHKGetUIDs.size();
-	}
-
-	public int getNumRemoteSSKRequests() {
+	public int getNumRemoteSSKRequests(boolean realTimeFlag) {
 //		synchronized(runningSSKGetUIDs) {
 //			for(Long l : runningSSKGetUIDs)
 //				Logger.minor(this, "Running remote SSK fetch: "+l);
 //		}
-		return runningSSKGetUIDs.size();
+		return realTimeFlag ? runningSSKGetUIDsRT.size() : runningSSKGetUIDsBulk.size();
 	}
 
-	public int getNumRemoteCHKRequests() {
-		return runningCHKGetUIDs.size();
+	public int getNumRemoteCHKRequests(boolean realTimeFlag) {
+		return realTimeFlag ? runningCHKGetUIDsRT.size() : runningCHKGetUIDsBulk.size();
 	}
 
-	public int getNumLocalSSKInserts() {
-		return runningLocalSSKPutUIDs.size();
+	public int getNumLocalSSKInserts(boolean realTimeFlag) {
+		return realTimeFlag ? runningLocalSSKPutUIDsRT.size() : runningLocalSSKPutUIDsBulk.size();
 	}
 
-	public int getNumLocalCHKInserts() {
-		return runningLocalCHKPutUIDs.size();
+	public int getNumLocalCHKInserts(boolean realTimeFlag) {
+		return realTimeFlag ? runningLocalCHKPutUIDsRT.size() : runningLocalCHKPutUIDsBulk.size();
 	}
 
-	public int getNumRemoteSSKInserts() {
-		return runningSSKPutUIDs.size();
+	public int getNumLocalCHKRequests(boolean realTimeFlag) {
+		return realTimeFlag ? runningLocalCHKGetUIDsRT.size() : runningLocalCHKGetUIDsBulk.size();
 	}
 
-	public int getNumRemoteCHKInserts() {
-		return runningCHKPutUIDs.size();
+	public int getNumLocalSSKRequests(boolean realTimeFlag) {
+		return realTimeFlag ? runningLocalSSKGetUIDsRT.size() : runningLocalSSKGetUIDsBulk.size();
 	}
 
-	public int getNumSSKOfferReplies() {
-		return runningSSKOfferReplyUIDs.size();
+	public int getNumRemoteSSKInserts(boolean realTimeFlag) {
+		return realTimeFlag ? runningSSKPutUIDsRT.size() : runningSSKPutUIDsBulk.size();
 	}
 
-	public int getNumCHKOfferReplies() {
-		return runningCHKOfferReplyUIDs.size();
+	public int getNumRemoteCHKInserts(boolean realTimeFlag) {
+		return realTimeFlag ? runningCHKPutUIDsRT.size() : runningCHKPutUIDsBulk.size();
+	}
+
+	public int getNumSSKOfferReplies(boolean realTimeFlag) {
+		return realTimeFlag ? runningSSKOfferReplyUIDsRT.size() : runningSSKOfferReplyUIDsBulk.size();
+	}
+
+	public int getNumCHKOfferReplies(boolean realTimeFlag) {
+		return realTimeFlag ? runningCHKOfferReplyUIDsRT.size() : runningCHKOfferReplyUIDsBulk.size();
 	}
 
 	public int getNumTransferringRequestSenders() {
@@ -5430,8 +5466,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public int getTotalRunningUIDsAlt() {
 		synchronized(runningUIDs) {
-			return this.runningCHKGetUIDs.size() + this.runningCHKPutUIDs.size() + this.runningSSKGetUIDs.size() +
-			this.runningSSKGetUIDs.size() + this.runningSSKOfferReplyUIDs.size() + this.runningCHKOfferReplyUIDs.size();
+			return this.runningCHKGetUIDsRT.size() + this.runningCHKPutUIDsRT.size() + this.runningSSKGetUIDsRT.size() +
+			this.runningSSKGetUIDsRT.size() + this.runningSSKOfferReplyUIDsRT.size() + this.runningCHKOfferReplyUIDsRT.size() + 
+			this.runningCHKGetUIDsBulk.size() + this.runningCHKPutUIDsBulk.size() + this.runningSSKGetUIDsBulk.size() +
+			this.runningSSKGetUIDsBulk.size() + this.runningSSKOfferReplyUIDsBulk.size() + this.runningCHKOfferReplyUIDsBulk.size();
 		}
 	}
 

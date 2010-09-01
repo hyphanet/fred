@@ -11,6 +11,7 @@ import java.util.HashSet;
 public abstract class UIDTag {
 	
 	final long createdTime;
+	final boolean realTimeFlag;
 	// FIXME weak reference? purge on drop?
 	// weak reference has the disadvantage that if it's cleared it would be counted as local?
 	// Maybe we could compare to the local vs remote on the subclass?
@@ -25,9 +26,10 @@ public abstract class UIDTag {
 	/** Node we are currently doing an offered-key-fetch from */
 	private HashSet<PeerNode> fetchingOfferedKeyFrom = null;
 	
-	UIDTag(PeerNode source) {
+	UIDTag(PeerNode source, boolean realTimeFlag) {
 		createdTime = System.currentTimeMillis();
 		this.source = source;
+		this.realTimeFlag = realTimeFlag;
 	}
 
 	public abstract void logStillPresent(Long uid);

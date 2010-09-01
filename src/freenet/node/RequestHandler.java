@@ -190,7 +190,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				rs = (RequestSender) o;
 				//If we cannot respond before this time, the 'source' node has already fatally timed out (and we need not return packets which will not be claimed)
 				searchStartTime = System.currentTimeMillis();
-				responseDeadline = searchStartTime + RequestSender.FETCH_TIMEOUT + queueTime;
+				responseDeadline = searchStartTime + rs.fetchTimeout() + queueTime;
 			}
 			rs.addListener(this);
 		}
