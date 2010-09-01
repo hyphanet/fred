@@ -246,7 +246,7 @@ public class PluginManager {
 			toStart = null;
 		}
 	}
-	
+
 	public void stop(int maxWaitTime) {
 		// Stop loading plugins.
 		ArrayList<PluginProgress> matches = new ArrayList<PluginProgress>();
@@ -734,7 +734,7 @@ public class PluginManager {
 		if(lastSlash == -1)
 			/* Windows, maybe? */
 			lastSlash = pluginSpecification.lastIndexOf('\\');
-		File pluginDirectory = new File(node.getNodeDir(), "plugins");
+		File pluginDirectory = node.getPluginDir();
 		if(lastSlash == -1)
 			/* it's an official plugin! */
 			pluginFilename = pluginSpecification + ".jar";
@@ -1097,7 +1097,7 @@ public class PluginManager {
 	};
 
 	public File getPluginFilename(String pluginName) {
-		File pluginDirectory = new File(node.getNodeDir(), "plugins");
+		File pluginDirectory = node.getPluginDir();
 		if((pluginDirectory.exists() && !pluginDirectory.isDirectory()) || (!pluginDirectory.exists() && !pluginDirectory.mkdirs()))
 			return null;
 		return new File(pluginDirectory, pluginName + ".jar");
@@ -1123,7 +1123,7 @@ public class PluginManager {
 		pdl.setSource(name);
 
 		/* check for plugin directory. */
-		File pluginDirectory = new File(node.getNodeDir(), "plugins");
+		File pluginDirectory = node.getPluginDir();
 		if((pluginDirectory.exists() && !pluginDirectory.isDirectory()) || (!pluginDirectory.exists() && !pluginDirectory.mkdirs())) {
 			Logger.error(this, "could not create plugin directory");
 			throw new PluginNotFoundException("could not create plugin directory");

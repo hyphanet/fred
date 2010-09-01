@@ -10,16 +10,13 @@ public class NodeInitException extends Exception {
 	public static final int EXIT_TEST_ERROR = 25;
 	public static final int EXIT_RESTART_FAILED = 24;
 	public static final int EXIT_THROTTLE_FILE_ERROR = 23;
-	public static final int EXIT_EXTRA_PEER_DATA_DIR = 22;
 	public static final int EXIT_COULD_NOT_START_UPDATER = 21;
 	public static final int EXIT_DATABASE_REQUIRES_RESTART = 20;
 	public static final int EXIT_CRAPPY_JVM = 255;
 	public static final int EXIT_COULD_NOT_START_TMCI = 19;
 	public static final int EXIT_COULD_NOT_START_FPROXY = 18;
 	public static final int EXIT_COULD_NOT_START_FCP = 17;
-	public static final int EXIT_BAD_TEMP_DIR = 16;
-	public static final int EXIT_BAD_NODE_DIR = 15;
-	public static final int EXIT_BAD_DOWNLOADS_DIR = 14;
+	public static final int EXIT_BAD_DIR = 15;
 	public static final int EXIT_INVALID_STORE_SIZE = 13;
 	public static final int EXIT_TESTNET_DISABLED_NOT_SUPPORTED = 12;
 	public static final int EXIT_NO_AVAILABLE_UDP_PORTS = 11;

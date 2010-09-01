@@ -49,7 +49,7 @@ import freenet.support.io.Closer;
  * delta calculation that is quite conservative. Still, its used along side the
  * global multiplier and program- supplied guesses, as suggested.</li>
  * </ul>
- * 
+ *
  * @author Scott G. Miller <scgmille@indiana.edu>
  */
 public class Yarrow extends RandomSource {
@@ -76,19 +76,23 @@ public class Yarrow extends RandomSource {
 	public Yarrow() {
 		this("prng.seed", "SHA1", "Rijndael", true, true);
 	}
-	
+
 	public Yarrow(boolean canBlock) {
 		this("prng.seed", "SHA1", "Rijndael", true, canBlock);
+	}
+
+	public Yarrow(File seed) {
+		this(seed, "SHA1", "Rijndael", true, true);
 	}
 
 	public Yarrow(String seed, String digest, String cipher, boolean updateSeed, boolean canBlock) {
 		this(new File(seed), digest, cipher, updateSeed, canBlock);
 	}
-	
+
 	public Yarrow(File seed, String digest, String cipher, boolean updateSeed, boolean canBlock) {
 		this(seed, digest, cipher, updateSeed, canBlock, true);
 	}
-	
+
 	// unset reseedOnStartup only in unit test
 	Yarrow(File seed, String digest, String cipher, boolean updateSeed, boolean canBlock, boolean reseedOnStartup) {
 		SecureRandom s;
@@ -106,8 +110,8 @@ public class Yarrow extends RandomSource {
 			Logger.error(this, "Could not init pools trying to getInstance(" + digest + "): " + e, e);
 			throw new RuntimeException("Cannot initialize Yarrow!: " + e, e);
 		}
-		
-		if(updateSeed && !(seed.toString()).equals("/dev/urandom")) //Dont try to update the seedfile if we know that it wont be possible anyways 
+
+		if(updateSeed && !(seed.toString()).equals("/dev/urandom")) //Dont try to update the seedfile if we know that it wont be possible anyways
 			seedfile = seed;
 		else
 			seedfile = null;
@@ -501,7 +505,7 @@ public class Yarrow extends RandomSource {
 				(byte) (data >> 48),
 				(byte) (data >> 56)
 		};
-		
+
 		synchronized(this) {
 			fast_select = !fast_select;
 			MessageDigest pool = (fast_select ? fast_pool : slow_pool);

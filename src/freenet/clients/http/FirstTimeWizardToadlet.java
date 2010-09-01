@@ -830,7 +830,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		if(!config.get("node").getOption("storeSize").isDefault())
 			return -1;
 
-		long freeSpace = FileUtil.getFreeSpace(core.node.getNodeDir());
+		long freeSpace = FileUtil.getFreeSpace(core.node.getStoreDir());
 
 		if(freeSpace <= 0)
 			return -1;

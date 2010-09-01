@@ -38,8 +38,8 @@ public class BookmarkManager implements RequestClient {
 	private final USKUpdatedCallback uskCB = new USKUpdatedCallback();
 	public static final BookmarkCategory MAIN_CATEGORY = new BookmarkCategory("/");
 	private final HashMap<String, Bookmark> bookmarks = new HashMap<String, Bookmark>();
-	private final File bookmarksFile = new File("bookmarks.dat").getAbsoluteFile();
-	private final File backupBookmarksFile = new File(bookmarksFile.getParentFile(), bookmarksFile.getName() + ".bak");
+	private final File bookmarksFile;
+	private final File backupBookmarksFile;
 	private boolean isSavingBookmarks = false;
 	static {
 		String name = "freenet/clients/http/staticfiles/defaultbookmarks.dat";
@@ -63,6 +63,8 @@ public class BookmarkManager implements RequestClient {
 	public BookmarkManager(NodeClientCore n) {
 		putPaths("/", MAIN_CATEGORY);
 		this.node = n;
+		this.bookmarksFile = n.node.userDir().file("bookmarks.dat");
+		this.backupBookmarksFile = n.node.userDir().file("bookmarks.dat.bak");
 
 		try {
 			// Read the backup file if necessary
