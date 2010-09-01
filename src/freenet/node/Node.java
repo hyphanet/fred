@@ -1902,7 +1902,6 @@ public class Node implements TimeSkewDetectorCallback {
 			System.out.println("NOTE: The configuration option node.extraPeerDataDir will removed in a future release.");
 			if (!currentExtraPeerDataDir.equals(defaultExtraPeerDataDir)) {
 				new File(currentExtraPeerDataDir).renameTo(new File(defaultExtraPeerDataDir));
-				nodeConfig.fixOldDefault("extraPeerDataDir", currentExtraPeerDataDir);
 				System.out.println("NOTE: That directory has been moved from " + currentExtraPeerDataDir + " to " + defaultExtraPeerDataDir);
 			}
 		}
