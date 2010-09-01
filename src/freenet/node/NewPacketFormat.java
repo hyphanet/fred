@@ -13,12 +13,10 @@ import freenet.crypt.PCFBMode;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
-import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.SparseBitmap;
-import freenet.support.WouldBlockException;
 
 public class NewPacketFormat implements PacketFormat {
 
