@@ -1007,13 +1007,13 @@ public class Node implements TimeSkewDetectorCallback {
 		// Directory for node-related files other than store
 		this.nodeDir = setupProgramDir(nodeConfig, "node references", "nodeDir", ".",
 		  sortOrder++, "Node.nodeDir", "Node.nodeDirLong");
-		this.cfgDir = setupProgramDir(nodeConfig, "user config", "cfgDir", ".",
+		this.cfgDir = setupProgramDir(nodeConfig, "user config", "cfgDir", nodeDir.dir.toString(),
 		  sortOrder++, "Node.cfgDir", "Node.cfgDirLong");
-		this.userDir = setupProgramDir(nodeConfig, "user state", "userDir", ".",
+		this.userDir = setupProgramDir(nodeConfig, "user state", "userDir", nodeDir.dir.toString(),
 		  sortOrder++, "Node.userDir", "Node.userDirLong");
-		this.runDir = setupProgramDir(nodeConfig, "runtime state", "runDir", ".",
+		this.runDir = setupProgramDir(nodeConfig, "runtime state", "runDir", nodeDir.dir.toString(),
 		  sortOrder++, "Node.runDir", "Node.runDirLong");
-		this.pluginDir = setupProgramDir(nodeConfig, "plugins", "pluginDir", "./plugins",
+		this.pluginDir = setupProgramDir(nodeConfig, "plugins", "pluginDir", new File(nodeDir.dir, "plugins").toString(),
 		  sortOrder++, "Node.pluginDir", "Node.pluginDirLong");
 
 		// l10n stuffs
