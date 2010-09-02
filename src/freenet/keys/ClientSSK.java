@@ -62,6 +62,8 @@ public class ClientSSK extends ClientKey {
 		this.docName = docName;
 		this.pubKey = pubKey;
 		this.pubKeyHash = pubKeyHash;
+		if(docName == null)
+			throw new MalformedURLException("No document name.");
 		if(extras == null)
 			throw new MalformedURLException("No extra bytes in SSK - maybe a 0.5 key?");
 		if(extras.length < 5)
