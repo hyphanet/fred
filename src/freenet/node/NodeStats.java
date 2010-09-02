@@ -2522,4 +2522,14 @@ public class NodeStats implements Persistable {
 
 		return result;
 	}
+
+	private int totalAnnouncements;
+	private int totalAnnounceForwards;
+	
+	public synchronized void reportAnnounceForwarded(int forwardedRefs) {
+		totalAnnouncements++;
+		totalAnnounceForwards += forwardedRefs;
+		if(logMINOR) Logger.minor(this, "Announcements: "+totalAnnouncements+" average "+((totalAnnounceForwards*1.0)/totalAnnouncements));
+		// FIXME add to stats page
+	}
 }
