@@ -192,10 +192,12 @@ public class PacketThrottle {
 					if(bootID != peer.getBootID()) {
 						Logger.error(this, "Not notified of reconnection before timeout");
 						_abandonedTickets++;
+						notifyAll();
 						throw new NotConnectedException();
 					}
 					Logger.error(this, "Unable to send throttled message, waited "+(now-start)+"ms");
 					_abandonedTickets++;
+					notifyAll();
 					throw new WaitedTooLongException();
 				}
 				try {
@@ -210,11 +212,13 @@ public class PacketThrottle {
 				long newBootID = peer.getBootID();
 				if(bootID != newBootID) {
 					_abandonedTickets++;
+					notifyAll();
 					Logger.normal(this, "Peer restarted: boot ID was "+bootID+" now "+newBootID);
 					throw new PeerRestartedException();
 				}
 				if(_deprecatedFor != null) {
 					_abandonedTickets++;
+					notifyAll();
 					throw new ThrottleDeprecatedException(_deprecatedFor);
 				}
 			}
