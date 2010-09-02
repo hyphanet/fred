@@ -89,6 +89,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			node.completed(uid);
 			if(cb != null)
 				cb.completed();
+			node.nodeStats.endAnnouncement(uid);
 		}
 	}
 

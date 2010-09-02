@@ -4,6 +4,7 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.Map;
@@ -2531,5 +2532,38 @@ public class NodeStats implements Persistable {
 		totalAnnounceForwards += forwardedRefs;
 		if(logMINOR) Logger.minor(this, "Announcements: "+totalAnnouncements+" average "+((totalAnnounceForwards*1.0)/totalAnnouncements));
 		// FIXME add to stats page
+	}
+	
+	public synchronized int getTransfersPerAnnounce() {
+		if(totalAnnouncements == 0) return 1;
+		return (int)Math.ceil((totalAnnounceForwards*1.0)/totalAnnouncements);
+	}
+
+	private final HashSet<Long> runningAnnouncements = new HashSet<Long>();
+
+	// FIXME make configurable, more sophisticated.
+	
+	/** To prevent thread overflow */
+	private final static int MAX_ANNOUNCEMENTS = 100;
+	
+	public boolean shouldAcceptAnnouncement(long uid) {
+		int outputPerSecond = node.getOutputBandwidthLimit() / 2;
+		synchronized(this) {
+			int transfersPerAnnouncement = getTransfersPerAnnounce();
+			int running = runningAnnouncements.size();
+			if(running >= MAX_ANNOUNCEMENTS) return false;
+			// Liability-style limiting as well.
+			int perTransfer = OpennetManager.PADDED_NODEREF_SIZE;
+			// Must all complete in 30 seconds. That is the timeout for one block.
+			int bandwidthIn30Secs = outputPerSecond * 30;
+			if(perTransfer * transfersPerAnnouncement * running > bandwidthIn30Secs) 
+				return false;
+			runningAnnouncements.add(uid);
+			return true;
+		}
+	}
+	
+	public synchronized void endAnnouncement(long uid) {
+		runningAnnouncements.remove(uid);
 	}
 }
