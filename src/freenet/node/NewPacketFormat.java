@@ -30,6 +30,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
 	private static final long NUM_SEQNUMS = 2147483648l;
+	private static final int MAX_MSGID_BLOCK_TIME = 10 * 60 * 1000;
 
 	private static volatile boolean logMINOR;
 	static {
@@ -464,7 +465,7 @@ public class NewPacketFormat implements PacketFormat {
 		return true;
 	}
 
-	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) {
+	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) throws BlockedTooLongException {
 		//Mark packets as lost
 		synchronized(sentPackets) {
 			int avgRtt = Math.max(250, averageRTT());
@@ -587,10 +588,19 @@ fragments:
 		return seqNum;
 	}
 
-	private int getMessageID() {
+	private long blockedSince = -1;
+	private int getMessageID() throws BlockedTooLongException {
 		int messageID;
 		synchronized(this) {
-			if(seqNumGreaterThan(nextMessageID, (messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS, 28)) return -1;
+			if(seqNumGreaterThan(nextMessageID, (messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS, 28)) {
+				if(blockedSince == -1) {
+					blockedSince = System.currentTimeMillis();
+				} else if(System.currentTimeMillis() - blockedSince > MAX_MSGID_BLOCK_TIME) {
+					throw new BlockedTooLongException(null, System.currentTimeMillis() - blockedSince);
+				}
+				return -1;
+			}
+			blockedSince = -1;
 			messageID = nextMessageID++;
 			if(nextMessageID == NUM_MESSAGE_IDS) nextMessageID = 0;
 		}

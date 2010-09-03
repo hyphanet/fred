@@ -6,7 +6,7 @@ package freenet.node;
 import junit.framework.TestCase;
 
 public class NewPacketFormatTest extends TestCase {
-	public void testEmptyCreation() {
+	public void testEmptyCreation() throws BlockedTooLongException {
 		NewPacketFormat npf = new NewPacketFormat(null);
 		PeerMessageQueue pmq = new PeerMessageQueue();
 
@@ -14,7 +14,7 @@ public class NewPacketFormatTest extends TestCase {
 		if(p != null) fail("Created packet from nothing");
 	}
 
-	public void testAckOnlyCreation() {
+	public void testAckOnlyCreation() throws BlockedTooLongException {
 		NewPacketFormat npf = new NewPacketFormat(null);
 		PeerMessageQueue pmq = new PeerMessageQueue();
 
@@ -80,7 +80,7 @@ public class NewPacketFormatTest extends TestCase {
 	}
 	*/
 
-	public void testOutOfOrderDelivery() {
+	public void testOutOfOrderDelivery() throws BlockedTooLongException {
 		NewPacketFormat sender = new NewPacketFormat(null);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null);
@@ -105,7 +105,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, receiver.handleDecryptedPacket(fragment2).size());
 	}
 
-	public void testReceiveUnknownMessageLength() {
+	public void testReceiveUnknownMessageLength() throws BlockedTooLongException {
 		NewPacketFormat sender = new NewPacketFormat(null);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null);
@@ -130,7 +130,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, receiver.handleDecryptedPacket(fragment1).size());
 	}
 
-	public void testResendAlreadyCompleted() {
+	public void testResendAlreadyCompleted() throws BlockedTooLongException {
 		NewPacketFormat sender = new NewPacketFormat(null);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null);
@@ -149,7 +149,8 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(0, receiver.handleDecryptedPacket(packet1).size());
 	}
 
-	private void setUpRTT(long delay, NewPacketFormat sender, PeerMessageQueue senderQueue, NewPacketFormat receiver, PeerMessageQueue receiverQueue) {
+	private void setUpRTT(long delay, NewPacketFormat sender, PeerMessageQueue senderQueue, NewPacketFormat receiver, PeerMessageQueue receiverQueue)
+	                throws BlockedTooLongException {
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1], null, false, null, (short) 0));
 		NPFPacket s = sender.createPacket(512, senderQueue);
 		s.setSequenceNumber(0);
