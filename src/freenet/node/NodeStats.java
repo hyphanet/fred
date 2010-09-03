@@ -2536,7 +2536,7 @@ public class NodeStats implements Persistable {
 	
 	public synchronized int getTransfersPerAnnounce() {
 		if(totalAnnouncements == 0) return 1;
-		return (int)Math.ceil((totalAnnounceForwards*1.0)/totalAnnouncements);
+		return (int)Math.max(1, Math.ceil((totalAnnounceForwards*1.0)/totalAnnouncements));
 	}
 
 	private final HashSet<Long> runningAnnouncements = new HashSet<Long>();
