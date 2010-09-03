@@ -2547,7 +2547,7 @@ public class NodeStats implements Persistable {
 	private final static int MAX_ANNOUNCEMENTS = 100;
 	
 	public boolean shouldAcceptAnnouncement(long uid) {
-		int outputPerSecond = node.getOutputBandwidthLimit() / 2;
+		int outputPerSecond = node.getOutputBandwidthLimit() / 2; // FIXME: Take overhead into account??? Be careful, it may include announcements and that would cause problems!
 		int inputPerSecond = node.getInputBandwidthLimit() / 2;
 		int limit = Math.min(inputPerSecond, outputPerSecond);
 		synchronized(this) {
