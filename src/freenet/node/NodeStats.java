@@ -2548,6 +2548,8 @@ public class NodeStats implements Persistable {
 	
 	public boolean shouldAcceptAnnouncement(long uid) {
 		int outputPerSecond = node.getOutputBandwidthLimit() / 2;
+		int inputPerSecond = node.getInputBandwidthLimit() / 2;
+		int limit = Math.min(inputPerSecond, outputPerSecond);
 		synchronized(this) {
 			int transfersPerAnnouncement = getTransfersPerAnnounce();
 			int running = runningAnnouncements.size();
@@ -2555,7 +2557,7 @@ public class NodeStats implements Persistable {
 			// Liability-style limiting as well.
 			int perTransfer = OpennetManager.PADDED_NODEREF_SIZE;
 			// Must all complete in 30 seconds. That is the timeout for one block.
-			int bandwidthIn30Secs = outputPerSecond * 30;
+			int bandwidthIn30Secs = limit * 30;
 			if(perTransfer * transfersPerAnnouncement * running > bandwidthIn30Secs) 
 				return false;
 			runningAnnouncements.add(uid);
