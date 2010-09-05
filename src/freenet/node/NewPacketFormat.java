@@ -112,6 +112,7 @@ public class NewPacketFormat implements PacketFormat {
 		pn.receivedPacket(false, true);
 		pn.verified(s);
 		pn.maybeRekey();
+		pn.reportIncomingPacket(buf, offset, length, now);
 
 		if(packet.getAcks().size() > 0) pn.getThrottle().notifyOfPacketAcknowledged();
 
