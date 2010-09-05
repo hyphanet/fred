@@ -582,6 +582,27 @@ fragments:
 		}
 	}
 
+	public boolean canSend() {
+		synchronized(this) {
+			if(!seqNumGreaterThan(nextMessageID, (messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS, 28)) {
+				//getMessageID would return the next message id, so we can get more from the queue
+				return true;
+			}
+		}
+
+		synchronized(startedByPrio) {
+			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+				synchronized(started) {
+					//We have something to send even if we can't grab from the queue
+					//FIXME: We might not be able to send even if this isn't empty
+					if(!started.isEmpty()) return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 	private synchronized int getSequenceNumber() {
 		int seqNum = nextSequenceNumber++;
 		if(nextSequenceNumber < 0) nextSequenceNumber = 0;

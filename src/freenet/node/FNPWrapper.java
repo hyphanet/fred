@@ -176,4 +176,13 @@ public class FNPWrapper implements PacketFormat {
 	public void onDisconnect() {
 		//Nothing to do, MessageItems are either sent or requeued.
 	}
+
+	public boolean canSend() {
+		SessionKey cur = pn.getCurrentKeyTracker();
+		try {
+			return cur != null && !cur.packets.wouldBlock(false);
+		} catch (BlockedTooLongException e) {
+			return false;
+		}
+	}
 }

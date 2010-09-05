@@ -22,4 +22,12 @@ public interface PacketFormat {
 	 * Called when the peer has been disconnected.
 	 */
 	void onDisconnect();
+
+	/**
+	 * Returns {@code false} if the packet format can't send packets because it must wait for some internal event.
+	 * For example, if a packet sequence number can not be allocated this method should return {@code false}, but if
+	 * nothing can be sent because there is no (external) data to send it should not.
+	 * @return {@code false} if the packet format can't send packets
+	 */
+	boolean canSend();
 }
