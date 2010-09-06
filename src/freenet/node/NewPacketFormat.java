@@ -33,11 +33,13 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int MAX_MSGID_BLOCK_TIME = 10 * 60 * 1000;
 
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 			}
 		});
 	}
@@ -99,7 +101,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(s == null) continue;
 			packet = tryDecipherPacket(buf, offset, length, s);
 			if(packet != null) {
-				if(logMINOR) Logger.minor(this, "Decrypted packet with tracker " + i);
+				if(logDEBUG) Logger.debug(this, "Decrypted packet with tracker " + i);
 				break;
 			}
 		}
@@ -210,7 +212,7 @@ public class NewPacketFormat implements PacketFormat {
 
 				synchronized(bufferUsageLock) {
 					usedBuffer -= recvBuffer.messageLength;
-					if(logMINOR) Logger.minor(this, "Removed " + recvBuffer.messageLength + " from buffer. Total is now " + usedBuffer);
+					if(logDEBUG) Logger.debug(this, "Removed " + recvBuffer.messageLength + " from buffer. Total is now " + usedBuffer);
 				}
 
 				synchronized(receivedMessages) {
@@ -232,7 +234,7 @@ public class NewPacketFormat implements PacketFormat {
 
 				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": Completed");
 			} else {
-				if(logMINOR) Logger.minor(this, "Message id " + fragment.messageID + ": " + recvMap);
+				if(logDEBUG) Logger.debug(this, "Message id " + fragment.messageID + ": " + recvMap);
 			}
 		}
 
@@ -282,7 +284,7 @@ public class NewPacketFormat implements PacketFormat {
 				if(logMINOR) Logger.minor(this, "Tried moving watchlist pointer by " + moveBy);
 				moveBy = 0;
 			} else {
-				if(logMINOR) Logger.minor(this, "Moving watchlist pointer by " + moveBy);
+				if(logDEBUG) Logger.debug(this, "Moving watchlist pointer by " + moveBy);
 			}
 
 			int seqNum = (int) ((0l + watchListOffset + seqNumWatchList.length) % NUM_SEQNUMS);
@@ -301,7 +303,7 @@ public class NewPacketFormat implements PacketFormat {
 				if(seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) break;
 				if(j == (seqNumWatchList[index].length - 1)) {
 					int sequenceNumber = (int) ((0l + watchListOffset + i) % NUM_SEQNUMS);
-					if(logMINOR) Logger.minor(this, "Received packet matches sequence number " + sequenceNumber);
+					if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 					NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 					if(p != null) return p;
 				}
@@ -391,7 +393,7 @@ public class NewPacketFormat implements PacketFormat {
 		int paddedLen = packet.getLength() + HMAC_LENGTH;
 		if(pn.crypto.config.paddDataPackets()) {
 			int packetLength = paddedLen;
-			if(logMINOR) Logger.minor(this, "Pre-padding length: " + packetLength);
+			if(logDEBUG) Logger.debug(this, "Pre-padding length: " + packetLength);
 
 			if(packetLength < 64) {
 				paddedLen = 64 + pn.node.fastWeakRandom.nextInt(32);
@@ -528,7 +530,7 @@ fragments:
 					bufferUsage = usedBufferOtherSide;
 				}
 				if((bufferUsage + item.buf.length) > MAX_BUFFER_SIZE) {
-					if(logMINOR) Logger.minor(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
+					if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
 					messageQueue.pushfrontPrioritizedMessageItem(item);
 					break fragments;
 				}
@@ -556,7 +558,7 @@ fragments:
 
 				synchronized(bufferUsageLock) {
 					usedBufferOtherSide += item.buf.length;
-					if(logMINOR) Logger.minor(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide);
+					if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide);
 				}
 			}
 		}
@@ -579,7 +581,7 @@ fragments:
 		}
 		synchronized(bufferUsageLock) {
 			usedBufferOtherSide -= messageSize;
-			if(logMINOR) Logger.minor(this, "Removed " + messageSize + " from remote buffer. Total is now " + usedBufferOtherSide);
+			if(logDEBUG) Logger.debug(this, "Removed " + messageSize + " from remote buffer. Total is now " + usedBufferOtherSide);
 		}
 	}
 
@@ -708,7 +710,7 @@ fragments:
 			if(completedMessagesSize > 0) {
 				synchronized(npf.bufferUsageLock) {
 					npf.usedBufferOtherSide -= completedMessagesSize;
-					if(logMINOR) Logger.minor(this, "Removed " + completedMessagesSize + " from remote buffer. Total is now " + npf.usedBufferOtherSide);
+					if(logDEBUG) Logger.debug(this, "Removed " + completedMessagesSize + " from remote buffer. Total is now " + npf.usedBufferOtherSide);
 				}
 			}
 
@@ -772,7 +774,7 @@ fragments:
 		}
 
 		private boolean resize(int length) {
-			if(logMINOR) Logger.minor(this, "Resizing from " + buffer.length + " to " + length);
+			if(logDEBUG) Logger.debug(this, "Resizing from " + buffer.length + " to " + length);
 
 			synchronized(npf.bufferUsageLock) {
 				if((npf.usedBuffer + (length - buffer.length)) > MAX_BUFFER_SIZE) {
@@ -781,7 +783,7 @@ fragments:
 				}
 
 				npf.usedBuffer += (length - buffer.length);
-				if(logMINOR) Logger.minor(this, "Added " + (length - buffer.length) + " to buffer. Total is now " + npf.usedBuffer);
+				if(logDEBUG) Logger.debug(this, "Added " + (length - buffer.length) + " to buffer. Total is now " + npf.usedBuffer);
 			}
 
 			byte[] newBuffer = new byte[length];
