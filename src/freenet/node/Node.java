@@ -4713,10 +4713,6 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public int getNumRemoteSSKRequests(boolean realTimeFlag) {
-//		synchronized(runningSSKGetUIDs) {
-//			for(Long l : runningSSKGetUIDs)
-//				Logger.minor(this, "Running remote SSK fetch: "+l);
-//		}
 		return realTimeFlag ? runningSSKGetUIDsRT.size() : runningSSKGetUIDsBulk.size();
 	}
 
