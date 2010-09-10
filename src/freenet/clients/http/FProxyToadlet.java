@@ -993,7 +993,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		// FIXME how to change these on the fly when the interface language is changed?
 		
-		HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
+		HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, true);
 		
 		random = new byte[32];
 		core.random.nextBytes(random);
