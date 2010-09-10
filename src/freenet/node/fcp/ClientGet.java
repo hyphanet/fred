@@ -105,7 +105,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			boolean filterData, int maxSplitfileRetries, int maxNonSplitfileRetries,
 			long maxOutputLength, short returnType, boolean persistRebootOnly, String identifier, int verbosity,
-			short prioClass, File returnFilename, File returnTempFilename, String charset, boolean writeToClientCache, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
+			short prioClass, File returnFilename, File returnTempFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
 		super(uri, identifier, verbosity, charset, null, globalClient,
 				prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER), null, true, container);
@@ -120,6 +120,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxOutputLength = maxOutputLength;
 		fctx.maxTempLength = maxOutputLength;
 		fctx.canWriteClientCache = writeToClientCache;
+		fctx.realTimeFlag = realTimeFlag;
 		Bucket ret = null;
 		this.returnType = returnType;
 		binaryBlob = false;
@@ -165,6 +166,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxTempLength = message.maxTempSize;
 		fctx.canWriteClientCache = message.writeToClientCache;
 		fctx.filterData = message.filterData;
+		fctx.realTimeFlag = message.realTimeFlag;
 
 		if(message.allowedMIMETypes != null) {
 			fctx.allowedMIMETypes = new HashSet<String>();
