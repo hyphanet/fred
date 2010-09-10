@@ -52,8 +52,8 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**
- * Supervises NodeUpdater's. Enables us to easily update multiple files, 
- * change the URI's on the fly, eliminates some messy code in the 
+ * Supervises NodeUpdater's. Enables us to easily update multiple files,
+ * change the URI's on the fly, eliminates some messy code in the
  * callbacks etc.
  */
 public class NodeUpdateManager {
@@ -65,41 +65,41 @@ public class NodeUpdateManager {
 	public static final long MAX_REVOCATION_KEY_LENGTH = 4*1024;
 	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 4*1024;
 	public static final long MAX_REVOCATION_KEY_BLOB_LENGTH = 8*1024;
-	
+
 	public static final long MAX_MAIN_JAR_LENGTH = 16*1024*1024; // 16MB
-	
+
 	FreenetURI updateURI;
 	FreenetURI extURI;
 	FreenetURI revocationURI;
-	
+
 	NodeUpdater mainUpdater;
 	NodeUpdater extUpdater;
-	
+
 	Map<String, PluginJarUpdater> pluginUpdaters;
-	
+
 	private boolean autoDeployPluginsOnRestart;
 	boolean wasEnabledOnStartup;
 	/** Is auto-update enabled? */
 	volatile boolean isAutoUpdateAllowed;
 	/** Has the user given the go-ahead? */
 	volatile boolean armed;
-	/** Should we check for freenet-ext.jar updates? 
+	/** Should we check for freenet-ext.jar updates?
 	 * Normally set only when our freenet-ext.jar is known to be out of date. */
 	final boolean shouldUpdateExt;
 	/** Currently deploying an update? */
 	boolean isDeployingUpdate;
 	final Object broadcastUOMAnnouncesSync = new Object();
 	boolean broadcastUOMAnnounces = false;
-	
+
 	Node node;
-	
+
 	final RevocationChecker revocationChecker;
 	private String revocationMessage;
 	private volatile boolean hasBeenBlown;
 	private volatile boolean peersSayBlown;
 	private boolean updateSeednodes;
 	private boolean updateInstallers;
-	
+
 	/** Is there a new main jar ready to deploy? */
 	private volatile boolean hasNewMainJar;
 	/** Is there a new ext jar ready to deploy? */
@@ -112,17 +112,17 @@ public class NodeUpdateManager {
 
 	private int minExtVersion;
 	private int maxExtVersion;
-	
+
 	// Revocation alert
 	private RevocationKeyFoundUserAlert revocationAlert;
 	// Update alert
 	private final UpdatedVersionAvailableUserAlert alert;
-	
+
 	public final UpdateOverMandatoryManager uom;
-	
+
 	private boolean logMINOR;
 	private boolean disabledThisSession;
-	
+
 	public NodeUpdateManager(Node node, Config config) throws InvalidConfigValueException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.node = node;
@@ -130,7 +130,7 @@ public class NodeUpdateManager {
 		shouldUpdateExt = NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
 		this.alert= new UpdatedVersionAvailableUserAlert(this);
 		alert.isValid(false);
-		
+
         SubConfig updaterConfig = new SubConfig("node.updater", config);
 
         updaterConfig.register("enabled", true, 1, true, false, "NodeUpdateManager.enabled",
@@ -163,7 +163,7 @@ public class NodeUpdateManager {
         		true, false, "NodeUpdateManager.revocationURI",
         		"NodeUpdateManager.revocationURILong",
         		new UpdateRevocationURICallback());
-        
+
         try {
 			revocationURI = new FreenetURI(updaterConfig.getString("revocationURI"));
 		} catch (MalformedURLException e) {
@@ -171,7 +171,7 @@ public class NodeUpdateManager {
 		}
 
         updaterConfig.register("extURI", EXT_URI, 5, true, false, "NodeUpdateManager.extURI", "NodeUpdateManager.extURILong", new UpdateURICallback(true));
-        
+
         try {
 			extURI = new FreenetURI(updaterConfig.getString("extURI"));
 			long ver = extURI.getSuggestedEdition();
@@ -199,11 +199,11 @@ public class NodeUpdateManager {
 						else
 							throw new NodeNeedRestartException("Must restart to stop the seednodes fetch if it is still running");
 					}
-			
+
 		});
-		
+
 		updateSeednodes = updaterConfig.getBoolean("updateSeednodes");
-		
+
 		updaterConfig.register("updateInstallers", wasEnabledOnStartup, 6, true, true, "NodeUpdateManager.updateInstallers", "NodeUpdateManager.updateInstallersLong",
 				new BooleanCallback() {
 
@@ -221,27 +221,27 @@ public class NodeUpdateManager {
 						else
 							throw new NodeNeedRestartException("Must restart to stop the installers fetches if they are still running");
 					}
-			
+
 		});
-		
+
 		updateInstallers = updaterConfig.getBoolean("updateInstallers");
-		
-		
-		
+
+
+
         updaterConfig.finishedInitialization();
-        
+
         this.revocationChecker = new RevocationChecker(this, new File(node.clientCore.getPersistentTempDir(), "revocation-key.fblob"));
-        
+
         this.uom = new UpdateOverMandatoryManager(this);
         this.uom.removeOldTempFiles();
-        
+
         maxExtVersion = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
         minExtVersion = NodeStarter.REQUIRED_EXT_BUILD_NUMBER;
-        
+
 	}
-	
+
 	class SimplePuller implements ClientGetCallback {
-		
+
 		final FreenetURI freenetURI;
 		final String filename;
 
@@ -249,7 +249,7 @@ public class NodeUpdateManager {
 			this.freenetURI = freenetURI;
 			this.filename = filename;
 		}
-		
+
 		public void start(short priority, long maxSize) {
 			HighLevelSimpleClient hlsc = node.clientCore.makeClient(priority);
 			FetchContext context = hlsc.getFetchContext();
@@ -275,18 +275,18 @@ public class NodeUpdateManager {
 			File temp;
 			FileOutputStream fos = null;
 			try {
-				temp = File.createTempFile(filename, ".tmp", node.getNodeDir());
+				temp = File.createTempFile(filename, ".tmp", node.getRunDir());
 				temp.deleteOnExit();
 				fos = new FileOutputStream(temp);
 				BucketTools.copyTo(result.asBucket(), fos, -1);
 				fos.close();
 				fos = null;
-				if(FileUtil.renameTo(temp, new File(node.getNodeDir(), filename)))
+				if(FileUtil.renameTo(temp, node.runDir().file(filename)))
 					System.out.println("Successfully fetched "+filename+" for version "+Version.buildNumber());
 				else
 					System.out.println("Failed to rename "+temp+" to "+filename+" after fetching it from Freenet.");
 			} catch (IOException e) {
-				System.err.println("Fetched but failed to write out "+filename+" - please check that the node has permissions to write in "+node.getNodeDir()+" and particularly the file "+filename);
+				System.err.println("Fetched but failed to write out "+filename+" - please check that the node has permissions to write in "+node.getRunDir()+" and particularly the file "+filename);
 				System.err.println("The error was: "+e);
 				e.printStackTrace();
 			} finally {
@@ -297,65 +297,65 @@ public class NodeUpdateManager {
 		public void onMajorProgress(ObjectContainer container) {
 			// Ignore
 		}
-		
+
 	}
 
 	public static final String WINDOWS_FILENAME = "freenet-latest-installer-windows.exe";
 	public static final String NON_WINDOWS_FILENAME = "freenet-latest-installer-nonwindows.jar";
-	
+
 	public File getInstallerWindows() {
-		File f = new File(node.getNodeDir(), WINDOWS_FILENAME);
+		File f = node.runDir().file(WINDOWS_FILENAME);
 		if(!(f.exists() && f.canRead() && f.length() > 0)) return null;
 		else return f;
 	}
-	
+
 	public File getInstallerNonWindows() {
-		File f = new File(node.getNodeDir(), NON_WINDOWS_FILENAME);
+		File f = node.runDir().file(NON_WINDOWS_FILENAME);
 		if(!(f.exists() && f.canRead() && f.length() > 0)) return null;
 		else return f;
 	}
-	
+
 	public FreenetURI getSeednodesURI() {
 		return updateURI.sskForUSK().setDocName("seednodes-"+Version.buildNumber());
 	}
-	
+
 	public FreenetURI getInstallerWindowsURI() {
 		return updateURI.sskForUSK().setDocName("installer-"+Version.buildNumber());
 	}
-	
+
 	public FreenetURI getInstallerNonWindowsURI() {
 		return updateURI.sskForUSK().setDocName("wininstaller-"+Version.buildNumber());
 	}
-	
+
 	public void start() throws InvalidConfigValueException {
-		
+
 		node.clientCore.alerts.register(alert);
-        
+
         enable(wasEnabledOnStartup);
-        
-        // Fetch 3 files, each to a file in the nodeDir.
-        
+
+        // Fetch 3 files, each to a file in the runDir.
+
         if(updateSeednodes) {
-        
-        	SimplePuller seedrefsGetter = 
+
+        	SimplePuller seedrefsGetter =
         		new SimplePuller(getSeednodesURI(), Announcer.SEEDNODES_FILENAME);
         	seedrefsGetter.start(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 1024*1024);
         }
-        
+
         if(updateInstallers) {
-        	SimplePuller installerGetter = 
+        	SimplePuller installerGetter =
         		new SimplePuller(getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
         	SimplePuller wininstallerGetter =
         		new SimplePuller(getInstallerNonWindowsURI(), WINDOWS_FILENAME);
-        	
-        	
+
+
         	installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
         	wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
-        	
+
         }
-        
+
 	}
-	
+
 	void broadcastUOMAnnounces() {
 		Message msg;
 		synchronized(broadcastUOMAnnouncesSync) {
@@ -366,13 +366,13 @@ public class NodeUpdateManager {
 	}
 
 	private Message getUOMAnnouncement() {
-		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), revocationChecker.hasBlown(), 
+		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), revocationChecker.hasBlown(),
 				mainUpdater == null ? -1 : mainUpdater.getFetchedVersion(),
 				extUpdater == null ? -1 : extUpdater.getFetchedVersion(),
-				revocationChecker.lastSucceededDelta(), revocationChecker.getRevocationDNFCounter(), 
-				revocationChecker.getBlobSize(), 
+				revocationChecker.lastSucceededDelta(), revocationChecker.getRevocationDNFCounter(),
+				revocationChecker.getBlobSize(),
 				mainUpdater == null ? -1 : mainUpdater.getBlobSize(),
-				extUpdater == null ? -1 : extUpdater.getBlobSize(), 
+				extUpdater == null ? -1 : extUpdater.getBlobSize(),
 				(int)node.nodeStats.getNodeAveragePingTime(), (int)node.nodeStats.getBwlimitDelayTime());
 	}
 
@@ -395,7 +395,7 @@ public class NodeUpdateManager {
 			// Sad, but ignore it
 		}
 	}
-	
+
 	/**
 	 * Is auto-update enabled?
 	 */
@@ -454,7 +454,7 @@ public class NodeUpdateManager {
 			startPluginUpdaters();
 		}
 	}
-	
+
 	private void startPluginUpdaters() {
 		Map<String, OfficialPluginDescription> officialPlugins = PluginManager.officialPlugins;
 		for(OfficialPluginDescription plugin : officialPlugins.values()) {
@@ -462,7 +462,7 @@ public class NodeUpdateManager {
 		}
 	}
 
-	/** @param plugName The filename for loading/config purposes for an official plugin. 
+	/** @param plugName The filename for loading/config purposes for an official plugin.
 	 * E.g. "Library" (no .jar) */
 	public void startPluginUpdater(String plugName) {
 		if(logMINOR) Logger.minor(this, "Starting plugin updater for "+plugName);
@@ -473,7 +473,7 @@ public class NodeUpdateManager {
 			// Most likely not an official plugin
 			if(logMINOR) Logger.minor(this, "No such plugin "+plugName+" in startPluginUpdater()");
 	}
-	
+
 	void startPluginUpdater(OfficialPluginDescription plugin) {
 		String name = plugin.name;
 		long minVer = plugin.minimumVersion;
@@ -576,7 +576,7 @@ public class NodeUpdateManager {
 	public synchronized FreenetURI getRevocationURI() {
 		return revocationURI;
 	}
-	
+
 	/**
 	 * Set the revocation URI.
 	 * @param uri The new revocation URI.
@@ -588,7 +588,7 @@ public class NodeUpdateManager {
 		}
 		revocationChecker.onChangeRevocationURI();
 	}
-	
+
 	/**
 	 * @return Is auto-update currently enabled?
 	 */
@@ -614,11 +614,11 @@ public class NodeUpdateManager {
 	private static final int WAIT_FOR_SECOND_FETCH_TO_COMPLETE = 240*1000;
 	private static final int RECENT_REVOCATION_INTERVAL = 120*1000;
 	/** After 5 minutes, deploy the update even if we haven't got 3 DNFs on the revocation key yet.
-	 * Reason: we want to be able to deploy UOM updates on nodes with all TOO NEW or leaf nodes 
+	 * Reason: we want to be able to deploy UOM updates on nodes with all TOO NEW or leaf nodes
 	 * whose peers are overloaded/broken. Note that with UOM, revocation certs are automatically
 	 * propagated node to node, so this should be *relatively* safe. Any better ideas, tell us. */
 	private static final int REVOCATION_FETCH_TIMEOUT = 5*60*1000;
-	
+
 	/** Does the updater have an update ready to deploy? May be called synchronized(this) */
 	private boolean isReadyToDeployUpdate(boolean ignoreRevocation) {
 		long now = System.currentTimeMillis();
@@ -682,7 +682,7 @@ public class NodeUpdateManager {
 					Logger.error(this, msg);
 					System.err.println(msg);
 					return;
-					
+
 				}
 				if(!isEnabled()) {
 					if(logMINOR) Logger.minor(this, "Not enabled");
@@ -707,7 +707,7 @@ public class NodeUpdateManager {
 				}
 				isDeployingUpdate = true;
 			}
-			
+
 			innerDeployUpdate();
 		} catch (Throwable t) {
 			synchronized(this) {
@@ -715,7 +715,7 @@ public class NodeUpdateManager {
 			}
 		}
 	}
-	
+
 	/**
 	 * Deploy the update. Inner method. Doesn't check anything, just does it.
 	 */
@@ -731,7 +731,7 @@ public class NodeUpdateManager {
 			return;
 		}
 
-		if(writeJars(ctx)) 
+		if(writeJars(ctx))
 			restart(ctx);
 		else {
 			if(logMINOR) Logger.minor(this, "Did not write jars");
@@ -754,12 +754,12 @@ public class NodeUpdateManager {
 
 		boolean writtenNewJar = false;
 		boolean writtenNewExt = false;
-		
+
 		boolean tryEasyWay = File.pathSeparatorChar == ':' && !hasNewExtJar;
 
 		File mainJar = ctx.getMainJar();
 		File newMainJar = ctx.getNewMainJar();
-		
+
 		if(hasNewMainJar) {
 			writtenNewJar = true;
 			boolean writtenToTempFile = false;
@@ -802,7 +802,7 @@ public class NodeUpdateManager {
 				failUpdate("Cannot update: Cannot write to " + (tryEasyWay ? " temp file " : "new jar ")+newMainJar);
 				return false;
 			}
-			
+
 			if(tryEasyWay) {
 				// Do it the easy way. Just rewrite the main jar.
 				if(!newMainJar.renameTo(mainJar)) {
@@ -819,28 +819,28 @@ public class NodeUpdateManager {
 					return true;
 				}
 			}
-			
+
 		}
-		
+
 		// Easy way didn't work or we can't do the easy way. Try the hard way.
-		
+
 		if(hasNewExtJar) {
-			
+
 			writtenNewExt = true;
-			
+
 			// Write the new ext jar
-			
+
 			File newExtJar = ctx.getNewExtJar();
-			
+
 			try {
 				extUpdater.writeJarTo(newExtJar);
 			} catch (IOException e) {
 				failUpdate("Cannot write new ext jar to "+newExtJar);
 				return false;
 			}
-			
+
 		}
-		
+
 		try {
 			ctx.rewriteWrapperConf(writtenNewJar, writtenNewExt);
 		} catch (IOException e) {
@@ -854,7 +854,7 @@ public class NodeUpdateManager {
 			node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("updateFailedTitle"), e.getMessage(), l10n("updateFailedShort", "reason", e.getMessage()), UserAlert.CRITICAL_ERROR));
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -893,7 +893,7 @@ public class NodeUpdateManager {
 	 * @param recommendedExt If isExt is false, the recommended ext version (upper bound)
 	 * for the new jar, or -1 if it was not specified or the parse failed.
 	 * @param requiredExt If isExt is false, the required ext version (lower bound) for the
-	 * new jar, or -1 if it was not specified or the parse failed. 
+	 * new jar, or -1 if it was not specified or the parse failed.
 	 */
 	void onDownloadedNewJar(boolean isExt, int requiredExt, int recommendedExt) {
 		synchronized(this) {
@@ -929,7 +929,7 @@ public class NodeUpdateManager {
 		if(!isAutoUpdateAllowed)
 			broadcastUOMAnnounces();
 	}
-	
+
 	private int getReadyExt() {
 		int ver = NodeStarter.extBuildNumber;
 		if(extUpdater != null) {
@@ -953,7 +953,7 @@ public class NodeUpdateManager {
 			}
 		}
 	}
-	
+
 	/**
 	 * @param msg
 	 * @param disabledNotBlown If true, the auto-updating system is broken, and should
@@ -1019,9 +1019,9 @@ public class NodeUpdateManager {
 			public void run() {
 				revocationChecker.start(false);
 			}
-		}, node.random.nextInt(24*60*60*1000)); 
+		}, node.random.nextInt(24*60*60*1000));
 	}
-	
+
 	private void deployPluginUpdates() {
 		PluginJarUpdater[] updaters = null;
 		synchronized(this) {
@@ -1043,7 +1043,7 @@ public class NodeUpdateManager {
 		armed = true;
 		deployOffThread(0);
 	}
-	
+
 	void deployOffThread(long delay) {
 		node.ps.queueTimedJob(new Runnable() {
 			public void run() {
@@ -1064,7 +1064,7 @@ public class NodeUpdateManager {
 	public boolean isBlown() {
 		return hasBeenBlown;
 	}
-	
+
 	public boolean hasNewMainJar() {
 		return hasNewMainJar;
 	}
@@ -1075,7 +1075,7 @@ public class NodeUpdateManager {
 
 	/**
 	 * What version has been fetched?
-	 * 
+	 *
 	 * This includes jar's fetched via UOM, because the UOM code feeds
 	 * its results through the mainUpdater.
 	 */
@@ -1121,7 +1121,7 @@ public class NodeUpdateManager {
 	public int getMainVersion() {
 		return Version.buildNumber();
 	}
-	
+
 	public int getExtVersion() {
 		return NodeStarter.extBuildNumber;
 	}
@@ -1142,27 +1142,27 @@ public class NodeUpdateManager {
 	}
 
 	// Config callbacks
-	
+
 	class UpdaterEnabledCallback extends BooleanCallback  {
-		
+
 		@Override
 		public Boolean get() {
 			return isEnabled();
 		}
-		
+
 		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			enable(val);
 		}
 	}
-	
+
 	class AutoUpdateAllowedCallback extends BooleanCallback  {
-		
+
 		@Override
 		public Boolean get() {
 			return isAutoUpdateAllowed();
 		}
-		
+
 		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			setAutoUpdateAllowed(val);
@@ -1172,11 +1172,11 @@ public class NodeUpdateManager {
 	class UpdateURICallback extends StringCallback  {
 
 		boolean isExt;
-		
+
 		UpdateURICallback(boolean isExt) {
 			this.isExt = isExt;
 		}
-		
+
 		@Override
 		public String get() {
 			return getURI(isExt).toString(false, false);
@@ -1220,10 +1220,10 @@ public class NodeUpdateManager {
 	void peerClaimsKeyBlown() {
 		// Note that UpdateOverMandatoryManager manages the list of peers who think this.
 		// All we have to do is cancel the update.
-		
+
 		peersSayBlown = true;
 	}
-	
+
 	/** Called inside locks, so don't lock anything */
 	public void notPeerClaimsKeyBlown() {
 		peersSayBlown = false;
@@ -1232,10 +1232,10 @@ public class NodeUpdateManager {
 			public void run() {
 				isReadyToDeployUpdate(false);
 			}
-			
+
 		}, "Check for updates");
 	}
-	
+
 	boolean peersSayBlown() {
 		return peersSayBlown;
 	}
@@ -1249,7 +1249,7 @@ public class NodeUpdateManager {
 		}
 		return updater.getBlobFile(version);
 	}
-	
+
 	public File getExtBlob(int version) {
 		NodeUpdater updater;
 		synchronized(this) {
@@ -1278,21 +1278,21 @@ public class NodeUpdateManager {
 		public void sentPayload(int x) {
 			// Ignore. It will be reported to sentBytes() as well.
 		}
-		
+
 	};
 
 	public void disableThisSession() {
 		disabledThisSession = true;
 	}
-	
+
 	protected long getStartedFetchingNextMainJarTimestamp() {
 		return startedFetchingNextMainJar;
 	}
-	
+
 	protected long getStartedFetchingNextExtJarTimestamp() {
 		return startedFetchingNextExtJar;
 	}
-	
+
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing NodeUpdateManager in database", new Exception("error"));
 		return false;

@@ -49,6 +49,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	private double target;
 	private final AnnouncementCallback cb;
 	private final PeerNode onlyNode;
+	private int forwardedRefs;
 
 	public AnnounceSender(Message m, long uid, PeerNode source, OpennetManager om, Node node) {
 		this.source = source;
@@ -78,6 +79,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	public void run() {
 		try {
 			realRun();
+			node.nodeStats.reportAnnounceForwarded(forwardedRefs);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" announcing "+uid+" from "+source, t);
 		} finally {
@@ -87,6 +89,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			node.completed(uid);
 			if(cb != null)
 				cb.completed();
+			node.nodeStats.endAnnouncement(uid);
 		}
 	}
 
@@ -370,6 +373,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		if(source != null) {
 			// Now relay it
 			try {
+				forwardedRefs++;
 				om.sendAnnouncementReply(uid, source, noderefBuf, this);
 			} catch (NotConnectedException e) {
 				// Hmmm...!

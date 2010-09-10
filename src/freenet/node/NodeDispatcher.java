@@ -567,7 +567,17 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// FIXME we should probably keep a list!
 		node.completed(uid);
 		try {
+			if(!node.nodeStats.shouldAcceptAnnouncement(uid)) {
+				Message msg = DMT.createFNPRejectedOverload(uid, true);
+				try {
+					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
+				} catch (NotConnectedException e) {
+					// Ok
+				}
+				return true;
+			}
 			if(!source.shouldAcceptAnnounce(uid)) {
+				node.nodeStats.endAnnouncement(uid);
 				Message msg = DMT.createFNPRejectedOverload(uid, true);
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);

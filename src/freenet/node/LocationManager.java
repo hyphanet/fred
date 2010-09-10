@@ -35,14 +35,14 @@ import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 /**
  * @author amphibian
- * 
+ *
  * Tracks the Location of the node. Negotiates swap attempts.
  * Initiates swap attempts. Deals with locking.
  */
 public class LocationManager implements ByteCounter {
 
     public class MyCallback extends SendMessageOnErrorCallback {
-        
+
         RecentlyForwardedItem item;
 
         public MyCallback(Message message, PeerNode pn, RecentlyForwardedItem item) {
@@ -55,22 +55,22 @@ public class LocationManager implements ByteCounter {
             super.disconnected();
             removeRecentlyForwardedItem(item);
         }
-        
+
 		@Override
         public void acknowledged() {
             item.successfullyForwarded = true;
         }
     }
-    
+
     static final int TIMEOUT = 60*1000;
     static final int SWAP_MAX_HTL = 10;
-    /** Number of swap evaluations, either incoming or outgoing, between resetting our location. 
-     * There is a 2 in SWAP_RESET chance that a reset will occur on one or other end of a swap request. 
-     * 
+    /** Number of swap evaluations, either incoming or outgoing, between resetting our location.
+     * There is a 2 in SWAP_RESET chance that a reset will occur on one or other end of a swap request.
+     *
      * ALCHEMY: This depends on a number of factors, not least the size of the network. It is hard to
      * get a good value from simulations. But it can take time to recover after a random reset, so we
      * have increased it from 4000 to 16000 on 8 april 2008. At the time location churn was significant,
-     * and some of it likely caused by this. OTOH if we get major keyspace fragmentation, we must 
+     * and some of it likely caused by this. OTOH if we get major keyspace fragmentation, we must
      * reduce it to 8000 or 4000. */
     static final int SWAP_RESET = 16000;
 	// FIXME vary automatically
@@ -88,7 +88,7 @@ public class LocationManager implements ByteCounter {
     final SwapRequestSender sender;
     final Node node;
     long timeLastSuccessfullySwapped;
-    
+
     public LocationManager(RandomSource r, Node node) {
         loc = r.nextDouble();
         sender = new SwapRequestSender();
@@ -98,14 +98,14 @@ public class LocationManager implements ByteCounter {
         // FIXME persist to disk!
         averageSwapTime = new BootstrappingDecayingRunningAverage(SEND_SWAP_INTERVAL, 0, Integer.MAX_VALUE, 20, null);
         timeLocSet = System.currentTimeMillis();
-        
+
         logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     }
 
     private double loc;
     private long timeLocSet;
     private double locChangeSession = 0.0;
-    
+
     int numberOfRemotePeerLocationsSeenInSwaps = 0;
 
     /**
@@ -114,7 +114,7 @@ public class LocationManager implements ByteCounter {
     public synchronized double getLocation() {
         return loc;
     }
-    
+
     /**
      * @param l
      */
@@ -126,7 +126,7 @@ public class LocationManager implements ByteCounter {
         this.loc = l;
         timeLocSet = System.currentTimeMillis();
     }
-    
+
     public synchronized void updateLocationChangeSession(double newLoc) {
     	double oldLoc = loc;
 		double diff = Location.change(oldLoc, newLoc);
@@ -225,7 +225,7 @@ public class LocationManager implements ByteCounter {
             }
         }
     }
-    
+
     /**
      * Create a new SwapRequest, send it from this node out into
      * the wilderness.
@@ -234,7 +234,7 @@ public class LocationManager implements ByteCounter {
     	node.executor.execute(new OutgoingSwapRequestHandler(),
                 "Outgoing swap request handler for port "+node.getDarknetPortNumber());
     }
-    
+
     /**
      * Should we swap? LOCKING: Call without holding locks.
      * @return
@@ -269,39 +269,39 @@ public class LocationManager implements ByteCounter {
         PeerNode pn;
         long uid;
         RecentlyForwardedItem item;
-        
+
         IncomingSwapRequestHandler(Message msg, PeerNode pn, RecentlyForwardedItem item) {
             this.origMessage = msg;
             this.pn = pn;
             this.item = item;
             uid = origMessage.getLong(DMT.UID);
         }
-        
+
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
             MessageDigest md = SHA256.getMessageDigest();
-            
+
             boolean reachedEnd = false;
             try {
             // We are already locked by caller
             // Because if we can't get lock they need to send a reject
-            
+
             // Firstly, is their message valid?
-            
+
             byte[] hisHash = ((ShortBuffer)origMessage.getObject(DMT.HASH)).getData();
-            
+
             if(hisHash.length != md.getDigestLength()) {
                 Logger.error(this, "Invalid SwapRequest from peer: wrong length hash "+hisHash.length+" on "+uid);
                 // FIXME: Should we send a reject?
                 return;
             }
-            
+
             // Looks okay, lets get on with it
             // Only one ID because we are only receiving
             addForwardedItem(uid, uid, pn, null);
-            
+
             // Create my side
-            
+
             long random = r.nextLong();
             double myLoc = getLocation();
             LocationUIDPair[] friendLocsAndUIDs = node.peers.getPeerLocationsAndUIDs();
@@ -312,16 +312,16 @@ public class LocationManager implements ByteCounter {
             for(int i=0;i<friendLocs.length;i++)
                 myValueLong[i+2] = Double.doubleToLongBits(friendLocs[i]);
             byte[] myValue = Fields.longsToBytes(myValueLong);
-            
+
             byte[] myHash = md.digest(myValue);
-            
+
             Message m = DMT.createFNPSwapReply(uid, myHash);
-            
+
             MessageFilter filter =
                 MessageFilter.create().setType(DMT.FNPSwapCommit).setField(DMT.UID, uid).setTimeout(TIMEOUT).setSource(pn);
-            
+
             node.usm.send(pn, m, LocationManager.this);
-            
+
             Message commit;
             try {
                 commit = node.usm.waitFor(filter, LocationManager.this);
@@ -329,48 +329,48 @@ public class LocationManager implements ByteCounter {
             	if(logMINOR) Logger.minor(this, "Disconnected from "+pn+" while waiting for SwapCommit");
                 return;
             }
-            
+
             if(commit == null) {
                 // Timed out. Abort
                 Logger.error(this, "Timed out waiting for SwapCommit on "+uid+" - this can happen occasionally due to connection closes, if it happens often, there may be a serious problem");
                 return;
             }
-            
+
             // We have a SwapCommit
-            
+
             byte[] hisBuf = ((ShortBuffer)commit.getObject(DMT.DATA)).getData();
 
             if((hisBuf.length % 8 != 0) || (hisBuf.length < 16)) {
                 Logger.error(this, "Bad content length in SwapComplete - malicious node? on "+uid);
                 return;
             }
-            
+
             // First does it verify?
-            
+
             byte[] rehash = md.digest(hisBuf);
-            
+
             if(!java.util.Arrays.equals(rehash, hisHash)) {
                 Logger.error(this, "Bad hash in SwapCommit - malicious node? on "+uid);
                 return;
             }
-            
+
             // Now decode it
-            
+
             long[] hisBufLong = Fields.bytesToLongs(hisBuf);
 	    if(hisBufLong.length < 2) {
 		    Logger.error(this, "Bad buffer length (no random, no location)- malicious node? on "+uid);
 		    return;
 	    }
-            
+
             long hisRandom = hisBufLong[0];
-            
+
             double hisLoc = Double.longBitsToDouble(hisBufLong[1]);
             if((hisLoc < 0.0) || (hisLoc > 1.0)) {
                 Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                 return;
             }
             registerKnownLocation(hisLoc);
-            
+
             double[] hisFriendLocs = new double[hisBufLong.length-2];
             for(int i=0;i<hisFriendLocs.length;i++) {
                 hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
@@ -381,20 +381,20 @@ public class LocationManager implements ByteCounter {
                 registerLocationLink(hisLoc, hisFriendLocs[i]);
                 registerKnownLocation(hisFriendLocs[i]);
             }
-            
+
             numberOfRemotePeerLocationsSeenInSwaps += hisFriendLocs.length;
-            
+
             // Send our SwapComplete
-            
+
             Message confirm = DMT.createFNPSwapComplete(uid, myValue);
             //confirm.addSubMessage(DMT.createFNPSwapLocations(extractUIDs(friendLocsAndUIDs)));
-            
+
             node.usm.send(pn, confirm, LocationManager.this);
-            
+
             boolean shouldSwap = shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom);
-            
+
             spyOnLocations(commit, true, shouldSwap, myLoc);
-            
+
             if(shouldSwap) {
                 timeLastSuccessfullySwapped = System.currentTimeMillis();
                 // Swap
@@ -408,9 +408,9 @@ public class LocationManager implements ByteCounter {
             	if(logMINOR) Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 noSwaps++;
             }
-            
+
             reachedEnd = true;
-            
+
             // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
             if(node.random.nextInt(SWAP_RESET) == 0) {
                 setLocation(node.random.nextDouble());
@@ -428,7 +428,7 @@ public class LocationManager implements ByteCounter {
         }
 
     }
-    
+
     /**
      * Locks the LocationManager.
      * Sends an FNPSwapRequest out into the network.
@@ -436,12 +436,12 @@ public class LocationManager implements ByteCounter {
      * Etc.
      */
     public class OutgoingSwapRequestHandler implements Runnable {
-        
+
         RecentlyForwardedItem item;
-        
+
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
-            long uid = r.nextLong();            
+            long uid = r.nextLong();
             if(!lock()) return;
             boolean reachedEnd = false;
             try {
@@ -458,11 +458,11 @@ public class LocationManager implements ByteCounter {
                 for(int i=0;i<friendLocs.length;i++)
                     myValueLong[i+2] = Double.doubleToLongBits(friendLocs[i]);
                 byte[] myValue = Fields.longsToBytes(myValueLong);
-                
+
                 byte[] myHash = SHA256.digest(myValue);
-                
+
                 Message m = DMT.createFNPSwapRequest(uid, myHash, SWAP_MAX_HTL);
-                
+
                 PeerNode pn = node.peers.getRandomPeer();
                 if(pn == null) {
                     // Nowhere to send
@@ -472,15 +472,15 @@ public class LocationManager implements ByteCounter {
                 item = addForwardedItem(uid, uid, null, pn);
 
                 if(logMINOR) Logger.minor(this, "Sending SwapRequest "+uid+" to "+pn);
-                
+
                 MessageFilter filter1 =
                     MessageFilter.create().setType(DMT.FNPSwapRejected).setField(DMT.UID, uid).setSource(pn).setTimeout(TIMEOUT);
                 MessageFilter filter2 =
                     MessageFilter.create().setType(DMT.FNPSwapReply).setField(DMT.UID, uid).setSource(pn).setTimeout(TIMEOUT);
                 MessageFilter filter = filter1.or(filter2);
-                
+
                 node.usm.send(pn, m, LocationManager.this);
-                
+
                 if(logMINOR) Logger.minor(this, "Waiting for SwapReply/SwapRejected on "+uid);
                 Message reply;
                 try {
@@ -497,26 +497,26 @@ public class LocationManager implements ByteCounter {
                     }
                     return;
                 }
-                
+
                 if(reply.getSpec() == DMT.FNPSwapRejected) {
                     // Failed. Abort.
                 	if(logMINOR) Logger.minor(this, "Swap rejected on "+uid);
                     return;
                 }
-                
+
                 // We have an FNPSwapReply, yay
                 // FNPSwapReply is exactly the same format as FNPSwapRequest
                 byte[] hisHash = ((ShortBuffer)reply.getObject(DMT.HASH)).getData();
-                
+
                 Message confirm = DMT.createFNPSwapCommit(uid, myValue);
                 //confirm.addSubMessage(DMT.createFNPSwapLocations(extractUIDs(friendLocsAndUIDs)));
 
                 filter1.clearOr();
                 MessageFilter filter3 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPSwapComplete).setTimeout(TIMEOUT).setSource(pn);
                 filter = filter1.or(filter3);
-                
+
                 node.usm.send(pn, confirm, LocationManager.this);
-                
+
                 if(logMINOR) Logger.minor(this, "Waiting for SwapComplete: uid = "+uid);
 
                 try {
@@ -525,7 +525,7 @@ public class LocationManager implements ByteCounter {
                 	if(logMINOR) Logger.minor(this, "Disconnected waiting for SwapComplete on "+uid);
                     return;
                 }
-                
+
                 if(reply == null) {
                     if(pn.isRoutable() && (System.currentTimeMillis() - pn.timeLastConnectionCompleted() > TIMEOUT*2)) {
                         // Hrrrm!
@@ -533,28 +533,28 @@ public class LocationManager implements ByteCounter {
                     }
                     return;
                 }
-                
+
                 if(reply.getSpec() == DMT.FNPSwapRejected) {
                     Logger.error(this, "Got SwapRejected while waiting for SwapComplete. This can happen occasionally because of badly timed disconnects, but if it happens frequently it indicates a bug or an attack");
                     return;
                 }
-                
+
                 byte[] hisBuf = ((ShortBuffer)reply.getObject(DMT.DATA)).getData();
 
                 if((hisBuf.length % 8 != 0) || (hisBuf.length < 16)) {
                     Logger.error(this, "Bad content length in SwapComplete - malicious node? on "+uid);
                     return;
                 }
-                
+
                 // First does it verify?
-                
+
                 byte[] rehash = SHA256.digest(hisBuf);
-                
+
                 if(!java.util.Arrays.equals(rehash, hisHash)) {
                     Logger.error(this, "Bad hash in SwapComplete - malicious node? on "+uid);
                     return;
                 }
-                
+
                 // Now decode it
 
 		    long[] hisBufLong = Fields.bytesToLongs(hisBuf);
@@ -564,14 +564,14 @@ public class LocationManager implements ByteCounter {
 		    }
 
                 long hisRandom = hisBufLong[0];
-                
+
                 double hisLoc = Double.longBitsToDouble(hisBufLong[1]);
                 if((hisLoc < 0.0) || (hisLoc > 1.0)) {
                     Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                     return;
                 }
                 registerKnownLocation(hisLoc);
-                
+
                 double[] hisFriendLocs = new double[hisBufLong.length-2];
                 for(int i=0;i<hisFriendLocs.length;i++) {
                     hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
@@ -582,13 +582,13 @@ public class LocationManager implements ByteCounter {
                     registerLocationLink(hisLoc, hisFriendLocs[i]);
                     registerKnownLocation(hisFriendLocs[i]);
                 }
-                
+
                 numberOfRemotePeerLocationsSeenInSwaps += hisFriendLocs.length;
-                
+
                 boolean shouldSwap = shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom);
-                
+
                 spyOnLocations(reply, true, shouldSwap, myLoc);
-                
+
                 if(shouldSwap) {
                     timeLastSuccessfullySwapped = System.currentTimeMillis();
                     // Swap
@@ -602,9 +602,9 @@ public class LocationManager implements ByteCounter {
                 	if(logMINOR) Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
                     noSwaps++;
                 }
-                
+
                 reachedEnd = true;
-                
+
                 // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
                 if(node.random.nextInt(SWAP_RESET) == 0) {
                     setLocation(node.random.nextDouble());
@@ -622,26 +622,26 @@ public class LocationManager implements ByteCounter {
         }
 
     }
-    
+
     /**
      * Tell all connected peers that our location has changed
      */
     protected void announceLocChange() {
 	    announceLocChange(false, false, false);
     }
-    
+
     private void announceLocChange(boolean log, boolean randomReset, boolean fromDupLocation) {
         Message msg = DMT.createFNPLocChangeNotificationNew(getLocation(), node.peers.getPeerLocationDoubles(true));
         node.peers.localBroadcast(msg, false, true, this);
 	if(log)
 		recordLocChange(randomReset, fromDupLocation);
     }
-    
+
     private void recordLocChange(final boolean randomReset, final boolean fromDupLocation) {
         node.executor.execute(new Runnable() {
 
 			public void run() {
-				File locationLog = new File(node.nodeDir, "location.log.txt");
+				File locationLog = node.nodeDir().file("location.log.txt");
 				if(locationLog.exists() && locationLog.length() > 1024*1024*10)
 					locationLog.delete();
 				FileWriter fw = null;
@@ -655,7 +655,7 @@ public class LocationManager implements ByteCounter {
 					if(fw != null) Closer.close(fw);
 				}
 			}
-        	
+
         }, "Record new location");
 	}
 
@@ -668,9 +668,9 @@ public class LocationManager implements ByteCounter {
     public static int swapsRejectedNowhereToGo;
     public static int swapsRejectedRateLimit;
     public static int swapsRejectedRecognizedID;
-    
+
     long lockedTime;
-    
+
     /**
      * Lock the LocationManager.
      * @return True if we managed to lock the LocationManager,
@@ -686,7 +686,7 @@ public class LocationManager implements ByteCounter {
         lockedTime = System.currentTimeMillis();
         return true;
     }
-    
+
     /**
      * Unlock the node for swapping.
      * @param logSwapTime If true, log the swap time. */
@@ -701,19 +701,19 @@ public class LocationManager implements ByteCounter {
         	Logger.minor(this, "lockTime: "+lockTime);
         }
         averageSwapTime.report(lockTime);
-        
+
         if(incomingMessageQueue.isEmpty()) {
         	locked = false;
         	return;
         }
-        
+
         // Otherwise, stay locked, and start the next one from the queue.
-        
+
         nextMessage = incomingMessageQueue.removeFirst();
         lockedTime = System.currentTimeMillis();
-        
+
     	}
-    	
+
         long oldID = nextMessage.getLong(DMT.UID);
         long newID = oldID+1;
         PeerNode pn = (PeerNode) nextMessage.getSource();
@@ -725,7 +725,7 @@ public class LocationManager implements ByteCounter {
      * Should we swap? This method implements the core of the Freenet
      * 0.7 routing algorithm - the criteria for swapping.
      * Oskar says this is derived from the Metropolis-Hastings algorithm.
-     * 
+     *
      * Anyway:
      * Two nodes choose each other and decide to attempt a switch. They
      * calculate the distance of all their edges currently (that is the
@@ -733,12 +733,12 @@ public class LocationManager implements ByteCounter {
      * multiply up all these values to get A. Then they calculate the
      * distance to all their neighbors as it would be if they switched
      * IDs, and multiply up these values to get B.
-     * 
+     *
      * If A > B then they switch.
-     * 
+     *
      * If A <= B, then calculate p = A / B. They then switch with
      * probability p (that is, switch if rand.nextFloat() < p).
-     * 
+     *
      * @param myLoc My location as a double.
      * @param friendLocs Locations of my friends as doubles.
      * @param hisLoc His location as a double
@@ -747,34 +747,34 @@ public class LocationManager implements ByteCounter {
      * @return
      */
     private boolean shouldSwap(double myLoc, double[] friendLocs, double hisLoc, double[] hisFriendLocs, long rand) {
-        
+
         // A = distance from us to all our neighbours, for both nodes,
         // all multiplied together
 
         // Dump
-    	
+
     	if(Math.abs(hisLoc - myLoc) <= Double.MIN_VALUE * 2)
     		return false; // Probably swapping with self
 
         StringBuilder sb = new StringBuilder();
-        
+
         sb.append("my: ").append(myLoc).append(", his: ").append(hisLoc).append(", myFriends: ");
         sb.append(friendLocs.length).append(", hisFriends: ").append(hisFriendLocs.length).append(" mine:\n");
-        
+
         for(int i=0;i<friendLocs.length;i++) {
             sb.append(friendLocs[i]);
             sb.append(' ');
         }
 
         sb.append("\nhis:\n");
-        
+
         for(int i=0;i<hisFriendLocs.length;i++) {
             sb.append(hisFriendLocs[i]);
             sb.append(' ');
         }
 
         if(logMINOR) Logger.minor(this, sb.toString());
-        
+
         double A = 1.0;
         for(int i=0;i<friendLocs.length;i++) {
             if(Math.abs(friendLocs[i] - myLoc) <= Double.MIN_VALUE*2) continue;
@@ -784,7 +784,7 @@ public class LocationManager implements ByteCounter {
             if(Math.abs(hisFriendLocs[i] - hisLoc) <= Double.MIN_VALUE*2) continue;
             A *= Location.distance(hisFriendLocs[i], hisLoc);
         }
-        
+
         // B = the same, with our two values swapped
         double B = 1.0;
         for(int i=0;i<friendLocs.length;i++) {
@@ -795,27 +795,27 @@ public class LocationManager implements ByteCounter {
             if(Math.abs(hisFriendLocs[i] - myLoc) <= Double.MIN_VALUE*2) continue;
             B *= Location.distance(hisFriendLocs[i], myLoc);
         }
-        
+
         //Logger.normal(this, "A="+A+" B="+B);
-        
+
         if(A>B) return true;
-        
+
         double p = A / B;
-        
+
         // Take last 63 bits, then turn into a double
-        double randProb = ((double)(rand & Long.MAX_VALUE)) 
+        double randProb = ((double)(rand & Long.MAX_VALUE))
                 / ((double) Long.MAX_VALUE);
-        
+
         //Logger.normal(this, "p="+p+" randProb="+randProb);
-        
+
         if(randProb < p) return true;
         return false;
     }
 
     static final double SWAP_ACCEPT_PROB = 0.25;
-    
+
     final Hashtable<Long, RecentlyForwardedItem> recentlyForwardedIDs;
-    
+
     static class RecentlyForwardedItem {
         final long incomingID; // unnecessary?
         final long outgoingID;
@@ -825,7 +825,7 @@ public class LocationManager implements ByteCounter {
         PeerNode routedTo;
         // Set when a request is accepted. Unset when we send one.
         boolean successfullyForwarded;
-        
+
         RecentlyForwardedItem(long id, long outgoingID, PeerNode from, PeerNode to) {
             this.incomingID = id;
             this.outgoingID = outgoingID;
@@ -835,15 +835,15 @@ public class LocationManager implements ByteCounter {
             lastMessageTime = addedTime;
         }
     }
-    
+
     /** Queue of swap requests to handle after this one. */
     private final LinkedList<Message> incomingMessageQueue = new LinkedList<Message>();
-    
+
     static final int MAX_INCOMING_QUEUE_LENGTH = 10;
-    
+
     /** Prevent timeouts and deadlocks due to A waiting for B waiting for A */
     static final long MAX_TIME_ON_INCOMING_QUEUE = 30*1000;
-    
+
     void removeTooOldQueuedItems() {
     	while(true) {
     		Message first;
@@ -857,7 +857,7 @@ public class LocationManager implements ByteCounter {
     		}
             long oldID = first.getLong(DMT.UID);
             PeerNode pn = (PeerNode) first.getSource();
-            
+
             // Reject
             Message reject = DMT.createFNPSwapRejected(oldID);
             try {
@@ -867,7 +867,7 @@ public class LocationManager implements ByteCounter {
             }
     	}
     }
-    
+
     /**
      * Handle an incoming SwapRequest
      * @return True if we have handled the message, false if it needs
@@ -879,8 +879,8 @@ public class LocationManager implements ByteCounter {
         /**
          * UID is used to record the state i.e. UID x, came in from node a, forwarded to node b.
          * We increment it on each hop, because in order for the node selection to be as random as
-         * possible we *must allow loops*! I.e. the same swap chain may pass over the same node 
-         * twice or more. However, if we get a request with either the incoming or the outgoing 
+         * possible we *must allow loops*! I.e. the same swap chain may pass over the same node
+         * twice or more. However, if we get a request with either the incoming or the outgoing
          * UID, we can safely kill it as it's clearly the result of a bug.
          */
         RecentlyForwardedItem item = recentlyForwardedIDs.get(oldID);
@@ -984,7 +984,7 @@ public class LocationManager implements ByteCounter {
     	        lockedTime = System.currentTimeMillis();
     		} else {
     			// Locked.
-    			if((!node.enableSwapQueueing) || 
+    			if((!node.enableSwapQueueing) ||
     					incomingMessageQueue.size() > MAX_INCOMING_QUEUE_LENGTH) {
     				// Reject anyway.
     				reject = true;
@@ -1017,7 +1017,7 @@ public class LocationManager implements ByteCounter {
     		}
     	}
     }
-    
+
     private void innerHandleSwapRequest(long oldID, long newID, PeerNode pn, Message m) {
     	RecentlyForwardedItem item = addForwardedItem(oldID, newID, pn, null);
         // Locked, do it
@@ -1071,7 +1071,7 @@ public class LocationManager implements ByteCounter {
         }
         return true;
     }
-    
+
     /**
      * Handle an unmatched FNPSwapRejected
      * @return True if we recognized and forwarded this message.
@@ -1092,7 +1092,7 @@ public class LocationManager implements ByteCounter {
             Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+source+
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
-        }        
+        }
         removeRecentlyForwardedItem(item);
         item.lastMessageTime = System.currentTimeMillis();
         if(logMINOR) Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+source+" to "+item.requestSender);
@@ -1105,7 +1105,7 @@ public class LocationManager implements ByteCounter {
         }
         return true;
     }
-    
+
     /**
      * Handle an unmatched FNPSwapCommit
      * @return True if we recognized and forwarded this message.
@@ -1175,43 +1175,43 @@ public class LocationManager implements ByteCounter {
     private void spyOnLocations(Message m, boolean ignoreIfOld) {
     	spyOnLocations(m, ignoreIfOld, false, -1.0);
     }
-    
+
     /** Spy on locations in somebody else's swap request. Greatly increases the
      * speed at which we can gather location data to estimate the network's size.
      * @param swappingWithMe True if this node is participating in the swap, false if it is
      * merely spying on somebody else's swap.
      */
     private void spyOnLocations(Message m, boolean ignoreIfOld, boolean swappingWithMe, double myLoc) {
-    	
+
     	long[] uids = null;
-    	
+
     	Message uidsMessage = m.getSubMessage(DMT.FNPSwapNodeUIDs);
     	if(uidsMessage != null) {
     		uids = Fields.bytesToLongs(((ShortBuffer) uidsMessage.getObject(DMT.NODE_UIDS)).getData());
     	}
-    	
+
         byte[] data = ((ShortBuffer)m.getObject(DMT.DATA)).getData();
-        
+
         if(data.length < 16 || data.length % 8 != 0) {
         	Logger.error(this, "Data invalid length in swap commit: "+data.length, new Exception("error"));
         	return;
         }
-        
+
         double[] locations = Fields.bytesToDoubles(data, 8, data.length-8);
-        
+
         double hisLoc = locations[0];
         if(hisLoc < 0.0 || hisLoc > 1.0) {
         	Logger.error(this, "Invalid hisLoc in swap commit: "+hisLoc, new Exception("error"));
         	return;
         }
-        
+
         if(uids != null) {
         	registerKnownLocation(hisLoc, uids[0]);
         	if(swappingWithMe)
         		registerKnownLocation(myLoc, uids[0]);
         } else if (!ignoreIfOld)
         	registerKnownLocation(hisLoc);
-        
+
         for(int i=1;i<locations.length;i++) {
         	double loc = locations[i];
         	if(uids != null) {
@@ -1222,7 +1222,7 @@ public class LocationManager implements ByteCounter {
         		registerLocationLink(hisLoc, loc);
         	}
         }
-        
+
 	}
 
     public void clearOldSwapChains() {
@@ -1250,7 +1250,7 @@ public class LocationManager implements ByteCounter {
 			for (Map.Entry<Long, RecentlyForwardedItem> entry : entrySet) {
 				Long l = entry.getKey();
 				RecentlyForwardedItem item = entry.getValue();
-				
+
                 if(item == null) {
                 	Logger.error(this, "Key is "+l+" but no value on recentlyForwardedIDs - shouldn't be possible");
                 	continue;
@@ -1260,7 +1260,7 @@ public class LocationManager implements ByteCounter {
                     v.add(item);
                 }
             }
-			
+
 			// remove them
 			for (RecentlyForwardedItem item : v)
 				removeRecentlyForwardedItem(item);
@@ -1279,7 +1279,7 @@ public class LocationManager implements ByteCounter {
             }
         }
     }
-    
+
     private void removeRecentlyForwardedItem(RecentlyForwardedItem item) {
     	if(logMINOR) Logger.minor(this, "Removing: "+item);
         if(item == null) {
@@ -1290,24 +1290,24 @@ public class LocationManager implements ByteCounter {
 			recentlyForwardedIDs.remove(item.outgoingID);
         }
     }
-    
+
     private static final long MAX_AGE = 7*24*60*60*1000;
-    
+
     private final TimeSortedHashtable<Double> knownLocs = new TimeSortedHashtable<Double>();
-    
+
     void registerLocationLink(double d, double t) {
     	if(logMINOR) Logger.minor(this, "Known Link: "+d+ ' ' +t);
     }
-    
+
     void registerKnownLocation(double d, long uid) {
     	if(logMINOR) Logger.minor(this, "LOCATION: "+d+" UID: "+uid);
     	registerKnownLocation(d);
     }
-    
+
     void registerKnownLocation(double d) {
     	if(logMINOR) Logger.minor(this, "Known Location: "+d);
         long now = System.currentTimeMillis();
-        
+
         synchronized(knownLocs) {
         	Logger.minor(this, "Adding location "+d+" knownLocs size "+knownLocs.size());
         	knownLocs.push(d, now);
@@ -1317,19 +1317,19 @@ public class LocationManager implements ByteCounter {
         }
 		if(logMINOR) Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
     }
-    
+
     void registerLink(long uid1, long uid2) {
     	if(logMINOR) Logger.minor(this, "UID LINK: "+uid1+" , "+uid2);
     }
-    
+
     //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
     public int getNetworkSizeEstimate(long timestamp) {
    		return knownLocs.countValuesAfter(timestamp);
 	}
-    
+
     /**
      * Method called by Node.getKnownLocations(long timestamp)
-     * 
+     *
      * @Return an array containing two cells : Locations and their last seen time for a given timestamp.
      */
     public Object[] getKnownLocations(long timestamp) {
@@ -1337,7 +1337,7 @@ public class LocationManager implements ByteCounter {
     		return knownLocs.pairsAfter(timestamp, new Double[knownLocs.size()]);
     	}
 	}
-    
+
 	static double[] extractLocs(LocationUIDPair[] pairs) {
 		double[] locs = new double[pairs.length];
 		for(int i=0;i<pairs.length;i++)
@@ -1376,7 +1376,7 @@ public class LocationManager implements ByteCounter {
 	public synchronized double getLocChangeSession() {
 		return locChangeSession;
 	}
-	
+
 	public int getAverageSwapTime() {
 		return (int) averageSwapTime.currentValue();
 	}

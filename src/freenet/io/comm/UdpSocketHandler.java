@@ -69,7 +69,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		dropRandom = node.fastWeakRandom;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
-		tracker = AddressTracker.create(node.lastBootID, node.getNodeDir(), listenPort);
+		tracker = AddressTracker.create(node.lastBootID, node.runDir(), listenPort);
 		tracker.startSend(startupTime);
 	}
 
@@ -315,7 +315,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				}
 			}
 		}
-		tracker.storeData(node.bootID, node.getNodeDir(), listenPort);
+		tracker.storeData(node.bootID, node.runDir(), listenPort);
 	}
 
 	public int getDropProbability() {

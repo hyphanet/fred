@@ -31,35 +31,36 @@ import java.util.Iterator;
 
 import freenet.io.comm.Peer;
 import freenet.node.FSParseException;
+import freenet.node.ProgramDirectory;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
- * Track packet traffic to/from specific peers and IP addresses, in order to 
+ * Track packet traffic to/from specific peers and IP addresses, in order to
  * determine whether we are open to the internet.
- * 
+ *
  * Normally there would be one tracker per port i.e. per UdpSocketHandler.
  * @author toad
  */
 public class AddressTracker {
-	
+
 	/** PeerAddressTrackerItem's by Peer */
 	private final HashMap<Peer, PeerAddressTrackerItem> peerTrackers;
-	
+
 	/** InetAddressAddressTrackerItem's by InetAddress */
 	private final HashMap<InetAddress, InetAddressAddressTrackerItem> ipTrackers;
-	
+
 	/** Maximum number of Item's of either type */
 	static final int MAX_ITEMS = 1000;
-	
+
 	private long timeDefinitelyNoPacketsReceived;
 	private long timeDefinitelyNoPacketsSent;
-	
+
 	private long brokenTime;
-	
-	public static AddressTracker create(long lastBootID, File nodeDir, int port) {
-		File data = new File(nodeDir, "packets-"+port+".dat");
-		File dataBak = new File(nodeDir, "packets-"+port+".bak");
+
+	public static AddressTracker create(long lastBootID, ProgramDirectory runDir, int port) {
+		File data = runDir.file("packets-"+port+".dat");
+		File dataBak = runDir.file("packets-"+port+".bak");
 		dataBak.delete();
 		FileInputStream fis = null;
 		try {
@@ -84,14 +85,14 @@ public class AddressTracker {
 		}
 		return new AddressTracker();
 	}
-	
+
 	private AddressTracker() {
 		timeDefinitelyNoPacketsReceived = System.currentTimeMillis();
 		timeDefinitelyNoPacketsSent = System.currentTimeMillis();
 		peerTrackers = new HashMap<Peer, PeerAddressTrackerItem>();
 		ipTrackers = new HashMap<InetAddress, InetAddressAddressTrackerItem>();
 	}
-	
+
 	private AddressTracker(SimpleFieldSet fs, long lastBootID) throws FSParseException {
 		int version = fs.getInt("Version");
 		if(version != 1)
@@ -128,15 +129,15 @@ public class AddressTracker {
 		}
 		}
 	}
-	
+
 	public void sentPacketTo(Peer peer) {
 		packetTo(peer, true);
 	}
-	
+
 	public void receivedPacketFrom(Peer peer) {
 		packetTo(peer, false);
 	}
-	
+
 	private void packetTo(Peer peer, boolean sent) {
 		Peer peer2 = peer.dropHostName();
 		if(peer2 == null) {
@@ -144,7 +145,7 @@ public class AddressTracker {
 			return;
 		}
 		peer = peer2;
-		
+
 		InetAddress ip = peer.getAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -198,27 +199,27 @@ public class AddressTracker {
 		InetAddressAddressTrackerItem[] items = new InetAddressAddressTrackerItem[ipTrackers.size()];
 		return ipTrackers.values().toArray(items);
 	}
-	
+
 	public static final int DEFINITELY_PORT_FORWARDED = 2;
 	public static final int MAYBE_PORT_FORWARDED = 1;
 	public static final int MAYBE_NATED = -1;
 	public static final int DEFINITELY_NATED = -2;
 	public static final int DONT_KNOW = 0;
-	
-	/** If the minimum gap is at least this, we might be port forwarded. 
+
+	/** If the minimum gap is at least this, we might be port forwarded.
 	 * RFC 4787 requires at least 2 minutes, but many NATs have shorter timeouts. */
 	public final static long MAYBE_TUNNEL_LENGTH = ((5 * 60) + 1) * 1000L;
-	/** If the minimum gap is at least this, we are almost certainly port forwarded. 
-	 * Some stateful firewalls do at least 30 minutes. Hopefully the below is 
+	/** If the minimum gap is at least this, we are almost certainly port forwarded.
+	 * Some stateful firewalls do at least 30 minutes. Hopefully the below is
 	 * sufficiently over the top! */
 	public final static long DEFINITELY_TUNNEL_LENGTH = (12 * 60 + 1) * 60 * 1000L;
 	/** Time after which we ignore evidence that we are port forwarded */
 	public static final long HORIZON = 24*60*60*1000L;
-	
+
 	public long getLongestSendReceiveGap() {
 		return getLongestSendReceiveGap(HORIZON);
 	}
-	
+
 	/**
 	 * Find the longest send/known-no-packets-sent ... receive gap.
 	 * It is highly unlikely that we are behind a NAT or symmetric
@@ -235,12 +236,12 @@ public class AddressTracker {
 			longestGap = Math.max(longestGap, item.longestGap(horizon, now));
 		}
 		return longestGap;
-		
+
 	}
-	
+
 	public int getPortForwardStatus() {
 		long minGap = getLongestSendReceiveGap(HORIZON);
-		
+
 		if(minGap > DEFINITELY_TUNNEL_LENGTH)
 			return DEFINITELY_PORT_FORWARDED;
 		if(minGap > MAYBE_TUNNEL_LENGTH)
@@ -254,7 +255,7 @@ public class AddressTracker {
 		}
 		return DONT_KNOW;
 	}
-	
+
 	private boolean isBroken() {
 		return System.currentTimeMillis() - brokenTime < HORIZON;
 	}
@@ -277,11 +278,11 @@ public class AddressTracker {
 	}
 
 	/** Persist the table to disk */
-	public void storeData(long bootID, File nodeDir, int port) {
+	public void storeData(long bootID, ProgramDirectory runDir, int port) {
 		// Don't write to disk if we know we're NATed anyway!
 		if(isBroken()) return;
-		File data = new File(nodeDir, "packets-"+port+".dat");
-		File dataBak = new File(nodeDir, "packets-"+port+".bak");
+		File data = runDir.file("packets-"+port+".dat");
+		File dataBak = runDir.file("packets-"+port+".bak");
 		data.delete();
 		dataBak.delete();
 		FileOutputStream fos = null;
@@ -342,7 +343,7 @@ public class AddressTracker {
 	}
 
 	private long timePresumeGuilty = -1;
-	
+
 	public synchronized void setPresumedGuiltyAt(long l) {
 		if(timePresumeGuilty <= 0)
 			timePresumeGuilty = l;
