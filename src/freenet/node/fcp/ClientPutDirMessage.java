@@ -55,6 +55,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final int extraInsertsSplitfileHeaderBlock;
 	final InsertContext.CompatibilityMode compatibilityMode;
 	final boolean localRequestOnly;
+	final boolean realTimeFlag;
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -165,6 +166,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
 		extraInsertsSingleBlock = fs.getInt("ExtraInsertsSingleBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK);
 		extraInsertsSplitfileHeaderBlock = fs.getInt("ExtraInsertsSplitfileHeaderBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER);
+		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
 	}
 
 	@Override

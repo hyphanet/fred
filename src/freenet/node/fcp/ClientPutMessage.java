@@ -80,6 +80,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final InsertContext.CompatibilityMode compatibilityMode;
 	final byte[] overrideSplitfileCryptoKey;
 	final boolean localRequestOnly;
+	final boolean realTimeFlag;
 	
 	public static final short UPLOAD_FROM_DIRECT = 0;
 	public static final short UPLOAD_FROM_DISK = 1;
@@ -270,6 +271,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
 		extraInsertsSingleBlock = fs.getInt("ExtraInsertsSingleBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK);
 		extraInsertsSplitfileHeaderBlock = fs.getInt("ExtraInsertsSplitfileHeaderBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER);
+		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
 	}
 
 	@Override

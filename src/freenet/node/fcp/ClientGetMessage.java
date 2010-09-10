@@ -62,6 +62,7 @@ public class ClientGetMessage extends FCPMessage {
 	public boolean writeToClientCache;
 	final String charset;
 	final boolean filterData;
+	final boolean realTimeFlag;
 	
 	// FIXME move these to the actual getter process
 	static final short RETURN_TYPE_DIRECT = 0; // over FCP
@@ -202,6 +203,7 @@ public class ClientGetMessage extends FCPMessage {
 		}
 		writeToClientCache = fs.getBoolean("WriteToClientCache", persistenceType == ClientRequest.PERSIST_CONNECTION);
 		binaryBlob = Fields.stringToBool(fs.get("BinaryBlob"), false);
+		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
 	}
 
 	@Override
