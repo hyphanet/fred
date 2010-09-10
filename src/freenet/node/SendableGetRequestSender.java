@@ -41,7 +41,7 @@ public class SendableGetRequestSender implements SendableRequestSender {
 		}
 		try {
 			try {
-				core.realGetKey(key, req.localRequestOnly, req.ignoreStore, req.canWriteClientCache);
+				core.realGetKey(key, req.localRequestOnly, req.ignoreStore, req.canWriteClientCache, req.realTimeFlag);
 			} catch (final LowLevelGetException e) {
 				req.onFailure(e, context);
 				return true;

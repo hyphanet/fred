@@ -26,9 +26,10 @@ public abstract class ChosenBlock {
 	public transient final boolean ignoreStore;
 	public transient final boolean canWriteClientCache;
 	public transient final boolean forkOnCacheable;
+	public transient final boolean realTimeFlag;
 	private transient ClientKey generatedKey;
 	
-	public ChosenBlock(SendableRequestItem token, Key key, ClientKey ckey, boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, RequestScheduler sched) {
+	public ChosenBlock(SendableRequestItem token, Key key, ClientKey ckey, boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean realTimeFlag, RequestScheduler sched) {
 		this.token = token;
 		if(token == null) throw new NullPointerException();
 		this.key = key;
@@ -37,6 +38,7 @@ public abstract class ChosenBlock {
 		this.ignoreStore = ignoreStore;
 		this.canWriteClientCache = canWriteClientCache;
 		this.forkOnCacheable = forkOnCacheable;
+		this.realTimeFlag = realTimeFlag;
 	}
 
 	public abstract boolean isPersistent();

@@ -73,6 +73,7 @@ public class RealNodeULPRTest extends RealNodeTest {
     static final boolean ENABLE_ULPRS = true; // This is the point of the test, but it's probably a good idea to be able to do a comparison if we want to
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = true;
     static final boolean ENABLE_FOAF = true;
+    static final boolean REAL_TIME_FLAG = false;
     
     public static final int DARKNET_PORT_BASE = RealNodeSecretPingTest.DARKNET_PORT_END;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
@@ -209,7 +210,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         for(int i=0;i<nodes.length;i++) {
         	System.out.println("Searching from node "+i);
         	try {
-        		nodes[i%nodes.length].clientCore.realGetKey(fetchKey, false, false, false);
+        		nodes[i%nodes.length].clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
         		System.err.println("TEST FAILED: KEY ALREADY PRESENT!!!"); // impossible!
         		System.exit(EXIT_KEY_EXISTS);
         	} catch (LowLevelGetException e) {

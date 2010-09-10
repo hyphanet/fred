@@ -53,6 +53,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean DISABLE_PROBABILISTIC_HTLS = false;
     // Set to true to cache everything. This depends on security level.
     static final boolean USE_SLASHDOT_CACHE = false;
+    static final boolean REAL_TIME_FLAG = false;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -165,7 +166,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 				try {
 					insertAttempts++;
-					randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false);
+					randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE, false, false, REAL_TIME_FLAG);
 					Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 					insertSuccesses++;
 				} catch (freenet.node.LowLevelPutException putEx) {
@@ -180,7 +181,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 } while(node2 == node1);
                 Node fetchNode = nodes[node2];
                 try {
-                	block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false);
+                	block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
                 } catch (LowLevelGetException e) {
                 	block = null;
                 }
