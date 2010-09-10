@@ -49,6 +49,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	private long curMaxTempLength;
 	private int curMaxMetadataLength;
 	private final RandomSource random;
+	private final boolean realTimeFlag;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final int MAX_ARCHIVE_LEVELS = 4;
@@ -90,7 +91,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	/*Whether or not to filter fetched content*/
 	static final boolean FILTER_DATA = false;
 
-	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
+	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
 		this.core = node;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
@@ -102,6 +103,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
 		this.persistentBucketFactory = node.persistentTempBucketFactory;
+		this.realTimeFlag = realTimeFlag;
 	}
 
 	public HighLevelSimpleClientImpl(HighLevelSimpleClientImpl hlsc) {
@@ -115,6 +117,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		this.curMaxMetadataLength = hlsc.curMaxMetadataLength;
 		this.curMaxTempLength = hlsc.curMaxTempLength;
 		this.random = hlsc.random;
+		this.realTimeFlag = hlsc.realTimeFlag;
 	}
 
 	public HighLevelSimpleClientImpl clone() {
@@ -279,14 +282,14 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				FILTER_DATA, MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
 				bucketFactory, eventProducer,
-				false, CAN_WRITE_CLIENT_CACHE, null, null);
+				false, CAN_WRITE_CLIENT_CACHE, realTimeFlag, null, null);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
 		return new InsertContext(
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, EXTRA_INSERTS_SINGLE_BLOCK, EXTRA_INSERTS_SPLITFILE_HEADER, InsertContext.CompatibilityMode.COMPAT_CURRENT);
+				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, false, realTimeFlag, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, EXTRA_INSERTS_SINGLE_BLOCK, EXTRA_INSERTS_SPLITFILE_HEADER, InsertContext.CompatibilityMode.COMPAT_CURRENT);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {
