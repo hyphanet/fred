@@ -1599,10 +1599,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	/** Queue the offered key. */
-	public void queueOfferedKey(Key key) {
+	public void queueOfferedKey(Key key, boolean realTime) {
 		ClientRequestScheduler sched =
 			key instanceof NodeSSK ? requestStarters.sskFetchScheduler : requestStarters.chkFetchScheduler;
-		sched.queueOfferedKey(key);
+		sched.queueOfferedKey(key, realTime);
 	}
 
 	public void dequeueOfferedKey(Key key) {

@@ -370,7 +370,11 @@ public class FailureTable implements OOMHook {
 		// Either a peer wants it, in which case we want it for them,
 		// or we want it, or we have requested it in the past, in which case
 		// we will probably want it in the future.
-		node.clientCore.queueOfferedKey(key);
+		// FIXME: Not safe to queue offered keys as realtime????
+		// For the same reason that priorities are not safe?
+		// But do it at low priorities?
+		// Offers mostly happen for SSKs anyway ... reconsider?
+		node.clientCore.queueOfferedKey(key, false);
 	}
 
 	private synchronized void trimOffersList(long now) {

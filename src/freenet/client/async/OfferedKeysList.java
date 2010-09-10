@@ -57,8 +57,9 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	private final short priorityClass;
 	private final NodeClientCore core;
 	private final boolean isSSK;
+	private final boolean realTimeFlag;
 	
-	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK) {
+	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK, boolean realTimeFlag) {
 		super(false);
 		this.keys = new HashSet<Key>();
 		this.keysList = new Vector<Key>();
@@ -66,6 +67,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		this.priorityClass = priorityClass;
 		this.core = core;
 		this.isSSK = isSSK;
+		this.realTimeFlag = realTimeFlag;
 	}
 	
 	/** Called when a key is found, when it no longer belongs to this list etc. */
@@ -168,7 +170,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 						// Ignore
 					}
 					
-				}, true, false);
+				}, true, false, realTimeFlag);
 				// FIXME reconsider canWriteClientCache=false parameter.
 				return true;
 			}

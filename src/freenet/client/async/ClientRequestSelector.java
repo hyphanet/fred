@@ -170,11 +170,11 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, ClientContext context, ObjectContainer container) {
+	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeysRealTime, OfferedKeysList offeredKeysBulk, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, ClientContext context, ObjectContainer container) {
 		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
-			SelectorReturn r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, context, container, now);
+			SelectorReturn r = removeFirstInner(fuzz, random, offeredKeysRealTime, offeredKeysBulk, starter, null, schedTransient, true, false, maxPrio, context, container, now);
 			SendableRequest req = null;
 			if(r != null && r.req != null) req = r.req;
 			if(req == null) continue;
@@ -261,7 +261,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 	}
 	
-	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, ClientContext context, ObjectContainer container, long now) {
+	SelectorReturn removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeysRealTime, OfferedKeysList offeredKeysBulk, RequestStarter starter, ClientRequestSchedulerCore schedCore, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, ClientContext context, ObjectContainer container, long now) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		if(schedCore == null) transientOnly = true;
@@ -269,10 +269,12 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			Logger.error(this, "Not transient but no core");
 			return null;
 		}
-		boolean tryOfferedKeys = offeredKeys != null && (!notTransient) && random.nextBoolean();
+		boolean tryOfferedKeys = offeredKeysRealTime != null && (!notTransient) && random.nextBoolean();
 		if(tryOfferedKeys) {
-			if(offeredKeys.getCooldownTime(container, context, now) == 0)
-				return new SelectorReturn(offeredKeys);
+			if(offeredKeysRealTime.getCooldownTime(container, context, now) == 0)
+				return new SelectorReturn(offeredKeysRealTime);
+			if(offeredKeysBulk.getCooldownTime(container, context, now) == 0)
+				return new SelectorReturn(offeredKeysBulk);
 		}
 		long l = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container, context, now);
 		if(l > Integer.MAX_VALUE) {
@@ -282,8 +284,10 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		int choosenPriorityClass = (int)l;
 		if(choosenPriorityClass == -1) {
 			if((!notTransient) && !tryOfferedKeys) {
-				if(offeredKeys != null && offeredKeys.getCooldownTime(container, context, now) == 0)
-					return new SelectorReturn(offeredKeys);
+				if(offeredKeysRealTime != null && offeredKeysRealTime.getCooldownTime(container, context, now) == 0)
+					return new SelectorReturn(offeredKeysRealTime);
+				if(offeredKeysBulk != null && offeredKeysBulk.getCooldownTime(container, context, now) == 0)
+					return new SelectorReturn(offeredKeysBulk);
 			}
 			if(logMINOR)
 				Logger.minor(this, "Nothing to do");

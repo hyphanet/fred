@@ -101,7 +101,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	/** Offered keys list. Only one, not split by priority, to prevent various attacks relating
 	 * to offering specific keys and timing how long it takes for the node to request the key. 
 	 * Non-persistent. */
-	private final OfferedKeysList offeredKeys;
+	private final OfferedKeysList offeredKeysRealTime;
+	private final OfferedKeysList offeredKeysBulk;
 	// we have one for inserts and one for requests
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
@@ -141,9 +142,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 		if(!forInserts) {
-			offeredKeys = new OfferedKeysList(core, random, (short)0, forSSKs);
+			offeredKeysRealTime = new OfferedKeysList(core, random, (short)0, forSSKs, true);
+			offeredKeysBulk = new OfferedKeysList(core, random, (short)0, forSSKs, false);
 		} else {
-			offeredKeys = null;
+			offeredKeysRealTime = null;
+			offeredKeysBulk = null;
 		}
 		if(!forInserts)
 			transientCooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
@@ -405,7 +408,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
-		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, clientContext, null);
+		return selector.removeFirstTransient(fuzz, random, offeredKeysRealTime, offeredKeysBulk, starter, schedTransient, prio, clientContext, null);
 	}
 	
 	/**
@@ -705,7 +708,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		boolean addedMore = false;
 		while(true) {
-			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, context, container, now);
+			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeysRealTime, offeredKeysBulk, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, context, container, now);
 			SendableRequest request = null;
 			if(r != null && r.req != null) request = r.req;
 			else {
@@ -917,8 +920,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void tripPendingKey(final KeyBlock block) {
 		if(logMINOR) Logger.minor(this, "tripPendingKey("+block.getKey()+")");
 		
-		if(offeredKeys != null) {
-			offeredKeys.remove(block.getKey());
+		if(offeredKeysRealTime != null) {
+			offeredKeysRealTime.remove(block.getKey());
+		}
+		if(offeredKeysBulk != null) {
+			offeredKeysBulk.remove(block.getKey());
 		}
 		final Key key = block.getKey();
 		schedTransient.tripPendingKey(key, block, null, clientContext);
@@ -943,15 +949,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	/** Queue the offered key */
-	public void queueOfferedKey(final Key key) {
+	public void queueOfferedKey(final Key key, boolean realTime) {
 		if(logMINOR)
 			Logger.minor(this, "queueOfferedKey("+key);
-		offeredKeys.queueKey(key);
+		if(realTime)
+			offeredKeysRealTime.queueKey(key);
+		else
+			offeredKeysBulk.queueKey(key);
 		starter.wakeUp();
 	}
 
 	public void dequeueOfferedKey(Key key) {
-		offeredKeys.remove(key);
+		offeredKeysRealTime.remove(key);
+		offeredKeysBulk.remove(key);
 	}
 
 	/**
