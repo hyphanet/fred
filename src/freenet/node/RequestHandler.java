@@ -64,6 +64,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private long responseDeadline;
 	private BlockTransmitter bt;
 	private final RequestTag tag;
+	private final boolean realTimeFlag;
 	KeyBlock passedInKeyBlock;
 
 	@Override
@@ -81,10 +82,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * @param tag
 	 * @param passedInKeyBlock We ALWAYS look up in the datastore before starting a request.
 	 */
-	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key, RequestTag tag, KeyBlock passedInKeyBlock) {
+	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key, RequestTag tag, KeyBlock passedInKeyBlock, boolean realTimeFlag) {
 		req = m;
 		node = n;
 		uid = id;
+		this.realTimeFlag = realTimeFlag;
 		this.source = source;
 		this.htl = htl;
 		this.tag = tag;
@@ -106,12 +108,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			Logger.normal(this, "requestor gone, could not start request handler wait");
 			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(e);
-			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, tag);
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(t);
-			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, tag);
 		}
 	}
 	private Exception previousApplyByteCountCall;
@@ -175,7 +177,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			passedInKeyBlock = null; // For GC
 			return;
 		} else
-			o = node.makeRequestSender(key, htl, uid, tag, source, false, true, false, false, false);
+			o = node.makeRequestSender(key, htl, uid, tag, source, false, true, false, false, false, realTimeFlag);
 
 		if(o == null) { // ran out of htl?
 			Message dnf = DMT.createFNPDataNotFound(uid);
@@ -498,7 +500,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	private void unregisterRequestHandlerWithNode() {
 		node.removeTransferringRequestHandler(uid);
-		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, tag);
 	}
 
 	/**

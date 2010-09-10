@@ -247,6 +247,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	}
         	origTag.addRoutedTo(pn, true);
         	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
+        	msg.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
         	try {
 				pn.sendAsync(msg, null, this);
 			} catch (NotConnectedException e2) {
@@ -595,6 +596,7 @@ loadWaiterLoop:
             	nodesRoutedTo.add(next);
             	
             	Message req = createDataRequest();
+            	req.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
             	
             	// Not possible to get an accurate time for sending, guaranteed to be not later than the time of receipt.
             	// Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.

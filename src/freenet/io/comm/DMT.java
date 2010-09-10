@@ -1688,4 +1688,23 @@ public class DMT {
 	public static final String INPUT_BANDWIDTH_LOWER_LIMIT = "inputBandwidthLowerLimit";
 	public static final String INPUT_BANDWIDTH_UPPER_LIMIT = "inputBandwidthUpperLimit";
 	public static final String INPUT_BANDWIDTH_PEER_LIMIT = "inputBandwidthPeerLimit";
+	
+	public static final String REAL_TIME_FLAG = "realTimeFlag";
+	
+	public static final MessageType FNPRealTimeFlag = new MessageType("FNPRealTimeFlag", PRIORITY_HIGH) {{
+		addField(REAL_TIME_FLAG, Boolean.class);
+	}};
+	
+	public static final Message createFNPRealTimeFlag(boolean isBulk) {
+		Message msg = new Message(FNPRealTimeFlag);
+		msg.set(REAL_TIME_FLAG, isBulk);
+		return msg;
+	}
+
+	public static boolean getRealTimeFlag(Message m) {
+		Message bulk = m.getSubMessage(FNPRealTimeFlag);
+		if(bulk == null) return false;
+		return bulk.getBoolean(REAL_TIME_FLAG);
+	}
+	
 }

@@ -285,13 +285,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
 		boolean isSSK = key instanceof NodeSSK;
-		OfferReplyTag tag = new OfferReplyTag(isSSK, source);
-		node.lockUID(uid, isSSK, false, true, false, tag);
+        boolean realTimeFlag = DMT.getRealTimeFlag(m);
+		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag);
+		node.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag);
 		boolean needPubKey;
 		try {
 		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		RejectReason reject = 
-			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false, false);
+			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false, false, realTimeFlag);
 		if(reject != null) {
 			Logger.normal(this, "Rejecting FNPGetOfferedKey from "+source+" for "+key+" : "+reject);
 			Message rejected = DMT.createFNPRejectedOverload(uid, true);
@@ -302,15 +303,15 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(uid, isSSK, false, false, true, false, tag, reject.soft);
+			node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag, reject.soft);
 			return true;
 		}
 		
 		} catch (Error e) {
-			node.unlockUID(uid, isSSK, false, false, true, false, tag);
+			node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
 			throw e;
 		} catch (RuntimeException e) {
-			node.unlockUID(uid, isSSK, false, false, true, false, tag);
+			node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
 			throw e;
 		} // Otherwise, sendOfferedKey is responsible for unlocking. 
 		
@@ -381,8 +382,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
         short htl = m.getShort(DMT.HTL);
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
-        final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source);
-		if(!node.lockUID(id, isSSK, false, false, false, tag)) {
+        boolean realTimeFlag = DMT.getRealTimeFlag(m);
+        final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag);
+		if(!node.lockUID(id, isSSK, false, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -403,7 +405,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		BlockMetadata meta = new BlockMetadata();
 		KeyBlock block = node.fetch(key, false, false, false, false, meta);
 		
-		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null && !meta.isOldBlock(), false);
+		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null && !meta.isOldBlock(), false, realTimeFlag);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting "+(isSSK ? "SSK" : "CHK")+" request from "+source.getPeer()+" preemptively because "+rejectReason);
@@ -416,7 +418,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
 			tag.setRejected();
-			node.unlockUID(id, isSSK, false, false, false, false, tag, rejectReason.soft);
+			node.unlockUID(id, isSSK, false, false, false, false, realTimeFlag, tag, rejectReason.soft);
 			// Do not tell failure table.
 			// Otherwise an attacker can flood us with requests very cheaply and purge our
 			// failure table even though we didn't accept any of them.
@@ -424,7 +426,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		nodeStats.reportIncomingRequestLocation(key.toNormalizedDouble());
 		//if(!node.lockUID(id)) return false;
-		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key, tag, block);
+		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key, tag, block, realTimeFlag);
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 		return true;
 	}
@@ -441,8 +443,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		}
-		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source);
-		if(!node.lockUID(id, isSSK, true, false, false, tag)) {
+        boolean realTimeFlag = DMT.getRealTimeFlag(m);
+		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag);
+		if(!node.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -465,7 +468,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(preference != null)
 			preferInsert = preference.getBoolean(DMT.PREFER_INSERT);
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false, preferInsert);
+		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false, preferInsert, realTimeFlag);
 		if(rejectReason != null) {
 			Logger.normal(this, "Rejecting insert from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
@@ -476,7 +479,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, true, false, false, false, tag, rejectReason.soft);
+			node.unlockUID(id, isSSK, true, false, false, false, realTimeFlag, tag, rejectReason.soft);
 			return true;
 		}
 		long now = System.currentTimeMillis();
