@@ -197,4 +197,9 @@ public class SimpleSendableInsert extends SendableInsert {
 	public boolean localRequestOnly(ObjectContainer container) {
 		return false;
 	}
+
+	@Override
+	public boolean realTimeFlag(ObjectContainer container) {
+		return false;
+	}
 }
