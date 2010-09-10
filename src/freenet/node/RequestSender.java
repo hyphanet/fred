@@ -30,6 +30,7 @@ import freenet.keys.SSKVerifyException;
 import freenet.node.FailureTable.BlockOffer;
 import freenet.node.FailureTable.OfferList;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.PeerNode.OutputLoadTracker;
 import freenet.node.PeerNode.RequestLikelyAcceptedState;
 import freenet.node.PeerNode.SlotWaiter;
 import freenet.store.KeyCollisionException;
@@ -531,13 +532,15 @@ loadWaiterLoop:
             	
             	RequestLikelyAcceptedState expectedAcceptState;
             	
-            	if(next.getLastIncomingLoadStats() == null) {
+            	OutputLoadTracker outputLoadTracker = next.outputLoadTracker(realTimeFlag);
+            	
+            	if(outputLoadTracker.getLastIncomingLoadStats(realTimeFlag) == null) {
             		// No stats, old style, just go for it.
             		triedAll = true;
             		expectedAcceptState = RequestLikelyAcceptedState.UNKNOWN;
             	} else {
             		expectedAcceptState = 
-            			next.tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
+            			outputLoadTracker.tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
             		
             		if(expectedAcceptState != null) {
             			if(logMINOR)
@@ -546,9 +549,9 @@ loadWaiterLoop:
             			if(logMINOR)
             				Logger.minor(this, "Cannot send to "+next);
             			waitedForLoadManagement = true;
-            			SlotWaiter waiter = next.createSlotWaiter(origTag, type, false);
+            			SlotWaiter waiter = next.createSlotWaiter(origTag, type, false, realTimeFlag);
             			while(true) {
-            				next.queueSlotWaiter(waiter);
+            				outputLoadTracker.queueSlotWaiter(waiter);
             				long startTime = System.currentTimeMillis();
             				PeerNode waited = waiter.waitForAny();
             				if(waited == null) {

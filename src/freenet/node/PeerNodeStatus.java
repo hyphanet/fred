@@ -104,7 +104,9 @@ public class PeerNodeStatus {
 
 	// int's because that's what they are transferred as
 	
-	public final IncomingLoadSummaryStats incomingLoadStats;
+	public final IncomingLoadSummaryStats incomingLoadStatsRealTime;
+
+	public final IncomingLoadSummaryStats incomingLoadStatsBulk;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
@@ -159,7 +161,8 @@ public class PeerNodeStatus {
 		this.isSearchable = peerNode.isRealConnection();
 		this.resendBytesSent = peerNode.getResendBytesSent();
 		this.reportedUptimePercentage = peerNode.getUptime();
-		incomingLoadStats = peerNode.getIncomingLoadStats();
+		incomingLoadStatsRealTime = peerNode.getIncomingLoadStats(true);
+		incomingLoadStatsBulk = peerNode.getIncomingLoadStats(false);
 	}
 
 	/**

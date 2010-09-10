@@ -1605,6 +1605,7 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
 	public static final MessageType FNPPeerLoadStatusShort = new MessageType("FNPPeerLoadStatusShort", PRIORITY_HIGH) {{
@@ -1620,6 +1621,7 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
 	public static final MessageType FNPPeerLoadStatusInt = new MessageType("FNPPeerLoadStatusInt", PRIORITY_HIGH) {{
@@ -1635,6 +1637,7 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
 	public static final Message createFNPPeerLoadStatus(PeerLoadStats stats) {
@@ -1672,6 +1675,7 @@ public class DMT {
 		msg.set(INPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.inputBandwidthLowerLimit);
 		msg.set(INPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.inputBandwidthUpperLimit);
 		msg.set(INPUT_BANDWIDTH_PEER_LIMIT, (int)stats.inputBandwidthPeerLimit);
+		msg.set(REAL_TIME_FLAG, stats.realTime);
 		return msg;
 	}
 	

@@ -616,6 +616,7 @@ public class NodeStats implements Persistable {
 		public final double inputBandwidthLowerLimit;
 		public final double inputBandwidthUpperLimit;
 		public final double inputBandwidthPeerLimit;
+		public final boolean realTime;
 		
 		public boolean equals(Object o) {
 			if(!(o instanceof PeerLoadStats)) return false;
@@ -643,6 +644,7 @@ public class NodeStats implements Persistable {
 		
 		public PeerLoadStats(PeerNode peer, boolean realTimeFlag) {
 			this.peer = peer;
+			this.realTime = realTimeFlag;
 			long[] total = node.collector.getTotalIO();
 			long totalSent = total[0];
 			long totalOverhead = getSentOverhead();
@@ -660,8 +662,8 @@ public class NodeStats implements Persistable {
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(limit);
 			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false);
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true);
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, realTimeFlag);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, realTimeFlag);
 			
 			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node, realTimeFlag);
 			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false, realTimeFlag);
@@ -703,6 +705,7 @@ public class NodeStats implements Persistable {
 			inputBandwidthLowerLimit = m.getInt(DMT.INPUT_BANDWIDTH_LOWER_LIMIT);
 			inputBandwidthUpperLimit = m.getInt(DMT.INPUT_BANDWIDTH_UPPER_LIMIT);
 			inputBandwidthPeerLimit = m.getInt(DMT.INPUT_BANDWIDTH_PEER_LIMIT);
+			realTime = m.getBoolean(DMT.REAL_TIME_FLAG);
 		}
 
 		public RunningRequestsSnapshot getOtherRunningRequests() {
@@ -1105,7 +1108,7 @@ public class NodeStats implements Persistable {
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
 		
-		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input);
+		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, realTimeFlag);
 		
 		// If over the upper limit, reject.
 		
@@ -1135,7 +1138,7 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 
-	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input) {
+	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean realTimeFlag) {
 		
 		int peers = node.peers.countConnectedPeers();
 		
@@ -1158,7 +1161,7 @@ public class NodeStats implements Persistable {
 		
 		if(source != null) {
 			// FIXME tell local as well somehow?
-			source.onSetPeerAllocation(input, (int)thisAllocation);
+			source.onSetPeerAllocation(input, (int)thisAllocation, realTimeFlag);
 		}
 		
 		return thisAllocation;
