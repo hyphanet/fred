@@ -48,6 +48,7 @@ public class InsertContext implements Cloneable {
 	/** Number of extra inserts for a block inserted above a splitfile. */
 	public int extraInsertsSplitfileHeaderBlock;
 	public boolean localRequestOnly;
+	public boolean realTimeFlag;
 	// FIXME DB4O: This should really be an enum. However, db4o has a tendency to copy enum's,
 	// which wastes space (often unrecoverably), confuses programmers, creates wierd bugs and breaks == comparison.
 	
@@ -93,7 +94,7 @@ public class InsertContext implements Cloneable {
 
 	public InsertContext(
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, CompatibilityMode compatibilityMode) {
+			ClientEventProducer eventProducer, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, boolean realTimeFlag, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, CompatibilityMode compatibilityMode) {
 		dontCompress = false;
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
 		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
@@ -110,6 +111,7 @@ public class InsertContext implements Cloneable {
 			compatibilityMode = CompatibilityMode.latest();
 		this.compatibilityMode = compatibilityMode.ordinal();
 		this.localRequestOnly = localRequestOnly;
+		this.realTimeFlag = realTimeFlag;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
@@ -126,6 +128,7 @@ public class InsertContext implements Cloneable {
 		this.extraInsertsSplitfileHeaderBlock = ctx.extraInsertsSplitfileHeaderBlock;
 		this.compatibilityMode = ctx.compatibilityMode;
 		this.localRequestOnly = ctx.localRequestOnly;
+		this.realTimeFlag = ctx.realTimeFlag;
 	}
 	
 	/** Make public, but just call parent for a field for field copy */

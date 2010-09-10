@@ -219,12 +219,14 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			boolean ignoreStore;
 			boolean canWriteClientCache;
 			boolean forkOnCacheable;
+			boolean realTimeFlag;
 			if(req instanceof SendableGet) {
 				SendableGet sg = (SendableGet) req;
 				FetchContext ctx = sg.getContext(container);
 				localRequestOnly = ctx.localRequestOnly;
 				ignoreStore = ctx.ignoreStore;
 				canWriteClientCache = ctx.canWriteClientCache;
+				realTimeFlag = ctx.realTimeFlag;
 				forkOnCacheable = false;
 			} else {
 				localRequestOnly = false;
@@ -232,14 +234,16 @@ class ClientRequestSelector implements KeysFetchingLocally {
 					canWriteClientCache = ((SendableInsert)req).canWriteClientCache(null);
 					forkOnCacheable = ((SendableInsert)req).forkOnCacheable(null);
 					localRequestOnly = ((SendableInsert)req).localRequestOnly(null);
+					realTimeFlag = ((SendableInsert)req).realTimeFlag(null);
 				} else {
 					canWriteClientCache = false;
 					forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
 					localRequestOnly = false;
+					realTimeFlag = false;
 				}
 				ignoreStore = false;
 			}
-			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, sched);
+			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag, sched);
 			return ret;
 		}
 	}
