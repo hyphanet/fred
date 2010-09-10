@@ -333,7 +333,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		healingQueue = new SimpleHealingQueue(
 				new InsertContext(
 						0, 2, 0, 0, new SimpleEventProducer(),
-						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
 		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor, storeChecker);
 		compressor.setClientContext(clientContext);
@@ -1447,12 +1447,24 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
+	/** @deprecated Only provided for compatibility with old plugins! Plugins must specify! */
 	public HighLevelSimpleClient makeClient(short prioClass) {
-		return makeClient(prioClass, false);
+		return makeClient(prioClass, false, false);
 	}
 
-	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
-		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, forceDontIgnoreTooManyPathComponents);
+	/**
+	 * @param prioClass The priority to run requests at.
+	 * @param realTimeFlag If true, requests are latency-optimised. If false, they are 
+	 * throughput-optimised. Fewer latency-optimised ("real time") requests are accepted
+	 * but their transfers are faster. Latency-optimised requests are expected to be bursty,
+	 * whereas throughput-optimised (bulk) requests can be constant. 
+	 */
+	public HighLevelSimpleClient makeClient(short prioClass, boolean realTimeFlag) {
+		return makeClient(prioClass, false, realTimeFlag);
+	}
+
+	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
+		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, forceDontIgnoreTooManyPathComponents, realTimeFlag);
 	}
 
 	public FCPServer getFCPServer() {
