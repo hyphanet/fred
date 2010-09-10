@@ -93,6 +93,11 @@ public class FetchContext implements Cloneable {
 	public TagReplacerCallback tagReplacer;
 	/**Force the content fiter to use this MIME type*/
 	public String overrideMIME;
+	/** Send the request with the real time flag enabled? Real-time requests are given 
+	 * a higher priority in data transfers, but fewer of them are accepted. They are 
+	 * optimised for latency rather than throughput, and are expected to be bursty rather
+	 * than continual. */
+	public boolean realTimeFlag;
 
 	public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -102,7 +107,7 @@ public class FetchContext implements Cloneable {
 			boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer,
-			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME) {
+			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, boolean realTimeFlag, String charset, String overrideMIME) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -125,6 +130,7 @@ public class FetchContext implements Cloneable {
 		this.canWriteClientCache = canWriteClientCache;
 		this.charset = charset;
 		this.overrideMIME = overrideMIME;
+		this.realTimeFlag = realTimeFlag;
 		hasOwnEventProducer = true;
 	}
 
@@ -168,6 +174,7 @@ public class FetchContext implements Cloneable {
 		this.prefetchHook = ctx.prefetchHook;
 		this.tagReplacer = ctx.tagReplacer;
 		this.overrideMIME = ctx.overrideMIME;
+		this.realTimeFlag = ctx.realTimeFlag;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT

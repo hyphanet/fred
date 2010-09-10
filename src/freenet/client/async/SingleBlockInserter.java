@@ -561,8 +561,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						throw failed;
 					}
 				else
-					// FIXME bulk flag
-					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, false);
+					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
 			} catch (LowLevelPutException e) {
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
@@ -863,6 +862,20 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return retval;
 	}
 	
+	@Override
+	public boolean realTimeFlag(ObjectContainer container) {
+		boolean deactivate = false;
+		if(persistent) {
+			deactivate = !container.ext().isActive(ctx);
+			if(deactivate)
+				container.activate(ctx, 1);
+		}
+		boolean retval = ctx.realTimeFlag;
+		if(deactivate)
+			container.deactivate(ctx, 1);
+		return retval;
+	}
+	
 	public boolean objectCanNew(ObjectContainer container) {
 		if(finished) {
 			Logger.error(this, "objectCanNew when already finished on "+this);
@@ -889,5 +902,5 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
 		onEncode(key, container, context);
 	}
-	
+
 }

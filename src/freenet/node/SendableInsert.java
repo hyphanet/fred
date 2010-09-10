@@ -63,5 +63,7 @@ public abstract class SendableInsert extends SendableRequest {
 		if(isEmpty(container)) return -1;
 		return 0;
 	}
+
+	public abstract boolean realTimeFlag(ObjectContainer container);
 	
 }

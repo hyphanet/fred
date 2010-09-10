@@ -1204,8 +1204,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							throw new LowLevelPutException(LowLevelPutException.COLLISION);
 						}
 					else
-						// FIXME bulk flag
-						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, false);
+						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed for "+e);
@@ -1406,6 +1405,20 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				container.activate(blockInsertContext, 1);
 		}
 		boolean retval = blockInsertContext.forkOnCacheable;
+		if(deactivate)
+			container.deactivate(blockInsertContext, 1);
+		return retval;
+	}
+
+	@Override
+	public boolean realTimeFlag(ObjectContainer container) {
+		boolean deactivate = false;
+		if(persistent) {
+			deactivate = !container.ext().isActive(blockInsertContext);
+			if(deactivate)
+				container.activate(blockInsertContext, 1);
+		}
+		boolean retval = blockInsertContext.realTimeFlag;
 		if(deactivate)
 			container.deactivate(blockInsertContext, 1);
 		return retval;
