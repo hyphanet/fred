@@ -4751,6 +4751,46 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getNumCHKOfferReplies(boolean realTimeFlag) {
 		return realTimeFlag ? runningCHKOfferReplyUIDsRT.size() : runningCHKOfferReplyUIDsBulk.size();
 	}
+	
+	public int getNumRemoteCHKRequests() {
+		return getNumRemoteCHKRequests(false) + getNumRemoteCHKRequests(true);
+	}
+
+	public int getNumRemoteCHKInserts() {
+		return getNumRemoteCHKInserts(false) + getNumRemoteCHKInserts(true);
+	}
+
+	public int getNumRemoteSSKRequests() {
+		return getNumRemoteSSKRequests(false) + getNumRemoteSSKRequests(true);
+	}
+
+	public int getNumRemoteSSKInserts() {
+		return getNumRemoteSSKInserts(false) + getNumRemoteSSKInserts(true);
+	}
+
+	public int getNumLocalCHKRequests() {
+		return getNumLocalCHKRequests(false) + getNumLocalCHKRequests(true);
+	}
+
+	public int getNumLocalCHKInserts() {
+		return getNumLocalCHKInserts(false) + getNumLocalCHKInserts(true);
+	}
+
+	public int getNumLocalSSKRequests() {
+		return getNumLocalSSKRequests(false) + getNumLocalSSKRequests(true);
+	}
+
+	public int getNumLocalSSKInserts() {
+		return getNumLocalSSKInserts(false) + getNumLocalSSKInserts(true);
+	}
+	
+	public int getNumSSKOfferReplies() {
+		return getNumSSKOfferReplies(false) + getNumSSKOfferReplies(true);
+	}
+
+	public int getNumCHKOfferReplies() {
+		return getNumCHKOfferReplies(false) + getNumCHKOfferReplies(true);
+	}
 
 	public int getNumTransferringRequestSenders() {
 		synchronized(transferringRequestSenders) {
