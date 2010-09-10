@@ -1452,6 +1452,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return makeClient(prioClass, false, false);
 	}
 
+	/** @deprecated Only provided for compatibility with old plugins! Plugins must specify! */
+	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
+		return makeClient(prioClass, forceDontIgnoreTooManyPathComponents, false);
+	}
+
 	/**
 	 * @param prioClass The priority to run requests at.
 	 * @param realTimeFlag If true, requests are latency-optimised. If false, they are 
@@ -1459,10 +1464,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * but their transfers are faster. Latency-optimised requests are expected to be bursty,
 	 * whereas throughput-optimised (bulk) requests can be constant. 
 	 */
-	public HighLevelSimpleClient makeClient(short prioClass, boolean realTimeFlag) {
-		return makeClient(prioClass, false, realTimeFlag);
-	}
-
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
 		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, forceDontIgnoreTooManyPathComponents, realTimeFlag);
 	}
