@@ -218,6 +218,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(preferInsert != Node.PREFER_INSERT_DEFAULT) {
             	request.addSubMessage(DMT.createFNPSubInsertPreferInsert(preferInsert));
             }
+        	request.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
             
             // Wait for ack or reject... will come before even a locally generated DataReply
             
