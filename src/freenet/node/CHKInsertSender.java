@@ -377,6 +377,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             if(preferInsert != Node.PREFER_INSERT_DEFAULT) {
             	req.addSubMessage(DMT.createFNPSubInsertPreferInsert(preferInsert));
             }
+        	req.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
             
             // Wait for ack or reject... will come before even a locally generated DataReply
             
