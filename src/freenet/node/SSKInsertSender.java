@@ -65,6 +65,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private final boolean forkOnCacheable;
     private final boolean preferInsert;
     private final boolean ignoreLowBackoff;
+    private final boolean realTimeFlag;
     private InsertTag forkedRequestTag;
     
     private int status = -1;
@@ -83,7 +84,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     /** Could not get off the node at all! */
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
-    SSKInsertSender(SSKBlock block, long uid, InsertTag tag, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
+    SSKInsertSender(SSKBlock block, long uid, InsertTag tag, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
     	logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     	this.fromStore = fromStore;
     	this.node = node;
@@ -107,6 +108,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	this.forkOnCacheable = forkOnCacheable;
     	this.preferInsert = preferInsert;
     	this.ignoreLowBackoff = ignoreLowBackoff;
+    	this.realTimeFlag = realTimeFlag;
     }
 
     void start() {
@@ -131,7 +133,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         	if(forkedRequestTag != null)
-            	node.unlockUID(uid, true, true, false, false, false, forkedRequestTag);
+            	node.unlockUID(uid, true, true, false, false, false, realTimeFlag, forkedRequestTag);
         }
 	}
 
@@ -183,11 +185,11 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	
-            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source);
+            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source, realTimeFlag);
             	uid = node.random.nextLong();
             	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
-            	node.lockUID(uid, true, true, false, false, forkedRequestTag);
+            	node.lockUID(uid, true, true, false, false, realTimeFlag, forkedRequestTag);
             }
             
             // Route it

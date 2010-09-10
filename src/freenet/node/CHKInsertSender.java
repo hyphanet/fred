@@ -175,7 +175,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	
 	CHKInsertSender(NodeCHK myKey, long uid, InsertTag tag, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore,
-            boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
+            boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
         this.origUID = uid;
@@ -192,6 +192,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.forkOnCacheable = forkOnCacheable;
         this.preferInsert = preferInsert;
         this.ignoreLowBackoff = ignoreLowBackoff;
+        this.realTimeFlag = realTimeFlag;
         logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     }
 
@@ -225,6 +226,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     private final boolean forkOnCacheable;
     private final boolean preferInsert;
     private final boolean ignoreLowBackoff;
+    private final boolean realTimeFlag;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
 
     
@@ -283,7 +285,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             if(myStatus == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         	if(forkedRequestTag != null)
-            	node.unlockUID(uid, false, true, false, false, false, forkedRequestTag);
+            	node.unlockUID(uid, false, true, false, false, false, realTimeFlag, forkedRequestTag);
         }
     }
     
@@ -342,11 +344,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	
-            	forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE, source);
+            	forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE, source, realTimeFlag);
             	uid = node.random.nextLong();
             	Logger.normal(this, "FORKING CHK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
-            	node.lockUID(uid, false, true, false, false, forkedRequestTag);
+            	node.lockUID(uid, false, true, false, false, realTimeFlag, forkedRequestTag);
             }
             
             // Route it

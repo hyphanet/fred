@@ -83,7 +83,7 @@ public class SimpleSendableInsert extends SendableInsert {
 				boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 				try {
 					if(logMINOR) Logger.minor(this, "Starting request: "+this);
-					core.realPut(block, req.canWriteClientCache, Node.FORK_ON_CACHEABLE_DEFAULT, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT);
+					core.realPut(block, req.canWriteClientCache, Node.FORK_ON_CACHEABLE_DEFAULT, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
 				} catch (LowLevelPutException e) {
 					onFailure(e, req.token, null, context);
 					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
