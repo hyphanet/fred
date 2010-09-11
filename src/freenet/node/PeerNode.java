@@ -4763,10 +4763,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(slotWaiters.isEmpty()) return;
 				boolean foundNone = true;
 				for(int i=0;i<RequestType.values().length;i++) {
-					slotWaiterTypeCounter++;
-					if(slotWaiterTypeCounter == RequestType.values().length)
-						slotWaiterTypeCounter = 0;
-					RequestType type = RequestType.values()[slotWaiterTypeCounter];
+					RequestType type;
+					synchronized(this) {
+						slotWaiterTypeCounter++;
+						if(slotWaiterTypeCounter == RequestType.values().length)
+							slotWaiterTypeCounter = 0;
+						type = RequestType.values()[slotWaiterTypeCounter];
+					}
 					LinkedHashSet<SlotWaiter> list = slotWaiters.get(type);
 					if(list == null) continue;
 					if(list.isEmpty()) continue;
