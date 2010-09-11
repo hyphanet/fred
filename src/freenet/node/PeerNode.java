@@ -4718,7 +4718,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				noLoadStats = (this.lastIncomingLoadStats == null);
 				if(!noLoadStats) {
 					makeSlotWaiters(waiter.requestType).add(waiter);
-					slotWaiters.get(waiter.requestType).add(waiter);
 					return;
 				}
 			}
