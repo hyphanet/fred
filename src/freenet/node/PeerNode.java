@@ -4594,6 +4594,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(!waitingFor.isEmpty()) return;
 				}
 				failed = true;
+				notifyAll();
 			}
 		}
 		
