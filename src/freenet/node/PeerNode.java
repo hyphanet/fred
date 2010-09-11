@@ -4839,7 +4839,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
 				PeerLoadStats stats) {
 			double ourUsage = runningRequests.calculate(ignoreLocalVsRemote, byteCounters);
-			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input));
+			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input)+" realtime "+realTime);
 			if(ourUsage < stats.peerLimit(input))
 				return RequestLikelyAcceptedState.GUARANTEED;
 			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, byteCounters);
