@@ -693,6 +693,7 @@ acceptWaiterLoop:
 							
 							if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
 								if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
+								nodesRoutedTo.remove(next);
 								// FIXME sanity check based on new data. Backoff if not plausible.
 								// FIXME recalculate with broader check, allow a few percent etc.
 								if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
