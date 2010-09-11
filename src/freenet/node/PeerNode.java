@@ -4564,6 +4564,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		
 		void onWaited(PeerNode peer, RequestLikelyAcceptedState state) {
+			if(logMINOR) Logger.minor(this, "Waking slot waiter "+this);
 			PeerNode[] all;
 			synchronized(this) {
 				if(acceptedBy != null) return;
@@ -4774,6 +4775,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					LinkedHashSet<SlotWaiter> list = slotWaiters.get(type);
 					if(list == null) continue;
 					if(list.isEmpty()) continue;
+					if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
 					Iterator<SlotWaiter> it = list.iterator();
 					foundNone = false;
 					// Should be safe to collect these here, just a little expensive.
