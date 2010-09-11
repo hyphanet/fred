@@ -538,6 +538,7 @@ loadWaiterLoop:
             		// No stats, old style, just go for it.
             		triedAll = true;
             		expectedAcceptState = RequestLikelyAcceptedState.UNKNOWN;
+            		if(logMINOR) Logger.minor(this, "No load stats for "+next);
             	} else {
             		expectedAcceptState = 
             			outputLoadTracker.tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
