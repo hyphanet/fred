@@ -582,7 +582,7 @@ loadWaiterLoop:
             				} else {
             					next = waited;
             					long endTime = System.currentTimeMillis();
-            					if(logMINOR) Logger.minor(this, "Sending to "+next+ " after waited for "+TimeUtil.formatTime(endTime-startTime));
+            					if(logMINOR) Logger.minor(this, "Sending to "+next+ " after waited for "+TimeUtil.formatTime(endTime-startTime)+" realtime="+realTimeFlag);
             					break;
             				}
             			}
