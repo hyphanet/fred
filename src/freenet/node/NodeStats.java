@@ -889,6 +889,19 @@ public class NodeStats implements Persistable {
 				numRemoteCHKInserts + numRemoteSSKInserts + numCHKOfferReplies + 
 				numSSKOfferReplies;
 		}
+
+		/** Requests we send to another node must be all regarded as remote - because over
+		 * there they *ARE* remote! */
+		public void collapseLocal() {
+			numRemoteCHKRequests += numLocalCHKRequests;
+			numRemoteSSKRequests += numLocalSSKRequests;
+			numRemoteCHKInserts += numLocalCHKInserts;
+			numRemoteSSKInserts += numLocalSSKInserts;
+			numLocalCHKRequests = 0;
+			numLocalSSKRequests = 0;
+			numLocalCHKInserts = 0;
+			numLocalSSKInserts = 0;
+		}
 		
 	}
 	
