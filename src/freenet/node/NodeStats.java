@@ -1112,7 +1112,7 @@ public class NodeStats implements Persistable {
 		
 		// If over the upper limit, reject.
 		
-		if(logMINOR) Logger.minor(this, "90 second limit: "+bandwidthAvailableOutputUpperLimit+" expected output liability: "+bandwidthLiabilityOutput);
+		if(logMINOR) Logger.minor(this, limit+" second limit: "+bandwidthAvailableOutputUpperLimit+" expected output liability: "+bandwidthLiabilityOutput);
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutputUpperLimit) {
 			pInstantRejectIncoming.report(1.0);
 			rejected(name+" bandwidth liability", isLocal);
