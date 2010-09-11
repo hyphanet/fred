@@ -4759,6 +4759,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			ByteCountersSnapshot byteCountersOutput = null;
 			ByteCountersSnapshot byteCountersInput = null;
 			boolean ignoreLocalVsRemote = false;
+			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime);
 			while(true) {
 				if(slotWaiters.isEmpty()) return;
 				boolean foundNone = true;
