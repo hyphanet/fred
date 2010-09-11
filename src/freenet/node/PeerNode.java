@@ -4766,7 +4766,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					slotWaiterTypeCounter++;
 					if(slotWaiterTypeCounter == RequestType.values().length)
 						slotWaiterTypeCounter = 0;
-					RequestType type = RequestType.values()[i];
+					RequestType type = RequestType.values()[slotWaiterTypeCounter];
 					LinkedHashSet<SlotWaiter> list = slotWaiters.get(type);
 					if(list == null) continue;
 					if(list.isEmpty()) continue;
