@@ -953,7 +953,9 @@ public class NodeStats implements Persistable {
 		// FIXME consider using a shorter average
 		// FIXME what happens when the bwlimit changes?
 		
-		double nonOverheadFraction = ((double)(Math.max(totalSent,((node.getOutputBandwidthLimit() * uptime) / 1000.0)) - totalOverhead)) / totalSent;
+		double totalCouldSend = Math.max(totalSent,
+				((double)((node.getOutputBandwidthLimit() * uptime))/1000.0));
+		double nonOverheadFraction = (totalCouldSend - totalOverhead) / totalCouldSend;
 		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
 		if(timeFirstAnyConnections > 0) {
 			long time = now - timeFirstAnyConnections;
