@@ -4718,6 +4718,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				noLoadStats = (this.lastIncomingLoadStats == null);
 				if(!noLoadStats) {
 					makeSlotWaiters(waiter.requestType).add(waiter);
+					if(logMINOR) Logger.minor(this, "Queued slot waiter");
 					return;
 				}
 			}
@@ -4762,7 +4763,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime);
 			while(true) {
 				synchronized(routedToLock) {
-					if(slotWaiters.isEmpty()) return;
+					if(slotWaiters.isEmpty()) {
+						if(logMINOR) Logger.minor(this, "No slot waiters for "+this);
+						return;
+					}
 				}
 				boolean foundNone = true;
 				for(int i=0;i<RequestType.values().length;i++) {
@@ -4774,10 +4778,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 						type = RequestType.values()[slotWaiterTypeCounter];
 					}
 					LinkedHashSet<SlotWaiter> list;
+					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
 					synchronized(routedToLock) {
 						list = slotWaiters.get(type);
-						if(list == null) continue;
-						if(list.isEmpty()) continue;
+						if(list == null) {
+							if(logMINOR) Logger.minor(this, "No list");
+							continue;
+						}
+						if(list.isEmpty()) {
+							if(logMINOR) Logger.minor(this, "List empty");
+							continue;
+						}
 					}
 					if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
 					foundNone = false;
