@@ -593,7 +593,10 @@ public class NodeStats implements Persistable {
 		/** The fraction of output bytes which are used for requests */
 		// FIXME consider using a shorter average
 		// FIXME what happens when the bwlimit changes?
-		double nonOverheadFraction = ((double)(Math.max(totalSent,((node.getOutputBandwidthLimit() * uptime) / 1000.0)) - totalOverhead)) / totalSent;
+		double totalCouldSend = Math.max(totalSent,
+				((double)((node.getOutputBandwidthLimit() * uptime))/1000.0));
+		double nonOverheadFraction = (totalCouldSend - totalOverhead) / totalCouldSend;
+		
 		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Output rate: "+(totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+nonOverheadFraction);
