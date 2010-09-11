@@ -136,8 +136,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.getPriority());
 				if(!req.localRequestOnly) {
 					// Wait
-					long delay = throttle.getDelay();
-					if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
+					long delay = 100;
 					long sleepUntil = cycleTime + delay;
 					if(!LOCAL_REQUESTS_COMPETE_FAIRLY) {
 						inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
