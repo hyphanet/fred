@@ -783,6 +783,7 @@ public class NodeStats implements Persistable {
 		int numRemoteSSKInserts;
 		int numCHKOfferReplies;
 		int numSSKOfferReplies;
+		final boolean realTimeFlag;
 		
 		RunningRequestsSnapshot(Node node, boolean realTimeFlag) {
 			numLocalCHKRequests = node.getNumLocalCHKRequests(realTimeFlag);
@@ -795,6 +796,7 @@ public class NodeStats implements Persistable {
 			numRemoteSSKInserts = node.getNumRemoteSSKInserts(realTimeFlag);
 			numCHKOfferReplies = node.getNumCHKOfferReplies(realTimeFlag);
 			numSSKOfferReplies = node.getNumSSKOfferReplies(realTimeFlag);
+			this.realTimeFlag = realTimeFlag;
 		}
 		
 		/**
@@ -814,6 +816,7 @@ public class NodeStats implements Persistable {
 			numRemoteSSKInserts = node.countRequests(source, requestsToNode, false, true, true, false, realTimeFlag);
 			numCHKOfferReplies = node.countRequests(source, requestsToNode, false, false, false, true, realTimeFlag);
 			numSSKOfferReplies = node.countRequests(source, requestsToNode, false, true, false, true, realTimeFlag);
+			this.realTimeFlag = realTimeFlag;
 		}
 
 		public RunningRequestsSnapshot(PeerLoadStats stats) {
@@ -828,6 +831,7 @@ public class NodeStats implements Persistable {
 			this.numLocalSSKInserts = 0;
 			this.numLocalCHKRequests = 0;
 			this.numLocalSSKRequests = 0;
+			this.realTimeFlag = stats.realTime;
 		}
 
 		public void decrement(boolean isSSK, boolean isInsert,
@@ -847,7 +851,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void log() {
-			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
+			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies+" realtime="+realTimeFlag);
 		}
 
 		public double calculate(boolean ignoreLocalVsRemoteBandwidthLiability,
