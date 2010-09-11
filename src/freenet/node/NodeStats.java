@@ -620,6 +620,10 @@ public class NodeStats implements Persistable {
 			Logger.error(this, "Non-overhead fraction is "+nonOverheadFraction+" - assuming this is self-inflicted and using default");
 			nonOverheadFraction = MIN_NON_OVERHEAD;
 		}
+		if(nonOverheadFraction > 1.0) {
+			Logger.error(this, "Non-overhead fraction is >1.0!!!");
+			nonOverheadFraction = 1.0;
+		}
 
 		// If no recent reports, no packets have been sent; correct the average downwards.
 		double pingTime;
