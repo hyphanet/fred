@@ -4761,7 +4761,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			boolean ignoreLocalVsRemote = false;
 			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime);
 			while(true) {
-				if(slotWaiters.isEmpty()) return;
+				synchronized(routedToLock) {
+					if(slotWaiters.isEmpty()) return;
+				}
 				boolean foundNone = true;
 				for(int i=0;i<RequestType.values().length;i++) {
 					RequestType type;
@@ -4771,11 +4773,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 							slotWaiterTypeCounter = 0;
 						type = RequestType.values()[slotWaiterTypeCounter];
 					}
-					LinkedHashSet<SlotWaiter> list = slotWaiters.get(type);
-					if(list == null) continue;
-					if(list.isEmpty()) continue;
+					LinkedHashSet<SlotWaiter> list;
+					synchronized(routedToLock) {
+						list = slotWaiters.get(type);
+						if(list == null) continue;
+						if(list.isEmpty()) continue;
+					}
 					if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
-					Iterator<SlotWaiter> it = list.iterator();
 					foundNone = false;
 					// Should be safe to collect these here, just a little expensive.
 					if(byteCountersOutput == null) {
@@ -4791,8 +4795,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 					RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
 					if(acceptState == null) return;
-					SlotWaiter slot = it.next();
-					it.remove();
+					SlotWaiter slot;
+					synchronized(routedToLock) {
+						Iterator<SlotWaiter> it = list.iterator();
+						slot = it.next();
+						it.remove();
+					}
 					slot.onWaited(PeerNode.this, acceptState);
 				}
 				if(foundNone) return;
