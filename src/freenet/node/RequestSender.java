@@ -548,7 +548,7 @@ loadWaiterLoop:
             				Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState+" realtime="+realTimeFlag);
             		} else {
             			if(logMINOR)
-            				Logger.minor(this, "Cannot send to "+next);
+            				Logger.minor(this, "Cannot send to "+next+" realtime="+realTimeFlag);
             			waitedForLoadManagement = true;
             			SlotWaiter waiter = next.createSlotWaiter(origTag, type, false, realTimeFlag);
             			while(true) {
