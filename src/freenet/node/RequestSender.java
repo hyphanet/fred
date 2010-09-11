@@ -733,7 +733,7 @@ acceptWaiterLoop:
             
             long now = System.currentTimeMillis();
             if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
-            	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(now-startedTryingPeer)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement);
+            	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(now-startedTryingPeer)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+" realtime="+realTimeFlag);
             
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
