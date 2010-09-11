@@ -4610,6 +4610,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					if(!waitingFor.isEmpty()) return;
 				}
 				failed = true;
+				notifyAll();
 			}
 		}
 		
