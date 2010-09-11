@@ -596,7 +596,7 @@ loadWaiterLoop:
             		lastNode = next;
             	}
             	
-            	if(logMINOR) Logger.minor(this, "Routing request to "+next);
+            	if(logMINOR) Logger.minor(this, "Routing request to "+next+" realtime="+realTimeFlag);
             	nodesRoutedTo.add(next);
             	
             	Message req = createDataRequest();
