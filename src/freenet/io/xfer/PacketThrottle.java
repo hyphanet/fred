@@ -50,7 +50,6 @@ public class PacketThrottle {
 	protected static final long MIN_DELAY = 1;
 	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
-	private final Peer _peer;
 	private long _roundTripTime = 500, _totalPackets, _droppedPackets;
 	private float _simulatedWindowSize = 2;
 	private final int PACKET_SIZE;
@@ -68,10 +67,7 @@ public class PacketThrottle {
 	/** The number of would-be packets which are no longer waiting in line for the transmition window */
 	private long _abandonedTickets;
 	
-	private PacketThrottle _deprecatedFor;
-
-	public PacketThrottle(Peer peer, int packetSize) {
-		_peer = peer;
+	public PacketThrottle(int packetSize) {
 		PACKET_SIZE = packetSize;
 	}
 
@@ -135,7 +131,7 @@ public class PacketThrottle {
 	public synchronized String toString() {
 		return Double.toString((((PACKET_SIZE * 1000.0 / getDelay())) / 1024)) + " k/sec, (w: "
 				+ _simulatedWindowSize + ", r:" + _roundTripTime + ", d:"
-				+ (((float) _droppedPackets / (float) _totalPackets)) + ") total="+_totalPackets+" for "+_peer+" : "+super.toString();
+				+ (((float) _droppedPackets / (float) _totalPackets)) + ") total="+_totalPackets+" : "+super.toString();
 	}
 
 	public synchronized long getRoundTripTime() {
@@ -156,7 +152,7 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
-	public void sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
+	public void sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		synchronized(this) {
@@ -216,11 +212,6 @@ public class PacketThrottle {
 					notifyAll();
 					Logger.normal(this, "Peer restarted: boot ID was "+bootID+" now "+newBootID);
 					throw new PeerRestartedException();
-				}
-				if(_deprecatedFor != null) {
-					_abandonedTickets++;
-					notifyAll();
-					throw new ThrottleDeprecatedException(_deprecatedFor);
 				}
 			}
 			/** Because we send in order, we have to go around all the waiters again after sending.
@@ -338,15 +329,5 @@ public class PacketThrottle {
 
 	public synchronized void maybeDisconnected() {
 		notifyAll();
-	}
-
-	public synchronized void changedAddress(PacketThrottle newThrottle) {
-		Logger.normal(this, "Deprecated "+this+" for "+newThrottle);
-		_deprecatedFor = newThrottle;
-		notifyAll();
-	}
-
-	public Peer getPeer() {
-		return _peer;
 	}
 }

@@ -3459,28 +3459,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return Version.getArbitraryBuildNumber(getVersion(), -1);
 	}
 
-	private PacketThrottle _lastThrottle;
+	private final PacketThrottle _lastThrottle = new PacketThrottle(Node.PACKET_SIZE);
 
 	public PacketThrottle getThrottle() {
-		PacketThrottle newThrottle = null;
-		PacketThrottle prevThrottle = null;
-		synchronized(this) {
-			Peer peer = getPeer();
-			if(peer == null) {
-				// We haven't connected, prevent an NPE.
-				return null;
-			}
-			if(_lastThrottle != null) {
-				if(_lastThrottle.getPeer().equals(peer))
-					return _lastThrottle;
-			}
-			newThrottle = new PacketThrottle(peer, Node.PACKET_SIZE);
-			prevThrottle = _lastThrottle;
-			_lastThrottle = newThrottle;
-		}
-		if(prevThrottle != null)
-			prevThrottle.changedAddress(newThrottle);
-		return newThrottle;
+		return _lastThrottle;
 	}
 
 	/**
@@ -4102,19 +4084,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long deadline = System.currentTimeMillis() + timeout;
 		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
-		for(int i=0;i<100;i++) {
-			try {
-				getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback);
-				return;
-			} catch (ThrottleDeprecatedException e) {
-				if(logMINOR) Logger.minor(this, "Throttle deprecated");
-				// Try with the new throttle. We don't need it, we'll get it from getThrottle().
-				continue;
-			}
-		}
-		Logger.error(this, "Peer constantly changes its IP address!!: "+shortToString());
-		forceDisconnect(true);
-		throw new NotConnectedException();
+		getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback);
 	}
 
 	/**
