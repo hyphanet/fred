@@ -4563,13 +4563,14 @@ public class Node implements TimeSkewDetectorCallback {
 			int count = 0;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
-				if(offer) {
-					if(tag.currentlyFetchingOfferedKeyFrom(source)) count++;
-				} else {
-					if(tag.currentlyRoutingTo(source)) {
-						if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
-						count++;
-					}
+				// Ordinary requests can be routed to an offered key.
+				// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
+				if(tag.currentlyFetchingOfferedKeyFrom(source)) {
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+					count++;
+				} else if(tag.currentlyRoutingTo(source)) {
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+					count++;
 				}
 			}
 			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count);
