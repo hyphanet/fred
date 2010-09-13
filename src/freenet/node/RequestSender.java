@@ -576,10 +576,8 @@ loadWaiterLoop:
             						node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
             						return;
             					} else {
-            						if(logMINOR) Logger.minor(this, "Adding new peer to the wait list: "+next);
-            						// Add the new peer to the list
-            						waiter.addWaitingFor(next);
-            						continue;
+            						if(logMINOR) Logger.minor(this, "Rerouted after failure in wait to "+next);
+            						continue loadWaiterLoop;
             					}
             				} else {
             					next = waited;
