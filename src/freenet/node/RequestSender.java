@@ -556,42 +556,42 @@ loadWaiterLoop:
             				waiter = next.createSlotWaiter(origTag, type, false, realTimeFlag);
             			else
             				waiter.addWaitingFor(next);
-            				outputLoadTracker.queueSlotWaiter(waiter);
-            				long startTime = System.currentTimeMillis();
-            				PeerNode waited = waiter.waitForAny();
-            				if(waited == null) {
-            					
-            					if(logMINOR) Logger.minor(this, "Failed in wait - backoff, disconnection etc? Rerouting...");
-            					// Disconnected, low capacity, or backed off.
-            					// In any case, add another peer.
-            					
-            					// Route it
-            					// Nodes we were waiting for that then became backed off will have been removed from the list.
-            					HashSet<PeerNode> exclude = waiter.waitingForList();
-            					exclude.addAll(nodesRoutedTo);
-            					// will have been removed from the list.
-            					next = node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
-            							key, htl, 0, source == null);
-            					
-            					if(next == null) {
-            						if (logMINOR && rejectOverloads>0)
-            							Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
-            						// Backtrack
-            						finish(ROUTE_NOT_FOUND, null, false);
-            						node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
-            						return;
-            					} else {
-            						if(logMINOR) Logger.minor(this, "Rerouted after failure in wait to "+next);
-            						waiter.addWaitingFor(next);
-            						// We can still route to the original node if it is still connected. So we do want to go around the loop again. However ...
-           		            		// Wait for the old and the new too.
-           		            		continue loadWaiterLoop;
-            					}
+            			outputLoadTracker.queueSlotWaiter(waiter);
+            			long startTime = System.currentTimeMillis();
+            			PeerNode waited = waiter.waitForAny();
+            			if(waited == null) {
+            				
+            				if(logMINOR) Logger.minor(this, "Failed in wait - backoff, disconnection etc? Rerouting...");
+            				// Disconnected, low capacity, or backed off.
+            				// In any case, add another peer.
+            				
+            				// Route it
+            				// Nodes we were waiting for that then became backed off will have been removed from the list.
+            				HashSet<PeerNode> exclude = waiter.waitingForList();
+            				exclude.addAll(nodesRoutedTo);
+            				// will have been removed from the list.
+            				next = node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
+            						key, htl, 0, source == null);
+            				
+            				if(next == null) {
+            					if (logMINOR && rejectOverloads>0)
+            						Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
+            					// Backtrack
+            					finish(ROUTE_NOT_FOUND, null, false);
+            					node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
+            					return;
             				} else {
-            					next = waited;
-            					long endTime = System.currentTimeMillis();
-            					if(logMINOR) Logger.minor(this, "Sending to "+next+ " after waited for "+TimeUtil.formatTime(endTime-startTime)+" realtime="+realTimeFlag);
+            					if(logMINOR) Logger.minor(this, "Rerouted after failure in wait to "+next);
+            					waiter.addWaitingFor(next);
+            					// We can still route to the original node if it is still connected. So we do want to go around the loop again. However ...
+            					// Wait for the old and the new too.
+            					continue loadWaiterLoop;
             				}
+            			} else {
+            				next = waited;
+            				long endTime = System.currentTimeMillis();
+            				if(logMINOR) Logger.minor(this, "Sending to "+next+ " after waited for "+TimeUtil.formatTime(endTime-startTime)+" realtime="+realTimeFlag);
+            			}
             		}
             		// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
             		// In fact, we should report only after Accepted.
