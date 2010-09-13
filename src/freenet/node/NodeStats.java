@@ -851,7 +851,11 @@ public class NodeStats implements Persistable {
 		}
 
 		public void log() {
-			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies+" realtime="+realTimeFlag);
+			log(null);
+		}
+		
+		public void log(PeerNode source) {
+			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies+" realtime="+realTimeFlag+(source == null ? "" : (" for "+source)));
 		}
 
 		public double calculate(boolean ignoreLocalVsRemoteBandwidthLiability,
@@ -1193,10 +1197,13 @@ public class NodeStats implements Persistable {
 
 	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters, boolean realTimeFlag) {
 		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source, false, realTimeFlag);
+		requestsSnapshot.collapseLocal(); // Since other side will do this anyway...
 		
 		if(source != null) {
 			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply);
 		}
+		
+		requestsSnapshot.log(source);
 		
 		return requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCounters);
 	}

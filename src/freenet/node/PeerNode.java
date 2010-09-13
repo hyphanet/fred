@@ -4707,6 +4707,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// Requests already running to this node
 				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
 				runningRequests.collapseLocal();
+				runningRequests.log(PeerNode.this);
 				// Requests running from its other peers
 				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
@@ -4812,6 +4813,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					// Requests already running to this node
 					RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
 					runningRequests.collapseLocal();
+					runningRequests.log(PeerNode.this);
 					// Requests running from its other peers
 					RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 					RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
