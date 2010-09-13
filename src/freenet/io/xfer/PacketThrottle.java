@@ -341,6 +341,7 @@ public class PacketThrottle {
 	}
 
 	public synchronized void changedAddress(PacketThrottle newThrottle) {
+		Logger.normal(this, "Deprecated "+this+" for "+newThrottle);
 		_deprecatedFor = newThrottle;
 		notifyAll();
 	}
