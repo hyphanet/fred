@@ -4556,7 +4556,6 @@ public class Node implements TimeSkewDetectorCallback {
 		synchronized(map) {
 		if(!requestsToNode) {
 			if((source == null) != local) return 0;
-			if(source == null) return map.size();
 			int count = 0;
 			for(UIDTag tag : map.values()) {
 				if(tag.source == source) count++;
