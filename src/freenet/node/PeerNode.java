@@ -4813,6 +4813,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 						slot = it.next();
 						it.remove();
 					}
+					if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up");
 					slot.onWaited(PeerNode.this, acceptState);
 				}
 				if(foundNone) return;
@@ -4839,7 +4840,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
 				PeerLoadStats stats) {
 			double ourUsage = runningRequests.calculate(ignoreLocalVsRemote, byteCounters);
-			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input)+" realtime "+realTime);
+			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input)+" realtime "+realTime+" input "+input);
 			if(ourUsage < stats.peerLimit(input))
 				return RequestLikelyAcceptedState.GUARANTEED;
 			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, byteCounters);
