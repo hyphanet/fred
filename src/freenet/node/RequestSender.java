@@ -556,7 +556,6 @@ loadWaiterLoop:
             				waiter = next.createSlotWaiter(origTag, type, false, realTimeFlag);
             			else
             				waiter.addWaitingFor(next);
-            			while(true) {
             				outputLoadTracker.queueSlotWaiter(waiter);
             				long startTime = System.currentTimeMillis();
             				PeerNode waited = waiter.waitForAny();
@@ -592,9 +591,7 @@ loadWaiterLoop:
             					next = waited;
             					long endTime = System.currentTimeMillis();
             					if(logMINOR) Logger.minor(this, "Sending to "+next+ " after waited for "+TimeUtil.formatTime(endTime-startTime)+" realtime="+realTimeFlag);
-            					break;
             				}
-            			}
             		}
             		// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
             		// In fact, we should report only after Accepted.
