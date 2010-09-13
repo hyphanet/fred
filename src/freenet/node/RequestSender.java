@@ -557,6 +557,7 @@ loadWaiterLoop:
             				PeerNode waited = waiter.waitForAny();
             				if(waited == null) {
             					
+            					if(logMINOR) Logger.minor(this, "Failed in wait - backoff, disconnection etc? Rerouting...");
             					// Disconnected, low capacity, or backed off.
             					// In any case, add another peer.
             					
