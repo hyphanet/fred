@@ -4584,16 +4584,30 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 		
-		public synchronized PeerNode waitForAny() {
-			while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
-				try {
-					wait();
-				} catch (InterruptedException e) {
-					// Ignore
+		public PeerNode waitForAny() {
+			PeerNode[] all;
+			synchronized(this) {
+				if(!(acceptedBy == null && (!waitingFor.isEmpty()) && !failed)) {
+					failed = false;
+					return acceptedBy;
 				}
+				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 			}
-			failed = false;
-			return acceptedBy;
+			// Double-check before blocking, prevent race condition.
+			for(PeerNode p : all)
+				if(p.outputLoadTracker(realTime).tryRouteTo(tag, RequestLikelyAcceptedState.LIKELY, offeredKey) != null)
+					return p;
+			synchronized(this) {
+				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+				failed = false;
+				return acceptedBy;
+			}
 		}
 		
 		public synchronized RequestLikelyAcceptedState getAcceptedState() {
@@ -4659,7 +4673,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput));
 		}
 		
-		public RequestLikelyAcceptedState tryRouteTo(RequestTag tag,
+		public RequestLikelyAcceptedState tryRouteTo(UIDTag tag,
 				RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 			ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
 			ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
