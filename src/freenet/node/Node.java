@@ -4557,8 +4557,12 @@ public class Node implements TimeSkewDetectorCallback {
 		if(!requestsToNode) {
 			if((source == null) != local) return 0;
 			int count = 0;
-			for(UIDTag tag : map.values()) {
-				if(tag.source == source) count++;
+			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
+				UIDTag tag = entry.getValue();
+				if(tag.source == source) {
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey()+" from "+source);
+					count++;
+				}
 			}
 			return count;
 		} else {
