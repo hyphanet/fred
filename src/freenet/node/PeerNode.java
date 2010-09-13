@@ -4107,6 +4107,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback);
 				return;
 			} catch (ThrottleDeprecatedException e) {
+				if(logMINOR) Logger.minor(this, "Throttle deprecated");
 				// Try with the new throttle. We don't need it, we'll get it from getThrottle().
 				continue;
 			}
