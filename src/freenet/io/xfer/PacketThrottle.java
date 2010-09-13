@@ -160,7 +160,7 @@ public class PacketThrottle {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		synchronized(this) {
-			long thisTicket=_packetTicketGenerator++;
+			final long thisTicket=_packetTicketGenerator++;
 			// FIXME a list, or even a TreeMap by deadline, would use less CPU than waking up every waiter twice whenever a packet is acked.
 			while(true) {
 				int windowSize = (int) getWindowSize();
