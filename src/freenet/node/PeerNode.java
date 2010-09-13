@@ -4815,7 +4815,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					// Requests running from its other peers
 					RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 					RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
-					if(acceptState == null) return;
+					if(acceptState == null || acceptState == RequestLikelyAcceptedState.UNLIKELY) {
+						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" - not waking up");
+						return;
+					}
 					SlotWaiter slot;
 					synchronized(routedToLock) {
 						Iterator<SlotWaiter> it = list.iterator();
