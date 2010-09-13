@@ -1231,6 +1231,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			om.onDisconnect(this);
 		outputLoadTrackerRealTime.failSlotWaiters(true);
 		outputLoadTrackerBulk.failSlotWaiters(true);
+		loadSenderRealTime.onDisconnect();
+		loadSenderBulk.onDisconnect();
 		return ret;
 	}
 
@@ -4436,6 +4438,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			this.realTimeFlag = realTimeFlag;
 		}
 		
+		public void onDisconnect() {
+			this.lastSentAllocationInput = 0;
+			this.lastSentAllocationOutput = 0;
+			this.timeLastSentAllocationNotice = -1;
+			this.lastFullStats = null;
+		}
+
 		private int lastSentAllocationInput;
 		private int lastSentAllocationOutput;
 		private long timeLastSentAllocationNotice;
