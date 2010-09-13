@@ -578,7 +578,19 @@ loadWaiterLoop:
             						return;
             					} else {
             						if(logMINOR) Logger.minor(this, "Rerouted after failure in wait to "+next);
-            						continue loadWaiterLoop;
+            						waiter.addWaitingFor(next);
+            						// We can still route to the original node if it is still connected. So we do want to go around the loop again. However ...
+            						outputLoadTracker = next.outputLoadTracker(realTimeFlag);
+            		            	if(outputLoadTracker.getLastIncomingLoadStats(realTimeFlag) == null) {
+            		            		// No stats, old style, just go for it.
+            		            		triedAll = true;
+            		            		expectedAcceptState = RequestLikelyAcceptedState.UNKNOWN;
+            		            		if(logMINOR) Logger.minor(this, "No load stats for "+next);
+            		            		break;
+            		            	} else {
+            		            		// Wait for the old and the new too.
+            		            		continue;
+            		            	}
             					}
             				} else {
             					next = waited;
