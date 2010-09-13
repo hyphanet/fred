@@ -1320,6 +1320,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			om.onDisconnect(this);
 		outputLoadTrackerRealTime.failSlotWaiters(true);
 		outputLoadTrackerBulk.failSlotWaiters(true);
+		loadSenderRealTime.onDisconnect();
+		loadSenderBulk.onDisconnect();
 		return ret;
 	}
 
