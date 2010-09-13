@@ -526,6 +526,8 @@ peerLoop:
 			boolean waitedForLoadManagement = false;
 			boolean retriedForLoadManagement = false;
 			
+			SlotWaiter waiter = null;
+			
 loadWaiterLoop:
 			
             while(!triedAll) {
@@ -550,7 +552,10 @@ loadWaiterLoop:
             			if(logMINOR)
             				Logger.minor(this, "Cannot send to "+next+" realtime="+realTimeFlag);
             			waitedForLoadManagement = true;
-            			SlotWaiter waiter = next.createSlotWaiter(origTag, type, false, realTimeFlag);
+            			if(waiter == null)
+            				waiter = next.createSlotWaiter(origTag, type, false, realTimeFlag);
+            			else
+            				waiter.addWaitingFor(next);
             			while(true) {
             				outputLoadTracker.queueSlotWaiter(waiter);
             				long startTime = System.currentTimeMillis();
@@ -580,17 +585,8 @@ loadWaiterLoop:
             						if(logMINOR) Logger.minor(this, "Rerouted after failure in wait to "+next);
             						waiter.addWaitingFor(next);
             						// We can still route to the original node if it is still connected. So we do want to go around the loop again. However ...
-            						outputLoadTracker = next.outputLoadTracker(realTimeFlag);
-            		            	if(outputLoadTracker.getLastIncomingLoadStats(realTimeFlag) == null) {
-            		            		// No stats, old style, just go for it.
-            		            		triedAll = true;
-            		            		expectedAcceptState = RequestLikelyAcceptedState.UNKNOWN;
-            		            		if(logMINOR) Logger.minor(this, "No load stats for "+next);
-            		            		break;
-            		            	} else {
-            		            		// Wait for the old and the new too.
-            		            		continue;
-            		            	}
+           		            		// Wait for the old and the new too.
+           		            		continue loadWaiterLoop;
             					}
             				} else {
             					next = waited;
