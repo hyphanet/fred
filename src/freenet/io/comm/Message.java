@@ -65,6 +65,7 @@ public class Message {
 	private List<Message> _subMessages;
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
+	final short priority;
 
 	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
@@ -151,6 +152,7 @@ public class Message {
 			_sourceRef = source.getWeakRef();
 		}
 		_receivedByteCount = recvByteCount;
+		priority = spec.getPriority();
 	}
 
 	public boolean getBoolean(String key) {
@@ -350,6 +352,10 @@ public class Message {
 
 	public long age() {
 		return System.currentTimeMillis() - localInstantiationTime;
+	}
+
+	public short getPriority() {
+		return priority;
 	}
 
 }

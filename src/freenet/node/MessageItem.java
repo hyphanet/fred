@@ -30,7 +30,7 @@ public class MessageItem {
 		formatted = false;
 		this.ctrCallback = ctr;
 		this.submitted = System.currentTimeMillis();
-		priority = msg2.getSpec().getPriority();
+		priority = msg2.getPriority();
 		buf = msg.encodeToPacket(pn);
 	}
 
