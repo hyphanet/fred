@@ -129,10 +129,9 @@ class NPFPacket {
 				if(shortMessage) {
 					value = plaintext[offset++] & 0xFF;
 				} else {
-					value = ((plaintext[offset] & 0xFF) << 16)
-					                | ((plaintext[offset + 1] & 0xFF) << 8)
-							| (plaintext[offset + 2] & 0xFF);
-					offset += 3;
+					value = ((plaintext[offset] & 0xFF) << 8)
+							| (plaintext[offset + 1] & 0xFF);
+					offset += 2;
 				}
 
 				if(firstFragment) {
@@ -225,10 +224,9 @@ class NPFPacket {
 				if(fragment.shortMessage) {
 					buf[offset++] = (byte) (value);
 				} else {
-					buf[offset] = (byte) (value >>> 16);
-					buf[offset + 1] = (byte) (value >>> 8);
-					buf[offset + 2] = (byte) (value);
-					offset += 3;
+					buf[offset] = (byte) (value >>> 8);
+					buf[offset + 1] = (byte) (value);
+					offset += 2;
 				}
 			}
 

@@ -176,7 +176,7 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x00, //0 acks
 		                (byte)0x50, (byte)0x00, (byte) 0x00, (byte) 0x00, // Flags (long, fragmented, not first) and messageID 0
 		                (byte)0x01, (byte)0x01, //Fragment length
-		                (byte)0x01, (byte)0x01, (byte)0x01}; //Fragment offset
+		                (byte)0x01, (byte)0x01}; //Fragment offset
 		byte[] packet = new byte[packetNoData.length + 257];
 		System.arraycopy(packetNoData, 0, packet, 0, packetNoData.length);
 
@@ -190,7 +190,7 @@ public class NPFPacketTest extends TestCase {
 		assertFalse(f.firstFragment);
 		assertTrue(f.isFragmented);
 		assertEquals(257, f.fragmentLength);
-		assertEquals(65793, f.fragmentOffset);
+		assertEquals(257, f.fragmentOffset);
 		assertEquals(0, f.messageID);
 
 		assertFalse(r.getError());
@@ -291,7 +291,7 @@ public class NPFPacketTest extends TestCase {
 		                //Second fragment
 		                (byte)0x4F, (byte)0xFF,
 		                (byte)0x00, (byte)0x0e, //Fragment length
-		                (byte)0x00, (byte)0x01, (byte)0x00, //Fragment offset
+		                (byte)0x01, (byte)0x00, //Fragment offset
 		                (byte)0xfd, (byte)0x47, (byte)0xc2, (byte)0x30,
 		                (byte)0x41, (byte)0x53, (byte)0x57, (byte)0x56,
 		                (byte)0x0e, (byte)0x56, (byte)0x69, (byte)0xf5,

@@ -31,7 +31,7 @@ class MessageFragment {
 	public int length() {
 		return 2 //Message id + flags
 		                + (shortMessage ? 1 : 2) //Fragment length
-		                + (isFragmented ? (shortMessage ? 1 : 3) : 0) //Fragment offset or message length
+		                + (isFragmented ? (shortMessage ? 1 : 2) : 0) //Fragment offset or message length
 		                + fragmentData.length;
 
         }
