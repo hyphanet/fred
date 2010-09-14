@@ -1083,7 +1083,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Returns the number of milliseconds that it is estimated to take to transmit the currently queued packets.
 	 */
 	public long getProbableSendQueueTime() {
-		return (long)(getMessageQueueLengthBytes()/(getThrottle().getBandwidth()+1.0));
+		double bandwidth = (getThrottle().getBandwidth()+1.0);
+		if(shouldThrottle())
+			bandwidth = Math.min(bandwidth, node.getOutputBandwidthLimit() / 2);
+		return (long)(getMessageQueueLengthBytes()/bandwidth);
 	}
 
 	/**
