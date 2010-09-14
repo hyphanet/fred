@@ -328,7 +328,7 @@ public class BlockTransmitter {
 		}
 	}
 
-	private class MyAsyncMessageCallback() implements AsyncMessageCallback {
+	private class MyAsyncMessageCallback implements AsyncMessageCallback {
 
 		MyAsyncMessageCallback() {
 			synchronized(BlockTransmitter.this) {
