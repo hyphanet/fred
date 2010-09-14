@@ -23,10 +23,6 @@ public class PeerMessageQueue {
 		Map<Long, LinkedList<MessageItem>> itemsByID;
 		// Construct structures lazily, we're protected by the overall synchronized.
 
-		/** 0 = itemsNoID, else 1-N = in itemsWithID[0-(N-1)].
-		 * Set when a packet is sent. */
-		private int roundRobinCounter;
-
 		public void addLast(MessageItem item) {
 			if(item.msg == null) {
 				if(itemsNoID == null) itemsNoID = new LinkedList<MessageItem>();
@@ -180,27 +176,28 @@ public class PeerMessageQueue {
 			assert(size >= 0);
 			assert(minSize >= 0);
 			assert(maxSize >= minSize);
-			int lists = 0;
-			if(itemsNoID != null)
-				lists++;
-			if(itemsWithID != null)
-				lists += itemsWithID.size();
-			for(int i=0;i<lists;i++) {
-				LinkedList<MessageItem> list;
-				Long id;
-				if(i == 0 && itemsNoID != null) {
-					list = itemsNoID;
-					id = -1L;
-				} else {
-					list = itemsWithID.get(0);
-					id = itemsIDs.get(0);
-				}
-
-				while(true) {
+			while(true) {
+				boolean addedNone = true;
+				int lists = 0;
+				if(itemsNoID != null)
+					lists++;
+				if(itemsWithID != null)
+					lists += itemsWithID.size();
+				for(int i=0;i<lists;i++) {
+					LinkedList<MessageItem> list;
+					Long id;
+					if(i == 0 && itemsNoID != null) {
+						list = itemsNoID;
+						id = -1L;
+					} else {
+						list = itemsWithID.get(0);
+						id = itemsIDs.get(0);
+					}
+					
 					if(list.isEmpty()) {
 						if(list == itemsNoID) {
 							itemsNoID = null;
-							lists--;
+								lists--;
 						}
 						else {
 							itemsWithID.remove(0);
@@ -208,11 +205,11 @@ public class PeerMessageQueue {
 							itemsByID.remove(id);
 							lists--;
 						}
-						break;
+						continue;
 					}
 					MessageItem item = list.getFirst();
 					if(isUrgent && item.submitted + PacketSender.MAX_COALESCING_DELAY > now) break;
-
+					
 					int thisSize = item.getLength();
 					if(size + 2 + thisSize > maxSize) {
 						if(size == minSize) {
@@ -238,7 +235,6 @@ public class PeerMessageQueue {
 								}
 							}
 							messages.add(item);
-							roundRobinCounter = i;
 							return size;
 						}
 						return -size;
@@ -263,10 +259,10 @@ public class PeerMessageQueue {
 						}
 					}
 					messages.add(item);
-					roundRobinCounter = i;
+					addedNone = false;
 				}
+				if(addedNone) return size;
 			}
-			return size;
 		}
 
 		/**
