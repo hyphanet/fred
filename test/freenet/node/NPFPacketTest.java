@@ -319,7 +319,7 @@ public class NPFPacketTest extends TestCase {
 		byte[] data = new byte[packet.getLength()];
 		packet.toBytes(data, 0, null);
 
-		assertEquals(data.length, correctData.length);
+		assertEquals("Packet lengths differ:", data.length, correctData.length);
 		for(int i = 0; i < data.length; i++) {
 			if(data[i] != correctData[i]) {
 				fail("Different values at index " + i + ": Expected 0x"
