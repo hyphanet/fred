@@ -207,6 +207,7 @@ public class ElementInfo {
 	public final static HashSet<String> PSEUDOCLASS=new HashSet<String>();
 	static {
 		PSEUDOCLASS.add("first-child");
+		PSEUDOCLASS.add("last-child");
 		PSEUDOCLASS.add("link");
 		PSEUDOCLASS.add("visited");
 		PSEUDOCLASS.add("hover");
