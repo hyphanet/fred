@@ -51,7 +51,7 @@ public class PacketThrottle {
 	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
 	private long _roundTripTime = 500, _totalPackets, _droppedPackets;
-	private float _simulatedWindowSize = 2;
+	private float _windowSize = 2;
 	private final int PACKET_SIZE;
 	private boolean slowStart = true;
 	/** Total packets in flight, including waiting for bandwidth from the central throttle. */
@@ -79,7 +79,7 @@ public class PacketThrottle {
     public synchronized void notifyOfPacketLost() {
 		_droppedPackets++;
 		_totalPackets++;
-		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
 		slowStart = false;
 		if(logMINOR)
 			Logger.minor(this, "notifyOfPacketLost(): "+this);
@@ -95,9 +95,9 @@ public class PacketThrottle {
         if(_packetSeqWindowFullChecked + windowSize < _packetSeq) {
         	if(_packetSeqWindowFull < _packetSeqWindowFullChecked) {
         		// We haven't used the full window once since we last checked.
-        		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+        		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
             	_packetSeqWindowFullChecked += windowSize;
-            	if(logMINOR) Logger.minor(this, "Window not used since we last checked: full="+_packetSeqWindowFull+" last checked="+_packetSeqWindowFullChecked+" window = "+_simulatedWindowSize+" for "+this);
+            	if(logMINOR) Logger.minor(this, "Window not used since we last checked: full="+_packetSeqWindowFull+" last checked="+_packetSeqWindowFullChecked+" window = "+_windowSize+" for "+this);
         		return;
         	}
         	_packetSeqWindowFullChecked += windowSize;
@@ -105,11 +105,11 @@ public class PacketThrottle {
 
     	if(slowStart) {
     		if(logMINOR) Logger.minor(this, "Still in slow start");
-    		_simulatedWindowSize += _simulatedWindowSize / SLOW_START_DIVISOR;
+    		_windowSize += _windowSize / SLOW_START_DIVISOR;
     	} else {
-    		_simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
+    		_windowSize += (PACKET_TRANSMIT_INCREMENT / _windowSize);
     	}
-    	if(_simulatedWindowSize > (windowSize + 1))
+    	if(_windowSize > (windowSize + 1))
     		notifyAll();
     	if(logMINOR)
     		Logger.minor(this, "notifyOfPacketAcked(): "+this);
@@ -119,13 +119,13 @@ public class PacketThrottle {
      * need lots of sanity checking here. */
 	public synchronized long getDelay() {
 		// return (long) (_roundTripTime / _simulatedWindowSize);
-		return Math.max(MIN_DELAY, (long) (_roundTripTime / _simulatedWindowSize));
+		return Math.max(MIN_DELAY, (long) (_roundTripTime / _windowSize));
 	}
 
 	@Override
 	public synchronized String toString() {
 		return Double.toString(getBandwidth()) + " k/sec, (w: "
-				+ _simulatedWindowSize + ", r:" + _roundTripTime + ", d:"
+				+ _windowSize + ", r:" + _roundTripTime + ", d:"
 				+ (((float) _droppedPackets / (float) _totalPackets)) + ") total="+_totalPackets+" : "+super.toString();
 	}
 
@@ -134,7 +134,7 @@ public class PacketThrottle {
 	}
 
 	public synchronized double getWindowSize() {
-		return Math.max(1.0, _simulatedWindowSize);
+		return Math.max(1.0, _windowSize);
 	}
 
 	/**
