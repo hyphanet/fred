@@ -115,14 +115,9 @@ public class PacketThrottle {
     		Logger.minor(this, "notifyOfPacketAcked(): "+this);
     }
     
+    /** Only used for diagnostics. We actually maintain a real window size. So we don't
+     * need lots of sanity checking here. */
 	public synchronized long getDelay() {
-		float winSizeForMinPacketDelay = ((float)_roundTripTime / MIN_DELAY);
-		if (_simulatedWindowSize > winSizeForMinPacketDelay) {
-			_simulatedWindowSize = winSizeForMinPacketDelay;
-		}
-		if (_simulatedWindowSize < 1) {
-			_simulatedWindowSize = 1;
-		}
 		// return (long) (_roundTripTime / _simulatedWindowSize);
 		return Math.max(MIN_DELAY, (long) (_roundTripTime / _simulatedWindowSize));
 	}
