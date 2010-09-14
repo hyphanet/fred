@@ -107,6 +107,10 @@ public class PeerNodeStatus {
 	public final IncomingLoadSummaryStats incomingLoadStatsRealTime;
 
 	public final IncomingLoadSummaryStats incomingLoadStatsBulk;
+	
+	private final long messageQueueLengthBytes;
+	
+	private final long messageQueueLengthTime;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
@@ -163,6 +167,16 @@ public class PeerNodeStatus {
 		this.reportedUptimePercentage = peerNode.getUptime();
 		incomingLoadStatsRealTime = peerNode.getIncomingLoadStats(true);
 		incomingLoadStatsBulk = peerNode.getIncomingLoadStats(false);
+		messageQueueLengthBytes = peerNode.getMessageQueueLengthBytes();
+		messageQueueLengthTime = peerNode.getProbableSendQueueTime();
+	}
+	
+	public long getMessageQueueLengthBytes() {
+		return messageQueueLengthBytes;
+	}
+	
+	public long getMessageQueueLengthTime() {
+		return messageQueueLengthTime;
 	}
 
 	/**
