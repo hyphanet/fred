@@ -79,8 +79,10 @@ public class BlockTransmitter {
 	private boolean asyncExitStatus;
 	private boolean asyncExitStatusSet;
 	private final ReceiverAbortHandler abortHandler;
+	private final boolean realTime;
 	
-	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler) {
+	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, boolean realTime) {
+		this.realTime = realTime;
 		this.abortHandler = abortHandler;
 		_usm = usm;
 		_destination = destination;
@@ -97,6 +99,7 @@ public class BlockTransmitter {
 			// Will throw on running
 		}
 		throttle = _destination.getThrottle();
+		final boolean boostPrio = realTime;
 		_senderThread = new PrioRunnable() {
 		
 			public void run() {
@@ -116,7 +119,7 @@ public class BlockTransmitter {
 					}
 					int totalPackets;
 					try {
-						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo), boostPrio), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
 						totalPackets=_prb.getNumPackets();
 					} catch (PeerRestartedException e) {
 						Logger.normal(this, "Terminating send due to peer restart: "+e);

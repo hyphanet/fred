@@ -65,7 +65,7 @@ public class Message {
 	private List<Message> _subMessages;
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
-	final short priority;
+	short priority;
 
 	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
@@ -356,6 +356,10 @@ public class Message {
 
 	public short getPriority() {
 		return priority;
+	}
+	
+	public void boostPriority() {
+		priority--;
 	}
 
 }
