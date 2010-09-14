@@ -116,7 +116,7 @@ public class BlockTransmitter {
 					}
 					int totalPackets;
 					try {
-						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, myBlockSendMessageCallback);
+						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
 						totalPackets=_prb.getNumPackets();
 					} catch (PeerRestartedException e) {
 						Logger.normal(this, "Terminating send due to peer restart: "+e);
@@ -328,9 +328,9 @@ public class BlockTransmitter {
 		}
 	}
 
-	protected final AsyncMessageCallback myBlockSendMessageCallback = new AsyncMessageCallback() {
+	private class MyAsyncMessageCallback() implements AsyncMessageCallback {
 
-		{
+		MyAsyncMessageCallback() {
 			synchronized(BlockTransmitter.this) {
 				blockSendsPending++;
 			}
