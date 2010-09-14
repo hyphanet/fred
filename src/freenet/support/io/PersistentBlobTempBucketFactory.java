@@ -42,6 +42,7 @@ import freenet.support.api.Bucket;
 public class PersistentBlobTempBucketFactory {
 	
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -49,6 +50,7 @@ public class PersistentBlobTempBucketFactory {
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -119,7 +121,7 @@ public class PersistentBlobTempBucketFactory {
 		
 		// Diagnostics
 		
-		if(logMINOR)
+		if(logDEBUG)
 			initRangeDump(container);
 	}
 	
