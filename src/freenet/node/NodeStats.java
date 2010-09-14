@@ -544,8 +544,16 @@ public class NodeStats implements Persistable {
 	 * Note that this only applies to data on the queue before calling shouldRejectRequest(): we
 	 * do *not* attempt to include any estimate of how much the request will add to it. This is
 	 * important because if we did, the AIMD may not have reached sufficient speed to transfer it
-	 * in 60 seconds yet, because it hasn't had enough data in transit to need to increase its speed. */
-	private static final double MAX_PEER_QUEUE_TIME = 1 * 60 * 1000.0;
+	 * in 60 seconds yet, because it hasn't had enough data in transit to need to increase its speed.
+	 * 
+	 * Interaction with output bandwidth liability: This must be slightly larger than the
+	 * output bandwidth liability time limit (combined for both types).
+	 * 
+	 * A fast peer can have slightly more than half our output limit queued in requests to run. 
+	 * If they all complete, they will take half the time limit. If they are all served from the 
+	 * store, this will be shown on the queue time. But the queue time is estimated based on 
+	 * using at most half the limit, so the time will be slightly over the overall limit. */
+	private static final double MAX_PEER_QUEUE_TIME = 4 * 60 * 1000.0;
 
 	private long lastAcceptedRequest = -1;
 
