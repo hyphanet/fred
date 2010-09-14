@@ -231,9 +231,11 @@ public class PeerMessageQueue {
 									lists--;
 								}
 							} else {
-								// Move to end of list.
-								itemsIDs.remove(0);
-								itemsIDs.add(id);
+								if(list != itemsNoID) {
+									// Move to end of list.
+									itemsIDs.remove(0);
+									itemsIDs.add(id);
+								}
 							}
 							messages.add(item);
 							roundRobinCounter = i;
@@ -254,9 +256,11 @@ public class PeerMessageQueue {
 							lists--;
 						}
 					} else {
-						// Move to end of list.
-						itemsIDs.remove(0);
-						itemsIDs.add(id);
+						if(list != itemsNoID) {
+							// Move to end of list.
+							itemsIDs.remove(0);
+							itemsIDs.add(id);
+						}
 					}
 					messages.add(item);
 					roundRobinCounter = i;
