@@ -111,7 +111,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			r = ++tracker.retryCount;
 		else
 			r = ++retryCount;
-		if(logMINOR && persistent)
+		if(logMINOR)
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+r+") on "+this+" finished="+finished+" cancelled="+cancelled);
 		if((r <= maxRetries) || (maxRetries == -1)) {
 			if(persistent && maxRetries != -1)
