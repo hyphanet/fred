@@ -187,17 +187,13 @@ public class PeerMessageQueue {
 				lists += itemsWithID.size();
 			for(int i=0;i<lists;i++) {
 				LinkedList<MessageItem> list;
-				int l = (i + roundRobinCounter + 1) % lists;
-				int listNum = -1;
-				if(itemsNoID != null) {
-					if(l == 0) list = itemsNoID;
-					else {
-						listNum = l-1;
-						list = itemsWithID.get(listNum);
-					}
+				Long id;
+				if(i == 0 && itemsNoID != null) {
+					list = itemsNoID;
+					id = -1L;
 				} else {
-					listNum = l;
-					list = itemsWithID.get(l);
+					list = itemsWithID.get(0);
+					id = itemsIDs.get(0);
 				}
 
 				while(true) {
@@ -217,16 +213,14 @@ public class PeerMessageQueue {
 									lists--;
 								}
 								else {
-									Long id = itemsIDs.get(listNum);
-									itemsWithID.remove(listNum);
-									itemsIDs.remove(listNum);
+									itemsWithID.remove(0);
+									itemsIDs.remove(0);
 									itemsByID.remove(id);
 									lists--;
 								}
 							} else {
 								// Move to end of list.
-								Long id = itemsIDs.get(listNum);
-								itemsIDs.remove(listNum);
+								itemsIDs.remove(0);
 								itemsIDs.add(id);
 							}
 							messages.add(item);
@@ -242,16 +236,14 @@ public class PeerMessageQueue {
 							itemsNoID = null;
 							lists--;
 						} else {
-							Long id = itemsIDs.get(listNum);
-							itemsWithID.remove(listNum);
-							itemsIDs.remove(listNum);
+							itemsWithID.remove(0);
+							itemsIDs.remove(0);
 							itemsByID.remove(id);
 							lists--;
 						}
 					} else {
 						// Move to end of list.
-						Long id = itemsIDs.get(listNum);
-						itemsIDs.remove(listNum);
+						itemsIDs.remove(0);
 						itemsIDs.add(id);
 					}
 					messages.add(item);
