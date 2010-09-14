@@ -20,6 +20,7 @@ package freenet.io.xfer;
 
 import java.util.LinkedList;
 
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -115,7 +116,7 @@ public class BlockTransmitter {
 					}
 					int totalPackets;
 					try {
-						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, null);
+						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, myBlockSendMessageCallback);
 						totalPackets=_prb.getNumPackets();
 					} catch (PeerRestartedException e) {
 						Logger.normal(this, "Terminating send due to peer restart: "+e);
@@ -252,6 +253,7 @@ public class BlockTransmitter {
 					//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
 					if((timeAllSent > 0) && ((now - timeAllSent) > SEND_TIMEOUT) &&
 							(getNumSent() == _prb.getNumPackets())) {
+						if(waitForAsyncBlockSends()) continue;
 						String timeString=TimeUtil.formatTime((now - timeAllSent), 2, true);
 						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
 						sendAborted(RetrievalException.RECEIVER_DIED, "Haven't heard from you (receiver) in "+timeString);
@@ -322,6 +324,65 @@ public class BlockTransmitter {
 			}
 			if (myListener!=null)
 				_prb.removeListener(myListener);
+			waitForAsyncBlockSends();
+		}
+	}
+
+	protected final AsyncMessageCallback myBlockSendMessageCallback = new AsyncMessageCallback() {
+
+		{
+			synchronized(BlockTransmitter.this) {
+				blockSendsPending++;
+			}
+		}
+		
+		private boolean completed = false;
+		
+		public void sent() {
+			// Wait for acknowledged
+		}
+
+		public void acknowledged() {
+			complete();
+			
+		}
+
+		public void disconnected() {
+			// FIXME kill transfer
+			complete();
+		}
+
+		public void fatalError() {
+			// FIXME kill transfer
+			complete();
+		}
+		
+		private void complete() {
+			synchronized(BlockTransmitter.this) {
+				if(completed) return;
+				completed = true;
+				blockSendsPending--;
+			}
+		}
+
+	};
+	
+	private int blockSendsPending = 0;
+	
+	/**
+	 * @return True if we blocked.
+	 */
+	private boolean waitForAsyncBlockSends() {
+		synchronized(this) {
+			if(blockSendsPending == 0) return false;
+			while(blockSendsPending != 0) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+			return true;
 		}
 	}
 
