@@ -223,6 +223,11 @@ public class PeerMessageQueue {
 									itemsByID.remove(id);
 									lists--;
 								}
+							} else {
+								// Move to end of list.
+								Long id = itemsIDs.get(listNum);
+								itemsIDs.remove(listNum);
+								itemsIDs.add(id);
 							}
 							messages.add(item);
 							roundRobinCounter = i;
@@ -243,6 +248,11 @@ public class PeerMessageQueue {
 							itemsByID.remove(id);
 							lists--;
 						}
+					} else {
+						// Move to end of list.
+						Long id = itemsIDs.get(listNum);
+						itemsIDs.remove(listNum);
+						itemsIDs.add(id);
 					}
 					messages.add(item);
 					roundRobinCounter = i;
