@@ -1086,7 +1086,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		double bandwidth = (getThrottle().getBandwidth()+1.0);
 		if(shouldThrottle())
 			bandwidth = Math.min(bandwidth, node.getOutputBandwidthLimit() / 2);
-		return (long)(getMessageQueueLengthBytes()/bandwidth);
+		long length = getMessageQueueLengthBytes();
+		return (long)(1000.0*length/bandwidth);
 	}
 
 	/**
