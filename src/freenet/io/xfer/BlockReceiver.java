@@ -178,12 +178,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				if(logMINOR)
 					Logger.minor(this, "Missing: "+missing.size());
 				if (missing.size() > 0) {
-					Message mn = DMT.createMissingPacketNotification(_uid, missing);
-					_usm.send(_sender, mn, _ctr);
 					consecutiveMissingPacketReports++;
-					if (missing.size() > 50) {
-						Logger.normal(this, "Excessive packet loss : "+mn);
-					}
 				}
 
 			}
@@ -199,12 +194,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 						missing.add(x);
 					}
 				}
-				Message mn = DMT.createMissingPacketNotification(_uid, missing);
-				_usm.send(_sender, mn, _ctr);
 				consecutiveMissingPacketReports++;
-				if (missing.size() > 50) {
-					Logger.normal(this, "Sending large missingPacketNotification due to packet receiver timeout after "+RECEIPT_TIMEOUT+"ms");
-				}
 			}
 		}
 		_usm.send(_sender, DMT.createAllReceived(_uid), _ctr);
