@@ -102,8 +102,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	/** Try again - returns true if we can retry */
 	protected boolean retry(ObjectContainer container, ClientContext context) {
-		if(isEmpty(container))
+		if(isEmpty(container)) {
+			if(logMINOR) Logger.minor(this, "Not retrying because empty");
 			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
+		}
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 		int r;
