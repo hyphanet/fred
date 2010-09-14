@@ -17,74 +17,96 @@ public class PeerMessageQueue {
 	private final PrioQueue[] queuesByPriority;
 
 	private static class PrioQueue {
-		LinkedList<MessageItem> itemsNoID;
-		ArrayList<LinkedList<MessageItem>> itemsWithID;
-		ArrayList<Long> itemsIDs;
-		Map<Long, LinkedList<MessageItem>> itemsByID;
+		
+		private class Items {
+			final LinkedList<MessageItem> items;
+			final long id;
+			long timeLastSent;
+			Items(long id) {
+				items = new LinkedList<MessageItem>();
+				this.id = id;
+				timeLastSent = -1;
+			}
+			public void addLast(MessageItem item) {
+				items.addLast(item);
+			}
+			public void addFirst(MessageItem item) {
+				items.addFirst(item);
+			}
+		}
+		
+		static final long FORGET_AFTER = 10*60*1000;
+		
+		LinkedList<Items> itemsWithID;
+		Map<Long, Items> itemsByID;
 		// Construct structures lazily, we're protected by the overall synchronized.
 
 		public void addLast(MessageItem item) {
 			if(item.msg == null) {
-				if(itemsNoID == null) itemsNoID = new LinkedList<MessageItem>();
-				itemsNoID.addLast(item);
+				makeItemsNoID().addLast(item);
 				return;
 			}
 			Object o = item.msg.getObject(DMT.UID);
 			if(o == null || !(o instanceof Long)) {
-				if(itemsNoID == null) itemsNoID = new LinkedList<MessageItem>();
-				itemsNoID.addLast(item);
+				makeItemsNoID().addLast(item);
 				return;
 			}
 			Long id = (Long) o;
-			LinkedList<MessageItem> list;
+			Items list;
 			if(itemsByID == null) {
-				itemsByID = new HashMap<Long, LinkedList<MessageItem>>();
-				itemsWithID = new ArrayList<LinkedList<MessageItem>>();
-				itemsIDs = new ArrayList<Long>();
-				list = new LinkedList<MessageItem>();
+				itemsByID = new HashMap<Long, Items>();
+				itemsWithID = new LinkedList<Items>();
+				list = new Items(id);
 				itemsWithID.add(list);
-				itemsIDs.add(id);
 				itemsByID.put(id, list);
 			} else {
 				list = itemsByID.get(id);
 				if(list == null) {
-					list = new LinkedList<MessageItem>();
+					list = new Items(id);
 					itemsWithID.add(list);
 					itemsByID.put(id, list);
-					itemsIDs.add(id);
 				}
 			}
 			list.addLast(item);
 		}
 
+		private Items makeItemsNoID() {
+			if(itemsWithID == null)
+				itemsWithID = new LinkedList<Items>();
+			if(itemsByID == null)
+				itemsByID = new HashMap<Long, Items>();
+			Items itemsNoID = itemsByID.get(-1L);
+			if(itemsNoID == null) {
+				itemsNoID = new Items(-1L);
+				itemsWithID.add(itemsNoID);
+				itemsByID.put(-1L, itemsNoID);
+			}
+			return itemsNoID;
+		}
+
 		public void addFirst(MessageItem item) {
 			if(item.msg == null) {
-				if(itemsNoID == null) itemsNoID = new LinkedList<MessageItem>();
-				itemsNoID.addFirst(item);
+				makeItemsNoID().addFirst(item);
 				return;
 			}
 			Object o = item.msg.getObject(DMT.UID);
 			if(o == null || !(o instanceof Long)) {
-				if(itemsNoID == null) itemsNoID = new LinkedList<MessageItem>();
-				itemsNoID.addFirst(item);
+				makeItemsNoID().addFirst(item);
 				return;
 			}
 			Long id = (Long) o;
-			LinkedList<MessageItem> list;
+			Items list;
 			if(itemsByID == null) {
-				itemsByID = new HashMap<Long, LinkedList<MessageItem>>();
-				itemsWithID = new ArrayList<LinkedList<MessageItem>>();
-				itemsIDs = new ArrayList<Long>();
-				list = new LinkedList<MessageItem>();
+				itemsByID = new HashMap<Long, Items>();
+				itemsWithID = new LinkedList<Items>();
+				list = new Items(id);
 				itemsWithID.add(list);
-				itemsIDs.add(0, id);
 				itemsByID.put(id, list);
 			} else {
 				list = itemsByID.get(id);
 				if(list == null) {
-					list = new LinkedList<MessageItem>();
+					list = new Items(id);
 					itemsWithID.add(list);
-					itemsIDs.add(0, id);
 					itemsByID.put(id, list);
 				}
 			}
@@ -93,34 +115,25 @@ public class PeerMessageQueue {
 
 		public int size() {
 			int size = 0;
-			if(itemsNoID != null)
-				size += itemsNoID.size();
 			if(itemsWithID != null)
-				for(LinkedList<MessageItem> list : itemsWithID)
-					size += list.size();
+				for(Items items : itemsWithID)
+					size += items.items.size();
 			return size;
 		}
 
 		public int addTo(MessageItem[] output, int ptr) {
-			if(itemsNoID != null)
-				for(MessageItem item : itemsNoID)
-					output[ptr++] = item;
 			if(itemsWithID != null)
-				for(LinkedList<MessageItem> list : itemsWithID)
-					for(MessageItem item : list)
+				for(Items list : itemsWithID)
+					for(MessageItem item : list.items)
 						output[ptr++] = item;
 			return ptr;
 		}
 
 		public long getNextUrgentTime(long t, long now) {
-			if(itemsNoID != null && itemsNoID.size() != 0) {
-				t = Math.min(t, itemsNoID.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
-				if(t <= now) return t;
-			}
 			if(itemsWithID != null) {
-				for(LinkedList<MessageItem> items : itemsWithID) {
-					if(items.size() == 0) continue;
-					t = Math.min(t, items.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
+				for(Items items : itemsWithID) {
+					if(items.items.size() == 0) continue;
+					t = Math.min(t, items.items.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
 					if(t <= now) return t;
 				}
 			}
@@ -136,16 +149,9 @@ public class PeerMessageQueue {
 		 * @return the resulting length after adding messages
 		 */
 		public int addSize(int length, int maxSize) {
-			if(itemsNoID != null) {
-				for(MessageItem item : itemsNoID) {
-					int thisLen = item.getLength();
-					length += thisLen;
-					if(length > maxSize) return length;
-				}
-			}
 			if(itemsWithID != null) {
-				for(LinkedList<MessageItem> list : itemsWithID) {
-					for(MessageItem item : list) {
+				for(Items list : itemsWithID) {
+					for(MessageItem item : list.items) {
 						int thisLen = item.getLength();
 						length += thisLen;
 						if(length > maxSize) return length;
@@ -179,35 +185,27 @@ public class PeerMessageQueue {
 			while(true) {
 				boolean addedNone = true;
 				int lists = 0;
-				if(itemsNoID != null)
-					lists++;
 				if(itemsWithID != null)
 					lists += itemsWithID.size();
+				int skipped = 0;
 				for(int i=0;i<lists;i++) {
-					LinkedList<MessageItem> list;
+					Items list;
 					Long id;
-					if(i == 0 && itemsNoID != null) {
-						list = itemsNoID;
-						id = -1L;
-					} else {
-						list = itemsWithID.get(0);
-						id = itemsIDs.get(0);
-					}
+					list = itemsWithID.get(skipped);
+					id = list.id;
 					
-					if(list.isEmpty()) {
-						if(list == itemsNoID) {
-							itemsNoID = null;
-								lists--;
-						}
-						else {
+					if(list.items.isEmpty()) {
+						if(list.timeLastSent != -1 && now - list.timeLastSent > FORGET_AFTER) {
+							// Remove it
 							itemsWithID.remove(0);
-							itemsIDs.remove(0);
 							itemsByID.remove(id);
-							lists--;
+						} else {
+							// Skip it
+							skipped++;
 						}
 						continue;
 					}
-					MessageItem item = list.getFirst();
+					MessageItem item = list.items.getFirst();
 					if(isUrgent && item.submitted + PacketSender.MAX_COALESCING_DELAY > now) break;
 					
 					int thisSize = item.getLength();
@@ -215,50 +213,23 @@ public class PeerMessageQueue {
 						if(size == minSize) {
 							// Send it anyway, nothing else to send.
 							size += 2 + thisSize;
-							list.removeFirst();
-							if(list.isEmpty()) {
-								if(list == itemsNoID) {
-									itemsNoID = null;
-									lists--;
-								}
-								else {
-									itemsWithID.remove(0);
-									itemsIDs.remove(0);
-									itemsByID.remove(id);
-									lists--;
-								}
-							} else {
-								if(list != itemsNoID) {
-									// Move to end of list.
-									itemsIDs.remove(0);
-									itemsIDs.add(id);
-								}
-							}
+							list.items.removeFirst();
+							list.timeLastSent = now;
+							// Move to end of list.
+							itemsWithID.remove(skipped);
+							itemsWithID.add(list);
 							messages.add(item);
 							return size;
 						}
 						return -size;
 					}
 					size += 2 + thisSize;
-					list.removeFirst();
-					if(list.isEmpty()) {
-						if(list == itemsNoID) {
-							itemsNoID = null;
-							lists--;
-						} else {
-							itemsWithID.remove(0);
-							itemsIDs.remove(0);
-							itemsByID.remove(id);
-							lists--;
-						}
-					} else {
-						if(list != itemsNoID) {
-							// Move to end of list.
-							itemsIDs.remove(0);
-							itemsIDs.add(id);
-						}
-					}
+					list.items.removeFirst();
+					// Move to end of list.
+					itemsWithID.remove(skipped);
+					itemsWithID.add(list);
 					messages.add(item);
+					list.timeLastSent = now;
 					addedNone = false;
 				}
 				if(addedNone) return size;
@@ -304,9 +275,7 @@ public class PeerMessageQueue {
 		}
 
 		public void clear() {
-			itemsNoID = null;
 			itemsWithID = null;
-			itemsIDs = null;
 			itemsByID = null;
 		}
 
@@ -332,15 +301,9 @@ public class PeerMessageQueue {
 		enqueuePrioritizedMessageItem(item);
 		int x = 0;
 		for(PrioQueue pq : queuesByPriority) {
-			if(pq.itemsNoID != null)
-				for(MessageItem it : pq.itemsNoID) {
-					x += it.getLength() + 2;
-					if(x > 1024)
-						break;
-				}
 			if(pq.itemsWithID != null) {
-				for(LinkedList<MessageItem> q : pq.itemsWithID)
-					for(MessageItem it : q) {
+				for(PrioQueue.Items q : pq.itemsWithID)
+					for(MessageItem it : q.items) {
 						x += it.getLength() + 2;
 						if(x > 1024)
 							break;
@@ -353,12 +316,9 @@ public class PeerMessageQueue {
 	public synchronized long getMessageQueueLengthBytes() {
 		long x = 0;
 		for(PrioQueue pq : queuesByPriority) {
-			if(pq.itemsNoID != null)
-				for(MessageItem it : pq.itemsNoID)
-					x += it.getLength() + 2;
 			if(pq.itemsWithID != null)
-				for(LinkedList<MessageItem> q : pq.itemsWithID)
-					for(MessageItem it : q)
+				for(PrioQueue.Items q : pq.itemsWithID)
+					for(MessageItem it : q.items)
 						x += it.getLength() + 2;
 		}
 		return x;
