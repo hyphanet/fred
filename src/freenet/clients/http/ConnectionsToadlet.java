@@ -820,7 +820,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(t == null)
 				val = "none";
 			else
-				val = (int)((1000.0 / t.getDelay()) * 1024.0)+"B/sec delay "+
+				val = (int)t.getBandwidth()+"B/sec delay "+
 					t.getDelay()+"ms (RTT "+t.getRoundTripTime()+"ms window "+t.getWindowSize()+')';
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", val);
 			// time delta
