@@ -81,14 +81,14 @@ public class PeerMessageQueue {
 				itemsIDs = new ArrayList<Long>();
 				list = new LinkedList<MessageItem>();
 				itemsWithID.add(list);
-				itemsIDs.add(id);
+				itemsIDs.add(0, id);
 				itemsByID.put(id, list);
 			} else {
 				list = itemsByID.get(id);
 				if(list == null) {
 					list = new LinkedList<MessageItem>();
 					itemsWithID.add(list);
-					itemsIDs.add(id);
+					itemsIDs.add(0, id);
 					itemsByID.put(id, list);
 				}
 			}
