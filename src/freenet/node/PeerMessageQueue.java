@@ -197,7 +197,19 @@ public class PeerMessageQueue {
 				}
 
 				while(true) {
-					if(list.isEmpty()) break;
+					if(list.isEmpty()) {
+						if(list == itemsNoID) {
+							itemsNoID = null;
+							lists--;
+						}
+						else {
+							itemsWithID.remove(0);
+							itemsIDs.remove(0);
+							itemsByID.remove(id);
+							lists--;
+						}
+						break;
+					}
 					MessageItem item = list.getFirst();
 					if(isUrgent && item.submitted + PacketSender.MAX_COALESCING_DELAY > now) break;
 
