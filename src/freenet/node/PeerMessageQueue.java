@@ -14,6 +14,9 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.MutableBoolean;
 import freenet.io.comm.Message;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Queue of messages to send to a node. Ordered first by priority then by time.
@@ -434,15 +437,20 @@ public class PeerMessageQueue {
 					if(mustSendLoadRT && item.sendLoadRT) {
 						load = new MessageItem(pn.loadSenderRealTime.makeLoadStats(now, pn.node.nodeStats.outwardTransfersPerInsert()), null, pn.node.nodeStats.allocationNoticesCounter, pn);
 						mustSendLoadRT = false;
+						if(logMINOR && load != null)
+							Logger.minor(this, "Adding load message (realtime) to packet for "+pn);
 					} else if(mustSendLoadBulk && item.sendLoadBulk) {
 						load = new MessageItem(pn.loadSenderBulk.makeLoadStats(now, pn.node.nodeStats.outwardTransfersPerInsert()), null, pn.node.nodeStats.allocationNoticesCounter, pn);
 						mustSendLoadBulk = false;
+						if(logMINOR && load != null)
+							Logger.minor(this, "Adding load message (bulk) to packet for "+pn);
 					}
 					if(load != null) {
 						thisSize = item.getLength();
 						if(size + 2 + thisSize > maxSize) {
 							addFirst(load);
 						} else {
+							if(logMINOR) Logger.minor(this, "Unable to add load message to packet, queueing");
 							messages.add(load);
 						}
 					}
