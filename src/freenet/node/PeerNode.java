@@ -4684,8 +4684,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			synchronized(routedToLock) {
 				noLoadStats = (this.lastIncomingLoadStats == null);
 				if(!noLoadStats) {
-					makeSlotWaiters(waiter.requestType).add(waiter);
-					if(logMINOR) Logger.minor(this, "Queued slot waiter");
+					LinkedHashSet<SlotWaiter> list = makeSlotWaiters(waiter.requestType);
+					list.add(waiter);
+					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size());
 					return;
 				}
 			}
@@ -4774,7 +4775,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 					RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
 					if(acceptState == null || acceptState == RequestLikelyAcceptedState.UNLIKELY) {
-						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" - not waking up");
+						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" - not waking up - type is "+type);
 						return;
 					}
 					SlotWaiter slot;
