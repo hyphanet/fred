@@ -126,7 +126,7 @@ public class PeerMessageQueue {
 				list = itemsByID.get(id);
 				if(list == null) {
 					list = new Items(id);
-					itemsWithID.add(list);
+					itemsWithID.addFirst(list);
 					itemsByID.put(id, list);
 				}
 			}
