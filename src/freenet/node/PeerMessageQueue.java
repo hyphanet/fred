@@ -6,6 +6,10 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Queue of messages to send to a node. Ordered first by priority then by time.
@@ -13,6 +17,17 @@ import freenet.io.comm.DMT;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class PeerMessageQueue {
+
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	private final PrioQueue[] queuesByPriority;
 
