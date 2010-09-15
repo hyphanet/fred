@@ -879,7 +879,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				// Ignore
 			}
 
-			public void onRequestSenderFinished(int status) {
+			/** The RequestSender finished, or it turtled.
+			 * @param status The completion status.
+			 * @param uidTransferred If this is set, the RequestSender has taken on 
+			 * responsibility for unlocking the UID specified. We should not unlock it.
+			 */
+			public void onRequestSenderFinished(int status, long uidTransferred) {
 				// If transfer coalescing has happened, we may have already unlocked.
 				node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag);
 				tag.setRequestSenderFinished(status);

@@ -210,6 +210,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             Logger.error(this, "Caught "+t, t);
             finish(INTERNAL_ERROR, null, false);
         } finally {
+        	if(sentAbortDownstreamTransfers) {
+        		// We took on responsibility for unlocking.
+        		if(logMINOR) Logger.minor(this, "Unlocking after turtle");
+        		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, source == null, realTimeFlag, origTag);
+        	}
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
         }
     }
@@ -1518,7 +1523,7 @@ acceptWaiterLoop:
 		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onCHKTransferBegins();
 		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onRequestSenderFinished(int status);
+		void onRequestSenderFinished(int status, long grabbedUID);
 		/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
 		 * Should return quickly, allocate a thread if it needs to block etc. */
 		void onAbortDownstreamTransfers(int reason, String desc);
@@ -1552,7 +1557,7 @@ acceptWaiterLoop:
 		if(sentTransferCancel)
 			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
 		if (status!=NOT_FINISHED && sentFinished)
-			l.onRequestSenderFinished(status);
+			l.onRequestSenderFinished(status, -1);
 	}
 	
 	private boolean sentReceivedRejectOverload;
@@ -1593,7 +1598,7 @@ acceptWaiterLoop:
 			sentRequestSenderFinished = true;
 			for (Listener l : listeners) {
 				try {
-					l.onRequestSenderFinished(status);
+					l.onRequestSenderFinished(status, -1);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
@@ -1613,7 +1618,7 @@ acceptWaiterLoop:
 			for (Listener l : listeners) {
 				try {
 					l.onAbortDownstreamTransfers(reason, desc);
-					l.onRequestSenderFinished(TRANSFER_FAILED);
+					l.onRequestSenderFinished(TRANSFER_FAILED, uid);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
