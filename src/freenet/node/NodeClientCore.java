@@ -957,6 +957,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
+		RequestSender rs = null;
 		try {
 			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache);
 			if(o instanceof CHKBlock)
@@ -969,7 +970,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			if(o == null)
 				throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
-			RequestSender rs = (RequestSender) o;
+			rs = (RequestSender) o;
 			boolean rejectedOverload = false;
 			short waitStatus = 0;
 			while(true) {
@@ -1066,7 +1067,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			node.unlockUID(uid, false, false, true, false, true, tag);
+			if(rs == null || !rs.abortedDownstreamTransfers())
+				node.unlockUID(uid, false, false, true, false, true, tag);
 		}
 	}
 
@@ -1078,6 +1080,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
+		RequestSender rs = null;
 		try {
 			Object o = node.makeRequestSender(key.getNodeKey(true), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache);
 			if(o instanceof SSKBlock)
@@ -1092,7 +1095,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			if(o == null)
 				throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
-			RequestSender rs = (RequestSender) o;
+			rs = (RequestSender) o;
 			boolean rejectedOverload = false;
 			short waitStatus = 0;
 			while(true) {
@@ -1178,7 +1181,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 			}
 		} finally {
-			node.unlockUID(uid, true, false, true, false, true, tag);
+			if(rs == null || !rs.abortedDownstreamTransfers())
+				node.unlockUID(uid, true, false, true, false, true, tag);
 		}
 	}
 
