@@ -331,7 +331,7 @@ public class BlockTransmitter {
 	private class MyAsyncMessageCallback implements AsyncMessageCallback {
 
 		MyAsyncMessageCallback() {
-			synchronized(BlockTransmitter.this) {
+			synchronized(_senderThread) {
 				blockSendsPending++;
 			}
 		}
@@ -358,7 +358,7 @@ public class BlockTransmitter {
 		}
 		
 		private void complete() {
-			synchronized(BlockTransmitter.this) {
+			synchronized(_senderThread) {
 				if(completed) return;
 				completed = true;
 				blockSendsPending--;
@@ -373,7 +373,7 @@ public class BlockTransmitter {
 	 * @return True if we blocked.
 	 */
 	private boolean waitForAsyncBlockSends() {
-		synchronized(this) {
+		synchronized(_senderThread) {
 			if(blockSendsPending == 0) return false;
 			while(blockSendsPending != 0) {
 				try {
