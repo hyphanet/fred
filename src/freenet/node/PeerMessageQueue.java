@@ -13,6 +13,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.MutableBoolean;
+import freenet.io.comm.Message;
 
 /**
  * Queue of messages to send to a node. Ordered first by priority then by time.
@@ -35,6 +36,11 @@ public class PeerMessageQueue {
 	}
 
 	private final PrioQueue[] queuesByPriority;
+	
+	private boolean mustSendLoadRT;
+	private boolean mustSendLoadBulk;
+	
+	private final PeerNode pn;
 	
 	private class PrioQueue {
 		
@@ -424,6 +430,22 @@ public class PeerMessageQueue {
 						list = prev.getNext();
 					messages.add(item);
 					addedNone = false;
+					MessageItem load = null;
+					if(mustSendLoadRT && item.sendLoadRT) {
+						load = new MessageItem(pn.loadSenderRealTime.makeLoadStats(now, pn.node.nodeStats.outwardTransfersPerInsert()), null, pn.node.nodeStats.allocationNoticesCounter, pn);
+						mustSendLoadRT = false;
+					} else if(mustSendLoadBulk && item.sendLoadBulk) {
+						load = new MessageItem(pn.loadSenderBulk.makeLoadStats(now, pn.node.nodeStats.outwardTransfersPerInsert()), null, pn.node.nodeStats.allocationNoticesCounter, pn);
+						mustSendLoadBulk = false;
+					}
+					if(load != null) {
+						thisSize = item.getLength();
+						if(size + 2 + thisSize > maxSize) {
+							addFirst(load);
+						} else {
+							messages.add(load);
+						}
+					}
 					if(oversize) {
 						if(logDEBUG) Logger.debug(this, "Returning with oversize urgent message");
 						return size;
@@ -552,7 +574,8 @@ public class PeerMessageQueue {
 
 	}
 
-	PeerMessageQueue() {
+	PeerMessageQueue(PeerNode parent) {
+		pn = parent;
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
 		for(int i=0;i<queuesByPriority.length;i++)
 			queuesByPriority[i] = new PrioQueue();
@@ -604,6 +627,10 @@ public class PeerMessageQueue {
 		//Assume it goes on the end, both the common case
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addLast(addMe);
+		if(addMe.sendLoadRT)
+			mustSendLoadRT = true;
+		if(addMe.sendLoadBulk)
+			mustSendLoadBulk = true;
 	}
 
 	/**
@@ -613,6 +640,10 @@ public class PeerMessageQueue {
 		//Assume it goes on the front
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addFirst(addMe);
+		if(addMe.sendLoadRT)
+			mustSendLoadRT = true;
+		if(addMe.sendLoadBulk)
+			mustSendLoadBulk = true;
 	}
 
 	public synchronized MessageItem[] grabQueuedMessageItems() {
