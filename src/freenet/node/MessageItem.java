@@ -23,6 +23,8 @@ public class MessageItem {
 	final boolean formatted;
 	final ByteCounter ctrCallback;
 	private final short priority;
+	final boolean sendLoadRT;
+	final boolean sendLoadBulk;
 
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, PeerNode pn) {
 		this.msg = msg2;
@@ -30,11 +32,13 @@ public class MessageItem {
 		formatted = false;
 		this.ctrCallback = ctr;
 		this.submitted = System.currentTimeMillis();
+		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
+		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
 		priority = msg2.getPriority();
 		buf = msg.encodeToPacket(pn);
 	}
 
-	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority) {
+	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority, boolean sendLoadRT, boolean sendLoadBulk) {
 		this.cb = cb2;
 		this.msg = null;
 		this.buf = data;
@@ -44,6 +48,8 @@ public class MessageItem {
 		this.ctrCallback = ctr;
 		this.submitted = System.currentTimeMillis();
 		this.priority = priority;
+		this.sendLoadRT = sendLoadRT;
+		this.sendLoadBulk = sendLoadBulk;
 	}
 
 	/**

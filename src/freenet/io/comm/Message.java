@@ -66,7 +66,9 @@ public class Message {
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
 	short priority;
-
+	private boolean needsLoadRT;
+	private boolean needsLoadBulk;
+	
 	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
 		return decodeMessage(bb, peer, length + overhead, true, false);
@@ -360,6 +362,22 @@ public class Message {
 	
 	public void boostPriority() {
 		priority--;
+	}
+
+	public boolean needsLoadRT() {
+		return needsLoadRT;
+	}
+	
+	public boolean needsLoadBulk() {
+		return needsLoadBulk;
+	}
+	
+	public void setNeedsLoadRT() {
+		needsLoadRT = true;
+	}
+	
+	public void setNeedsLoadBulk() {
+		needsLoadBulk = true;
 	}
 
 }

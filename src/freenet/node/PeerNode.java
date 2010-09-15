@@ -621,7 +621,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// Not connected yet; need to handshake
 		isConnected = false;
 
-		messageQueue = new PeerMessageQueue();
+		messageQueue = new PeerMessageQueue(this);
 
 		decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
 		decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
@@ -2802,7 +2802,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.error(this, "No tracker to resend packet " + item.packetNumber + " on");
 				continue;
 			}
-			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, resendByteCounter, item.priority);
+			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, resendByteCounter, item.priority, false, false);
 			requeueMessageItems(new MessageItem[]{mi}, 0, 1, true);
 		}
 	}
@@ -4403,27 +4403,30 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 				}
 				if(!mustSend) return;
-				timeLastSentAllocationNotice = now;
-				if(input)
-					lastSentAllocationInput = thisAllocation;
-				else
-					lastSentAllocationOutput = thisAllocation;
-				countAllocationNotices++;
-				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+thisAllocation+" for "+input);
+				Message msg = makeLoadStats(now);
+				if(msg != null) {
+					if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+thisAllocation+" for "+input);
+					try {
+						sendAsync(msg, null, node.nodeStats.allocationNoticesCounter);
+					} catch (NotConnectedException e) {
+						// Ignore
+					}
+				}
 			}
+		}
+		
+		Message makeLoadStats(long now) {
 			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, realTimeFlag);
 			synchronized(this) {
 				lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
 				lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
-				if(lastFullStats != null && lastFullStats.equals(stats)) return;
+				if(lastFullStats != null && lastFullStats.equals(stats)) return null;
 				lastFullStats = stats;
+				timeLastSentAllocationNotice = now;
+				countAllocationNotices++;
 			}
 			Message msg = DMT.createFNPPeerLoadStatus(stats);
-			try {
-				sendAsync(msg, null, node.nodeStats.allocationNoticesCounter);
-			} catch (NotConnectedException e) {
-				// Ignore
-			}
+			return msg;
 		}
 	}
 	

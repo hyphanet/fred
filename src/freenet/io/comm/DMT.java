@@ -469,10 +469,16 @@ public class DMT {
 		addField(IS_LOCAL, Boolean.class);
 	}};
 	
-	public static final Message createFNPRejectedOverload(long id, boolean isLocal) {
+	public static final Message createFNPRejectedOverload(long id, boolean isLocal, boolean needsLoad, boolean realTimeFlag) {
 		Message msg = new Message(FNPRejectedOverload);
 		msg.set(UID, id);
 		msg.set(IS_LOCAL, isLocal);
+		if(needsLoad) {
+			if(realTimeFlag)
+				msg.setNeedsLoadRT();
+			else
+				msg.setNeedsLoadBulk();
+		}
 		return msg;
 	}
 	

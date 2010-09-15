@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
 
 /**
  * Queue of messages to send to a node. Ordered first by priority then by time.
@@ -15,8 +16,13 @@ import freenet.io.comm.DMT;
 public class PeerMessageQueue {
 
 	private final PrioQueue[] queuesByPriority;
-
-	private static class PrioQueue {
+	
+	private boolean mustSendLoadRT;
+	private boolean mustSendLoadBulk;
+	
+	private final PeerNode pn;
+	
+	private class PrioQueue {
 		
 		private class Items {
 			final LinkedList<MessageItem> items;
@@ -231,6 +237,22 @@ public class PeerMessageQueue {
 					messages.add(item);
 					list.timeLastSent = now;
 					addedNone = false;
+					MessageItem load = null;
+					if(mustSendLoadRT && item.sendLoadRT) {
+						load = new MessageItem(pn.loadSenderRealTime.makeLoadStats(now), null, pn.node.nodeStats.allocationNoticesCounter, pn);
+						mustSendLoadRT = false;
+					} else if(mustSendLoadBulk && item.sendLoadBulk) {
+						load = new MessageItem(pn.loadSenderBulk.makeLoadStats(now), null, pn.node.nodeStats.allocationNoticesCounter, pn);
+						mustSendLoadBulk = false;
+					}
+					if(load != null) {
+						thisSize = item.getLength();
+						if(size + 2 + thisSize > maxSize) {
+							makeItemsNoID().items.addFirst(load);
+						} else {
+							messages.add(load);
+						}
+					}
 				}
 				if(addedNone) return size;
 			}
@@ -283,7 +305,8 @@ public class PeerMessageQueue {
 
 	}
 
-	PeerMessageQueue() {
+	PeerMessageQueue(PeerNode parent) {
+		pn = parent;
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
 		for(int i=0;i<queuesByPriority.length;i++)
 			queuesByPriority[i] = new PrioQueue();
@@ -328,6 +351,10 @@ public class PeerMessageQueue {
 		//Assume it goes on the end, both the common case
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addLast(addMe);
+		if(addMe.sendLoadRT)
+			mustSendLoadRT = true;
+		if(addMe.sendLoadBulk)
+			mustSendLoadBulk = true;
 	}
 
 	/**
@@ -337,6 +364,10 @@ public class PeerMessageQueue {
 		//Assume it goes on the front
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addFirst(addMe);
+		if(addMe.sendLoadRT)
+			mustSendLoadRT = true;
+		if(addMe.sendLoadBulk)
+			mustSendLoadBulk = true;
 	}
 
 	public synchronized MessageItem[] grabQueuedMessageItems() {

@@ -219,7 +219,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             if((!receivedRejectedOverload) && sender.receivedRejectedOverload()) {
             	receivedRejectedOverload = true;
             	// Forward it
-            	Message m = DMT.createFNPRejectedOverload(uid, false);
+            	Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
             	try {
 					source.sendSync(m, this);
 				} catch (NotConnectedException e) {
@@ -239,7 +239,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             if((status == CHKInsertSender.TIMED_OUT) ||
             		(status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD) ||
             		(status == CHKInsertSender.INTERNAL_ERROR)) {
-                msg = DMT.createFNPRejectedOverload(uid, true);
+                msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
                 try {
 					source.sendSync(msg, this);
 				} catch (NotConnectedException e) {
@@ -288,7 +288,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             
             // Otherwise...?
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
-            msg = DMT.createFNPRejectedOverload(uid, true);
+            msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
             try {
 				source.sendSync(msg, this);
 			} catch (NotConnectedException e) {
