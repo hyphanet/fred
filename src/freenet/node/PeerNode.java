@@ -4737,14 +4737,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 				}
 				boolean foundNone = true;
+				RequestType type;
+				synchronized(this) {
+					type = RequestType.values()[slotWaiterTypeCounter];
+				}
 				for(int i=0;i<RequestType.values().length;i++) {
-					RequestType type;
-					synchronized(this) {
-						slotWaiterTypeCounter++;
-						if(slotWaiterTypeCounter == RequestType.values().length)
-							slotWaiterTypeCounter = 0;
-						type = RequestType.values()[slotWaiterTypeCounter];
-					}
 					LinkedHashSet<SlotWaiter> list;
 					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
 					synchronized(routedToLock) {
@@ -4786,6 +4783,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 					if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up");
 					slot.onWaited(PeerNode.this, acceptState);
+					synchronized(this) {
+						slotWaiterTypeCounter++;
+						if(slotWaiterTypeCounter == RequestType.values().length)
+							slotWaiterTypeCounter = 0;
+						type = RequestType.values()[slotWaiterTypeCounter];
+					}
 				}
 				if(foundNone) return;
 			}
