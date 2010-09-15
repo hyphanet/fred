@@ -4550,14 +4550,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			synchronized(this) {
 				if(!(acceptedBy == null && (!waitingFor.isEmpty()) && !failed)) {
 					failed = false;
+					if(logMINOR) Logger.minor(this, "Returning in first check: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
 					return acceptedBy;
 				}
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 			}
 			// Double-check before blocking, prevent race condition.
-			for(PeerNode p : all)
-				if(p.outputLoadTracker(realTime).tryRouteTo(tag, RequestLikelyAcceptedState.LIKELY, offeredKey) != null)
+			for(PeerNode p : all) {
+				RequestLikelyAcceptedState accept = p.outputLoadTracker(realTime).tryRouteTo(tag, RequestLikelyAcceptedState.LIKELY, offeredKey);
+				if(accept != null) {
+					if(logMINOR) Logger.minor(this, "tryRouteTo() pre-wait check returned "+accept);
 					return p;
+				}
+			}
 			synchronized(this) {
 				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
 					try {
@@ -4567,6 +4572,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 				}
 				failed = false;
+				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
 				return acceptedBy;
 			}
 		}
