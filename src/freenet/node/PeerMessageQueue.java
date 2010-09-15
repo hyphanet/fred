@@ -448,11 +448,11 @@ public class PeerMessageQueue {
 					if(load != null) {
 						thisSize = item.getLength();
 						if(size + 2 + thisSize > maxSize) {
-							addFirst(load);
-						} else {
 							if(logMINOR) Logger.minor(this, "Unable to add load message to packet, queueing");
 							messages.add(load);
-						}
+						} else {
+							addFirst(load);
+						}							
 					}
 					if(oversize) {
 						if(logDEBUG) Logger.debug(this, "Returning with oversize urgent message");
