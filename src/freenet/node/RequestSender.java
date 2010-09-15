@@ -690,7 +690,7 @@ loadWaiterLoop:
         		}
         		fireCHKTransferBegins();
 				
-        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true);
+        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag);
         		
        			if(logMINOR) Logger.minor(this, "Receiving data");
        			final PeerNode p = pn;
@@ -986,7 +986,7 @@ loadWaiterLoop:
     	fireCHKTransferBegins();
     	
     	final long tStart = System.currentTimeMillis();
-    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true);
+    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag);
     	
     	if(logMINOR) Logger.minor(this, "Receiving data");
     	final PeerNode from = next;
