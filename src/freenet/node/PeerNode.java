@@ -4729,6 +4729,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			ByteCountersSnapshot byteCountersInput = null;
 			boolean ignoreLocalVsRemote = false;
 			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime);
+			boolean foundNever = true;
 			while(true) {
 				synchronized(routedToLock) {
 					if(slotWaiters.isEmpty()) {
@@ -4738,11 +4739,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				}
 				boolean foundNone = true;
 				RequestType type;
+				int typeNum;
 				synchronized(this) {
-					type = RequestType.values()[slotWaiterTypeCounter];
+					typeNum = slotWaiterTypeCounter;
 				}
 				for(int i=0;i<RequestType.values().length;i++) {
 					LinkedHashSet<SlotWaiter> list;
+					type = RequestType.values()[typeNum];
 					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
 					synchronized(routedToLock) {
 						list = slotWaiters.get(type);
@@ -4757,6 +4760,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 					if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
 					foundNone = false;
+					foundNever = false;
 					// Should be safe to collect these here, just a little expensive.
 					if(byteCountersOutput == null) {
 						ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
@@ -4783,14 +4787,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 					if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up");
 					slot.onWaited(PeerNode.this, acceptState);
-					synchronized(this) {
-						slotWaiterTypeCounter++;
-						if(slotWaiterTypeCounter == RequestType.values().length)
-							slotWaiterTypeCounter = 0;
-						type = RequestType.values()[slotWaiterTypeCounter];
-					}
+					typeNum++;
+					if(typeNum == RequestType.values().length)
+						typeNum = 0;
 				}
-				if(foundNone) return;
+				if(foundNone) {
+					if(!foundNever) {
+						synchronized(this) {
+							slotWaiterTypeCounter = typeNum;
+						}
+					}
+					return;
+				}
 			}
 		}
 		
