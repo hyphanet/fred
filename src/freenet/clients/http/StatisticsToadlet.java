@@ -916,7 +916,6 @@ public class StatisticsToadlet extends Toadlet {
 		int numSSKRequests = numLocalSSKRequests + numRemoteSSKRequests;
 		int numCHKInserts = numLocalCHKInserts + numRemoteCHKInserts;
 		int numSSKInserts = numLocalSSKInserts + numRemoteSSKInserts;
-		int numIncomingTurtles = node.getNumIncomingTurtles();
 		if ((numTransferringRequests == 0) &&
 				(numCHKRequests == 0) && (numSSKRequests == 0) &&
 				(numCHKInserts == 0) && (numSSKInserts == 0) &&
@@ -937,9 +936,9 @@ public class StatisticsToadlet extends Toadlet {
 						new String[] { "CHKhandlers", "SSKhandlers", "local" } , 
 						new String[] { Integer.toString(numCHKRequests), Integer.toString(numSSKRequests), Integer.toString(numLocalCHKRequests)+"/" + Integer.toString(numLocalSSKRequests)}));
 			}
-			if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0 || numIncomingTurtles > 0) {
+			if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0) {
 				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.transferringRequests", 
-						new String[] { "senders", "receivers", "turtles" }, new String[] { Integer.toString(numTransferringRequests), Integer.toString(numTransferringRequestHandlers), Integer.toString(numIncomingTurtles)}));
+						new String[] { "senders", "receivers" }, new String[] { Integer.toString(numTransferringRequests), Integer.toString(numTransferringRequestHandlers)}));
 			}
 			if (numCHKOfferReplys > 0 || numSSKOfferReplys > 0) {
 				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.offerReplys", 

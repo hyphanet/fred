@@ -894,10 +894,6 @@ public class PeerManager {
 					Logger.minor(this, "Skipping (not connected): " + p.getPeer());
 				continue;
 			}
-			if(key != null && p.isTurtling(key)) {
-				if(logMINOR)
-					Logger.minor(this, "Skipping (already turtling key): "+p.getPeer());
-			}
 			if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion(), -1) < minVersion) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping old version: " + p.getPeer());

@@ -86,10 +86,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private SSKBlock block;
     private boolean hasForwarded;
     private PeerNode transferringFrom;
-    private boolean turtleMode;
-    private boolean sentBackoffTurtle;
-    /** Set when we start to think about going to turtle mode - not unset if we get cancelled instead. */
-    private boolean tryTurtle;
     private final boolean canWriteClientCache;
     private final boolean canWriteDatastore;
     
@@ -930,16 +926,6 @@ acceptWaiterLoop:
                 			synchronized(this) {
                 				transferringFrom = next;
                 			}
-                			node.getTicker().queueTimedJob(new Runnable() {
-
-								public void run() {
-									synchronized(RequestSender.this) {
-										if(transferringFrom != from) return;
-									}
-									makeTurtle();
-								}
-                				
-                			}, 60*1000);
                 			byte[] data;
                 			try {
                 				data = br.receive();
@@ -953,24 +939,8 @@ acceptWaiterLoop:
                 			this.transferTime = tEnd - tStart;
                 			boolean turtle;
                 			boolean turtleBackedOff;
-                			synchronized(this) {
-                				turtle = turtleMode;
-                				turtleBackedOff = sentBackoffTurtle;
-                				sentBackoffTurtle = true;
-                			}
-                			if(!turtle)
-                				next.transferSuccess();
-                			else {
-                				Logger.normal(this, "TURTLE SUCCEEDED: "+key+" for "+this+" in "+TimeUtil.formatTime(transferTime, 2, true));
-                				if(!turtleBackedOff)
-                					next.transferFailed("TurtledTransfer");
-                				node.nodeStats.turtleSucceeded();
-                			}
+               				next.transferSuccess();
                         	next.successNotOverload();
-                        	if(turtle) {
-                        		next.unregisterTurtleTransfer(this);
-                        		node.unregisterTurtleTransfer(this);
-                        	}
                         	node.nodeStats.successfulBlockReceive();
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
@@ -985,20 +955,6 @@ acceptWaiterLoop:
                 			finish(SUCCESS, next, false);
                 			return;
                 		} catch (RetrievalException e) {
-                			boolean turtle;
-                			synchronized(this) {
-                				turtle = turtleMode;
-                			}
-            				if(turtle) {
-            					if(e.getReason() != RetrievalException.GONE_TO_TURTLE_MODE) {
-            						Logger.normal(this, "TURTLE FAILED: "+key+" for "+this+" : "+e);
-            						node.nodeStats.turtleFailed();
-            					} else {
-            						if(logMINOR) Logger.minor(this, "Upstream turtled for "+this+" from "+next);
-            					}
-                           		next.unregisterTurtleTransfer(this);
-                           		node.unregisterTurtleTransfer(this);
-            				}
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
@@ -1106,14 +1062,6 @@ acceptWaiterLoop:
         }
 	}
     
-	protected void makeTurtle() {
-		synchronized(this) {
-			if(tryTurtle) return;
-			tryTurtle = true;
-		}
-		node.makeTurtle(RequestSender.this);
-	}
-
 	/**
      * Finish fetching an SSK. We must have received the data, the headers and the pubkey by this point.
      * @param next The node we received the data from.
@@ -1269,8 +1217,6 @@ acceptWaiterLoop:
     
 	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	
-	private static MedianMeanRunningAverage avgTimeTakenTurtle = new MedianMeanRunningAverage();
-	
 	private static MedianMeanRunningAverage avgTimeTakenTransfer = new MedianMeanRunningAverage();
 	
 	private long transferTime;
@@ -1278,12 +1224,9 @@ acceptWaiterLoop:
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
         
-    	boolean turtle;
-    	
         synchronized(this) {
             status = code;
             notifyAll();
-            turtle = turtleMode;
             if(status == SUCCESS)
             	successFrom = next;
         }
@@ -1292,19 +1235,11 @@ acceptWaiterLoop:
         	if(key instanceof NodeCHK && transferTime > 0 && logMINOR) {
         		long timeTaken = System.currentTimeMillis() - startTime;
         		synchronized(avgTimeTaken) {
-        			if(turtle)
-        				avgTimeTakenTurtle.report(timeTaken);
-        			else {
-        				avgTimeTaken.report(timeTaken);
-            			avgTimeTakenTransfer.report(transferTime);
-        			}
-        			if(turtle) {
-        				if(logMINOR) Logger.minor(this, "Successful CHK turtle request took "+timeTaken+" average "+avgTimeTakenTurtle);
-        			} else {
-        				if(logMINOR) Logger.minor(this, "Successful CHK request took "+timeTaken+" average "+avgTimeTaken);
-            			if(logMINOR) Logger.minor(this, "Successful CHK request transfer "+transferTime+" average "+avgTimeTakenTransfer);
-            			if(logMINOR) Logger.minor(this, "Search phase: median "+(avgTimeTaken.currentValue() - avgTimeTakenTransfer.currentValue())+"ms, mean "+(avgTimeTaken.meanValue() - avgTimeTakenTransfer.meanValue())+"ms");
-        			}
+       				avgTimeTaken.report(timeTaken);
+           			avgTimeTakenTransfer.report(transferTime);
+       				if(logMINOR) Logger.minor(this, "Successful CHK request took "+timeTaken+" average "+avgTimeTaken);
+           			if(logMINOR) Logger.minor(this, "Successful CHK request transfer "+transferTime+" average "+avgTimeTakenTransfer);
+           			if(logMINOR) Logger.minor(this, "Search phase: median "+(avgTimeTaken.currentValue() - avgTimeTakenTransfer.currentValue())+"ms, mean "+(avgTimeTaken.meanValue() - avgTimeTakenTransfer.meanValue())+"ms");
         		}
         	}
         	if(next != null) {
@@ -1632,27 +1567,6 @@ acceptWaiterLoop:
 	
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
-	}
-
-	public void setTurtle() {
-		synchronized(this) {
-			this.turtleMode = true;
-		}
-		sendAbortDownstreamTransfers(RetrievalException.GONE_TO_TURTLE_MODE, "Turtling");
-		node.getTicker().queueTimedJob(new Runnable() {
-
-			public void run() {
-				PeerNode from;
-				synchronized(RequestSender.this) {
-					if(sentBackoffTurtle) return;
-					sentBackoffTurtle = true;
-					from = transferringFrom;
-					if(from == null) return;
-				}
-				from.transferFailed("TurtledTransfer");
-			}
-			
-		}, 30*1000);
 	}
 
 	public PeerNode transferringFrom() {
