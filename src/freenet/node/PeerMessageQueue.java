@@ -253,12 +253,16 @@ public class PeerMessageQueue {
 					addedNone = false;
 					MessageItem load = null;
 					if(mustSendLoadRT && item.sendLoadRT) {
-						load = new MessageItem(pn.loadSenderRealTime.makeLoadStats(now), null, pn.node.nodeStats.allocationNoticesCounter, pn);
+						Message msg = pn.loadSenderRealTime.makeLoadStats(now);
+						if(msg != null)
+							load = new MessageItem(msg, null, pn.node.nodeStats.allocationNoticesCounter, pn);
 						mustSendLoadRT = false;
 						if(logMINOR && load != null)
 							Logger.minor(this, "Adding load message (realtime) to packet for "+pn);
 					} else if(mustSendLoadBulk && item.sendLoadBulk) {
-						load = new MessageItem(pn.loadSenderBulk.makeLoadStats(now), null, pn.node.nodeStats.allocationNoticesCounter, pn);
+						Message msg = pn.loadSenderBulk.makeLoadStats(now);
+						if(msg != null)
+							load = new MessageItem(msg, null, pn.node.nodeStats.allocationNoticesCounter, pn);
 						mustSendLoadBulk = false;
 						if(logMINOR && load != null)
 							Logger.minor(this, "Adding load message (bulk) to packet for "+pn);
