@@ -266,10 +266,10 @@ public class PeerMessageQueue {
 					if(load != null) {
 						thisSize = item.getLength();
 						if(size + 2 + thisSize > maxSize) {
-							makeItemsNoID().items.addFirst(load);
-						} else {
 							if(logMINOR) Logger.minor(this, "Unable to add load message to packet, queueing");
 							messages.add(load);
+						} else {
+							makeItemsNoID().items.addFirst(load);
 						}
 					}
 				}
