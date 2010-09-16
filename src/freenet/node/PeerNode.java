@@ -4386,6 +4386,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 		public void onSetPeerAllocation(boolean input, int thisAllocation) {
 			boolean mustSend = false;
+			Message msg;
 			// FIXME review constants, how often are allocations actually sent?
 			synchronized(this) {
 				int last = input ? lastSentAllocationInput : lastSentAllocationOutput;
@@ -4403,14 +4404,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 				}
 				if(!mustSend) return;
-				Message msg = makeLoadStats(now);
-				if(msg != null) {
-					if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+thisAllocation+" for "+input);
-					try {
-						sendAsync(msg, null, node.nodeStats.allocationNoticesCounter);
-					} catch (NotConnectedException e) {
-						// Ignore
-					}
+				msg = makeLoadStats(now);
+			}
+			if(msg != null) {
+				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+thisAllocation+" for "+input);
+				try {
+					sendAsync(msg, null, node.nodeStats.allocationNoticesCounter);
+				} catch (NotConnectedException e) {
+					// Ignore
 				}
 			}
 		}
