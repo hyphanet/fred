@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -4491,6 +4492,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		private boolean failed;
 		final boolean realTime;
 		
+		// FIXME the counter is a quick hack to ensure that the original ordering is preserved
+		// even after failures (transfer failures, backoffs).
+		// The real solution, which would likely result in simpler code as well as saving 
+		// a thread, is to make the wait loop in RequestSender asynchronous i.e. to not
+		// block at all there, but process the waiters in order in a callback when we get
+		// such a failure.
+		
+		final long counter;
+		static private long waiterCounter;
+		
 		SlotWaiter(UIDTag tag, RequestType type, PeerNode initial, boolean offeredKey, boolean realTime) {
 			this.tag = tag;
 			this.requestType = type;
@@ -4498,6 +4509,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			this.waitingFor = new HashSet<PeerNode>();
 			this.waitingFor.add(initial);
 			this.realTime = realTime;
+			synchronized(SlotWaiter.class) {
+				counter = waiterCounter++;
+			}
 		}
 		
 		public void addWaitingFor(PeerNode peer) {
@@ -4681,15 +4695,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// FIXME on capacity changing so that we should add another node???
 		// FIXME on backoff so that we should add another node???
 		
-		private final EnumMap<RequestType,LinkedHashSet<SlotWaiter>> slotWaiters = new EnumMap<RequestType,LinkedHashSet<SlotWaiter>>(RequestType.class);
+		private final EnumMap<RequestType,TreeMap<Long,SlotWaiter>> slotWaiters = new EnumMap<RequestType,TreeMap<Long,SlotWaiter>>(RequestType.class);
 		
 		void queueSlotWaiter(SlotWaiter waiter) {
 			boolean noLoadStats = false;
 			synchronized(routedToLock) {
 				noLoadStats = (this.lastIncomingLoadStats == null);
 				if(!noLoadStats) {
-					LinkedHashSet<SlotWaiter> list = makeSlotWaiters(waiter.requestType);
-					list.add(waiter);
+					TreeMap<Long,SlotWaiter> list = makeSlotWaiters(waiter.requestType);
+					list.put(waiter.counter, waiter);
 					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size());
 					return;
 				}
@@ -4698,10 +4712,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			waiter.onWaited(PeerNode.this, RequestLikelyAcceptedState.UNKNOWN);
 		}
 		
-		private LinkedHashSet<SlotWaiter> makeSlotWaiters(RequestType requestType) {
-			LinkedHashSet<SlotWaiter> slots = slotWaiters.get(requestType);
+		private TreeMap<Long,SlotWaiter> makeSlotWaiters(RequestType requestType) {
+			TreeMap<Long,SlotWaiter> slots = slotWaiters.get(requestType);
 			if(slots == null) {
-				slots = new LinkedHashSet<SlotWaiter>();
+				slots = new TreeMap<Long,SlotWaiter>();
 				slotWaiters.put(requestType, slots);
 			}
 			return slots;
@@ -4715,13 +4729,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 		private void failSlotWaiters(boolean reallyFailed) {
 			for(RequestType type : RequestType.values()) {
-				LinkedHashSet<SlotWaiter> slots; 
+				TreeMap<Long,SlotWaiter> slots; 
 				synchronized(routedToLock) {
 					slots = slotWaiters.get(type);
 					if(slots == null) continue;
 					slotWaiters.remove(type);
 				}
-				for(SlotWaiter w : slots)
+				for(SlotWaiter w : slots.values())
 					w.onFailed(PeerNode.this, reallyFailed);
 			}
 		}
@@ -4748,7 +4762,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					typeNum = slotWaiterTypeCounter;
 				}
 				for(int i=0;i<RequestType.values().length;i++) {
-					LinkedHashSet<SlotWaiter> list;
+					TreeMap<Long,SlotWaiter> list;
 					type = RequestType.values()[typeNum];
 					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
 					synchronized(routedToLock) {
@@ -4785,7 +4799,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 					SlotWaiter slot;
 					synchronized(routedToLock) {
-						Iterator<SlotWaiter> it = list.iterator();
+						Iterator<SlotWaiter> it = list.values().iterator();
 						slot = it.next();
 						it.remove();
 					}
