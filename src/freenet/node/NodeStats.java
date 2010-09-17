@@ -675,7 +675,7 @@ public class NodeStats implements Persistable {
 			this.averageTransfersOutPerInsert = transfersPerInsert;
 			
 			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node, ignoreLocalVsRemote, transfersPerInsert);
-			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false, ignoreLocalVsRemote, transfersPerInsert);
+			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false, transfersPerInsert);
 			expectedTransfersInCHK = runningGlobal.expectedTransfersInCHK - runningLocal.expectedTransfersInCHK;
 			expectedTransfersInSSK = runningGlobal.expectedTransfersInSSK - runningLocal.expectedTransfersInSSK;
 			expectedTransfersOutCHK = runningGlobal.expectedTransfersOutCHK - runningLocal.expectedTransfersOutCHK;
@@ -811,13 +811,16 @@ public class NodeStats implements Persistable {
 		 * @param requestsToNode If true, count requests sent to the node and currently
 		 * running. If false, count requests originated by the node.
 		 */
-		RunningRequestsSnapshot(Node node, PeerNode source, boolean requestsToNode, boolean ignoreLocalVsRemote, int transfersPerInsert) {
+		RunningRequestsSnapshot(Node node, PeerNode source, boolean requestsToNode, int transfersPerInsert) {
 			int transfersInSSK = 0;
 			int transfersOutSSK = 0;
 			int transfersInCHK = 0;
 			int transfersOutCHK = 0;
 			int reqs = 0;
 			this.averageTransfersPerInsert = transfersPerInsert;
+			// We are calculating what part of their resources we use. Therefore, we have
+			// to see it from their point of view - meaning all the requests are remote.
+			boolean ignoreLocalVsRemote = true;
 			CountedRequests count;
 			count = node.countRequests(source, requestsToNode, true, false, false, false, transfersPerInsert, ignoreLocalVsRemote);
 			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
@@ -1210,7 +1213,7 @@ public class NodeStats implements Persistable {
 	}
 
 	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters, boolean ignoreLocalVsRemote, int transfersOutPerInsert, boolean input) {
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemote, transfersOutPerInsert);
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source, false, transfersOutPerInsert);
 		
 		if(source != null) {
 			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersOutPerInsert);
@@ -2811,7 +2814,7 @@ public class NodeStats implements Persistable {
 	}
 
 	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, int transfersPerInsert) {
-		return new RunningRequestsSnapshot(node, peerNode, true, ignoreLocalVsRemoteBandwidthLiability, outwardTransfersPerInsert());
+		return new RunningRequestsSnapshot(node, peerNode, true, outwardTransfersPerInsert());
 	}
 	
 	public boolean ignoreLocalVsRemoteBandwidthLiability() {
