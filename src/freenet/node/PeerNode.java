@@ -4650,16 +4650,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
 			ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
 			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
-			runningRequests.collapseLocal();
 			RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 			boolean ignoreLocalVsRemoteBandwidthLiability = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
 					loadStats.outputBandwidthPeerLimit, loadStats.inputBandwidthPeerLimit,
 					loadStats.outputBandwidthUpperLimit, loadStats.inputBandwidthUpperLimit,
-					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput),
-					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput),
-					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput),
-					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput));
+					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput, false),
+					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput, true),
+					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput, false),
+					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput, true));
 		}
 		
 		public RequestLikelyAcceptedState tryRouteTo(UIDTag tag,
@@ -4680,7 +4679,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				}
 				// Requests already running to this node
 				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
-				runningRequests.collapseLocal();
 				runningRequests.log(PeerNode.this);
 				// Requests running from its other peers
 				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
@@ -4788,7 +4786,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					PeerLoadStats loadStats = lastIncomingLoadStats;
 					// Requests already running to this node
 					RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
-					runningRequests.collapseLocal();
 					runningRequests.log(PeerNode.this);
 					// Requests running from its other peers
 					RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
@@ -4839,11 +4836,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				RunningRequestsSnapshot runningRequests,
 				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
 				PeerLoadStats stats) {
-			double ourUsage = runningRequests.calculate(ignoreLocalVsRemote, byteCounters);
+			double ourUsage = runningRequests.calculate(ignoreLocalVsRemote, byteCounters, input);
 			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input)+" realtime "+realTime+" input "+input);
 			if(ourUsage < stats.peerLimit(input))
 				return RequestLikelyAcceptedState.GUARANTEED;
-			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, byteCounters);
+			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, byteCounters, input);
 			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
 			if(ourUsage + theirUsage < stats.lowerLimit(input))
 				return RequestLikelyAcceptedState.LIKELY;

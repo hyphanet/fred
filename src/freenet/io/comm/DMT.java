@@ -1595,12 +1595,10 @@ public class DMT {
 	// New load management
 	
 	public static final MessageType FNPPeerLoadStatusByte = new MessageType("FNPPeerLoadStatusByte", PRIORITY_HIGH) {{
-		addField(OTHER_RUNNING_CHK_REQUESTS, Byte.class);
-		addField(OTHER_RUNNING_SSK_REQUESTS, Byte.class);
-		addField(OTHER_RUNNING_CHK_INSERTS, Byte.class);
-		addField(OTHER_RUNNING_SSK_INSERTS, Byte.class);
-		addField(OTHER_RUNNING_CHK_OFFERS, Byte.class);
-		addField(OTHER_RUNNING_SSK_OFFERS, Byte.class);
+		addField(OTHER_TRANSFERS_OUT_CHK, Byte.class);
+		addField(OTHER_TRANSFERS_IN_CHK, Byte.class);
+		addField(OTHER_TRANSFERS_OUT_SSK, Byte.class);
+		addField(OTHER_TRANSFERS_IN_SSK, Byte.class);
 		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
@@ -1611,12 +1609,10 @@ public class DMT {
 	}};
 	
 	public static final MessageType FNPPeerLoadStatusShort = new MessageType("FNPPeerLoadStatusShort", PRIORITY_HIGH) {{
-		addField(OTHER_RUNNING_CHK_REQUESTS, Short.class);
-		addField(OTHER_RUNNING_SSK_REQUESTS, Short.class);
-		addField(OTHER_RUNNING_CHK_INSERTS, Short.class);
-		addField(OTHER_RUNNING_SSK_INSERTS, Short.class);
-		addField(OTHER_RUNNING_CHK_OFFERS, Short.class);
-		addField(OTHER_RUNNING_SSK_OFFERS, Short.class);
+		addField(OTHER_TRANSFERS_OUT_CHK, Short.class);
+		addField(OTHER_TRANSFERS_IN_CHK, Short.class);
+		addField(OTHER_TRANSFERS_OUT_SSK, Short.class);
+		addField(OTHER_TRANSFERS_IN_SSK, Short.class);
 		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
@@ -1627,12 +1623,10 @@ public class DMT {
 	}};
 	
 	public static final MessageType FNPPeerLoadStatusInt = new MessageType("FNPPeerLoadStatusInt", PRIORITY_HIGH) {{
-		addField(OTHER_RUNNING_CHK_REQUESTS, Integer.class);
-		addField(OTHER_RUNNING_SSK_REQUESTS, Integer.class);
-		addField(OTHER_RUNNING_CHK_INSERTS, Integer.class);
-		addField(OTHER_RUNNING_SSK_INSERTS, Integer.class);
-		addField(OTHER_RUNNING_CHK_OFFERS, Integer.class);
-		addField(OTHER_RUNNING_SSK_OFFERS, Integer.class);
+		addField(OTHER_TRANSFERS_OUT_CHK, Integer.class);
+		addField(OTHER_TRANSFERS_IN_CHK, Integer.class);
+		addField(OTHER_TRANSFERS_OUT_SSK, Integer.class);
+		addField(OTHER_TRANSFERS_IN_SSK, Integer.class);
 		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
@@ -1644,32 +1638,26 @@ public class DMT {
 	
 	public static final Message createFNPPeerLoadStatus(PeerLoadStats stats) {
 		Message msg;
-		if(stats.numOtherCHKInserts < 256 && stats.numOtherCHKRequests < 256 && stats.numOtherCHKOffered < 256 &&
-				stats.numOtherSSKInserts < 256 && stats.numOtherSSKRequests < 256 && stats.numOtherSSKOffered < 256) {
+		if(stats.expectedTransfersInCHK < 256 && stats.expectedTransfersInSSK < 256 &&
+				stats.expectedTransfersOutCHK < 256 && stats.expectedTransfersOutSSK < 256) {
 			msg = new Message(FNPPeerLoadStatusByte);
-			msg.set(OTHER_RUNNING_CHK_REQUESTS, (byte)stats.numOtherCHKRequests);
-			msg.set(OTHER_RUNNING_CHK_INSERTS, (byte)stats.numOtherCHKInserts);
-			msg.set(OTHER_RUNNING_CHK_OFFERS, (byte)stats.numOtherCHKOffered);
-			msg.set(OTHER_RUNNING_SSK_REQUESTS, (byte)stats.numOtherSSKRequests);
-			msg.set(OTHER_RUNNING_SSK_INSERTS, (byte)stats.numOtherSSKInserts);
-			msg.set(OTHER_RUNNING_SSK_OFFERS, (byte)stats.numOtherSSKOffered);
-		} else if(stats.numOtherCHKInserts < 65536 && stats.numOtherCHKRequests < 65536 && stats.numOtherCHKOffered < 65536 &&
-				stats.numOtherSSKInserts < 65536 && stats.numOtherSSKRequests < 65536 && stats.numOtherSSKOffered < 65536) {
+			msg.set(OTHER_TRANSFERS_OUT_CHK, (byte)stats.expectedTransfersOutCHK);
+			msg.set(OTHER_TRANSFERS_IN_CHK, (byte)stats.expectedTransfersInCHK);
+			msg.set(OTHER_TRANSFERS_OUT_SSK, (byte)stats.expectedTransfersOutSSK);
+			msg.set(OTHER_TRANSFERS_IN_SSK, (byte)stats.expectedTransfersInSSK);
+		} else if(stats.expectedTransfersInCHK < 65536 && stats.expectedTransfersInSSK < 65536 &&
+				stats.expectedTransfersOutCHK < 65536 && stats.expectedTransfersOutSSK < 65536) {
 			msg = new Message(FNPPeerLoadStatusShort);
-			msg.set(OTHER_RUNNING_CHK_REQUESTS, (short)stats.numOtherCHKRequests);
-			msg.set(OTHER_RUNNING_CHK_INSERTS, (short)stats.numOtherCHKInserts);
-			msg.set(OTHER_RUNNING_CHK_OFFERS, (short)stats.numOtherCHKOffered);
-			msg.set(OTHER_RUNNING_SSK_REQUESTS, (short)stats.numOtherSSKRequests);
-			msg.set(OTHER_RUNNING_SSK_INSERTS, (short)stats.numOtherSSKInserts);
-			msg.set(OTHER_RUNNING_SSK_OFFERS, (short)stats.numOtherSSKOffered);
+			msg.set(OTHER_TRANSFERS_OUT_CHK, (short)stats.expectedTransfersOutCHK);
+			msg.set(OTHER_TRANSFERS_IN_CHK, (short)stats.expectedTransfersInCHK);
+			msg.set(OTHER_TRANSFERS_OUT_SSK, (short)stats.expectedTransfersOutSSK);
+			msg.set(OTHER_TRANSFERS_IN_SSK, (short)stats.expectedTransfersInSSK);
 		} else {
 			msg = new Message(FNPPeerLoadStatusInt);
-			msg.set(OTHER_RUNNING_CHK_REQUESTS, stats.numOtherCHKRequests);
-			msg.set(OTHER_RUNNING_CHK_INSERTS, stats.numOtherCHKInserts);
-			msg.set(OTHER_RUNNING_CHK_OFFERS, stats.numOtherCHKOffered);
-			msg.set(OTHER_RUNNING_SSK_REQUESTS, stats.numOtherSSKRequests);
-			msg.set(OTHER_RUNNING_SSK_INSERTS, stats.numOtherSSKInserts);
-			msg.set(OTHER_RUNNING_SSK_OFFERS, stats.numOtherSSKOffered);
+			msg.set(OTHER_TRANSFERS_OUT_CHK, stats.expectedTransfersOutCHK);
+			msg.set(OTHER_TRANSFERS_IN_CHK, stats.expectedTransfersInCHK);
+			msg.set(OTHER_TRANSFERS_OUT_SSK, stats.expectedTransfersOutSSK);
+			msg.set(OTHER_TRANSFERS_IN_SSK, stats.expectedTransfersInSSK);
 		}
 		msg.set(OUTPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.outputBandwidthLowerLimit);
 		msg.set(OUTPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.outputBandwidthUpperLimit);
@@ -1681,12 +1669,10 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final String OTHER_RUNNING_CHK_REQUESTS = "otherRunningCHKRequests";
-	public static final String OTHER_RUNNING_SSK_REQUESTS = "otherRunningSSKRequests";
-	public static final String OTHER_RUNNING_CHK_INSERTS = "otherRunningCHKInserts";
-	public static final String OTHER_RUNNING_SSK_INSERTS = "otherRunningSSKInserts";
-	public static final String OTHER_RUNNING_CHK_OFFERS = "otherRunningCHKOffers";
-	public static final String OTHER_RUNNING_SSK_OFFERS = "otherRunningSSKOffers";
+	public static final String OTHER_TRANSFERS_OUT_CHK = "otherTransfersOutCHK";
+	public static final String OTHER_TRANSFERS_IN_CHK = "otherTransfersOutCHK";
+	public static final String OTHER_TRANSFERS_OUT_SSK = "otherTransfersOutCHK";
+	public static final String OTHER_TRANSFERS_IN_SSK = "otherTransfersOutCHK";
 	
 	public static final String OUTPUT_BANDWIDTH_LOWER_LIMIT = "outputBandwidthLowerLimit";
 	public static final String OUTPUT_BANDWIDTH_UPPER_LIMIT = "outputBandwidthUpperLimit";
