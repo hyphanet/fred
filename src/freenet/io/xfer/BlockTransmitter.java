@@ -380,7 +380,7 @@ public class BlockTransmitter {
 			if(blockSendsPending == 0) return false;
 			while(blockSendsPending != 0) {
 				try {
-					wait();
+					_senderThread.wait();
 				} catch (InterruptedException e) {
 					// Ignore
 				}
