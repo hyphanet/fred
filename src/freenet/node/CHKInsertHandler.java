@@ -170,18 +170,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		receiveStarted = true;
         node.executor.execute(dataReceiver, "CHKInsertHandler$DataReceiver for UID "+uid);
 
-        if(htl == 0) {
-            canCommit = true;
-        	msg = DMT.createFNPInsertReply(uid);
-        	try {
-				source.sendSync(msg, this);
-			} catch (NotConnectedException e) {
-				// Ignore
-			}
-            finish(CHKInsertSender.SUCCESS);
-            return;
-        }
-        
         // Wait...
         // What do we want to wait for?
         // If the data receive completes, that's very nice,
