@@ -4385,7 +4385,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		private PeerLoadStats lastFullStats;
 		private final boolean realTimeFlag;
 		
-		public void onSetPeerAllocation(boolean input, int thisAllocation) {
+		public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert) {
 			boolean mustSend = false;
 			Message msg;
 			// FIXME review constants, how often are allocations actually sent?
@@ -4405,7 +4405,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 				}
 				if(!mustSend) return;
-				msg = makeLoadStats(now);
+				msg = makeLoadStats(now, transfersPerInsert);
 			}
 			if(msg != null) {
 				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+thisAllocation+" for "+input);
@@ -4417,8 +4417,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 		
-		Message makeLoadStats(long now) {
-			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, realTimeFlag);
+		Message makeLoadStats(long now, int transfersPerInsert) {
+			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, realTimeFlag, transfersPerInsert);
 			synchronized(this) {
 				lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
 				lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
@@ -4432,8 +4432,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 	
-	public void onSetPeerAllocation(boolean input, int thisAllocation, boolean realTime) {
-		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation);
+	public void onSetPeerAllocation(boolean input, int thisAllocation, boolean realTime, int transfersPerInsert) {
+		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation, transfersPerInsert);
 	}
 
 	public class IncomingLoadSummaryStats {
@@ -4649,7 +4649,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
 			ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
-			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
+			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime, loadStats.averageTransfersOutPerInsert);
 			RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 			boolean ignoreLocalVsRemoteBandwidthLiability = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
@@ -4678,7 +4678,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					return RequestLikelyAcceptedState.UNKNOWN;
 				}
 				// Requests already running to this node
-				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
+				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime, loadStats.averageTransfersOutPerInsert);
 				runningRequests.log(PeerNode.this);
 				// Requests running from its other peers
 				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
@@ -4785,7 +4785,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 					PeerLoadStats loadStats = lastIncomingLoadStats;
 					// Requests already running to this node
-					RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
+					RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime, loadStats.averageTransfersOutPerInsert);
 					runningRequests.log(PeerNode.this);
 					// Requests running from its other peers
 					RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();

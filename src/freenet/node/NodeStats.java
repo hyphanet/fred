@@ -625,6 +625,7 @@ public class NodeStats implements Persistable {
 		public final double inputBandwidthPeerLimit;
 		public final boolean realTime;
 		public final int totalRequests;
+		public final int averageTransfersOutPerInsert;
 		
 		public boolean equals(Object o) {
 			if(!(o instanceof PeerLoadStats)) return false;
@@ -635,6 +636,7 @@ public class NodeStats implements Persistable {
 			if(s.expectedTransfersOutSSK != expectedTransfersOutSSK) return false;
 			if(s.expectedTransfersInSSK != expectedTransfersInSSK) return false;
 			if(s.totalRequests != totalRequests) return false;
+			if(s.averageTransfersOutPerInsert != averageTransfersOutPerInsert) return false;
 			if(s.outputBandwidthLowerLimit != outputBandwidthLowerLimit) return false;
 			if(s.outputBandwidthUpperLimit != outputBandwidthUpperLimit) return false;
 			if(s.outputBandwidthPeerLimit != outputBandwidthPeerLimit) return false;
@@ -650,7 +652,7 @@ public class NodeStats implements Persistable {
 				expectedTransfersOutCHK+"chk/"+expectedTransfersOutSSK+"ssk"+":rt="+realTime;
 		}
 		
-		public PeerLoadStats(PeerNode peer, boolean realTimeFlag) {
+		public PeerLoadStats(PeerNode peer, boolean realTimeFlag, int transfersPerInsert) {
 			this.peer = peer;
 			this.realTime = realTimeFlag;
 			long[] total = node.collector.getTotalIO();
@@ -670,11 +672,12 @@ public class NodeStats implements Persistable {
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(limit);
 			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, realTimeFlag, true);
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, realTimeFlag, true);
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, realTimeFlag, true, transfersPerInsert);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, realTimeFlag, true, transfersPerInsert);
 			
 			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
-			int transfersPerInsert = outwardTransfersPerInsert();
+			
+			this.averageTransfersOutPerInsert = transfersPerInsert;
 			
 			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node, realTimeFlag, ignoreLocalVsRemote, transfersPerInsert);
 			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false, realTimeFlag, ignoreLocalVsRemote, transfersPerInsert);
@@ -692,16 +695,20 @@ public class NodeStats implements Persistable {
 				expectedTransfersInSSK = m.getInt(DMT.OTHER_TRANSFERS_IN_SSK);
 				expectedTransfersOutCHK = m.getInt(DMT.OTHER_TRANSFERS_OUT_CHK);
 				expectedTransfersOutSSK = m.getInt(DMT.OTHER_TRANSFERS_OUT_SSK);
+				averageTransfersOutPerInsert = m.getInt(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT);
+
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusShort) {
 				expectedTransfersInCHK = m.getShort(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFFFF;
 				expectedTransfersInSSK = m.getShort(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFFFF;
 				expectedTransfersOutCHK = m.getShort(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFFFF;
 				expectedTransfersOutSSK = m.getShort(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFFFF;
+				averageTransfersOutPerInsert = m.getShort(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT) & 0xFFFF;
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusByte) {
 				expectedTransfersInCHK = m.getByte(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFF;
 				expectedTransfersInSSK = m.getByte(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFF;
 				expectedTransfersOutCHK = m.getByte(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFF;
 				expectedTransfersOutSSK = m.getByte(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFF;
+				averageTransfersOutPerInsert = m.getByte(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT) & 0xFF;
 			} else throw new IllegalArgumentException();
 			outputBandwidthLowerLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_LOWER_LIMIT);
 			outputBandwidthUpperLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_UPPER_LIMIT);
@@ -783,6 +790,7 @@ public class NodeStats implements Persistable {
 		int expectedTransfersOutSSK;
 		int expectedTransfersInSSK;
 		int totalRequests;
+		int averageTransfersPerInsert;
 		final boolean realTimeFlag;
 		
 		RunningRequestsSnapshot(Node node, boolean realTimeFlag, boolean ignoreLocalVsRemote, int transfersPerInsert) {
@@ -790,6 +798,7 @@ public class NodeStats implements Persistable {
 			int transfersOutSSK = 0;
 			int transfersInCHK = 0;
 			int transfersOutCHK = 0;
+			this.averageTransfersPerInsert = transfersPerInsert;
 			CountedRequests count;
 			count = node.countRequests(true, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
 			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
@@ -830,6 +839,7 @@ public class NodeStats implements Persistable {
 			int transfersInCHK = 0;
 			int transfersOutCHK = 0;
 			int reqs = 0;
+			this.averageTransfersPerInsert = transfersPerInsert;
 			CountedRequests count;
 			count = node.countRequests(source, requestsToNode, true, false, false, false, realTimeFlag, transfersPerInsert, ignoreLocalVsRemote);
 			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
@@ -877,6 +887,7 @@ public class NodeStats implements Persistable {
 			this.expectedTransfersOutSSK = stats.expectedTransfersOutSSK;
 			this.totalRequests = stats.totalRequests;
 			this.realTimeFlag = stats.realTime;
+			this.averageTransfersPerInsert = stats.averageTransfersOutPerInsert;
 		}
 
 		public void decrement(boolean isSSK, boolean isInsert,
@@ -1164,7 +1175,7 @@ public class NodeStats implements Persistable {
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
 		
-		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, realTimeFlag, false);
+		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, realTimeFlag, false, transfersPerInsert);
 		
 		// If over the upper limit, reject.
 		
@@ -1194,7 +1205,7 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 
-	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean realTimeFlag, boolean dontTellPeer) {
+	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean realTimeFlag, boolean dontTellPeer, int transfersPerInsert) {
 		
 		int peers = node.peers.countConnectedPeers();
 		
@@ -1217,7 +1228,7 @@ public class NodeStats implements Persistable {
 		
 		if(source != null && !dontTellPeer) {
 			// FIXME tell local as well somehow?
-			source.onSetPeerAllocation(input, (int)thisAllocation, realTimeFlag);
+			source.onSetPeerAllocation(input, (int)thisAllocation, realTimeFlag, transfersPerInsert);
 		}
 		
 		return thisAllocation;
@@ -2814,8 +2825,8 @@ public class NodeStats implements Persistable {
 		return result;
 	}
 
-	public PeerLoadStats createPeerLoadStats(PeerNode peer, boolean realTimeFlag) {
-		return new PeerLoadStats(peer, realTimeFlag);
+	public PeerLoadStats createPeerLoadStats(PeerNode peer, boolean realTimeFlag, int transfersPerInsert) {
+		return new PeerLoadStats(peer, realTimeFlag, transfersPerInsert);
 	}
 
 	public PeerLoadStats parseLoadStats(PeerNode source, Message m) {
@@ -2826,7 +2837,7 @@ public class NodeStats implements Persistable {
 		return new ByteCountersSnapshot(input);
 	}
 
-	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, boolean realTimeFlag) {
+	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, boolean realTimeFlag, int transfersPerInsert) {
 		return new RunningRequestsSnapshot(node, peerNode, true, realTimeFlag, ignoreLocalVsRemoteBandwidthLiability, outwardTransfersPerInsert());
 	}
 	
