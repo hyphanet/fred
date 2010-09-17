@@ -4539,42 +4539,71 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public synchronized int countRequests(boolean local, boolean ssk, boolean insert, boolean offer) {
-		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
-		return map.size();
+	public class CountedRequests {
+		final int total;
+		final int expectedTransfersOut;
+		final int expectedTransfersIn;
+		private CountedRequests(int count, int out, int in) {
+			total = count;
+			expectedTransfersOut = out;
+			expectedTransfersIn = in;
+		}
 	}
 	
-	public int countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer) {
+	public synchronized CountedRequests countRequests(boolean local, boolean ssk, boolean insert, boolean offer, int transfersPerInsert, boolean ignoreLocalVsRemote) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
 		synchronized(map) {
-		if(!requestsToNode) {
-			if((source == null) != local) return 0;
 			int count = 0;
+			int transfersOut = 0;
+			int transfersIn = 0;
+			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
+				UIDTag tag = entry.getValue();
+				count++;
+				transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
+				transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+			}
+			return new CountedRequests(count, transfersOut, transfersIn);
+		}
+	}
+	
+	public CountedRequests countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, int transfersPerInsert, boolean ignoreLocalVsRemote) {
+		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
+		synchronized(map) {
+		int count = 0;
+		int transfersOut = 0;
+		int transfersIn = 0;
+		if(!requestsToNode) {
+			if((source == null) != local) return new CountedRequests(0, 0, 0);
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
 				if(tag.source == source) {
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey()+" from "+source);
 					count++;
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
 				}
 			}
-			return count;
+			return new CountedRequests(count, transfersOut, transfersIn);
 		} else {
 			// FIXME improve efficiency!
-			int count = 0;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
 				// Ordinary requests can be routed to an offered key.
 				// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
 				if(tag.currentlyFetchingOfferedKeyFrom(source)) {
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
 					count++;
 				} else if(tag.currentlyRoutingTo(source)) {
 					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
 					count++;
 				}
 			}
 			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count);
-			return count;
+			return new CountedRequests(count, transfersOut, transfersIn);
 		}
 		}
 	}
