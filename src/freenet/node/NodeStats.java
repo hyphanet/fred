@@ -693,15 +693,15 @@ public class NodeStats implements Persistable {
 				expectedTransfersOutCHK = m.getInt(DMT.OTHER_TRANSFERS_OUT_CHK);
 				expectedTransfersOutSSK = m.getInt(DMT.OTHER_TRANSFERS_OUT_SSK);
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusShort) {
-				expectedTransfersInCHK = m.getShort(DMT.OTHER_TRANSFERS_IN_CHK);
-				expectedTransfersInSSK = m.getShort(DMT.OTHER_TRANSFERS_IN_SSK);
-				expectedTransfersOutCHK = m.getShort(DMT.OTHER_TRANSFERS_OUT_CHK);
-				expectedTransfersOutSSK = m.getShort(DMT.OTHER_TRANSFERS_OUT_SSK);
+				expectedTransfersInCHK = m.getShort(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFFFF;
+				expectedTransfersInSSK = m.getShort(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFFFF;
+				expectedTransfersOutCHK = m.getShort(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFFFF;
+				expectedTransfersOutSSK = m.getShort(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFFFF;
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusByte) {
-				expectedTransfersInCHK = m.getInt(DMT.OTHER_TRANSFERS_IN_CHK);
-				expectedTransfersInSSK = m.getInt(DMT.OTHER_TRANSFERS_IN_SSK);
-				expectedTransfersOutCHK = m.getInt(DMT.OTHER_TRANSFERS_OUT_CHK);
-				expectedTransfersOutSSK = m.getInt(DMT.OTHER_TRANSFERS_OUT_SSK);
+				expectedTransfersInCHK = m.getByte(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFF;
+				expectedTransfersInSSK = m.getByte(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFF;
+				expectedTransfersOutCHK = m.getByte(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFF;
+				expectedTransfersOutSSK = m.getByte(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFF;
 			} else throw new IllegalArgumentException();
 			outputBandwidthLowerLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_LOWER_LIMIT);
 			outputBandwidthUpperLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_UPPER_LIMIT);
