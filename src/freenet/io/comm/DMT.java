@@ -1620,7 +1620,8 @@ public class DMT {
 	public static final Message createFNPPeerLoadStatus(PeerLoadStats stats) {
 		Message msg;
 		if(stats.expectedTransfersInCHK < 256 && stats.expectedTransfersInSSK < 256 &&
-				stats.expectedTransfersOutCHK < 256 && stats.expectedTransfersOutSSK < 256) {
+				stats.expectedTransfersOutCHK < 256 && stats.expectedTransfersOutSSK < 256 &&
+				stats.averageTransfersOutPerInsert < 256) {
 			msg = new Message(FNPPeerLoadStatusByte);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, (byte)stats.expectedTransfersOutCHK);
 			msg.set(OTHER_TRANSFERS_IN_CHK, (byte)stats.expectedTransfersInCHK);
@@ -1628,7 +1629,8 @@ public class DMT {
 			msg.set(OTHER_TRANSFERS_IN_SSK, (byte)stats.expectedTransfersInSSK);
 			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (byte)stats.averageTransfersOutPerInsert);
 		} else if(stats.expectedTransfersInCHK < 65536 && stats.expectedTransfersInSSK < 65536 &&
-				stats.expectedTransfersOutCHK < 65536 && stats.expectedTransfersOutSSK < 65536) {
+				stats.expectedTransfersOutCHK < 65536 && stats.expectedTransfersOutSSK < 65536 &&
+				stats.averageTransfersOutPerInsert < 65536) {
 			msg = new Message(FNPPeerLoadStatusShort);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, (short)stats.expectedTransfersOutCHK);
 			msg.set(OTHER_TRANSFERS_IN_CHK, (short)stats.expectedTransfersInCHK);
