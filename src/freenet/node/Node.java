@@ -731,6 +731,7 @@ public class Node implements TimeSkewDetectorCallback {
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)18;
 	private short maxHTL;
+	private boolean skipWrapperWarning;
 	/** Should inserts ignore low backoff times by default? */
 	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
@@ -2499,6 +2500,21 @@ public class Node implements TimeSkewDetectorCallback {
 
 		});
 
+		nodeConfig.register("skipWrapperWarning", false, sortOrder++, true, false, "Node.skipWrapperWarning", "Node.skipWrapperWarningLong", new BooleanCallback() {
+
+			@Override
+			public void set(Boolean value) throws InvalidConfigValueException, NodeNeedRestartException {
+				skipWrapperWarning = value;
+			}
+
+			@Override
+			public Boolean get() {
+				return skipWrapperWarning;
+			}
+		});
+
+		skipWrapperWarning = nodeConfig.getBoolean("skipWrapperWarning");
+
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
 			config.store();
@@ -3828,7 +3844,7 @@ public class Node implements TimeSkewDetectorCallback {
 			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "name", "version" }, new String[] { jvmVendor, jvmName, javaVersion }), l10n("notUsingSunVMShort"), UserAlert.WARNING));
 		}
 
-		if(!isUsingWrapper()) {
+		if(!isUsingWrapper() && !skipWrapperWarning) {
 			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
 		}
 
