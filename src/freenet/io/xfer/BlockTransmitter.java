@@ -362,6 +362,7 @@ public class BlockTransmitter {
 				if(completed) return;
 				completed = true;
 				blockSendsPending--;
+				_senderThread.notifyAll();
 			}
 		}
 
