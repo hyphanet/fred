@@ -101,4 +101,16 @@ public class RequestTag extends UIDTag {
 		handlerDisconnected = true;
 	}
 
+	@Override
+	public int expectedTransfersIn(boolean ignoreLocalVsRemote,
+			int outwardTransfersPerInsert) {
+		return notRoutedOnwards ? 0 : 1;
+	}
+
+	@Override
+	public int expectedTransfersOut(boolean ignoreLocalVsRemote,
+			int outwardTransfersPerInsert) {
+		return (ignoreLocalVsRemote && source == null) ? 0 : 1;
+	}
+
 }

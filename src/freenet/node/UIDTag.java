@@ -24,6 +24,7 @@ public abstract class UIDTag {
 	private HashSet<PeerNode> currentlyRoutingTo = null;
 	/** Node we are currently doing an offered-key-fetch from */
 	private HashSet<PeerNode> fetchingOfferedKeyFrom = null;
+	protected boolean notRoutedOnwards;
 	
 	UIDTag(PeerNode source) {
 		createdTime = System.currentTimeMillis();
@@ -79,4 +80,24 @@ public abstract class UIDTag {
 		currentlyRoutingTo.remove(next);
 	}
 
+	public void postUnlock() {
+		PeerNode[] peers;
+		synchronized(this) {
+			if(routedTo != null)
+				peers = routedTo.toArray(new PeerNode[routedTo.size()]);
+			else
+				peers = null;
+		}
+		if(peers != null)
+			for(PeerNode p : peers)
+				p.postUnlock(this);
+	}
+	
+	public abstract int expectedTransfersIn(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert);
+	
+	public abstract int expectedTransfersOut(boolean ignoreLocalVsRemote, int outwardTransfersPerInsert);
+	
+	public synchronized void setNotRoutedOnwards() {
+		this.notRoutedOnwards = true;
+	}
 }

@@ -24,4 +24,16 @@ public class OfferReplyTag extends UIDTag {
 		Logger.error(this, sb.toString());
 	}
 
+	@Override
+	public int expectedTransfersIn(boolean ignoreLocalVsRemote,
+			int outwardTransfersPerInsert) {
+		return 0;
+	}
+
+	@Override
+	public int expectedTransfersOut(boolean ignoreLocalVsRemote,
+			int outwardTransfersPerInsert) {
+		return 1;
+	}
+
 }

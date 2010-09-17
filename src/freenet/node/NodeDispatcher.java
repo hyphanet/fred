@@ -402,6 +402,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// If we do reuse it, call reset().
 		BlockMetadata meta = new BlockMetadata();
 		KeyBlock block = node.fetch(key, false, false, false, false, meta);
+		if(block != null)
+			tag.setNotRoutedOnwards();
 		
 		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null && !meta.isOldBlock(), false);
 		if(rejectReason != null) {
