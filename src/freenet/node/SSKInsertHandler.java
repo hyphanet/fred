@@ -210,18 +210,6 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		
 		if(logMINOR) Logger.minor(this, "Got block for "+key+" for "+uid);
 		
-        if(htl == 0) {
-        	Message msg = DMT.createFNPInsertReply(uid);
-        	try {
-				source.sendSync(msg, this);
-			} catch (NotConnectedException e) {
-				// Ignore
-			}
-			canCommit = true;
-            finish(SSKInsertSender.SUCCESS);
-            return;
-        }
-        
         if(htl > 0)
             sender = node.makeInsertSender(block, htl, uid, source, false, false, canWriteDatastore, forkOnCacheable, preferInsert, ignoreLowBackoff);
         
