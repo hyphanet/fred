@@ -1626,6 +1626,7 @@ public class DMT {
 			msg.set(OTHER_TRANSFERS_IN_CHK, (byte)stats.expectedTransfersInCHK);
 			msg.set(OTHER_TRANSFERS_OUT_SSK, (byte)stats.expectedTransfersOutSSK);
 			msg.set(OTHER_TRANSFERS_IN_SSK, (byte)stats.expectedTransfersInSSK);
+			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (byte)stats.averageTransfersOutPerInsert);
 		} else if(stats.expectedTransfersInCHK < 65536 && stats.expectedTransfersInSSK < 65536 &&
 				stats.expectedTransfersOutCHK < 65536 && stats.expectedTransfersOutSSK < 65536) {
 			msg = new Message(FNPPeerLoadStatusShort);
@@ -1633,12 +1634,14 @@ public class DMT {
 			msg.set(OTHER_TRANSFERS_IN_CHK, (short)stats.expectedTransfersInCHK);
 			msg.set(OTHER_TRANSFERS_OUT_SSK, (short)stats.expectedTransfersOutSSK);
 			msg.set(OTHER_TRANSFERS_IN_SSK, (short)stats.expectedTransfersInSSK);
+			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, (short)stats.averageTransfersOutPerInsert);
 		} else {
 			msg = new Message(FNPPeerLoadStatusInt);
 			msg.set(OTHER_TRANSFERS_OUT_CHK, stats.expectedTransfersOutCHK);
 			msg.set(OTHER_TRANSFERS_IN_CHK, stats.expectedTransfersInCHK);
 			msg.set(OTHER_TRANSFERS_OUT_SSK, stats.expectedTransfersOutSSK);
 			msg.set(OTHER_TRANSFERS_IN_SSK, stats.expectedTransfersInSSK);
+			msg.set(AVERAGE_TRANSFERS_OUT_PER_INSERT, stats.averageTransfersOutPerInsert);
 		}
 		msg.set(OUTPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.outputBandwidthLowerLimit);
 		msg.set(OUTPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.outputBandwidthUpperLimit);
@@ -1648,6 +1651,8 @@ public class DMT {
 		msg.set(INPUT_BANDWIDTH_PEER_LIMIT, (int)stats.inputBandwidthPeerLimit);
 		return msg;
 	}
+	
+	public static final String AVERAGE_TRANSFERS_OUT_PER_INSERT = "averageTransfersOutPerInsert";
 	
 	public static final String OTHER_TRANSFERS_OUT_CHK = "otherTransfersOutCHK";
 	public static final String OTHER_TRANSFERS_IN_CHK = "otherTransfersOutCHK";
