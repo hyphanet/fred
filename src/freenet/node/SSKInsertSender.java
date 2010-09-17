@@ -174,6 +174,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             starting = false;
             if(htl == 0) {
                 // Send an InsertReply back
+        		if(!sentRequest)
+        			origTag.setNotRoutedOnwards();
                 finish(SUCCESS, null);
                 return;
             }
@@ -198,6 +200,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             if(next == null) {
                 // Backtrack
+        		if(!sentRequest)
+        			origTag.setNotRoutedOnwards();
                 finish(ROUTE_NOT_FOUND, null);
                 return;
             }

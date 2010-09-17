@@ -332,6 +332,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             synchronized (this) {
             	if(htl == 0) {
             		// Send an InsertReply back
+            		if(!sentRequest)
+            			origTag.setNotRoutedOnwards();
             		finish(SUCCESS, null);
             		return;
             	}
@@ -358,6 +360,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			
             if(next == null) {
                 // Backtrack
+        		if(!sentRequest)
+        			origTag.setNotRoutedOnwards();
                 finish(ROUTE_NOT_FOUND, null);
                 return;
             }

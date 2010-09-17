@@ -42,4 +42,17 @@ public class InsertTag extends UIDTag {
 			Logger.error(this, sb.toString());
 	}
 
+	@Override
+	public int expectedTransfersIn(boolean ignoreLocalVsRemote,
+			int outwardTransfersPerInsert) {
+		return (source != null || ignoreLocalVsRemote) ? 1 : 0;
+	}
+
+	@Override
+	public int expectedTransfersOut(boolean ignoreLocalVsRemote,
+			int outwardTransfersPerInsert) {
+		if(notRoutedOnwards) return 0;
+		else return outwardTransfersPerInsert;
+	}
+
 }
