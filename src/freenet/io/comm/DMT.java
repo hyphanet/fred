@@ -1599,6 +1599,7 @@ public class DMT {
 		addField(OTHER_TRANSFERS_IN_CHK, Byte.class);
 		addField(OTHER_TRANSFERS_OUT_SSK, Byte.class);
 		addField(OTHER_TRANSFERS_IN_SSK, Byte.class);
+		addField(AVERAGE_TRANSFERS_OUT_PER_INSERT, Byte.class);
 		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
@@ -1613,6 +1614,7 @@ public class DMT {
 		addField(OTHER_TRANSFERS_IN_CHK, Short.class);
 		addField(OTHER_TRANSFERS_OUT_SSK, Short.class);
 		addField(OTHER_TRANSFERS_IN_SSK, Short.class);
+		addField(AVERAGE_TRANSFERS_OUT_PER_INSERT, Short.class);
 		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
@@ -1627,6 +1629,7 @@ public class DMT {
 		addField(OTHER_TRANSFERS_IN_CHK, Integer.class);
 		addField(OTHER_TRANSFERS_OUT_SSK, Integer.class);
 		addField(OTHER_TRANSFERS_IN_SSK, Integer.class);
+		addField(AVERAGE_TRANSFERS_OUT_PER_INSERT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(OUTPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
