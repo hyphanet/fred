@@ -4584,7 +4584,7 @@ public class Node implements TimeSkewDetectorCallback {
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
 				if(tag.source == source) {
-					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey()+" from "+source);
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source);
 					count++;
 					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
 					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
@@ -4598,12 +4598,12 @@ public class Node implements TimeSkewDetectorCallback {
 				// Ordinary requests can be routed to an offered key.
 				// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
 				if(tag.currentlyFetchingOfferedKeyFrom(source)) {
-					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
 					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
 					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
 					count++;
 				} else if(tag.currentlyRoutingTo(source)) {
-					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
 					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
 					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
 					count++;
