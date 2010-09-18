@@ -492,12 +492,56 @@ public class PeerMessageQueue {
 	 * messages that didn't fit
 	 */
 	public synchronized int addNonUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
-		for(PrioQueue queue : queuesByPriority) {
-			size = queue.addMessages(Math.abs(size), minSize, maxSize, now, messages);
+		// Do not allow realtime data to starve bulk data
+		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
+			size = queuesByPriority[i].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+		}
+		
+		// FIXME token bucket?
+		if(sendBalance >= 0) {
+			// Try realtime first
+			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+			if(s != size) {
+				size = s;
+				sendBalance--;
+			}
+			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+			if(s != size) {
+				size = s;
+				sendBalance++;
+			}
+		} else {
+			// Try bulk first
+			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+			if(s != size) {
+				size = s;
+				sendBalance++;
+			}
+			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+			if(s != size) {
+				size = s;
+				sendBalance--;
+			}
+		}
+		if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
+		if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
+		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
+			size = queuesByPriority[i].addMessages(Math.abs(size), minSize, maxSize, now, messages);
 		}
 		return size;
 	}
-
-
+	
+	/** This is incremented when a bulk packet is sent, and decremented when a realtime 
+	 * packet is sent. If it is positive we prefer realtime packets, and if it is negative 
+	 * we prefer bulk packets. Limits specified below ensure we don't burst either way for
+	 * too long. */
+	private int sendBalance;
+	
+	// FIXME compute these from time and bandwidth?
+	// We can't just record the time we sent the last bulk packet though, because we'd end up sending so few bulk packets that many would timeout.
+	
+	static final int MAX_BALANCE = 32; // Allow a burst of 32 realtime packets after a long period of bulk packets.
+	static final int MIN_BALANCE = -32; // Allow a burst of 32 bulk packets after a long period of realtime packets.
+	
 }
 
