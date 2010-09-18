@@ -364,6 +364,7 @@ public class BlockTransmitter {
 		}
 		
 		private void complete() {
+			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this);
 			synchronized(_senderThread) {
 				if(completed) return;
 				completed = true;
