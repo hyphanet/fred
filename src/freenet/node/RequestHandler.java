@@ -276,7 +276,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private void waitAndFinishCHKTransfer() throws NotConnectedException {
 		if(logMINOR)
 			Logger.minor(this, "Waiting for CHK transfer to finish");
-		if(bt.getAsyncExitStatus()) {
+		boolean success = bt.getAsyncExitStatus();
+		tag.completedDownstreamTransfers();
+		if(success) {
 			status = rs.getStatus();
 			// Successful CHK transfer, maybe path fold
 			finishOpennetChecked();
@@ -488,7 +490,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				new BlockTransmitter(node.usm, source, uid, prb, this, BlockTransmitter.NEVER_CASCADE, realTimeFlag);
 			node.addTransferringRequestHandler(uid);
 			source.sendAsync(df, null, this);
-			if(bt.send(node.executor)) {
+			boolean success = bt.send(node.executor);
+			tag.completedDownstreamTransfers();
+			if(success) {
 				// for byte logging
 				status = RequestSender.SUCCESS;
 				// We've fetched it from our datastore, so there won't be a downstream noderef.
