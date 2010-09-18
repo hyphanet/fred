@@ -151,6 +151,10 @@ public class BlockTransmitter {
 						if(_unsent.size() == 0 && getNumSent() == totalPackets) {
 							//No unsent packets, no unreceived packets
 							sendAllSentNotification();
+							if(waitForAsyncBlockSends()) {
+								// Re-check
+								if(_unsent.size() != 0) continue;
+							}
 							timeAllSent = System.currentTimeMillis();
 							if(logMINOR)
 								Logger.minor(this, "Sent all blocks, none unsent");
@@ -256,7 +260,6 @@ public class BlockTransmitter {
 					//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
 					if((timeAllSent > 0) && ((now - timeAllSent) > SEND_TIMEOUT) &&
 							(getNumSent() == _prb.getNumPackets())) {
-						if(waitForAsyncBlockSends()) continue;
 						String timeString=TimeUtil.formatTime((now - timeAllSent), 2, true);
 						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
 						sendAborted(RetrievalException.RECEIVER_DIED, "Haven't heard from you (receiver) in "+timeString);
