@@ -922,7 +922,7 @@ public class NodeStats implements Persistable {
 		public void log(PeerNode source) {
 			Logger.minor(this, "Running (adjusted): CHK in: "+expectedTransfersInCHK+" out: "+expectedTransfersOutCHK+
 					" SSK in: "+expectedTransfersInSSK+" out: "+expectedTransfersOutSSK
-					+" realtime="+realTimeFlag+(source == null ? "" : (" for "+source)));
+					+" realtime="+realTimeFlag+" total="+totalRequests+(source == null ? "" : (" for "+source)));
 		}
 
 		public double calculate(boolean ignoreLocalVsRemoteBandwidthLiability,
