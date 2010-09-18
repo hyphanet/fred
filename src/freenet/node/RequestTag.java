@@ -36,7 +36,7 @@ public class RequestTag extends UIDTag {
 		this.isSSK = isSSK;
 	}
 
-	public void synchronized setRequestSenderFinished(int status) {
+	public synchronized void setRequestSenderFinished(int status) {
 		requestSenderFinishedCode = status;
 	}
 
