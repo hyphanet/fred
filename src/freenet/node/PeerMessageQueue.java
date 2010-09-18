@@ -470,8 +470,45 @@ public class PeerMessageQueue {
 	 * messages that didn't fit
 	 */
 	public synchronized int addUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
-		for(PrioQueue queue : queuesByPriority) {
-			size = queue.addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+		// Do not allow realtime data to starve bulk data
+		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
+			size = queuesByPriority[i].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+		}
+		
+		// FIXME token bucket?
+		if(sendBalance >= 0) {
+			// Try realtime first
+			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+			if(s != size) {
+				size = s;
+				sendBalance--;
+				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance);
+			}
+			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+			if(s != size) {
+				size = s;
+				sendBalance++;
+				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance);
+			}
+		} else {
+			// Try bulk first
+			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+			if(s != size) {
+				size = s;
+				sendBalance++;
+				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance);
+			}
+			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+			if(s != size) {
+				size = s;
+				sendBalance--;
+				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance);
+			}
+		}
+		if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
+		if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
+		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
+			size = queuesByPriority[i].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
 		}
 		return size;
 	}
