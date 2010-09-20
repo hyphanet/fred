@@ -546,7 +546,7 @@ public class PacketTracker {
 					cbCount++;
 				}
 		}
-		if(cbCount > 0 && logMINOR)
+		if(logMINOR)
 			Logger.minor(this, "Executed " + cbCount + " callbacks");
 		try {
 			wouldBlock(true);
