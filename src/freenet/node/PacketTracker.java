@@ -945,6 +945,7 @@ public class PacketTracker {
 	 * @throws NotConnectedException 
 	 */
 	public void sentPacket(byte[] data, int seqNumber, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException {
+		if(logMINOR) Logger.minor(this, "Sent packet "+seqNumber+" length "+data.length+" with "+(callbacks == null ? "no callbacks" : callbacks.length));
 		if(callbacks != null)
 			for(int i = 0; i < callbacks.length; i++) {
 				if(callbacks[i] == null)
