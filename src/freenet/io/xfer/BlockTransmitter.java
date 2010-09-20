@@ -339,6 +339,7 @@ public class BlockTransmitter {
 		private boolean completed = false;
 		
 		public void sent() {
+			if(logMINOR) Logger.minor(this, "Sent block on "+BlockTransmitter.this);
 			// Wait for acknowledged
 		}
 
