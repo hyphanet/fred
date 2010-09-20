@@ -470,21 +470,37 @@ public class PeerMessageQueue {
 	 * messages that didn't fit
 	 */
 	public synchronized int addUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
+		boolean someDidntFit = false;
+		if(size < 0) {
+			size = -size;
+			someDidntFit = true;
+		}
 		// Do not allow realtime data to starve bulk data
 		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
-			size = queuesByPriority[i].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+			size = queuesByPriority[i].addUrgentMessages(size, minSize, maxSize, now, messages);
+			if(size < 0) {
+				size = -size;
+				someDidntFit = true;
+			}
 		}
-		
 		// FIXME token bucket?
 		if(sendBalance >= 0) {
 			// Try realtime first
-			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addUrgentMessages(size, minSize, maxSize, now, messages);
+			if(s < 0) {
+				s = -s;
+				someDidntFit = true;
+			}
 			if(s != size) {
 				sendBalance--;
 				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
 				size = s;
 			}
-			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addUrgentMessages(size, minSize, maxSize, now, messages);
+			if(s < 0) {
+				s = -s;
+				someDidntFit = true;
+			}
 			if(s != size) {
 				sendBalance++;
 				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
@@ -492,13 +508,21 @@ public class PeerMessageQueue {
 			}
 		} else {
 			// Try bulk first
-			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addUrgentMessages(size, minSize, maxSize, now, messages);
+			if(s < 0) {
+				s = -s;
+				someDidntFit = true;
+			}
 			if(s != size) {
 				sendBalance++;
 				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
 				size = s;
 			}
-			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addUrgentMessages(size, minSize, maxSize, now, messages);
+			if(s < 0) {
+				s = -s;
+				someDidntFit = true;
+			}
 			if(s != size) {
 				sendBalance--;
 				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
@@ -508,8 +532,13 @@ public class PeerMessageQueue {
 		if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
 		if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
 		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
-			size = queuesByPriority[i].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+			size = queuesByPriority[i].addUrgentMessages(size, minSize, maxSize, now, messages);
+			if(size < 0) {
+				size = -size;
+				someDidntFit = true;
+			}
 		}
+		if(someDidntFit) size = -size;
 		return size;
 	}
 
@@ -530,20 +559,36 @@ public class PeerMessageQueue {
 	 */
 	public synchronized int addNonUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
 		// Do not allow realtime data to starve bulk data
-		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
-			size = queuesByPriority[i].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+		boolean someDidntFit = false;
+		if(size < 0) {
+			size = -size;
+			someDidntFit = true;
 		}
-		
+		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
+			size = queuesByPriority[i].addMessages(size, minSize, maxSize, now, messages);
+			if(size < 0) {
+				size = -size;
+				someDidntFit = true;
+			}
+		}
 		// FIXME token bucket?
 		if(sendBalance >= 0) {
 			// Try realtime first
-			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addMessages(size, minSize, maxSize, now, messages);
+			if(s < 0) {
+				s = -s;
+				someDidntFit = true;
+			}
 			if(s != size) {
 				size = s;
 				sendBalance--;
 				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
 			}
-			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addMessages(size, minSize, maxSize, now, messages);
+			if(s < 0) {
+				s = -s;
+				someDidntFit = true;
+			}
 			if(s != size) {
 				size = s;
 				sendBalance++;
@@ -551,13 +596,21 @@ public class PeerMessageQueue {
 			}
 		} else {
 			// Try bulk first
-			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addMessages(size, minSize, maxSize, now, messages);
+			if(s < 0) {
+				s = -s;
+				someDidntFit = true;
+			}
 			if(s != size) {
 				size = s;
 				sendBalance++;
 				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
 			}
-			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addMessages(size, minSize, maxSize, now, messages);
+			if(s < 0) {
+				s = -s;
+				someDidntFit = true;
+			}
 			if(s != size) {
 				size = s;
 				sendBalance--;
@@ -567,8 +620,13 @@ public class PeerMessageQueue {
 		if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
 		if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
 		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
-			size = queuesByPriority[i].addMessages(Math.abs(size), minSize, maxSize, now, messages);
+			size = queuesByPriority[i].addMessages(size, minSize, maxSize, now, messages);
+			if(size < 0) {
+				size = -size;
+				someDidntFit = true;
+			}
 		}
+		if(someDidntFit) size = -size;
 		return size;
 	}
 	
