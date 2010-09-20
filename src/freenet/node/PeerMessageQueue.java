@@ -480,29 +480,29 @@ public class PeerMessageQueue {
 			// Try realtime first
 			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
 			if(s != size) {
-				size = s;
 				sendBalance--;
-				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance);
+				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance+" size "+(s-size));
+				size = s;
 			}
 			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
 			if(s != size) {
-				size = s;
 				sendBalance++;
-				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance);
+				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance+" size "+(s-size));
+				size = s;
 			}
 		} else {
 			// Try bulk first
 			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
 			if(s != size) {
-				size = s;
 				sendBalance++;
-				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance);
+				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance+" size "+(s-size));
+				size = s;
 			}
 			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
 			if(s != size) {
-				size = s;
 				sendBalance--;
-				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance);
+				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance+" size "+(s-size));
+				size = s;
 			}
 		}
 		if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
