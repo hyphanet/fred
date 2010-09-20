@@ -373,9 +373,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int byte1 = ((pcfb.decipher(buf[dataStart-2])) & 0xff);
 		int byte2 = ((pcfb.decipher(buf[dataStart-1])) & 0xff);
 		int dataLength = (byte1 << 8) + byte2;
-		if(logMINOR) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
+		if(logDEBUG) Logger.debug(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
 		if(dataLength > length - (ivLength+hash.length+2)) {
-			if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
+			if(logDEBUG) Logger.debug(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
 			return false;
 		}
 		// Decrypt the data
@@ -394,7 +394,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			pn.reportIncomingPacket(buf, offset, length, now);
 			return true;
 		} else {
-			if(logMINOR) Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
+			if(logDEBUG) Logger.debug(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
 			return false;
 		}
 	}
