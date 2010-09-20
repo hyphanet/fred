@@ -534,6 +534,8 @@ public class PacketTracker {
 					throttle.notifyOfPacketAcknowledged();
 					throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 				}
+			if(logMINOR)
+				Logger.minor(this, "Removed ack request, callbacks "+(callbacks[i] == null ? "(null)" : callbacks[i].length));
 		}
 		int cbCount = 0;
 		for(int i = 0; i < callbacks.length; i++) {
