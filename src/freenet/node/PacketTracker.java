@@ -568,9 +568,9 @@ public class PacketTracker {
 		} catch(UpdatableSortedLinkedListKilledException e) {
 			// Ignore, we are processing an incoming packet
 		}
-		if(logMINOR)
-			Logger.minor(this, "Removed ack request");
 		callbacks = sentPacketsContents.getCallbacks(realSeqNo);
+		if(logMINOR)
+			Logger.minor(this, "Removed ack request, callbacks "+(callbacks == null ? "(null)" : callbacks.length));
 		byte[] buf = sentPacketsContents.get(realSeqNo);
 		long timeAdded = sentPacketsContents.getTime(realSeqNo);
 		if(sentPacketsContents.remove(realSeqNo))
