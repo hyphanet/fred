@@ -484,7 +484,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int ivLength = pcfb.lengthIV();
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 5) {
-			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 5));
+			if(logDEBUG) Logger.debug(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 5));
 			return false;
 		}
 		// IV at the beginning
@@ -501,9 +501,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int byte1 = ((pcfb.decipher(buf[dataStart-2])) & 0xff);
 		int byte2 = ((pcfb.decipher(buf[dataStart-1])) & 0xff);
 		int dataLength = (byte1 << 8) + byte2;
-		if(logMINOR) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
+		if(logDEBUG) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
 		if(dataLength > length - (ivLength+hash.length+2)) {
-			if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
+			if(logDEBUG) Logger.debug(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
 			return false;
 		}
 		// Decrypt the data
@@ -518,7 +518,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			processDecryptedAuthAnonReply(payload, peer, pn);
 			return true;
 		} else {
-			if(logMINOR) Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
+			if(logDEBUG) Logger.debug(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
 			return false;
 		}
 	}
@@ -1836,7 +1836,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(logDEBUG) Logger.debug(this, "Tracker == null");
 			return false;
 		}
-		if(logMINOR) Logger.minor(this,"Entering tryProcess: "+Fields.hashCode(buf)+ ',' +offset+ ',' +length+ ',' +tracker);
+		if(logDEBUG) Logger.debug(this,"Entering tryProcess: "+Fields.hashCode(buf)+ ',' +offset+ ',' +length+ ',' +tracker);
 		/**
 		 * E_pcbc_session(H(seq+random+data)) E_pcfb_session(seq+random+data)
 		 *
@@ -1883,7 +1883,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		PacketTracker packets = tracker.packets;
 
 		int targetSeqNumber = packets.highestReceivedIncomingSeqNumber();
-		if(logMINOR) Logger.minor(this, "Seqno: "+seqNumber+" (highest seen "+targetSeqNumber+") receiving packet from "+tracker.pn.getPeer());
+		if(logDEBUG) Logger.debug(this, "Seqno: "+seqNumber+" (highest seen "+targetSeqNumber+") receiving packet from "+tracker.pn.getPeer());
 
 		if(seqNumber == -1) {
 			// Ack/resendreq-only packet
@@ -1894,7 +1894,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				return false;
 			}
 		}
-		if(logMINOR) Logger.minor(this, "Sequence number received: "+seqNumber);
+		if(logDEBUG) Logger.debug(this, "Sequence number received: "+seqNumber);
 
 		// Plausible, so lets decrypt the rest of the data
 
@@ -1920,7 +1920,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		// Check the hash
 		if(!Arrays.equals(packetHash, realHash)) {
-			if(logMINOR) Logger.minor(this, "Packet possibly from "+tracker+" hash does not match:\npacketHash="+
+			if(logDEBUG) Logger.debug(this, "Packet possibly from "+tracker+" hash does not match:\npacketHash="+
 					HexUtil.bytesToHex(packetHash)+"\n  realHash="+HexUtil.bytesToHex(realHash)+" ("+(length-HASH_LENGTH)+" bytes payload)");
 			return false;
 		}
