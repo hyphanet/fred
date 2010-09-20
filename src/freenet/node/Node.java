@@ -4602,7 +4602,7 @@ public class Node implements TimeSkewDetectorCallback {
 					count++;
 				} else if(logDEBUG) Logger.debug(this, "Not counting "+tag);
 			}
-			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count+" of "+map.size());
+			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count+" of "+map.size()+" for "+source);
 			return new CountedRequests(count, transfersOut, transfersIn);
 		}
 		}
