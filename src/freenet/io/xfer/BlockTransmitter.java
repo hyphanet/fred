@@ -178,6 +178,8 @@ public class BlockTransmitter {
 		};
 	}
 
+	/** Abort the send, and then send the sendAborted message. Don't do anything if the
+	 * send has already been aborted. */
 	public void abortSend(int reason, String desc) throws NotConnectedException {
 		synchronized(this) {
 			if(_sendComplete) return;
@@ -188,6 +190,8 @@ public class BlockTransmitter {
 		innerSendAborted(reason, desc);
 	}
 	
+	/** Send the sendAborted message. Only send it once. Send it even if we have already
+	 * aborted, we are called in some cases when the PRB aborts. */
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
 		synchronized(this) {
 			if(_sentSendAborted) return;
