@@ -486,6 +486,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		NPFPacket packet = new NPFPacket();
+		SentPacket sentPacket = new SentPacket(this);
 
 		int numAcks = 0;
 		synchronized(acks) {
@@ -509,6 +510,7 @@ fragments:
 					MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
 					if(frag == null) continue;
 					packet.addMessageFragment(frag);
+					sentPacket.addFragment(frag);
 				}
 			}
 
@@ -544,6 +546,7 @@ fragments:
 					break;
 				}
 				packet.addMessageFragment(frag);
+				sentPacket.addFragment(frag);
 
 				//Priority of the one we grabbed might be higher than i
 				HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
@@ -563,12 +566,7 @@ fragments:
 		int seqNum = getSequenceNumber();
 		packet.setSequenceNumber(seqNum);
 
-		SentPacket sentPacket = new SentPacket(this);
-		for(MessageFragment frag : packet.getFragments()) {
-			sentPacket.addFragment(frag);
-		}
 		sentPacket.sent();
-
 		synchronized(sentPackets) {
 			sentPackets.put(seqNum, sentPacket);
 		}
