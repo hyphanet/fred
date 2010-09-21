@@ -32,8 +32,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, p.getAcks().size());
 	}
 
-	/*
-	public void testLostLastAck() {
+	public void testLostLastAck() throws BlockedTooLongException {
 		NewPacketFormat sender = new NewPacketFormat(null);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null);
@@ -78,7 +77,6 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, ack2.getAcks().size());
 		assertEquals(0, ack2.getFragments().size());
 	}
-	*/
 
 	public void testOutOfOrderDelivery() throws BlockedTooLongException {
 		NewPacketFormat sender = new NewPacketFormat(null);
