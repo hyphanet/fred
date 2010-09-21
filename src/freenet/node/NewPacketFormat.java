@@ -388,8 +388,6 @@ public class NewPacketFormat implements PacketFormat {
 		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue());
 		if(packet == null) return false;
 
-		packet.setSequenceNumber(getSequenceNumber());
-
 		int paddedLen = packet.getLength() + HMAC_LENGTH;
 		if(pn.crypto.config.paddDataPackets()) {
 			int packetLength = paddedLen;
@@ -446,14 +444,11 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		if(packet.getFragments().size() != 0) {
-			SentPacket sentPacket = new SentPacket(this);
-			sentPacket.sent();
-			for(MessageFragment frag : packet.getFragments()) {
-				sentPacket.addFragment(frag);
-			}
+			SentPacket sentPacket = null;
 			synchronized(sentPackets) {
-				sentPackets.put(packet.getSequenceNumber(), sentPacket);
+				sentPackets.get(packet.getSequenceNumber());
 			}
+			if(sentPacket != null) sentPacket.sent();
 		}
 
 		pn.sentPacket();
@@ -564,6 +559,19 @@ fragments:
 		}
 
 		if(packet.getLength() == 5) return null;
+
+		int seqNum = getSequenceNumber();
+		packet.setSequenceNumber(seqNum);
+
+		SentPacket sentPacket = new SentPacket(this);
+		for(MessageFragment frag : packet.getFragments()) {
+			sentPacket.addFragment(frag);
+		}
+		sentPacket.sent();
+
+		synchronized(sentPackets) {
+			sentPackets.put(seqNum, sentPacket);
+		}
 
 		return packet;
 	}
