@@ -192,8 +192,6 @@ public class BlockTransmitter {
 		synchronized(this) {
 			if(_sentSendAborted) return;
 			_sentSendAborted = true;
-			if(_sentSendAborted) return;
-			_sentSendAborted = true;
 		}
 		innerSendAborted(reason, desc);
 	}
