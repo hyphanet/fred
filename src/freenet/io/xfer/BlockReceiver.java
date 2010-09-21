@@ -278,4 +278,11 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public synchronized boolean senderAborted() {
 		return senderAborted;
 	}
+
+	public static long timeout(boolean realTime) {
+		if(realTime)
+			return RECEIPT_TIMEOUT_REALTIME * MAX_CONSECUTIVE_MISSING_PACKET_REPORTS;
+		else
+			return RECEIPT_TIMEOUT_BULK * MAX_CONSECUTIVE_MISSING_PACKET_REPORTS;
+	}
 }

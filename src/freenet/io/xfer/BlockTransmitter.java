@@ -80,9 +80,11 @@ public class BlockTransmitter {
 	private boolean asyncExitStatusSet;
 	private final ReceiverAbortHandler abortHandler;
 	private final boolean realTime;
+	private final long RECEIVER_SIDE_TIMEOUT;
 	
 	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, boolean realTime) {
 		this.realTime = realTime;
+		RECEIVER_SIDE_TIMEOUT = BlockReceiver.timeout(realTime);
 		this.abortHandler = abortHandler;
 		_usm = usm;
 		_destination = destination;
@@ -333,6 +335,8 @@ public class BlockTransmitter {
 			waitForAsyncBlockSends();
 		}
 	}
+	
+	long timeLastBlockSendCompleted = -1;
 
 	private class MyAsyncMessageCallback implements AsyncMessageCallback {
 
@@ -366,12 +370,31 @@ public class BlockTransmitter {
 		
 		private void complete() {
 			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this);
+			long now = System.currentTimeMillis();
+			boolean cancel = false;
 			synchronized(_senderThread) {
 				if(completed) return;
 				completed = true;
 				blockSendsPending--;
+				if(timeLastBlockSendCompleted != -1) {
+					long delta = now - timeLastBlockSendCompleted;
+					if(delta > RECEIVER_SIDE_TIMEOUT) {
+						Logger.error(this, "Receiver may timeout: time between block sends "+TimeUtil.formatTime(delta)+" for "+BlockTransmitter.this+" still in flight "+blockSendsPending);
+						if(delta > RECEIVER_SIDE_TIMEOUT * 2 && !_sendComplete) {
+							Logger.error(this, "Receiver will timeout, cancelling");
+							_sendComplete = true;
+						}
+					}
+				}
+				timeLastBlockSendCompleted = now;
 				_senderThread.notifyAll();
 			}
+			if(cancel)
+				try {
+					sendAborted(RetrievalException.TIMED_OUT, "Took too long to send a packet, receiver will timeout");
+				} catch (NotConnectedException e) {
+					// Ignore
+				}
 		}
 
 	};
