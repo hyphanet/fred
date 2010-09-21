@@ -67,6 +67,7 @@ public class BlockTransmitter {
 	final MessageCore _usm;
 	final PeerContext _destination;
 	private boolean _sendComplete;
+	private boolean _sentSendAborted;
 	final long _uid;
 	final PartiallyReceivedBlock _prb;
 	private LinkedList<Integer> _unsent;
@@ -181,11 +182,23 @@ public class BlockTransmitter {
 		synchronized(this) {
 			if(_sendComplete) return;
 			_sendComplete = true;
+			if(_sentSendAborted) return;
+			_sentSendAborted = true;
 		}
-		sendAborted(reason, desc);
+		innerSendAborted(reason, desc);
 	}
 	
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
+		synchronized(this) {
+			if(_sentSendAborted) return;
+			_sentSendAborted = true;
+			if(_sentSendAborted) return;
+			_sentSendAborted = true;
+		}
+		innerSendAborted(reason, desc);
+	}
+	
+	public void innerSendAborted(int reason, String desc) throws NotConnectedException {
 		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc), _ctr);
 	}
 	
@@ -243,9 +256,11 @@ public class BlockTransmitter {
 							timeAllSent = -1;
 							_sendComplete = true;
 							_senderThread.notifyAll();
+							if(_sentSendAborted) return;
+							_sentSendAborted = true;
 						}
 						try {
-							sendAborted(reason, description);
+							innerSendAborted(reason, description);
 						} catch (NotConnectedException e) {
 							// Ignore
 						}
