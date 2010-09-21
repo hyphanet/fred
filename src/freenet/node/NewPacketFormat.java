@@ -507,10 +507,12 @@ fragments:
 				Iterator<MessageWrapper> it = started.values().iterator();
 				while(it.hasNext() && packet.getLength() < maxPacketSize) {
 					MessageWrapper wrapper = it.next();
-					MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-					if(frag == null) continue;
-					packet.addMessageFragment(frag);
-					sentPacket.addFragment(frag);
+					while(packet.getLength() < maxPacketSize) {
+						MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+						if(frag == null) break;
+						packet.addMessageFragment(frag);
+						sentPacket.addFragment(frag);
+					}
 				}
 			}
 
