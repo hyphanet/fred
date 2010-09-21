@@ -93,9 +93,11 @@ public class NewPacketFormatTest extends TestCase {
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue);
 		fragment1.setSequenceNumber(1);
 		assertEquals(1, fragment1.getFragments().size());
+
 		NPFPacket fragment2 = sender.createPacket(512, senderQueue);
 		fragment2.setSequenceNumber(2);
 		assertEquals(1, fragment2.getFragments().size());
+
 		NPFPacket fragment3 = sender.createPacket(512, senderQueue);
 		fragment3.setSequenceNumber(3);
 		assertEquals(1, fragment3.getFragments().size());
