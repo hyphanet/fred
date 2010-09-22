@@ -227,6 +227,24 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			try {
 				if (_prb.isAborted() && !sentAborted) {
 					sendAborted(_prb.getAbortReason(), _prb.getAbortDescription());
+					if(!senderAborted) {
+						// Wait for acknowledgement.
+						// It is important for load management that the two sides agree on the number of transfers happening.
+						// Therefore we need to not complete until the other side has acknowledged that the transfer has been cancelled.
+						MessageFilter mfSendAborted = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
+						try {
+							Message msg = _usm.waitFor(mfSendAborted, _ctr);
+							if(msg != null) {
+								if(logMINOR) Logger.minor(this, "Transfer cancel acknowledged");
+							} else {
+								Logger.error(this, "Other side did not acknowlege transfer failure on "+this);
+								// FIXME load management will be thrown out because the other side may still think the transfer is running.
+								// FIXME implement some sort of non-advisory backoff for load management.
+							}
+						} catch (DisconnectedException e) {
+							// Ignore
+						}
+					}
 				}
 			} catch (NotConnectedException e) {
 				//ignore
