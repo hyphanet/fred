@@ -463,11 +463,6 @@ loadWaiterLoop:
             	}
             } // loadWaiterLoop
             
-            if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) {
-            	// Try another node
-            	continue peerLoop;
-            }
-            
             long now = System.currentTimeMillis();
             if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
             	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(now-startedTryingPeer)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+" realtime="+realTimeFlag);
