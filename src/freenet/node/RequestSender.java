@@ -88,6 +88,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private boolean tryTurtle;
     private final boolean canWriteClientCache;
     private final boolean canWriteDatastore;
+    private final boolean isSSK;
     
     // State of the main loop which is more convenient to keep as private members
     private PeerNode next;
@@ -191,6 +192,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         this.tryOffersOnly = offersOnly;
         this.canWriteClientCache = canWriteClientCache;
         this.canWriteDatastore = canWriteDatastore;
+        this.isSSK = key instanceof NodeSSK;
+        assert(isSSK || key instanceof NodeCHK);
         target = key.toNormalizedDouble();
     }
 
@@ -215,7 +218,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		mustUnlock = this.mustUnlock;
             	}
             	if(mustUnlock)
-            		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, origTag);
+            		node.unlockUID(uid, isSSK, false, false, false, false, origTag);
         	}
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
         }
@@ -229,7 +232,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	
     private void realRun() {
 	    freenet.support.Logger.OSThread.logPID(this);
-        if((key instanceof NodeSSK) && (pubKey == null)) {
+        if(isSSK && (pubKey == null)) {
         	pubKey = ((NodeSSK)key).getPubKey();
         }
         
@@ -271,7 +274,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPRejectedOverload);
         	MessageFilter mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
         	// Wait for a response.
-        	if(key instanceof NodeCHK) {
+        	if(!isSSK) {
         		// Headers first, then block transfer.
         		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPCHKDataFound);
         		Message reply;
@@ -675,7 +678,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	MessageFilter mfAltDFSSKHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
             	MessageFilter mfAltDFSSKData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
                 MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload)));
-                if(key instanceof NodeCHK) {
+                if(!isSSK) {
                 	mf = mfRealDFCHK.or(mf);
                 } else {
                 	mf = mfPubKey.or(mfAltDFSSKHeaders.or(mfAltDFSSKData.or(mf)));
@@ -726,7 +729,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	}
 
             	if(msg.getSpec() == DMT.FNPCHKDataFound) {
-            		if(!(key instanceof NodeCHK)) {
+            		if(isSSK) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
             			break;
             		}
@@ -737,7 +740,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	
             	if(msg.getSpec() == DMT.FNPSSKPubKey) {
             		
-            		if(!(key instanceof NodeSSK)) {
+            		if(!isSSK) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
                 		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
             			break;
@@ -754,7 +757,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		
             		if(logMINOR) Logger.minor(this, "Got data on "+uid);
             		
-            		if(!(key instanceof NodeSSK)) {
+            		if(!isSSK) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
                 		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
             			break;
@@ -774,7 +777,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		
             		if(logMINOR) Logger.minor(this, "Got headers on "+uid);
             		
-            		if(!(key instanceof NodeSSK)) {
+            		if(!isSSK) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
                 		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
             			break;
@@ -1109,15 +1112,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	}
 
 	private Message createDataRequest() {
-    	if(key instanceof NodeCHK)
+    	if(!isSSK)
     		return DMT.createFNPCHKDataRequest(uid, htl, (NodeCHK)key);
-    	else if(key instanceof NodeSSK)
+    	else// if(key instanceof NodeSSK)
     		return DMT.createFNPSSKDataRequest(uid, htl, (NodeSSK)key, pubKey == null);
-    	else throw new IllegalStateException("Unknown keytype: "+key);
 	}
 
 	private void verifyAndCommit(byte[] data) throws KeyVerifyException {
-    	if(key instanceof NodeCHK) {
+    	if(!isSSK) {
     		CHKBlock block = new CHKBlock(data, headers, (NodeCHK)key);
     		// Cache only in the cache, not the store. The reason for this is that
     		// requests don't go to the full distance, and therefore pollute the 
@@ -1126,7 +1128,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     		node.storeShallow(block, canWriteClientCache, canWriteDatastore, tryOffersOnly);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
-    	} else if (key instanceof NodeSSK) {
+    	} else /*if (key instanceof NodeSSK)*/ {
     		try {
 				node.storeShallow(new SSKBlock(data, headers, (NodeSSK)key, false), canWriteClientCache, canWriteDatastore, tryOffersOnly);
 			} catch (KeyCollisionException e) {
@@ -1243,7 +1245,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         }
 		
         if(status == SUCCESS) {
-        	if(key instanceof NodeCHK && transferTime > 0 && logMINOR) {
+        	if((!isSSK) && transferTime > 0 && logMINOR) {
         		long timeTaken = System.currentTimeMillis() - startTime;
         		synchronized(avgTimeTaken) {
         			if(turtle)
@@ -1262,10 +1264,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         		}
         	}
         	if(next != null) {
-        		next.onSuccess(false, key instanceof NodeSSK);
+        		next.onSuccess(false, isSSK);
         	}
         	// FIXME should this be called when fromOfferedKey??
-       		node.nodeStats.requestCompleted(true, source != null, key instanceof NodeSSK);
+       		node.nodeStats.requestCompleted(true, source != null, isSSK);
         	
 			//NOTE: because of the requesthandler implementation, this will block and wait
 			//      for downstream transfers on a CHK. The opennet stuff introduces
@@ -1273,14 +1275,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			fireRequestSenderFinished(code);
 			
 			if(!fromOfferedKey) {
-				if(key instanceof NodeCHK && next != null && 
+				if((!isSSK) && next != null && 
 						(next.isOpennet() || node.passOpennetRefsThroughDarknet()) ) {
 					finishOpennet(next);
 				} else
 					finishOpennetNull(next);
 			}
         } else {
-        	node.nodeStats.requestCompleted(false, source != null, key instanceof NodeSSK);
+        	node.nodeStats.requestCompleted(false, source != null, isSSK);
 			fireRequestSenderFinished(code);
 		}
         
@@ -1433,7 +1435,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
-		node.nodeStats.requestSentBytes(key instanceof NodeSSK, x);
+		node.nodeStats.requestSentBytes(isSSK, x);
 	}
 	
 	public int getTotalSentBytes() {
@@ -1448,7 +1450,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
-		node.nodeStats.requestReceivedBytes(key instanceof NodeSSK, x);
+		node.nodeStats.requestReceivedBytes(isSSK, x);
 	}
 	
 	public int getTotalReceivedBytes() {
@@ -1463,7 +1465,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
-		node.nodeStats.requestSentBytes(key instanceof NodeSSK, -x);
+		node.nodeStats.requestSentBytes(isSSK, -x);
 	}
 	
 	private int recentlyFailedTimeLeft;
