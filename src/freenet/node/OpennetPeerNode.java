@@ -219,4 +219,10 @@ public class OpennetPeerNode extends PeerNode {
 	protected void maybeClearPeerAddedTimeOnRestart(long now) {
 		// Do nothing.
 	}
+
+	@Override
+	public void fatalTimeout() {
+		// Disconnect.
+		forceDisconnect(true);
+	}
 }
