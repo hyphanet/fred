@@ -98,6 +98,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private int rejectOverloads;
     private int gotMessages;
     private String lastMessage;
+    private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -462,7 +463,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         }
         
 		int routeAttempts=0;
-        HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
         next = null;
         // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
         int highHTLFailureCount = 0;
@@ -664,94 +664,16 @@ loadWaiterLoop:
             		hasForwarded = true;
             	}
             	
-acceptWaiterLoop:	
-				while(true) {
-					
-					/**
-					 * What are we waiting for?
-					 * FNPAccepted - continue
-					 * FNPRejectedLoop - go to another node
-					 * FNPRejectedOverload - propagate back to source, go to another node if local
-					 */
-					
-					MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
-					MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
-					MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
-					
-					// mfRejectedOverload must be the last thing in the or
-					// So its or pointer remains null
-					// Otherwise we need to recreate it below
-					MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
-					
-					try {
-						msg = node.usm.waitFor(mf, this);
-						if(logMINOR) Logger.minor(this, "first part got "+msg);
-					} catch (DisconnectedException e) {
-						Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
-						next.noLongerRoutingTo(origTag, false);
-						continue peerLoop;
-					}
-					
-					if(msg == null) {
-						if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
-						// Timeout waiting for Accepted
-						next.localRejectedOverload("AcceptedTimeout");
-						forwardRejectedOverload();
-						node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-						// Try next node
-						// It could still be running. So the timeout is fatal to the node.
-	        			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
-	        			next.fatalTimeout();
-						continue peerLoop;
-					}
-					
-					if(msg.getSpec() == DMT.FNPRejectedLoop) {
-						if(logMINOR) Logger.minor(this, "Rejected loop");
-						next.successNotOverload();
-						node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-						// Find another node to route to
-						next.noLongerRoutingTo(origTag, false);
-						continue peerLoop;
-					}
-					
-					if(msg.getSpec() == DMT.FNPRejectedOverload) {
-						if(logMINOR) Logger.minor(this, "Rejected: overload");
-						// Non-fatal - probably still have time left
-						forwardRejectedOverload();
-						if (msg.getBoolean(DMT.IS_LOCAL)) {
-							
-							if(logMINOR) Logger.minor(this, "Is local");
-							
-							if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
-								if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
-								nodesRoutedTo.remove(next);
-				            	origTag.removeRoutingTo(next);
-								retriedForLoadManagement = true;
-								continue loadWaiterLoop;
-							} else {
-								next.localRejectedOverload("ForwardRejectedOverload");
-								node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-								if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
-								// Give up on this one, try another
-								next.noLongerRoutingTo(origTag, false);
-								continue peerLoop;
-							}
-						}
-						//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
-						continue peerLoop;
-					}
-					
-					if(msg.getSpec() != DMT.FNPAccepted) {
-						Logger.error(this, "Unrecognized message: "+msg);
-						continue peerLoop;
-					}
-					
-					break; // Got Accepted
-					
-				} // acceptWaiterLoop
-            	
-            	break; // Got Accepted
-            
+            	DO action = waitForAccepted();
+            	// Here FINISHED means accepted, WAIT means try again (soft reject).
+            	if(action == DO.WAIT) {
+					retriedForLoadManagement = true;
+            		continue loadWaiterLoop;
+            	} else if(action == DO.NEXT_PEER) {
+            		continue peerLoop;
+            	} else { // FINISHED => accepted
+            		break;
+            	}
             } // loadWaiterLoop
             
             if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) {
@@ -849,7 +771,95 @@ acceptWaiterLoop:
         }
 	}
     
-    private MessageFilter createMessageFilter(int timeout) {
+    /** Here FINISHED means accepted, WAIT means try again (soft reject). */
+    private DO waitForAccepted() {
+    	while(true) {
+    		
+    		Message msg;
+    		/**
+    		 * What are we waiting for?
+    		 * FNPAccepted - continue
+    		 * FNPRejectedLoop - go to another node
+    		 * FNPRejectedOverload - propagate back to source, go to another node if local
+    		 */
+    		
+    		MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
+    		MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
+    		MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
+    		
+    		// mfRejectedOverload must be the last thing in the or
+    		// So its or pointer remains null
+    		// Otherwise we need to recreate it below
+    		MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+    		
+    		try {
+    			msg = node.usm.waitFor(mf, this);
+    			if(logMINOR) Logger.minor(this, "first part got "+msg);
+    		} catch (DisconnectedException e) {
+    			Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
+    			next.noLongerRoutingTo(origTag, false);
+    			return DO.NEXT_PEER;
+    		}
+    		
+    		if(msg == null) {
+    			if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
+    			// Timeout waiting for Accepted
+    			next.localRejectedOverload("AcceptedTimeout");
+    			forwardRejectedOverload();
+    			node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+    			// Try next node
+    			// It could still be running. So the timeout is fatal to the node.
+    			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+    			next.fatalTimeout();
+    			return DO.NEXT_PEER;
+    		}
+    		
+    		if(msg.getSpec() == DMT.FNPRejectedLoop) {
+    			if(logMINOR) Logger.minor(this, "Rejected loop");
+    			next.successNotOverload();
+    			node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+    			// Find another node to route to
+    			next.noLongerRoutingTo(origTag, false);
+    			return DO.NEXT_PEER;
+    		}
+    		
+    		if(msg.getSpec() == DMT.FNPRejectedOverload) {
+    			if(logMINOR) Logger.minor(this, "Rejected: overload");
+    			// Non-fatal - probably still have time left
+    			forwardRejectedOverload();
+    			if (msg.getBoolean(DMT.IS_LOCAL)) {
+    				
+    				if(logMINOR) Logger.minor(this, "Is local");
+    				
+    				if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
+    					if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
+    					nodesRoutedTo.remove(next);
+    					origTag.removeRoutingTo(next);
+    					return DO.WAIT;
+    				} else {
+    					next.localRejectedOverload("ForwardRejectedOverload");
+    					node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+    					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+    					// Give up on this one, try another
+    					next.noLongerRoutingTo(origTag, false);
+    					return DO.NEXT_PEER;
+    				}
+    			}
+    			//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
+    			return DO.NEXT_PEER;
+    		}
+    		
+    		if(msg.getSpec() != DMT.FNPAccepted) {
+    			Logger.error(this, "Unrecognized message: "+msg);
+    			return DO.NEXT_PEER;
+    		}
+    		
+    		return DO.FINISHED;
+    		
+    	}
+	}
+
+	private MessageFilter createMessageFilter(int timeout) {
 		MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPDataNotFound);
 		MessageFilter mfRF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRecentlyFailed);
 		MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRouteNotFound);
