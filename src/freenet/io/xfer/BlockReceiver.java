@@ -56,6 +56,33 @@ import freenet.support.math.MedianMeanRunningAverage;
  */
 public class BlockReceiver implements AsyncMessageFilterCallback {
 
+	public interface BlockReceiverTimeoutHandler {
+		
+		/** After a block times out, we call this callback. Once it returns, we cancel the
+		 * PRB and wait for a cancel message or the second timeout. Hence, if the problem
+		 * is on the node sending the data, we will get the first timeout then the second
+		 * (fatal) timeout. But if the problem is downstream, we will only get the first
+		 * timeout. 
+		 * 
+		 * Simple requests will need to implement this and transfer ownership of
+		 * the request to this node, because the source node will end the request as soon
+		 * as it sees the transfer cancel resulting from the PRB being cancelled; 
+		 * assigning the UID to ourselves keeps it consistent, and thus avoids severe load
+		 * management problems (resulting in e.g. constantly sending requests to a node 
+		 * which are then rejected because we think we have capacity when we don't). */
+		void onFirstTimeout();
+		
+		/** After the first timeout, we wait for either a cancel message (sendAborted 
+		 * here), or the second timeout. If we get the second timeout, the problem was
+		 * caused by the node we are receiving the data from, rather than upstream. In
+		 * which case, we may need to take severe action against the node responsible, 
+		 * because we do not know whether or not it thinks the transfer is still running.
+		 * If it is still running and yet we cancel it, we will think that there is 
+		 * capacity for more requests on the node when there isn't, resulting in load 
+		 * management problems as above. */
+		void onFatalTimeout();
+	}
+	
 	/*
 	 * RECEIPT_TIMEOUT must be less than 60 seconds because BlockTransmitter times out after not
 	 * hearing from us in 60 seconds. Without contact from the transmitter, we will try sending
@@ -85,10 +112,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	private boolean senderAborted;
 	private final boolean _realTime;
 //	private final boolean _doTooLong;
+	private final BlockReceiverTimeoutHandler _timeoutHandler;
 
 	boolean logMINOR=Logger.shouldLog(LogLevel.MINOR, this);
 	
-	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong, boolean realTime) {
+	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong, boolean realTime, BlockReceiverTimeoutHandler timeoutHandler) {
+		_timeoutHandler = timeoutHandler;
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;
