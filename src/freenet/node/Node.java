@@ -4573,7 +4573,10 @@ public class Node implements TimeSkewDetectorCallback {
 		int transfersOut = 0;
 		int transfersIn = 0;
 		if(!requestsToNode) {
-			if((source == null) != local) return new CountedRequests(0, 0, 0);
+			// If a request is adopted by us as a result of a timeout, it can be in the 
+			// remote map despite having source == null. However, if a request is in the 
+			// local map it will always have source == null.
+			if(source != null && local) return new CountedRequests(0, 0, 0);
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
 				if(tag.source == source) {
@@ -4606,6 +4609,11 @@ public class Node implements TimeSkewDetectorCallback {
 			return new CountedRequests(count, transfersOut, transfersIn);
 		}
 		}
+	}
+	
+	void reassignTagToSelf(UIDTag tag) {
+		// The tag remains remote, but we flag it as adopted.
+		tag.reassignToSelf();
 	}
 	
 	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
