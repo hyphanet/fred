@@ -317,7 +317,7 @@ peerLoop:
             
             Message msg = null;
             
-            long timeSentRequest = -1;
+            timeSentRequest = -1;
             
 			msg = null;
 			
