@@ -314,12 +314,8 @@ peerLoop:
             
             boolean triedAll = false;
             
-            Message msg = null;
-            
             timeSentRequest = -1;
             
-			msg = null;
-			
 			int tryCount = 0;
 	
 			long startedTryingPeer = System.currentTimeMillis();
@@ -479,7 +475,7 @@ loadWaiterLoop:
             	
             	now = System.currentTimeMillis();
             	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - now));
-            	msg = null;
+            	Message msg = null;
             	
             	if(timeout > 0) {
             	
