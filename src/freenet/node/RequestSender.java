@@ -280,6 +280,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         		if(reply == null) {
         			// We gave it a chance, don't give it another.
         			offers.deleteLastOffer();
+        			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+        			pn.fatalTimeout();
         			continue;
         		} else if(reply.getSpec() == DMT.FNPRejectedOverload) {
         			// Non-fatal, keep it.
@@ -688,6 +690,9 @@ acceptWaiterLoop:
 						forwardRejectedOverload();
 						node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
 						// Try next node
+						// It could still be running. So the timeout is fatal to the node.
+	        			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+	        			next.fatalTimeout();
 						continue peerLoop;
 					}
 					

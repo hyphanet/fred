@@ -272,6 +272,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					if(logMINOR) Logger.minor(this, "Timeout");
 					next.localRejectedOverload("Timeout");
 					forwardRejectedOverload();
+					// It could still be running. So the timeout is fatal to the node.
+        			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+        			next.fatalTimeout();
 					break;
 				}
 				
