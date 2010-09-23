@@ -370,11 +370,8 @@ loadWaiterLoop:
             	}
             } // loadWaiterLoop
             
-            if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) {
-            	// Try another node
-            	continue;
-            }
-
+            long now = System.currentTimeMillis();
+            
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
             // Otherwise, must be Accepted
@@ -382,7 +379,6 @@ loadWaiterLoop:
             // So wait...
             int gotMessages=0;
             String lastMessage=null;
-            long now = System.currentTimeMillis();
             long deadline = now + fetchTimeout;
             while(true) {
             	
