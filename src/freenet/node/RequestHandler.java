@@ -344,7 +344,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				case RequestSender.INTERNAL_ERROR:
 					// Locally generated.
 					// Propagate back to source who needs to reduce send rate
-					///@bug: we may not want to translate fatal timeouts into non-fatal timeouts.
 					Message reject = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
 					sendTerminal(reject);
 					return;

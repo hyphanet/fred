@@ -795,12 +795,46 @@ acceptWaiterLoop:
                 
             	if(msg == null) {
 					Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+")");
-            		// Fatal timeout
+					
             		next.localRejectedOverload("FatalTimeout");
             		forwardRejectedOverload();
-            		finish(TIMED_OUT, next, false);
             		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
-            		return;
+					next.noLongerRoutingTo(origTag, false);
+            		finish(TIMED_OUT, next, false);
+            		
+					// First timeout. Could be caused downstream.
+            		// If it is, we should see a RejectedOverload or similar error message.
+            		// If we don't, we know it's caused by the next node and therefore we should do something about it.
+					node.reassignTagToSelf(origTag);
+					now = System.currentTimeMillis();
+					while(true) {
+						now = System.currentTimeMillis();
+						deadline = now + fetchTimeout;
+						timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - now));
+						msg = null;
+						
+						MessageFilter mf = createMessageFilter(fetchTimeout);
+						try {
+							msg = node.usm.waitFor(mf, this);
+						} catch (DisconnectedException e) {
+							Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
+							return;
+						}
+						
+						if(msg == null) {
+							// Fatal timeout.
+							Logger.error(this, "Fatal timeout waiting for DataFound etc in "+this+" on "+next);
+							next.fatalTimeout();
+						} else {
+							DO action = handleMessage(msg);
+							if(action == DO.WAIT)
+								continue;
+							else if(action == DO.NEXT_PEER)
+								return; // No time to try the others
+							else // if(action == DO.FINISHED
+								return;
+						}
+					}
             	}
 				
             	DO action = handleMessage(msg);
