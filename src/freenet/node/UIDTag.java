@@ -16,7 +16,7 @@ public abstract class UIDTag {
 	// weak reference has the disadvantage that if it's cleared it would be counted as local?
 	// Maybe we could compare to the local vs remote on the subclass?
 	// in theory when disconnect we will remove it anyway, so i guess it's not a big deal?
-	final PeerNode source;
+	PeerNode source;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -101,5 +101,9 @@ public abstract class UIDTag {
 	
 	public synchronized void setNotRoutedOnwards() {
 		this.notRoutedOnwards = true;
+	}
+
+	public void reassignToSelf() {
+		source = null;
 	}
 }
