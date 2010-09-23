@@ -61,7 +61,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		/** After a block times out, we call this callback. Once it returns, we cancel the
 		 * PRB and wait for a cancel message or the second timeout. Hence, if the problem
 		 * is on the node sending the data, we will get the first timeout then the second
-		 * (fatal) timeout. But if the problem is downstream, we will only get the first
+		 * (fatal) timeout. But if the problem is upstream, we will only get the first
 		 * timeout. 
 		 * 
 		 * Simple requests will need to implement this and transfer ownership of
