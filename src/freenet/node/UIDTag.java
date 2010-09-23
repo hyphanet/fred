@@ -113,7 +113,8 @@ public abstract class UIDTag {
 		if(reassigned) return null;
 		return source;
 	}
-	
+
+	/** Reassign the tag to us rather than its original sender. */
 	public synchronized void reassignToSelf() {
 		reassigned = true;
 	}
