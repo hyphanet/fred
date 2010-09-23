@@ -231,6 +231,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	}
 	
     private void realRun() {
+    	long fetchTimeout = FETCH_TIMEOUT;
 	    freenet.support.Logger.OSThread.logPID(this);
         if(isSSK && (pubKey == null)) {
         	pubKey = ((NodeSSK)key).getPubKey();
@@ -487,6 +488,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
         int highHTLFailureCount = 0;
         boolean starting = true;
+        peerLoop:
         while(true) {
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
             if((!starting) && (!canWriteStorePrev)) {
@@ -666,33 +668,43 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             // So wait...
             int gotMessages=0;
             String lastMessage=null;
+            long now = System.currentTimeMillis();
+            long deadline = now + fetchTimeout;
             while(true) {
             	
-                MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataNotFound);
-                MessageFilter mfRF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRecentlyFailed);
-                MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
-                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
-                
-                MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKPubKey);
-            	MessageFilter mfRealDFCHK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
-            	MessageFilter mfAltDFSSKHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
-            	MessageFilter mfAltDFSSKData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
-                MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload)));
-                if(!isSSK) {
-                	mf = mfRealDFCHK.or(mf);
-                } else {
-                	mf = mfPubKey.or(mfAltDFSSKHeaders.or(mfAltDFSSKData.or(mf)));
-                }
-                
-            	try {
-            		msg = node.usm.waitFor(mf, this);
-            	} catch (DisconnectedException e) {
-            		Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
-            		origTag.removeRoutingTo(next);
-            		break;
-            	}
+            	now = System.currentTimeMillis();
+            	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - now));
+            	msg = null;
             	
-            	if(logMINOR) Logger.minor(this, "second part got "+msg);
+            	if(timeout > 0) {
+            	
+            		MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPDataNotFound);
+            		MessageFilter mfRF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRecentlyFailed);
+            		MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRouteNotFound);
+            		MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRejectedOverload);
+            		
+            		MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPSSKPubKey);
+            		MessageFilter mfRealDFCHK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPCHKDataFound);
+            		MessageFilter mfAltDFSSKHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPSSKDataFoundHeaders);
+            		MessageFilter mfAltDFSSKData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPSSKDataFoundData);
+            		MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload)));
+            		if(!isSSK) {
+            			mf = mfRealDFCHK.or(mf);
+            		} else {
+            			mf = mfPubKey.or(mfAltDFSSKHeaders.or(mfAltDFSSKData.or(mf)));
+            		}
+            		
+            		try {
+            			msg = node.usm.waitFor(mf, this);
+            		} catch (DisconnectedException e) {
+            			Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
+            			next.noLongerRoutingTo(origTag, false);
+            			continue peerLoop;
+            		}
+            		
+            		if(logMINOR) Logger.minor(this, "second part got "+msg);
+            		
+            	}
                 
             	if(msg == null) {
 					Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+")");
