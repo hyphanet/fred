@@ -12,6 +12,7 @@ public abstract class UIDTag {
 	
 	final long createdTime;
 	final boolean realTimeFlag;
+	final boolean wasLocal;
 	// FIXME weak reference? purge on drop?
 	// weak reference has the disadvantage that if it's cleared it would be counted as local?
 	// Maybe we could compare to the local vs remote on the subclass?
@@ -31,6 +32,7 @@ public abstract class UIDTag {
 		createdTime = System.currentTimeMillis();
 		this.source = source;
 		this.realTimeFlag = realTimeFlag;
+		wasLocal = source == null;
 	}
 
 	public abstract void logStillPresent(Long uid);
@@ -114,5 +116,20 @@ public abstract class UIDTag {
 	
 	public synchronized void reassignToSelf() {
 		reassigned = true;
+	}
+	
+	/** Was the request originated locally? This returns the original answer: It is not
+	 * affected by reassigning to self. */
+	public boolean wasLocal() {
+		return wasLocal;
+	}
+	
+	/** Is the request local now? I.e. was it either originated locally or reassigned to
+	 * self? */
+	public boolean isLocal() {
+		if(wasLocal) return true;
+		synchronized(this) {
+			return reassigned;
+		}
 	}
 }
