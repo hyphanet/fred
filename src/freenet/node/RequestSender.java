@@ -1027,7 +1027,6 @@ loadWaiterLoop:
     		
     		try {
     			if(logMINOR) Logger.minor(this, "Receiving data");
-    			final PeerNode from = next;
     			synchronized(this) {
     				transferringFrom = next;
     			}
@@ -1042,8 +1041,6 @@ loadWaiterLoop:
     			
     			long tEnd = System.currentTimeMillis();
     			this.transferTime = tEnd - tStart;
-    			boolean turtle;
-    			boolean turtleBackedOff;
    				next.transferSuccess();
             	next.successNotOverload();
             	node.nodeStats.successfulBlockReceive();
