@@ -107,12 +107,12 @@ public abstract class UIDTag {
 	
 	/** Get the effective source node (e.g. for load management). This is null if the tag 
 	 * was reassigned to us. */
-	public PeerNode getSource() {
+	public synchronized PeerNode getSource() {
 		if(reassigned) return null;
 		return source;
 	}
 	
-	public void reassignToSelf() {
+	public synchronized void reassignToSelf() {
 		reassigned = true;
 	}
 }
