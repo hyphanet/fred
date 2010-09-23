@@ -855,14 +855,14 @@ acceptWaiterLoop:
             		
             		if(logMINOR) Logger.minor(this, "Got data on "+uid);
             		
-                	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
-                	
             		if(!(key instanceof NodeSSK)) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
                 		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
             			break;
             		}
             		
+                	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
+                	
                 	if(pubKey != null && headers != null) {
                 		finishSSK(next);
                 		return;
