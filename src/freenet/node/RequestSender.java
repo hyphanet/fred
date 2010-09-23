@@ -874,6 +874,8 @@ acceptWaiterLoop:
             	}
             	
            		Logger.error(this, "Unexpected message: "+msg);
+           		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+           		break;
             	
             }
         }
