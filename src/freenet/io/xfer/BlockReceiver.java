@@ -109,6 +109,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	boolean sentAborted;
 	private MessageFilter discardFilter;
 	private long discardEndTime;
+	private boolean weTimedOut;
 	private boolean senderAborted;
 	private final boolean _realTime;
 //	private final boolean _doTooLong;
@@ -219,6 +220,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			if ((m1 == null) || (m1.getSpec().equals(DMT.allSent))) {
 				if (consecutiveMissingPacketReports >= MAX_CONSECUTIVE_MISSING_PACKET_REPORTS) {
+					weTimedOut = true;
 					_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests");
 					throw new RetrievalException(RetrievalException.SENDER_DIED,
 							"Sender unresponsive to resend requests");
@@ -254,8 +256,9 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			throw new RetrievalException(RetrievalException.UNKNOWN, "Aborted?");
 		} finally {
 			try {
-				if (_prb.isAborted() && !sentAborted) {
-					sendAborted(_prb.getAbortReason(), _prb.getAbortDescription());
+				if (weTimedOut) {
+					if(!sentAborted)
+						sendAborted(_prb.getAbortReason(), _prb.getAbortDescription());
 					if(!senderAborted) {
 						// If sender didn't abort it, we did. I.e. we timed out.
 						_timeoutHandler.onFirstTimeout();
