@@ -4885,15 +4885,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * 1) Lock the slot forever (or at least until the node reconnects). So every time a
 	 * node times out, it loses a slot, and gradually it becomes completely catatonic.
 	 * 2) Wait forever for an acknowledgement of the timeout. This may be worth 
-	 * investigating.
+	 * investigating. One problem with this is that the slot would still count towards our
+	 * overall load management, which is surely a bad thing, although we could make it 
+	 * only count towards this node. Also, if it doesn't arrive in a reasonable time maybe
+	 * there has been a severe problem e.g. out of memory, bug etc; in that case, waiting
+	 * forever may not be sensible.
 	 * 3) Disconnect the node. This makes perfect sense for opennet. For darknet it's a 
 	 * bit more problematic.
 	 * 4) Turn off routing to the node, possibly for a limited period. This would need to
-	 * include the effects of disconnection. 
+	 * include the effects of disconnection. It might open up some cheapish local DoS's.
 	 * 
-	 * For opennet nodes, including both seed clients and seed servers, we do #3.
-	 * For darknet nodes, we log an error, disconnect, 
-	 * */
+	 * For all nodes, at present, we disconnect. For darknet nodes, we log an error, and 
+	 * allow them to reconnect. */
 	public abstract void fatalTimeout();
 	
 }
