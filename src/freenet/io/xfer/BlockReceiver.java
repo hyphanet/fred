@@ -80,8 +80,20 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		 * If it is still running and yet we cancel it, we will think that there is 
 		 * capacity for more requests on the node when there isn't, resulting in load 
 		 * management problems as above. */
-		void onFatalTimeout();
+		void onFatalTimeout(PeerContext source);
 	}
+	
+	private BlockReceiverTimeoutHandler nullTimeoutHandler = new BlockReceiverTimeoutHandler() {
+
+		public void onFirstTimeout() {
+			// Do nothing
+		}
+
+		public void onFatalTimeout(PeerContext source) {
+			// Do nothing
+		}
+		
+	};
 	
 	/*
 	 * RECEIPT_TIMEOUT must be less than 60 seconds because BlockTransmitter times out after not
@@ -118,7 +130,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	boolean logMINOR=Logger.shouldLog(LogLevel.MINOR, this);
 	
 	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong, boolean realTime, BlockReceiverTimeoutHandler timeoutHandler) {
-		_timeoutHandler = timeoutHandler;
+		_timeoutHandler = timeoutHandler == null ? nullTimeoutHandler : timeoutHandler;
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;

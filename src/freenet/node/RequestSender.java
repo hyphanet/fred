@@ -15,10 +15,12 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.NullAsyncMessageFilterCallback;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.BlockReceiver;
+import freenet.io.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
@@ -310,7 +312,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		}
                 		fireCHKTransferBegins();
 						
-                		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag);
+                		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
                 		
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
@@ -923,7 +925,7 @@ acceptWaiterLoop:
                 		fireCHKTransferBegins();
 						
                 		long tStart = System.currentTimeMillis();
-                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag);
+                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
                 		
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
@@ -1591,4 +1593,23 @@ acceptWaiterLoop:
 		return fetchTimeout;
 	}
 
+	BlockReceiverTimeoutHandler myTimeoutHandler = new BlockReceiverTimeoutHandler() {
+
+		/** The data receive has failed. A block timed out. The PRB will be cancelled as
+		 * soon as we return, and that will cause the source node to consider the request
+		 * finished. Meantime we don't know whether the upstream node has finished or not.
+		 * So we reassign the request to ourself, and then wait for the second timeout. */
+		public void onFirstTimeout() {
+			node.reassignTagToSelf(origTag);
+		}
+
+		/** The timeout appears to have been caused by the node we are directly connected
+		 * to. So we need to disconnect the node, or take other fairly strong sanctions,
+		 * to avoid load management problems. */
+		public void onFatalTimeout(PeerContext receivingFrom) {
+			((PeerNode)receivingFrom).fatalTimeout();
+		}
+		
+	};
+	
 }

@@ -9,9 +9,11 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.BlockReceiver;
+import freenet.io.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -63,7 +65,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	private final boolean preferInsert;
 	private final boolean ignoreLowBackoff;
 	private final boolean realTimeFlag;
-    
+
     CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.req = req;
         this.node = node;
@@ -141,7 +143,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
         		source.sendAsync(m, null, this);
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-        		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag);
+        		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null);
         		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
         		br.sendAborted(RetrievalException.NO_DATAINSERT, "No DataInsert");
         		return;
@@ -163,7 +165,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
             sender = node.makeInsertSender(key, htl, uid, tag, source, headers, prb, false, false, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
-        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag);
+        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, myTimeoutHandler);
         
         // Receive the data, off thread
         Runnable dataReceiver = new DataReceiver();
@@ -520,4 +522,28 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}
+	
+	private BlockReceiverTimeoutHandler myTimeoutHandler = new BlockReceiverTimeoutHandler() {
+
+		/** We timed out waiting for a block from the request sender. We do not know 
+		 * whether it is the fault of the request sender or that of some previous node.
+		 * The PRB will be cancelled, resulting in all outgoing transfers for this insert
+		 * being cancelled quickly. If the problem occurred on a previous node, we will
+		 * receive a cancel. So we are consistent with the nodes we routed to, and it is
+		 * safe to wait for the node that routed to us to send an explicit cancel. We do
+		 * not need to do anything yet. */
+		public void onFirstTimeout() {
+			// Do nothing.
+		}
+
+		/** We timed out, and the sender did not send us a timeout message, even after we
+		 * told it we were cancelling. Hence, we know that it was at fault. We need to 
+		 * take action against it.
+		 */
+		public void onFatalTimeout(PeerContext receivingFrom) {
+			((PeerNode)receivingFrom).fatalTimeout();
+		}
+		
+	};
+    
 }
