@@ -353,8 +353,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	hasForwarded = true;
             }
             
-            Message msg = null;
-            
 loadWaiterLoop:
             while(true) {
             	
@@ -384,7 +382,7 @@ loadWaiterLoop:
             	
             	now = System.currentTimeMillis();
             	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - now));
-            	msg = null;
+            	Message msg = null;
             	
             	if(timeout > 0) {
             	
