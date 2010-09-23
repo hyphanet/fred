@@ -1,5 +1,6 @@
 package freenet.node;
 
+import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
 /**
@@ -13,11 +14,7 @@ public abstract class UIDTag {
 	final long createdTime;
 	final boolean realTimeFlag;
 	final boolean wasLocal;
-	// FIXME weak reference? purge on drop?
-	// weak reference has the disadvantage that if it's cleared it would be counted as local?
-	// Maybe we could compare to the local vs remote on the subclass?
-	// in theory when disconnect we will remove it anyway, so i guess it's not a big deal?
-	private final PeerNode source;
+	private final WeakReference<PeerNode> sourceRef;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -30,7 +27,7 @@ public abstract class UIDTag {
 	
 	UIDTag(PeerNode source, boolean realTimeFlag) {
 		createdTime = System.currentTimeMillis();
-		this.source = source;
+		this.sourceRef = source == null ? null : source.myRef;
 		this.realTimeFlag = realTimeFlag;
 		wasLocal = source == null;
 	}
@@ -111,7 +108,7 @@ public abstract class UIDTag {
 	 * was reassigned to us. */
 	public synchronized PeerNode getSource() {
 		if(reassigned) return null;
-		return source;
+		return sourceRef.get();
 	}
 
 	/** Reassign the tag to us rather than its original sender. */
