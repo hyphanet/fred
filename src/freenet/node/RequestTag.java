@@ -110,7 +110,8 @@ public class RequestTag extends UIDTag {
 	@Override
 	public synchronized int expectedTransfersOut(boolean ignoreLocalVsRemote,
 			int outwardTransfersPerInsert) {
-		return (source != null || ignoreLocalVsRemote) ? 1 : 0;
+		if(completedDownstreamTransfers) return 0;
+		return (getSource() != null || ignoreLocalVsRemote) ? 1 : 0;
 	}
 	
 	private boolean completedDownstreamTransfers;
