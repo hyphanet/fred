@@ -287,7 +287,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 								if(logMINOR) Logger.minor(this, "Transfer cancel acknowledged");
 							} else {
 								Logger.error(this, "Other side did not acknowlege transfer failure on "+this);
-								_timeoutHandler.onFatalTimeout();
+								_timeoutHandler.onFatalTimeout(_sender);
 							}
 						} catch (DisconnectedException e) {
 							// Ignore
