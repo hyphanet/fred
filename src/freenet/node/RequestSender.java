@@ -549,6 +549,8 @@ loadWaiterLoop:
         		if(reply == null) {
         			// We gave it a chance, don't give it another.
         			offers.deleteLastOffer();
+        			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+        			pn.fatalTimeout();
         			continue;
         		} else {
         			if(handleCHKOfferReply(reply, pn, offer, offers)) return true;
@@ -566,7 +568,10 @@ loadWaiterLoop:
 					continue;
 				}
         		if(reply == null) {
+        			// We gave it a chance, don't give it another.
             		offers.deleteLastOffer();
+        			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+        			pn.fatalTimeout();
         			continue;
         		} else {
         			if(handleSSKOfferReply(reply, pn, offer, offers)) return true;
@@ -790,7 +795,7 @@ loadWaiterLoop:
     			// Try next node
     			// It could still be running. So the timeout is fatal to the node.
     			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
-    			//next.fatalTimeout();
+    			next.fatalTimeout();
     			return DO.NEXT_PEER;
     		}
     		
