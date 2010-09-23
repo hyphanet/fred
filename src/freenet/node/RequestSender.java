@@ -772,6 +772,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	}
             	
            		Logger.error(this, "Unexpected message: "+msg);
+           		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+           		break;
             	
             }
         }
