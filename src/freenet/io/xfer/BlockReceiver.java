@@ -271,6 +271,25 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests");
 				complete(RetrievalException.SENDER_DIED,
 						"Sender unresponsive to resend requests");
+				
+				_timeoutHandler.onFirstTimeout();
+				// If upstream caused the problem, then sender will itself timeout
+				// and will tell us. So wait for a timeout.
+				// It is important for load management that the two sides agree on the number of transfers happening.
+				// Therefore we need to not complete until the other side has acknowledged that the transfer has been cancelled.
+				MessageFilter mfSendAborted = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
+				try {
+					Message msg = _usm.waitFor(mfSendAborted, _ctr);
+					if(msg != null) {
+						if(logMINOR) Logger.minor(this, "Transfer cancel acknowledged");
+					} else {
+						Logger.error(this, "Other side did not acknowlege transfer failure on "+this);
+						_timeoutHandler.onFatalTimeout();
+					}
+				} catch (DisconnectedException e) {
+					// Ignore
+				}
+				
 				return;
 			} catch (AbortedException e) {
 				// We didn't cause it?!
