@@ -4875,5 +4875,25 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public IncomingLoadSummaryStats getIncomingLoadStats(boolean realTime) {
 		return outputLoadTracker(realTime).getIncomingLoadStats();
 	}
+
+	/** After a fatal timeout - that is, a timeout that we reasonably believe originated
+	 * on the node rather than downstream - we do not know whether or not the node thinks
+	 * the request is still running. Hence load management will get really confused and 
+	 * likely start to send requests over and over, which are repeatedly rejected.
+	 * 
+	 * So we have some alternatives: 
+	 * 1) Lock the slot forever (or at least until the node reconnects). So every time a
+	 * node times out, it loses a slot, and gradually it becomes completely catatonic.
+	 * 2) Wait forever for an acknowledgement of the timeout. This may be worth 
+	 * investigating.
+	 * 3) Disconnect the node. This makes perfect sense for opennet. For darknet it's a 
+	 * bit more problematic.
+	 * 4) Turn off routing to the node, possibly for a limited period. This would need to
+	 * include the effects of disconnection. 
+	 * 
+	 * For opennet nodes, including both seed clients and seed servers, we do #3.
+	 * For darknet nodes, we log an error, disconnect, 
+	 * */
+	public abstract void fatalTimeout();
 	
 }
