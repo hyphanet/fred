@@ -830,22 +830,13 @@ acceptWaiterLoop:
             		else break;
             	}
 
-            	if(msg.getSpec() == DMT.FNPCHKDataFound) {
-            		if(isSSK) {
-            			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
-            			break;
-            		}
+            	if((!isSSK) && msg.getSpec() == DMT.FNPCHKDataFound) {
             		handleCHKDataFound(msg);
             		return;
             	}
             	
-            	if(msg.getSpec() == DMT.FNPSSKPubKey) {
+            	if(isSSK && msg.getSpec() == DMT.FNPSSKPubKey) {
             		
-            		if(!isSSK) {
-            			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
-                		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-            			break;
-            		}
             		if(!handleSSKPubKey(msg)) break;
     				if(sskData != null && headers != null) {
     					finishSSK(next);
@@ -854,15 +845,9 @@ acceptWaiterLoop:
     				continue;
             	}
             	            	
-            	if(msg.getSpec() == DMT.FNPSSKDataFoundData) {
+            	if(isSSK && msg.getSpec() == DMT.FNPSSKDataFoundData) {
             		
             		if(logMINOR) Logger.minor(this, "Got data on "+uid);
-            		
-            		if(!isSSK) {
-            			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
-                		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-            			break;
-            		}
             		
                 	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
                 	
@@ -874,15 +859,9 @@ acceptWaiterLoop:
 
             	}
             	
-            	if(msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
+            	if(isSSK && msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
             		
             		if(logMINOR) Logger.minor(this, "Got headers on "+uid);
-            		
-            		if(!isSSK) {
-            			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
-                		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-            			break;
-            		}
             		
                 	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
             		
