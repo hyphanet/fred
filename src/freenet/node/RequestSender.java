@@ -96,6 +96,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private PeerNode next;
     private long timeSentRequest;
     private int rejectOverloads;
+    private int gotMessages;
+    private String lastMessage;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -766,8 +768,8 @@ acceptWaiterLoop:
             // Otherwise, must be Accepted
             
             // So wait...
-            int gotMessages=0;
-            String lastMessage=null;
+            gotMessages=0;
+            lastMessage=null;
             long deadline = now + fetchTimeout;
             while(true) {
             	
@@ -815,80 +817,97 @@ acceptWaiterLoop:
             		return;
             	}
 				
-				//For debugging purposes, remember the number of responses AFTER the insert, and the last message type we received.
-				gotMessages++;
-				lastMessage=msg.getSpec().getName();
+            	DO action = handleMessage(msg);
             	
-            	if(msg.getSpec() == DMT.FNPDataNotFound) {
-            		handleDataNotFound(msg);
+            	if(action == DO.FINISHED)
             		return;
-            	}
-            	
-            	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
-            		handleRecentlyFailed(msg);
-            		return;
-            	}
-            	
-            	if(msg.getSpec() == DMT.FNPRouteNotFound) {
-            		handleRouteNotFound(msg);
+            	else if(action == DO.NEXT_PEER)
             		break;
-            	}
-            	
-            	if(msg.getSpec() == DMT.FNPRejectedOverload) {
-            		if(handleRejectedOverload(msg)) continue;
-            		else break;
-            	}
-
-            	if((!isSSK) && msg.getSpec() == DMT.FNPCHKDataFound) {
-            		handleCHKDataFound(msg);
-            		return;
-            	}
-            	
-            	if(isSSK && msg.getSpec() == DMT.FNPSSKPubKey) {
-            		
-            		if(!handleSSKPubKey(msg)) break;
-    				if(sskData != null && headers != null) {
-    					finishSSK(next);
-    					return;
-    				}
-    				continue;
-            	}
-            	            	
-            	if(isSSK && msg.getSpec() == DMT.FNPSSKDataFoundData) {
-            		
-            		if(logMINOR) Logger.minor(this, "Got data on "+uid);
-            		
-                	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
-                	
-                	if(pubKey != null && headers != null) {
-                		finishSSK(next);
-                		return;
-                	}
-                	continue;
-
-            	}
-            	
-            	if(isSSK && msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
-            		
-            		if(logMINOR) Logger.minor(this, "Got headers on "+uid);
-            		
-                	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
-            		
-                	if(pubKey != null && sskData != null) {
-                		finishSSK(next);
-                		return;
-                	}
-                	continue;
-
-            	}
-            	
-           		Logger.error(this, "Unexpected message: "+msg);
-           		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-           		break;
-            	
+//            	else if(action == DO.WAIT)
+ //           		continue;
             }
         }
 	}
+    
+    private DO handleMessage(Message msg) {
+		//For debugging purposes, remember the number of responses AFTER the insert, and the last message type we received.
+		gotMessages++;
+		lastMessage=msg.getSpec().getName();
+    	
+    	if(msg.getSpec() == DMT.FNPDataNotFound) {
+    		handleDataNotFound(msg);
+    		return DO.FINISHED;
+    	}
+    	
+    	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
+    		handleRecentlyFailed(msg);
+    		return DO.FINISHED;
+    	}
+    	
+    	if(msg.getSpec() == DMT.FNPRouteNotFound) {
+    		handleRouteNotFound(msg);
+    		return DO.NEXT_PEER;
+    	}
+    	
+    	if(msg.getSpec() == DMT.FNPRejectedOverload) {
+    		if(handleRejectedOverload(msg)) return DO.WAIT;
+    		else return DO.NEXT_PEER;
+    	}
+
+    	if((!isSSK) && msg.getSpec() == DMT.FNPCHKDataFound) {
+    		handleCHKDataFound(msg);
+    		return DO.FINISHED;
+    	}
+    	
+    	if(isSSK && msg.getSpec() == DMT.FNPSSKPubKey) {
+    		
+    		if(!handleSSKPubKey(msg)) return DO.NEXT_PEER;
+			if(sskData != null && headers != null) {
+				finishSSK(next);
+				return DO.FINISHED;
+			}
+			return DO.WAIT;
+    	}
+    	            	
+    	if(isSSK && msg.getSpec() == DMT.FNPSSKDataFoundData) {
+    		
+    		if(logMINOR) Logger.minor(this, "Got data on "+uid);
+    		
+        	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
+        	
+        	if(pubKey != null && headers != null) {
+        		finishSSK(next);
+        		return DO.FINISHED;
+        	}
+        	return DO.WAIT;
+
+    	}
+    	
+    	if(isSSK && msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
+    		
+    		if(logMINOR) Logger.minor(this, "Got headers on "+uid);
+    		
+        	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
+    		
+        	if(pubKey != null && sskData != null) {
+        		finishSSK(next);
+        		return DO.FINISHED;
+        	}
+        	return DO.WAIT;
+
+    	}
+    	
+   		Logger.error(this, "Unexpected message: "+msg);
+   		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+   		return DO.NEXT_PEER;
+    	
+	}
+
+	private static enum DO {
+    	FINISHED,
+    	WAIT,
+    	NEXT_PEER
+    }
 
     /** @return True unless the pubkey is broken and we should try another node */
     private boolean handleSSKPubKey(Message msg) {
