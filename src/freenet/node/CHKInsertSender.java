@@ -298,9 +298,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         int highHTLFailureCount = 0;
         boolean starting = true;
         while(true) {
-            if(receiveFailed) {
-            	return; // don't need to set status as killed by CHKInsertHandler
-            }
+        	synchronized(backgroundTransfers) {
+        		if(receiveFailed) {
+        			return; // don't need to set status as killed by CHKInsertHandler
+        		}
+        	}
             
             /*
              * If we haven't routed to any node yet, decrement according to the source.
@@ -426,7 +428,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				sentRequest = true;				
 			}
             
-            if(receiveFailed) return; // don't need to set status as killed by CHKInsertHandler
+			synchronized(backgroundTransfers) {
+				if(receiveFailed) return; // don't need to set status as killed by CHKInsertHandler
+			}
             Message msg = null;
             
             /*
@@ -446,8 +450,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					break;
 				}
 				
-				if (receiveFailed)
-					return; // don't need to set status as killed by CHKInsertHandler
+				synchronized(backgroundTransfers) {
+					if (receiveFailed)
+						return; // don't need to set status as killed by CHKInsertHandler
+				}
 				
 				if (msg == null) {
 					// Terminal overload
@@ -521,7 +527,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
 
             if(logMINOR) Logger.minor(this, "Sending DataInsert");
-            if(receiveFailed) return;
+            synchronized(backgroundTransfers) {
+            	if(receiveFailed) return;
+            }
             try {
 				next.sendSync(dataInsert, this);
 			} catch (NotConnectedException e1) {
@@ -534,8 +542,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			
             while (true) {
 
-				if (receiveFailed)
-					return;
+            	synchronized(backgroundTransfers) {
+            		if (receiveFailed)
+            			return;
+            	}
 				
 				try {
 					msg = node.usm.waitFor(mf, this);
@@ -544,8 +554,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							+ " while waiting for InsertReply on " + this);
 					break;
 				}
-				if (receiveFailed)
-					return;
+				synchronized(backgroundTransfers) {
+					if (receiveFailed)
+						return;
+				}
 				
 				if ((msg == null) || (msg.getSpec() == DMT.FNPRejectedTimeout)) {
 					// Timeout :(
@@ -619,7 +631,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						}
 						break; // What else can we do?
 					} else if (reason == DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED) {
-						if (receiveFailed) {
+						boolean recvFailed;
+						synchronized(backgroundTransfers) {
+							recvFailed = receiveFailed;
+						}
+						if (recvFailed) {
 							if(logMINOR) Logger.minor(this, "Failed to receive data, so failed to send data");
 						} else {
 							try {
