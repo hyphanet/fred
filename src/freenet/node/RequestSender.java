@@ -212,7 +212,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     }
     
     public void run() {
-        short origHTL = htl;
         try {
         	realRun();
         } catch (Throwable t) {
