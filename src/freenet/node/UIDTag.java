@@ -116,6 +116,7 @@ public abstract class UIDTag {
 
 	/** Reassign the tag to us rather than its original sender. */
 	public synchronized void reassignToSelf() {
+		if(wasLocal) return;
 		reassigned = true;
 	}
 	
