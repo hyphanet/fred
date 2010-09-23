@@ -1607,6 +1607,7 @@ acceptWaiterLoop:
 		 * to. So we need to disconnect the node, or take other fairly strong sanctions,
 		 * to avoid load management problems. */
 		public void onFatalTimeout(PeerContext receivingFrom) {
+			Logger.error(this, "Fatal timeout receiving requested block on "+this+" from "+receivingFrom);
 			((PeerNode)receivingFrom).fatalTimeout();
 		}
 		

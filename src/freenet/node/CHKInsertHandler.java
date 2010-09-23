@@ -541,6 +541,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		 * take action against it.
 		 */
 		public void onFatalTimeout(PeerContext receivingFrom) {
+			Logger.error(this, "Fatal timeout receiving insert "+CHKInsertHandler.this+" from "+receivingFrom);
 			((PeerNode)receivingFrom).fatalTimeout();
 		}
 		
