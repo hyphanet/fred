@@ -752,7 +752,7 @@ loadWaiterLoop:
     				}
     			}
     			//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
-    			return DO.NEXT_PEER;
+    			continue;
     		}
     		
     		if(msg.getSpec() != DMT.FNPAccepted) {
