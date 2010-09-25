@@ -1579,6 +1579,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if (!cb.done) {
 			Logger.error(this, "Waited too long for a blocking send for " + req + " to " + PeerNode.this, new Exception("error"));
 			this.localRejectedOverload("SendSyncTimeout");
+			// Other side will normally timeout so no need for fatalTimeout().
 		}
 	}
 
