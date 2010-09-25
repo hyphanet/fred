@@ -529,61 +529,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 
 				//Can occur after reception of the entire chk block
 				if (msg.getSpec() == DMT.FNPDataInsertRejected) {
-					next.successNotOverload();
-					short reason = msg
-							.getShort(DMT.DATA_INSERT_REJECTED_REASON);
-					if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
-						if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
-						if (fromStore) {
-							// That's odd...
-							Logger.error(this,"Verify failed on next node "
-									+ next + " for DataInsert but we were sending from the store!");
-						} else {
-							try {
-								if (!prb.allReceived())
-									Logger.error(this,
-											"Did not receive all packets but next node says invalid anyway!");
-								else {
-									// Check the data
-									new CHKBlock(prb.getBlock(), headers,
-											myKey);
-									Logger.error(this,
-											"Verify failed on " + next
-											+ " but data was valid!");
-								}
-							} catch (CHKVerifyException e) {
-								Logger.normal(this,
-												"Verify failed because data was invalid");
-							} catch (AbortedException e) {
-								receiveFailed();
-							}
-						}
-						break; // What else can we do?
-					} else if (reason == DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED) {
-						boolean recvFailed;
-						synchronized(backgroundTransfers) {
-							recvFailed = receiveFailed;
-						}
-						if (recvFailed) {
-							if(logMINOR) Logger.minor(this, "Failed to receive data, so failed to send data");
-						} else {
-							try {
-								if (prb.allReceived()) {
-									Logger.error(this, "Received all data but send failed to " + next);
-								} else {
-									if (prb.isAborted()) {
-										Logger.normal(this, "Send failed: aborted: " + prb.getAbortReason() + ": " + prb.getAbortDescription());
-									} else
-										Logger.normal(this, "Send failed; have not yet received all data but not aborted: " + next);
-								}
-							} catch (AbortedException e) {
-								receiveFailed();
-							}
-						}
-					}
-					Logger.error(this, "DataInsert rejected! Reason="
-							+ DMT.getDataInsertRejectedReason(reason));
-					break;
+					handleDataInsertRejected(msg, next);
 				}
 				
 				if (msg.getSpec() != DMT.FNPInsertReply) {
@@ -599,6 +545,62 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 			if (logMINOR) Logger.debug(this, "Trying alternate node for insert");
 		}
+	}
+
+	private void handleDataInsertRejected(Message msg, PeerNode next) {
+		next.successNotOverload();
+		short reason = msg
+				.getShort(DMT.DATA_INSERT_REJECTED_REASON);
+		if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
+		if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
+			if (fromStore) {
+				// That's odd...
+				Logger.error(this,"Verify failed on next node "
+						+ next + " for DataInsert but we were sending from the store!");
+			} else {
+				try {
+					if (!prb.allReceived())
+						Logger.error(this,
+								"Did not receive all packets but next node says invalid anyway!");
+					else {
+						// Check the data
+						new CHKBlock(prb.getBlock(), headers,
+								myKey);
+						Logger.error(this,
+								"Verify failed on " + next
+								+ " but data was valid!");
+					}
+				} catch (CHKVerifyException e) {
+					Logger.normal(this,
+									"Verify failed because data was invalid");
+				} catch (AbortedException e) {
+					receiveFailed();
+				}
+			}
+		} else if (reason == DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED) {
+			boolean recvFailed;
+			synchronized(backgroundTransfers) {
+				recvFailed = receiveFailed;
+			}
+			if (recvFailed) {
+				if(logMINOR) Logger.minor(this, "Failed to receive data, so failed to send data");
+			} else {
+				try {
+					if (prb.allReceived()) {
+						Logger.error(this, "Received all data but send failed to " + next);
+					} else {
+						if (prb.isAborted()) {
+							Logger.normal(this, "Send failed: aborted: " + prb.getAbortReason() + ": " + prb.getAbortDescription());
+						} else
+							Logger.normal(this, "Send failed; have not yet received all data but not aborted: " + next);
+					}
+				} catch (AbortedException e) {
+					receiveFailed();
+				}
+			}
+		}
+		Logger.error(this, "DataInsert rejected! Reason="
+				+ DMT.getDataInsertRejectedReason(reason));
 	}
 
 	private boolean waitAccepted(PeerNode next, InsertTag thisTag) {
