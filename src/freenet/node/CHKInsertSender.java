@@ -504,10 +504,14 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					// Timeout :(
 					// Fairly serious problem
 					Logger.error(this, "Node timed out waiting for our DataInsert (" + msg
-							+ ") after Accepted in insert");
+							+ ") after Accepted in insert - treating as fatal timeout");
 					// Terminal overload
 					// Try to propagate back to source
 					next.localRejectedOverload("AfterInsertAcceptedRejectedTimeout");
+					
+					// Since we definitely sent the DataInsert, this is definitely the fault of the next node.
+					next.fatalTimeout();
+					
 					finish(TIMED_OUT, next);
 					return;
 				}
