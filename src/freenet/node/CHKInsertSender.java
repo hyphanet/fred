@@ -489,30 +489,85 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 				
 				if (msg == null) {
-					// Timeout :(
-					// Fairly serious problem
-					Logger.error(this, "Timeout (" + msg
-							+ ") after Accepted in insert");
-					// Terminal overload
-					// Try to propagate back to source
+					
+					Logger.error(this, "Timeout on insert "+this+" to "+next);
+					
+					// First timeout.
+					// Could be caused by the next node, or could be caused downstream.
 					next.localRejectedOverload("AfterInsertAcceptedTimeout2");
-					finish(TIMED_OUT, next);
+					
+					synchronized(this) {
+						status = TIMED_OUT;
+						notifyAll();
+					}
+					
+					// Wait for second timeout.
+					
+		            while (true) {
+
+		            	synchronized(backgroundTransfers) {
+		            		if (receiveFailed)
+		            			return;
+		            	}
+						
+						try {
+							msg = node.usm.waitFor(mf, this);
+						} catch (DisconnectedException e) {
+							Logger.normal(this, "Disconnected from " + next
+									+ " while waiting for InsertReply on " + this);
+							break;
+						}
+						synchronized(backgroundTransfers) {
+							if (receiveFailed)
+								return;
+						}
+						
+						if(msg == null) {
+							// Second timeout.
+							// Definitely caused by the next node, fatal.
+							next.fatalTimeout();
+							return;
+						}
+						
+						if (msg.getSpec() == DMT.FNPRejectedTimeout) {
+							// Next node timed out awaiting our DataInsert.
+							// But we already sent it, so something is wrong. :(
+							handleRejectedTimeout(msg, next);
+							return;
+						}
+
+						if (msg.getSpec() == DMT.FNPRejectedOverload) {
+							if(handleRejectedOverload(msg, next)) return; // Don't try another node.
+							else continue;
+						}
+
+						if (msg.getSpec() == DMT.FNPRouteNotFound) {
+							return; // Don't try another node.
+						}
+						
+						if (msg.getSpec() == DMT.FNPDataInsertRejected) {
+							handleDataInsertRejected(msg, next);
+							return; // Don't try another node.
+						}
+						
+						if (msg.getSpec() != DMT.FNPInsertReply) {
+							Logger.error(this, "Unknown reply: " + msg);
+							finish(INTERNAL_ERROR, next);
+							return;
+						} else {
+							// Our task is complete, one node (quite deep), has accepted the insert.
+							// The request will not be routed to any other nodes, this is where the data *should* be.
+							finish(SUCCESS, next);
+							return;
+						}
+		            }
 					return;
 				}
 
 				if (msg.getSpec() == DMT.FNPRejectedTimeout) {
-					// Timeout :(
-					// Fairly serious problem
-					Logger.error(this, "Node timed out waiting for our DataInsert (" + msg
-							+ ") after Accepted in insert - treating as fatal timeout");
-					// Terminal overload
-					// Try to propagate back to source
-					next.localRejectedOverload("AfterInsertAcceptedRejectedTimeout");
-					
-					// Since we definitely sent the DataInsert, this is definitely the fault of the next node.
-					next.fatalTimeout();
-					
-					finish(TIMED_OUT, next);
+					// Next node timed out awaiting our DataInsert.
+					// But we already sent it, so something is wrong. :(
+					handleRejectedTimeout(msg, next);
 					return;
 				}
 
@@ -548,7 +603,22 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 	}
 
-    /** @return True if fatal i.e. we should try another node. */
+    private void handleRejectedTimeout(Message msg, PeerNode next) {
+		// Timeout :(
+		// Fairly serious problem
+		Logger.error(this, "Node timed out waiting for our DataInsert (" + msg
+				+ ") after Accepted in insert - treating as fatal timeout");
+		// Terminal overload
+		// Try to propagate back to source
+		next.localRejectedOverload("AfterInsertAcceptedRejectedTimeout");
+		
+		// Since we definitely sent the DataInsert, this is definitely the fault of the next node.
+		next.fatalTimeout();
+		
+		finish(TIMED_OUT, next);
+	}
+
+	/** @return True if fatal i.e. we should try another node. */
 	private boolean handleRejectedOverload(Message msg, PeerNode next) {
 		// Probably non-fatal, if so, we have time left, can try next one
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
@@ -768,7 +838,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         		if(status == RECEIVE_FAILED) {
         			if(code == SUCCESS)
         				Logger.error(this, "Request succeeded despite receive failed?! on "+this);
-        		} else
+        		} else if(status != TIMED_OUT)
         			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         	} else {
                 status = code;
