@@ -366,6 +366,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				if (msg.getSpec() != DMT.FNPInsertReply) {
 					Logger.error(this, "Unknown reply: " + msg);
 					finish(INTERNAL_ERROR, next);
+					return;
 				}
 						
 				// Our task is complete
