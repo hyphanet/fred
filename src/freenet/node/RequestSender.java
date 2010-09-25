@@ -326,6 +326,7 @@ peerLoop:
 			SlotWaiter waiter = null;
 			
 			RequestLikelyAcceptedState lastExpectedAcceptState = null;
+        	PeerNode lastNext = null;
         	RequestLikelyAcceptedState expectedAcceptState = null;
 			
 loadWaiterLoop:
@@ -341,6 +342,7 @@ loadWaiterLoop:
             		if(logMINOR) Logger.minor(this, "No load stats for "+next);
             	} else {
                 	lastExpectedAcceptState = expectedAcceptState;
+                	lastNext = next;
                 	
             		expectedAcceptState = 
             			outputLoadTracker.tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
@@ -350,7 +352,7 @@ loadWaiterLoop:
             				Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState+" realtime="+realTimeFlag);
 						// FIXME sanity check based on new data. Backoff if not plausible.
 						// FIXME recalculate with broader check, allow a few percent etc.
-						if(lastExpectedAcceptState == RequestLikelyAcceptedState.GUARANTEED && 
+						if(lastNext == next && lastExpectedAcceptState == RequestLikelyAcceptedState.GUARANTEED && 
 								(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)) {
 							Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState);
 							next.enterMandatoryBackoff("Mandatory:RejectedGUARANTEED");
