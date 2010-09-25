@@ -385,18 +385,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             }
         	req.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
             
-            // Wait for ack or reject... will come before even a locally generated DataReply
-            
-            MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
-            MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
-            MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
-            
-            // mfRejectedOverload must be the last thing in the or
-            // So its or pointer remains null
-            // Otherwise we need to recreate it below
-            mfRejectedOverload.clearOr();
-            MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
-            
             InsertTag thisTag = forkedRequestTag;
             if(forkedRequestTag == null) thisTag = origTag;
             
@@ -433,73 +421,15 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
             Message msg = null;
             
-            /*
-             * Because messages may be re-ordered, it is
-             * entirely possible that we get a non-local RejectedOverload,
-             * followed by an Accepted. So we must loop here.
-             */
-            
-            while ((msg==null) || (msg.getSpec() != DMT.FNPAccepted)) {
+            if(!waitAccepted(next, thisTag)) {
             	
-				try {
-					msg = node.usm.waitFor(mf, this);
-				} catch (DisconnectedException e) {
-					Logger.normal(this, "Disconnected from " + next
-							+ " while waiting for Accepted");
-					next.noLongerRoutingTo(thisTag, false);
-					break;
-				}
-				
 				synchronized(backgroundTransfers) {
 					if (receiveFailed)
 						return; // don't need to set status as killed by CHKInsertHandler
 				}
 				
-				if (msg == null) {
-					// Terminal overload
-					// Try to propagate back to source
-					if(logMINOR) Logger.minor(this, "Timeout");
-					next.localRejectedOverload("Timeout3");
-					// Try another node.
-					forwardRejectedOverload();
-					// It could still be running. So the timeout is fatal to the node.
-        			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
-        			next.fatalTimeout();
-					break;
-				}
-				
-				if (msg.getSpec() == DMT.FNPRejectedOverload) {
-					// Non-fatal - probably still have time left
-					if (msg.getBoolean(DMT.IS_LOCAL)) {
-						next.localRejectedOverload("ForwardRejectedOverload5");
-						if(logMINOR) Logger.minor(this,
-										"Local RejectedOverload, moving on to next peer");
-						// Give up on this one, try another
-						next.noLongerRoutingTo(thisTag, false);
-						break;
-					} else {
-						forwardRejectedOverload();
-					}
-					continue;
-				}
-				
-				if (msg.getSpec() == DMT.FNPRejectedLoop) {
-					next.successNotOverload();
-					// Loop - we don't want to send the data to this one
-					next.noLongerRoutingTo(thisTag, false);
-					break;
-				}
-				
-				if (msg.getSpec() != DMT.FNPAccepted) {
-					Logger.error(this,
-							"Unexpected message waiting for Accepted: "
-									+ msg);
-					break;
-				}
-				// Otherwise is an FNPAccepted
-			}
-            
-            if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) continue;
+				continue; // Try another node
+            }
             
             if(logMINOR) Logger.minor(this, "Got Accepted on "+this);
             
@@ -518,13 +448,12 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
              */
             
             MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPInsertReply);
-            mfRejectedOverload.setTimeout(SEARCH_TIMEOUT);
-            mfRejectedOverload.clearOr();
+            MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
             MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
             MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPDataInsertRejected);
             MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRejectedTimeout);
             
-            mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
+            MessageFilter mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
 
             if(logMINOR) Logger.minor(this, "Sending DataInsert");
             synchronized(backgroundTransfers) {
@@ -670,6 +599,93 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 			if (logMINOR) Logger.debug(this, "Trying alternate node for insert");
 		}
+	}
+
+	private boolean waitAccepted(PeerNode next, InsertTag thisTag) {
+		
+		Message msg = null;
+		
+        // Wait for ack or reject... will come before even a locally generated DataReply
+        
+        MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
+        MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
+        MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
+        
+        // mfRejectedOverload must be the last thing in the or
+        // So its or pointer remains null
+        // Otherwise we need to recreate it below
+        mfRejectedOverload.clearOr();
+        MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+        
+        /*
+         * Because messages may be re-ordered, it is
+         * entirely possible that we get a non-local RejectedOverload,
+         * followed by an Accepted. So we must loop here.
+         */
+        
+        while ((msg==null) || (msg.getSpec() != DMT.FNPAccepted)) {
+        	
+			try {
+				msg = node.usm.waitFor(mf, this);
+			} catch (DisconnectedException e) {
+				Logger.normal(this, "Disconnected from " + next
+						+ " while waiting for Accepted");
+				next.noLongerRoutingTo(thisTag, false);
+				break;
+			}
+			
+			synchronized(backgroundTransfers) {
+				if (receiveFailed)
+					return false; // don't need to set status as killed by CHKInsertHandler
+			}
+			
+			if (msg == null) {
+				// Terminal overload
+				// Try to propagate back to source
+				if(logMINOR) Logger.minor(this, "Timeout");
+				next.localRejectedOverload("Timeout3");
+				// Try another node.
+				forwardRejectedOverload();
+				// It could still be running. So the timeout is fatal to the node.
+    			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+    			next.fatalTimeout();
+				break;
+			}
+			
+			if (msg.getSpec() == DMT.FNPRejectedOverload) {
+				// Non-fatal - probably still have time left
+				if (msg.getBoolean(DMT.IS_LOCAL)) {
+					next.localRejectedOverload("ForwardRejectedOverload5");
+					if(logMINOR) Logger.minor(this,
+									"Local RejectedOverload, moving on to next peer");
+					// Give up on this one, try another
+					next.noLongerRoutingTo(thisTag, false);
+					break;
+				} else {
+					forwardRejectedOverload();
+				}
+				continue;
+			}
+			
+			if (msg.getSpec() == DMT.FNPRejectedLoop) {
+				next.successNotOverload();
+				// Loop - we don't want to send the data to this one
+				next.noLongerRoutingTo(thisTag, false);
+				break;
+			}
+			
+			if (msg.getSpec() != DMT.FNPAccepted) {
+				Logger.error(this,
+						"Unexpected message waiting for Accepted: "
+								+ msg);
+				break;
+			}
+			// Otherwise is an FNPAccepted
+		}
+        
+        if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) return true;
+        return false;
+        
 	}
 
 	private void startBackgroundTransfer(PeerNode node, PartiallyReceivedBlock prb) {
