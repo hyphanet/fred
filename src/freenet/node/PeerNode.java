@@ -2874,14 +2874,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long lastSampleTime = Long.MAX_VALUE;
 
 	/**
-	 * Got a local RejectedOverload.
-	 * Back off this node for a while.
-	 */
-	public void localRejectedOverload() {
-		localRejectedOverload("");
-	}
-
-	/**
 	 * Track the percentage of time a peer spends backed off
 	 */
 	private void reportBackoffStatus(long now) {
