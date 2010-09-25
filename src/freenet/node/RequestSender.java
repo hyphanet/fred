@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import freenet.crypt.CryptFormatException;
@@ -99,6 +100,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private int gotMessages;
     private String lastMessage;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
+    private HashMap<PeerNode, Integer> softRejectCount;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -354,6 +356,9 @@ loadWaiterLoop:
 						// FIXME recalculate with broader check, allow a few percent etc.
 						if(lastNext == next && lastExpectedAcceptState == RequestLikelyAcceptedState.GUARANTEED && 
 								(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)) {
+							// This time it's GUARANTEED.
+							// Last time it was also GUARANTEED.
+							// Yet last time it was rejected. Why?
 							Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState);
 							next.enterMandatoryBackoff("Mandatory:RejectedGUARANTEED");
 						}
@@ -451,7 +456,7 @@ loadWaiterLoop:
             		hasForwarded = true;
             	}
             	
-            	DO action = waitForAccepted();
+            	DO action = waitForAccepted(outputLoadTracker);
             	// Here FINISHED means accepted, WAIT means try again (soft reject).
             	if(action == DO.WAIT) {
 					retriedForLoadManagement = true;
@@ -790,7 +795,7 @@ loadWaiterLoop:
 	}
 
 	/** Here FINISHED means accepted, WAIT means try again (soft reject). */
-    private DO waitForAccepted() {
+    private DO waitForAccepted(OutputLoadTracker tracker) {
     	while(true) {
     		
     		Message msg;
@@ -853,6 +858,14 @@ loadWaiterLoop:
     					if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
     					nodesRoutedTo.remove(next);
     					origTag.removeRoutingTo(next);
+    					if(softRejectCount == null) softRejectCount = new HashMap<PeerNode, Integer>();
+    					Integer i = softRejectCount.get(next);
+    					if(i == null) softRejectCount.put(next, 1);
+    					else softRejectCount.put(next, i+1);
+    					if(i > 3) {
+    						Logger.error(this, "Rejected repeatedly ("+i+") by "+next+" : "+this);
+    						tracker.setDontSendUnlessGuaranteed();
+    					}
     					return DO.WAIT;
     				} else {
     					next.localRejectedOverload("ForwardRejectedOverload");
@@ -873,6 +886,7 @@ loadWaiterLoop:
     		}
     		
     		next.resetMandatoryBackoff();
+    		tracker.clearDontSendUnlessGuaranteed();
     		return DO.FINISHED;
     		
     	}

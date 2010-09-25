@@ -4645,6 +4645,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 		private PeerLoadStats lastIncomingLoadStats;
 		
+		private boolean dontSendUnlessGuaranteed;
+		
 		public void reportLoadStatus(PeerLoadStats stat) {
 			if(logMINOR) Logger.minor(this, "Got load status : "+stat);
 			synchronized(routedToLock) {
@@ -4816,6 +4818,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 					SlotWaiter slot;
 					synchronized(routedToLock) {
+						if(dontSendUnlessGuaranteed && acceptState != RequestLikelyAcceptedState.GUARANTEED) {
+							if(logMINOR) Logger.minor(this, "Not accepting until guaranteed for "+PeerNode.this+" realtime="+realTime);
+							return;
+						}
 						Iterator<SlotWaiter> it = list.values().iterator();
 						slot = it.next();
 						it.remove();
@@ -4866,6 +4872,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				return RequestLikelyAcceptedState.LIKELY;
 			else
 				return RequestLikelyAcceptedState.UNLIKELY;
+		}
+
+		public void setDontSendUnlessGuaranteed() {
+			Logger.error(this, "Setting don't-send-unless-guaranteed for "+PeerNode.this+" realtime="+realTime);
+			synchronized(routedToLock) {
+				dontSendUnlessGuaranteed = true;
+			}
+		}
+
+		public void clearDontSendUnlessGuaranteed() {
+			Logger.error(this, "Clearing don't-send-unless-guaranteed for "+PeerNode.this+" realtime="+realTime);
+			synchronized(routedToLock) {
+				dontSendUnlessGuaranteed = false;
+			}
 		}
 	
 	}
