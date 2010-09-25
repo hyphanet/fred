@@ -108,6 +108,7 @@ public abstract class UIDTag {
 	 * was reassigned to us. */
 	public synchronized PeerNode getSource() {
 		if(reassigned) return null;
+		if(wasLocal) return null;
 		return sourceRef.get();
 	}
 
