@@ -164,6 +164,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private RestartDBJob[] startupDatabaseJobs;
 	private File persistentTempDir;
 	private boolean alwaysCommit;
+	private boolean useAIMDs;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, ObjectContainer container) throws NodeInitException {
 		this.node = node;
@@ -364,11 +365,36 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 
+		nodeConfig.register("useAIMDs", true, sortOrder++, true, false, "NodeClientCore.useAIMDs", "NodeClientCore.useAIMDsLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(NodeClientCore.this) {
+					return useAIMDs;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				synchronized(NodeClientCore.this) {
+					if(useAIMDs == val.booleanValue()) return;
+					useAIMDs = val;
+				}
+				NodeClientCore.this.requestStarters.setUseAIMDs(val);
+			}
+			
+		});
+		
 		try {
 			requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
 		} catch (InvalidConfigValueException e1) {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
 		}
+		
+		useAIMDs = nodeConfig.getBoolean("useAIMDs");
+		requestStarters.setUseAIMDs(useAIMDs);
+		
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
 
