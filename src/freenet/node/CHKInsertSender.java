@@ -539,6 +539,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				//Can occur after reception of the entire chk block
 				if (msg.getSpec() == DMT.FNPDataInsertRejected) {
 					handleDataInsertRejected(msg, next);
+					break;
 				}
 				
 				if (msg.getSpec() != DMT.FNPInsertReply) {
