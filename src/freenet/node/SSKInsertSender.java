@@ -292,8 +292,10 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	
             	if(newAck == null) {
 					// Try to propagate back to source
-            		if(logMINOR) Logger.minor(this, "Timeout");
+            		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
 					next.localRejectedOverload("Timeout2");
+            		// This is a local timeout, they should send it immediately.
+            		next.fatalTimeout();
 					forwardRejectedOverload();
 					// Try another peer
 					continue;
