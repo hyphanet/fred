@@ -613,7 +613,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
     	synchronized(this) {
     		if(status != NOT_FINISHED && status != TIMED_OUT)
-    			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
+    			Logger.error(this, "finish() called with "+code+" when was already "+status);
     		
     		if((code == ROUTE_NOT_FOUND) && !sentRequest)
     			code = ROUTE_REALLY_NOT_FOUND;
