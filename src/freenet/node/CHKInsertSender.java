@@ -105,10 +105,12 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 		}
 		
-		private void receivedNotice(boolean success) {
+		/** @return True unless we had already received a notice. */
+		private boolean receivedNotice(boolean success) {
 			synchronized(this) {
 				if (receivedCompletionNotice) {
-					Logger.error(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
+					if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
+					return false;
 				} else {
 				completionSucceeded = success;
 				receivedCompletionNotice = true;
@@ -120,7 +122,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 			if(!success) {
 				setTransferTimedOut();
-			}			
+			}
+			return true;
 		}
 		
 		public void onMatched(Message m) {
@@ -154,8 +157,20 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			 */
 			// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
 			Logger.normal(this, "Timed out waiting for a final ack from: "+pn+" on "+this);
-			pn.localRejectedOverload("InsertTimeoutNoFinalAck");
-			receivedNotice(false);
+			if(receivedNotice(false)) {
+				pn.localRejectedOverload("InsertTimeoutNoFinalAck");
+				// First timeout. Wait for second timeout.
+				try {
+					node.usm.addAsyncFilter(getNotificationMessageFilter(), this);
+				} catch (DisconnectedException e) {
+					// Normal
+					if(logMINOR)
+						Logger.minor(this, "Disconnected while adding filter after first timeout");
+				}
+			} else {
+				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
+				pn.fatalTimeout();
+			}
 		}
 
 		public void onDisconnect(PeerContext ctx) {
