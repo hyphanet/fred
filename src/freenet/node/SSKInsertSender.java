@@ -222,15 +222,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             // Wait for ack or reject... will come before even a locally generated DataReply
             
-            MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPSSKAccepted);
-            MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
-            MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
-            // mfRejectedOverload must be the last thing in the or
-            // So its or pointer remains null
-            // Otherwise we need to recreate it below
-            mfRejectedOverload.clearOr();
-            MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
-
             InsertTag thisTag = forkedRequestTag;
             if(forkedRequestTag == null) thisTag = origTag;
             
@@ -247,69 +238,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 			}
             sentRequest = true;
             
-            Message msg = null;
+            Message msg = waitForAccepted(next, thisTag);
             
-            /*
-             * Because messages may be re-ordered, it is
-             * entirely possible that we get a non-local RejectedOverload,
-             * followed by an Accepted. So we must loop here.
-             */
-            
-            while (true) {
-            	
-				try {
-					msg = node.usm.waitFor(mf, this);
-				} catch (DisconnectedException e) {
-					Logger.normal(this, "Disconnected from " + next
-							+ " while waiting for Accepted");
-	            	next.noLongerRoutingTo(thisTag, false);
-					break;
-				}
-				
-				if (msg == null) {
-					// Terminal overload
-					// Try to propagate back to source
-					if(logMINOR) Logger.minor(this, "Timeout");
-					next.localRejectedOverload("Timeout");
-					forwardRejectedOverload();
-					// It could still be running. So the timeout is fatal to the node.
-        			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
-        			next.fatalTimeout();
-					break;
-				}
-				
-				if (msg.getSpec() == DMT.FNPRejectedOverload) {
-					// Non-fatal - probably still have time left
-					if (msg.getBoolean(DMT.IS_LOCAL)) {
-						next.localRejectedOverload("ForwardRejectedOverload3");
-						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
-						// Give up on this one, try another
-		            	next.noLongerRoutingTo(thisTag, false);
-						break;
-					} else {
-						forwardRejectedOverload();
-					}
-					continue;
-				}
-				
-				if (msg.getSpec() == DMT.FNPRejectedLoop) {
-					next.successNotOverload();
-					// Loop - we don't want to send the data to this one
-	            	next.noLongerRoutingTo(thisTag, false);
-					break;
-				}
-				
-				if (msg.getSpec() != DMT.FNPSSKAccepted) {
-					Logger.error(this,
-							"Unexpected message waiting for SSKAccepted: "
-									+ msg);
-					break;
-				}
-				// Otherwise is an FNPSSKAccepted
-				break;
-            }
-            
-            if((msg == null) || (msg.getSpec() != DMT.FNPSSKAccepted)) continue;
+            if(msg == null) continue;
             
             if(logMINOR) Logger.minor(this, "Got Accepted on "+this);
             
@@ -384,12 +315,11 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
              */
             
             MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPInsertReply);
-            mfRejectedOverload.setTimeout(SEARCH_TIMEOUT);
-            mfRejectedOverload.clearOr();
+            MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
             MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
             MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPDataInsertRejected);
             
-            mf = mfRouteNotFound.or(mfInsertReply.or(mfRejectedOverload.or(mfDataInsertRejected)));
+            MessageFilter mf = mfRouteNotFound.or(mfInsertReply.or(mfRejectedOverload.or(mfDataInsertRejected)));
             
             while (true) {
 				try {
@@ -521,6 +451,79 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             }
         }
     }
+
+	private Message waitForAccepted(PeerNode next, InsertTag thisTag) {
+		Message msg;
+        /*
+         * Because messages may be re-ordered, it is
+         * entirely possible that we get a non-local RejectedOverload,
+         * followed by an Accepted. So we must loop here.
+         */
+        
+        MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPSSKAccepted);
+        MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
+        MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
+        // mfRejectedOverload must be the last thing in the or
+        // So its or pointer remains null
+        // Otherwise we need to recreate it below
+        mfRejectedOverload.clearOr();
+        MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+
+        while (true) {
+        	
+			try {
+				msg = node.usm.waitFor(mf, this);
+			} catch (DisconnectedException e) {
+				Logger.normal(this, "Disconnected from " + next
+						+ " while waiting for Accepted");
+            	next.noLongerRoutingTo(thisTag, false);
+				return null;
+			}
+			
+			if (msg == null) {
+				// Terminal overload
+				// Try to propagate back to source
+				if(logMINOR) Logger.minor(this, "Timeout");
+				next.localRejectedOverload("Timeout");
+				forwardRejectedOverload();
+				// It could still be running. So the timeout is fatal to the node.
+    			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+    			next.fatalTimeout();
+				return null;
+			}
+			
+			if (msg.getSpec() == DMT.FNPRejectedOverload) {
+				// Non-fatal - probably still have time left
+				if (msg.getBoolean(DMT.IS_LOCAL)) {
+					next.localRejectedOverload("ForwardRejectedOverload3");
+					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+					// Give up on this one, try another
+	            	next.noLongerRoutingTo(thisTag, false);
+					return null;
+				} else {
+					forwardRejectedOverload();
+				}
+				continue;
+			}
+			
+			if (msg.getSpec() == DMT.FNPRejectedLoop) {
+				next.successNotOverload();
+				// Loop - we don't want to send the data to this one
+            	next.noLongerRoutingTo(thisTag, false);
+				return null;
+			}
+			
+			if (msg.getSpec() != DMT.FNPSSKAccepted) {
+				Logger.error(this,
+						"Unexpected message waiting for SSKAccepted: "
+								+ msg);
+				return null;
+			}
+			// Otherwise is an FNPSSKAccepted
+			return msg;
+        }
+        
+	}
 
 	private boolean hasForwardedRejectedOverload;
     
