@@ -488,7 +488,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						return;
 				}
 				
-				if ((msg == null) || (msg.getSpec() == DMT.FNPRejectedTimeout)) {
+				if (msg == null) {
 					// Timeout :(
 					// Fairly serious problem
 					Logger.error(this, "Timeout (" + msg
@@ -496,6 +496,18 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					// Terminal overload
 					// Try to propagate back to source
 					next.localRejectedOverload("AfterInsertAcceptedTimeout2");
+					finish(TIMED_OUT, next);
+					return;
+				}
+
+				if (msg.getSpec() == DMT.FNPRejectedTimeout) {
+					// Timeout :(
+					// Fairly serious problem
+					Logger.error(this, "Node timed out waiting for our DataInsert (" + msg
+							+ ") after Accepted in insert");
+					// Terminal overload
+					// Try to propagate back to source
+					next.localRejectedOverload("AfterInsertAcceptedRejectedTimeout");
 					finish(TIMED_OUT, next);
 					return;
 				}
