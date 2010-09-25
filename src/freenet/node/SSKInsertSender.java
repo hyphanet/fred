@@ -342,41 +342,58 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					return;
 				}
 				
-				if (msg.getSpec() == DMT.FNPRejectedOverload) {
-					if(handleRejectedOverload(msg, next, thisTag)) break;
-					else continue;
-				}
-
-				if (msg.getSpec() == DMT.FNPRouteNotFound) {
-					handleRouteNotFound(msg, next, thisTag);
-					// Finished as far as this node is concerned
-					break;
-				}
-
-				if (msg.getSpec() == DMT.FNPDataInsertRejected) {
-					handleDataInsertRejected(msg, next, thisTag);
-					break; // What else can we do?
-				}
+				DO action = handleMessage(msg, next, thisTag);
 				
-				if(msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
-					if(!handleSSKDataFoundHeaders(msg, next)) break;
-					else continue;
-        		}
-				
-				if (msg.getSpec() != DMT.FNPInsertReply) {
-					Logger.error(this, "Unknown reply: " + msg);
-					finish(INTERNAL_ERROR, next);
+				if(action == DO.FINISHED)
 					return;
-				}
-						
-				// Our task is complete
-				next.successNotOverload();
-				finish(SUCCESS, next);
-				return;
+				else if(action == DO.NEXT_PEER)
+					break;
+				// else if(action == DO.WAIT) continue;
             }
         }
     }
+    
+    private DO handleMessage(Message msg, PeerNode next, InsertTag thisTag) {
+		if (msg.getSpec() == DMT.FNPRejectedOverload) {
+			if(handleRejectedOverload(msg, next, thisTag)) return DO.NEXT_PEER;
+			else return DO.WAIT;
+		}
 
+		if (msg.getSpec() == DMT.FNPRouteNotFound) {
+			handleRouteNotFound(msg, next, thisTag);
+			// Finished as far as this node is concerned
+			return DO.NEXT_PEER;
+		}
+
+		if (msg.getSpec() == DMT.FNPDataInsertRejected) {
+			handleDataInsertRejected(msg, next, thisTag);
+			return DO.NEXT_PEER; // What else can we do?
+		}
+		
+		if(msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
+			if(!handleSSKDataFoundHeaders(msg, next)) return DO.NEXT_PEER;
+			else return DO.WAIT;
+		}
+		
+		if (msg.getSpec() != DMT.FNPInsertReply) {
+			Logger.error(this, "Unknown reply: " + msg);
+			finish(INTERNAL_ERROR, next);
+			return DO.FINISHED;
+		}
+				
+		// Our task is complete
+		next.successNotOverload();
+		finish(SUCCESS, next);
+		return DO.FINISHED;
+
+    }
+
+    private enum DO {
+    	FINISHED,
+    	WAIT,
+    	NEXT_PEER
+    }
+    
     /** @return True if fatal and we should try another node, false if just relayed so 
      * we should wait for more responses. */
     private boolean handleRejectedOverload(Message msg, PeerNode next, InsertTag thisTag) {
