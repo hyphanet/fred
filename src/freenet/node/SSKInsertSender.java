@@ -368,19 +368,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
 
 				if (msg.getSpec() == DMT.FNPDataInsertRejected) {
-					next.successNotOverload();
-					short reason = msg.getShort(DMT.DATA_INSERT_REJECTED_REASON);
-					if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
-					if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
-						if (fromStore) {
-							// That's odd...
-							Logger.error(this,"Verify failed on next node "
-									+ next + " for DataInsert but we were sending from the store!");
-						}
-					}
-					Logger.error(this, "SSK insert rejected! Reason="
-							+ DMT.getDataInsertRejectedReason(reason));
-	            	next.noLongerRoutingTo(thisTag, false);
+					handleDataInsertRejected(msg, next, thisTag);
 					break; // What else can we do?
 				}
 				
@@ -402,7 +390,23 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         }
     }
 
-    /** @return True if we got new data and are propagating it. False if something failed
+    private void handleDataInsertRejected(Message msg, PeerNode next, InsertTag thisTag) {
+		next.successNotOverload();
+		short reason = msg.getShort(DMT.DATA_INSERT_REJECTED_REASON);
+		if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
+		if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
+			if (fromStore) {
+				// That's odd...
+				Logger.error(this,"Verify failed on next node "
+						+ next + " for DataInsert but we were sending from the store!");
+			}
+		}
+		Logger.error(this, "SSK insert rejected! Reason="
+				+ DMT.getDataInsertRejectedReason(reason));
+    	next.noLongerRoutingTo(thisTag, false);
+	}
+
+	/** @return True if we got new data and are propagating it. False if something failed
      * and we need to try the next node. */
 	private boolean handleSSKDataFoundHeaders(Message msg, PeerNode next) {
 		/**
