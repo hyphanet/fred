@@ -516,7 +516,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						} catch (DisconnectedException e) {
 							Logger.normal(this, "Disconnected from " + next
 									+ " while waiting for InsertReply on " + this);
-							break;
+							return;
 						}
 						synchronized(backgroundTransfers) {
 							if (receiveFailed)
@@ -562,7 +562,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							return;
 						}
 		            }
-					return;
 				}
 
 				if (msg.getSpec() == DMT.FNPRejectedTimeout) {
