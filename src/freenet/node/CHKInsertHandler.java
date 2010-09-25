@@ -146,6 +146,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null);
         		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
         		br.sendAborted(RetrievalException.NO_DATAINSERT, "No DataInsert");
+        		source.localRejectedOverload("TimedOutAwaitingDataInsert");
+        		source.fatalTimeout();
         		return;
         	} catch (NotConnectedException e) {
         		if(logMINOR) Logger.minor(this, "Lost connection to source");
