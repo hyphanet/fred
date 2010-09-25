@@ -353,6 +353,7 @@ loadWaiterLoop:
 						if(lastExpectedAcceptState == RequestLikelyAcceptedState.GUARANTEED && 
 								(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)) {
 							Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState);
+							next.enterMandatoryBackoff("Mandatory:RejectedGUARANTEED");
 						}
             		} else {
             			if(logMINOR)
@@ -868,6 +869,7 @@ loadWaiterLoop:
     			return DO.NEXT_PEER;
     		}
     		
+    		next.resetMandatoryBackoff();
     		return DO.FINISHED;
     		
     	}

@@ -1020,12 +1020,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/**
 	 * Returns true if (apart from actually knowing the peer's location), it is presumed that this peer could route requests.
 	 * True if this peer's build number is not 'too-old' or 'too-new', actively connected, and not marked as explicity disabled.
-	 * Does not reflect any 'backoff' logic.
+	 * Does not reflect any 'backoff' logic, except the mandatory backoff logic.
 	 */
 	public boolean isRoutingCompatible() {
 		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
 		synchronized(this) {
 			if(isRoutable && !disableRouting) {
+				if(mandatoryBackoffUntil > -1 && now < mandatoryBackoffUntil)
+					return false;
 				timeLastRoutable = now;
 				return true;
 			}
@@ -2869,6 +2871,36 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/* time of last sample */
 	private long lastSampleTime = Long.MAX_VALUE;
 
+	// Separate, mandatory backoff mechanism for when nodes are consistently sending unexpected soft rejects.
+	// E.g. when load management predicts GUARANTEED and yet we are rejected.
+	// This can happens when the peer's view of how many of our requests are running is different to our view.
+	// But there has not been a timeout, so we haven't called fatalTimeout() and reconnected.
+	
+	// FIXME 3 different kinds of backoff? Can we get rid of some???
+	
+	long mandatoryBackoffUntil = -1;
+	int mandatoryBackoffLength = INITIAL_MANDATORY_BACKOFF_LENGTH;
+	static final int INITIAL_MANDATORY_BACKOFF_LENGTH = 1*1000;
+	static final int MANDATORY_BACKOFF_MULTIPLIER = 2;
+	static final int MAX_MANDATORY_BACKOFF_LENGTH = 5*60*1000;
+	
+	/** When load management predicts that a peer will definitely accept the request, both
+	 * before it was sent and after we got the rejected, we go into mandatory backoff. */
+	public synchronized void enterMandatoryBackoff(String reason) {
+		long now = System.currentTimeMillis();
+		if(mandatoryBackoffUntil > -1 && mandatoryBackoffUntil > now) return;
+		Logger.error(this, "Entering mandatory backoff for "+this);
+		mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt(mandatoryBackoffLength/2);
+		mandatoryBackoffLength *= MANDATORY_BACKOFF_MULTIPLIER;
+		this.setLastBackoffReason(reason);
+	}
+
+	/** Called when a request is accepted. We don't wait for completion, unlike 
+	 * successNotOverload(). */
+	public synchronized void resetMandatoryBackoff() {
+		mandatoryBackoffLength = INITIAL_MANDATORY_BACKOFF_LENGTH;
+	}
+	
 	/**
 	 * Track the percentage of time a peer spends backed off
 	 */
@@ -3056,7 +3088,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public synchronized long getRoutingBackedOffUntil() {
-		return Math.max(routingBackedOffUntil, transferBackedOffUntil);
+		return Math.max(this.mandatoryBackoffUntil, Math.max(routingBackedOffUntil, transferBackedOffUntil));
 	}
 
 	public synchronized String getLastBackoffReason() {
