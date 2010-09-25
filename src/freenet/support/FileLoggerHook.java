@@ -952,6 +952,17 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			if(!list.offer(b)) {
 				byte[] ss = list.poll();
 				if(ss != null) listBytes -= ss.length + LINE_OVERHEAD;
+				ss = list.poll();
+				if(ss != null) listBytes -= ss.length + LINE_OVERHEAD;
+				String err =
+					"GRRR: ERROR: Logging too fast, chopped "
+						+ 2
+						+ " entries, "
+						+ listBytes
+						+ " bytes in memory\n";
+				byte[] buf = err.getBytes();
+				if(list.offer(buf))
+					listBytes += (buf.length + LINE_OVERHEAD);
 				if(list.offer(b))
 					listBytes += (b.length + LINE_OVERHEAD);
 			} else
