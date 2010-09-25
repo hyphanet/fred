@@ -350,18 +350,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
 				
 				if (msg.getSpec() == DMT.FNPRejectedOverload) {
-					// Probably non-fatal, if so, we have time left, can try next one
-					if (msg.getBoolean(DMT.IS_LOCAL)) {
-						next.localRejectedOverload("ForwardRejectedOverload4");
-						if(logMINOR) Logger.minor(this,
-								"Local RejectedOverload, moving on to next peer");
-						// Give up on this one, try another
-						thisTag.removeRoutingTo(next);
-						break;
-					} else {
-						forwardRejectedOverload();
-					}
-					continue; // Wait for any further response
+					if(handleRejectedOverload(msg, next, thisTag)) break;
+					else continue;
 				}
 
 				if (msg.getSpec() == DMT.FNPRouteNotFound) {
@@ -393,7 +383,24 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         }
     }
 
-    private void handleRouteNotFound(Message msg, PeerNode next, InsertTag thisTag) {
+    /** @return True if fatal and we should try another node, false if just relayed so 
+     * we should wait for more responses. */
+    private boolean handleRejectedOverload(Message msg, PeerNode next, InsertTag thisTag) {
+		// Probably non-fatal, if so, we have time left, can try next one
+		if (msg.getBoolean(DMT.IS_LOCAL)) {
+			next.localRejectedOverload("ForwardRejectedOverload4");
+			if(logMINOR) Logger.minor(this,
+					"Local RejectedOverload, moving on to next peer");
+			// Give up on this one, try another
+        	next.noLongerRoutingTo(thisTag, false);
+			return true;
+		} else {
+			forwardRejectedOverload();
+		}
+		return false; // Wait for any further response
+	}
+
+	private void handleRouteNotFound(Message msg, PeerNode next, InsertTag thisTag) {
 		if(logMINOR) Logger.minor(this, "Rejected: RNF");
 		short newHtl = msg.getShort(DMT.HTL);
 		if (htl > newHtl)
