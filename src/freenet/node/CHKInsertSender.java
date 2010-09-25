@@ -526,6 +526,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						if(msg == null) {
 							// Second timeout.
 							// Definitely caused by the next node, fatal.
+							Logger.error(this, "Got second (local) timeout on "+this+" from "+next);
 							next.fatalTimeout();
 							return;
 						}
