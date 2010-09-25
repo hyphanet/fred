@@ -400,6 +400,7 @@ loadWaiterLoop:
             				next = waited;
             				long endTime = System.currentTimeMillis();
             				if(logMINOR) Logger.minor(this, "Sending to "+next+ " after waited for "+TimeUtil.formatTime(endTime-startTime)+" realtime="+realTimeFlag);
+            				expectedAcceptState = waiter.getAcceptedState();
             			}
             		}
             		// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
