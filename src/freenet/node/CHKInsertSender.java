@@ -716,6 +716,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				+ DMT.getDataInsertRejectedReason(reason));
 	}
 
+	/** @return True if accepted, false if we should try another node. */
 	private boolean waitAccepted(PeerNode next, InsertTag thisTag) {
 		
 		Message msg = null;
@@ -798,8 +799,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			// Otherwise is an FNPAccepted
 		}
         
-        if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) return true;
-        return false;
+        if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) return false;
+        return true;
         
 	}
 
