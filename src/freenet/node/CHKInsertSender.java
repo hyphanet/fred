@@ -517,17 +517,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 
 				if (msg.getSpec() == DMT.FNPRejectedOverload) {
-					// Probably non-fatal, if so, we have time left, can try next one
-					if (msg.getBoolean(DMT.IS_LOCAL)) {
-						next.localRejectedOverload("ForwardRejectedOverload6");
-						if(logMINOR) Logger.minor(this,
-								"Local RejectedOverload, moving on to next peer");
-						// Give up on this one, try another
-						break;
-					} else {
-						forwardRejectedOverload();
-					}
-					continue; // Wait for any further response
+					if(handleRejectedOverload(msg, next)) break;
+					else continue;
 				}
 
 				if (msg.getSpec() == DMT.FNPRouteNotFound) {
@@ -555,6 +546,21 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 			if (logMINOR) Logger.debug(this, "Trying alternate node for insert");
 		}
+	}
+
+    /** @return True if fatal i.e. we should try another node. */
+	private boolean handleRejectedOverload(Message msg, PeerNode next) {
+		// Probably non-fatal, if so, we have time left, can try next one
+		if (msg.getBoolean(DMT.IS_LOCAL)) {
+			next.localRejectedOverload("ForwardRejectedOverload6");
+			if(logMINOR) Logger.minor(this,
+					"Local RejectedOverload, moving on to next peer");
+			// Give up on this one, try another
+			return true;
+		} else {
+			forwardRejectedOverload();
+		}
+		return false; // Wait for any further response
 	}
 
 	private void handleRNF(Message msg, PeerNode next) {
