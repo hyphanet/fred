@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import freenet.crypt.CryptFormatException;
@@ -107,6 +108,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private int gotMessages;
     private String lastMessage;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
+    private HashMap<PeerNode, Integer> softRejectCount;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -402,6 +404,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				// FIXME recalculate with broader check, allow a few percent etc.
         				if(lastNext == next && lastExpectedAcceptState == RequestLikelyAcceptedState.GUARANTEED && 
         						(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)) {
+        					// This time it's GUARANTEED.
+        					// Last time it was also GUARANTEED.
+        					// Yet last time it was rejected. Why?
         					Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState);
         					next.enterMandatoryBackoff("Mandatory:RejectedGUARANTEED");
         				}
@@ -1004,6 +1009,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     						Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
     					nodesRoutedTo.remove(next);
     					origTag.removeRoutingTo(next);
+    					if(softRejectCount == null) softRejectCount = new HashMap<PeerNode, Integer>();
+    					Integer i = softRejectCount.get(next);
+    					if(i == null) softRejectCount.put(next, 1);
+    					else softRejectCount.put(next, i+1);
+    					if(i > 3) {
+    						Logger.error(this, "Rejected repeatedly ("+i+") by "+next+" : "+this);
+    						next.outputLoadTracker(realTimeFlag).setDontSendUnlessGuaranteed();
+    					}
     					return DO.WAIT;
     				} else {
     					next.localRejectedOverload("ForwardRejectedOverload");
@@ -1024,6 +1037,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     		}
     		
     		next.resetMandatoryBackoff();
+    		next.outputLoadTracker(realTimeFlag).clearDontSendUnlessGuaranteed();
     		return DO.FINISHED;
     		
     	}
