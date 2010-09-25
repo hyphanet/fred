@@ -531,15 +531,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 
 				if (msg.getSpec() == DMT.FNPRouteNotFound) {
-					if(logMINOR) Logger.minor(this, "Rejected: RNF");
-					short newHtl = msg.getShort(DMT.HTL);
-					synchronized (this) {
-						if (htl > newHtl)
-							htl = newHtl;						
-					}
-					// Finished as far as this node is concerned
-					next.successNotOverload();
 					//RNF means that the HTL was not exhausted, but that the data will still be stored.
+					handleRNF(msg, next);
 					break;
 				}
 
@@ -561,6 +554,17 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 			if (logMINOR) Logger.debug(this, "Trying alternate node for insert");
 		}
+	}
+
+	private void handleRNF(Message msg, PeerNode next) {
+		if(logMINOR) Logger.minor(this, "Rejected: RNF");
+		short newHtl = msg.getShort(DMT.HTL);
+		synchronized (this) {
+			if (htl > newHtl)
+				htl = newHtl;						
+		}
+		// Finished as far as this node is concerned
+		next.successNotOverload();
 	}
 
 	private void handleDataInsertRejected(Message msg, PeerNode next) {
