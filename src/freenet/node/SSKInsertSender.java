@@ -332,14 +332,40 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
 
 				if (msg == null) {
-					// Timeout :(
-					// Fairly serious problem
-					Logger.error(this, "Timeout (" + msg + ") after Accepted in insert; to ("+next+")");
-					// Terminal overload
-					// Try to propagate back to source
+					
+					// First timeout.
+					Logger.error(this, "Timeout waiting for reply after Accepted in "+this+" from "+next);
 					next.localRejectedOverload("AfterInsertAcceptedTimeout");
+					forwardRejectedOverload();
 					finish(TIMED_OUT, next);
-					return;
+					
+					// Wait for second timeout.
+					while(true) {
+						
+						try {
+							msg = node.usm.waitFor(mf, this);
+						} catch (DisconnectedException e) {
+							Logger.normal(this, "Disconnected from " + next
+									+ " while waiting for InsertReply on " + this);
+							return;
+						}
+						
+						if(msg == null) {
+							// Second timeout.
+							Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
+							next.fatalTimeout();
+							return;
+						}
+						
+						DO action = handleMessage(msg, next, thisTag);
+						
+						if(action == DO.FINISHED)
+							return;
+						else if(action == DO.NEXT_PEER)
+							return; // Don't try others
+						// else if(action == DO.WAIT) continue;
+						
+					}
 				}
 				
 				DO action = handleMessage(msg, next, thisTag);
@@ -584,15 +610,16 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
     	synchronized(this) {
-    		if(status != NOT_FINISHED)
+    		if(status != NOT_FINISHED && status != TIMED_OUT)
     			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
     		
     		if((code == ROUTE_NOT_FOUND) && !sentRequest)
     			code = ROUTE_REALLY_NOT_FOUND;
     		
-    		status = code;
-    		
-    		notifyAll();
+    		if(status != TIMED_OUT) {
+    			status = code;
+    			notifyAll();
+    		}
         }
 
         if(code == SUCCESS && next != null)
