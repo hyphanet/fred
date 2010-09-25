@@ -357,13 +357,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
 
 				if (msg.getSpec() == DMT.FNPRouteNotFound) {
-					if(logMINOR) Logger.minor(this, "Rejected: RNF");
-					short newHtl = msg.getShort(DMT.HTL);
-					if (htl > newHtl)
-						htl = newHtl;
+					handleRouteNotFound(msg, next, thisTag);
 					// Finished as far as this node is concerned
-					next.successNotOverload();
-	            	next.noLongerRoutingTo(thisTag, false);
 					break;
 				}
 
@@ -390,7 +385,16 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         }
     }
 
-    private void handleDataInsertRejected(Message msg, PeerNode next, InsertTag thisTag) {
+    private void handleRouteNotFound(Message msg, PeerNode next, InsertTag thisTag) {
+		if(logMINOR) Logger.minor(this, "Rejected: RNF");
+		short newHtl = msg.getShort(DMT.HTL);
+		if (htl > newHtl)
+			htl = newHtl;
+		next.successNotOverload();
+    	next.noLongerRoutingTo(thisTag, false);
+	}
+
+	private void handleDataInsertRejected(Message msg, PeerNode next, InsertTag thisTag) {
 		next.successNotOverload();
 		short reason = msg.getShort(DMT.DATA_INSERT_REJECTED_REASON);
 		if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
