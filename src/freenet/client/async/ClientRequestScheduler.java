@@ -1187,5 +1187,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public byte[] saltKey(boolean persistent, Key key) {
 		return persistent ? schedCore.saltKey(key) : schedTransient.saltKey(key);
 	}
+
+	public void setUseAIMDs(boolean val) {
+		starter.setUseAIMDs(val);
+	}
 	
 }

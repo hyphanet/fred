@@ -4875,16 +4875,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		public void setDontSendUnlessGuaranteed() {
-			Logger.error(this, "Setting don't-send-unless-guaranteed for "+PeerNode.this+" realtime="+realTime);
 			synchronized(routedToLock) {
-				dontSendUnlessGuaranteed = true;
+				if(!dontSendUnlessGuaranteed) {
+					Logger.error(this, "Setting don't-send-unless-guaranteed for "+PeerNode.this+" realtime="+realTime);
+					dontSendUnlessGuaranteed = true;
+				}
 			}
 		}
 
 		public void clearDontSendUnlessGuaranteed() {
-			Logger.error(this, "Clearing don't-send-unless-guaranteed for "+PeerNode.this+" realtime="+realTime);
 			synchronized(routedToLock) {
-				dontSendUnlessGuaranteed = false;
+				if(dontSendUnlessGuaranteed) {
+					Logger.error(this, "Clearing don't-send-unless-guaranteed for "+PeerNode.this+" realtime="+realTime);
+					dontSendUnlessGuaranteed = false;
+				}
 			}
 		}
 	
