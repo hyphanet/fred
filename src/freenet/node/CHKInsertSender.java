@@ -495,7 +495,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					// First timeout.
 					// Could be caused by the next node, or could be caused downstream.
 					next.localRejectedOverload("AfterInsertAcceptedTimeout2");
-					
+					forwardRejectedOverload();
+
 					synchronized(this) {
 						status = TIMED_OUT;
 						notifyAll();
