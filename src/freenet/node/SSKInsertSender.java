@@ -385,58 +385,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
 				
 				if(msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
-					/**
-					 * Data was already on node, and was NOT equal to what we sent. COLLISION!
-					 * 
-					 * We can either accept the old data or the new data.
-					 * OLD DATA:
-					 * - KSK-based stuff is usable. Well, somewhat; a node could spoof KSKs on
-					 * receiving an insert, (if it knows them in advance), but it cannot just 
-					 * start inserts to overwrite old SSKs.
-					 * - You cannot "update" an SSK.
-					 * NEW DATA:
-					 * - KSK-based stuff not usable. (Some people think this is a good idea!).
-					 * - Illusion of updatability. (VERY BAD IMHO, because it's not really
-					 * updatable... FIXME implement TUKs; would determine latest version based
-					 * on version number, and propagate on request with a certain probability or
-					 * according to time. However there are good arguments to do updating at a
-					 * higher level (e.g. key bottleneck argument), and TUKs should probably be 
-					 * distinct from SSKs.
-					 * 
-					 * For now, accept the "old" i.e. preexisting data.
-					 */
-					Logger.normal(this, "Got collision on "+myKey+" ("+uid+") sending to "+next.getPeer());
-					
-        			headers = ((ShortBuffer) msg.getObject(DMT.BLOCK_HEADERS)).getData();
-        			// Wait for the data
-        			MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(RequestSender.FETCH_TIMEOUT_REALTIME).setType(DMT.FNPSSKDataFoundData);
-        			Message dataMessage;
-        			try {
-						dataMessage = node.usm.waitFor(mfData, this);
-					} catch (DisconnectedException e) {
-						if(logMINOR)
-							Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
-						break;
-					}
-					if(dataMessage == null) {
-    					Logger.error(this, "Got headers but not data for datareply for insert from "+this);
-    					break;
-					}
-					// collided, overwrite data with remote data
-					try {
-						data = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
-						block = new SSKBlock(data, block.getRawHeaders(), block.getKey(), false);
-						
-						synchronized(this) {
-							hasRecentlyCollided = true;
-							hasCollided = true;
-							notifyAll();
-						}
-					} catch (SSKVerifyException e) {
-    					Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" +block);
-						finish(INTERNAL_ERROR, next);
-					}
-					continue; // The node will now propagate the new data. There is no need to move to the next node yet.
+					if(!handleSSKDataFoundHeaders(msg, next)) break;
+					else continue;
         		}
 				
 				if (msg.getSpec() != DMT.FNPInsertReply) {
@@ -451,6 +401,63 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             }
         }
     }
+
+    /** @return True if we got new data and are propagating it. False if something failed
+     * and we need to try the next node. */
+	private boolean handleSSKDataFoundHeaders(Message msg, PeerNode next) {
+		/**
+		 * Data was already on node, and was NOT equal to what we sent. COLLISION!
+		 * 
+		 * We can either accept the old data or the new data.
+		 * OLD DATA:
+		 * - KSK-based stuff is usable. Well, somewhat; a node could spoof KSKs on
+		 * receiving an insert, (if it knows them in advance), but it cannot just 
+		 * start inserts to overwrite old SSKs.
+		 * - You cannot "update" an SSK.
+		 * NEW DATA:
+		 * - KSK-based stuff not usable. (Some people think this is a good idea!).
+		 * - Illusion of updatability. (VERY BAD IMHO, because it's not really
+		 * updatable... FIXME implement TUKs; would determine latest version based
+		 * on version number, and propagate on request with a certain probability or
+		 * according to time. However there are good arguments to do updating at a
+		 * higher level (e.g. key bottleneck argument), and TUKs should probably be 
+		 * distinct from SSKs.
+		 * 
+		 * For now, accept the "old" i.e. preexisting data.
+		 */
+		Logger.normal(this, "Got collision on "+myKey+" ("+uid+") sending to "+next.getPeer());
+		
+		headers = ((ShortBuffer) msg.getObject(DMT.BLOCK_HEADERS)).getData();
+		// Wait for the data
+		MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(RequestSender.FETCH_TIMEOUT_REALTIME).setType(DMT.FNPSSKDataFoundData);
+		Message dataMessage;
+		try {
+			dataMessage = node.usm.waitFor(mfData, this);
+		} catch (DisconnectedException e) {
+			if(logMINOR)
+				Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
+			return false;
+		}
+		if(dataMessage == null) {
+			Logger.error(this, "Got headers but not data for datareply for insert from "+this);
+			return false;
+		}
+		// collided, overwrite data with remote data
+		try {
+			data = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
+			block = new SSKBlock(data, block.getRawHeaders(), block.getKey(), false);
+			
+			synchronized(this) {
+				hasRecentlyCollided = true;
+				hasCollided = true;
+				notifyAll();
+			}
+		} catch (SSKVerifyException e) {
+			Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" +block);
+			finish(INTERNAL_ERROR, next);
+		}
+		return true; // The node will now propagate the new data. There is no need to move to the next node yet.
+	}
 
 	private Message waitForAccepted(PeerNode next, InsertTag thisTag) {
 		Message msg;
