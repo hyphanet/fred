@@ -901,8 +901,7 @@ public class NodeStats implements Persistable {
 					" SSK in: "+expectedTransfersInSSK+" out: "+expectedTransfersOutSSK
 					+" total="+totalRequests+(source == null ? "" : (" for "+source));
 			if(expectedTransfersInCHK < 0 || expectedTransfersOutCHK < 0 ||
-					expectedTransfersInSSK < 0 || expectedTransfersOutSSK < 0 || 
-					totalRequests < 0)
+					expectedTransfersInSSK < 0 || expectedTransfersOutSSK < 0)
 				Logger.error(this, message);
 			else
 				if(logMINOR) Logger.minor(this, message);
