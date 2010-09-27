@@ -861,10 +861,12 @@ loadWaiterLoop:
     					if(softRejectCount == null) softRejectCount = new HashMap<PeerNode, Integer>();
     					Integer i = softRejectCount.get(next);
     					if(i == null) softRejectCount.put(next, 1);
-    					else softRejectCount.put(next, i+1);
-    					if(i > 3) {
-    						Logger.error(this, "Rejected repeatedly ("+i+") by "+next+" : "+this);
-    						tracker.setDontSendUnlessGuaranteed();
+    					else {
+    						softRejectCount.put(next, i+1);
+        					if(i > 3) {
+        						Logger.error(this, "Rejected repeatedly ("+i+") by "+next+" : "+this);
+        						tracker.setDontSendUnlessGuaranteed();
+        					}
     					}
     					return DO.WAIT;
     				} else {
