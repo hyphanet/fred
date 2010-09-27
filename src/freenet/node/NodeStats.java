@@ -896,9 +896,16 @@ public class NodeStats implements Persistable {
 		}
 		
 		public void log(PeerNode source) {
-			Logger.minor(this, "Running (adjusted): CHK in: "+expectedTransfersInCHK+" out: "+expectedTransfersOutCHK+
+			String message = 
+				"Running (adjusted): CHK in: "+expectedTransfersInCHK+" out: "+expectedTransfersOutCHK+
 					" SSK in: "+expectedTransfersInSSK+" out: "+expectedTransfersOutSSK
-					+(source == null ? "" : (" for "+source)));
+					+" total="+totalRequests+(source == null ? "" : (" for "+source));
+			if(expectedTransfersInCHK < 0 || expectedTransfersOutCHK < 0 ||
+					expectedTransfersInSSK < 0 || expectedTransfersOutSSK < 0 || 
+					totalRequests < 0)
+				Logger.error(this, message);
+			else
+				if(logMINOR) Logger.minor(this, message);
 		}
 
 		public double calculate(boolean ignoreLocalVsRemoteBandwidthLiability,
