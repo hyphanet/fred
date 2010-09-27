@@ -416,6 +416,7 @@ public class BlockTransmitter {
 				if(completed) return;
 				completed = true;
 				blockSendsPending--;
+				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
 				if(timeLastBlockSendCompleted != -1) {
 					long delta = now - timeLastBlockSendCompleted;
 					if(delta > RECEIVER_SIDE_TIMEOUT) {
