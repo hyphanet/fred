@@ -398,13 +398,16 @@ public class BlockTransmitter {
 						if(delta > RECEIVER_SIDE_TIMEOUT * 2 && !_sendComplete) {
 							Logger.error(this, "Receiver will timeout, cancelling");
 							_sendComplete = true;
+							cancel = true;
 						}
 					}
 				}
 				timeLastBlockSendCompleted = now;
 				_senderThread.notifyAll();
-				if(_sentSendAborted) return;
-				_sentSendAborted = true;
+				if(cancel) {
+					if(_sentSendAborted) return;
+					_sentSendAborted = true;
+				}
 			}
 			if(cancel)
 				try {
