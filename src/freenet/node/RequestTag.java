@@ -111,7 +111,7 @@ public class RequestTag extends UIDTag {
 	public synchronized int expectedTransfersOut(boolean ignoreLocalVsRemote,
 			int outwardTransfersPerInsert) {
 		if(completedDownstreamTransfers) return 0;
-		return (isLocal() || ignoreLocalVsRemote) ? 1 : 0;
+		return ((!isLocal()) || ignoreLocalVsRemote) ? 1 : 0;
 	}
 	
 	private boolean completedDownstreamTransfers;
