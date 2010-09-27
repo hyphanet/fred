@@ -478,13 +478,15 @@ public class PeerMessageQueue {
 		return false;
 	}
 
-	/**
-	 * Add urgent messages to <code>messages</code> until there are no more
-	 * messages to add or <code>size</code> would exceed
-	 * <code>maxSize</code>. If <code>size == maxSize</code>, the first
-	 * message in the queue will be added even if it makes <code>size</code>
-	 * exceed <code>maxSize</code>. Messages are urgent if the message has been
-	 * waiting for more than <code>PacketSender.MAX_COALESCING_DELAY</code>.
+	/** At each priority level, send overdue (urgent) messages, then only send non-overdue
+	 * messages if we have exhausted the supply of overdue urgent messages. In other words,
+	 * at each priority level, we send overdue messages, and if the overdue messages don't
+	 * fit, we *DON'T* send smaller non-overdue messages, because if we did it would delay
+	 * the overdue messages we haven't sent (because after we send a packet it will be a
+	 * while due to bandwidth limiting until we can send another one). HOWEVER, this only
+	 * applies within priorities! In other words, high priority messages should be sent
+	 * quickly and opportunistically even if this means that low priority messages which
+	 * are already overdue take a little longer to be sent.
 	 * @param size the current size of the messages
 	 * @param now the current time
 	 * @param minSize the starting size with no messages
@@ -493,20 +495,29 @@ public class PeerMessageQueue {
 	 * @return the size of the messages, multiplied by -1 if there were
 	 * messages that didn't fit
 	 */
-	public synchronized int addUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
+	public int addMessages(int size, long now, int minSize, int maxSize,
+			ArrayList<MessageItem> messages) {
 		boolean someDidntFit = false;
 		if(size < 0) {
 			size = -size;
 			someDidntFit = true;
 		}
+
 		// Do not allow realtime data to starve bulk data
 		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
 			size = queuesByPriority[i].addUrgentMessages(size, minSize, maxSize, now, messages);
 			if(size < 0) {
 				size = -size;
 				someDidntFit = true;
+			} else {
+				size = queuesByPriority[i].addMessages(size, minSize, maxSize, now, messages);
+				if(size < 0) {
+					size = -size;
+					someDidntFit = true;
+				}
 			}
 		}
+		
 		// FIXME token bucket?
 		if(sendBalance >= 0) {
 			// Try realtime first
@@ -514,6 +525,12 @@ public class PeerMessageQueue {
 			if(s < 0) {
 				s = -s;
 				someDidntFit = true;
+			} else {
+				s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addMessages(size, minSize, maxSize, now, messages);
+				if(s < 0) {
+					s = -s;
+					someDidntFit = true;
+				}
 			}
 			if(s != size) {
 				sendBalance--;
@@ -524,6 +541,12 @@ public class PeerMessageQueue {
 			if(s < 0) {
 				s = -s;
 				someDidntFit = true;
+			} else {
+				s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addMessages(size, minSize, maxSize, now, messages);
+				if(s < 0) {
+					s = -s;
+					someDidntFit = true;
+				}				
 			}
 			if(s != size) {
 				sendBalance++;
@@ -536,6 +559,12 @@ public class PeerMessageQueue {
 			if(s < 0) {
 				s = -s;
 				someDidntFit = true;
+			} else {
+				s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addMessages(size, minSize, maxSize, now, messages);
+				if(s < 0) {
+					s = -s;
+					someDidntFit = true;
+				}
 			}
 			if(s != size) {
 				sendBalance++;
@@ -546,6 +575,12 @@ public class PeerMessageQueue {
 			if(s < 0) {
 				s = -s;
 				someDidntFit = true;
+			} else {
+				s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addMessages(size, minSize, maxSize, now, messages);				
+				if(s < 0) {
+					s = -s;
+					someDidntFit = true;
+				}
 			}
 			if(s != size) {
 				sendBalance--;
@@ -560,94 +595,12 @@ public class PeerMessageQueue {
 			if(size < 0) {
 				size = -size;
 				someDidntFit = true;
-			}
-		}
-		if(someDidntFit) size = -size;
-		return size;
-	}
-
-	/**
-	 * Add non-urgent messages to <code>messages</code> until there are no more
-	 * messages to add or <code>size</code> would exceed
-	 * <code>maxSize</code>. If <code>size == maxSize</code>, the first
-	 * message in the queue will be added even if it makes <code>size</code>
-	 * exceed <code>maxSize</code>. Non-urgent messages are messages that
-	 * are still waiting because of coalescing.
-	 * @param size the current size of the messages
-	 * @param now the current time
-	 * @param minSize the starting size with no messages
-	 * @param maxSize the maximum size of messages
-	 * @param messages the list that messages will be added to
-	 * @return the size of the messages, multiplied by -1 if there were
-	 * messages that didn't fit
-	 */
-	public synchronized int addNonUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
-		// Do not allow realtime data to starve bulk data
-		boolean someDidntFit = false;
-		if(size < 0) {
-			size = -size;
-			someDidntFit = true;
-		}
-		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
-			size = queuesByPriority[i].addMessages(size, minSize, maxSize, now, messages);
-			if(size < 0) {
-				size = -size;
-				someDidntFit = true;
-			}
-		}
-		// FIXME token bucket?
-		if(sendBalance >= 0) {
-			// Try realtime first
-			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addMessages(size, minSize, maxSize, now, messages);
-			if(s < 0) {
-				s = -s;
-				someDidntFit = true;
-			}
-			if(s != size) {
-				size = s;
-				sendBalance--;
-				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
-			}
-			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addMessages(size, minSize, maxSize, now, messages);
-			if(s < 0) {
-				s = -s;
-				someDidntFit = true;
-			}
-			if(s != size) {
-				size = s;
-				sendBalance++;
-				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
-			}
-		} else {
-			// Try bulk first
-			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addMessages(size, minSize, maxSize, now, messages);
-			if(s < 0) {
-				s = -s;
-				someDidntFit = true;
-			}
-			if(s != size) {
-				size = s;
-				sendBalance++;
-				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
-			}
-			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addMessages(size, minSize, maxSize, now, messages);
-			if(s < 0) {
-				s = -s;
-				someDidntFit = true;
-			}
-			if(s != size) {
-				size = s;
-				sendBalance--;
-				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
-			}
-		}
-		if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
-		if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
-		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
-			size = queuesByPriority[i].addMessages(size, minSize, maxSize, now, messages);
-			if(size < 0) {
-				size = -size;
-				someDidntFit = true;
+			} else {
+				size = queuesByPriority[i].addMessages(size, minSize, maxSize, now, messages);
+				if(size < 0) {
+					size = -size;
+					someDidntFit = true;
+				}				
 			}
 		}
 		if(someDidntFit) size = -size;
@@ -674,6 +627,6 @@ public class PeerMessageQueue {
 		message.onFailed();
 		return true;
 	}
-	
+
 }
 
