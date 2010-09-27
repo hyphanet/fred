@@ -1012,10 +1012,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     					if(softRejectCount == null) softRejectCount = new HashMap<PeerNode, Integer>();
     					Integer i = softRejectCount.get(next);
     					if(i == null) softRejectCount.put(next, 1);
-    					else softRejectCount.put(next, i+1);
-    					if(i > 3) {
-    						Logger.error(this, "Rejected repeatedly ("+i+") by "+next+" : "+this);
-    						next.outputLoadTracker(realTimeFlag).setDontSendUnlessGuaranteed();
+    					else {
+    						softRejectCount.put(next, i+1);
+        					if(i > 3) {
+        						Logger.error(this, "Rejected repeatedly ("+i+") by "+next+" : "+this);
+        						next.outputLoadTracker(realTimeFlag).setDontSendUnlessGuaranteed();
+        					}
     					}
     					return DO.WAIT;
     				} else {
