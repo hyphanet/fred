@@ -68,4 +68,6 @@ public interface PeerContext {
 
 	/** Report a transfer failure */
 	void transferFailed(String reason);
+
+	boolean unqueueMessage(MessageItem item);
 }
