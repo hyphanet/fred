@@ -220,7 +220,7 @@ public class PacketSender implements Runnable, Ticker {
 						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
 						canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
 						if(logMINOR)
-							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+							Logger.minor(this, "Sent packet, can send throttled packets in "+canSendAt+"ms");
 						nextActionTime = Math.min(nextActionTime, now + canSendAt);
 						newBrokeAt = idx;
 					}
