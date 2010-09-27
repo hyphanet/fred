@@ -329,6 +329,7 @@ public class BlockTransmitter {
 						_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
 					sendAborted(msg.getInt(DMT.REASON), msg.getString(DMT.DESCRIPTION));
 					cancelItemsPending();
+					sendAborted(msg.getInt(DMT.REASON), msg.getString(DMT.DESCRIPTION));
 					return false;
 				} else {
 					Logger.error(this, "Transmitter received unknown message type: "+msg.getSpec().getName());
