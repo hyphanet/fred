@@ -25,6 +25,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
+import freenet.node.MessageItem;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -147,7 +148,7 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
-	public void sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
+	public MessageItem sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		synchronized(this) {
@@ -229,8 +230,9 @@ public class PacketThrottle {
 		else if(logMINOR)
 			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
 		MyCallback callback = new MyCallback(cbForAsyncSend);
+		MessageItem sent;
 		try {
-			peer.sendAsync(msg, callback, ctr);
+			sent = peer.sendAsync(msg, callback, ctr);
 			ctr.sentPayload(packetSize);
 			if(blockForSend) {
 				synchronized(callback) {
@@ -248,6 +250,7 @@ public class PacketThrottle {
 					}
 				}
 			}
+			return sent;
 			
 		} catch (RuntimeException e) {
 			callback.fatalError();
