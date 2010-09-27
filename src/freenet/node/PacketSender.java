@@ -243,6 +243,10 @@ public class PacketSender implements Runnable, Ticker {
 					pn.startARKFetcher();
 
 			if(pn.shouldSendHandshake()) {
+				if(pn.shouldThrottle() && !canSendThrottled) {
+					if(logMINOR) Logger.minor(this, "Not sending handshake to "+pn+" because can't send throttled packets");
+					continue;
+				}
 				// Send handshake if necessary
 				long beforeHandshakeTime = System.currentTimeMillis();
 				pn.getOutgoingMangler().sendHandshake(pn, false);
