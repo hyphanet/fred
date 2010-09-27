@@ -870,7 +870,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void decrement(boolean isSSK, boolean isInsert,
-				boolean isOfferReply, int transfersOutPerInsert) {
+				boolean isOfferReply, int transfersOutPerInsert, boolean hasInStore) {
 			if(isInsert) {
 				if(isSSK)
 					expectedTransfersOutSSK -= transfersOutPerInsert;
@@ -882,7 +882,7 @@ public class NodeStats implements Persistable {
 				else
 					expectedTransfersOutCHK--;
 			}
-			if(!isOfferReply) {
+			if(!(isOfferReply || hasInStore)) {
 				if(isSSK)
 					expectedTransfersInSSK--;
 				else
@@ -1015,7 +1015,7 @@ public class NodeStats implements Persistable {
 		if(!isLocal) {
 			// If not local, is already locked.
 			// So we need to decrement the relevant value, to counteract this and restore the SSK:CHK balance.
-			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersPerInsert);
+			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersPerInsert, hasInStore);
 		}
 
 		if(logMINOR)
@@ -1035,13 +1035,13 @@ public class NodeStats implements Persistable {
 		// Multiply by limit: X seconds at full power should be able to clear the transfers even if all the requests succeed.
 		
 		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), byteCountersSent, requestsSnapshot, false, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply, transfersPerInsert);  
+				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert);  
 		if(ret != null) return new RejectReason(ret, true);
 		
 		ByteCountersSnapshot byteCountersReceived = new ByteCountersSnapshot(true);
 		
 		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), byteCountersReceived, requestsSnapshot, true, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply, transfersPerInsert);  
+				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert);  
 		if(ret != null) return new RejectReason(ret, true);
 		
 		// Do we have the bandwidth?
@@ -1152,7 +1152,7 @@ public class NodeStats implements Persistable {
 	private String checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
 			ByteCountersSnapshot byteCountersSent,
 			RunningRequestsSnapshot requestsSnapshot, boolean input, long limit,
-			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, int transfersPerInsert) {
+			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert) {
 		String name = input ? "Input" : "Output";
 		double bandwidthAvailableOutputLowerLimit = bandwidthAvailableOutputUpperLimit / 2;
 		
@@ -1178,7 +1178,7 @@ public class NodeStats implements Persistable {
 			if(logMINOR)
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation);
 			
-			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, input);
+			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent, ignoreLocalVsRemoteBandwidthLiability, hasInStore, transfersPerInsert, input);
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
@@ -1218,11 +1218,11 @@ public class NodeStats implements Persistable {
 		
 	}
 
-	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters, boolean ignoreLocalVsRemote, int transfersOutPerInsert, boolean input) {
+	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters, boolean ignoreLocalVsRemote, boolean hasInStore, int transfersOutPerInsert, boolean input) {
 		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemote, transfersOutPerInsert);
 		
 		if(source != null) {
-			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersOutPerInsert);
+			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersOutPerInsert, hasInStore);
 		}
 		
 		requestsSnapshot.log(source);
