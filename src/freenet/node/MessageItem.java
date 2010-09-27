@@ -107,4 +107,16 @@ public class MessageItem {
 			}
 		}
 	}
+
+	public void onFailed() {
+		if(cb != null) {
+			for(int i=0;i<cb.length;i++) {
+				try {
+					cb[i].fatalError();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
+				}
+			}
+		}
+	}
 }

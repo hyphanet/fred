@@ -53,6 +53,9 @@ public class PeerMessageQueue {
 			public void addFirst(MessageItem item) {
 				items.addFirst(item);
 			}
+			public boolean remove(MessageItem item) {
+				return items.remove(item);
+			}
 		}
 		
 		static final long FORGET_AFTER = 10*60*1000;
@@ -326,6 +329,27 @@ public class PeerMessageQueue {
 		public void clear() {
 			itemsWithID = null;
 			itemsByID = null;
+		}
+
+		public boolean removeMessage(MessageItem item) {
+			if(item.msg == null) {
+				return makeItemsNoID().remove(item);
+			}
+			Object o = item.msg.getObject(DMT.UID);
+			if(o == null || !(o instanceof Long)) {
+				return makeItemsNoID().remove(item);
+			}
+			Long id = (Long) o;
+			Items list;
+			if(itemsByID == null) {
+				return false;
+			} else {
+				list = itemsByID.get(id);
+				if(list == null) {
+					return false;
+				}
+			}
+			return list.remove(item);
 		}
 
 
@@ -641,6 +665,15 @@ public class PeerMessageQueue {
 	
 	static final int MAX_BALANCE = 32; // Allow a burst of 32 realtime packets after a long period of bulk packets.
 	static final int MIN_BALANCE = -32; // Allow a burst of 32 bulk packets after a long period of realtime packets.
+	
+	public boolean removeMessage(MessageItem message) {
+		synchronized(this) {
+			short prio = message.getPriority();
+			if(!queuesByPriority[prio].removeMessage(message)) return false;
+		}
+		message.onFailed();
+		return true;
+	}
 	
 }
 
