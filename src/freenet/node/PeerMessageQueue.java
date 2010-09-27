@@ -48,6 +48,9 @@ public class PeerMessageQueue {
 			public void addFirst(MessageItem item) {
 				items.addFirst(item);
 			}
+			public boolean remove(MessageItem item) {
+				return items.remove(item);
+			}
 		}
 		
 		static final long FORGET_AFTER = 10*60*1000;
@@ -298,6 +301,27 @@ public class PeerMessageQueue {
 			itemsByID = null;
 		}
 
+		public boolean removeMessage(MessageItem item) {
+			if(item.msg == null) {
+				return makeItemsNoID().remove(item);
+			}
+			Object o = item.msg.getObject(DMT.UID);
+			if(o == null || !(o instanceof Long)) {
+				return makeItemsNoID().remove(item);
+			}
+			Long id = (Long) o;
+			Items list;
+			if(itemsByID == null) {
+				return false;
+			} else {
+				list = itemsByID.get(id);
+				if(list == null) {
+					return false;
+				}
+			}
+			return list.remove(item);
+		}
+
 
 
 	}
@@ -478,7 +502,15 @@ public class PeerMessageQueue {
 		if(someDidntFit) size = -size;
 		return size;
 	}
-
-
+	
+	public boolean removeMessage(MessageItem message) {
+		synchronized(this) {
+			short prio = message.getPriority();
+			if(!queuesByPriority[prio].removeMessage(message)) return false;
+		}
+		message.onFailed();
+		return true;
+	}
+	
 }
 
