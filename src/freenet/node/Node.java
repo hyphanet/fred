@@ -4561,6 +4561,7 @@ public class Node implements TimeSkewDetectorCallback {
 				count++;
 				transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
 				transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+				if(logDEBUG) Logger.debug(this, "UID "+entry.getKey()+" : out "+transfersOut+" in "+transfersIn);
 			}
 			return new CountedRequests(count, transfersOut, transfersIn);
 		}
