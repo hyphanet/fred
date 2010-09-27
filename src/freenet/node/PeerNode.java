@@ -1068,6 +1068,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// it wakes up every 100ms *anyway*.
 		return item;
 	}
+	
+	public boolean unqueueMessage(MessageItem message) {
+		if(logMINOR) Logger.minor(this, "Unqueueing message on "+this+" : "+message);
+		return messageQueue.removeMessage(message);
+	}
 
 	public long getMessageQueueLengthBytes() {
 		return messageQueue.getMessageQueueLengthBytes();
