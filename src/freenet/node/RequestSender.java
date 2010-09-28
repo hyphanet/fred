@@ -238,6 +238,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		mustUnlock = true;
 	}
 	
+	synchronized boolean mustUnlock() {
+		return mustUnlock;
+	}
+	
     private void realRun() {
 	    freenet.support.Logger.OSThread.logPID(this);
         if(isSSK && (pubKey == null)) {
