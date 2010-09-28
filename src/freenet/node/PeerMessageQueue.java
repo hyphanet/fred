@@ -10,6 +10,7 @@ import freenet.io.comm.Message;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
+import freenet.support.MutableBoolean;
 
 /**
  * Queue of messages to send to a node. Ordered first by priority then by time.
@@ -30,8 +31,8 @@ public class PeerMessageQueue {
 	}
 
 	private final PrioQueue[] queuesByPriority;
-
-	private static class PrioQueue {
+	
+	private class PrioQueue {
 		
 		private class Items {
 			final LinkedList<MessageItem> items;
@@ -54,7 +55,7 @@ public class PeerMessageQueue {
 		}
 		
 		static final long FORGET_AFTER = 10*60*1000;
-		
+
 		LinkedList<Items> itemsWithID;
 		Map<Long, Items> itemsByID;
 		// Construct structures lazily, we're protected by the overall synchronized.
@@ -295,6 +296,42 @@ public class PeerMessageQueue {
 		public int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
 			return addMessages(size, minSize, maxSize, now, messages, false);
 		}
+		
+		/**
+		 * Add urgent messages, then non-urgent messages. Add a load message if need to.
+		 * @param size
+		 * @param minSize
+		 * @param maxSize
+		 * @param now
+		 * @param messages
+		 * @return
+		 */
+		int addPriorityMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean incomplete) {
+			// Urgent messages first.
+			size = innerAddMessages(size, minSize, maxSize, now, messages, incomplete, true);
+			if(incomplete.value) return (incomplete.value ? -size : size);
+			// If no more urgent messages, try to add some non-urgent messages too.
+			size = innerAddMessages(size, minSize, maxSize, now, messages, incomplete, false);
+			return (incomplete.value ? -size : size);
+		}
+
+		private int innerAddMessages(int size, int minSize, int maxSize,
+				long now, ArrayList<MessageItem> messages,
+				MutableBoolean incomplete,
+				boolean urgentOnly) {
+			while(true) {
+				synchronized(PeerMessageQueue.this) {
+					size = addMessages(size, minSize, maxSize, now, messages, true);
+				}
+				if(size < 0) {
+					incomplete.value = true;
+					size = -size;
+				}
+				boolean recall = false;
+				if(!recall) break;
+			}
+			return size;
+		}
 
 		public void clear() {
 			itemsWithID = null;
@@ -458,26 +495,14 @@ public class PeerMessageQueue {
 	 */
 	public int addMessages(int size, long now, int minSize, int maxSize,
 			ArrayList<MessageItem> messages) {
-		boolean someDidntFit = false;
-		if(size < 0) {
-			size = -size;
-			someDidntFit = true;
-		}
-		
+		MutableBoolean incomplete = new MutableBoolean();
+
+		// Do not allow realtime data to starve bulk data
 		for(int i=0;i<DMT.NUM_PRIORITIES;i++) {
-			size = queuesByPriority[i].addUrgentMessages(size, minSize, maxSize, now, messages);
-			if(size < 0) {
-				size = -size;
-				someDidntFit = true;
-			} else {
-				size = queuesByPriority[i].addMessages(size, minSize, maxSize, now, messages);
-				if(size < 0) {
-					size = -size;
-					someDidntFit = true;
-				}
-			}
+			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, incomplete);
 		}
-		if(someDidntFit) size = -size;
+
+		if(incomplete.value) size = -size;
 		return size;
 	}
 	
