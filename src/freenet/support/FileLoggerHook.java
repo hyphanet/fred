@@ -947,6 +947,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	private static final int LINE_OVERHEAD = 60;
 	
 	public void logString(byte[] b) {
+		long start = System.currentTimeMillis();
 		synchronized (list) {
 			int sz = list.size();
 			if(!list.offer(b)) {
@@ -994,6 +995,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			if (sz == 0)
 				list.notifyAll();
 		}
+		long end = System.currentTimeMillis();
+		if(end - start > 2000)
+			System.err.println("Logging took "+TimeUtil.formatTime(end-start));
 	}
 
 	public long listBytes() {
