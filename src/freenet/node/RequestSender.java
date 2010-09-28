@@ -106,6 +106,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private boolean tryOffersOnly;
     
 	private ArrayList<Listener> listeners=new ArrayList<Listener>();
+	
+	private boolean mustUnlock;
     
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -221,10 +223,20 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             finish(INTERNAL_ERROR, null, false);
         } finally {
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
+        	boolean mustUnlock;
+        	synchronized(this) {
+        		mustUnlock = this.mustUnlock;
+        	}
+        	if(mustUnlock)
+        		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, origTag);
         }
     }
 
 	static final int MAX_HIGH_HTL_FAILURES = 5;
+	
+	synchronized void setMustUnlock() {
+		mustUnlock = true;
+	}
 	
     private void realRun() {
 	    freenet.support.Logger.OSThread.logPID(this);
