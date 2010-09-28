@@ -1619,6 +1619,7 @@ loadWaiterLoop:
 		int status;
 		synchronized (this) {
 			synchronized (listeners) {
+				listeners.add(l);
 				reject = sentReceivedRejectOverload;
 				transfer = sentCHKTransferBegins;
 				sentFinished = sentRequestSenderFinished;
@@ -1671,6 +1672,7 @@ loadWaiterLoop:
 	private void fireRequestSenderFinished(int status) {
 		synchronized (listeners) {
 			sentRequestSenderFinished = true;
+			if(logMINOR) Logger.minor(this, "Listeners: "+listeners.size());
 			for (Listener l : listeners) {
 				try {
 					l.onRequestSenderFinished(status, -1);
