@@ -1009,9 +1009,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 				int status = rs.getStatus();
 
-				if(rs.abortedDownstreamTransfers())
-					status = RequestSender.TRANSFER_FAILED;
-
 				if(status == RequestSender.NOT_FINISHED)
 					continue;
 
@@ -1093,7 +1090,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			if(rs == null || !rs.abortedDownstreamTransfers())
+			if(rs == null || !rs.mustUnlock())
 				node.unlockUID(uid, false, false, true, false, true, realTimeFlag, tag);
 		}
 	}
@@ -1207,7 +1204,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 			}
 		} finally {
-			if(rs == null || !rs.abortedDownstreamTransfers())
+			if(rs == null || !rs.mustUnlock())
 				node.unlockUID(uid, true, false, true, false, true, realTimeFlag, tag);
 		}
 	}
