@@ -515,7 +515,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				notifyAll();
 			}
 		} catch (SSKVerifyException e) {
-			Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" +block);
+			Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" +block, e);
 			finish(INTERNAL_ERROR, next);
 		}
 		return true; // The node will now propagate the new data. There is no need to move to the next node yet.
