@@ -66,6 +66,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private BlockTransmitter bt;
 	private final RequestTag tag;
 	KeyBlock passedInKeyBlock;
+	private boolean dontUnlock = false;
 
 	@Override
 	public String toString() {
@@ -107,12 +108,22 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			Logger.normal(this, "requestor gone, could not start request handler wait");
 			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(e);
-			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+			boolean dontUnlock;
+			synchronized(this) {
+				dontUnlock = this.dontUnlock;
+			}
+			if(!dontUnlock)
+				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(t);
-			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+			boolean dontUnlock;
+			synchronized(this) {
+				dontUnlock = this.dontUnlock;
+			}
+			if(!dontUnlock)
+				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
 		}
 	}
 	private Exception previousApplyByteCountCall;
@@ -230,6 +241,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							// This may indicate downstream is having trouble communicating with us.
 							Logger.error(this, "Downstream transfer successful but upstream transfer failed. Reassigning tag to self because want the data for ourselves on "+this);
 							node.reassignTagToSelf(tag);
+							rs.setMustUnlock();
+							synchronized(this) {
+								dontUnlock = true;
+							}
+							// FIXME move unlocking logic into UIDTag and always wait for both the handler and the sender.
 							return false; // Want it
 						}
 						return true;
