@@ -521,6 +521,14 @@ public class PeerMessageQueue {
 			ArrayList<MessageItem> messages) {
 		MutableBoolean addPeerLoadStatsRT = new MutableBoolean();
 		MutableBoolean addPeerLoadStatsBulk = new MutableBoolean();
+		// FIXME NETWORK PERFORMANCE NEW PACKET FORMAT:
+		// If at a priority we have more to send than can fit into the packet, yet there 
+		// are smaller messages at lower priorities, we don't add the smaller messsages.
+		// The same applies for urgent vs non-urgent at the same priority in the below method.
+		// The reason for this is that we don't want the smaller lower priority messages
+		// using up valuable, limited bandwidth and preventing us from clearing the backlog
+		// of high priority messages. Fortunately this doesn't arise in practice very much,
+		// but when we merge the new packet format it will be eliminated entirely.
 		MutableBoolean incomplete = new MutableBoolean();
 
 		// Do not allow realtime data to starve bulk data
