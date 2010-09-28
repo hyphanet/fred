@@ -175,7 +175,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			passedInKeyBlock = null; // For GC
 			return;
 		} else
-			o = node.makeRequestSender(key, htl, uid, source, false, true, false, false, false);
+			o = node.makeRequestSender(key, htl, uid, tag, source, false, true, false, false, false);
 
 		if(o == null) { // ran out of htl?
 			Message dnf = DMT.createFNPDataNotFound(uid);
@@ -287,7 +287,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
-	public void onRequestSenderFinished(int status) {
+	/** If this is set, the transfer was turtled, the RequestSender took on responsibility
+	 * for unlocking the UID given, we should not unlock it. */
+	private long dontUnlockUID = -1;
+	
+	public void onRequestSenderFinished(int status, long grabbedUID) {
 		if(logMINOR) Logger.minor(this, "onRequestSenderFinished("+status+") on "+this);
 		long now = System.currentTimeMillis();
 
@@ -298,6 +302,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			else
 				return;
 			tooLate = responseDeadline > 0 && now > responseDeadline;
+			if(grabbedUID != -1)
+				dontUnlockUID = grabbedUID;
 		}
 		
 		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble());
@@ -498,6 +504,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	private void unregisterRequestHandlerWithNode() {
 		node.removeTransferringRequestHandler(uid);
+		synchronized(this) {
+			if(uid == dontUnlockUID) return;
+		}
 		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
 	}
 

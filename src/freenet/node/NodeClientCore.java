@@ -879,7 +879,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				// Ignore
 			}
 
-			public void onRequestSenderFinished(int status) {
+			/** The RequestSender finished, or it turtled.
+			 * @param status The completion status.
+			 * @param uidTransferred If this is set, the RequestSender has taken on 
+			 * responsibility for unlocking the UID specified. We should not unlock it.
+			 */
+			public void onRequestSenderFinished(int status, long uidTransferred) {
 				// If transfer coalescing has happened, we may have already unlocked.
 				node.unlockUID(uid, isSSK, false, true, false, true, tag);
 				tag.setRequestSenderFinished(status);
@@ -901,7 +906,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 */
 	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl) {
 		try {
-			Object o = node.makeRequestSender(key, htl, uid, null, false, false, offersOnly, canReadClientCache, canWriteClientCache);
+			Object o = node.makeRequestSender(key, htl, uid, tag, null, false, false, offersOnly, canReadClientCache, canWriteClientCache);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
 				node.unlockUID(uid, isSSK, false, true, false, true, tag);
@@ -953,7 +958,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, localOnly, ignoreStore, false, true, canWriteClientCache);
+			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache);
 			if(o instanceof CHKBlock)
 				try {
 					tag.setServedFromDatastore();
@@ -1074,7 +1079,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-			Object o = node.makeRequestSender(key.getNodeKey(true), node.maxHTL(), uid, null, localOnly, ignoreStore, false, true, canWriteClientCache);
+			Object o = node.makeRequestSender(key.getNodeKey(true), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache);
 			if(o instanceof SSKBlock)
 				try {
 					tag.setServedFromDatastore();
