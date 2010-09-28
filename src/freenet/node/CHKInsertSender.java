@@ -194,6 +194,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		public int getPriority() {
 			return NativeThread.HIGH_PRIORITY;
 		}
+		
+		public String toString() {
+			return super.toString()+":"+uid+":"+pn;
+		}
 	}
 	
 	CHKInsertSender(NodeCHK myKey, long uid, InsertTag tag, byte[] headers, short htl, 
