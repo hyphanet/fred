@@ -912,7 +912,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			 */
 			public void onRequestSenderFinished(int status, long uidTransferred) {
 				// If transfer coalescing has happened, we may have already unlocked.
-				node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag);
+				if(uidTransferred != uid)
+					node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag);
 				tag.setRequestSenderFinished(status);
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
