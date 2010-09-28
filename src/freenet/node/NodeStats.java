@@ -539,7 +539,10 @@ public class NodeStats implements Persistable {
 	 * If they all complete, they will take half the time limit. If they are all served from the 
 	 * store, this will be shown on the queue time. But the queue time is estimated based on 
 	 * using at most half the limit, so the time will be slightly over the overall limit. */
-	private static final double MAX_PEER_QUEUE_TIME = 4 * 60 * 1000.0;
+	
+	// FIXME increase to 4 minutes when bulk/realtime flag merged!
+	
+	private static final double MAX_PEER_QUEUE_TIME = 2 * 60 * 1000.0;
 
 	private long lastAcceptedRequest = -1;
 
