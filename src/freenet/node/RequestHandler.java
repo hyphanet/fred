@@ -212,6 +212,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	public void onReceivedRejectOverload() {
 		try {
 			if(!sentRejectedOverload) {
+				if(logMINOR) Logger.minor(this, "Propagating RejectedOverload on "+this);
 				// Forward RejectedOverload
 				//Note: This message is only decernable from the terminal messages by the IS_LOCAL flag being false. (!IS_LOCAL)->!Terminal
 				Message msg = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
@@ -226,6 +227,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private boolean disconnected = false;
 
 	public void onCHKTransferBegins() {
+		if(logMINOR) Logger.minor(this, "CHK transfer start on "+this);
 		try {
 			// Is a CHK.
 			Message df = DMT.createFNPCHKDataFound(uid, rs.getHeaders());
@@ -333,6 +335,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble());
 
 		if(tooLate) {
+			if(logMINOR) Logger.minor(this, "Too late");
 			// Offer the data if there is any.
 			node.failureTable.onFinalFailure(key, null, htl, htl, -1, source);
 			PeerNode routedLast = rs == null ? null : rs.routedLast();
