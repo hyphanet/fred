@@ -463,6 +463,7 @@ public class PeerMessageQueue {
 		// Do not allow realtime data to starve bulk data
 		for(int i=0;i<DMT.NUM_PRIORITIES;i++) {
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, incomplete);
+			if(incomplete.value) return -size;
 		}
 
 		if(incomplete.value) size = -size;
