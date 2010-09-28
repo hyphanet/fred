@@ -220,11 +220,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             Logger.error(this, "Caught "+t, t);
             finish(INTERNAL_ERROR, null, false);
         } finally {
-        	if(sentAbortDownstreamTransfers) {
-        		// We took on responsibility for unlocking.
-        		if(logMINOR) Logger.minor(this, "Unlocking after turtle");
-        		node.unlockUID(uid, isSSK, false, false, false, source == null, realTimeFlag, origTag);
-        	}
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
         }
     }
@@ -1322,7 +1317,7 @@ loadWaiterLoop:
        		if(prb != null)
        			current |= WAIT_TRANSFERRING_DATA;
         	
-        	if(status != NOT_FINISHED || sentAbortDownstreamTransfers)
+        	if(status != NOT_FINISHED)
         		current |= WAIT_FINISHED;
         	
         	if(current != mask) return current;
@@ -1605,13 +1600,9 @@ loadWaiterLoop:
 		boolean reject=false;
 		boolean transfer=false;
 		boolean sentFinished;
-		boolean sentTransferCancel = false;
 		int status;
 		synchronized (this) {
 			synchronized (listeners) {
-				sentTransferCancel = sentAbortDownstreamTransfers;
-				if(!sentTransferCancel)
-					listeners.add(l);
 				reject = sentReceivedRejectOverload;
 				transfer = sentCHKTransferBegins;
 				sentFinished = sentRequestSenderFinished;
@@ -1624,8 +1615,6 @@ loadWaiterLoop:
 			l.onReceivedRejectOverload();
 		if (transfer)
 			l.onCHKTransferBegins();
-		if(sentTransferCancel)
-			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
 		if (status!=NOT_FINISHED && sentFinished)
 			l.onRequestSenderFinished(status, -1);
 	}
@@ -1676,29 +1665,8 @@ loadWaiterLoop:
 		}
 	}
 
-	private boolean sentAbortDownstreamTransfers;
 	private int abortDownstreamTransfersReason;
 	private String abortDownstreamTransfersDesc;
-	
-	private void sendAbortDownstreamTransfers(int reason, String desc) {
-		synchronized (listeners) {
-			abortDownstreamTransfersReason = reason;
-			abortDownstreamTransfersDesc = desc;
-			sentAbortDownstreamTransfers = true;
-			for (Listener l : listeners) {
-				try {
-					l.onAbortDownstreamTransfers(reason, desc);
-					l.onRequestSenderFinished(TRANSFER_FAILED, uid);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught: "+t, t);
-				}
-			}
-			listeners.clear();
-		}
-		synchronized(this) {
-			notifyAll();
-		}
-	}
 	
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
@@ -1711,10 +1679,6 @@ loadWaiterLoop:
 	public void killTurtle() {
 		prb.abort(RetrievalException.TURTLE_KILLED, "Too many turtles / already have turtles for this key");
 		node.failureTable.onFinalFailure(key, transferringFrom(), htl, origHTL, FailureTable.REJECT_TIME, source);
-	}
-
-	public boolean abortedDownstreamTransfers() {
-		return sentAbortDownstreamTransfers;
 	}
 
 	public long fetchTimeout() {
