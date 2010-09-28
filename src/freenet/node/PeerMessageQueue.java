@@ -259,43 +259,6 @@ public class PeerMessageQueue {
 			}
 		}
 
-		/**
-		 * Add urgent messages to <code>messages</code> until there are no more
-		 * messages to add or <code>size</code> would exceed
-		 * <code>maxSize</code>. If <code>size == maxSize</code>, a message in
-		 * the queue will be added even if it makes <code>size</code> exceed
-		 * <code>maxSize</code>.
-		 *
-		 * @param size the current size of <code>messages</code>
-		 * @param minSize the size when <code>messages</code> is empty
-		 * @param maxSize the maximum size of <code>messages</code>
-		 * @param now the current time
-		 * @param messages the list that messages will be added to
-		 * @return the size of <code>messages</code>, multiplied by -1 if there were
-		 * messages that didn't fit
-		 */
-		public int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
-			return addMessages(size, minSize, maxSize, now, messages, true);
-		}
-
-		/**
-		 * Add messages to <code>messages</code> until there are no more
-		 * messages to add or <code>size</code> would exceed
-		 * <code>maxSize</code>. If <code>size == maxSize</code>, a message in
-		 * the queue will be added even if it makes <code>size</code> exceed
-		 * <code>maxSize</code>.
-		 *
-		 * @param size the current size of <code>messages</code>
-		 * @param minSize the size when <code>messages</code> is empty
-		 * @param maxSize the maximum size of <code>messages</code>
-		 * @param now the current time
-		 * @param messages the list that messages will be added to
-		 * @return the size of <code>messages</code>, multiplied by -1 if there were
-		 * messages that didn't fit
-		 */
-		public int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
-			return addMessages(size, minSize, maxSize, now, messages, false);
-		}
 		
 		/**
 		 * Add urgent messages, then non-urgent messages. Add a load message if need to.
