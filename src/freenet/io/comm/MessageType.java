@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import freenet.support.Logger;
+import freenet.support.Serializer;
 import freenet.support.ShortBuffer;
 
 public class MessageType {
@@ -140,5 +141,16 @@ public class MessageType {
 	
 	public short getPriority() {
 		return priority;
+	}
+
+	/** Only works for simple messages!! */
+	public int getMaxSize(int maxStringLength) {
+		// This method mirrors Message.encodeToPacket.
+		int length = 0;
+		length += 4; // _spec.getName().hashCode()
+		for (Map.Entry<String, Class<?>> entry : _fields.entrySet()) {
+			length += Serializer.length(entry.getValue(), maxStringLength);
+		}
+		return length;
 	}
 }
