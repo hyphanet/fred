@@ -526,6 +526,7 @@ public class PeerMessageQueue {
 		// Do not allow realtime data to starve bulk data
 		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete);
+			if(incomplete.value) return -size;
 		}
 		
 		// FIXME token bucket?
@@ -537,12 +538,14 @@ public class PeerMessageQueue {
 				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
 				size = s;
 			}
+			if(incomplete.value) return -size;
 			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete);
 			if(s != size) {
 				sendBalance++;
 				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
 				size = s;
 			}
+			if(incomplete.value) return -size;
 		} else {
 			// Try bulk first
 			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete);
@@ -551,19 +554,21 @@ public class PeerMessageQueue {
 				if(logMINOR) Logger.minor(this, "Sending realtime packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
 				size = s;
 			}
+			if(incomplete.value) return -size;
 			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete); 
 			if(s != size) {
 				sendBalance++;
 				if(logMINOR) Logger.minor(this, "Sending bulk packet for "+pn+" balance "+sendBalance+" size "+s+" was "+size);
 				size = s;
 			}
+			if(incomplete.value) return -size;
 		}
 		if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
 		if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
 		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete);
+			if(incomplete.value) return -size;
 		}
-		if(incomplete.value) size = -size;
 		return size;
 	}
 	
