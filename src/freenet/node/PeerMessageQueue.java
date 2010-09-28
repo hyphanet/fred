@@ -431,9 +431,19 @@ public class PeerMessageQueue {
 	 * messages that didn't fit
 	 */
 	public synchronized int addUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
-		for(PrioQueue queue : queuesByPriority) {
-			size = queue.addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
+		boolean someDidntFit = false;
+		if(size < 0) {
+			size = -size;
+			someDidntFit = true;
 		}
+		for(PrioQueue queue : queuesByPriority) {
+			size = queue.addUrgentMessages(size, minSize, maxSize, now, messages);
+			if(size < 0) {
+				size = -size;
+				someDidntFit = true;
+			}
+		}
+		if(someDidntFit) size = -size;
 		return size;
 	}
 
@@ -453,9 +463,19 @@ public class PeerMessageQueue {
 	 * messages that didn't fit
 	 */
 	public synchronized int addNonUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
+		boolean someDidntFit = false;
+		if(size < 0) {
+			size = -size;
+			someDidntFit = true;
+		}
 		for(PrioQueue queue : queuesByPriority) {
 			size = queue.addMessages(Math.abs(size), minSize, maxSize, now, messages);
+			if(size < 0) {
+				size = -size;
+				someDidntFit = true;
+			}
 		}
+		if(someDidntFit) size = -size;
 		return size;
 	}
 
