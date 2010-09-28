@@ -261,7 +261,6 @@ public class PeerMessageQueue {
 					messages.add(item);
 					list.timeLastSent = now;
 					addedNone = false;
-					MessageItem load = null;
 					if(mustSendLoadRT && item.sendLoadRT && !addPeerLoadStatsRT.value) {
 						if(size + 2 + MAX_PEER_LOAD_STATS_SIZE > maxSize) {
 							if(logMINOR) Logger.minor(this, "Unable to add load message (realtime) to packet");
@@ -284,44 +283,6 @@ public class PeerMessageQueue {
 			}
 		}
 
-		/**
-		 * Add urgent messages to <code>messages</code> until there are no more
-		 * messages to add or <code>size</code> would exceed
-		 * <code>maxSize</code>. If <code>size == maxSize</code>, a message in
-		 * the queue will be added even if it makes <code>size</code> exceed
-		 * <code>maxSize</code>.
-		 *
-		 * @param size the current size of <code>messages</code>
-		 * @param minSize the size when <code>messages</code> is empty
-		 * @param maxSize the maximum size of <code>messages</code>
-		 * @param now the current time
-		 * @param messages the list that messages will be added to
-		 * @return the size of <code>messages</code>, multiplied by -1 if there were
-		 * messages that didn't fit
-		 */
-		public int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
-			return addMessages(size, minSize, maxSize, now, messages, true, addPeerLoadStatsRT, addPeerLoadStatsBulk);
-		}
-
-		/**
-		 * Add messages to <code>messages</code> until there are no more
-		 * messages to add or <code>size</code> would exceed
-		 * <code>maxSize</code>. If <code>size == maxSize</code>, a message in
-		 * the queue will be added even if it makes <code>size</code> exceed
-		 * <code>maxSize</code>.
-		 *
-		 * @param size the current size of <code>messages</code>
-		 * @param minSize the size when <code>messages</code> is empty
-		 * @param maxSize the maximum size of <code>messages</code>
-		 * @param now the current time
-		 * @param messages the list that messages will be added to
-		 * @return the size of <code>messages</code>, multiplied by -1 if there were
-		 * messages that didn't fit
-		 */
-		public int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
-			return addMessages(size, minSize, maxSize, now, messages, false, addPeerLoadStatsRT, addPeerLoadStatsBulk);
-		}
-		
 		/**
 		 * Add urgent messages, then non-urgent messages. Add a load message if need to.
 		 * @param size
