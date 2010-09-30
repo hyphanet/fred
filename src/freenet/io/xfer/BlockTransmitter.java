@@ -433,6 +433,7 @@ public class BlockTransmitter {
 				now = System.currentTimeMillis();
 				if(now > deadline)
 					throw new IllegalStateException("Waited an hour for "+blockSendsPending+" blocks");
+				// FIXME do a clean abort, cancel the blocks as they must still be queued.
 			}
 		}
 	}
