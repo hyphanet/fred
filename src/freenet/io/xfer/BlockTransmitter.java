@@ -126,7 +126,10 @@ public class BlockTransmitter {
 						return;
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "Terminating send: "+e);
-						//the send() thread should notice...
+						//the send() thread should notice... but lets not take any chances, it might reconnect.
+						synchronized(_senderThread) {
+							_sendComplete = true;
+						}
 						return;
 					} catch (AbortedException e) {
 						Logger.normal(this, "Terminating send due to abort: "+e);
@@ -139,7 +142,10 @@ public class BlockTransmitter {
 						}
 						return;
 					} catch (SyncSendWaitedTooLongException e) {
-						// Impossible
+						// Impossible, but lets cancel it anyway
+						synchronized(_senderThread) {
+							_sendComplete = true;
+						}
 						Logger.error(this, "Impossible: Caught "+e, e);
 						return;
 					}
