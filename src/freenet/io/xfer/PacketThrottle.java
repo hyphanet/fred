@@ -156,6 +156,13 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
+	/** 
+	 * Send a throttled message.
+	 * @param cbForAsyncSend Callback to call when we send the message, etc. We will try
+	 * to call it even if we throw an exception etc. The caller may want to do this too,
+	 * in which case the callback should ignore multiple calls, which is a good idea 
+	 * anyway.
+	 */
 	public void sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
