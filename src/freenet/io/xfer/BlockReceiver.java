@@ -96,8 +96,11 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	}
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
+		synchronized(this) {
+			if(sentAborted) return;
+			sentAborted = true;
+		}
 		_usm.send(_sender, DMT.createSendAborted(_uid, reason, desc), _ctr);
-		sentAborted=true;
 	}
 	
 	public byte[] receive() throws RetrievalException {
