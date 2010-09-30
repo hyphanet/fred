@@ -30,6 +30,7 @@ import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker;
+import freenet.io.AddressTracker.Status;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
@@ -538,10 +539,10 @@ public class NodeCrypto {
 	}
 
 	public boolean definitelyPortForwarded() {
-		return socket.getDetectedConnectivityStatus() == AddressTracker.DEFINITELY_PORT_FORWARDED;
+		return socket.getDetectedConnectivityStatus() == Status.DEFINITELY_PORT_FORWARDED;
 	}
 
-	public int getDetectedConnectivityStatus() {
+	public Status getDetectedConnectivityStatus() {
 		return socket.getDetectedConnectivityStatus();
 	}
 

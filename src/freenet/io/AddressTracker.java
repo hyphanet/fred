@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import freenet.io.comm.Peer;
+import freenet.l10n.NodeL10n;
 import freenet.node.FSParseException;
 import freenet.node.ProgramDirectory;
 import freenet.support.Logger;
@@ -200,12 +201,16 @@ public class AddressTracker {
 		return ipTrackers.values().toArray(items);
 	}
 
-	public static final int DEFINITELY_PORT_FORWARDED = 2;
-	public static final int MAYBE_PORT_FORWARDED = 1;
-	public static final int MAYBE_NATED = -1;
-	public static final int DEFINITELY_NATED = -2;
-	public static final int DONT_KNOW = 0;
-
+	public enum Status {
+		// Note: Order is important! We compare by ordinals in various places.
+		// FIXME switch to using member methods.
+		DEFINITELY_PORT_FORWARDED,
+		MAYBE_PORT_FORWARDED,
+		MAYBE_NATED,
+		DEFINITELY_NATED,
+		DONT_KNOW
+	}
+	
 	/** If the minimum gap is at least this, we might be port forwarded.
 	 * RFC 4787 requires at least 2 minutes, but many NATs have shorter timeouts. */
 	public final static long MAYBE_TUNNEL_LENGTH = ((5 * 60) + 1) * 1000L;
@@ -239,42 +244,29 @@ public class AddressTracker {
 
 	}
 
-	public int getPortForwardStatus() {
+	public Status getPortForwardStatus() {
 		long minGap = getLongestSendReceiveGap(HORIZON);
 
 		if(minGap > DEFINITELY_TUNNEL_LENGTH)
-			return DEFINITELY_PORT_FORWARDED;
+			return Status.DEFINITELY_PORT_FORWARDED;
 		if(minGap > MAYBE_TUNNEL_LENGTH)
-			return MAYBE_PORT_FORWARDED;
+			return Status.MAYBE_PORT_FORWARDED;
 		// Only take isBroken into account if we're not sure.
 		// Somebody could be playing with us by sending bogus FNPSentPackets...
 		synchronized(this) {
-			if(isBroken()) return DEFINITELY_NATED;
+			if(isBroken()) return Status.DEFINITELY_NATED;
 			if(minGap == 0 && timePresumeGuilty > 0 && System.currentTimeMillis() > timePresumeGuilty)
-				return MAYBE_NATED;
+				return Status.MAYBE_NATED;
 		}
-		return DONT_KNOW;
+		return Status.DONT_KNOW;
 	}
 
 	private boolean isBroken() {
 		return System.currentTimeMillis() - brokenTime < HORIZON;
 	}
 
-	public static String statusString(int status) {
-		switch(status) {
-		case DEFINITELY_PORT_FORWARDED:
-			return "Port forwarded";
-		case MAYBE_PORT_FORWARDED:
-			return "Maybe port forwarded";
-		case MAYBE_NATED:
-			return "Maybe behind NAT";
-		case DEFINITELY_NATED:
-			return "Behind NAT";
-		case DONT_KNOW:
-			return "Status unknown";
-		default:
-			return "Error";
-		}
+	public static String statusString(Status status) {
+		return NodeL10n.getBase().getString("ConnectivityToadlet.status."+status);
 	}
 
 	/** Persist the table to disk */

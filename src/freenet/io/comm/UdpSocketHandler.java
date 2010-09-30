@@ -347,7 +347,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		tracker.rescan();
 	}
 
-	public int getDetectedConnectivityStatus() {
+	public AddressTracker.Status getDetectedConnectivityStatus() {
 		return tracker.getPortForwardStatus();
 	}
 

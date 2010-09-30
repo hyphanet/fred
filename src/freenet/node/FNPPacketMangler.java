@@ -26,6 +26,7 @@ import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker;
+import freenet.io.AddressTracker.Status;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
@@ -3138,9 +3139,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return data;
 	}
 
-	public int getConnectivityStatus() {
+	public Status getConnectivityStatus() {
 		if(crypto.config.alwaysHandshakeAggressively())
-			return AddressTracker.DEFINITELY_NATED;
+			return AddressTracker.Status.DEFINITELY_NATED;
 		return sock.getDetectedConnectivityStatus();
 	}
 
