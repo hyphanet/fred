@@ -421,6 +421,7 @@ public class BlockTransmitter {
 		synchronized(_senderThread) {
 			if(blockSendsPending == 0) return false;
 			while(blockSendsPending != 0) {
+				if(logMINOR) Logger.minor(this, "Waiting for "+blockSendsPending+" blocks");
 				try {
 					_senderThread.wait();
 				} catch (InterruptedException e) {
