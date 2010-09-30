@@ -405,6 +405,7 @@ public class BlockTransmitter {
 				if(completed) return;
 				completed = true;
 				blockSendsPending--;
+				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
 				_senderThread.notifyAll();
 			}
 		}
