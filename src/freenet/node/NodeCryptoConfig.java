@@ -56,7 +56,10 @@ public class NodeCryptoConfig {
 	private boolean paddDataPackets;
 	
 	NodeCryptoConfig(SubConfig config, int sortOrder, boolean isOpennet, SecurityLevels securityLevels) throws NodeInitException {
-		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
+		config.register("listenPort", -1 /* means random */, sortOrder++, true, true,
+				isOpennet ? "Node.opennetPort" : "Node.port", 
+				isOpennet ? "Node.opennetPortLong" : "Node.portLong", 
+						new IntCallback() {
 			@Override
 			public Integer get() {
 				synchronized(NodeCryptoConfig.class) {
