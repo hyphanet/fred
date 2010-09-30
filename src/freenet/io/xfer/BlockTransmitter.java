@@ -122,6 +122,7 @@ public class BlockTransmitter {
 						Logger.normal(this, "Terminating send due to peer restart: "+e);
 						synchronized(_senderThread) {
 							_sendComplete = true;
+							_senderThread.notifyAll();
 						}
 						return;
 					} catch (NotConnectedException e) {
@@ -129,6 +130,7 @@ public class BlockTransmitter {
 						//the send() thread should notice... but lets not take any chances, it might reconnect.
 						synchronized(_senderThread) {
 							_sendComplete = true;
+							_senderThread.notifyAll();
 						}
 						return;
 					} catch (AbortedException e) {
@@ -139,12 +141,14 @@ public class BlockTransmitter {
 						Logger.normal(this, "Waited too long to send packet, aborting");
 						synchronized(_senderThread) {
 							_sendComplete = true;
+							_senderThread.notifyAll();
 						}
 						return;
 					} catch (SyncSendWaitedTooLongException e) {
 						// Impossible, but lets cancel it anyway
 						synchronized(_senderThread) {
 							_sendComplete = true;
+							_senderThread.notifyAll();
 						}
 						Logger.error(this, "Impossible: Caught "+e, e);
 						return;
@@ -238,6 +242,7 @@ public class BlockTransmitter {
 						synchronized(_senderThread) {
 							timeAllSent = -1;
 							_sendComplete = true;
+							_senderThread.notifyAll();
 						}
 						try {
 							sendAborted(reason, description);
