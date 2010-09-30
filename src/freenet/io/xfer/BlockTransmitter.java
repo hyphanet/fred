@@ -419,16 +419,21 @@ public class BlockTransmitter {
 	 */
 	private boolean waitForAsyncBlockSends() {
 		synchronized(_senderThread) {
+			long now = System.currentTimeMillis();
+			long deadline = now + 60*60*1000;
 			if(blockSendsPending == 0) return false;
-			while(blockSendsPending != 0) {
+			while(true) {
 				if(logMINOR) Logger.minor(this, "Waiting for "+blockSendsPending+" blocks");
 				try {
-					_senderThread.wait();
+					_senderThread.wait(60*60*1000);
 				} catch (InterruptedException e) {
 					// Ignore
 				}
+				if(blockSendsPending == 0) return true;
+				now = System.currentTimeMillis();
+				if(now > deadline)
+					throw new IllegalStateException("Waited an hour for "+blockSendsPending+" blocks");
 			}
-			return true;
 		}
 	}
 
