@@ -235,6 +235,15 @@ public class BlockTransmitter {
 					}
 
 					public void receiveAborted(int reason, String description) {
+						synchronized(_senderThread) {
+							timeAllSent = -1;
+							_sendComplete = true;
+						}
+						try {
+							sendAborted(reason, description);
+						} catch (NotConnectedException e) {
+							// Ignore
+						}
 					}
 				});
 			}
@@ -244,8 +253,6 @@ public class BlockTransmitter {
 				synchronized(_senderThread) {
 					if(_sendComplete) return false;
 				}
-				// Check for abort, even if timeAllSent is never set.
-				_prb.getNumPackets();
 				Message msg;
 				try {
 					MessageFilter mfMissingPacketNotification = MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
