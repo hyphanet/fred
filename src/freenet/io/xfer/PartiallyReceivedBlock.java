@@ -156,6 +156,7 @@ public class PartiallyReceivedBlock {
 	}
 
 	public synchronized void abort(int reason, String description) {
+		if(_aborted) return;
 		_aborted = true;
 		_abortReason = reason;
 		_abortDescription = description;
