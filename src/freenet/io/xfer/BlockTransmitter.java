@@ -78,8 +78,6 @@ public class BlockTransmitter {
 	private long timeAllSent = -1;
 	final ByteCounter _ctr;
 	final int PACKET_SIZE;
-	private boolean asyncExitStatus;
-	private boolean asyncExitStatusSet;
 	private final ReceiverAbortHandler abortHandler;
 	
 	private final Ticker _ticker;
@@ -118,7 +116,7 @@ public class BlockTransmitter {
 		
 		public void schedule(long delay) {
 			if(_sendComplete) return;
-			_ticker.queueTimedJob(this, "BlockTransmitter block sender", delay, false, false);
+			_ticker.queueTimedJob(this, "BlockTransmitter block sender for "+_uid+" to "+_destination, delay, false, false);
 		}
 
 		/** @return True . */
@@ -469,38 +467,19 @@ public class BlockTransmitter {
 	public void sendAsync(final BlockTransmitterCompletion callback) {
 		_ticker.queueTimedJob(new PrioRunnable() {
 			public void run() {
-						 try {
-						    asyncExitStatus=send();
-						 } finally {
-						    synchronized (BlockTransmitter.this) {
-						       asyncExitStatusSet=true;
-						       BlockTransmitter.this.notifyAll();
-						    }
-					       if(callback != null)
-					    	   callback.blockTransferFinished(asyncExitStatus);
-						 }
-					}
+				boolean asyncExitStatus = false;
+				try {
+					asyncExitStatus=send();
+				} finally {
+					if(callback != null)
+						callback.blockTransferFinished(asyncExitStatus);
+				}
+			}
 
 			public int getPriority() {
 				return NativeThread.HIGH_PRIORITY;
 			} },
 			"BlockTransmitter:sendAsync() for "+this, 0, false, false);
-	}
-
-	public boolean getAsyncExitStatus() {
-    	long deadline = System.currentTimeMillis() + 60*60*1000;
-		synchronized (this) {
-			while (!asyncExitStatusSet) {
-				try {
-	            	long now = System.currentTimeMillis();
-	            	if(now >= deadline) throw new IllegalStateException("Waited more than 1 hour for transfer completion!");
-	                wait(deadline - now);
-				} catch (InterruptedException e) {
-					//ignore
-				}
-			}
-		}
-		return asyncExitStatus;
 	}
 
 	public PeerContext getDestination() {
