@@ -275,8 +275,6 @@ public class BlockTransmitter {
 				synchronized(_senderThread) {
 					if(_sendComplete) return false;
 				}
-				// Check for abort, even if timeAllSent is never set.
-				_prb.getNumPackets();
 				Message msg;
 				try {
 					MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
