@@ -405,19 +405,29 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	}
 
 	private void maybeCompleteTransfer() throws NotConnectedException {
-		Message reject;
-		if(disconnected) {
-			unregisterRequestHandlerWithNode();
-		} else if(bt == null) {
-			// Bug! This is impossible!
-			Logger.error(this, "Status is "+status+" but we never started a transfer on " + uid);
-			// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
-			reject = DMT.createFNPRejectedOverload(uid, true);
-			sendTerminal(reject);
-		} else {
-			if(readyToFinishTransfer())
-				transferFinished(transferSuccess);
+		Message reject = null;
+		boolean disconn = false;
+		boolean xferFinished = false;
+		boolean xferSuccess = false;
+		synchronized(this) {
+			if(disconnected)
+				disconn = true;
+			else if(bt == null) {
+				// Bug! This is impossible!
+				Logger.error(this, "Status is "+status+" but we never started a transfer on " + uid);
+				// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
+				reject = DMT.createFNPRejectedOverload(uid, true);
+			} else {
+				xferFinished = readyToFinishTransfer();
+				xferSuccess = transferSuccess;
+			}
 		}
+		if(disconn)
+			unregisterRequestHandlerWithNode();
+		else if(disconn)
+			sendTerminal(reject);
+		else if(xferFinished)
+			transferFinished(xferSuccess);
 	}
 
 	private void sendSSK(byte[] headers, final byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
