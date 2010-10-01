@@ -466,8 +466,8 @@ public class BlockTransmitter {
 	/**
 	 * Send the data, off-thread.
 	 */
-	public void sendAsync(final Executor executor) {
-		executor.execute(new PrioRunnable() {
+	public void sendAsync(final BlockTransmitterCompletion callback) {
+		_ticker.queueTimedJob(new PrioRunnable() {
 			public void run() {
 						 try {
 						    asyncExitStatus=send();
@@ -476,13 +476,15 @@ public class BlockTransmitter {
 						       asyncExitStatusSet=true;
 						       BlockTransmitter.this.notifyAll();
 						    }
+					       if(callback != null)
+					    	   callback.blockTransferFinished(asyncExitStatus);
 						 }
 					}
 
 			public int getPriority() {
 				return NativeThread.HIGH_PRIORITY;
 			} },
-			"BlockTransmitter:sendAsync() for "+this);
+			"BlockTransmitter:sendAsync() for "+this, 0, false, false);
 	}
 
 	public boolean getAsyncExitStatus() {
