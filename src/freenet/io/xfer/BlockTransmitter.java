@@ -267,9 +267,10 @@ public class BlockTransmitter {
 		
 	}
 	
+	private PartiallyReceivedBlock.PacketReceivedListener myListener = null;
+	
 	public boolean send() {
 		long startTime = System.currentTimeMillis();
-		PartiallyReceivedBlock.PacketReceivedListener myListener=null;
 		
 		try {
 			synchronized(_prb) {
