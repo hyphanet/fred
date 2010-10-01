@@ -295,18 +295,14 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
-	private void waitAndFinishCHKTransferOffThread() {
-		boolean transferredSuccessfully;
-		synchronized(RequestHandler.this) {
-			if(waitingForTransferSuccess) {
-				Logger.error(this, "waitAndFinishCHKTransferOffThread called twice on "+this);
-				return;
-			}
-			waitingForTransferSuccess = true;
-			if(!transferCompleted) return; // Wait
-			transferredSuccessfully = transferSuccess;
+	private synchronized boolean readyToFinishTransfer() {
+		if(waitingForTransferSuccess) {
+			Logger.error(this, "waitAndFinishCHKTransferOffThread called twice on "+this);
+			return false;
 		}
-		transferFinished(transferredSuccessfully);
+		waitingForTransferSuccess = true;
+		if(!transferCompleted) return false; // Wait
+		return true;
 	}
 
 	/** If this is set, the transfer was turtled, the RequestSender took on responsibility
@@ -384,7 +380,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							reject = DMT.createFNPRejectedOverload(uid, true);
 							sendTerminal(reject);
 						} else {
-							waitAndFinishCHKTransferOffThread();
+							if(readyToFinishTransfer())
+								transferFinished(transferSuccess);
 						}
 					}
 					return;
@@ -401,7 +398,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							sendTerminal(reject);
 						} else {
 							//Verify fails after receive() is complete, so we might as well propagate it...
-							waitAndFinishCHKTransferOffThread();
+							if(readyToFinishTransfer())
+								transferFinished(transferSuccess);
 						}
 						return;
 					}
@@ -417,10 +415,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
 							reject = DMT.createFNPRejectedOverload(uid, true);
 							sendTerminal(reject);
-						} else if(!disconnected)
-							waitAndFinishCHKTransferOffThread();
-						else
+						} else if(!disconnected) {
+							if(readyToFinishTransfer())
+								transferFinished(transferSuccess);
+						} else {
 							unregisterRequestHandlerWithNode();
+						}
 						return;
 					}
 					Logger.error(this, "finish(TRANSFER_FAILED) should not be called on SSK?!?!", new Exception("error"));
