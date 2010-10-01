@@ -262,6 +262,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	/** Are we waiting for the transfer to complete? */
 	boolean waitingForTransferSuccess;
 	
+	/** Once the transfer has finished and we have the final status code, either path fold
+	 * or just unregister.
+	 * @param success Whether the block transfer succeeded.
+	 */
 	protected void transferFinished(boolean success) {
 		if(success) {
 			status = rs.getStatus();
@@ -295,6 +299,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
+	/** Called when we have the final status and can thus complete as soon as the transfer
+	 * finishes.
+	 * @return True if we have finished the transfer as well and can therefore go to 
+	 * transferFinished(). 
+	 */
 	private synchronized boolean readyToFinishTransfer() {
 		if(waitingForTransferSuccess) {
 			Logger.error(this, "waitAndFinishCHKTransferOffThread called twice on "+this);
@@ -404,6 +413,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
+	/** After we have reached a terminal status that might involve a transfer - success,
+	 * transfer fail or verify failure - check for disconnection, check that we actually
+	 * started the transfer, complete if we have already completed the transfer, or set
+	 * a flag so that we will complete when we do.
+	 * @throws NotConnectedException If we didn't start the transfer and were not 
+	 * connected to the source.
+	 */
 	private void maybeCompleteTransfer() throws NotConnectedException {
 		Message reject = null;
 		boolean disconn = false;
