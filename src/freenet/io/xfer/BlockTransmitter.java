@@ -293,8 +293,9 @@ public class BlockTransmitter {
 	public boolean maybeFail() {
 		if(_completed) return false;
 		if(_failed) return false;
-		_completed = true;
 		_failed = true;
+		if(blockSendsPending != 0) return false;
+		_completed = true;
 		return true;
 	}
 
