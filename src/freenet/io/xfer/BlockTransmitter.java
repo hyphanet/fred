@@ -569,8 +569,8 @@ public class BlockTransmitter {
 			}
 			_senderThread.schedule(0);
 			
-			mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setSource(_destination);
-			mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_destination);
+			mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
+			mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
 			
 			try {
 				_usm.addAsyncFilter(mfAllReceived, cbAllReceived);
