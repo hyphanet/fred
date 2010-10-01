@@ -232,20 +232,21 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						return true;
 					}
 					
+				},
+				new BlockTransmitterCompletion() {
+
+					public void blockTransferFinished(boolean success) {
+						synchronized(RequestHandler.this) {
+							transferCompleted = true;
+							transferSuccess = success;
+							if(!waitingForTransferSuccess) return;
+						}
+						transferFinished(success);
+					}
+					
 				});
 			node.addTransferringRequestHandler(uid);
-			bt.sendAsync(new BlockTransmitterCompletion() {
-
-				public void blockTransferFinished(boolean success) {
-					synchronized(RequestHandler.this) {
-						transferCompleted = true;
-						transferSuccess = success;
-						if(!waitingForTransferSuccess) return;
-					}
-					transferFinished(success);
-				}
-				
-			});
+			bt.sendAsync();
 		} catch(NotConnectedException e) {
 			synchronized(this) {
 				disconnected = true;
@@ -516,34 +517,35 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			PartiallyReceivedBlock prb =
 				new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
 			BlockTransmitter bt =
-				new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, this, BlockTransmitter.NEVER_CASCADE);
+				new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, this, BlockTransmitter.NEVER_CASCADE,
+						new BlockTransmitterCompletion() {
+
+					public void blockTransferFinished(boolean success) {
+						if(success) {
+							// for byte logging
+							status = RequestSender.SUCCESS;
+							// We've fetched it from our datastore, so there won't be a downstream noderef.
+							// But we want to send at least an FNPOpennetCompletedAck, otherwise the request source
+							// may have to timeout waiting for one. That will be the terminal message.
+							try {
+								finishOpennetNoRelay();
+							} catch (NotConnectedException e) {
+								Logger.normal(this, "requestor gone, could not start request handler wait");
+								node.removeTransferringRequestHandler(uid);
+								tag.handlerThrew(e);
+								node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+							}
+						} else {
+							//also for byte logging, since the block is the 'terminal' message.
+							applyByteCounts();
+							unregisterRequestHandlerWithNode();
+						}
+					}
+					
+				});
 			node.addTransferringRequestHandler(uid);
 			source.sendAsync(df, null, this);
-			bt.sendAsync(new BlockTransmitterCompletion() {
-
-				public void blockTransferFinished(boolean success) {
-					if(success) {
-						// for byte logging
-						status = RequestSender.SUCCESS;
-						// We've fetched it from our datastore, so there won't be a downstream noderef.
-						// But we want to send at least an FNPOpennetCompletedAck, otherwise the request source
-						// may have to timeout waiting for one. That will be the terminal message.
-						try {
-							finishOpennetNoRelay();
-						} catch (NotConnectedException e) {
-							Logger.normal(this, "requestor gone, could not start request handler wait");
-							node.removeTransferringRequestHandler(uid);
-							tag.handlerThrew(e);
-							node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
-						}
-					} else {
-						//also for byte logging, since the block is the 'terminal' message.
-						applyByteCounts();
-						unregisterRequestHandlerWithNode();
-					}
-				}
-				
-			});
+			bt.sendAsync();
 		} else
 			throw new IllegalStateException();
 	}

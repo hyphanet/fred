@@ -47,29 +47,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		/** Did it succeed? */
 		boolean transferSucceeded;
 		
-		BackgroundTransfer(PeerNode pn, PartiallyReceivedBlock prb) {
+		BackgroundTransfer(final PeerNode pn, PartiallyReceivedBlock prb) {
 			this.pn = pn;
 			this.uid = CHKInsertSender.this.uid;
-			bt = new BlockTransmitter(node.usm, node.getTicker(), pn, uid, prb, CHKInsertSender.this, BlockTransmitter.NEVER_CASCADE);
-		}
-		
-		void start() {
-			node.executor.execute(this, "CHKInsert-BackgroundTransfer for "+uid+" to "+pn.getPeer());
-		}
-		
-		public void run() {
-			freenet.support.Logger.OSThread.logPID(this);
-			try {
-				this.realRun();
-			} catch (Throwable t) {
-				this.completedTransfer(false);
-				this.receivedNotice(false);
-				Logger.error(this, "Caught "+t, t);
-			}
-		}
-		
-		private void realRun() {
-			bt.sendAsync(new BlockTransmitterCompletion() {
+			bt = new BlockTransmitter(node.usm, node.getTicker(), pn, uid, prb, CHKInsertSender.this, BlockTransmitter.NEVER_CASCADE, 
+					new BlockTransmitterCompletion() {
 
 				public void blockTransferFinished(boolean success) {
 					BackgroundTransfer.this.completedTransfer(success);
@@ -93,6 +75,25 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 				
 			});
+		}
+		
+		void start() {
+			node.executor.execute(this, "CHKInsert-BackgroundTransfer for "+uid+" to "+pn.getPeer());
+		}
+		
+		public void run() {
+			freenet.support.Logger.OSThread.logPID(this);
+			try {
+				this.realRun();
+			} catch (Throwable t) {
+				this.completedTransfer(false);
+				this.receivedNotice(false);
+				Logger.error(this, "Caught "+t, t);
+			}
+		}
+		
+		private void realRun() {
+			bt.sendAsync();
 		}
 		
 		private void completedTransfer(boolean success) {

@@ -80,6 +80,7 @@ public class BlockTransmitter {
 	private final ReceiverAbortHandler abortHandler;
 	
 	private final Ticker _ticker;
+	private final BlockTransmitterCompletion _callback;
 	
 	class MyRunnable implements PrioRunnable {
 		
@@ -183,8 +184,9 @@ public class BlockTransmitter {
 		
 	}
 	
-	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler) {
+	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, BlockTransmitterCompletion callback) {
 		_ticker = ticker;
+		_callback = callback;
 		this.abortHandler = abortHandler;
 		_usm = usm;
 		_destination = destination;
@@ -459,19 +461,19 @@ public class BlockTransmitter {
 		}
 		return ret;
 	}
-
+	
 	/**
 	 * Send the data, off-thread.
 	 */
-	public void sendAsync(final BlockTransmitterCompletion callback) {
+	public void sendAsync() {
 		_ticker.queueTimedJob(new PrioRunnable() {
 			public void run() {
 				boolean asyncExitStatus = false;
 				try {
 					asyncExitStatus=send();
 				} finally {
-					if(callback != null)
-						callback.blockTransferFinished(asyncExitStatus);
+					if(_callback != null)
+						_callback.blockTransferFinished(asyncExitStatus);
 				}
 			}
 
