@@ -302,11 +302,10 @@ public class BlockTransmitter {
 	 * send has already been aborted. */
 	public void abortSend(int reason, String desc) throws NotConnectedException {
 		boolean callFail = false;
-		synchronized(this) {
+		boolean sendAbort = false;
+		synchronized(_senderThread) {
 			_failed = true;
-			if(_sentSendAborted) return;
-			_sentSendAborted = true;
-			scheduleTimeoutAfterBlockSends();
+			sendAbort = prepareSendAbort();
 			callFail = maybeFail();
 		}
 		if(callFail) {
@@ -314,16 +313,23 @@ public class BlockTransmitter {
 				_callback.blockTransferFinished(false);
 			cleanup();
 		}
-		innerSendAborted(reason, desc);
+		if(sendAbort)
+			innerSendAborted(reason, desc);
+	}
+	
+	/** Must be called synchronized on _senderThread */
+	private boolean prepareSendAbort() {
+		scheduleTimeoutAfterBlockSends();
+		if(_sentSendAborted) return false;
+		_sentSendAborted = true;
+		return true;
 	}
 	
 	/** Send the sendAborted message. Only send it once. Send it even if we have already
 	 * aborted, we are called in some cases when the PRB aborts. */
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
-		synchronized(this) {
-			if(_sentSendAborted) return;
-			_sentSendAborted = true;
-			scheduleTimeoutAfterBlockSends();
+		synchronized(_senderThread) {
+			if(!prepareSendAbort()) return;
 		}
 		innerSendAborted(reason, desc);
 	}
@@ -472,19 +478,20 @@ public class BlockTransmitter {
 	
 	private void onAborted(int reason, String description) {
 		boolean callFailCallback;
+		boolean sendAbort;
 		synchronized(_senderThread) {
 			timeAllSent = -1;
 			_failed = true;
 			_senderThread.notifyAll();
-			if(_sentSendAborted) return;
-			_sentSendAborted = true;
-			scheduleTimeoutAfterBlockSends();
+			sendAbort = prepareSendAbort();
 			callFailCallback = maybeFail();
 		}
-		try {
-			innerSendAborted(reason, description);
-		} catch (NotConnectedException e) {
-			// Ignore
+		if(sendAbort) {
+			try {
+				innerSendAborted(reason, description);
+			} catch (NotConnectedException e) {
+				// Ignore
+			}
 		}
 		if(callFailCallback) {
 			if(_callback != null) 
