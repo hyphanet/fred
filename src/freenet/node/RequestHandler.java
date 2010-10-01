@@ -118,45 +118,47 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private Exception previousApplyByteCountCall;
 
 	private void applyByteCounts() {
-		if(disconnected) {
-			Logger.normal(this, "Not applying byte counts as request source disconnected during receive");
-			return;
-		}
-		if(appliedByteCounts) {
-			Logger.error(this, "applyByteCounts already called", new Exception("error"));
-			Logger.error(this, "first called here", previousApplyByteCountCall);
-			return;
-		}
-		previousApplyByteCountCall = new Exception("first call to applyByteCounts");
-		appliedByteCounts = true;
-		if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
-			int sent, rcvd;
-			synchronized(bytesSync) {
-				sent = sentBytes;
-				rcvd = receivedBytes;
+		synchronized(this) {
+			if(disconnected) {
+				Logger.normal(this, "Not applying byte counts as request source disconnected during receive");
+				return;
 			}
-			sent += rs.getTotalSentBytes();
-			rcvd += rs.getTotalReceivedBytes();
-			if(key instanceof NodeSSK) {
-				if(logMINOR)
-					Logger.minor(this, "Remote SSK fetch cost " + sent + '/' + rcvd + " bytes (" + status + ')');
-				node.nodeStats.remoteSskFetchBytesSentAverage.report(sent);
-				node.nodeStats.remoteSskFetchBytesReceivedAverage.report(rcvd);
-				if(status == RequestSender.SUCCESS) {
-					// Can report both parts, because we had both a Handler and a Sender
-					node.nodeStats.successfulSskFetchBytesSentAverage.report(sent);
-					node.nodeStats.successfulSskFetchBytesReceivedAverage.report(rcvd);
-				}
-			} else {
-				if(logMINOR)
-					Logger.minor(this, "Remote CHK fetch cost " + sent + '/' + rcvd + " bytes (" + status + ')');
-				node.nodeStats.remoteChkFetchBytesSentAverage.report(sent);
-				node.nodeStats.remoteChkFetchBytesReceivedAverage.report(rcvd);
-				if(status == RequestSender.SUCCESS) {
-					// Can report both parts, because we had both a Handler and a Sender
-					node.nodeStats.successfulChkFetchBytesSentAverage.report(sent);
-					node.nodeStats.successfulChkFetchBytesReceivedAverage.report(rcvd);
-				}
+			if(appliedByteCounts) {
+				Logger.error(this, "applyByteCounts already called", new Exception("error"));
+				Logger.error(this, "first called here", previousApplyByteCountCall);
+				return;
+			}
+			previousApplyByteCountCall = new Exception("first call to applyByteCounts");
+			appliedByteCounts = true;
+			if(!((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR))
+				return;
+		}
+		int sent, rcvd;
+		synchronized(bytesSync) {
+			sent = sentBytes;
+			rcvd = receivedBytes;
+		}
+		sent += rs.getTotalSentBytes();
+		rcvd += rs.getTotalReceivedBytes();
+		if(key instanceof NodeSSK) {
+			if(logMINOR)
+				Logger.minor(this, "Remote SSK fetch cost " + sent + '/' + rcvd + " bytes (" + status + ')');
+			node.nodeStats.remoteSskFetchBytesSentAverage.report(sent);
+			node.nodeStats.remoteSskFetchBytesReceivedAverage.report(rcvd);
+			if(status == RequestSender.SUCCESS) {
+				// Can report both parts, because we had both a Handler and a Sender
+				node.nodeStats.successfulSskFetchBytesSentAverage.report(sent);
+				node.nodeStats.successfulSskFetchBytesReceivedAverage.report(rcvd);
+			}
+		} else {
+			if(logMINOR)
+				Logger.minor(this, "Remote CHK fetch cost " + sent + '/' + rcvd + " bytes (" + status + ')');
+			node.nodeStats.remoteChkFetchBytesSentAverage.report(sent);
+			node.nodeStats.remoteChkFetchBytesReceivedAverage.report(rcvd);
+			if(status == RequestSender.SUCCESS) {
+				// Can report both parts, because we had both a Handler and a Sender
+				node.nodeStats.successfulChkFetchBytesSentAverage.report(sent);
+				node.nodeStats.successfulChkFetchBytesReceivedAverage.report(rcvd);
 			}
 		}
 	}
