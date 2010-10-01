@@ -145,7 +145,7 @@ public class BlockTransmitter {
 				// The PRB callback will deal with this.
 				return false;
 			} catch (WaitedTooLongException e) {
-				Logger.normal(this, "Waited too long to send packet, aborting");
+				Logger.normal(this, "Waited too long to send packet, aborting on "+BlockTransmitter.this);
 				boolean callFail = false;
 				synchronized(_senderThread) {
 					callFail = maybeFail();
@@ -162,7 +162,7 @@ public class BlockTransmitter {
 				synchronized(_senderThread) {
 					callFail = maybeFail();
 				}
-				Logger.error(this, "Impossible: Caught "+e, e);
+				Logger.error(this, "Impossible: Caught "+e+" on "+BlockTransmitter.this, e);
 				if(callFail) {
 					if(_callback != null)
 						_callback.blockTransferFinished(false);
@@ -231,6 +231,7 @@ public class BlockTransmitter {
 	public void scheduleTimeoutAfterBlockSends() {
 		synchronized(_senderThread) {
 			if(timeoutJob != null) return;
+			if(logMINOR) Logger.minor(this, "Scheduling timeout on "+this);
 			timeoutJob = new PrioRunnable() {
 				
 				public void run() {
@@ -272,12 +273,13 @@ public class BlockTransmitter {
 		if(blockSendsPending == 0 && _unsent.size() == 0 && getNumSent() == _prb._packets) {
 			timeAllSent = System.currentTimeMillis();
 			if(logMINOR)
-				Logger.minor(this, "Sent all blocks, none unsent");
+				Logger.minor(this, "Sent all blocks, none unsent on "+this);
 			_senderThread.notifyAll();
 			return true;
 		}
 		if(blockSendsPending == 0 && _failed)
 			return true;
+		if(logMINOR) Logger.minor(this, "maybeAllSent: block sends pending = "+blockSendsPending+" unsent = "+_unsent.size()+" on "+this);
 		return false;
 	}
 
@@ -285,17 +287,31 @@ public class BlockTransmitter {
 	 * _sendCompleted and then uses _completed to complete only once. LOCKING: Must be 
 	 * called with _senderThread held. */
 	public boolean maybeComplete() {
-		if(!_sendCompleted) return false;
-		if(_completed) return false;
+		if(!_sendCompleted) {
+			if(logMINOR) Logger.minor(this, "maybeComplete() not completing because send not completed on "+this);
+			return false;
+		}
+		if(_completed) {
+			if(logMINOR) Logger.minor(this, "maybeComplete() already completed on "+this);
+			return false;
+		}
+		if(logMINOR) Logger.minor(this, "maybeComplete() completing on "+this);
 		_completed = true;
 		return true;
 	}
 	
 	/** Only fail once. Called on a drastic failure e.g. disconnection. */
 	public boolean maybeFail() {
-		if(_completed) return false;
+		if(_completed) {
+			if(logMINOR) Logger.minor(this, "maybeFail() already completed on "+this);
+			return false;
+		}
 		_failed = true;
-		if(blockSendsPending != 0) return false;
+		if(blockSendsPending != 0) {
+			if(logMINOR) Logger.minor(this, "maybeFail() waiting for "+blockSendsPending+" block sends on "+this);
+			return false;
+		}
+		if(logMINOR) Logger.minor(this, "maybeFail() completing on "+this);
 		_completed = true;
 		return true;
 	}
@@ -303,6 +319,7 @@ public class BlockTransmitter {
 	/** Abort the send, and then send the sendAborted message. Don't do anything if the
 	 * send has already been aborted. */
 	public void abortSend(int reason, String desc) throws NotConnectedException {
+		if(logMINOR) Logger.minor(this, "Aborting send on "+this);
 		boolean callFail = false;
 		boolean sendAbort = false;
 		synchronized(_senderThread) {
@@ -322,7 +339,10 @@ public class BlockTransmitter {
 	/** Must be called synchronized on _senderThread */
 	private boolean prepareSendAbort() {
 		scheduleTimeoutAfterBlockSends();
-		if(_sentSendAborted) return false;
+		if(_sentSendAborted) {
+			if(logMINOR) Logger.minor(this, "Not sending sendAborted on "+this);
+			return false;
+		}
 		_sentSendAborted = true;
 		return true;
 	}
@@ -391,7 +411,7 @@ public class BlockTransmitter {
 				long transferTime = (endTime - startTime);
 				synchronized(avgTimeTaken) {
 					avgTimeTaken.report(transferTime);
-					Logger.minor(this, "Block send took "+transferTime+" : "+avgTimeTaken);
+					Logger.minor(this, "Block send took "+transferTime+" : "+avgTimeTaken+" on "+BlockTransmitter.this);
 				}
 			}
 			synchronized(_senderThread) {
@@ -439,7 +459,7 @@ public class BlockTransmitter {
 				complete = maybeFail();
 				abort = !_sentSendAborted;
 				_sentSendAborted = true;
-				if(logMINOR) Logger.minor(this, "Transfer got sendAborted on "+this);
+				if(logMINOR) Logger.minor(this, "Transfer got sendAborted on "+BlockTransmitter.this);
 			}
 			if(abort) {
 				try {
@@ -487,6 +507,7 @@ public class BlockTransmitter {
 	}
 	
 	private void onAborted(int reason, String description) {
+		if(logMINOR) Logger.minor(this, "Aborting on "+this);
 		boolean callFailCallback;
 		boolean sendAbort;
 		synchronized(_senderThread) {
@@ -516,6 +537,7 @@ public class BlockTransmitter {
 	public void sendAsync() {
 		startTime = System.currentTimeMillis();
 		
+		if(logMINOR) Logger.minor(this, "Starting async send on "+this);
 		incRunningBlockTransmits();
 		
 		try {
