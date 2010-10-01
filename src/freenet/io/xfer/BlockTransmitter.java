@@ -307,6 +307,8 @@ public class BlockTransmitter {
 			if(_sentSendAborted) return;
 			_sentSendAborted = true;
 			callFail = maybeFail();
+			// Wait for them to acknowledge the abort.
+			scheduleTimeoutAfterBlockSends();
 		}
 		if(callFail) {
 			if(_callback != null)
