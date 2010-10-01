@@ -263,7 +263,7 @@ public class BlockTransmitter {
 				}
 				
 			};
-			_ticker.queueTimedJob(timeoutJob, SEND_TIMEOUT);
+			_ticker.queueTimedJob(timeoutJob, "Timeout for "+this, SEND_TIMEOUT, false, false);
 		}
 	}
 
