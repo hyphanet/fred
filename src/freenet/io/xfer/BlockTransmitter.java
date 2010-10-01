@@ -78,6 +78,7 @@ public class BlockTransmitter {
 	final ByteCounter _ctr;
 	final int PACKET_SIZE;
 	private final ReceiverAbortHandler abortHandler;
+	private final int totalPackets;
 	
 	private final Ticker _ticker;
 	private final BlockTransmitterCompletion _callback;
@@ -121,10 +122,8 @@ public class BlockTransmitter {
 
 		/** @return True . */
 		private boolean innerRun(int packetNo) {
-			int totalPackets;
 			try {
 				_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
-				totalPackets=_prb.getNumPackets();
 			} catch (PeerRestartedException e) {
 				Logger.normal(this, "Terminating send due to peer restart: "+e);
 				synchronized(_senderThread) {
@@ -165,17 +164,11 @@ public class BlockTransmitter {
 				if(_unsent.size() == 0 && getNumSent() == totalPackets) {
 					//No unsent packets, no unreceived packets
 					sendAllSentNotification();
-					if(waitForAsyncBlockSends()) {
-						// Re-check
-						if(_unsent.size() != 0) return true;
-					}
-					timeAllSent = System.currentTimeMillis();
-					if(logMINOR)
-						Logger.minor(this, "Sent all blocks, none unsent");
-					_senderThread.notifyAll();
+					maybeAllSent();
+					return false; // No more blocks to send.
 				}
 			}
-			return true;
+			return true; // More blocks to send.
 		}
 
 		public int getPriority() {
@@ -188,13 +181,14 @@ public class BlockTransmitter {
 		_ticker = ticker;
 		_callback = callback;
 		this.abortHandler = abortHandler;
+		totalPackets = source._packets;
 		_usm = usm;
 		_destination = destination;
 		_uid = uid;
 		_prb = source;
 		_ctr = ctr;
 		if(_ctr == null) throw new NullPointerException();
-		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets)
+		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, totalPackets)
 			+ destination.getOutgoingMangler().fullHeadersLengthOneMessage();
 		try {
 			_sentPackets = new BitArray(_prb.getNumPackets());
@@ -203,6 +197,16 @@ public class BlockTransmitter {
 			// Will throw on running
 		}
 		throttle = _destination.getThrottle();
+	}
+
+	/** LOCKING: Must be called with _senderThread held. */
+	public void maybeAllSent() {
+		if(blockSendsPending == 0 && _unsent.size() == 0 && getNumSent() == totalPackets) {
+			timeAllSent = System.currentTimeMillis();
+			if(logMINOR)
+				Logger.minor(this, "Sent all blocks, none unsent");
+			_senderThread.notifyAll();
+		}
 	}
 
 	/** Abort the send, and then send the sendAborted message. Don't do anything if the
@@ -418,7 +422,7 @@ public class BlockTransmitter {
 				completed = true;
 				blockSendsPending--;
 				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
-				_senderThread.notifyAll();
+				maybeAllSent();
 			}
 		}
 
