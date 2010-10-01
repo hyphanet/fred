@@ -306,9 +306,8 @@ public class BlockTransmitter {
 			_failed = true;
 			if(_sentSendAborted) return;
 			_sentSendAborted = true;
-			callFail = maybeFail();
-			// Wait for them to acknowledge the abort.
 			scheduleTimeoutAfterBlockSends();
+			callFail = maybeFail();
 		}
 		if(callFail) {
 			if(_callback != null)
@@ -324,6 +323,7 @@ public class BlockTransmitter {
 		synchronized(this) {
 			if(_sentSendAborted) return;
 			_sentSendAborted = true;
+			scheduleTimeoutAfterBlockSends();
 		}
 		innerSendAborted(reason, desc);
 	}
@@ -478,6 +478,7 @@ public class BlockTransmitter {
 			_senderThread.notifyAll();
 			if(_sentSendAborted) return;
 			_sentSendAborted = true;
+			scheduleTimeoutAfterBlockSends();
 			callFailCallback = maybeFail();
 		}
 		try {
