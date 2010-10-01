@@ -63,7 +63,6 @@ public class BlockTransmitter {
 	}
 
 	public static final int SEND_TIMEOUT = 60000;
-	public static final int PING_EVERY = 8;
 	
 	final MessageCore _usm;
 	final PeerContext _destination;
