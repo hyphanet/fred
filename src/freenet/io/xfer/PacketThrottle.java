@@ -156,86 +156,116 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
+	/** 
+	 * Send a throttled message.
+	 * @param cbForAsyncSend Callback to call when we send the message, etc. We will try
+	 * to call it even if we throw an exception etc. The caller may want to do this too,
+	 * in which case the callback should ignore multiple calls, which is a good idea 
+	 * anyway.
+	 */
 	public void sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
-		synchronized(this) {
-			long thisTicket=_packetTicketGenerator++;
-			// FIXME a list, or even a TreeMap by deadline, would use less CPU than waking up every waiter twice whenever a packet is acked.
-			while(true) {
-				int windowSize = (int) getWindowSize();
-				// If we have different timeouts, and we have packets 1 and 2 timeout and 3 and 4 not timeout,
-				// we could end up not sending 3 and 4 at all if we use == here.
-				if(logMINOR) Logger.minor(this, "_packetSeq="+_packetSeq+" this ticket = "+thisTicket+" abandoned "+_abandonedTickets+" in flight "+_packetsInFlight+" window "+windowSize);
-				boolean wereNext=(_packetSeq>=(thisTicket-_abandonedTickets));
-				//If there is room for it in the window, break and send it immediately
-				if(_packetsInFlight < windowSize && wereNext) {
-					_packetsInFlight++;
-					_packetSeq++;
-					if(windowSize == _packetsInFlight) {
-						_packetSeqWindowFull = _packetSeq;
-						if(logMINOR) Logger.minor(this, "Window full at "+_packetSeq+" for "+this);
+		try {
+			synchronized(this) {
+				long thisTicket=_packetTicketGenerator++;
+				// FIXME a list, or even a TreeMap by deadline, would use less CPU than waking up every waiter twice whenever a packet is acked.
+				while(true) {
+					int windowSize = (int) getWindowSize();
+					// If we have different timeouts, and we have packets 1 and 2 timeout and 3 and 4 not timeout,
+					// we could end up not sending 3 and 4 at all if we use == here.
+					if(logMINOR) Logger.minor(this, "_packetSeq="+_packetSeq+" this ticket = "+thisTicket+" abandoned "+_abandonedTickets+" in flight "+_packetsInFlight+" window "+windowSize);
+					boolean wereNext=(_packetSeq>=(thisTicket-_abandonedTickets));
+					//If there is room for it in the window, break and send it immediately
+					if(_packetsInFlight < windowSize && wereNext) {
+						_packetsInFlight++;
+						_packetSeq++;
+						if(windowSize == _packetsInFlight) {
+							_packetSeqWindowFull = _packetSeq;
+							if(logMINOR) Logger.minor(this, "Window full at "+_packetSeq+" for "+this);
+						}
+						if(logMINOR) Logger.minor(this, "Sending, window size now "+windowSize+" packets in flight "+_packetsInFlight+" for "+this);
+						break;
 					}
-					if(logMINOR) Logger.minor(this, "Sending, window size now "+windowSize+" packets in flight "+_packetsInFlight+" for "+this);
-					break;
-				}
-				long waitingBehind=thisTicket-_abandonedTickets-_packetSeq;
-				if(logMINOR) Logger.minor(this, "Window size: "+windowSize+" packets in flight "+_packetsInFlight+", "+waitingBehind+" in front of this thread for "+this);
-				long now = System.currentTimeMillis();
-				int waitFor = (int)Math.min(Integer.MAX_VALUE, deadline - now);
-				if(waitFor <= 0) {
-					// Double-check.
-					if(!peer.isConnected()) {
-						Logger.error(this, "Not notified of disconnection before timeout");
-						_abandonedTickets++;
-						throw new NotConnectedException();
-					}
-					if(bootID != peer.getBootID()) {
-						Logger.error(this, "Not notified of reconnection before timeout");
+					long waitingBehind=thisTicket-_abandonedTickets-_packetSeq;
+					if(logMINOR) Logger.minor(this, "Window size: "+windowSize+" packets in flight "+_packetsInFlight+", "+waitingBehind+" in front of this thread for "+this);
+					long now = System.currentTimeMillis();
+					int waitFor = (int)Math.min(Integer.MAX_VALUE, deadline - now);
+					if(waitFor <= 0) {
+						// Double-check.
+						if(!peer.isConnected()) {
+							Logger.error(this, "Not notified of disconnection before timeout");
+							_abandonedTickets++;
+							throw new NotConnectedException();
+						}
+						if(bootID != peer.getBootID()) {
+							Logger.error(this, "Not notified of reconnection before timeout");
+							_abandonedTickets++;
+							notifyAll();
+							throw new NotConnectedException();
+						}
+						Logger.error(this, "Unable to send throttled message, waited "+(now-start)+"ms");
 						_abandonedTickets++;
 						notifyAll();
+						throw new WaitedTooLongException();
+					}
+					try {
+						wait(waitFor);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+					if(!peer.isConnected()) {
+						_abandonedTickets++;
 						throw new NotConnectedException();
 					}
-					Logger.error(this, "Unable to send throttled message, waited "+(now-start)+"ms");
-					_abandonedTickets++;
-					notifyAll();
-					throw new WaitedTooLongException();
+					long newBootID = peer.getBootID();
+					if(bootID != newBootID) {
+						_abandonedTickets++;
+						notifyAll();
+						Logger.normal(this, "Peer restarted: boot ID was "+bootID+" now "+newBootID);
+						throw new PeerRestartedException();
+					}
+					if(_deprecatedFor != null) {
+						_abandonedTickets++;
+						notifyAll();
+						throw new ThrottleDeprecatedException(_deprecatedFor);
+					}
 				}
-				try {
-					wait(waitFor);
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-				if(!peer.isConnected()) {
-					_abandonedTickets++;
-					throw new NotConnectedException();
-				}
-				long newBootID = peer.getBootID();
-				if(bootID != newBootID) {
-					_abandonedTickets++;
-					notifyAll();
-					Logger.normal(this, "Peer restarted: boot ID was "+bootID+" now "+newBootID);
-					throw new PeerRestartedException();
-				}
-				if(_deprecatedFor != null) {
-					_abandonedTickets++;
-					notifyAll();
-					throw new ThrottleDeprecatedException(_deprecatedFor);
-				}
+				/** Because we send in order, we have to go around all the waiters again after sending.
+				 * Otherwise, we will miss slots:
+				 * Seq = 0
+				 * A: Wait for seq = 1
+				 * B: Wait for seq = 2
+				 * Packet acked
+				 * Packet acked
+				 * B: I'm not next since seq = 0 and I'm waiting for 2. Do nothing.
+				 * A: I'm next because seq = 0 and I'm waiting for 1. Send a packet.
+				 * A sends, B doesn't, even though it ought to: its slot is lost, and this can cause big 
+				 * problems if we are sending more than one packet at a time.
+				 */
+				notifyAll();
 			}
-			/** Because we send in order, we have to go around all the waiters again after sending.
-			 * Otherwise, we will miss slots:
-			 * Seq = 0
-			 * A: Wait for seq = 1
-			 * B: Wait for seq = 2
-			 * Packet acked
-			 * Packet acked
-			 * B: I'm not next since seq = 0 and I'm waiting for 2. Do nothing.
-			 * A: I'm next because seq = 0 and I'm waiting for 1. Send a packet.
-			 * A sends, B doesn't, even though it ought to: its slot is lost, and this can cause big 
-			 * problems if we are sending more than one packet at a time.
-			 */
-			notifyAll();
+			// Deal with this outside the lock, catch and re-throw.
+		} catch (NotConnectedException e) {
+			if(cbForAsyncSend != null)
+				cbForAsyncSend.disconnected();
+			throw e;
+		} catch (PeerRestartedException e) {
+			if(cbForAsyncSend != null)
+				cbForAsyncSend.disconnected();
+			throw e;
+		} catch (WaitedTooLongException e) {
+			if(cbForAsyncSend != null)
+				cbForAsyncSend.fatalError();
+			throw e;
+		} catch (Error e) {
+			if(cbForAsyncSend != null)
+				cbForAsyncSend.fatalError();
+			throw e;
+		} catch (RuntimeException e) {
+			if(cbForAsyncSend != null)
+				cbForAsyncSend.fatalError();
+			throw e;
 		}
 		long waitTime = System.currentTimeMillis() - start;
 		if(waitTime > 60*1000)

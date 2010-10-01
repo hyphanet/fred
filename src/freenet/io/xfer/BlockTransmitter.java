@@ -67,6 +67,7 @@ public class BlockTransmitter {
 	final MessageCore _usm;
 	final PeerContext _destination;
 	private boolean _sendComplete;
+	private boolean _sentSendAborted;
 	final long _uid;
 	final PartiallyReceivedBlock _prb;
 	private LinkedList<Integer> _unsent;
@@ -122,11 +123,16 @@ public class BlockTransmitter {
 						Logger.normal(this, "Terminating send due to peer restart: "+e);
 						synchronized(_senderThread) {
 							_sendComplete = true;
+							_senderThread.notifyAll();
 						}
 						return;
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "Terminating send: "+e);
-						//the send() thread should notice...
+						//the send() thread should notice... but lets not take any chances, it might reconnect.
+						synchronized(_senderThread) {
+							_sendComplete = true;
+							_senderThread.notifyAll();
+						}
 						return;
 					} catch (AbortedException e) {
 						Logger.normal(this, "Terminating send due to abort: "+e);
@@ -136,10 +142,15 @@ public class BlockTransmitter {
 						Logger.normal(this, "Waited too long to send packet, aborting");
 						synchronized(_senderThread) {
 							_sendComplete = true;
+							_senderThread.notifyAll();
 						}
 						return;
 					} catch (SyncSendWaitedTooLongException e) {
-						// Impossible
+						// Impossible, but lets cancel it anyway
+						synchronized(_senderThread) {
+							_sendComplete = true;
+							_senderThread.notifyAll();
+						}
 						Logger.error(this, "Impossible: Caught "+e, e);
 						return;
 					}
@@ -167,15 +178,29 @@ public class BlockTransmitter {
 		};
 	}
 
+	/** Abort the send, and then send the sendAborted message. Don't do anything if the
+	 * send has already been aborted. */
 	public void abortSend(int reason, String desc) throws NotConnectedException {
 		synchronized(this) {
 			if(_sendComplete) return;
 			_sendComplete = true;
+			if(_sentSendAborted) return;
+			_sentSendAborted = true;
 		}
-		sendAborted(reason, desc);
+		innerSendAborted(reason, desc);
 	}
 	
+	/** Send the sendAborted message. Only send it once. Send it even if we have already
+	 * aborted, we are called in some cases when the PRB aborts. */
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
+		synchronized(this) {
+			if(_sentSendAborted) return;
+			_sentSendAborted = true;
+		}
+		innerSendAborted(reason, desc);
+	}
+	
+	public void innerSendAborted(int reason, String desc) throws NotConnectedException {
 		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc), _ctr);
 	}
 	
@@ -229,6 +254,18 @@ public class BlockTransmitter {
 					}
 
 					public void receiveAborted(int reason, String description) {
+						synchronized(_senderThread) {
+							timeAllSent = -1;
+							_sendComplete = true;
+							_senderThread.notifyAll();
+							if(_sentSendAborted) return;
+							_sentSendAborted = true;
+						}
+						try {
+							innerSendAborted(reason, description);
+						} catch (NotConnectedException e) {
+							// Ignore
+						}
 					}
 				});
 			}
@@ -301,6 +338,7 @@ public class BlockTransmitter {
 				} else if (msg.getSpec().equals(DMT.sendAborted)) {
 					if(abortHandler.onAbort())
 						_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
+					sendAborted(msg.getInt(DMT.REASON), msg.getString(DMT.DESCRIPTION));
 					return false;
 				} else {
 					Logger.error(this, "Transmitter received unknown message type: "+msg.getSpec().getName());
@@ -369,6 +407,7 @@ public class BlockTransmitter {
 				if(completed) return;
 				completed = true;
 				blockSendsPending--;
+				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
 				_senderThread.notifyAll();
 			}
 		}
@@ -382,15 +421,22 @@ public class BlockTransmitter {
 	 */
 	private boolean waitForAsyncBlockSends() {
 		synchronized(_senderThread) {
+			long now = System.currentTimeMillis();
+			long deadline = now + 60*60*1000;
 			if(blockSendsPending == 0) return false;
-			while(blockSendsPending != 0) {
+			while(true) {
+				if(logMINOR) Logger.minor(this, "Waiting for "+blockSendsPending+" blocks");
 				try {
-					_senderThread.wait();
+					_senderThread.wait(60*60*1000);
 				} catch (InterruptedException e) {
 					// Ignore
 				}
+				if(blockSendsPending == 0) return true;
+				now = System.currentTimeMillis();
+				if(now > deadline)
+					throw new IllegalStateException("Waited an hour for "+blockSendsPending+" blocks");
+				// FIXME do a clean abort, cancel the blocks as they must still be queued.
 			}
-			return true;
 		}
 	}
 

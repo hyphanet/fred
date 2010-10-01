@@ -1049,8 +1049,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.error(this, "Bytes not logged", new Exception("debug"));
 		if(logMINOR)
 			Logger.minor(this, "Sending async: " + msg + " : " + cb + " on " + this+" for "+node.getDarknetPortNumber());
-		if(!isConnected())
+		if(!isConnected()) {
+			if(cb != null)
+				cb.disconnected();
 			throw new NotConnectedException();
+		}
 		addToLocalNodeSentMessagesToStatistic(msg);
 		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, ctr, this);
 		long now = System.currentTimeMillis();
@@ -4113,6 +4116,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		Logger.error(this, "Peer constantly changes its IP address!!: "+shortToString());
 		forceDisconnect(true);
+		if(callback != null)
+			callback.disconnected();
 		throw new NotConnectedException();
 	}
 
