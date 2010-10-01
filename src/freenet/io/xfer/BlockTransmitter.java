@@ -494,7 +494,8 @@ public class BlockTransmitter {
 
 	private long startTime;
 	
-	public void startSend() {
+	/** Send the data, off-thread. */
+	public void sendAsync() {
 		startTime = System.currentTimeMillis();
 		
 		try {
@@ -604,13 +605,6 @@ public class BlockTransmitter {
 		return ret;
 	}
 	
-	/**
-	 * Send the data, off-thread.
-	 */
-	public void sendAsync() {
-		startSend();
-	}
-
 	public PeerContext getDestination() {
 		return _destination;
 	}
