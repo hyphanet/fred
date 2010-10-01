@@ -292,7 +292,6 @@ public class BlockTransmitter {
 	/** Only fail once. Called on a drastic failure e.g. disconnection. */
 	public boolean maybeFail() {
 		if(_completed) return false;
-		if(_failed) return false;
 		_failed = true;
 		if(blockSendsPending != 0) return false;
 		_completed = true;
