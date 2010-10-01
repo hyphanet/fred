@@ -82,6 +82,16 @@ public class BlockTransmitter {
 	
 	private final Ticker _ticker;
 	private final BlockTransmitterCompletion _callback;
+
+	/** Have we received a completion acknowledgement from the other side - either a 
+	 * sendAborted or allReceived? */
+	private boolean _sendCompleted;
+	/** Was it an allReceived? */
+	private boolean _sendSucceeded;
+	/** Have we completed i.e. called the callback? */
+	private boolean _completed;
+	/** Have we failed e.g. due to PRB abort, disconnection? */
+	private boolean _failed;
 	
 	class MyRunnable implements PrioRunnable {
 		
@@ -126,18 +136,26 @@ public class BlockTransmitter {
 				_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
 			} catch (PeerRestartedException e) {
 				Logger.normal(this, "Terminating send due to peer restart: "+e);
+				boolean callFail = false;
 				synchronized(_senderThread) {
 					_sendComplete = true;
 					_senderThread.notifyAll();
+					callFail = maybeFail();
 				}
+				if(callFail && _callback != null)
+					_callback.blockTransferFinished(false);
 				return false;
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Terminating send: "+e);
+				boolean callFail = false;
 				//the send() thread should notice... but lets not take any chances, it might reconnect.
 				synchronized(_senderThread) {
 					_sendComplete = true;
 					_senderThread.notifyAll();
+					callFail = maybeFail();
 				}
+				if(callFail && _callback != null)
+					_callback.blockTransferFinished(false);
 				return false;
 			} catch (AbortedException e) {
 				Logger.normal(this, "Terminating send due to abort: "+e);
@@ -145,28 +163,48 @@ public class BlockTransmitter {
 				return false;
 			} catch (WaitedTooLongException e) {
 				Logger.normal(this, "Waited too long to send packet, aborting");
+				boolean callFail = false;
 				synchronized(_senderThread) {
 					_sendComplete = true;
 					_senderThread.notifyAll();
+					callFail = maybeFail();
 				}
+				if(callFail && _callback != null)
+					_callback.blockTransferFinished(false);
 				return false;
 			} catch (SyncSendWaitedTooLongException e) {
 				// Impossible, but lets cancel it anyway
+				boolean callFail = false;
 				synchronized(_senderThread) {
 					_sendComplete = true;
 					_senderThread.notifyAll();
+					callFail = maybeFail();
 				}
 				Logger.error(this, "Impossible: Caught "+e, e);
+				if(callFail && _callback != null)
+					_callback.blockTransferFinished(false);
 				return false;
 			}
+			boolean success = false;
+			boolean complete = false;
 			synchronized (_senderThread) {
 				_sentPackets.setBit(packetNo, true);
 				if(_unsent.size() == 0 && getNumSent() == totalPackets) {
 					//No unsent packets, no unreceived packets
 					sendAllSentNotification();
-					maybeAllSent();
-					return false; // No more blocks to send.
+					if(maybeAllSent()) {
+						if(maybeComplete()) {
+							complete = true;
+							success = _sendSucceeded;
+						}
+					}
+					return false;
 				}
+			}
+			if(complete) {
+				if(_callback != null)
+					_callback.blockTransferFinished(success);
+				return false; // No more blocks to send.
 			}
 			return true; // More blocks to send.
 		}
@@ -199,14 +237,39 @@ public class BlockTransmitter {
 		throttle = _destination.getThrottle();
 	}
 
-	/** LOCKING: Must be called with _senderThread held. */
-	public void maybeAllSent() {
+	/** LOCKING: Must be called with _senderThread held. 
+	 * @return True if everything has been sent and we are now just waiting for an
+	 * acknowledgement or timeout from the other side. */
+	public boolean maybeAllSent() {
 		if(blockSendsPending == 0 && _unsent.size() == 0 && getNumSent() == totalPackets) {
 			timeAllSent = System.currentTimeMillis();
 			if(logMINOR)
 				Logger.minor(this, "Sent all blocks, none unsent");
 			_senderThread.notifyAll();
+			return true;
 		}
+		if(blockSendsPending == 0 && _failed)
+			return true;
+		return false;
+	}
+
+	/** Complete? maybeAllSent() must have already returned true. This method checks 
+	 * _sendCompleted and then uses _completed to complete only once. LOCKING: Must be 
+	 * called with _senderThread held. */
+	public boolean maybeComplete() {
+		if(!_sendCompleted) return false;
+		if(_completed) return false;
+		_completed = true;
+		return true;
+	}
+	
+	/** Only fail once. */
+	public boolean maybeFail() {
+		if(_completed) return false;
+		if(_failed) return false;
+		_completed = true;
+		_failed = true;
+		return true;
 	}
 
 	/** Abort the send, and then send the sendAborted message. Don't do anything if the
@@ -275,7 +338,7 @@ public class BlockTransmitter {
 	
 	private PartiallyReceivedBlock.PacketReceivedListener myListener = null;
 	
-	public boolean send() {
+	public void send() {
 		long startTime = System.currentTimeMillis();
 		
 		try {
@@ -292,18 +355,22 @@ public class BlockTransmitter {
 					}
 
 					public void receiveAborted(int reason, String description) {
+						boolean callFailCallback;
 						synchronized(_senderThread) {
 							timeAllSent = -1;
 							_sendComplete = true;
 							_senderThread.notifyAll();
 							if(_sentSendAborted) return;
 							_sentSendAborted = true;
+							callFailCallback = maybeFail();
 						}
 						try {
 							innerSendAborted(reason, description);
 						} catch (NotConnectedException e) {
 							// Ignore
 						}
+						if(callFailCallback && _callback != null)
+							_callback.blockTransferFinished(false);
 					}
 				});
 			}
@@ -311,7 +378,7 @@ public class BlockTransmitter {
 			
 			while (true) {
 				synchronized(_senderThread) {
-					if(_sendComplete) return false;
+					if(_sendComplete) return; // FIXME CHECK: Whoever set _sendComplete will have called the failure callback.
 				}
 				Message msg;
 				try {
@@ -323,7 +390,11 @@ public class BlockTransmitter {
 					throttle.maybeDisconnected();
 					Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" because node disconnected while waiting");
 					//They disconnected, can't send an abort to them then can we?
-					return false;
+					synchronized(_senderThread) {
+						if(!maybeFail()) return;
+					}
+					if(_callback != null) _callback.blockTransferFinished(false);
+					return;
 				}
 				if(logMINOR) Logger.minor(this, "Got "+msg);
 				if (msg == null) {
@@ -334,7 +405,11 @@ public class BlockTransmitter {
 						String timeString=TimeUtil.formatTime((now - timeAllSent), 2, true);
 						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
 						sendAborted(RetrievalException.RECEIVER_DIED, "Haven't heard from you (receiver) in "+timeString);
-						return false;
+						synchronized(_senderThread) {
+							if(!maybeFail()) return;
+						}
+						if(_callback != null) _callback.blockTransferFinished(false);
+						return;
 					} else {
 						if(logMINOR) Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+ '/' +_prb.getNumPackets());
 						continue;
@@ -348,13 +423,26 @@ public class BlockTransmitter {
 							Logger.minor(this, "Block send took "+transferTime+" : "+avgTimeTaken);
 						}
 					}
-					
-					return true;
+					synchronized(_senderThread) {
+						_sendCompleted = true;
+						_sendSucceeded = true;
+						_senderThread.notifyAll();
+						if(!maybeFail()) return;
+					}
+					if(_callback != null) _callback.blockTransferFinished(false);
+					return;
 				} else if (msg.getSpec().equals(DMT.sendAborted)) {
 					if(abortHandler.onAbort())
 						_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
 					sendAborted(msg.getInt(DMT.REASON), msg.getString(DMT.DESCRIPTION));
-					return false;
+					synchronized(_senderThread) {
+						_sendCompleted = true;
+						_sendSucceeded = false;
+						_senderThread.notifyAll();
+						if(!maybeFail()) return;
+					}
+					if(_callback != null) _callback.blockTransferFinished(false);
+					return;
 				} else {
 					Logger.error(this, "Transmitter received unknown message type: "+msg.getSpec().getName());
 				}
@@ -362,7 +450,11 @@ public class BlockTransmitter {
 		} catch (NotConnectedException e) {
 			//most likely from sending an abort()
 			Logger.normal(this, "NotConnectedException in BlockTransfer.send():"+e);
-			return false;
+			synchronized(_senderThread) {
+				if(!maybeFail()) return;
+			}
+			if(_callback != null) _callback.blockTransferFinished(false);
+			return;
 		} catch (AbortedException e) {
 			Logger.normal(this, "AbortedException in BlockTransfer.send():"+e);
 			try {
@@ -373,7 +465,11 @@ public class BlockTransmitter {
 			} catch (NotConnectedException gone) {
 				//ignore
 			}
-			return false;
+			synchronized(_senderThread) {
+				if(!maybeFail()) return;
+			}
+			if(_callback != null) _callback.blockTransferFinished(false);
+			return;
 		} finally {
 			//Terminate the sender thread, if we are not listening for control packets, don't be sending any data
 			synchronized(_senderThread) {
@@ -382,7 +478,6 @@ public class BlockTransmitter {
 			}
 			if (myListener!=null)
 				_prb.removeListener(myListener);
-			waitForAsyncBlockSends();
 		}
 	}
 
@@ -417,43 +512,24 @@ public class BlockTransmitter {
 		
 		private void complete() {
 			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this);
+			boolean success;
 			synchronized(_senderThread) {
 				if(completed) return;
 				completed = true;
 				blockSendsPending--;
 				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
-				maybeAllSent();
+				if(!maybeAllSent()) return;
+				if(!maybeComplete()) return;
+				success = _sendSucceeded;
 			}
+			if(_callback != null)
+				_callback.blockTransferFinished(success);
 		}
 
 	};
 	
 	private int blockSendsPending = 0;
 	
-	/**
-	 * @return True if we blocked.
-	 */
-	private boolean waitForAsyncBlockSends() {
-		synchronized(_senderThread) {
-			long now = System.currentTimeMillis();
-			long deadline = now + 60*60*1000;
-			if(blockSendsPending == 0) return false;
-			while(true) {
-				if(logMINOR) Logger.minor(this, "Waiting for "+blockSendsPending+" blocks");
-				try {
-					_senderThread.wait(60*60*1000);
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-				if(blockSendsPending == 0) return true;
-				now = System.currentTimeMillis();
-				if(now > deadline)
-					throw new IllegalStateException("Waited an hour for "+blockSendsPending+" blocks");
-				// FIXME do a clean abort, cancel the blocks as they must still be queued.
-			}
-		}
-	}
-
 	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	
 	public int getNumSent() {
@@ -472,13 +548,7 @@ public class BlockTransmitter {
 	public void sendAsync() {
 		_ticker.queueTimedJob(new PrioRunnable() {
 			public void run() {
-				boolean asyncExitStatus = false;
-				try {
-					asyncExitStatus=send();
-				} finally {
-					if(_callback != null)
-						_callback.blockTransferFinished(asyncExitStatus);
-				}
+				send();
 			}
 
 			public int getPriority() {
