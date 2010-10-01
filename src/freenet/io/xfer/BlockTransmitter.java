@@ -494,7 +494,7 @@ public class BlockTransmitter {
 
 	private long startTime;
 	
-	public void send() {
+	public void startSend() {
 		startTime = System.currentTimeMillis();
 		
 		try {
@@ -608,15 +608,7 @@ public class BlockTransmitter {
 	 * Send the data, off-thread.
 	 */
 	public void sendAsync() {
-		_ticker.queueTimedJob(new PrioRunnable() {
-			public void run() {
-				send();
-			}
-
-			public int getPriority() {
-				return NativeThread.HIGH_PRIORITY;
-			} },
-			"BlockTransmitter:sendAsync() for "+this, 0, false, false);
+		startSend();
 	}
 
 	public PeerContext getDestination() {
