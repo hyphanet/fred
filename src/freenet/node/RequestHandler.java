@@ -371,36 +371,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					if(key instanceof NodeSSK)
 						sendSSK(rs.getHeaders(), rs.getSSKData(), needsPubKey, (rs.getSSKBlock().getKey()).getPubKey());
 					else {
-						if(disconnected) {
-							unregisterRequestHandlerWithNode();
-						} else if(bt == null) {
-							// Bug! This is impossible!
-							Logger.error(this, "Status is SUCCESS but we never started a transfer on " + uid);
-							// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
-							reject = DMT.createFNPRejectedOverload(uid, true);
-							sendTerminal(reject);
-						} else {
-							if(readyToFinishTransfer())
-								transferFinished(transferSuccess);
-						}
+						maybeCompleteTransfer();
 					}
 					return;
 				case RequestSender.VERIFY_FAILURE:
 				case RequestSender.GET_OFFER_VERIFY_FAILURE:
 					if(key instanceof NodeCHK) {
-						if(disconnected) {
-							unregisterRequestHandlerWithNode();
-						} else if(bt == null) {
-							// Bug! This is impossible!
-							Logger.error(this, "Status is VERIFY_FAILURE but we never started a transfer on " + uid);
-							// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
-							reject = DMT.createFNPRejectedOverload(uid, true);
-							sendTerminal(reject);
-						} else {
-							//Verify fails after receive() is complete, so we might as well propagate it...
-							if(readyToFinishTransfer())
-								transferFinished(transferSuccess);
-						}
+						maybeCompleteTransfer();
 						return;
 					}
 					reject = DMT.createFNPRejectedOverload(uid, true);
@@ -409,18 +386,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				case RequestSender.TRANSFER_FAILED:
 				case RequestSender.GET_OFFER_TRANSFER_FAILED:
 					if(key instanceof NodeCHK) {
-						if(bt == null && !disconnected) {
-							// Bug! This is impossible!
-							Logger.error(this, "Status is TRANSFER_FAILED but we never started a transfer on " + uid);
-							// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
-							reject = DMT.createFNPRejectedOverload(uid, true);
-							sendTerminal(reject);
-						} else if(!disconnected) {
-							if(readyToFinishTransfer())
-								transferFinished(transferSuccess);
-						} else {
-							unregisterRequestHandlerWithNode();
-						}
+						maybeCompleteTransfer();
 						return;
 					}
 					Logger.error(this, "finish(TRANSFER_FAILED) should not be called on SSK?!?!", new Exception("error"));
@@ -435,6 +401,22 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			Logger.normal(this, "requestor is gone, can't send terminal message");
 			applyByteCounts();
 			unregisterRequestHandlerWithNode();
+		}
+	}
+
+	private void maybeCompleteTransfer() throws NotConnectedException {
+		Message reject;
+		if(disconnected) {
+			unregisterRequestHandlerWithNode();
+		} else if(bt == null) {
+			// Bug! This is impossible!
+			Logger.error(this, "Status is "+status+" but we never started a transfer on " + uid);
+			// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
+			reject = DMT.createFNPRejectedOverload(uid, true);
+			sendTerminal(reject);
+		} else {
+			if(readyToFinishTransfer())
+				transferFinished(transferSuccess);
 		}
 	}
 
