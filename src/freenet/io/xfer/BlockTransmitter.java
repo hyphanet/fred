@@ -428,19 +428,26 @@ public class BlockTransmitter {
 		public void onMatched(Message msg) {
 			if(abortHandler.onAbort())
 				_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
-			try {
-				sendAborted(msg.getInt(DMT.REASON), msg.getString(DMT.DESCRIPTION));
-			} catch (NotConnectedException e) {
-				// Ignore
-			}
+			boolean complete = false;
+			boolean abort = false;
 			synchronized(_senderThread) {
 				_sendCompleted = true;
 				_sendSucceeded = false;
-				_senderThread.notifyAll();
-				if(!maybeFail()) return;
+				complete = maybeFail();
+				abort = !_sentSendAborted;
+				_sentSendAborted = true;
 			}
-			if(_callback != null) _callback.blockTransferFinished(false);
-			cleanup();
+			if(abort) {
+				try {
+					innerSendAborted(msg.getInt(DMT.REASON), msg.getString(DMT.DESCRIPTION));
+				} catch (NotConnectedException e) {
+					// Ignore
+				}
+			}
+			if(complete) {
+				if(_callback != null) _callback.blockTransferFinished(false);
+				cleanup();
+			}
 		}
 
 		public boolean shouldTimeout() {
