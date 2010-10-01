@@ -136,33 +136,10 @@ public class BlockTransmitter {
 			try {
 				_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
 			} catch (PeerRestartedException e) {
-				Logger.normal(this, "Terminating send due to peer restart: "+e);
-				boolean callFail = false;
-				synchronized(_senderThread) {
-					_sendComplete = true;
-					_senderThread.notifyAll();
-					callFail = maybeFail();
-				}
-				if(callFail) {
-					if(_callback != null)
-						_callback.blockTransferFinished(false);
-					cleanup();
-				}
+				onDisconnect();
 				return false;
 			} catch (NotConnectedException e) {
-				Logger.normal(this, "Terminating send: "+e);
-				boolean callFail = false;
-				//the send() thread should notice... but lets not take any chances, it might reconnect.
-				synchronized(_senderThread) {
-					_sendComplete = true;
-					_senderThread.notifyAll();
-					callFail = maybeFail();
-				}
-				if(callFail) {
-					if(_callback != null)
-						_callback.blockTransferFinished(false);
-					cleanup();
-				}
+				onDisconnect();
 				return false;
 			} catch (AbortedException e) {
 				Logger.normal(this, "Terminating send due to abort: "+e);
