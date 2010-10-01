@@ -374,32 +374,35 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				case RequestSender.SUCCESS:
 					if(key instanceof NodeSSK)
 						sendSSK(rs.getHeaders(), rs.getSSKData(), needsPubKey, (rs.getSSKBlock().getKey()).getPubKey());
-					else
-						if(bt == null && !disconnected) {
+					else {
+						if(disconnected) {
+							unregisterRequestHandlerWithNode();
+						} else if(bt == null) {
 							// Bug! This is impossible!
 							Logger.error(this, "Status is SUCCESS but we never started a transfer on " + uid);
 							// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
 							reject = DMT.createFNPRejectedOverload(uid, true);
 							sendTerminal(reject);
-						} else if(!disconnected)
+						} else {
 							waitAndFinishCHKTransferOffThread();
-						else
-							unregisterRequestHandlerWithNode();
+						}
+					}
 					return;
 				case RequestSender.VERIFY_FAILURE:
 				case RequestSender.GET_OFFER_VERIFY_FAILURE:
 					if(key instanceof NodeCHK) {
-						if(bt == null && !disconnected) {
+						if(disconnected) {
+							unregisterRequestHandlerWithNode();
+						} else if(bt == null) {
 							// Bug! This is impossible!
 							Logger.error(this, "Status is VERIFY_FAILURE but we never started a transfer on " + uid);
 							// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
 							reject = DMT.createFNPRejectedOverload(uid, true);
 							sendTerminal(reject);
-						} else if(!disconnected)
+						} else {
 							//Verify fails after receive() is complete, so we might as well propagate it...
 							waitAndFinishCHKTransferOffThread();
-						else
-							unregisterRequestHandlerWithNode();
+						}
 						return;
 					}
 					reject = DMT.createFNPRejectedOverload(uid, true);
