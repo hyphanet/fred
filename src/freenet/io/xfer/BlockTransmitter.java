@@ -140,7 +140,7 @@ public class BlockTransmitter {
 				return false;
 			} catch (AbortedException e) {
 				Logger.normal(this, "Terminating send due to abort: "+e);
-				//the send() thread should notice...
+				// The PRB callback will deal with this.
 				return false;
 			} catch (WaitedTooLongException e) {
 				Logger.normal(this, "Waited too long to send packet, aborting");
