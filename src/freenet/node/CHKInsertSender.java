@@ -68,7 +68,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 		
 		private void realRun() {
-			this.completedTransfer(bt.send(node.executor));
+			this.completedTransfer(bt.send());
 			// Double-check that the node is still connected. Pointless to wait otherwise.
 			if (pn.isConnected() && transferSucceeded) {
 				//synch-version: this.receivedNotice(waitForReceivedNotification(this));

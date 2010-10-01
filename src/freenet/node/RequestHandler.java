@@ -486,7 +486,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				new BlockTransmitter(node.usm, source, uid, prb, this, BlockTransmitter.NEVER_CASCADE);
 			node.addTransferringRequestHandler(uid);
 			source.sendAsync(df, null, this);
-			if(bt.send(node.executor)) {
+			if(bt.send()) {
 				// for byte logging
 				status = RequestSender.SUCCESS;
 				// We've fetched it from our datastore, so there won't be a downstream noderef.

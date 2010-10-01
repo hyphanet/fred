@@ -484,7 +484,7 @@ public class FailureTable implements OOMHook {
 
 				public void run() {
 					try {
-						bt.send(node.executor);
+						bt.send();
 					} catch (Throwable t) {
 						Logger.error(this, "Sending offered key failed: "+t, t);
 					} finally {

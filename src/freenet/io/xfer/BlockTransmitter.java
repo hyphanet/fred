@@ -264,7 +264,7 @@ public class BlockTransmitter {
 		
 	};
 	
-	public boolean send(final Executor executor) {
+	public boolean send() {
 		long startTime = System.currentTimeMillis();
 		PartiallyReceivedBlock.PacketReceivedListener myListener=null;
 		
@@ -464,7 +464,7 @@ public class BlockTransmitter {
 		executor.execute(new PrioRunnable() {
 			public void run() {
 						 try {
-						    asyncExitStatus=send(executor);
+						    asyncExitStatus=send();
 						 } finally {
 						    synchronized (BlockTransmitter.this) {
 						       asyncExitStatusSet=true;
