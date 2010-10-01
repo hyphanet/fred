@@ -33,6 +33,7 @@ import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.RetrievalException;
 import freenet.node.PrioRunnable;
 import freenet.node.SyncSendWaitedTooLongException;
+import freenet.node.Ticker;
 import freenet.support.BitArray;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
@@ -71,7 +72,7 @@ public class BlockTransmitter {
 	final long _uid;
 	final PartiallyReceivedBlock _prb;
 	private LinkedList<Integer> _unsent;
-	private Runnable _senderThread;
+	private MyRunnable _senderThread = new MyRunnable();
 	private BitArray _sentPackets;
 	final PacketThrottle throttle;
 	private long timeAllSent = -1;
@@ -81,7 +82,112 @@ public class BlockTransmitter {
 	private boolean asyncExitStatusSet;
 	private final ReceiverAbortHandler abortHandler;
 	
-	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler) {
+	private final Ticker _ticker;
+	
+	class MyRunnable implements PrioRunnable {
+		
+		private boolean running = false;
+		
+		public void run() {
+			synchronized(this) {
+				if(running) return;
+				running = true;
+			}
+			try {
+				while(true) {
+					int packetNo = -1;
+					synchronized(_senderThread) {
+						if(_sendComplete) return;
+						if(_unsent.size() == 0) packetNo = -1;
+						else
+							packetNo = _unsent.removeFirst();
+					}
+					if(packetNo == -1) {
+						schedule(10*1000);
+						return;
+					} else {
+						if(!innerRun(packetNo)) return;
+					}
+				}
+			} finally {
+				synchronized(this) {
+					running = false;
+				}
+			}
+		}
+		
+		public void schedule(long delay) {
+			if(_sendComplete) return;
+			_ticker.queueTimedJob(this, delay);
+		}
+
+		/** @return True . */
+		private boolean innerRun(int packetNo) {
+			int totalPackets;
+			try {
+				_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+				totalPackets=_prb.getNumPackets();
+			} catch (PeerRestartedException e) {
+				Logger.normal(this, "Terminating send due to peer restart: "+e);
+				synchronized(_senderThread) {
+					_sendComplete = true;
+					_senderThread.notifyAll();
+				}
+				return false;
+			} catch (NotConnectedException e) {
+				Logger.normal(this, "Terminating send: "+e);
+				//the send() thread should notice... but lets not take any chances, it might reconnect.
+				synchronized(_senderThread) {
+					_sendComplete = true;
+					_senderThread.notifyAll();
+				}
+				return false;
+			} catch (AbortedException e) {
+				Logger.normal(this, "Terminating send due to abort: "+e);
+				//the send() thread should notice...
+				return false;
+			} catch (WaitedTooLongException e) {
+				Logger.normal(this, "Waited too long to send packet, aborting");
+				synchronized(_senderThread) {
+					_sendComplete = true;
+					_senderThread.notifyAll();
+				}
+				return false;
+			} catch (SyncSendWaitedTooLongException e) {
+				// Impossible, but lets cancel it anyway
+				synchronized(_senderThread) {
+					_sendComplete = true;
+					_senderThread.notifyAll();
+				}
+				Logger.error(this, "Impossible: Caught "+e, e);
+				return false;
+			}
+			synchronized (_senderThread) {
+				_sentPackets.setBit(packetNo, true);
+				if(_unsent.size() == 0 && getNumSent() == totalPackets) {
+					//No unsent packets, no unreceived packets
+					sendAllSentNotification();
+					if(waitForAsyncBlockSends()) {
+						// Re-check
+						if(_unsent.size() != 0) return true;
+					}
+					timeAllSent = System.currentTimeMillis();
+					if(logMINOR)
+						Logger.minor(this, "Sent all blocks, none unsent");
+					_senderThread.notifyAll();
+				}
+			}
+			return true;
+		}
+
+		public int getPriority() {
+			return NativeThread.HIGH_PRIORITY;
+		}
+		
+	}
+	
+	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler) {
+		_ticker = ticker;
 		this.abortHandler = abortHandler;
 		_usm = usm;
 		_destination = destination;
@@ -98,84 +204,6 @@ public class BlockTransmitter {
 			// Will throw on running
 		}
 		throttle = _destination.getThrottle();
-		_senderThread = new PrioRunnable() {
-		
-			public void run() {
-				while (!_sendComplete) {
-					int packetNo;
-					try {
-						synchronized(_senderThread) {
-							while (_unsent.size() == 0) {
-								if(_sendComplete) return;
-								_senderThread.wait(10*1000);
-							}
-							packetNo = _unsent.removeFirst();
-						}
-					} catch (InterruptedException e) {
-						Logger.error(this, "_senderThread interrupted");
-						continue;
-					}
-					int totalPackets;
-					try {
-						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
-						totalPackets=_prb.getNumPackets();
-					} catch (PeerRestartedException e) {
-						Logger.normal(this, "Terminating send due to peer restart: "+e);
-						synchronized(_senderThread) {
-							_sendComplete = true;
-							_senderThread.notifyAll();
-						}
-						return;
-					} catch (NotConnectedException e) {
-						Logger.normal(this, "Terminating send: "+e);
-						//the send() thread should notice... but lets not take any chances, it might reconnect.
-						synchronized(_senderThread) {
-							_sendComplete = true;
-							_senderThread.notifyAll();
-						}
-						return;
-					} catch (AbortedException e) {
-						Logger.normal(this, "Terminating send due to abort: "+e);
-						//the send() thread should notice...
-						return;
-					} catch (WaitedTooLongException e) {
-						Logger.normal(this, "Waited too long to send packet, aborting");
-						synchronized(_senderThread) {
-							_sendComplete = true;
-							_senderThread.notifyAll();
-						}
-						return;
-					} catch (SyncSendWaitedTooLongException e) {
-						// Impossible, but lets cancel it anyway
-						synchronized(_senderThread) {
-							_sendComplete = true;
-							_senderThread.notifyAll();
-						}
-						Logger.error(this, "Impossible: Caught "+e, e);
-						return;
-					}
-					synchronized (_senderThread) {
-						_sentPackets.setBit(packetNo, true);
-						if(_unsent.size() == 0 && getNumSent() == totalPackets) {
-							//No unsent packets, no unreceived packets
-							sendAllSentNotification();
-							if(waitForAsyncBlockSends()) {
-								// Re-check
-								if(_unsent.size() != 0) continue;
-							}
-							timeAllSent = System.currentTimeMillis();
-							if(logMINOR)
-								Logger.minor(this, "Sent all blocks, none unsent");
-							_senderThread.notifyAll();
-						}
-					}
-				}
-			}
-
-			public int getPriority() {
-				return NativeThread.HIGH_PRIORITY;
-			}
-		};
 	}
 
 	/** Abort the send, and then send the sendAborted message. Don't do anything if the
@@ -236,7 +264,7 @@ public class BlockTransmitter {
 		
 	};
 	
-	public boolean send(Executor executor) {
+	public boolean send(final Executor executor) {
 		long startTime = System.currentTimeMillis();
 		PartiallyReceivedBlock.PacketReceivedListener myListener=null;
 		
@@ -249,7 +277,7 @@ public class BlockTransmitter {
 							_unsent.addLast(packetNo);
 							timeAllSent = -1;
 							_sentPackets.setBit(packetNo, false);
-							_senderThread.notifyAll();
+							_senderThread.schedule(0);
 						}
 					}
 
