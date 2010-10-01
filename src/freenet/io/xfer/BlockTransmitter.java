@@ -469,6 +469,28 @@ public class BlockTransmitter {
 		if(_callback != null) _callback.blockTransferFinished(false);
 		cleanup();
 	}
+	
+	private void onAborted(int reason, String description) {
+		boolean callFailCallback;
+		synchronized(_senderThread) {
+			timeAllSent = -1;
+			_sendComplete = true;
+			_senderThread.notifyAll();
+			if(_sentSendAborted) return;
+			_sentSendAborted = true;
+			callFailCallback = maybeFail();
+		}
+		try {
+			innerSendAborted(reason, description);
+		} catch (NotConnectedException e) {
+			// Ignore
+		}
+		if(callFailCallback) {
+			if(_callback != null) 
+				_callback.blockTransferFinished(false);
+			cleanup();
+		}
+	}
 
 	private long startTime;
 	
@@ -489,25 +511,7 @@ public class BlockTransmitter {
 					}
 
 					public void receiveAborted(int reason, String description) {
-						boolean callFailCallback;
-						synchronized(_senderThread) {
-							timeAllSent = -1;
-							_sendComplete = true;
-							_senderThread.notifyAll();
-							if(_sentSendAborted) return;
-							_sentSendAborted = true;
-							callFailCallback = maybeFail();
-						}
-						try {
-							innerSendAborted(reason, description);
-						} catch (NotConnectedException e) {
-							// Ignore
-						}
-						if(callFailCallback) {
-							if(_callback != null) 
-								_callback.blockTransferFinished(false);
-							cleanup();
-						}
+						onAborted(reason, description);
 					}
 				});
 			}
@@ -524,21 +528,7 @@ public class BlockTransmitter {
 			}
 			
 		} catch (AbortedException e) {
-			Logger.normal(this, "AbortedException in BlockTransfer.send():"+e);
-			try {
-				String desc=_prb.getAbortDescription();
-				if (desc.indexOf("Upstream")<0)
-					desc="Upstream transfer failed: "+desc;
-				sendAborted(_prb.getAbortReason(), desc);
-			} catch (NotConnectedException gone) {
-				//ignore
-			}
-			synchronized(_senderThread) {
-				if(!maybeFail()) return;
-			}
-			if(_callback != null) _callback.blockTransferFinished(false);
-			cleanup();
-			return;
+			onAborted(_prb._abortReason, _prb._abortDescription);
 		}
 	}
 	
