@@ -35,7 +35,6 @@ import freenet.node.PrioRunnable;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.node.Ticker;
 import freenet.support.BitArray;
-import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
@@ -397,7 +396,6 @@ public class BlockTransmitter {
 
 		public void acknowledged() {
 			complete();
-			
 		}
 
 		public void disconnected() {

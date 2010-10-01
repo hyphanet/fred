@@ -12,6 +12,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.xfer.BlockTransmitter;
+import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.CHKBlock;
@@ -483,13 +484,13 @@ public class FailureTable implements OOMHook {
 				}
 
 				public void run() {
-					try {
-						bt.send();
-					} catch (Throwable t) {
-						Logger.error(this, "Sending offered key failed: "+t, t);
-					} finally {
-						node.unlockUID(uid, isSSK, false, false, true, false, tag);
-					}
+					bt.sendAsync(new BlockTransmitterCompletion() {
+
+						public void blockTransferFinished(boolean success) {
+							node.unlockUID(uid, isSSK, false, false, true, false, tag);
+						}
+						
+					});
 				}
         		
         	}, "CHK offer sender");

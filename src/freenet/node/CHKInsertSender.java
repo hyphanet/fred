@@ -16,6 +16,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.BlockTransmitter;
+import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -68,24 +69,30 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 		
 		private void realRun() {
-			this.completedTransfer(bt.send());
-			// Double-check that the node is still connected. Pointless to wait otherwise.
-			if (pn.isConnected() && transferSucceeded) {
-				//synch-version: this.receivedNotice(waitForReceivedNotification(this));
-				//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
-				try {
-					node.usm.addAsyncFilter(getNotificationMessageFilter(), this);
-				} catch (DisconnectedException e) {
-					// Normal
-					if(logMINOR)
-						Logger.minor(this, "Disconnected while adding filter");
-					this.completedTransfer(false);
-					this.receivedNotice(false);
+			bt.sendAsync(new BlockTransmitterCompletion() {
+
+				public void blockTransferFinished(boolean success) {
+					BackgroundTransfer.this.completedTransfer(success);
+					// Double-check that the node is still connected. Pointless to wait otherwise.
+					if (pn.isConnected() && transferSucceeded) {
+						//synch-version: this.receivedNotice(waitForReceivedNotification(this));
+						//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
+						try {
+							node.usm.addAsyncFilter(getNotificationMessageFilter(), BackgroundTransfer.this);
+						} catch (DisconnectedException e) {
+							// Normal
+							if(logMINOR)
+								Logger.minor(this, "Disconnected while adding filter");
+							BackgroundTransfer.this.completedTransfer(false);
+							BackgroundTransfer.this.receivedNotice(false);
+						}
+					} else {
+						BackgroundTransfer.this.receivedNotice(false);
+						pn.localRejectedOverload("TransferFailedInsert");
+					}
 				}
-			} else {
-				this.receivedNotice(false);
-				pn.localRejectedOverload("TransferFailedInsert");
-			}
+				
+			});
 		}
 		
 		private void completedTransfer(boolean success) {
