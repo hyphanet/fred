@@ -264,6 +264,12 @@ public class BlockTransmitter {
 		
 	};
 	
+	public interface BlockTransmitterCompletion {
+		
+		public void blockTransferFinished(boolean success);
+		
+	}
+	
 	public boolean send() {
 		long startTime = System.currentTimeMillis();
 		PartiallyReceivedBlock.PacketReceivedListener myListener=null;
