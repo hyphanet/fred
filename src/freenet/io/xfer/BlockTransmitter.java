@@ -67,7 +67,6 @@ public class BlockTransmitter {
 	
 	final MessageCore _usm;
 	final PeerContext _destination;
-	private boolean _sendComplete;
 	private boolean _sentSendAborted;
 	final long _uid;
 	final PartiallyReceivedBlock _prb;
@@ -106,7 +105,7 @@ public class BlockTransmitter {
 				while(true) {
 					int packetNo = -1;
 					synchronized(_senderThread) {
-						if(_sendComplete) return;
+						if(_failed || _sendCompleted || _completed) return;
 						if(_unsent.size() == 0) packetNo = -1;
 						else
 							packetNo = _unsent.removeFirst();
@@ -126,7 +125,7 @@ public class BlockTransmitter {
 		}
 		
 		public void schedule(long delay) {
-			if(_sendComplete) return;
+			if(_failed || _sendCompleted || _completed) return;
 			_ticker.queueTimedJob(this, "BlockTransmitter block sender for "+_uid+" to "+_destination, delay, false, false);
 		}
 
@@ -148,8 +147,6 @@ public class BlockTransmitter {
 				Logger.normal(this, "Waited too long to send packet, aborting");
 				boolean callFail = false;
 				synchronized(_senderThread) {
-					_sendComplete = true;
-					_senderThread.notifyAll();
 					callFail = maybeFail();
 				}
 				if(callFail) {
@@ -162,8 +159,6 @@ public class BlockTransmitter {
 				// Impossible, but lets cancel it anyway
 				boolean callFail = false;
 				synchronized(_senderThread) {
-					_sendComplete = true;
-					_senderThread.notifyAll();
 					callFail = maybeFail();
 				}
 				Logger.error(this, "Impossible: Caught "+e, e);
@@ -308,8 +303,7 @@ public class BlockTransmitter {
 	 * send has already been aborted. */
 	public void abortSend(int reason, String desc) throws NotConnectedException {
 		synchronized(this) {
-			if(_sendComplete) return;
-			_sendComplete = true;
+			_failed = true;
 			if(_sentSendAborted) return;
 			_sentSendAborted = true;
 		}
@@ -472,7 +466,7 @@ public class BlockTransmitter {
 		boolean callFailCallback;
 		synchronized(_senderThread) {
 			timeAllSent = -1;
-			_sendComplete = true;
+			_failed = true;
 			_senderThread.notifyAll();
 			if(_sentSendAborted) return;
 			_sentSendAborted = true;
