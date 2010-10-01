@@ -91,6 +91,8 @@ public class BlockTransmitter {
 	/** Have we failed e.g. due to PRB abort, disconnection? */
 	private boolean _failed;
 	
+	static int runningBlockTransmits = 0;
+	
 	class MyRunnable implements PrioRunnable {
 		
 		private boolean running = false;
@@ -437,6 +439,7 @@ public class BlockTransmitter {
 				complete = maybeFail();
 				abort = !_sentSendAborted;
 				_sentSendAborted = true;
+				if(logMINOR) Logger.minor(this, "Transfer got sendAborted on "+this);
 			}
 			if(abort) {
 				try {
@@ -513,6 +516,8 @@ public class BlockTransmitter {
 	public void sendAsync() {
 		startTime = System.currentTimeMillis();
 		
+		incRunningBlockTransmits();
+		
 		try {
 			synchronized(_prb) {
 				_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
@@ -548,11 +553,22 @@ public class BlockTransmitter {
 		}
 	}
 	
+	private static synchronized void incRunningBlockTransmits() {
+		runningBlockTransmits++;
+		if(logMINOR) Logger.minor(BlockTransmitter.class, "Started a block transmit, running: "+runningBlockTransmits);
+	}
+
+	private static synchronized void decRunningBlockTransmits() {
+		runningBlockTransmits--;
+		if(logMINOR) Logger.minor(BlockTransmitter.class, "Finished a block transmit, running: "+runningBlockTransmits);
+	}
+
 	private void cleanup() {
 		// FIXME remove filters
 		// shouldTimeout() should deal with them adequately, maybe we don't need to explicitly remove them.
 		if (myListener!=null)
 			_prb.removeListener(myListener);
+		decRunningBlockTransmits();
 	}
 
 	private class MyAsyncMessageCallback implements AsyncMessageCallback {
