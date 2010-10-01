@@ -301,10 +301,17 @@ public class BlockTransmitter {
 	/** Abort the send, and then send the sendAborted message. Don't do anything if the
 	 * send has already been aborted. */
 	public void abortSend(int reason, String desc) throws NotConnectedException {
+		boolean callFail = false;
 		synchronized(this) {
 			_failed = true;
 			if(_sentSendAborted) return;
 			_sentSendAborted = true;
+			callFail = maybeFail();
+		}
+		if(callFail) {
+			if(_callback != null)
+				_callback.blockTransferFinished(false);
+			cleanup();
 		}
 		innerSendAborted(reason, desc);
 	}
