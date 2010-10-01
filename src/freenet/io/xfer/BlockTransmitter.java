@@ -79,7 +79,6 @@ public class BlockTransmitter {
 	final ByteCounter _ctr;
 	final int PACKET_SIZE;
 	private final ReceiverAbortHandler abortHandler;
-	private final int totalPackets;
 	
 	private final Ticker _ticker;
 	private final BlockTransmitterCompletion _callback;
@@ -179,7 +178,7 @@ public class BlockTransmitter {
 			boolean complete = false;
 			synchronized (_senderThread) {
 				_sentPackets.setBit(packetNo, true);
-				if(_unsent.size() == 0 && getNumSent() == totalPackets) {
+				if(_unsent.size() == 0 && getNumSent() == _prb._packets) {
 					//No unsent packets, no unreceived packets
 					sendAllSentNotification();
 					if(maybeAllSent()) {
@@ -214,14 +213,13 @@ public class BlockTransmitter {
 		_ticker = ticker;
 		_callback = callback;
 		this.abortHandler = abortHandler;
-		totalPackets = source._packets;
 		_usm = usm;
 		_destination = destination;
 		_uid = uid;
 		_prb = source;
 		_ctr = ctr;
 		if(_ctr == null) throw new NullPointerException();
-		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, totalPackets)
+		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets)
 			+ destination.getOutgoingMangler().fullHeadersLengthOneMessage();
 		try {
 			_sentPackets = new BitArray(_prb.getNumPackets());
@@ -275,7 +273,7 @@ public class BlockTransmitter {
 	 * @return True if everything has been sent and we are now just waiting for an
 	 * acknowledgement or timeout from the other side. */
 	public boolean maybeAllSent() {
-		if(blockSendsPending == 0 && _unsent.size() == 0 && getNumSent() == totalPackets) {
+		if(blockSendsPending == 0 && _unsent.size() == 0 && getNumSent() == _prb._packets) {
 			timeAllSent = System.currentTimeMillis();
 			if(logMINOR)
 				Logger.minor(this, "Sent all blocks, none unsent");
