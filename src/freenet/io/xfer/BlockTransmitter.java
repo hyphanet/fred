@@ -37,6 +37,7 @@ import freenet.node.PrioRunnable;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.node.Ticker;
 import freenet.support.BitArray;
+import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
@@ -80,6 +81,7 @@ public class BlockTransmitter {
 	private final ReceiverAbortHandler abortHandler;
 	
 	private final Ticker _ticker;
+	private final Executor _executor;
 	private final BlockTransmitterCompletion _callback;
 
 	/** Have we received a completion acknowledgement from the other side - either a 
@@ -126,7 +128,7 @@ public class BlockTransmitter {
 		
 		public void schedule() {
 			if(_failed || _sendCompleted || _completed) return;
-			_ticker.queueTimedJob(this, "BlockTransmitter block sender for "+_uid+" to "+_destination, 0, false, false);
+			_executor.execute(this, "BlockTransmitter block sender for "+_uid+" to "+_destination);
 		}
 
 		/** @return True . */
@@ -206,6 +208,7 @@ public class BlockTransmitter {
 	
 	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, BlockTransmitterCompletion callback) {
 		_ticker = ticker;
+		_executor = _ticker.getExecutor();
 		_callback = callback;
 		this.abortHandler = abortHandler;
 		_usm = usm;
