@@ -446,7 +446,7 @@ public class BlockTransmitter {
 			BlockTransmitter.this.onDisconnect();
 		}
 
-		public int priority() {
+		public int getPriority() {
 			return NativeThread.NORM_PRIORITY;
 		}
 		
@@ -499,7 +499,7 @@ public class BlockTransmitter {
 			BlockTransmitter.this.onDisconnect();
 		}
 
-		public int priority() {
+		public int getPriority() {
 			return NativeThread.NORM_PRIORITY;
 		}
 		
