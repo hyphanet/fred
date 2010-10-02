@@ -36,6 +36,7 @@ import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
+import freenet.config.WrapperConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.PartiallyReceivedBlock;
@@ -64,6 +65,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.ExecutorIdleCallback;
+import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
@@ -283,7 +285,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		persistentTempDir = new File(nodeConfig.getString("persistentTempDir"));
 		initPTBF(container, nodeConfig);
 
-		nodeConfig.register("maxRAMBucketSize", "128KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
+                // Allocate 10% of the RAM to the RAMBucketPool by default
+                int defaultRamBucketPoolSize = Fields.parseInt(WrapperConfig.getWrapperProperty("wrapper.java.maxmemory"), 128) / 10;
+
+		nodeConfig.register("maxRAMBucketSize", (defaultRamBucketPoolSize > 30 ? "8MiB" : "128KiB"), sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
 			@Override
 			public Long get() {
@@ -297,7 +302,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				tempBucketFactory.setMaxRAMBucketSize(val);
 			}
 		}, true);
-		nodeConfig.register("RAMBucketPoolSize", "10MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
+
+		nodeConfig.register("RAMBucketPoolSize", defaultRamBucketPoolSize+"MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
 
 			@Override
 			public Long get() {
