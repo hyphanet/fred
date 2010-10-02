@@ -12,6 +12,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.BlockReceiver;
+import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -443,42 +444,45 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
         	if(logMINOR) Logger.minor(this, "Receiving data for "+CHKInsertHandler.this);
-            try {
-            	// Don't log whether the transfer succeeded or failed as the transfer was initiated by the source therefore could be unreliable evidence.
-                br.receive();
-                if(logMINOR) Logger.minor(this, "Received data for "+CHKInsertHandler.this);
-            	synchronized(CHKInsertHandler.this) {
-            		receiveCompleted = true;
-            		CHKInsertHandler.this.notifyAll();
-            	}
-            	node.nodeStats.successfulBlockReceive();
-            } catch (RetrievalException e) {
-            	synchronized(CHKInsertHandler.this) {
-            		receiveCompleted = true;
-            		receiveFailed = true;
-            		CHKInsertHandler.this.notifyAll();
-            	}
-                // Cancel the sender
-            	if(sender != null)
-            		sender.receiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
-                runThread.interrupt();
-                Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
-                try {
-                    source.sendSync(msg, CHKInsertHandler.this);
-                } catch (NotConnectedException ex) {
-					//If they are not connected, that's probably why the receive failed!
-                    if (logMINOR) Logger.minor(this, "Can't send "+msg+" to "+source+": "+ex);
-                }
-				if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
-					Logger.normal(this, "Failed to retrieve (disconnect): "+e, e);
-				else
-					// Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
-					Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
-            	node.nodeStats.failedBlockReceive(false, false, false);
-                return;
-            } catch (Throwable t) {
-                Logger.error(this, "Caught "+t, t);
-            }
+        	// Don't log whether the transfer succeeded or failed as the transfer was initiated by the source therefore could be unreliable evidence.
+        	br.receive(new BlockReceiverCompletion() {
+        		
+        		public void blockReceived(byte[] buf) {
+        			if(logMINOR) Logger.minor(this, "Received data for "+CHKInsertHandler.this);
+        			synchronized(CHKInsertHandler.this) {
+        				receiveCompleted = true;
+        				CHKInsertHandler.this.notifyAll();
+        			}
+        			node.nodeStats.successfulBlockReceive();
+        		}
+
+        		public void blockReceiveFailed(RetrievalException e) {
+        			synchronized(CHKInsertHandler.this) {
+        				receiveCompleted = true;
+        				receiveFailed = true;
+        				CHKInsertHandler.this.notifyAll();
+        			}
+        			// Cancel the sender
+        			if(sender != null)
+        				sender.receiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
+        			runThread.interrupt();
+        			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
+        			try {
+        				source.sendSync(msg, CHKInsertHandler.this);
+        			} catch (NotConnectedException ex) {
+        				//If they are not connected, that's probably why the receive failed!
+        				if (logMINOR) Logger.minor(this, "Can't send "+msg+" to "+source+": "+ex);
+        			}
+        			if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
+        				Logger.normal(this, "Failed to retrieve (disconnect): "+e, e);
+        			else
+        				// Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
+        				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
+        			node.nodeStats.failedBlockReceive(false, false, false);
+        			return;
+        		}
+        		
+        	});
         }
 
         @Override
