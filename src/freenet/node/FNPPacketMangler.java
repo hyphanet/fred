@@ -183,7 +183,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		authenticatorCache = new HashMap<ByteArrayWrapper, byte[]>();
 
                 //We want a bigger cache for seednodes
-                AUTHENTICATOR_CACHE_SIZE = (node.wantAnonAuth() ? 300 : OpennetManager.MAX_PEERS_FOR_SCALING);
+                AUTHENTICATOR_CACHE_SIZE = (node.wantAnonAuth() ? 300 : OpennetManager.MAX_PEERS_FOR_SCALING * 2 + 10);
 
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
