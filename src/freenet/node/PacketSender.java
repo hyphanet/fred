@@ -13,6 +13,7 @@ import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -562,5 +563,9 @@ public class PacketSender implements Runnable, Ticker {
 		if(offset < MAX_COALESCING_DELAY) {
 			wakeUp();
 		}
+	}
+
+	public Executor getExecutor() {
+		return node.executor;
 	}
 }

@@ -150,4 +150,8 @@ public class TrivialTicker implements Ticker {
 		}
 	}
 
+	public Executor getExecutor() {
+		return executor;
+	}
+
 }
