@@ -514,7 +514,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * Sends the 'final' packet of a request in such a way that the thread can be freed (made non-runnable/exit)
 	 * and the byte counter will still be accurate.
 	 */
-	private void sendTerminal(Message msg) throws NotConnectedException {
+	private void sendTerminal(Message msg) {
 		if(logMINOR)
 			Logger.minor(this, "sendTerminal(" + msg + ")", new Exception("debug"));
 		if(sendTerminalCalled)
@@ -522,7 +522,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		else
 			sendTerminalCalled = true;
 
-		source.sendAsync(msg, new TerminalMessageByteCountCollector(), this);
+		try {
+			source.sendAsync(msg, new TerminalMessageByteCountCollector(), this);
+		} catch (NotConnectedException e) {
+			// Will have called the callback, so caller doesn't need to worry about it.
+			e.printStackTrace();
+		}
 	}
 	boolean sendTerminalCalled = false;
 
