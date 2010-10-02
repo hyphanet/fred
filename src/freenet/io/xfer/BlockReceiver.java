@@ -145,25 +145,25 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				Buffer data = (Buffer) m1.getObject(DMT.DATA);
 				LinkedList<Integer> missing = new LinkedList<Integer>();
 				try {
-				_prb.addPacket(packetNo, data);
-				// Remove it from rrmp if its in there
-				_recentlyReportedMissingPackets.remove(packetNo);
-				// Check that we have what the sender thinks we have
-				for (int x = 0; x < sent.getSize(); x++) {
-					if (sent.bitAt(x) && !_prb.isReceived(x)) {
-						// Sender thinks we have a block which we don't, but have we already
-						// re-requested it recently?
-						Long resendTime = _recentlyReportedMissingPackets.get(x);
-						if ((resendTime == null) || (System.currentTimeMillis() > resendTime.longValue())) {
-							// Make a note of the earliest time we should resend this, based on the number of other
-							// packets we are already waiting for
-							long resendWait = System.currentTimeMillis()
+					_prb.addPacket(packetNo, data);
+					// Remove it from rrmp if its in there
+					_recentlyReportedMissingPackets.remove(packetNo);
+					// Check that we have what the sender thinks we have
+					for (int x = 0; x < sent.getSize(); x++) {
+						if (sent.bitAt(x) && !_prb.isReceived(x)) {
+							// Sender thinks we have a block which we don't, but have we already
+							// re-requested it recently?
+							Long resendTime = _recentlyReportedMissingPackets.get(x);
+							if ((resendTime == null) || (System.currentTimeMillis() > resendTime.longValue())) {
+								// Make a note of the earliest time we should resend this, based on the number of other
+								// packets we are already waiting for
+								long resendWait = System.currentTimeMillis()
 									+ (MAX_ROUND_TRIP_TIME + (_recentlyReportedMissingPackets.size() * MAX_SEND_INTERVAL));
-							_recentlyReportedMissingPackets.put(x, resendWait);
-							missing.add(x);
+								_recentlyReportedMissingPackets.put(x, resendWait);
+								missing.add(x);
+							}
 						}
 					}
-				}
 				} catch (AbortedException e) {
 					// We didn't cause it?!
 					Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e, e);
