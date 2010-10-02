@@ -134,11 +134,16 @@ public class BlockTransmitter {
 						Logger.normal(this, "Terminating send due to peer restart: "+e);
 						synchronized(_senderThread) {
 							_sendComplete = true;
+							_senderThread.notifyAll();
 						}
 						return;
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "Terminating send: "+e);
-						//the send() thread should notice...
+						//the send() thread should notice... but lets not take any chances, it might reconnect.
+						synchronized(_senderThread) {
+							_sendComplete = true;
+							_senderThread.notifyAll();
+						}
 						return;
 					} catch (AbortedException e) {
 						Logger.normal(this, "Terminating send due to abort: "+e);
@@ -149,11 +154,16 @@ public class BlockTransmitter {
 						Logger.normal(this, "Waited too long to send packet, aborting");
 						synchronized(_senderThread) {
 							_sendComplete = true;
+							_senderThread.notifyAll();
 						}
 						cancelItemsPending();
 						return;
 					} catch (SyncSendWaitedTooLongException e) {
-						// Impossible
+						// Impossible, but lets cancel it anyway
+						synchronized(_senderThread) {
+							_sendComplete = true;
+							_senderThread.notifyAll();
+						}
 						Logger.error(this, "Impossible: Caught "+e, e);
 						cancelItemsPending();
 						return;
@@ -258,6 +268,18 @@ public class BlockTransmitter {
 					}
 
 					public void receiveAborted(int reason, String description) {
+						synchronized(_senderThread) {
+							timeAllSent = -1;
+							_sendComplete = true;
+							_senderThread.notifyAll();
+							if(_sentSendAborted) return;
+							_sentSendAborted = true;
+						}
+						try {
+							innerSendAborted(reason, description);
+						} catch (NotConnectedException e) {
+							// Ignore
+						}
 					}
 				});
 			}
@@ -267,6 +289,8 @@ public class BlockTransmitter {
 				synchronized(_senderThread) {
 					if(_sendComplete) return false;
 				}
+				// Check for abort, even if timeAllSent is never set.
+				_prb.getNumPackets();
 				Message msg;
 				try {
 					MessageFilter mfMissingPacketNotification = MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
@@ -452,15 +476,22 @@ public class BlockTransmitter {
 	 */
 	private boolean waitForAsyncBlockSends() {
 		synchronized(_senderThread) {
+			long now = System.currentTimeMillis();
+			long deadline = now + 60*60*1000;
 			if(blockSendsPending == 0) return false;
-			while(blockSendsPending != 0) {
+			while(true) {
+				if(logMINOR) Logger.minor(this, "Waiting for "+blockSendsPending+" blocks");
 				try {
-					_senderThread.wait();
+					_senderThread.wait(60*60*1000);
 				} catch (InterruptedException e) {
 					// Ignore
 				}
+				if(blockSendsPending == 0) return true;
+				now = System.currentTimeMillis();
+				if(now > deadline)
+					throw new IllegalStateException("Waited an hour for "+blockSendsPending+" blocks");
+				// FIXME do a clean abort, cancel the blocks as they must still be queued.
 			}
-			return true;
 		}
 	}
 

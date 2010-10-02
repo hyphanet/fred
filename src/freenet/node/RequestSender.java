@@ -1683,9 +1683,6 @@ loadWaiterLoop:
 		}
 	}
 
-	private int abortDownstreamTransfersReason;
-	private String abortDownstreamTransfersDesc;
-	
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}

@@ -259,7 +259,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		// only update here so we don't get odd behavior with it fluctuating
 		bwlimitDelayTime = (int) n.getBwlimitDelayTime();
 		nodeAveragePingTime = (int) n.getNodeAveragePingTime();
-		oldestNeverConnectedPeerAge = (int) n.peers.getOldestNeverConnectedPeerAge();
+		oldestNeverConnectedPeerAge = (int) n.peers.getOldestNeverConnectedDarknetPeerAge();
 		return ((peers == 0 && !isOpennetEnabled) ||
 				(conns < 3 && !isOpennetEnabled) ||
 				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||

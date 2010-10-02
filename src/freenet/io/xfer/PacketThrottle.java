@@ -148,9 +148,17 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
+	/** 
+	 * Send a throttled message.
+	 * @param cbForAsyncSend Callback to call when we send the message, etc. We will try
+	 * to call it even if we throw an exception etc. The caller may want to do this too,
+	 * in which case the callback should ignore multiple calls, which is a good idea 
+	 * anyway.
+	 */
 	public MessageItem sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
+		try {
 		synchronized(this) {
 			final long thisTicket=_packetTicketGenerator++;
 			// FIXME a list, or even a TreeMap by deadline, would use less CPU than waking up every waiter twice whenever a packet is acked.
@@ -224,6 +232,29 @@ public class PacketThrottle {
 			 */
 			notifyAll();
 		}
+		// Deal with this outside the lock, catch and re-throw.
+		} catch (NotConnectedException e) {
+			if (cbForAsyncSend != null)
+				cbForAsyncSend.disconnected();
+			throw e;
+		} catch (PeerRestartedException e) {
+			if (cbForAsyncSend != null)
+				cbForAsyncSend.disconnected();
+			throw e;
+		} catch (WaitedTooLongException e) {
+			if (cbForAsyncSend != null)
+				cbForAsyncSend.fatalError();
+			throw e;
+		} catch (Error e) {
+			if (cbForAsyncSend != null)
+				cbForAsyncSend.fatalError();
+			throw e;
+		} catch (RuntimeException e) {
+			if (cbForAsyncSend != null)
+				cbForAsyncSend.fatalError();
+			throw e;
+		}
+
 		long waitTime = System.currentTimeMillis() - start;
 		if(waitTime > 60*1000)
 			Logger.error(this, "Congestion control wait time: "+waitTime+" for "+this);
