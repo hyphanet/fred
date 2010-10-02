@@ -195,13 +195,16 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 						}
 					}
 					complete(_prb.getBlock());
+					return;
 				}
 			} catch (AbortedException e1) {
 				// We didn't cause it?!
 				Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e1, e1);
 				complete(new RetrievalException(RetrievalException.UNKNOWN, "Aborted?"));
+				return;
 			} catch (NotConnectedException e1) {
 				complete(new RetrievalException(RetrievalException.SENDER_DISCONNECTED));
+				return;
 			}
 			try {
 				waitNotification();
