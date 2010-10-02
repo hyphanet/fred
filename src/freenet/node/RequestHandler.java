@@ -526,7 +526,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			source.sendAsync(msg, new TerminalMessageByteCountCollector(), this);
 		} catch (NotConnectedException e) {
 			// Will have called the callback, so caller doesn't need to worry about it.
-			e.printStackTrace();
 		}
 	}
 	boolean sendTerminalCalled = false;
