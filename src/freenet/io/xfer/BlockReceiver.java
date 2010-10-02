@@ -111,45 +111,6 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 
 	}
 	
-	private class BlockReceiverCompletionWaiter implements
-			BlockReceiverCompletion {
-
-		private byte[] buf;
-		private RetrievalException e;
-
-		public synchronized void blockReceived(byte[] buf) {
-			this.buf = buf;
-			notifyAll();
-		}
-
-		public synchronized void blockReceiveFailed(RetrievalException e) {
-			this.e = e;
-			notifyAll();
-		}
-
-		public synchronized byte[] waitResult() throws RetrievalException {
-			while (true) {
-				if (buf != null)
-					return buf;
-				if (e != null)
-					throw e;
-				try {
-					wait();
-				} catch (InterruptedException e1) {
-					// Ignore
-				}
-			}
-		}
-
-	}
-	
-	
-	
-	public byte[] receive() throws RetrievalException {
-		BlockReceiverCompletionWaiter waiter = new BlockReceiverCompletionWaiter();
-		return waiter.waitResult();
-	}
-	
 	private int consecutiveMissingPacketReports = 0;
 	
 	private BlockReceiverCompletion callback;
