@@ -3084,19 +3084,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private long timeLastReset = -1;
 
 	/**
-	 * How big can the authenticator get before we flush it ?
-	 * roughly n*(sizeof(message3|message4) + H(authenticator))
+	 * How big can the authenticator cache get before we flush it ?
+	 * n * 40 bytes (32 for the authenticator and 8 for the timestamp)
 	 *
-	 * We push to it until we reach the cap where we rekey
+	 * We push to it until we reach the cap where we rekey or we reach the PFS interval
 	 */
 	private int getAuthenticatorCacheSize() {
-		if(crypto.isOpennet) {
-			if(node.wantAnonAuth())
-				return 300;
-			else
-				return OpennetManager.MAX_PEERS_FOR_SCALING * 2 + 10;
-		} else
-			return 100;
+		if(crypto.isOpennet && node.wantAnonAuth()) // seednodes
+			return 5000; // 200kB
+		else
+			return 250; // 10kB
 	}
 	
 	/**
