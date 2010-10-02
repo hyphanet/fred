@@ -108,16 +108,14 @@ public class BlockTransmitter {
 					int packetNo = -1;
 					synchronized(_senderThread) {
 						if(_failed || _sendCompleted || _completed) return;
-						if(_unsent.size() == 0) packetNo = -1;
+						if(_unsent.size() == 0) {
+							// Wait for PRB callback to tell us we have more packets.
+							return;
+						}
 						else
 							packetNo = _unsent.removeFirst();
 					}
-					if(packetNo == -1) {
-						schedule(10*1000);
-						return;
-					} else {
-						if(!innerRun(packetNo)) return;
-					}
+					if(!innerRun(packetNo)) return;
 				}
 			} finally {
 				synchronized(this) {
