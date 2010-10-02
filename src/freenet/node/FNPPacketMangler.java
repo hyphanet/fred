@@ -120,13 +120,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private long jfkDHLastGenerationTimestamp = 0;
 
 	protected static final int NONCE_SIZE = 8;
-	/**
-	 * How big can the authenticator get before we flush it ?
-	 * roughly n*(sizeof(message3|message4) + H(authenticator))
-	 *
-	 * We push to it until we reach the cap where we rekey
-	 */
-	private int AUTHENTICATOR_CACHE_SIZE;
 	private static final int MAX_PACKETS_IN_FLIGHT = 256;
 	private static final int RANDOM_BYTES_LENGTH = 12;
 	private static final int HASH_LENGTH = SHA256.getDigestLength();
@@ -180,12 +173,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		fnpTimingSource = new EntropySource();
 		myPacketDataSource = new EntropySource();
 		authenticatorCache = new HashMap<ByteArrayWrapper, byte[]>();
-
-		if(crypt.isOpennet)
-			//We want a bigger cache for seednodes
-			AUTHENTICATOR_CACHE_SIZE = (node.wantAnonAuth() ? 300 : OpennetManager.MAX_PEERS_FOR_SCALING * 2 + 10);
-		else
-			AUTHENTICATOR_CACHE_SIZE = 100;
 
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
@@ -3096,6 +3083,22 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private long timeLastReset = -1;
 
 	/**
+	 * How big can the authenticator get before we flush it ?
+	 * roughly n*(sizeof(message3|message4) + H(authenticator))
+	 *
+	 * We push to it until we reach the cap where we rekey
+	 */
+	private int getAuthenticatorCacheSize() {
+		if(crypto.isOpennet) {
+			if(node.wantAnonAuth())
+				return 300;
+			else
+				return OpennetManager.MAX_PEERS_FOR_SCALING * 2 + 10;
+		} else
+			return 100;
+	}
+	
+	/**
 	 * Change the transient key used by JFK.
 	 *
 	 * It will determine the PFS interval, hence we call it at least once every 30mins.
@@ -3106,6 +3109,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		long now = System.currentTimeMillis();
 		boolean isCacheTooBig = true;
 		int authenticatorCacheSize = 0;
+		int AUTHENTICATOR_CACHE_SIZE = getAuthenticatorCacheSize();
 		synchronized (authenticatorCache) {
 			authenticatorCacheSize = authenticatorCache.size();
 			if(authenticatorCacheSize < AUTHENTICATOR_CACHE_SIZE) {
