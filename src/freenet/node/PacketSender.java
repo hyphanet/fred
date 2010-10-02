@@ -149,7 +149,7 @@ public class PacketSender implements Runnable, Ticker {
 				pn.setPeerNodeStatus(now);
 		}
 		pm.maybeLogPeerNodeStatusSummary(now);
-		pm.maybeUpdateOldestNeverConnectedPeerAge(now);
+		pm.maybeUpdateOldestNeverConnectedDarknetPeerAge(now);
 		stats.maybeUpdatePeerManagerUserAlertStats(now);
 		stats.maybeUpdateNodeIOStats(now);
 		pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
