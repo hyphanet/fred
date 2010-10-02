@@ -124,9 +124,9 @@ public class BlockTransmitter {
 			}
 		}
 		
-		public void schedule(long delay) {
+		public void schedule() {
 			if(_failed || _sendCompleted || _completed) return;
-			_ticker.queueTimedJob(this, "BlockTransmitter block sender for "+_uid+" to "+_destination, delay, false, true);
+			_ticker.queueTimedJob(this, "BlockTransmitter block sender for "+_uid+" to "+_destination, 0, false, false);
 		}
 
 		/** @return True . */
@@ -556,7 +556,7 @@ public class BlockTransmitter {
 							_unsent.addLast(packetNo);
 							timeAllSent = -1;
 							_sentPackets.setBit(packetNo, false);
-							_senderThread.schedule(0);
+							_senderThread.schedule();
 						}
 					}
 
@@ -565,7 +565,7 @@ public class BlockTransmitter {
 					}
 				});
 			}
-			_senderThread.schedule(0);
+			_senderThread.schedule();
 			
 			mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
 			mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_destination).setNoTimeout();
