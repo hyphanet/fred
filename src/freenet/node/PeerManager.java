@@ -62,9 +62,9 @@ public class PeerManager {
 	private String openFilename;
 	private PeerManagerUserAlert ua;	// Peers stuff
 	/** age of oldest never connected peer (milliseconds) */
-	private long oldestNeverConnectedPeerAge;
+	private long oldestNeverConnectedDarknetPeerAge;
 	/** Next time to update oldestNeverConnectedPeerAge */
-	private long nextOldestNeverConnectedPeerAgeUpdateTime = -1;
+	private long nextOldestNeverConnectedDarknetPeerAgeUpdateTime = -1;
 	/** oldestNeverConnectedPeerAge update interval (milliseconds) */
 	private static final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
 	/** Next time to log the PeerNode status summary */
@@ -1364,27 +1364,28 @@ public class PeerManager {
 	/**
 	 * Update oldestNeverConnectedPeerAge if the timer has expired
 	 */
-	public void maybeUpdateOldestNeverConnectedPeerAge(long now) {
+	public void maybeUpdateOldestNeverConnectedDarknetPeerAge(long now) {
 		synchronized(this) {
-			if(now <= nextOldestNeverConnectedPeerAgeUpdateTime)
+			if(now <= nextOldestNeverConnectedDarknetPeerAgeUpdateTime)
 				return;
-			nextOldestNeverConnectedPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
+			nextOldestNeverConnectedDarknetPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
 		}
-		oldestNeverConnectedPeerAge = 0;
+		oldestNeverConnectedDarknetPeerAge = 0;
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
 			PeerNode pn = peerList[i];
+			if(!pn.isDarknet()) continue;
 			if(pn.getPeerNodeStatus() == PEER_NODE_STATUS_NEVER_CONNECTED)
-				if((now - pn.getPeerAddedTime()) > oldestNeverConnectedPeerAge)
-					oldestNeverConnectedPeerAge = now - pn.getPeerAddedTime();
+				if((now - pn.getPeerAddedTime()) > oldestNeverConnectedDarknetPeerAge)
+					oldestNeverConnectedDarknetPeerAge = now - pn.getPeerAddedTime();
 		}
-		if(oldestNeverConnectedPeerAge > 0 && logMINOR)
-			Logger.minor(this, "Oldest never connected peer is " + oldestNeverConnectedPeerAge + "ms old");
-		nextOldestNeverConnectedPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
+		if(oldestNeverConnectedDarknetPeerAge > 0 && logMINOR)
+			Logger.minor(this, "Oldest never connected peer is " + oldestNeverConnectedDarknetPeerAge + "ms old");
+		nextOldestNeverConnectedDarknetPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
 	}
 
-	public long getOldestNeverConnectedPeerAge() {
-		return oldestNeverConnectedPeerAge;
+	public long getOldestNeverConnectedDarknetPeerAge() {
+		return oldestNeverConnectedDarknetPeerAge;
 	}
 
 	/**
