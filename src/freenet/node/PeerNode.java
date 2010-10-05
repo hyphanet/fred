@@ -1872,7 +1872,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean routable = true;
 		boolean newer = false;
 		boolean older = false;
-		if(bogusNoderef) {
+		if(isSeed()) {
+                        routable = false;
+                        if(logMINOR) Logger.minor(this, "Not routing traffic to " + this + " it's for announcement.");
+                } else if(bogusNoderef) {
 			Logger.normal(this, "Not routing traffic to " + this + " - bogus noderef");
 			routable = false;
 			//FIXME: It looks like bogusNoderef will just be set to false a few lines later...
