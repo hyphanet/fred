@@ -138,8 +138,9 @@ public class MultiReaderBucket {
 		}
 		
 		@Override
-		protected void finalize() {
+		protected void finalize() throws Throwable {
 			free();
+                        super.finalize();
 		}
 
 		public void storeTo(ObjectContainer container) {

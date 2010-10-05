@@ -317,9 +317,10 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 	@Override
-	protected void finalize() {
+	protected void finalize() throws Throwable {
 		if(deleteOnFinalize())
 			free(true);
+                super.finalize();
 	}
 
 	/**

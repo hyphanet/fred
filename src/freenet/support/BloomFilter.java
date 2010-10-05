@@ -212,8 +212,9 @@ public abstract class BloomFilter {
 	}
 
 	@Override
-	protected void finalize() {
+	protected void finalize() throws Throwable {
 		close();
+                super.finalize();
 	}
 	
 	public void storeTo(ObjectContainer container) {
