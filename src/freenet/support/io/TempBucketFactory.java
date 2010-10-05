@@ -570,6 +570,8 @@ public class TempBucketFactory implements BucketFactory {
 		boolean shouldContinue = true;
 		// create a new list to avoid race-conditions
 		Queue<TempBucket> toMigrate = null;
+                if(logMINOR)
+			Logger.minor(this, "Starting cleanBucketQueue");
 		do {
 			synchronized(ramBucketQueue) {
 				final WeakReference<TempBucket> tmpBucketRef = ramBucketQueue.peek();
