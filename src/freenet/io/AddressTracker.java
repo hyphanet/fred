@@ -204,11 +204,11 @@ public class AddressTracker {
 	public enum Status {
 		// Note: Order is important! We compare by ordinals in various places.
 		// FIXME switch to using member methods.
-		DEFINITELY_PORT_FORWARDED,
-		MAYBE_PORT_FORWARDED,
-		MAYBE_NATED,
 		DEFINITELY_NATED,
-		DONT_KNOW
+		MAYBE_NATED,
+		DONT_KNOW,
+		MAYBE_PORT_FORWARDED,
+		DEFINITELY_PORT_FORWARDED
 	}
 	
 	/** If the minimum gap is at least this, we might be port forwarded.
