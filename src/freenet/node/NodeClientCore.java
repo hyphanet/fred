@@ -286,7 +286,20 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		initPTBF(container, nodeConfig);
 
 		// Allocate 10% of the RAM to the RAMBucketPool by default
-		int defaultRamBucketPoolSize = Fields.parseInt(WrapperConfig.getWrapperProperty("wrapper.java.maxmemory"), 128) / 10;
+		int defaultRamBucketPoolSize;
+		long maxMemory = Runtime.getRuntime().maxMemory();
+		if(maxMemory == Long.MAX_VALUE || maxMemory <= 0)
+			defaultRamBucketPoolSize = 10;
+		else {
+			maxMemory /= (1024 * 1024);
+			if(maxMemory <= 0) // Still bogus
+				defaultRamBucketPoolSize = 10;
+			else {
+				// 10% of memory above 64MB, with a minimum of 1MB.
+				defaultRamBucketPoolSize = Math.min(Integer.MAX_VALUE, (int)((maxMemory - 64) / 10));
+				if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
+			}
+		}
 
 		nodeConfig.register("maxRAMBucketSize", (defaultRamBucketPoolSize > 30 ? "8MiB" : "128KiB"), sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
