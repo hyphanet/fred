@@ -11,7 +11,6 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.db4o.ObjectContainer;
@@ -24,6 +23,7 @@ import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import java.util.ArrayList;
 
 /**
  * Temporary Bucket Factory
@@ -77,7 +77,7 @@ public class TempBucketFactory implements BucketFactory {
 		/** A link to the "real" underlying outputStream, even if we migrated */
 		private OutputStream os = null;
 		/** All the open-streams to reset or close on migration or free() */
-		private final Vector<TempBucketInputStream> tbis;
+		private final ArrayList<TempBucketInputStream> tbis;
 		/** An identifier used to know when to deprecate the InputStreams */
 		private short osIndex;
 		/** A timestamp used to evaluate the age of the bucket and maybe consider it for a migration */
@@ -96,8 +96,8 @@ public class TempBucketFactory implements BucketFactory {
 			this.currentBucket = cur;
 			this.creationTime = now;
 			this.osIndex = 0;
-			this.tbis = new Vector<TempBucketInputStream>(1);
-			if(logMINOR) Logger.minor(this, "Created "+this, new Exception("debug"));
+			this.tbis = new ArrayList<TempBucketInputStream>(1);
+			if(logMINOR) Logger.minor(TempBucket.class, "Created "+this, new Exception("debug"));
 		}
 		
 		private synchronized void closeInputStreams(boolean forFree) {
@@ -177,10 +177,10 @@ public class TempBucketFactory implements BucketFactory {
 			// Hence we don't need to reset currentSize / _hasTaken() if a bucket is reused.
 			// FIXME we should migrate to disk rather than throwing.
 			hasWritten = true;
-			OutputStream os = new TempBucketOutputStream(++osIndex);
+			OutputStream tos = new TempBucketOutputStream(++osIndex);
 			if(logMINOR)
-				Logger.minor(this, "Got "+os+" for "+this, new Exception());
-			return os;
+				Logger.minor(this, "Got "+tos+" for "+this, new Exception());
+			return tos;
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
@@ -423,12 +423,13 @@ public class TempBucketFactory implements BucketFactory {
 		}
 		
 		@Override
-		protected void finalize() {
+		protected void finalize() throws Throwable {
 			if (!hasBeenFreed) {
 				if (TRACE_BUCKET_LEAKS)
 					Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this, tracer);
 				free();
 			}
+                        super.finalize();
 		}
 	}
 	
