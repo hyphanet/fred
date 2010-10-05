@@ -59,9 +59,13 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	public BaseFileBucket(File file, boolean deleteOnExit) {
 		if(file == null) throw new NullPointerException();
 		this.length = file.length();
-		if(deleteOnExit)
-			setDeleteOnExit(file);
+                maybeSetDeleteOnExit(deleteOnExit, file);
 	}
+
+        private void maybeSetDeleteOnExit(boolean deleteOnExit, File file) {
+        	if(deleteOnExit)
+			setDeleteOnExit(file);
+        }
 	
 	protected void setDeleteOnExit(File file) {
 		try {
