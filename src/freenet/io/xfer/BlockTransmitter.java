@@ -279,10 +279,9 @@ public class BlockTransmitter {
 				_prb.getNumPackets();
 				Message msg;
 				try {
-					MessageFilter mfMissingPacketNotification = MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
 					MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
 					MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
-					msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)), _ctr);
+					msg = _usm.waitFor(mfAllReceived.or(mfSendAborted), _ctr);
 					if(logMINOR) Logger.minor(this, "Got "+msg);
 				} catch (DisconnectedException e) {
 					throttle.maybeDisconnected();
@@ -303,26 +302,6 @@ public class BlockTransmitter {
 					} else {
 						if(logMINOR) Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+ '/' +_prb.getNumPackets());
 						continue;
-					}
-				} else if (msg.getSpec().equals(DMT.missingPacketNotification)) {
-					LinkedList<Integer> missing = (LinkedList<Integer>) msg.getObject(DMT.MISSING);
-					for (int packetNo :missing) {
-						if (_prb.isReceived(packetNo)) {
-							synchronized(_senderThread) {
-								if (_unsent.contains(packetNo)) {
-									Logger.minor(this, "already to transmit packet #"+packetNo);
-								} else {
-								_unsent.addFirst(packetNo);
-								timeAllSent=-1;
-								_sentPackets.setBit(packetNo, false);
-								_senderThread.notifyAll();
-								}
-							}
-						} else {
-							// To be expected if the transfer is slow, since we send missingPacketNotification on a timeout.
-							if(logMINOR)
-								Logger.minor(this, "receiver requested block #"+packetNo+" which is not received");
-						}
 					}
 				} else if (msg.getSpec().equals(DMT.allReceived)) {
 					long endTime = System.currentTimeMillis();

@@ -191,14 +191,6 @@ public class DMT {
 		return msg;
 	}
 
-	// REDFLAG: OBSOLETE AND DANGEROUS
-	// Retransmission occurs at a lower layer, and having it here too can cause queues to balloon and eventually cause serious problems.
-	
-	public static final MessageType missingPacketNotification = new MessageType("missingPacketNotification", PRIORITY_LOW) {{
-		addField(UID, Long.class);
-		addLinkedListField(MISSING, Integer.class);
-	}};
-	
 	public static final MessageType allReceived = new MessageType("allReceived", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 	}};
