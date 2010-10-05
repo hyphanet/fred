@@ -303,7 +303,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 		
 		// Max bucket size 5% of the total, minimum 32KB (one block, vast majority of buckets)
-		long maxBucketSize = Math.max(32768, defaultRamBucketPoolSize / 20);
+		long maxBucketSize = Math.max(32768, (defaultRamBucketPoolSize * 1024 * 1024) / 20);
 		
 		nodeConfig.register("maxRAMBucketSize", SizeUtil.formatSizeWithoutSpace(maxBucketSize), sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
