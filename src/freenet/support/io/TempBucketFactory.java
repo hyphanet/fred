@@ -17,6 +17,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
 import freenet.support.Executor;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
@@ -52,7 +53,6 @@ public class TempBucketFactory implements BucketFactory {
 	private final RandomSource strongPRNG;
 	private final Random weakPRNG;
 	private final Executor executor;
-	private volatile boolean logMINOR;
 	private volatile boolean reallyEncrypt;
 	
 	/** How big can the defaultSize be for us to consider using RAMBuckets? */
@@ -66,6 +66,16 @@ public class TempBucketFactory implements BucketFactory {
 	final static int RAMBUCKET_CONVERSION_FACTOR = 4;
 	
 	final static boolean TRACE_BUCKET_LEAKS = false;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	public class TempBucket implements Bucket {
 		/** The underlying bucket itself */
@@ -442,7 +452,6 @@ public class TempBucketFactory implements BucketFactory {
 		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
-		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
@@ -466,27 +475,22 @@ public class TempBucketFactory implements BucketFactory {
 	}
 	
 	public synchronized void setMaxRamUsed(long size) {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		maxRamUsed = size;
 	}
 	
 	public synchronized long getMaxRamUsed() {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		return maxRamUsed;
 	}
 	
 	public synchronized void setMaxRAMBucketSize(long size) {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		maxRAMBucketSize = size;
 	}
 	
 	public synchronized long getMaxRAMBucketSize() {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		return maxRAMBucketSize;
 	}
 	
 	public void setEncryption(boolean value) {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		reallyEncrypt = value;
 	}
 	
