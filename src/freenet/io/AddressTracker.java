@@ -180,7 +180,7 @@ public class AddressTracker {
 			if(ipItem == null) {
 				ipItem = new InetAddressAddressTrackerItem(timeDefinitelyNoPacketsReceivedIP, timeDefinitelyNoPacketsSentIP, ip);
 				if(ipTrackers.size() > MAX_ITEMS) {
-					Logger.error(this, "Clearing peer trackers on "+this);
+					Logger.error(this, "Clearing IP trackers on "+this);
 					peerTrackers.clear();
 					ipTrackers.clear();
 					timeDefinitelyNoPacketsReceivedIP = now;
