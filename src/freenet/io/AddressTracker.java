@@ -52,7 +52,10 @@ public class AddressTracker {
 	private final HashMap<InetAddress, InetAddressAddressTrackerItem> ipTrackers;
 
 	/** Maximum number of Item's of either type */
-	static final int MAX_ITEMS = 1000;
+	private int MAX_ITEMS = DEFAULT_MAX_ITEMS;
+	
+	static final int DEFAULT_MAX_ITEMS = 1000;
+	static final int SEED_MAX_ITEMS = 10000;
 
 	private long timeDefinitelyNoPacketsReceived;
 	private long timeDefinitelyNoPacketsSent;
@@ -154,6 +157,7 @@ public class AddressTracker {
 			if(peerItem == null) {
 				peerItem = new PeerAddressTrackerItem(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent, peer);
 				if(peerTrackers.size() > MAX_ITEMS) {
+					Logger.error(this, "Clearing peer trackers on "+this);
 					peerTrackers.clear();
 					ipTrackers.clear();
 					timeDefinitelyNoPacketsReceived = now;
@@ -169,6 +173,7 @@ public class AddressTracker {
 			if(ipItem == null) {
 				ipItem = new InetAddressAddressTrackerItem(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent, ip);
 				if(ipTrackers.size() > MAX_ITEMS) {
+					Logger.error(this, "Clearing peer trackers on "+this);
 					peerTrackers.clear();
 					ipTrackers.clear();
 					timeDefinitelyNoPacketsReceived = now;
@@ -343,5 +348,9 @@ public class AddressTracker {
 
 	public synchronized void setPresumedInnocent() {
 		timePresumeGuilty = -1;
+	}
+
+	public synchronized void setHugeTracker() {
+		MAX_ITEMS = SEED_MAX_ITEMS;
 	}
 }
