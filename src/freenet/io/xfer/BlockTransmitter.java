@@ -370,8 +370,10 @@ public class BlockTransmitter {
 			itemsPending.clear();
 		}
 		for(MessageItem item : items) {
-			if(!_destination.unqueueMessage(item))
-				Logger.error(this, "Message not queued ?!?!?!? on "+this+" : "+item);
+			if(!_destination.unqueueMessage(item)) {
+				// Race condition, can happen
+				if(logMINOR) Logger.minor(this, "Message not queued ?!?!?!? on "+this+" : "+item);
+			}
 		}
 	}
 
