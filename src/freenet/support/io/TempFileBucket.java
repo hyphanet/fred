@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import com.db4o.ObjectContainer;
+import freenet.support.LogThresholdCallback;
 
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -23,9 +24,22 @@ import freenet.support.api.Bucket;
 public class TempFileBucket extends BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
 	long filenameID;
 	final FilenameGenerator generator;
-	private static boolean logDebug = true;
 	private boolean readOnly;
 	private final boolean deleteOnFree;
+
+        private static volatile boolean logMINOR;
+        private static volatile boolean logDEBUG;
+
+        static {
+            Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+                @Override
+                public void shouldUpdate() {
+                    logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+                    logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+                }
+            });
+        }
 	
 	public TempFileBucket(long id, FilenameGenerator generator) {
 		// deleteOnExit -> files get stuck in a big HashSet, whether or not
@@ -49,18 +63,10 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		this.filenameID = id;
 		this.generator = generator;
 		this.deleteOnFree = deleteOnFree;
-		synchronized(this) {
-			logDebug = Logger.shouldLog(LogLevel.DEBUG, this);
-		}
 
-		//System.err.println("FProxyServlet.TempFileBucket -- created: " +
-		//         f.getAbsolutePath());
-		synchronized(this) {
-			if (logDebug)
-				Logger.debug(
-					this,
-					"Initializing TempFileBucket(" + getFile());
-		}
+            if (logDEBUG) {
+                Logger.debug(this,"Initializing TempFileBucket(" + getFile());
+            }
 	}
 
 	@Override
@@ -115,7 +121,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Removing from database: "+this);
 		// filenameGenerator is a global, we don't need to worry about it.
 		container.delete(this);
