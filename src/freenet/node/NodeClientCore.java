@@ -74,6 +74,7 @@ import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SizeUtil;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -300,8 +301,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
 			}
 		}
-
-		nodeConfig.register("maxRAMBucketSize", (defaultRamBucketPoolSize > 30 ? "8MiB" : "128KiB"), sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
+		
+		// Max bucket size 5% of the total, minimum 32KB (one block, vast majority of buckets)
+		long maxBucketSize = Math.max(32768, defaultRamBucketPoolSize / 20);
+		
+		nodeConfig.register("maxRAMBucketSize", SizeUtil.formatSizeWithoutSpace(maxBucketSize), sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
 			@Override
 			public Long get() {
