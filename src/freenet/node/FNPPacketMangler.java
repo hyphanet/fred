@@ -160,7 +160,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/** Headers overhead if there is one message and no acks. */
 	static public final int HEADERS_LENGTH_ONE_MESSAGE =
 		HEADERS_LENGTH_MINIMUM + 2; // 2 bytes = length of message. rest is the same.
-	static boolean LOG_UNMATCHABLE_ERROR = false;
 
 	final int fullHeadersLengthMinimum;
 	final int fullHeadersLengthOneMessage;
@@ -320,9 +319,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(node.wantAnonAuth()) {
 			if(tryProcessAuthAnon(buf, offset, length, peer)) return;
 		}
-		if(LOG_UNMATCHABLE_ERROR)
-			System.err.println("Unmatchable packet from "+peer+" on "+node.getDarknetPortNumber());
-		Logger.normal(this,"Unmatchable packet from "+peer);
+
+                // Don't log too much if we are a seednode
+                if(logMINOR && crypto.isOpennet && node.wantAnonAuth())
+                    Logger.minor(this,"Unmatchable packet from "+peer);
+                else
+                    Logger.normal(this,"Unmatchable packet from "+peer);
 	}
 
 	/**
