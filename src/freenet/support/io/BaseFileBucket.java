@@ -169,7 +169,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			throws FileNotFoundException {
 			super(tempfile, false);
 			if(logMINOR)
-				Logger.minor(this, "Writing to "+tempfile+" for "+getFile()+" : "+this);
+				Logger.minor(FileBucketOutputStream.class, "Writing to "+tempfile+" for "+getFile()+" : "+this);
 			this.tempfile = tempfile;
 			resetLength();
 			this.restartCount = restartCount;
