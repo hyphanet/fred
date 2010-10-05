@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
+import freenet.support.LogThresholdCallback;
 
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -27,6 +28,17 @@ public class MultiReaderBucket {
 	private ArrayList<Bucket> readers;
 	
 	private boolean closed;
+        private static volatile boolean logMINOR;
+
+        static {
+            Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+                @Override
+                public void shouldUpdate() {
+                    logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+                }
+            });
+        }
 	
 	public MultiReaderBucket(Bucket underlying) {
 		bucket = underlying;
@@ -40,7 +52,7 @@ public class MultiReaderBucket {
 			if (readers == null)
 				readers = new ArrayList<Bucket>(1);
 			readers.add(d);
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "getReaderBucket() returning "+d+" for "+this+" for "+bucket);
 			return d;
 		}
@@ -51,7 +63,7 @@ public class MultiReaderBucket {
 		private boolean freed;
 
 		public void free() {
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "ReaderBucket "+this+" for "+MultiReaderBucket.this+" free()ing for "+bucket);
 			synchronized(MultiReaderBucket.this) {
 				if(freed) return;
