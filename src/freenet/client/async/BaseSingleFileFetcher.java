@@ -393,7 +393,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		KeysFetchingLocally fetching = context.fetching;
 		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null, container), this, cancelled, container)) {
 			wakeTime = Long.MAX_VALUE;
-			tracker.cooldownWakeupTime = wakeTime;
+			// tracker.cooldownWakeupTime is only set for a real cooldown period, NOT when we go into hierarchical cooldown because the request is already running.
 		}
 		if(wakeTime == 0)
 			return 0;
