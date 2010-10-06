@@ -275,7 +275,7 @@ public class PeerMessageQueue {
 			if(incomplete.value) return (incomplete.value ? -size : size);
 			// If no more urgent messages, try to add some non-urgent messages too.
 			size = innerAddMessages(size, minSize, maxSize, now, messages, incomplete, false);
-			return (incomplete.value ? -size : size);
+			return size;
 		}
 
 		private int innerAddMessages(int size, int minSize, int maxSize,
