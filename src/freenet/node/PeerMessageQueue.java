@@ -284,7 +284,7 @@ public class PeerMessageQueue {
 				boolean urgentOnly) {
 			while(true) {
 				synchronized(PeerMessageQueue.this) {
-					size = addMessages(size, minSize, maxSize, now, messages, true);
+					size = addMessages(size, minSize, maxSize, now, messages, urgentOnly);
 				}
 				if(size < 0) {
 					incomplete.value = true;
