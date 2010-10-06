@@ -1044,7 +1044,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @param cb The callback to be called when the packet has been sent, or null.
 	* @param ctr A callback to tell how many bytes were used to send this message.
 	*/
-	public void sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException {
+	public MessageItem sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException {
 		if(ctr == null)
 			Logger.error(this, "Bytes not logged", new Exception("debug"));
 		if(logMINOR)
@@ -1066,6 +1066,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// Otherwise we do not need to wake up the PacketSender
 		// It will wake up before the maximum coalescing delay (100ms) because
 		// it wakes up every 100ms *anyway*.
+		return item;
+	}
+	
+	public boolean unqueueMessage(MessageItem message) {
+		if(logMINOR) Logger.minor(this, "Unqueueing message on "+this+" : "+message);
+		return messageQueue.removeMessage(message);
 	}
 
 	public long getMessageQueueLengthBytes() {
@@ -4091,10 +4097,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return resendBytesSent;
 	}
 
-	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
+	public MessageItem sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long deadline = System.currentTimeMillis() + timeout;
 		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
-		getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback);
+		return getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback);
 	}
 
 	/**
@@ -4247,17 +4253,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(messageQueue.mustSendSize(minSize, maxSize))
 					mustSend = true;
 			}
+			
+		}
 
-			if(mustSend) {
-				int size = minSize;
-				size = messageQueue.addUrgentMessages(size, now, minSize, maxSize, messages);
-
-				// Now the not-so-urgent messages.
-				if(size >= 0) {
-					size = messageQueue.addNonUrgentMessages(size, now, minSize, maxSize, messages);
-				}
-			}
-
+		if(mustSend) {
+			int size = minSize;
+			size = messageQueue.addMessages(size, now, minSize, maxSize, messages);
 		}
 
 		if(messages.isEmpty() && keepalive) {

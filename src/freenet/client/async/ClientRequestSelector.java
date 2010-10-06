@@ -599,6 +599,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		synchronized(keysFetching) {
 			boolean ret = keysFetching.contains(key);
 			if(!ret) return ret;
+			// It is being fetched. Add the BaseSendableGet to the wait list so it gets woken up when the request finishes.
 			if(getterWaiting != null) {
 				if(persistent) {
 					Long[] waiting = persistentRequestsWaitingForKeysFetching.get(key);

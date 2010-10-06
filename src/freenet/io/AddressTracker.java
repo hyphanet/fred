@@ -52,10 +52,16 @@ public class AddressTracker {
 	private final HashMap<InetAddress, InetAddressAddressTrackerItem> ipTrackers;
 
 	/** Maximum number of Item's of either type */
-	static final int MAX_ITEMS = 1000;
+	private int MAX_ITEMS = DEFAULT_MAX_ITEMS;
+	
+	static final int DEFAULT_MAX_ITEMS = 1000;
+	static final int SEED_MAX_ITEMS = 10000;
 
-	private long timeDefinitelyNoPacketsReceived;
-	private long timeDefinitelyNoPacketsSent;
+	private long timeDefinitelyNoPacketsReceivedIP;
+	private long timeDefinitelyNoPacketsSentIP;
+
+	private long timeDefinitelyNoPacketsReceivedPeer;
+	private long timeDefinitelyNoPacketsSentPeer;
 
 	private long brokenTime;
 
@@ -88,23 +94,27 @@ public class AddressTracker {
 	}
 
 	private AddressTracker() {
-		timeDefinitelyNoPacketsReceived = System.currentTimeMillis();
-		timeDefinitelyNoPacketsSent = System.currentTimeMillis();
+		timeDefinitelyNoPacketsReceivedIP = System.currentTimeMillis();
+		timeDefinitelyNoPacketsSentIP = System.currentTimeMillis();
+		timeDefinitelyNoPacketsReceivedPeer = System.currentTimeMillis();
+		timeDefinitelyNoPacketsSentPeer = System.currentTimeMillis();
 		peerTrackers = new HashMap<Peer, PeerAddressTrackerItem>();
 		ipTrackers = new HashMap<InetAddress, InetAddressAddressTrackerItem>();
 	}
 
 	private AddressTracker(SimpleFieldSet fs, long lastBootID) throws FSParseException {
 		int version = fs.getInt("Version");
-		if(version != 1)
+		if(version != 2)
 			throw new FSParseException("Unknown Version "+version);
 		long savedBootID = fs.getLong("BootID");
 		if(savedBootID != lastBootID) throw new FSParseException("Wrong boot ID - maybe unclean shutdown? Last was "+lastBootID+" stored "+savedBootID);
 		// Sadly we don't know whether there were packets arriving during the gap,
 		// and some insecure firewalls will use incoming packets to keep tunnels open
 		//timeDefinitelyNoPacketsReceived = fs.getLong("TimeDefinitelyNoPacketsReceived");
-		timeDefinitelyNoPacketsReceived = System.currentTimeMillis();
-		timeDefinitelyNoPacketsSent = fs.getLong("TimeDefinitelyNoPacketsSent");
+		timeDefinitelyNoPacketsReceivedPeer = System.currentTimeMillis();
+		timeDefinitelyNoPacketsReceivedIP = System.currentTimeMillis();
+		timeDefinitelyNoPacketsSentPeer = fs.getLong("TimeDefinitelyNoPacketsSentPeer");
+		timeDefinitelyNoPacketsSentIP = fs.getLong("TimeDefinitelyNoPacketsSentIP");
 		peerTrackers = new HashMap<Peer, PeerAddressTrackerItem>();
 		SimpleFieldSet peers = fs.subset("Peers");
 		if(peers != null) {
@@ -152,12 +162,13 @@ public class AddressTracker {
 		synchronized(this) {
 			PeerAddressTrackerItem peerItem = peerTrackers.get(peer);
 			if(peerItem == null) {
-				peerItem = new PeerAddressTrackerItem(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent, peer);
+				peerItem = new PeerAddressTrackerItem(timeDefinitelyNoPacketsReceivedPeer, timeDefinitelyNoPacketsSentPeer, peer);
 				if(peerTrackers.size() > MAX_ITEMS) {
+					Logger.error(this, "Clearing peer trackers on "+this);
 					peerTrackers.clear();
 					ipTrackers.clear();
-					timeDefinitelyNoPacketsReceived = now;
-					timeDefinitelyNoPacketsSent = now;
+					timeDefinitelyNoPacketsReceivedPeer = now;
+					timeDefinitelyNoPacketsSentPeer = now;
 				}
 				peerTrackers.put(peer, peerItem);
 			}
@@ -167,12 +178,13 @@ public class AddressTracker {
 				peerItem.receivedPacket(now);
 			InetAddressAddressTrackerItem ipItem = ipTrackers.get(ip);
 			if(ipItem == null) {
-				ipItem = new InetAddressAddressTrackerItem(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent, ip);
+				ipItem = new InetAddressAddressTrackerItem(timeDefinitelyNoPacketsReceivedIP, timeDefinitelyNoPacketsSentIP, ip);
 				if(ipTrackers.size() > MAX_ITEMS) {
+					Logger.error(this, "Clearing IP trackers on "+this);
 					peerTrackers.clear();
 					ipTrackers.clear();
-					timeDefinitelyNoPacketsReceived = now;
-					timeDefinitelyNoPacketsSent = now;
+					timeDefinitelyNoPacketsReceivedIP = now;
+					timeDefinitelyNoPacketsSentIP = now;
 				}
 				ipTrackers.put(ip, ipItem);
 			}
@@ -184,11 +196,13 @@ public class AddressTracker {
 	}
 
 	public synchronized void startReceive(long now) {
-		timeDefinitelyNoPacketsReceived = now;
+		timeDefinitelyNoPacketsReceivedIP = now;
+		timeDefinitelyNoPacketsReceivedPeer = now;
 	}
 
 	public synchronized void startSend(long now) {
-		timeDefinitelyNoPacketsSent = now;
+		timeDefinitelyNoPacketsSentIP = now;
+		timeDefinitelyNoPacketsSentPeer = now;
 	}
 
 	public synchronized PeerAddressTrackerItem[] getPeerAddressTrackerItems() {
@@ -204,11 +218,11 @@ public class AddressTracker {
 	public enum Status {
 		// Note: Order is important! We compare by ordinals in various places.
 		// FIXME switch to using member methods.
-		DEFINITELY_PORT_FORWARDED,
-		MAYBE_PORT_FORWARDED,
-		MAYBE_NATED,
 		DEFINITELY_NATED,
-		DONT_KNOW
+		MAYBE_NATED,
+		DONT_KNOW,
+		MAYBE_PORT_FORWARDED,
+		DEFINITELY_PORT_FORWARDED
 	}
 	
 	/** If the minimum gap is at least this, we might be port forwarded.
@@ -304,10 +318,12 @@ public class AddressTracker {
 
 	private synchronized SimpleFieldSet getFieldset(long bootID) {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs.put("Version", 1);
+		sfs.put("Version", 2);
 		sfs.put("BootID", bootID);
-		sfs.put("TimeDefinitelyNoPacketsReceived", timeDefinitelyNoPacketsReceived);
-		sfs.put("TimeDefinitelyNoPacketsSent", timeDefinitelyNoPacketsSent);
+		sfs.put("TimeDefinitelyNoPacketsReceivedPeer", timeDefinitelyNoPacketsReceivedPeer);
+		sfs.put("TimeDefinitelyNoPacketsReceivedIP", timeDefinitelyNoPacketsReceivedIP);
+		sfs.put("TimeDefinitelyNoPacketsSentPeer", timeDefinitelyNoPacketsSentPeer);
+		sfs.put("TimeDefinitelyNoPacketsSentIP", timeDefinitelyNoPacketsSentIP);
 		PeerAddressTrackerItem[] peerItems = getPeerAddressTrackerItems();
 		SimpleFieldSet items = new SimpleFieldSet(true);
 		if(peerItems.length > 0) {
@@ -343,5 +359,9 @@ public class AddressTracker {
 
 	public synchronized void setPresumedInnocent() {
 		timePresumeGuilty = -1;
+	}
+
+	public synchronized void setHugeTracker() {
+		MAX_ITEMS = SEED_MAX_ITEMS;
 	}
 }

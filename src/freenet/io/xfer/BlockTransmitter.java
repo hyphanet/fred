@@ -18,6 +18,7 @@
  */
 package freenet.io.xfer;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 
 import freenet.io.comm.AsyncMessageCallback;
@@ -31,6 +32,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.RetrievalException;
+import freenet.node.MessageItem;
 import freenet.node.PrioRunnable;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
@@ -80,6 +82,7 @@ public class BlockTransmitter {
 	private boolean asyncExitStatus;
 	private boolean asyncExitStatusSet;
 	private final ReceiverAbortHandler abortHandler;
+	private HashSet<MessageItem> itemsPending = new HashSet<MessageItem>();
 	
 	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler) {
 		this.abortHandler = abortHandler;
@@ -117,7 +120,10 @@ public class BlockTransmitter {
 					}
 					int totalPackets;
 					try {
-						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+						MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+						synchronized(itemsPending) {
+							itemsPending.add(item);
+						}
 						totalPackets=_prb.getNumPackets();
 					} catch (PeerRestartedException e) {
 						Logger.normal(this, "Terminating send due to peer restart: "+e);
@@ -137,6 +143,7 @@ public class BlockTransmitter {
 					} catch (AbortedException e) {
 						Logger.normal(this, "Terminating send due to abort: "+e);
 						//the send() thread should notice...
+						cancelItemsPending();
 						return;
 					} catch (WaitedTooLongException e) {
 						Logger.normal(this, "Waited too long to send packet, aborting");
@@ -144,6 +151,7 @@ public class BlockTransmitter {
 							_sendComplete = true;
 							_senderThread.notifyAll();
 						}
+						cancelItemsPending();
 						return;
 					} catch (SyncSendWaitedTooLongException e) {
 						// Impossible, but lets cancel it anyway
@@ -152,6 +160,7 @@ public class BlockTransmitter {
 							_senderThread.notifyAll();
 						}
 						Logger.error(this, "Impossible: Caught "+e, e);
+						cancelItemsPending();
 						return;
 					}
 					synchronized (_senderThread) {
@@ -298,6 +307,7 @@ public class BlockTransmitter {
 						String timeString=TimeUtil.formatTime((now - timeAllSent), 2, true);
 						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
 						sendAborted(RetrievalException.RECEIVER_DIED, "Haven't heard from you (receiver) in "+timeString);
+						cancelItemsPending();
 						return false;
 					} else {
 						if(logMINOR) Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+ '/' +_prb.getNumPackets());
@@ -318,6 +328,8 @@ public class BlockTransmitter {
 					if(abortHandler.onAbort())
 						_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
 					sendAborted(msg.getInt(DMT.REASON), msg.getString(DMT.DESCRIPTION));
+					cancelItemsPending();
+					sendAborted(msg.getInt(DMT.REASON), msg.getString(DMT.DESCRIPTION));
 					return false;
 				} else {
 					Logger.error(this, "Transmitter received unknown message type: "+msg.getSpec().getName());
@@ -333,6 +345,7 @@ public class BlockTransmitter {
 				String desc=_prb.getAbortDescription();
 				if (desc.indexOf("Upstream")<0)
 					desc="Upstream transfer failed: "+desc;
+				cancelItemsPending();
 				sendAborted(_prb.getAbortReason(), desc);
 			} catch (NotConnectedException gone) {
 				//ignore
@@ -349,6 +362,22 @@ public class BlockTransmitter {
 			waitForAsyncBlockSends();
 		}
 	}
+	
+	private void cancelItemsPending() {
+		MessageItem[] items;
+		synchronized(itemsPending) {
+			items = itemsPending.toArray(new MessageItem[itemsPending.size()]);
+			itemsPending.clear();
+		}
+		for(MessageItem item : items) {
+			if(!_destination.unqueueMessage(item)) {
+				// Race condition, can happen
+				if(logMINOR) Logger.minor(this, "Message not queued ?!?!?!? on "+this+" : "+item);
+			}
+		}
+	}
+
+	long timeLastBlockSendCompleted = -1;
 
 	private class MyAsyncMessageCallback implements AsyncMessageCallback {
 

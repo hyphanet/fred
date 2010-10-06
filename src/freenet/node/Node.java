@@ -1871,6 +1871,9 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 
 		acceptSeedConnections = opennetConfig.getBoolean("acceptSeedConnections");
+		
+		if(acceptSeedConnections && opennet != null)
+			opennet.crypto.socket.getAddressTracker().setHugeTracker();
 
 		opennetConfig.finishedInitialization();
 
