@@ -240,19 +240,15 @@ public class PeerMessageQueue {
 					}
 					
 					int thisSize = item.getLength();
+					boolean oversize = false;
 					if(size + 2 + thisSize > maxSize) {
 						if(size == minSize) {
-							// Send it anyway, nothing else to send.
-							size += 2 + thisSize;
-							list.items.removeFirst();
-							list.timeLastSent = now;
-							// Move to end of list.
-							itemsWithID.remove(skipped);
-							itemsWithID.add(list);
-							messages.add(item);
-							return size;
+							// Won't fit regardless, send it on its own.
+							oversize = true;
+						} else {
+							// Send what we have so far.
+							return -size;
 						}
-						return -size;
 					}
 					size += 2 + thisSize;
 					list.items.removeFirst();
@@ -262,6 +258,7 @@ public class PeerMessageQueue {
 					messages.add(item);
 					list.timeLastSent = now;
 					addedNone = false;
+					if(oversize) return size;
 				}
 				if(addedNone) return size;
 			}
