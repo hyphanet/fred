@@ -65,6 +65,8 @@ public class PeerMessageQueue {
 		Map<Long, Items> itemsByID;
 		// Construct structures lazily, we're protected by the overall synchronized.
 
+		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
+		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
 			if(item.msg == null) {
 				makeItemsNoID().addLast(item);
@@ -112,6 +114,8 @@ public class PeerMessageQueue {
 			return itemsNoID;
 		}
 
+		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
+		 * we tried to send it and failed). */
 		public void addFirst(MessageItem item) {
 			if(item.msg == null) {
 				makeItemsNoID().addFirst(item);
