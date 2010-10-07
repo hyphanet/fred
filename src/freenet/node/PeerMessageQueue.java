@@ -272,7 +272,7 @@ public class PeerMessageQueue {
 		int addPriorityMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean incomplete) {
 			// Urgent messages first.
 			size = innerAddMessages(size, minSize, maxSize, now, messages, incomplete, true);
-			if(incomplete.value) return (incomplete.value ? -size : size);
+			if(incomplete.value) return size;
 			// If no more urgent messages, try to add some non-urgent messages too.
 			size = innerAddMessages(size, minSize, maxSize, now, messages, incomplete, false);
 			return size;
