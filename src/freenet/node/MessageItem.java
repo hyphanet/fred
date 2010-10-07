@@ -5,6 +5,7 @@ package freenet.node;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
+import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.support.Logger;
 
@@ -111,6 +112,16 @@ public class MessageItem {
 					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
 				}
 			}
+		}
+	}
+
+	public long getID() {
+		if(msg == null) return -1;
+		Object o = msg.getObject(DMT.UID);
+		if(o == null || !(o instanceof Long)) {
+			return -1;
+		} else {
+			return (Long)o;
 		}
 	}
 }

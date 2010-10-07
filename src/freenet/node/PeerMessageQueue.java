@@ -69,16 +69,7 @@ public class PeerMessageQueue {
 		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
 		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
-			if(item.msg == null) {
-				makeItemsNoID().addLast(item);
-				return;
-			}
-			Object o = item.msg.getObject(DMT.UID);
-			if(o == null || !(o instanceof Long)) {
-				makeItemsNoID().addLast(item);
-				return;
-			}
-			Long id = (Long) o;
+			long id = item.getID();
 			Items list;
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, Items>();
@@ -101,33 +92,10 @@ public class PeerMessageQueue {
 			list.addLast(item);
 		}
 
-		private Items makeItemsNoID() {
-			if(itemsWithID == null)
-				itemsWithID = new ArrayList<Items>();
-			if(itemsByID == null)
-				itemsByID = new HashMap<Long, Items>();
-			Items itemsNoID = itemsByID.get(-1L);
-			if(itemsNoID == null) {
-				itemsNoID = new Items(-1L);
-				itemsWithID.add(itemsNoID);
-				itemsByID.put(-1L, itemsNoID);
-			}
-			return itemsNoID;
-		}
-
 		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
 		 * we tried to send it and failed). */
 		public void addFirst(MessageItem item) {
-			if(item.msg == null) {
-				makeItemsNoID().addFirst(item);
-				return;
-			}
-			Object o = item.msg.getObject(DMT.UID);
-			if(o == null || !(o instanceof Long)) {
-				makeItemsNoID().addFirst(item);
-				return;
-			}
-			Long id = (Long) o;
+			long id = item.getID();
 			Items list;
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, Items>();
@@ -314,14 +282,7 @@ public class PeerMessageQueue {
 		}
 
 		public boolean removeMessage(MessageItem item) {
-			if(item.msg == null) {
-				return makeItemsNoID().remove(item);
-			}
-			Object o = item.msg.getObject(DMT.UID);
-			if(o == null || !(o instanceof Long)) {
-				return makeItemsNoID().remove(item);
-			}
-			Long id = (Long) o;
+			long id = item.getID();
 			Items list;
 			if(itemsByID == null) {
 				return false;
