@@ -210,6 +210,7 @@ public class PeerMessageQueue {
 			assert(size >= 0);
 			assert(minSize >= 0);
 			assert(maxSize >= minSize);
+			if(size < 0) size = -size; // FIXME remove extra paranoia
 			while(true) {
 				boolean addedNone = true;
 				int lists = 0;
