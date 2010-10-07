@@ -238,6 +238,7 @@ public class PeerMessageQueue {
 					if(isUrgent && item.submitted + PacketSender.MAX_COALESCING_DELAY > now) {
 						// Skip non-urgent item, try the rest.
 						skipped++;
+						continue;
 					}
 					
 					int thisSize = item.getLength();
