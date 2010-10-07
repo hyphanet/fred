@@ -39,6 +39,8 @@ of speech, and without decentralization the network would be vulnerable to attac
 		</fileset>
 	</path>
 
+	<property name="contrib.base" value="../contrib/freenet_ext"/>
+	<property name="contrib.dst" value="${contrib.base}"/>
 	<property name="contrib.version.min" value="-1"/>
 	<property name="contrib.version.rec" value="-1"/>
 
@@ -85,17 +87,22 @@ of speech, and without decentralization the network would be vulnerable to attac
 		<echo message="For main build targets, see `ant -p`"/>
 		<echo message=""/>
 		<echo message="Test parameters (-Dtest.PARAM=true)"/>
-		<echo message=""/>
 		<echo message="  skip        Skip all tests"/>
 		<echo message="  verbose     Report additional information"/>
 		<echo message="  benchmark   Run benchmark tests"/>
 		<echo message="  extensive   Run extensive tests"/>
 		<echo message=""/>
-		<echo message="Rebuild parameters (-Drebuild.PARAM=true)"/>
-		<echo message=""/>
+		<echo message="Rebuild parameters (-Dsuppress.PARAM=false)"/>
 		<echo message="  ext         Rebuild ext if possible, otherwise download"/>
 		<echo message="  gjs         Rebuild gjs if possible, otherwise checkout"/>
 		<echo message=""/>
+		<echo message="Misc parameters (-DPARAM=VALUE)"/>
+		<echo message="  javac.args  Command line arguments to pass to javac"/>
+		<echo message=""/>
+	</target>
+
+	<target name="debug">
+		<echoproperties/>
 	</target>
 
 	<!-- =================================================================== -->
@@ -105,7 +112,6 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<target name="init">
 		<mkdir dir="${main.make}"/>
 		<mkdir dir="${test.make}"/>
-		<mkdir dir="${lib}"/>
 	</target>
 
 	<target name="dep" depends="dep-ext, dep-gjs"/>
@@ -245,6 +251,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<!-- =================================================================== -->
 
 	<target name="dep-ext" description="ensure that the Freenet dependencies are available">
+		<property name="suppress.ext" value="true"/>
 		<trydep property="contrib.present">
 			<condition><available classname="freenet.node.ExtVersion" classpathref="lib.path"/></condition>
 			<tasks>
@@ -260,14 +267,14 @@ of speech, and without decentralization the network would be vulnerable to attac
 			verbose="true" usetimestamp="true"/>
 	</target>
 
-	<target name="build-ext" if="${rebuild.ext}">
-		<!-- TODO -->
-		<fail message="build-ext not implemented TODO"/>
+	<target name="build-ext" unless="${suppress.ext}">
+		<ant antfile="build.xml" dir="${contrib.base}" inheritAll="false"/>
+		<copy file="${contrib.dst}/freenet-ext.jar" todir="${lib}"/>
 	</target>
 
 	<target name="clean-ext">
-		<!-- TODO -->
-		<fail message="clean-ext not implemented TODO"/>
+		<ant antfile="build.xml" dir="${contrib.base}" inheritAll="false" target="clean"/>
+		<delete file="${lib}/freenet-ext.jar"/>
 	</target>
 
 	<!-- =================================================================== -->
@@ -275,6 +282,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<!-- =================================================================== -->
 
 	<target name="dep-gjs" description="ensure that GWT-generated javascript is available">
+		<property name="suppress.gjs" value="true"/>
 		<trydep property="gjs.present">
 			<condition><available file="${gjs.dst}" type="dir"/></condition>
 			<tasks>
@@ -294,7 +302,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 		</trydep>
 	</target>
 
-	<target name="build-gjs" if="${rebuild.gjs}">
+	<target name="build-gjs" unless="${suppress.gjs}">
 		<ant antfile="build.xml" dir="${gjs.base}">
 			<reference refid="gjs.lib.path" torefid="project.class.path"/>
 		</ant>
@@ -308,7 +316,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 	</target>
 
 	<target name="clean-gjs">
-		<ant antfile="build.xml" target="deleteGenerated" dir="${gjs.base}"/>
+		<ant antfile="build.xml" dir="${gjs.base}" target="deleteGenerated"/>
 	</target>
 
 	<!-- =================================================================== -->
