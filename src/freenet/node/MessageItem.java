@@ -24,6 +24,8 @@ public class MessageItem {
 	final boolean formatted;
 	final ByteCounter ctrCallback;
 	private final short priority;
+	private long cachedID;
+	private boolean hasCachedID;
 
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, PeerNode pn) {
 		this.msg = msg2;
@@ -115,7 +117,14 @@ public class MessageItem {
 		}
 	}
 
-	public long getID() {
+	public synchronized long getID() {
+		if(hasCachedID) return cachedID;
+		cachedID = generateID();
+		hasCachedID = true;
+		return cachedID;
+	}
+	
+	private long generateID() {
 		if(msg == null) return -1;
 		Object o = msg.getObject(DMT.UID);
 		if(o == null || !(o instanceof Long)) {
