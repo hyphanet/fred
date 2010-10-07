@@ -136,6 +136,8 @@ public class PeerMessageQueue {
 			if(itemsWithID != null)
 				for(Items items : itemsWithID)
 					size += items.items.size();
+			if(itemsNonUrgent != null)
+				size += itemsNonUrgent.size();
 			return size;
 		}
 
@@ -144,6 +146,9 @@ public class PeerMessageQueue {
 				for(Items list : itemsWithID)
 					for(MessageItem item : list.items)
 						output[ptr++] = item;
+			if(itemsNonUrgent != null)
+				for(MessageItem item : itemsNonUrgent)
+					output[ptr++] = item;
 			return ptr;
 		}
 
@@ -179,6 +184,13 @@ public class PeerMessageQueue {
 						length += thisLen;
 						if(length > maxSize) return length;
 					}
+				}
+			}
+			if(itemsNonUrgent != null) {
+				for(MessageItem item : itemsNonUrgent) {
+					int thisLen = item.getLength();
+					length += thisLen;
+					if(length > maxSize) return length;
 				}
 			}
 			return length;
@@ -324,20 +336,23 @@ public class PeerMessageQueue {
 		public void clear() {
 			itemsWithID = null;
 			itemsByID = null;
+			itemsNonUrgent = null;
 		}
 
 		public boolean removeMessage(MessageItem item) {
 			long id = item.getID();
 			Items list;
-			if(itemsByID == null) {
-				return false;
-			} else {
+			if(itemsByID != null) {
 				list = itemsByID.get(id);
-				if(list == null) {
-					return false;
+				if(list != null) {
+					if(list.remove(item))
+						return true;
 				}
 			}
-			return list.remove(item);
+			if(itemsNonUrgent != null)
+				return itemsNonUrgent.remove(item);
+			else
+				return false;
 		}
 
 
