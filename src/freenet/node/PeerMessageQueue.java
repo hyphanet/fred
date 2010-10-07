@@ -7,6 +7,7 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
+import freenet.support.DoublyLinkedListImpl;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -34,7 +35,7 @@ public class PeerMessageQueue {
 	
 	private class PrioQueue {
 		
-		private class Items {
+		private class Items extends DoublyLinkedListImpl.Item<Items> {
 			/** List of messages to send. Stuff to send first is at the beginning. */
 			final LinkedList<MessageItem> items;
 			final long id;
@@ -57,12 +58,9 @@ public class PeerMessageQueue {
 		
 		static final long FORGET_AFTER = 10*60*1000;
 
-		/** We need to be able to access by index (to avoid constantly restarting an 
-		 * iterator), moving stuff around isn't _that_ inefficient. It might or might 
-		 * not be worth the overhead of a TreeMap (have to consider memory overheads), 
-		 * with a separate one for empty items, but we'd need a version that supports 
-		 * duplicate keys. */
-		ArrayList<Items> itemsWithID;
+		/** Using DoublyLinkedListImpl so that we can move stuff around without the 
+		 * iterator failing, and also delete efficiently. */
+		DoublyLinkedListImpl<Items> itemsWithID;
 		Map<Long, Items> itemsByID;
 		/** Non-urgent messages. Same order as in Items, so stuff to send first is at
 		 * the beginning. */
@@ -88,9 +86,9 @@ public class PeerMessageQueue {
 					Items list;
 					if(itemsByID == null) {
 						itemsByID = new HashMap<Long, Items>();
-						itemsWithID = new ArrayList<Items>();
+						itemsWithID = new DoublyLinkedListImpl<Items>();
 						list = new Items(id);
-						itemsWithID.add(list);
+						itemsWithID.push(list);
 						itemsByID.put(id, list);
 					} else {
 						list = itemsByID.get(id);
@@ -100,7 +98,7 @@ public class PeerMessageQueue {
 							// addLast() is typically called by sendAsync().
 							// If there are later items they are probably block transfers that are
 							// already in progress; it is fairer to send the new item first.
-							itemsWithID.add(0, list);
+							itemsWithID.unshift(list);
 							itemsByID.put(id, list);
 						}
 					}
@@ -116,15 +114,15 @@ public class PeerMessageQueue {
 			Items list;
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, Items>();
-				itemsWithID = new ArrayList<Items>();
+				itemsWithID = new DoublyLinkedListImpl<Items>();
 				list = new Items(id);
-				itemsWithID.add(list);
+				itemsWithID.push(list);
 				itemsByID.put(id, list);
 			} else {
 				list = itemsByID.get(id);
 				if(list == null) {
 					list = new Items(id);
-					itemsWithID.add(0, list);
+					itemsWithID.unshift(list);
 					itemsByID.put(id, list);
 				}
 			}
@@ -224,7 +222,7 @@ public class PeerMessageQueue {
 					if(tracker != null) {
 						// Demote the corresponding tracker to maintain round-robin.
 						itemsWithID.remove(tracker);
-						itemsWithID.add(tracker);
+						itemsWithID.push(tracker);
 					}
 				}
 				if(oversize) return size;
@@ -259,21 +257,24 @@ public class PeerMessageQueue {
 				int lists = 0;
 				if(itemsWithID != null)
 					lists += itemsWithID.size();
-				int skipped = 0;
-				for(int i=0;i<lists;i++) {
-					Items list;
+				Items list = itemsWithID.head();
+				for(int i=0;i<lists && list != null;i++) {
 					Long id;
-					list = itemsWithID.get(skipped);
 					id = list.id;
 					
 					if(list.items.isEmpty()) {
 						if(list.timeLastSent != -1 && now - list.timeLastSent > FORGET_AFTER) {
 							// Remove it
-							itemsWithID.remove(skipped);
+							Items prev = list.getPrev();
+							itemsWithID.remove(list);
 							itemsByID.remove(id);
+							if(prev == null)
+								list = itemsWithID.head();
+							else
+								list = prev.getNext();
 						} else {
 							// Skip it
-							skipped++;
+							list = list.getNext();
 						}
 						continue;
 					}
@@ -292,8 +293,13 @@ public class PeerMessageQueue {
 					size += 2 + thisSize;
 					list.items.removeFirst();
 					// Move to end of list.
-					itemsWithID.remove(skipped);
-					itemsWithID.add(list);
+					Items prev = list.getPrev();
+					itemsWithID.remove(list);
+					itemsWithID.push(list);
+					if(prev == null)
+						list = itemsWithID.head();
+					else
+						list = prev.getNext();
 					messages.add(item);
 					list.timeLastSent = now;
 					addedNone = false;
