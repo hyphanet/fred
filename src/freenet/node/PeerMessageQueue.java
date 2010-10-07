@@ -7,7 +7,6 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
