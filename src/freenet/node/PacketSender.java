@@ -214,11 +214,11 @@ public class PacketSender implements Runnable, Ticker {
 
 				try {
 					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
-						canSendThrottled = false;
 						count = node.outputThrottle.getCount();
 						if(count > MAX_PACKET_SIZE)
 							canSendThrottled = true;
 						else {
+							canSendThrottled = false;
 							long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
 							canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
 							if(logMINOR)
