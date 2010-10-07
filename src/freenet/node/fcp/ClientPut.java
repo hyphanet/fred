@@ -27,6 +27,7 @@ import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
@@ -50,10 +51,19 @@ public class ClientPut extends ClientPutBase {
 	private long finishedSize;
 	/** Filename if the file has one */
 	private final String targetFilename;
-	private boolean logMINOR;
 	/** If true, we are inserting a binary blob: No metadata, no URI is generated. */
 	private final boolean binaryBlob;
 	private transient boolean compressing;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	/**
 	 * Fproxy
@@ -113,7 +123,6 @@ public class ClientPut extends ClientPutBase {
 				throw new FileNotFoundException();
 		}
 
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		binaryBlob = false;
 		this.targetFilename = targetFilename;
 		this.uploadFrom = uploadFromType;
@@ -124,7 +133,6 @@ public class ClientPut extends ClientPutBase {
 		Bucket tempData = data;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = redirectTarget;
@@ -174,7 +182,6 @@ public class ClientPut extends ClientPutBase {
 		}
 			
 		this.targetFilename = message.targetFilename;
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.uploadFrom = message.uploadFromType;
 		this.origFilename = message.origFilename;
 		// Now go through the fields one at a time
@@ -269,7 +276,6 @@ public class ClientPut extends ClientPutBase {
 	 */
 	public ClientPut(SimpleFieldSet fs, FCPClient client2, FCPServer server, ObjectContainer container) throws PersistenceParseException, IOException, InsertException {
 		super(fs, client2, server);
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		String mimeType = fs.get("Metadata.ContentType");
 
 		String from = fs.get("UploadFrom");
@@ -308,7 +314,7 @@ public class ClientPut extends ClientPutBase {
 					throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
 				}
 			} else {
-				if(Logger.shouldLog(LogLevel.MINOR, this)) 
+				if(logMINOR)
 					Logger.minor(this, "Finished already so not reading bucket for "+this);
 				data = null;
 			}
@@ -364,7 +370,7 @@ public class ClientPut extends ClientPutBase {
 	
 	@Override
 	public void start(ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Starting "+this+" : "+identifier);
 		synchronized(this) {
 			if(finished) return;

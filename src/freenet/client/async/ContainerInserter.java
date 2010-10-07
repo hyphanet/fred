@@ -356,7 +356,7 @@ public class ContainerInserter implements ClientPutState {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				//System.out.println("Decompose: "+name+" (SubDir)");
 				smc.addItem(name, makeManifest(hm, archivePrefix+name+ '/'));
-				if(Logger.shouldLog(LogLevel.DEBUG, this))
+				if(logDEBUG)
 					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+hm.size());
 			} else if (o instanceof Metadata) {
 				//already Metadata, take it as is

@@ -18,6 +18,7 @@ import org.spaceroots.mantissa.random.MersenneTwister;
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.SHA256;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
@@ -29,7 +30,16 @@ import freenet.support.api.BucketFactory;
 public class BucketTools {
 
 	private static final int BUFFER_SIZE = 64 * 1024;
-	
+        
+	private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	/**
 	 * Copy from the input stream of <code>src</code> to the output stream of
 	 * <code>dest</code>.
@@ -394,7 +404,7 @@ public class BucketTools {
 			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
 		int bucketCount = (int) (length / splitSize);
 		if(length % splitSize > 0) bucketCount++;
-		if(Logger.shouldLog(LogLevel.MINOR, BucketTools.class))
+		if(logMINOR)
 			Logger.minor(BucketTools.class, "Splitting bucket "+origData+" of size "+length+" into "+bucketCount+" buckets");
 		Bucket[] buckets = new Bucket[bucketCount];
 		InputStream is = origData.getInputStream();

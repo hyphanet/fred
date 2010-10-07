@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import com.db4o.ObjectContainer;
+import freenet.support.LogThresholdCallback;
 
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -21,6 +22,16 @@ public class SplitFileStreamGenerator implements StreamGenerator {
 	private final long length;
 	private final int crossCheckBlocks;
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	SplitFileStreamGenerator(SplitFileFetcherSegment[] segments, long length, int crossCheckBlocks) {
 		this.segments = segments;
 		this.length = length;
@@ -30,14 +41,14 @@ public class SplitFileStreamGenerator implements StreamGenerator {
 	public void writeTo(OutputStream os, ObjectContainer container,
 			ClientContext context) throws IOException {
 		try {
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Generating Stream", new Exception("debug"));
+			if(logMINOR) Logger.minor(this, "Generating Stream", new Exception("debug"));
 			long bytesWritten = 0;
 			for(SplitFileFetcherSegment segment : segments) {
 				long max = (length < 0 ? 0 : (length - bytesWritten));
 				bytesWritten += segment.writeDecodedDataTo(os, max, container);
 				if(crossCheckBlocks == 0) segment.fetcherHalfFinished(container);
 			}
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Stream completely generated", new Exception("debug"));
+			if(logMINOR) Logger.minor(this, "Stream completely generated", new Exception("debug"));
 			os.close();
 		} finally {
 			Closer.close(os);

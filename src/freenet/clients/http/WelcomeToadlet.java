@@ -28,6 +28,7 @@ import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
@@ -41,6 +42,17 @@ public class WelcomeToadlet extends Toadlet {
     final NodeClientCore core;
     final Node node;
     final BookmarkManager bookmarkManager;
+
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
     WelcomeToadlet(HighLevelSimpleClient client, NodeClientCore core, Node node, BookmarkManager bookmarks) {
         super(client);
@@ -98,7 +110,7 @@ public class WelcomeToadlet extends Toadlet {
         String passwd = request.getPartAsString("formPassword", 32);
         boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
         if (noPassword) {
-            if (Logger.shouldLog(LogLevel.MINOR, this)) {
+            if (logMINOR) {
                 Logger.minor(this, "No password (" + passwd + " should be " + core.formPassword + ')');
             }
         }

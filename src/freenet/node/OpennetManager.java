@@ -602,7 +602,7 @@ public class OpennetManager {
 				}
 				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
-					if(Logger.shouldLog(LogLevel.MINOR, this))
+					if(logMINOR)
 						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected");
 					pn.setWasDropped();
 					return pn;
@@ -637,7 +637,7 @@ public class OpennetManager {
 				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
 					continue;
 				}
-				if(Logger.shouldLog(LogLevel.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
 							((connectionType == null) ? "" : ((System.currentTimeMillis() - timeLastDropped.get(connectionType))+" ms since last dropped peer of type "+connectionType)));
 				pn.setWasDropped();

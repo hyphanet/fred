@@ -12,6 +12,7 @@ import freenet.client.InsertException;
 import freenet.client.async.ClientContext;
 import freenet.node.PrioRunnable;
 import freenet.support.Executor;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
@@ -23,7 +24,17 @@ public class RealCompressor implements PrioRunnable {
 	private ClientContext context;
 	private static final LinkedList<CompressJob> _awaitingJobs = new LinkedList<CompressJob>();
 	public static final Semaphore compressorSemaphore = new Semaphore(getMaxRunningCompressionThreads());
-	
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	public RealCompressor(Executor e) {
 		this.exec = e;
 	}
@@ -38,7 +49,7 @@ public class RealCompressor implements PrioRunnable {
 	
 	public synchronized void enqueueNewJob(CompressJob j) {
 		_awaitingJobs.add(j);
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Enqueueing compression job: "+j);
 		notifyAll();
 	}

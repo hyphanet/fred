@@ -5,6 +5,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientPutCallback;
 import freenet.keys.FreenetURI;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -15,6 +16,16 @@ public class PutWaiter implements ClientPutCallback {
 	private boolean succeeded;
 	private FreenetURI uri;
 	private InsertException error;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		succeeded = true;
@@ -29,7 +40,7 @@ public class PutWaiter implements ClientPutCallback {
 	}
 
 	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "URI: "+uri);
 		if(this.uri == null)
 			this.uri = uri;

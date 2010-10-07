@@ -21,6 +21,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.Node;
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -63,6 +64,16 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public final static String SALT = "Salt";
 	public final static String FILE_HASH = "FileHash";
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
@@ -211,7 +222,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				if(!uri.equals(generatedURI))
 					Logger.error(this, "onGeneratedURI("+uri+ ',' +state+") but already set generatedURI to "+generatedURI);
 				else
-					if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "onGeneratedURI() twice with same value: "+generatedURI+" -> "+uri);
+					if(logMINOR) Logger.minor(this, "onGeneratedURI() twice with same value: "+generatedURI+" -> "+uri);
 			} else {
 				generatedURI = uri;
 			}

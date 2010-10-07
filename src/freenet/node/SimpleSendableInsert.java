@@ -17,6 +17,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -32,7 +33,17 @@ public class SimpleSendableInsert extends SendableInsert {
 	private boolean finished;
 	public final RequestClient client;
 	public final ClientRequestScheduler scheduler;
-	
+	      
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	public SimpleSendableInsert(NodeClientCore core, KeyBlock block, short prioClass) {
 		super(false);
 		this.block = block;
@@ -59,13 +70,13 @@ public class SimpleSendableInsert extends SendableInsert {
 	@Override
 	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
 		// Yay!
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Finished insert of "+block);
 	}
 
 	@Override
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}
 
@@ -80,7 +91,6 @@ public class SimpleSendableInsert extends SendableInsert {
 
 			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
 				// Ignore keyNum, key, since this is a single block
-				boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 				try {
 					if(logMINOR) Logger.minor(this, "Starting request: "+this);
 					core.realPut(block, req.canWriteClientCache, Node.FORK_ON_CACHEABLE_DEFAULT, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT);

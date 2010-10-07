@@ -3,6 +3,7 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
+import freenet.support.LogThresholdCallback;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
@@ -30,6 +31,16 @@ public class DecompressorThreadManager {
 	private boolean finished = false;
 	private Throwable error = null;
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	/** Creates a new DecompressorThreadManager
 	 * @param inputStream The stream that will be decompressed, if compressed
 	 * @param maxLen The maximum number of bytes to extract
@@ -45,7 +56,7 @@ public class DecompressorThreadManager {
 		input = inputStream;
 		while(!decompressors.isEmpty()) {
 			Compressor compressor = decompressors.remove(decompressors.size()-1);
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Decompressing with "+compressor);
+			if(logMINOR) Logger.minor(this, "Decompressing with "+compressor);
 			DecompressorThread thread = new DecompressorThread(compressor, this, input, output, maxLen);
 			threads.add(thread);
 			input = new PipedInputStream(output);

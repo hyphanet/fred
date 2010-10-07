@@ -21,6 +21,7 @@ import freenet.pluginmanager.RedirectPluginHTTPException;
 import freenet.pluginmanager.PluginManager.OfficialPluginDescription;
 import freenet.pluginmanager.PluginManager.PluginProgress;
 import freenet.support.HTMLNode;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.TimeUtil;
@@ -33,6 +34,16 @@ public class PproxyToadlet extends Toadlet {
 	private static final int MAX_THREADED_UNLOAD_WAIT_TIME = 60*1000;
 	private final Node node;
 	private final NodeClientCore core;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	public PproxyToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
@@ -63,7 +74,7 @@ public class PproxyToadlet extends Toadlet {
 		if(path.startsWith("/")) path = path.substring(1);
 		if(path.startsWith("plugins/")) path = path.substring("plugins/".length());
 
-		if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Pproxy received POST on "+path);
+		if(logMINOR) Logger.minor(this, "Pproxy received POST on "+path);
 
 		final PluginManager pm = node.pluginManager;
 
@@ -304,7 +315,7 @@ public class PproxyToadlet extends Toadlet {
 
 		PluginManager pm = node.pluginManager;
 
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Pproxy fetching "+path);
 		try {
 			if (path.equals("")) {

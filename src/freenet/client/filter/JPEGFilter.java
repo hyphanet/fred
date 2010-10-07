@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.CountedInputStream;
@@ -41,6 +42,16 @@ public class JPEGFilter implements ContentDataFilter {
 	private static final int MARKER_RST0 = 0xD0; // First reset marker
 	private static final int MARKER_RST7 = 0xD7; // Last reset marker
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	JPEGFilter(boolean deleteComments, boolean deleteExif) {
 		this.deleteComments = deleteComments;
 		this.deleteExif = deleteExif;
@@ -65,7 +76,6 @@ public class JPEGFilter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb, boolean deleteComments, boolean deleteExif)
 	throws DataFilterException, IOException {
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		CountedInputStream cis = new CountedInputStream(input);
 		DataInputStream dis = new DataInputStream(cis);
 		assertHeader(dis, soi);
@@ -396,8 +406,8 @@ public class JPEGFilter implements ContentDataFilter {
 		if(shortReason != null)
 			message += " - " + shortReason;
 		DataFilterException e = new DataFilterException(shortReason, shortReason, message);
-		if(Logger.shouldLog(LogLevel.NORMAL, this))
-			Logger.normal(this, "Throwing "+e, e);
+		if(logMINOR)
+			Logger.normal(this, "Throwing "+e.getMessage(), e);
 		throw e;
 	}
 

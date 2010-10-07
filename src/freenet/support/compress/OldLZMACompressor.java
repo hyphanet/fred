@@ -13,6 +13,7 @@ import java.io.OutputStream;
 
 import SevenZip.Compression.LZMA.Decoder;
 import SevenZip.Compression.LZMA.Encoder;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
@@ -23,6 +24,15 @@ import freenet.support.io.CountedOutputStream;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class OldLZMACompressor implements Compressor {
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	// Copied from EncoderThread. See below re licensing.
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
@@ -33,7 +43,7 @@ public class OldLZMACompressor implements Compressor {
 			output = bf.makeBucket(maxWriteLength);
 			is = data.getInputStream();
 			os = output.getOutputStream();
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
 			compress(is, os, maxReadLength, maxWriteLength);
 			is.close();
@@ -58,7 +68,7 @@ public class OldLZMACompressor implements Compressor {
         // enc.WriteCoderProperties( out );
         // 5d 00 00 10 00
         encoder.Code( cis, cos, -1, -1, null );
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Read "+cis.count()+" written "+cos.written());
 		return cos.written();
 	}
@@ -69,13 +79,13 @@ public class OldLZMACompressor implements Compressor {
 			output = preferred;
 		else
 			output = bf.makeBucket(maxLength);
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
 		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
 		BufferedOutputStream os = new BufferedOutputStream(output.getOutputStream());
 		decompress(is, os, maxLength, maxCheckSizeLength);
 		os.close();
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count());
 		is.close();
 		return output;

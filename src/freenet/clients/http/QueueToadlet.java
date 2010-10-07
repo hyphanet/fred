@@ -67,6 +67,7 @@ import freenet.node.useralerts.StoringUserEvent;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.MultiValueTable;
@@ -109,6 +110,16 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	final FCPServer fcp;
 	private FileInsertWizardToadlet fiw;
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	void setFIW(FileInsertWizardToadlet fiw) {
 		this.fiw = fiw;
 	}
@@ -142,8 +153,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
-
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		try {
 			// Browse... button
@@ -559,7 +568,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							try {
 							try {
 								clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, target, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, cmode, overrideSplitfileKey, fcp, container);
-								if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
+								if(logMINOR) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 								if(clientPut != null)
 									try {
 										fcp.startBlocking(clientPut, container, context);
@@ -649,7 +658,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							ClientPutDir clientPutDir;
 							try {
 							try {
-								boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 								clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, file, null, false, true, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, fcp, container);
 								if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
 								if(clientPutDir != null)
@@ -1024,7 +1032,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		Map<String, LinkedList<ClientGet>> failedBadMIMEType = new HashMap<String, LinkedList<ClientGet>>();
 
 		ClientRequest[] reqs = fcp.getGlobalRequests(container);
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Request count: "+reqs.length);
 
 		if(reqs.length < 1){
@@ -2022,7 +2030,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private void registerAlert(ClientRequest req, ObjectContainer container) {
 		final String identifier = req.getIdentifier();
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Registering alert for "+identifier);
 		if(!req.hasFinished()) {

@@ -19,6 +19,7 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
@@ -57,6 +58,16 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * Will be progressively cleared during startup. */
 	private SimpleFieldSet oldProgress;
 	private final byte[] overrideSplitfileCrypto;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	/**
 	 * @param client The object to call back when we complete, or don't.
@@ -121,7 +132,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public boolean start(boolean earlyEncode, boolean restart, ObjectContainer container, ClientContext context) throws InsertException {
 		if(persistent())
 			container.activate(client, 1);
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Starting "+this+" for "+targetURI);
 		try {
@@ -188,7 +198,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 					container.store(this);
 				return false;
 			}
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Starting insert: "+currentState);
 			if(currentState instanceof SingleFileInserter)
 				((SingleFileInserter)currentState).start(oldProgress, container, context);
@@ -247,7 +257,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this, container);
 			}
 		}
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Started "+this);
 		return true;
 	}
@@ -305,7 +315,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	/** Called when the insert fails. */
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "onFailure() for "+this+" : "+state+" : "+e, e);
+		if(logMINOR) Logger.minor(this, "onFailure() for "+this+" : "+state+" : "+e, e);
 		if(persistent())
 			container.activate(client, 1);
 		ClientPutState oldState;
@@ -357,7 +367,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * normally be called. */
 	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 		ClientPutState oldState = null;
 		synchronized(this) {
@@ -465,7 +475,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	/** Called when we know exactly how many blocks will be needed. */
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Set finished", new Exception("debug"));
 		blockSetFinalized(container, context);
 	}

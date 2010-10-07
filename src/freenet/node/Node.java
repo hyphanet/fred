@@ -1543,7 +1543,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(db != null) {
 			db.commit();
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "COMMITTED");
+			if(logMINOR) Logger.minor(this, "COMMITTED");
 		}
 
 		// Must be created after darknetCrypto
@@ -2607,7 +2607,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(db != null) {
 			db.commit();
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "COMMITTED");
+			if(logMINOR) Logger.minor(this, "COMMITTED");
 			try {
 				if(!clientCore.lateInitDatabase(nodeDBHandle, db))
 					failLateInitDatabase();
@@ -2844,7 +2844,7 @@ public class Node implements TimeSkewDetectorCallback {
 			e.printStackTrace();
 		}
 		// DUMP DATABASE CONTENTS
-		if(Logger.shouldLog(LogLevel.DEBUG, ClientRequestScheduler.class) && database != null) {
+		if(logDEBUG && database != null) {
 		try {
 		System.err.println("DUMPING DATABASE CONTENTS:");
 		ObjectSet<Object> contents = database.queryByExample(new Object());
@@ -2965,7 +2965,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) throws IOException {
 		IoAdapter baseAdapter = dbConfig.io();
-		if(Logger.shouldLog(LogLevel.DEBUG, this))
+		if(logDEBUG)
 			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
 		try {
 			dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));

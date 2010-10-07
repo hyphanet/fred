@@ -43,6 +43,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.support.HexUtil;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
@@ -71,6 +72,17 @@ public class TextModeClientInterface implements Runnable {
     final InputStream in;
     final OutputStream out;
     private boolean doneSomething;
+
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
     
     public TextModeClientInterface(TextModeClientInterfaceServer server, InputStream in, OutputStream out) {
     	this.n = server.n;
@@ -99,7 +111,7 @@ public class TextModeClientInterface implements Runnable {
     	try {
     		realRun();
     	} catch (IOException e) {
-    		if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Caught "+e, e);
+    		if(logMINOR) Logger.minor(this, "Caught "+e, e);
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
     	} catch (Throwable t) {
@@ -216,7 +228,7 @@ public class TextModeClientInterface implements Runnable {
         boolean getCHKOnly = false;
         if(line == null) return true;
         String uline = line.toUpperCase();
-        if(Logger.shouldLog(LogLevel.MINOR, this))
+        if(logMINOR)
         	Logger.minor(this, "Command: "+line);
         if(uline.startsWith("GET:")) {
             // Should have a key next
@@ -777,7 +789,7 @@ public class TextModeClientInterface implements Runnable {
             
             try{
             	n.setName(key);
-                if(Logger.shouldLog(LogLevel.MINOR, this))
+                if(logMINOR)
                 	Logger.minor(this, "Setting node.name to "+key);
             }catch(Exception e){
             	Logger.error(this, "Error setting node's name", e);

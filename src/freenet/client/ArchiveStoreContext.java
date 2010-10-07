@@ -5,6 +5,7 @@ package freenet.client;
 
 import freenet.keys.FreenetURI;
 import freenet.support.DoublyLinkedListImpl;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -30,6 +31,16 @@ class ArchiveStoreContext {
 	 * we must not take the ArchiveManager lock while holding this lock. It must be
 	 * the inner lock to avoid deadlocks. */
 	private final DoublyLinkedListImpl<ArchiveStoreItem> myItems;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	ArchiveStoreContext(FreenetURI key, ArchiveManager.ARCHIVE_TYPE archiveType) {
 		this.key = key;
@@ -86,7 +97,7 @@ class ArchiveStoreContext {
 	void removeItem(ArchiveStoreItem item) {
 		synchronized(myItems) {
 			if(myItems.remove(item) == null) {
-				if(Logger.shouldLog(LogLevel.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Not removing: "+item+" for "+this+" - already removed");
 				return; // only removed once
 			}

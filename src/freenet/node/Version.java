@@ -7,6 +7,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -61,6 +62,18 @@ public class Version {
 		// year, month - 1 (or constant), day, hour, minute, second
 		_cal.set( 2010, Calendar.OCTOBER, 12, 0, 0, 0 );
 		transitionTime = _cal.getTimeInMillis();
+	}
+
+        private static volatile boolean logMINOR;
+        private static volatile boolean logDEBUG;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+                                logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+			}
+		});
 	}
 
 	/**
@@ -126,8 +139,6 @@ public class Version {
 	public static final String cvsRevision() {
 		return cvsRevision;
 	}
-
-	private static boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG,Version.class);
 
 	/**
 	 * @return the node's version designators as an array
@@ -202,7 +213,7 @@ public class Version {
 					return false;
 				}
 			} catch (NumberFormatException e) {
-				if(Logger.shouldLog(LogLevel.MINOR, Version.class))
+				if(logMINOR)
 					Logger.minor(Version.class,
 							"Not accepting (" + e + ") from " + version);
 				return false;
@@ -273,7 +284,7 @@ public class Version {
 					return false;
 				}
 			} catch (NumberFormatException e) {
-				if(Logger.shouldLog(LogLevel.MINOR, Version.class))
+				if(logMINOR)
 					Logger.minor(Version.class,
 							"Not accepting (" + e + ") from " + version + " and/or " + lastGoodVersion);
 				return false;
@@ -388,7 +399,7 @@ public class Version {
 				return;
 			}
 			if (buildNo > highestSeenBuild) {
-				if (Logger.shouldLog(LogLevel.MINOR, Version.class)) {
+				if (logMINOR) {
 					Logger.minor(
 						Version.class,
 						"New highest seen build: " + buildNo);

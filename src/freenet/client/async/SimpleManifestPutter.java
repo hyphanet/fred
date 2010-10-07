@@ -29,7 +29,6 @@ import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
-import freenet.keys.InsertableClientSSK;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
@@ -132,7 +131,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		@Override
 		public void cancel(ObjectContainer container, ClientContext context) {
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 			ClientPutState oldState = null;
 			synchronized(this) {
@@ -732,7 +731,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				putHandlersByName.put(name, subMap);
 				makePutHandlers(Metadata.forceMap(o), subMap, ZipPrefix+name+ '/', persistent);
-				if(Logger.shouldLog(LogLevel.DEBUG, this))
+				if(logDEBUG)
 					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+((HashMap)o).size());
 			} else {
 				ManifestElement element = (ManifestElement) o;

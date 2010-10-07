@@ -29,7 +29,6 @@ import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.io.AddressTracker;
 import freenet.io.AddressTracker.Status;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
@@ -39,6 +38,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.IllegalBase64Exception;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -77,7 +77,6 @@ public class NodeCrypto {
 	InsertableClientSSK myARK;
 	/** My ARK sequence number */
 	long myARKNumber;
-	static boolean logMINOR;
 	final NodeCryptoConfig config;
 	final NodeIPPortDetector detector;
 	final BlockCipher anonSetupCipher;
@@ -90,6 +89,15 @@ public class NodeCrypto {
 	/** A synchronization object used while signing the reference fieldset */
 	private volatile Object referenceSync = new Object();
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	/**
 	 * Get port number from a config, create socket and packet mangler
 	 * @throws NodeInitException
@@ -100,7 +108,6 @@ public class NodeCrypto {
 		this.config = config;
 		random = node.random;
 		this.isOpennet = isOpennet;
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 
 		config.starting(this);
 
@@ -579,7 +586,7 @@ public class NodeCrypto {
 				tuple.portNumber = portNumber;
 				setupContainer.store(tuple);
 				setupContainer.commit();
-				if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "COMMITTED");
+				if(logMINOR) Logger.minor(this, "COMMITTED");
 				System.err.println("Generated and stored database handle for node on port "+portNumber+": "+handle);
 				return handle;
 			}

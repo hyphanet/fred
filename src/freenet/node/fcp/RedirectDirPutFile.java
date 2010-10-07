@@ -6,6 +6,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -14,6 +15,16 @@ import freenet.support.api.Bucket;
 public class RedirectDirPutFile extends DirPutFile {
 
 	final FreenetURI targetURI;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	public RedirectDirPutFile(SimpleFieldSet subset, String identifier, boolean global) throws MessageInvalidException {
 		super(subset, identifier, global);
@@ -25,7 +36,7 @@ public class RedirectDirPutFile extends DirPutFile {
 		} catch (MalformedURLException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: "+e, identifier, global);
 		}
-        if(Logger.shouldLog(LogLevel.MINOR, this))
+        if(logMINOR)
         	Logger.minor(this, "targetURI = "+targetURI);
 	}
 
