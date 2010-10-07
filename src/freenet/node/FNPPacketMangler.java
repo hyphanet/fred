@@ -255,19 +255,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			for(int i=0;i<peers.length;i++) {
 				pn = peers[i];
 				if(pn == opn) continue;
-				if(logMINOR) Logger.minor(this, "Trying current key tracker for loop");
+				if(logDEBUG) Logger.debug(this, "Trying current key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
 					return;
 				}
-				if(logMINOR) Logger.minor(this, "Trying previous key tracker for loop");
+				if(logDEBUG) Logger.debug(this, "Trying previous key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
 					return;
 				}
-				if(logMINOR) Logger.minor(this, "Trying unverified key tracker for loop");
+				if(logDEBUG) Logger.debug(this, "Trying unverified key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
@@ -337,7 +337,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode pn, Peer peer, boolean oldOpennetPeer, long now) {
 		BlockCipher authKey = pn.incomingSetupCipher;
-		if(logMINOR) Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(pn.incomingSetupKey)+" for "+peer+" : "+pn+" in tryProcessAuth");
+		if(logDEBUG) Logger.debug(this, "Decrypt key: "+HexUtil.bytesToHex(pn.incomingSetupKey)+" for "+peer+" : "+pn+" in tryProcessAuth");
 		// Does the packet match IV E( H(data) data ) ?
 		PCFBMode pcfb = PCFBMode.create(authKey);
 		int ivLength = pcfb.lengthIV();
@@ -1842,7 +1842,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(logMINOR) Logger.minor(this, "No cipher");
 			return false;
 		}
-		if(logMINOR) Logger.minor(this, "Decrypting with "+HexUtil.bytesToHex(tracker.sessionKey));
+		if(logDEBUG) Logger.debug(this, "Decrypting with "+HexUtil.bytesToHex(tracker.sessionKey));
 		int blockSize = sessionCipher.getBlockSize() >> 3;
 		if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
 			throw new IllegalStateException("Block size must be equal to key size");
@@ -1924,9 +1924,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		for(int i=0;i<HASH_LENGTH;i++) {
 			packetHash[i] ^= buf[offset+i];
 		}
-		if(logMINOR) Logger.minor(this, "Contributing entropy");
+		if(logDEBUG) Logger.minor(this, "Contributing entropy");
 		node.random.acceptEntropyBytes(myPacketDataSource, packetHash, 0, HASH_LENGTH, 0.5);
-		if(logMINOR) Logger.minor(this, "Contributed entropy");
+		if(logDEBUG) Logger.minor(this, "Contributed entropy");
 
 		// Lots more to do yet!
 		processDecryptedData(plaintext, seqNumber, tracker, length - plaintext.length);
