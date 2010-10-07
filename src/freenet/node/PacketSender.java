@@ -211,20 +211,20 @@ public class PacketSender implements Runnable, Ticker {
 				}
 
 				try {
-				if((canSendThrottled || !pn.shouldThrottle()) && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
-					canSendThrottled = false;
-					count = node.outputThrottle.getCount();
-					if(count > MAX_PACKET_SIZE)
-						canSendThrottled = true;
-					else {
-						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-						canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
-						if(logMINOR)
-							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
-						nextActionTime = Math.min(nextActionTime, now + canSendAt);
-						newBrokeAt = idx;
+					if((canSendThrottled || !pn.shouldThrottle()) && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
+						canSendThrottled = false;
+						count = node.outputThrottle.getCount();
+						if(count > MAX_PACKET_SIZE)
+							canSendThrottled = true;
+						else {
+							long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+							canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+							if(logMINOR)
+								Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+							nextActionTime = Math.min(nextActionTime, now + canSendAt);
+							newBrokeAt = idx;
+						}
 					}
-				}
 				} catch (BlockedTooLongException e) {
 					Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+this+" on "+e.tracker+" - DISCONNECTING!");
 					pn.forceDisconnect(true);
