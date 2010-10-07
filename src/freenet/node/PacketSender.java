@@ -188,8 +188,10 @@ public class PacketSender implements Runnable, Ticker {
 			}
 
 			if(pn.isConnected()) {
+				
+				boolean shouldThrottle = pn.shouldThrottle();
 
-				if(pn.shouldThrottle() && !canSendThrottled)
+				if(shouldThrottle && !canSendThrottled)
 					continue;
 
 				// Is the node dead?
@@ -211,7 +213,7 @@ public class PacketSender implements Runnable, Ticker {
 				}
 
 				try {
-					if((canSendThrottled || !pn.shouldThrottle()) && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
+					if((canSendThrottled || !shouldThrottle) && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
 						canSendThrottled = false;
 						count = node.outputThrottle.getCount();
 						if(count > MAX_PACKET_SIZE)
@@ -231,7 +233,7 @@ public class PacketSender implements Runnable, Ticker {
 					onForceDisconnectBlockTooLong(pn, e);
 				}
 
-				if(canSendThrottled || !pn.shouldThrottle()) {
+				if(canSendThrottled || !shouldThrottle) {
 					long urgentTime = pn.getNextUrgentTime(now);
 					// Should spam the logs, unless there is a deadlock
 					if(urgentTime < Long.MAX_VALUE && logMINOR)
