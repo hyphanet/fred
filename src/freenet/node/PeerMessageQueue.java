@@ -234,7 +234,10 @@ public class PeerMessageQueue {
 						continue;
 					}
 					MessageItem item = list.items.getFirst();
-					if(isUrgent && item.submitted + PacketSender.MAX_COALESCING_DELAY > now) break;
+					if(isUrgent && item.submitted + PacketSender.MAX_COALESCING_DELAY > now) {
+						// Skip non-urgent item, try the rest.
+						skipped++;
+					}
 					
 					int thisSize = item.getLength();
 					if(size + 2 + thisSize > maxSize) {
