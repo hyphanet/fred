@@ -7,12 +7,14 @@ all actions are anonymous. Without anonymity, there can never be true freedom
 of speech, and without decentralization the network would be vulnerable to attack.
 	</description>
 
-	<!-- Give user a chance to override without editing this file
-			(and without typing -D each time it compiles it) -->
-	<property file="build.properties" />
+	<!-- =================================================================== -->
+	<!-- Global properties                                                   -->
+	<!-- =================================================================== -->
 
-	<!-- set global properties for this build -->
-	<property name="java.usrlib" value="/usr/share/java"/>
+	<!-- user overrides (properties are immutable, so OK to set these here) -->
+	<property file="build.properties" />
+	<property name="javac.args" value="-Xlint"/>
+	<property name="java.class.dirs" value="/usr/share/java"/>
 
 	<property name="main.src" value="src"/>
 	<property name="main.make" value="build/main"/>
@@ -32,7 +34,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<property name="lib.contrib" location="${lib}/freenet-ext.jar"/>
 	<path id="lib.path">
 		<fileset dir="${lib}" includes="**/*.jar"/>
-		<fileset dir="${java.usrlib}">
+		<fileset dir="${java.class.dirs}">
 			<include name="junit.jar"/>
 		</fileset>
 	</path>
@@ -46,7 +48,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<path id="gjs.lib.path">
 		<fileset dir="${gjs.lib}" includes="*.jar"/>
 		<pathelement location="${gjs.base}/war/WEB-INF/classes"/>
-		<fileset dir="${java.usrlib}">
+		<fileset dir="${java.class.dirs}">
 			<include name="gwt-dev-linux.jar"/>
 			<include name="gwt-user.jar"/>
 			<include name="commons-collections3.jar"/>
@@ -128,7 +130,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 
 		<!-- Create the build directory structure used by compile -->
 		<javac srcdir="${main.src}" destdir="${main.make}" debug="on" optimize="on" source="1.5" target="1.5">
-			<compilerarg value="-Xlint"/>
+			<compilerarg line="${javac.args}"/>
 			<!-- tell javac to find Version.java in ${main.make}, not ${main.src} -->
 			<sourcepath>
 				<pathelement path="${main.make}"/>
@@ -146,6 +148,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 
 		<!-- Force compile of Version.java in case compile of ${main.src} didn't trigger it -->
 		<javac srcdir="${main.make}" destdir="${main.make}" debug="on" optimize="on" source="1.5" target="1.5">
+			<compilerarg line="${javac.args}"/>
 			<classpath>
 				<path refid="lib.path"/>
 			</classpath>
@@ -191,12 +194,11 @@ of speech, and without decentralization the network would be vulnerable to attac
 		<mkdir dir="${test.make}"/>
 
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on" source="1.5" target="1.5">
+			<compilerarg line="${javac.args}"/>
 			<classpath>
 				<path refid="lib.path"/>
 				<pathelement path="${main.make}"/>
-				<pathelement location="${lib.junit}"/>
 			</classpath>
-			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
 			<exclude name="*.java"/>
 		</javac>
@@ -214,7 +216,6 @@ of speech, and without decentralization the network would be vulnerable to attac
 				<path refid="lib.path"/>
 				<pathelement path="${main.make}"/>
 				<pathelement path="${test.make}"/>
-				<pathelement location="${lib.junit}"/>
 			</classpath>
 
 			<formatter type="plain" usefile="false"/>
@@ -227,9 +228,8 @@ of speech, and without decentralization the network would be vulnerable to attac
 			<sysproperty key="test.verbose" value="${test.verbose}"/>
 			<sysproperty key="test.benchmark" value="${test.benchmark}"/>
 			<sysproperty key="test.extensive" value="${test.extensive}"/>
-			<assertions>
-				<enable />
-			</assertions>
+			<!-- TODO source needs to be edited too; the old variables were "benchmark" and "extensiveTesting" -->
+			<assertions><enable/></assertions>
 		</junit>
 	</target>
 
