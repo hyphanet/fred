@@ -56,7 +56,12 @@ public class PeerMessageQueue {
 		
 		static final long FORGET_AFTER = 10*60*1000;
 
-		LinkedList<Items> itemsWithID;
+		/** We need to be able to access by index (to avoid constantly restarting an 
+		 * iterator), moving stuff around isn't _that_ inefficient. It might or might 
+		 * not be worth the overhead of a TreeMap (have to consider memory overheads), 
+		 * with a separate one for empty items, but we'd need a version that supports 
+		 * duplicate keys. */
+		ArrayList<Items> itemsWithID;
 		Map<Long, Items> itemsByID;
 		// Construct structures lazily, we're protected by the overall synchronized.
 
@@ -74,7 +79,7 @@ public class PeerMessageQueue {
 			Items list;
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, Items>();
-				itemsWithID = new LinkedList<Items>();
+				itemsWithID = new ArrayList<Items>();
 				list = new Items(id);
 				itemsWithID.add(list);
 				itemsByID.put(id, list);
@@ -86,7 +91,7 @@ public class PeerMessageQueue {
 					// This method is typically called by sendAsync().
 					// If there are later items they are probably block transfers that are
 					// already in progress; it is fairer to send the new item first.
-					itemsWithID.addFirst(list);
+					itemsWithID.add(0, list);
 					itemsByID.put(id, list);
 				}
 			}
@@ -95,7 +100,7 @@ public class PeerMessageQueue {
 
 		private Items makeItemsNoID() {
 			if(itemsWithID == null)
-				itemsWithID = new LinkedList<Items>();
+				itemsWithID = new ArrayList<Items>();
 			if(itemsByID == null)
 				itemsByID = new HashMap<Long, Items>();
 			Items itemsNoID = itemsByID.get(-1L);
@@ -121,7 +126,7 @@ public class PeerMessageQueue {
 			Items list;
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, Items>();
-				itemsWithID = new LinkedList<Items>();
+				itemsWithID = new ArrayList<Items>();
 				list = new Items(id);
 				itemsWithID.add(list);
 				itemsByID.put(id, list);
@@ -129,7 +134,7 @@ public class PeerMessageQueue {
 				list = itemsByID.get(id);
 				if(list == null) {
 					list = new Items(id);
-					itemsWithID.addFirst(list);
+					itemsWithID.add(0, list);
 					itemsByID.put(id, list);
 				}
 			}
