@@ -4298,7 +4298,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
-		packetFormat.handleReceivedPacket(buf, offset, length, now);
-        }
+		boolean result = packetFormat.handleReceivedPacket(buf, offset, length, now);
 
+		// Assume it is connection setup or rekeying
+		if(!result) {
+			crypto.packetMangler.process(buf, offset, length, getPeer(), now);
+		}
+	}
 }

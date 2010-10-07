@@ -87,7 +87,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 	}
 
-	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
+	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now) {
 		NPFPacket packet = null;
 		SessionKey s = null;
 		for(int i = 0; i < 3; i++) {
@@ -107,7 +107,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 		if(packet == null) {
 			Logger.warning(this, "Could not decrypt received packet");
-			return;
+			return false;
 		}
 		if(logMINOR) Logger.minor(this, "Received packet " + packet.getSequenceNumber());
 
@@ -122,6 +122,8 @@ public class NewPacketFormat implements PacketFormat {
 		for(byte[] buffer : finished) {
 			processFullyReceived(buffer);
 		}
+
+		return true;
 	}
 
 	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet) {

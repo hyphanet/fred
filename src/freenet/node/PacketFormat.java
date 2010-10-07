@@ -4,7 +4,7 @@ import java.util.Vector;
 
 public interface PacketFormat {
 
-	void handleReceivedPacket(byte[] buf, int offset, int length, long now);
+	boolean handleReceivedPacket(byte[] buf, int offset, int length, long now);
 
 	/**
 	 * Maybe send something. A SINGLE PACKET. Don't send everything at once, for two reasons:

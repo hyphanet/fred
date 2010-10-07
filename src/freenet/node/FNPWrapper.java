@@ -169,8 +169,9 @@ public class FNPWrapper implements PacketFormat {
 		}
 	}
 
-	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
+	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now) {
 		pn.crypto.packetMangler.process(buf, offset, length, pn.getPeer(), now);
+		return true;
 	}
 
 	public void onDisconnect() {
