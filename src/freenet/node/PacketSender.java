@@ -188,8 +188,10 @@ public class PacketSender implements Runnable, Ticker {
 			}
 
 			if(pn.isConnected()) {
+				
+				boolean shouldThrottle = pn.shouldThrottle();
 
-				if(pn.shouldThrottle() && !canSendThrottled)
+				if(shouldThrottle && !canSendThrottled)
 					continue;
 
 				// Is the node dead?
@@ -211,31 +213,33 @@ public class PacketSender implements Runnable, Ticker {
 				}
 
 				try {
-				if((canSendThrottled || !pn.shouldThrottle()) && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
-					canSendThrottled = false;
-					count = node.outputThrottle.getCount();
-					if(count > MAX_PACKET_SIZE)
-						canSendThrottled = true;
-					else {
-						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-						canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
-						if(logMINOR)
-							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
-						nextActionTime = Math.min(nextActionTime, now + canSendAt);
-						newBrokeAt = idx;
+					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
+						count = node.outputThrottle.getCount();
+						if(count > MAX_PACKET_SIZE)
+							canSendThrottled = true;
+						else {
+							canSendThrottled = false;
+							long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+							canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+							if(logMINOR)
+								Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+							nextActionTime = Math.min(nextActionTime, now + canSendAt);
+							newBrokeAt = idx;
+						}
 					}
-				}
 				} catch (BlockedTooLongException e) {
 					Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+this+" on "+e.tracker+" - DISCONNECTING!");
 					pn.forceDisconnect(true);
 					onForceDisconnectBlockTooLong(pn, e);
 				}
 
-				long urgentTime = pn.getNextUrgentTime(now);
-				// Should spam the logs, unless there is a deadlock
-				if(urgentTime < Long.MAX_VALUE && logMINOR)
-					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn.getPeer());
-				nextActionTime = Math.min(nextActionTime, urgentTime);
+				if(canSendThrottled || !shouldThrottle) {
+					long urgentTime = pn.getNextUrgentTime(now);
+					// Should spam the logs, unless there is a deadlock
+					if(urgentTime < Long.MAX_VALUE && logMINOR)
+						Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn.getPeer());
+					nextActionTime = Math.min(nextActionTime, urgentTime);
+				}
 			} else
 				// Not connected
 

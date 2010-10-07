@@ -3,10 +3,11 @@ package freenet.node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
+import freenet.support.DoublyLinkedListImpl;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -34,7 +35,8 @@ public class PeerMessageQueue {
 	
 	private class PrioQueue {
 		
-		private class Items {
+		private class Items extends DoublyLinkedListImpl.Item<Items> {
+			/** List of messages to send. Stuff to send first is at the beginning. */
 			final LinkedList<MessageItem> items;
 			final long id;
 			long timeLastSent;
@@ -56,80 +58,71 @@ public class PeerMessageQueue {
 		
 		static final long FORGET_AFTER = 10*60*1000;
 
-		LinkedList<Items> itemsWithID;
+		/** Using DoublyLinkedListImpl so that we can move stuff around without the 
+		 * iterator failing, and also delete efficiently. */
+		DoublyLinkedListImpl<Items> itemsWithID;
 		Map<Long, Items> itemsByID;
+		/** Non-urgent messages. Same order as in Items, so stuff to send first is at
+		 * the beginning. */
+		LinkedList<MessageItem> itemsNonUrgent;
 		// Construct structures lazily, we're protected by the overall synchronized.
 
+		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
+		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
-			if(item.msg == null) {
-				makeItemsNoID().addLast(item);
-				return;
+			if(itemsNonUrgent == null)
+				itemsNonUrgent = new LinkedList<MessageItem>();
+			itemsNonUrgent.addLast(item);
+		}
+		
+		private void moveToUrgent(long now) {
+			if(itemsNonUrgent == null) return;
+			ListIterator<MessageItem> it = itemsNonUrgent.listIterator();
+			while(it.hasNext()) {
+				MessageItem item = it.next();
+				if(item.submitted + PacketSender.MAX_COALESCING_DELAY >= now) {
+					// Move to urgent list
+					long id = item.getID();
+					Items list;
+					if(itemsByID == null) {
+						itemsByID = new HashMap<Long, Items>();
+						itemsWithID = new DoublyLinkedListImpl<Items>();
+						list = new Items(id);
+						itemsWithID.push(list);
+						itemsByID.put(id, list);
+					} else {
+						list = itemsByID.get(id);
+						if(list == null) {
+							list = new Items(id);
+							// In order to ensure fairness, we add it at the beginning.
+							// addLast() is typically called by sendAsync().
+							// If there are later items they are probably block transfers that are
+							// already in progress; it is fairer to send the new item first.
+							itemsWithID.unshift(list);
+							itemsByID.put(id, list);
+						}
+					}
+					list.addLast(item);
+				} else return;
 			}
-			Object o = item.msg.getObject(DMT.UID);
-			if(o == null || !(o instanceof Long)) {
-				makeItemsNoID().addLast(item);
-				return;
-			}
-			Long id = (Long) o;
-			Items list;
-			if(itemsByID == null) {
-				itemsByID = new HashMap<Long, Items>();
-				itemsWithID = new LinkedList<Items>();
-				list = new Items(id);
-				itemsWithID.add(list);
-				itemsByID.put(id, list);
-			} else {
-				list = itemsByID.get(id);
-				if(list == null) {
-					list = new Items(id);
-					// In order to ensure fairness, we add it at the beginning.
-					// This method is typically called by sendAsync().
-					// If there are later items they are probably block transfers that are
-					// already in progress; it is fairer to send the new item first.
-					itemsWithID.addFirst(list);
-					itemsByID.put(id, list);
-				}
-			}
-			list.addLast(item);
 		}
 
-		private Items makeItemsNoID() {
-			if(itemsWithID == null)
-				itemsWithID = new LinkedList<Items>();
-			if(itemsByID == null)
-				itemsByID = new HashMap<Long, Items>();
-			Items itemsNoID = itemsByID.get(-1L);
-			if(itemsNoID == null) {
-				itemsNoID = new Items(-1L);
-				itemsWithID.add(itemsNoID);
-				itemsByID.put(-1L, itemsNoID);
-			}
-			return itemsNoID;
-		}
-
+		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
+		 * we tried to send it and failed); it is assumed to already be urgent. */
 		public void addFirst(MessageItem item) {
-			if(item.msg == null) {
-				makeItemsNoID().addFirst(item);
-				return;
-			}
-			Object o = item.msg.getObject(DMT.UID);
-			if(o == null || !(o instanceof Long)) {
-				makeItemsNoID().addFirst(item);
-				return;
-			}
-			Long id = (Long) o;
+			long id = item.getID();
 			Items list;
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, Items>();
-				itemsWithID = new LinkedList<Items>();
+				itemsWithID = new DoublyLinkedListImpl<Items>();
 				list = new Items(id);
-				itemsWithID.add(list);
+				itemsWithID.push(list);
 				itemsByID.put(id, list);
 			} else {
 				list = itemsByID.get(id);
 				if(list == null) {
 					list = new Items(id);
-					itemsWithID.addFirst(list);
+					itemsWithID.unshift(list);
 					itemsByID.put(id, list);
 				}
 			}
@@ -141,6 +134,8 @@ public class PeerMessageQueue {
 			if(itemsWithID != null)
 				for(Items items : itemsWithID)
 					size += items.items.size();
+			if(itemsNonUrgent != null)
+				size += itemsNonUrgent.size();
 			return size;
 		}
 
@@ -149,6 +144,9 @@ public class PeerMessageQueue {
 				for(Items list : itemsWithID)
 					for(MessageItem item : list.items)
 						output[ptr++] = item;
+			if(itemsNonUrgent != null)
+				for(MessageItem item : itemsNonUrgent)
+					output[ptr++] = item;
 			return ptr;
 		}
 
@@ -156,9 +154,14 @@ public class PeerMessageQueue {
 			if(itemsWithID != null) {
 				for(Items items : itemsWithID) {
 					if(items.items.size() == 0) continue;
+					// It is possible that something requeued isn't urgent, so check anyway.
 					t = Math.min(t, items.items.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
 					if(t <= now) return t;
+					return t;
 				}
+			}
+			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
+				t = Math.min(t, itemsNonUrgent.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
 			}
 			return t;
 		}
@@ -181,7 +184,50 @@ public class PeerMessageQueue {
 					}
 				}
 			}
+			if(itemsNonUrgent != null) {
+				for(MessageItem item : itemsNonUrgent) {
+					int thisLen = item.getLength();
+					length += thisLen;
+					if(length > maxSize) return length;
+				}
+			}
 			return length;
+		}
+		
+		private int addNonUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
+			assert(size >= 0);
+			assert(minSize >= 0);
+			assert(maxSize >= minSize);
+			if(size < 0) size = -size; // FIXME remove extra paranoia
+			if(itemsNonUrgent == null) return size;
+			for(ListIterator<MessageItem> items = itemsNonUrgent.listIterator();items.hasNext();) {
+				MessageItem item = items.next();
+				int thisSize = item.getLength();
+				boolean oversize = false;
+				if(size + 2 + thisSize > maxSize) {
+					if(size == minSize) {
+						// Won't fit regardless, send it on its own.
+						oversize = true;
+					} else {
+						// Send what we have so far.
+						return -size;
+					}
+				}
+				size += 2 + thisSize;
+				items.remove();
+				messages.add(item);
+				if(itemsByID != null) {
+					long id = item.getID();
+					Items tracker = itemsByID.get(id);
+					if(tracker != null) {
+						// Demote the corresponding tracker to maintain round-robin.
+						itemsWithID.remove(tracker);
+						itemsWithID.push(tracker);
+					}
+				}
+				if(oversize) return size;
+			}
+			return size;
 		}
 
 		/**
@@ -201,59 +247,63 @@ public class PeerMessageQueue {
 		 * @return the size of <code>messages</code>, multiplied by -1 if there were
 		 * messages that didn't fit
 		 */
-		private int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, boolean isUrgent) {
+		private int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
 			assert(size >= 0);
 			assert(minSize >= 0);
 			assert(maxSize >= minSize);
+			if(size < 0) size = -size; // FIXME remove extra paranoia
 			while(true) {
 				boolean addedNone = true;
 				int lists = 0;
-				if(itemsWithID != null)
-					lists += itemsWithID.size();
-				int skipped = 0;
-				for(int i=0;i<lists;i++) {
-					Items list;
+				if(itemsWithID == null) return size;
+				lists += itemsWithID.size();
+				Items list = itemsWithID.head();
+				for(int i=0;i<lists && list != null;i++) {
 					Long id;
-					list = itemsWithID.get(skipped);
 					id = list.id;
 					
 					if(list.items.isEmpty()) {
 						if(list.timeLastSent != -1 && now - list.timeLastSent > FORGET_AFTER) {
 							// Remove it
-							itemsWithID.remove(0);
+							Items prev = list.getPrev();
+							itemsWithID.remove(list);
 							itemsByID.remove(id);
+							if(prev == null)
+								list = itemsWithID.head();
+							else
+								list = prev.getNext();
 						} else {
 							// Skip it
-							skipped++;
+							list = list.getNext();
 						}
 						continue;
 					}
 					MessageItem item = list.items.getFirst();
-					if(isUrgent && item.submitted + PacketSender.MAX_COALESCING_DELAY > now) break;
-					
 					int thisSize = item.getLength();
+					boolean oversize = false;
 					if(size + 2 + thisSize > maxSize) {
 						if(size == minSize) {
-							// Send it anyway, nothing else to send.
-							size += 2 + thisSize;
-							list.items.removeFirst();
-							list.timeLastSent = now;
-							// Move to end of list.
-							itemsWithID.remove(skipped);
-							itemsWithID.add(list);
-							messages.add(item);
-							return size;
+							// Won't fit regardless, send it on its own.
+							oversize = true;
+						} else {
+							// Send what we have so far.
+							return -size;
 						}
-						return -size;
 					}
 					size += 2 + thisSize;
 					list.items.removeFirst();
 					// Move to end of list.
-					itemsWithID.remove(skipped);
-					itemsWithID.add(list);
+					Items prev = list.getPrev();
+					itemsWithID.remove(list);
+					itemsWithID.push(list);
+					if(prev == null)
+						list = itemsWithID.head();
+					else
+						list = prev.getNext();
 					messages.add(item);
 					list.timeLastSent = now;
 					addedNone = false;
+					if(oversize) return size;
 				}
 				if(addedNone) return size;
 			}
@@ -270,56 +320,45 @@ public class PeerMessageQueue {
 		 * @return
 		 */
 		int addPriorityMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean incomplete) {
-			// Urgent messages first.
-			size = innerAddMessages(size, minSize, maxSize, now, messages, incomplete, true);
-			if(incomplete.value) return (incomplete.value ? -size : size);
-			// If no more urgent messages, try to add some non-urgent messages too.
-			size = innerAddMessages(size, minSize, maxSize, now, messages, incomplete, false);
-			return size;
-		}
-
-		private int innerAddMessages(int size, int minSize, int maxSize,
-				long now, ArrayList<MessageItem> messages,
-				MutableBoolean incomplete,
-				boolean urgentOnly) {
-			while(true) {
-				synchronized(PeerMessageQueue.this) {
-					size = addMessages(size, minSize, maxSize, now, messages, urgentOnly);
-				}
+			synchronized(PeerMessageQueue.this) {
+				// Urgent messages first.
+				moveToUrgent(now);
+				size = addUrgentMessages(size, minSize, maxSize, now, messages);
 				if(size < 0) {
-					incomplete.value = true;
 					size = -size;
+					incomplete.value = true;
+					return size;
 				}
-				boolean recall = false;
-				if(!recall) break;
+				// If no more urgent messages, try to add some non-urgent messages too.
+				size = addNonUrgentMessages(size, minSize, maxSize, now, messages);
+				if(size < 0) {
+					size = -size;
+					incomplete.value = true;
+				}
+				return size;
 			}
-			return size;
 		}
 
 		public void clear() {
 			itemsWithID = null;
 			itemsByID = null;
+			itemsNonUrgent = null;
 		}
 
 		public boolean removeMessage(MessageItem item) {
-			if(item.msg == null) {
-				return makeItemsNoID().remove(item);
-			}
-			Object o = item.msg.getObject(DMT.UID);
-			if(o == null || !(o instanceof Long)) {
-				return makeItemsNoID().remove(item);
-			}
-			Long id = (Long) o;
+			long id = item.getID();
 			Items list;
-			if(itemsByID == null) {
-				return false;
-			} else {
+			if(itemsByID != null) {
 				list = itemsByID.get(id);
-				if(list == null) {
-					return false;
+				if(list != null) {
+					if(list.remove(item))
+						return true;
 				}
 			}
-			return list.remove(item);
+			if(itemsNonUrgent != null)
+				return itemsNonUrgent.remove(item);
+			else
+				return false;
 		}
 
 

@@ -4257,8 +4257,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		if(mustSend) {
-			int size = minSize;
-			size = messageQueue.addMessages(size, now, minSize, maxSize, messages);
+			messageQueue.addMessages(minSize, now, minSize, maxSize, messages);
 		}
 
 		if(messages.isEmpty() && keepalive) {
