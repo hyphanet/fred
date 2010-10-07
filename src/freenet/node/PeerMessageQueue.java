@@ -97,7 +97,7 @@ public class PeerMessageQueue {
 						if(list == null) {
 							list = new Items(id);
 							// In order to ensure fairness, we add it at the beginning.
-							// This method is typically called by sendAsync().
+							// addLast() is typically called by sendAsync().
 							// If there are later items they are probably block transfers that are
 							// already in progress; it is fairer to send the new item first.
 							itemsWithID.add(0, list);
