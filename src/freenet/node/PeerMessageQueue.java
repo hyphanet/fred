@@ -255,8 +255,8 @@ public class PeerMessageQueue {
 			while(true) {
 				boolean addedNone = true;
 				int lists = 0;
-				if(itemsWithID != null)
-					lists += itemsWithID.size();
+				if(itemsWithID == null) return size;
+				lists += itemsWithID.size();
 				Items list = itemsWithID.head();
 				for(int i=0;i<lists && list != null;i++) {
 					Long id;
