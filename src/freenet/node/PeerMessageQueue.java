@@ -78,6 +78,7 @@ public class PeerMessageQueue {
 		}
 		
 		private void moveToUrgent(long now) {
+			if(itemsNonUrgent == null) return;
 			ListIterator<MessageItem> it = itemsNonUrgent.listIterator();
 			while(it.hasNext()) {
 				MessageItem item = it.next();
