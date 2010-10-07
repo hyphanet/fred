@@ -103,6 +103,7 @@ public class PeerMessageQueue {
 						}
 					}
 					list.addLast(item);
+					it.remove();
 				} else return;
 			}
 		}
