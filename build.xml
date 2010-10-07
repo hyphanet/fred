@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="Freenet" default="dist" basedir=".">
+<project name="Freenet" default="all" basedir=".">
 	<description>
 Freenet is free software that lets you publish and retrieve information without
 fear of censorship. To achieve this, the network is entirely decentralized, and
@@ -34,23 +34,23 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<property name="lib.contrib" location="${lib}/freenet-ext.jar"/>
 	<path id="lib.path">
 		<fileset dir="${lib}" includes="**/*.jar"/>
-		<fileset dir="${java.class.dirs}">
+		<fileset dir="${java.class.dirs}" erroronmissingdir="false">
 			<include name="junit.jar"/>
 		</fileset>
 	</path>
 
-	<property name="contrib.base" value="../contrib/freenet_ext"/>
-	<property name="contrib.dst" value="${contrib.base}"/>
+	<property name="contrib.dir" value="../contrib/freenet_ext"/>
+	<property name="contrib.dst" value="${contrib.dir}"/>
 	<property name="contrib.version.min" value="-1"/>
 	<property name="contrib.version.rec" value="-1"/>
 
 	<property name="gjs.dst" value="${main.src}/freenet/clients/http/staticfiles/freenetjs"/>
-	<property name="gjs.base" value="generator/js"/>
-	<property name="gjs.lib" value="${gjs.base}/lib"/>
+	<property name="gjs.dir" value="generator/js"/>
+	<property name="gjs.lib" value="${gjs.dir}/lib"/>
 	<path id="gjs.lib.path">
-		<fileset dir="${gjs.lib}" includes="*.jar"/>
-		<pathelement location="${gjs.base}/war/WEB-INF/classes"/>
-		<fileset dir="${java.class.dirs}">
+		<fileset dir="${gjs.lib}" includes="*.jar" erroronmissingdir="false"/>
+		<pathelement location="${gjs.dir}/war/WEB-INF/classes"/>
+		<fileset dir="${java.class.dirs}" erroronmissingdir="false">
 			<include name="gwt-dev-linux.jar"/>
 			<include name="gwt-user.jar"/>
 			<include name="commons-collections3.jar"/>
@@ -81,7 +81,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 
 	<target name="all" depends="clean-all, dist, doc" description="clean-builds everything"/>
 
-	<target name="clean-all" depends="clean, clean-doc, clean-gjs, clean-ext" description="clean all build products, including dependency builds"/>
+	<target name="clean-all" depends="clean, clean-doc, clean-gjs, clean-ext" description="clean all build products *and dependencies* (ext, gjs)"/>
 
 	<target name="help" description="display help on parameters">
 		<echo message="For main build targets, see `ant -p`"/>
@@ -122,7 +122,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 		</trydep>
 	</target>
 
-	<target name="build" depends="dep">
+	<target name="build" depends="init, dep">
 		<!-- Create the time stamp -->
 		<tstamp/>
 
@@ -268,12 +268,12 @@ of speech, and without decentralization the network would be vulnerable to attac
 	</target>
 
 	<target name="build-ext" unless="${suppress.ext}">
-		<ant antfile="build.xml" dir="${contrib.base}" inheritAll="false"/>
+		<ant antfile="build.xml" dir="${contrib.dir}" inheritAll="false"/>
 		<copy file="${contrib.dst}/freenet-ext.jar" todir="${lib}"/>
 	</target>
 
 	<target name="clean-ext">
-		<ant antfile="build.xml" dir="${contrib.base}" inheritAll="false" target="clean"/>
+		<ant antfile="build.xml" dir="${contrib.dir}" inheritAll="false" target="clean"/>
 		<delete file="${lib}/freenet-ext.jar"/>
 	</target>
 
@@ -303,7 +303,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 	</target>
 
 	<target name="build-gjs" unless="${suppress.gjs}">
-		<ant antfile="build.xml" dir="${gjs.base}">
+		<ant antfile="build.xml" dir="${gjs.dir}">
 			<reference refid="gjs.lib.path" torefid="project.class.path"/>
 		</ant>
 	</target>
@@ -316,7 +316,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 	</target>
 
 	<target name="clean-gjs">
-		<ant antfile="build.xml" dir="${gjs.base}" target="deleteGenerated"/>
+		<ant antfile="build.xml" dir="${gjs.dir}" target="deleteGenerated"/>
 	</target>
 
 	<!-- =================================================================== -->
