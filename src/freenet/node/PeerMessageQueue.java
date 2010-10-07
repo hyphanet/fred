@@ -220,7 +220,7 @@ public class PeerMessageQueue {
 					if(list.items.isEmpty()) {
 						if(list.timeLastSent != -1 && now - list.timeLastSent > FORGET_AFTER) {
 							// Remove it
-							itemsWithID.remove(0);
+							itemsWithID.remove(skipped);
 							itemsByID.remove(id);
 						} else {
 							// Skip it
