@@ -35,6 +35,7 @@ public class PeerMessageQueue {
 	private class PrioQueue {
 		
 		private class Items {
+			/** List of messages to send. Stuff to send first is at the beginning. */
 			final LinkedList<MessageItem> items;
 			final long id;
 			long timeLastSent;
