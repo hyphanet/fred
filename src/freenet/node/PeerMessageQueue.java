@@ -148,11 +148,15 @@ public class PeerMessageQueue {
 
 		public long getNextUrgentTime(long t, long now) {
 			if(itemsWithID != null) {
+				// Everything on itemsWithID is urgent, so if there is anything queued we can return immediately.
 				for(Items items : itemsWithID) {
 					if(items.items.size() == 0) continue;
 					t = Math.min(t, items.items.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
-					if(t <= now) return t;
+					return t;
 				}
+			}
+			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
+				t = Math.min(t, itemsNonUrgent.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
 			}
 			return t;
 		}
