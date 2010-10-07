@@ -79,7 +79,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 
 	<target name="clean-all" depends="clean, clean-doc, clean-gjs, clean-ext" description="clean all build products, including dependency builds"/>
 
-	<target name="help" description="display help on -D parameters">
+	<target name="help" description="display help on parameters">
 		<echo message="For main build targets, see `ant -p`"/>
 		<echo message=""/>
 		<echo message="Test parameters (-Dtest.PARAM=true)"/>
@@ -88,6 +88,12 @@ of speech, and without decentralization the network would be vulnerable to attac
 		<echo message="  verbose     Report additional information"/>
 		<echo message="  benchmark   Run benchmark tests"/>
 		<echo message="  extensive   Run extensive tests"/>
+		<echo message=""/>
+		<echo message="Rebuild parameters (-Drebuild.PARAM=true)"/>
+		<echo message=""/>
+		<echo message="  ext         Rebuild ext if possible, otherwise download"/>
+		<echo message="  gjs         Rebuild gjs if possible, otherwise checkout"/>
+		<echo message=""/>
 	</target>
 
 	<!-- =================================================================== -->
@@ -180,7 +186,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 		</jar>
 	</target>
 
-	<target name="unit-build" depends="build, dep-junit" unless="test.skip">
+	<target name="unit-build" depends="build, dep-junit" unless="${test.skip}">
 		<delete dir="${test.make}"/>
 		<mkdir dir="${test.make}"/>
 
@@ -202,7 +208,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 		</copy>
 	</target>
 
-	<target name="unit" depends="unit-build" unless="test.skip">
+	<target name="unit" depends="unit-build" unless="${test.skip}">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
 				<path refid="lib.path"/>
@@ -254,7 +260,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 			verbose="true" usetimestamp="true"/>
 	</target>
 
-	<target name="build-ext">
+	<target name="build-ext" if="${rebuild.ext}">
 		<!-- TODO -->
 		<fail message="build-ext not implemented TODO"/>
 	</target>
@@ -288,7 +294,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 		</trydep>
 	</target>
 
-	<target name="build-gjs">
+	<target name="build-gjs" if="${rebuild.gjs}">
 		<ant antfile="build.xml" dir="${gjs.base}">
 			<reference refid="gjs.lib.path" torefid="project.class.path"/>
 		</ant>
