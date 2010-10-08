@@ -209,28 +209,7 @@ public class FCPConnectionHandler implements Closeable {
 		this.clientName = name;
 		rebootClient = server.registerRebootClient(name, server.core, this);
 		rebootClient.queuePendingMessagesOnConnectionRestart(outputHandler, null);
-		if(!server.core.killedDatabase())
-			try {
-				server.core.clientContext.jobRunner.queue(new DBJob() {
-
-					public boolean run(ObjectContainer container, ClientContext context) {
-						try {
-							createForeverClient(name, container);
-						} catch (Throwable t) {
-							Logger.error(this, "Caught "+t+" creating persistent client for "+name, t);
-							failedGetForever = true;
-							synchronized(FCPConnectionHandler.this) {
-								failedGetForever = true;
-								FCPConnectionHandler.this.notifyAll();
-							}
-						}
-						return false;
-					}
-					
-				}, NativeThread.NORM_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
-				// Impossible??
-			}
+		// Create foreverClient lazily. Everything that needs it (especially creating ClientGet's etc) runs on a database job.
 		if(logMINOR)
 			Logger.minor(this, "Set client name: "+name);
 	}
