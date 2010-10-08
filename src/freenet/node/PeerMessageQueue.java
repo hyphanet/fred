@@ -324,7 +324,7 @@ public class PeerMessageQueue {
 							addToEmptyBackward(tracker);
 						} else {
 							if(nonEmptyItemsWithID == null) { 
-								Logger.error(this, "Tracker empty yet non empty items with ID does not exist?!?");
+								Logger.error(this, "Tracker not empty yet non empty items with ID does not exist?!?");
 							} else {
 								nonEmptyItemsWithID.remove(tracker);
 								addToNonEmptyBackward(tracker);
