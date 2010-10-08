@@ -152,6 +152,9 @@ public class PeerMessageQueue {
 		}
 
 		public long getNextUrgentTime(long t, long now) {
+			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
+				t = Math.min(t, itemsNonUrgent.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
+			}
 			if(itemsWithID != null) {
 				for(Items items : itemsWithID) {
 					if(items.items.size() == 0) continue;
@@ -160,9 +163,6 @@ public class PeerMessageQueue {
 					if(t <= now) return t;
 					return t;
 				}
-			}
-			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
-				t = Math.min(t, itemsNonUrgent.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
 			}
 			return t;
 		}
@@ -176,6 +176,13 @@ public class PeerMessageQueue {
 		 * @return the resulting length after adding messages
 		 */
 		public int addSize(int length, int maxSize) {
+			if(itemsNonUrgent != null) {
+				for(MessageItem item : itemsNonUrgent) {
+					int thisLen = item.getLength();
+					length += thisLen;
+					if(length > maxSize) return length;
+				}
+			}
 			if(itemsWithID != null) {
 				for(Items list : itemsWithID) {
 					for(MessageItem item : list.items) {
@@ -183,13 +190,6 @@ public class PeerMessageQueue {
 						length += thisLen;
 						if(length > maxSize) return length;
 					}
-				}
-			}
-			if(itemsNonUrgent != null) {
-				for(MessageItem item : itemsNonUrgent) {
-					int thisLen = item.getLength();
-					length += thisLen;
-					if(length > maxSize) return length;
 				}
 			}
 			return length;
