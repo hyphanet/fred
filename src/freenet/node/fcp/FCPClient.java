@@ -544,6 +544,10 @@ public class FCPClient {
 		container.activate(completedUnackedRequests, 2);
 		container.activate(clientRequestsByIdentifier, 2);
 		container.activate(lowLevelClient, 2);
+		assert lowLevelClient != null;
+		assert runningPersistentRequests != null;
+		assert completedUnackedRequests != null;
+		assert clientRequestsByIdentifier != null;
 	}
 
 	public boolean objectCanNew(ObjectContainer container) {
