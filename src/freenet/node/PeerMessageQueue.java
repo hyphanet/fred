@@ -149,6 +149,7 @@ public class PeerMessageQueue {
 					return;
 				}
 			}
+			nonEmptyItemsWithID.unshift(list);
 		}
 
 		private void moveFromEmptyToNonEmptyBackward(Items list) {
@@ -168,6 +169,7 @@ public class PeerMessageQueue {
 					return;
 				}
 			}
+			nonEmptyItemsWithID.unshift(list);
 		}
 
 		private void addToEmptyBackward(Items list) {
@@ -181,6 +183,7 @@ public class PeerMessageQueue {
 					return;
 				}
 			}
+			nonEmptyItemsWithID.unshift(list);
 		}
 
 		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
