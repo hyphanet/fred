@@ -367,6 +367,15 @@ public class PeerMessageQueue {
 				lists += nonEmptyItemsWithID.size();
 				Items list = nonEmptyItemsWithID.head();
 				for(int i=0;i<lists && list != null;i++) {
+					if(list.items.isEmpty()) {
+						// Should not happen, but check for it anyway since it keeps happening. :(
+						Logger.error(this, "List is in nonEmptyItemsWithID yet it is empty?!: "+list);
+						nonEmptyItemsWithID.remove(list);
+						addToNonEmptyBackward(list);
+						if(nonEmptyItemsWithID.isEmpty()) return size;
+						list = nonEmptyItemsWithID.head();
+						continue;
+					}
 					MessageItem item = list.items.getFirst();
 					int thisSize = item.getLength();
 					boolean oversize = false;
