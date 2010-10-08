@@ -154,6 +154,7 @@ public class PeerMessageQueue {
 		public long getNextUrgentTime(long t, long now) {
 			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
 				t = Math.min(t, itemsNonUrgent.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
+				if(t <= now) return t;
 			}
 			if(itemsWithID != null) {
 				for(Items items : itemsWithID) {
