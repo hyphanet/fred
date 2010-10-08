@@ -465,8 +465,8 @@ public class PeerMessageQueue {
 
 		private void clearOldNonUrgent(long now) {
 			int removed = 0;
+			if(emptyItemsWithID == null) return;
 			while(true) {
-				if(emptyItemsWithID == null) return;
 				if(emptyItemsWithID.isEmpty()) return;
 				Items list = emptyItemsWithID.head();
 				if(list.timeLastSent == -1 || now - list.timeLastSent > FORGET_AFTER) {
