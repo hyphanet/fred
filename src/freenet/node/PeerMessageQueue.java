@@ -137,12 +137,12 @@ public class PeerMessageQueue {
 			}
 			if(emptyItemsWithID != null)
 				emptyItemsWithID.remove(list);
-			else
-				emptyItemsWithID = new DoublyLinkedListImpl<Items>();
-			addToNonEmptyForwardInner(list);
+			addToNonEmptyForward(list);
 		}
 		
-		private void addToNonEmptyForwardInner(Items list) {
+		private void addToNonEmptyForward(Items list) {
+			if(nonEmptyItemsWithID == null)
+				nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 			Enumeration<Items> it = nonEmptyItemsWithID.elements();
 			while(it.hasMoreElements()) {
 				Items compare = it.nextElement();
