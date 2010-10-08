@@ -93,7 +93,8 @@ public class PeerMessageQueue {
 					Items list;
 					if(itemsByID == null) {
 						itemsByID = new HashMap<Long, Items>();
-						nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
+						if(nonEmptyItemsWithID == null)
+							nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 						list = new Items(id);
 						nonEmptyItemsWithID.push(list);
 						itemsByID.put(id, list);
@@ -101,6 +102,8 @@ public class PeerMessageQueue {
 						list = itemsByID.get(id);
 						if(list == null) {
 							list = new Items(id);
+							if(nonEmptyItemsWithID == null)
+								nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 							// In order to ensure fairness, we add it at the beginning.
 							// addLast() is typically called by sendAsync().
 							// If there are later items they are probably block transfers that are
@@ -195,7 +198,8 @@ public class PeerMessageQueue {
 			Items list;
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, Items>();
-				nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
+				if(nonEmptyItemsWithID == null)
+					nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 				list = new Items(id);
 				nonEmptyItemsWithID.push(list);
 				itemsByID.put(id, list);
@@ -203,6 +207,8 @@ public class PeerMessageQueue {
 				list = itemsByID.get(id);
 				if(list == null) {
 					list = new Items(id);
+					if(nonEmptyItemsWithID == null)
+						nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 					nonEmptyItemsWithID.unshift(list);
 					itemsByID.put(id, list);
 				} else {
