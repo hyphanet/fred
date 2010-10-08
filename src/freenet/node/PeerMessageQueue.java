@@ -84,7 +84,7 @@ public class PeerMessageQueue {
 			ListIterator<MessageItem> it = itemsNonUrgent.listIterator();
 			while(it.hasNext()) {
 				MessageItem item = it.next();
-				if(item.submitted + PacketSender.MAX_COALESCING_DELAY >= now) {
+				if(item.submitted + PacketSender.MAX_COALESCING_DELAY <= now) {
 					// Move to urgent list
 					long id = item.getID();
 					Items list;
