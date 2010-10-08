@@ -554,7 +554,8 @@ public class FCPClient {
 				lowLevelClient = c;
 				break;
 			}
-			lowLevelClient = new FCPClientRequestClient(this, persistenceType == ClientRequest.PERSIST_FOREVER);
+			if(lowLevelClient == null)
+				lowLevelClient = new FCPClientRequestClient(this, persistenceType == ClientRequest.PERSIST_FOREVER);
 			container.store(lowLevelClient);
 			container.store(this);
 		}
