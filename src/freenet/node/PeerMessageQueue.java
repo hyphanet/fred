@@ -470,6 +470,13 @@ public class PeerMessageQueue {
 		enqueuePrioritizedMessageItem(item);
 		int x = 0;
 		for(PrioQueue pq : queuesByPriority) {
+			if(pq.itemsNonUrgent != null) {
+				for(MessageItem it : pq.itemsNonUrgent) {
+					x += it.getLength() + 2;
+					if(x > 1024)
+						break;
+				}
+			}
 			if(pq.nonEmptyItemsWithID != null) {
 				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items) {
