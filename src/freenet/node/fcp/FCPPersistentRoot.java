@@ -105,7 +105,7 @@ public class FCPPersistentRoot {
 	}
 
 	public void maybeUnregisterClient(FCPClient client, ObjectContainer container) {
-		if(!client.hasPersistentRequests(container)) {
+		if((!client.isGlobalQueue) && !client.hasPersistentRequests(container)) {
 			client.removeFromDatabase(container);
 		}
 	}
