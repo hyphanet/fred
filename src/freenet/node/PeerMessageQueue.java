@@ -469,6 +469,13 @@ public class PeerMessageQueue {
 			while(true) {
 				if(emptyItemsWithID.isEmpty()) return;
 				Items list = emptyItemsWithID.head();
+				if(!list.items.isEmpty()) {
+					// FIXME remove paranoia
+					Logger.error(this, "List with items in emptyItemsWithID!!");
+					emptyItemsWithID.remove(list);
+					addToNonEmptyBackward(list);
+					return;
+				}
 				if(list.timeLastSent == -1 || now - list.timeLastSent > FORGET_AFTER) {
 					itemsByID.remove(list);
 					emptyItemsWithID.remove(list);
