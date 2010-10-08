@@ -496,7 +496,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 				public void sent() {
 					// Timeout...
-					updateManager.node.ps.queueTimedJob(new Runnable() {
+					updateManager.node.ticker.queueTimedJob(new Runnable() {
 
 						public void run() {
 							synchronized(UpdateOverMandatoryManager.this) {

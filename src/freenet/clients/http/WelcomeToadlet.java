@@ -268,7 +268,7 @@ public class WelcomeToadlet extends Toadlet {
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?terminated&formPassword=" + core.formPassword);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-            node.ps.queueTimedJob(new Runnable() {
+            node.ticker.queueTimedJob(new Runnable() {
 
                         public void run() {
                             node.exit("Shutdown from fproxy");
@@ -295,7 +295,7 @@ public class WelcomeToadlet extends Toadlet {
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?restarted&formPassword=" + core.formPassword);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-            node.ps.queueTimedJob(new Runnable() {
+            node.ticker.queueTimedJob(new Runnable() {
 
                         public void run() {
                             node.getNodeStarter().restart();

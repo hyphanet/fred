@@ -329,7 +329,7 @@ public class NodeStats implements Persistable {
 		},false);
 		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
 
-		myMemoryChecker = new MemoryChecker(node.ps, aggressiveGCModificator);
+		myMemoryChecker = new MemoryChecker(node.getTicker(), aggressiveGCModificator);
 		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "NodeStat.memCheck", "NodeStat.memCheckLong",
 				new BooleanCallback(){
 					@Override
@@ -414,7 +414,7 @@ public class NodeStats implements Persistable {
 		});
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false,
-				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps, node.getRunDir());
+				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ticker, node.getRunDir());
 
 		SimpleFieldSet throttleFS = persister.read();
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);

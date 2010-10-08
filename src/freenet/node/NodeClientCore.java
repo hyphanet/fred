@@ -182,7 +182,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		if(container != null)
 			initRestartJobs(nodeDBHandle, container);
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false,
-			"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ps, node.getRunDir());
+			"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ticker, node.getRunDir());
 
 		SimpleFieldSet throttleFS = persister.read();
 		if(logMINOR)
@@ -717,7 +717,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		// That sucks though ... they are only changed ONCE, and they are used constantly.
 		// Also existing transient requests won't care about the changes; what we must guarantee
 		// is that new persistent jobs will be accepted.
-		node.ps.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 
 			public void run() {
 				clientDatabaseExecutor.start(node.executor, "Client database access thread");
@@ -1599,7 +1599,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	public Ticker getTicker() {
-		return node.ps;
+		return node.getTicker();
 	}
 
 	public Executor getExecutor() {

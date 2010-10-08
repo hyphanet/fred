@@ -93,7 +93,7 @@ public class PeerManager {
 				writePeersInner();
 			}
 			
-			node.ps.queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
+			node.getTicker().queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
 		}
 	};
 	
@@ -1344,7 +1344,7 @@ public class PeerManager {
 		ua = new PeerManagerUserAlert(node.nodeStats);
 		updatePMUserAlert();
 		node.clientCore.alerts.register(ua);
-		node.ps.queueTimedJob(writePeersRunnable, 0);
+		node.getTicker().queueTimedJob(writePeersRunnable, 0);
 	}
 
 	public int countNonBackedOffPeers() {

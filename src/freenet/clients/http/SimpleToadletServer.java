@@ -944,7 +944,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public Ticker getTicker(){
-		return core.node.ps;
+		return core.node.getTicker();
 	}
 	
 	public NodeClientCore getCore(){

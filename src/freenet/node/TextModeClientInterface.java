@@ -410,7 +410,7 @@ public class TextModeClientInterface implements Runnable {
     } else if(uline.startsWith("UPDATE")) {
     	outsb.append("starting the update process");
     	// FIXME run on separate thread
-    	n.ps.queueTimedJob(new Runnable() {
+    	n.ticker.queueTimedJob(new Runnable() {
     		public void run() {
     		    freenet.support.Logger.OSThread.logPID(this);
     			n.getNodeUpdater().arm();

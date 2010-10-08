@@ -1015,7 +1015,7 @@ public class NodeUpdateManager {
 		deployPluginUpdates();
 		// If we're still here, we didn't update.
 		broadcastUOMAnnounces();
-		node.ps.queueTimedJob(new Runnable() {
+		node.ticker.queueTimedJob(new Runnable() {
 			public void run() {
 				revocationChecker.start(false);
 			}
@@ -1045,7 +1045,7 @@ public class NodeUpdateManager {
 	}
 
 	void deployOffThread(long delay) {
-		node.ps.queueTimedJob(new Runnable() {
+		node.ticker.queueTimedJob(new Runnable() {
 			public void run() {
 				if(logMINOR) Logger.minor(this, "Running deployOffThread");
 				try {

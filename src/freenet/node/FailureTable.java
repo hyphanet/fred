@@ -86,7 +86,7 @@ public class FailureTable implements OOMHook {
 		offerAuthenticatorKey = new byte[32];
 		node.random.nextBytes(offerAuthenticatorKey);
 		offerExecutor = new SerialExecutor(NativeThread.HIGH_PRIORITY);
-		node.ps.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
+		node.ticker.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
 	}
 	
 	public void start() {
@@ -606,7 +606,7 @@ public class FailureTable implements OOMHook {
 			} catch (Throwable t) {
 				Logger.error(this, "FailureTableCleaner caught "+t, t);
 			} finally {
-				node.ps.queueTimedJob(this, CLEANUP_PERIOD);
+				node.ticker.queueTimedJob(this, CLEANUP_PERIOD);
 			}
 		}
 
