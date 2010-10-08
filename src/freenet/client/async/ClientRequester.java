@@ -181,12 +181,17 @@ public abstract class ClientRequester {
 		if(container != null && client == null) {
 			if(container.ext().isStored(this) && container.ext().isActive(this)) {
 				// Data corruption?!?!?
-				throw new IllegalStateException("Stored and active "+this+" but client is null!");
+				// Obviously broken, possibly associated with a busted FCPClient.
+				// Lets fail it.
+				Logger.error(this, "Stored and active "+this+" but client is null!");
+				cancel(container, context);
+				return;
 			} else if(container.ext().isStored(this) && !container.ext().isActive(this)) {
 				// Definitely a bug, hopefully a simple one.
-				throw new IllegalStateException("Not active in completedBlock on "+this);
-			}
-			throw new IllegalStateException("Client is null on persistent request "+this);
+				Logger.error(this, "Not active in completedBlock on "+this, new Exception("error"));
+				return;
+			} else
+				throw new IllegalStateException("Client is null on persistent request "+this);
 		}
 		if(persistent()) container.store(this);
 		if(dontNotify) return;
