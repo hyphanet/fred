@@ -181,11 +181,11 @@ public class PeerMessageQueue {
 			while(it.hasMoreElements()) {
 				Items compare = it.nextElement();
 				if(compare.timeLastSent <= list.timeLastSent) {
-					nonEmptyItemsWithID.insertNext(list, compare);
+					emptyItemsWithID.insertNext(list, compare);
 					return;
 				}
 			}
-			nonEmptyItemsWithID.unshift(list);
+			emptyItemsWithID.unshift(list);
 		}
 
 		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
