@@ -178,6 +178,16 @@ public abstract class ClientRequester {
 			if(cancelled) return;
 			successfulBlocks++;
 		}
+		if(container != null && client == null) {
+			if(container.ext().isStored(this) && container.ext().isActive(this)) {
+				// Data corruption?!?!?
+				throw new IllegalStateException("Stored and active "+this+" but client is null!");
+			} else if(container.ext().isStored(this) && !container.ext().isActive(this)) {
+				// Definitely a bug, hopefully a simple one.
+				throw new IllegalStateException("Not active in completedBlock on "+this);
+			}
+			throw new IllegalStateException("Client is null on persistent request "+this);
+		}
 		if(persistent()) container.store(this);
 		if(dontNotify) return;
 		notifyClients(container, context);
