@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Query;
 
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
@@ -42,7 +44,7 @@ public class FCPClient {
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
-		lowLevelClient = createRequestClient(forever);
+		lowLevelClient = new FCPClientRequestClient(this, forever);
 		completionCallbacks = new ArrayList<RequestCompletionCallback>();
 		if(cb != null) completionCallbacks.add(cb);
 		this.whiteboard=whiteboard;
@@ -53,29 +55,6 @@ public class FCPClient {
 			this.root = null;
 	}
 	
-	private RequestClient createRequestClient(final boolean forever) {
-		return new RequestClient() {
-			// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-			public boolean persistent() {
-				return forever;
-			}
-			public void removeFrom(ObjectContainer container) {
-				if(forever)
-					container.delete(this);
-				else
-					throw new UnsupportedOperationException();
-			}
-			public boolean objectCanDelete(ObjectContainer container) {
-				container.activate(FCPClient.this, 1);
-				if(FCPClient.this.isGlobalQueue) {
-					Logger.error(this, "Trying to remove the RequestClient for the global queue!!!", new Exception("error"));
-					return false;
-				}
-				return true;
-			}
-		};
-	}
-
 	/** The persistent root object, null if persistenceType is PERSIST_REBOOT */
 	final FCPPersistentRoot root;
 	/** The client's Name sent in the ClientHello message */
@@ -565,9 +544,21 @@ public class FCPClient {
 			System.err.println("No lowLevelClient for "+this+" but other fields exist.");
 			System.err.println("This means your database has been corrupted slightly, probably by a bug in Freenet.");
 			System.err.println("We are trying to recover ...");
-			lowLevelClient = createRequestClient(persistenceType == ClientRequest.PERSIST_FOREVER);
+			Query q = container.query();
+			q.constrain(FCPClientRequestClient.class);
+			q.descend("client").constrain(this);
+			ObjectSet<FCPClientRequestClient> results = q.execute();
+			for(FCPClientRequestClient c : results) {
+				if(c.client != this) continue;
+				System.err.println("Found the old request client, eh???");
+				lowLevelClient = c;
+				break;
+			}
+			lowLevelClient = new FCPClientRequestClient(this, persistenceType == ClientRequest.PERSIST_FOREVER);
+			container.store(lowLevelClient);
+			container.store(this);
 		}
-		assert lowLevelClient != null;
+		//assert lowLevelClient != null;
 	}
 
 	public boolean objectCanNew(ObjectContainer container) {
