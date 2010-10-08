@@ -82,6 +82,7 @@ public class PeerMessageQueue {
 		private void moveToUrgent(long now) {
 			if(itemsNonUrgent == null) return;
 			ListIterator<MessageItem> it = itemsNonUrgent.listIterator();
+			int moved = 0;
 			while(it.hasNext()) {
 				MessageItem item = it.next();
 				if(item.submitted + PacketSender.MAX_COALESCING_DELAY <= now) {
@@ -114,7 +115,12 @@ public class PeerMessageQueue {
 					}
 					list.addLast(item);
 					it.remove();
-				} else return;
+					moved++;
+				} else {
+					if(logMINOR && moved > 0)
+						Logger.minor(this, "Moved "+moved+" items to urgent round-robin");
+					return;
+				}
 			}
 		}
 
@@ -413,6 +419,7 @@ public class PeerMessageQueue {
 		}
 
 		private void clearOldNonUrgent(long now) {
+			int removed = 0;
 			while(true) {
 				if(emptyItemsWithID == null) return;
 				if(emptyItemsWithID.isEmpty()) return;
@@ -420,8 +427,12 @@ public class PeerMessageQueue {
 				if(list.timeLastSent == -1 || now - list.timeLastSent > FORGET_AFTER) {
 					itemsByID.remove(list);
 					emptyItemsWithID.remove(list);
-				} else
+					removed++;
+				} else {
+					if(logMINOR && removed > 0)
+						Logger.minor(this, "Removed "+removed+" old empty UID trackers");
 					break;
+				}
 			}
 		}
 
