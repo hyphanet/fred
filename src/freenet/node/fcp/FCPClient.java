@@ -53,6 +53,14 @@ public class FCPClient {
 				else
 					throw new UnsupportedOperationException();
 			}
+			public boolean objectCanDelete(ObjectContainer container) {
+				container.activate(FCPClient.this, 1);
+				if(FCPClient.this.isGlobalQueue) {
+					Logger.error(this, "Trying to remove the RequestClient for the global queue!!!", new Exception("error"));
+					return false;
+				}
+				return true;
+			}
 		};
 		completionCallbacks = new ArrayList<RequestCompletionCallback>();
 		if(cb != null) completionCallbacks.add(cb);
