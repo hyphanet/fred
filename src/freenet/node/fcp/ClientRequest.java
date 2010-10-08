@@ -123,6 +123,7 @@ public abstract class ClientRequest {
 			assert(client.persistenceType == persistenceType);
 			lowLevelClient = client.lowLevelClient;
 		}
+		assert lowLevelClient != null;
 		this.startupTime = System.currentTimeMillis();
 	}
 
