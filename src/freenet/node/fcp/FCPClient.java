@@ -42,7 +42,19 @@ public class FCPClient {
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
-		lowLevelClient = new RequestClient() {
+		lowLevelClient = createRequestClient(forever);
+		completionCallbacks = new ArrayList<RequestCompletionCallback>();
+		if(cb != null) completionCallbacks.add(cb);
+		this.whiteboard=whiteboard;
+		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+			assert(root != null);
+			this.root = root;
+		} else
+			this.root = null;
+	}
+	
+	private RequestClient createRequestClient(final boolean forever) {
+		return new RequestClient() {
 			// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 			public boolean persistent() {
 				return forever;
@@ -62,16 +74,8 @@ public class FCPClient {
 				return true;
 			}
 		};
-		completionCallbacks = new ArrayList<RequestCompletionCallback>();
-		if(cb != null) completionCallbacks.add(cb);
-		this.whiteboard=whiteboard;
-		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
-			assert(root != null);
-			this.root = root;
-		} else
-			this.root = null;
 	}
-	
+
 	/** The persistent root object, null if persistenceType is PERSIST_REBOOT */
 	final FCPPersistentRoot root;
 	/** The client's Name sent in the ClientHello message */
@@ -92,7 +96,7 @@ public class FCPClient {
 	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
 	private transient LinkedList<FCPClient> clientsWatching;
 	private final NullObject clientsWatchingLock = new NullObject();
-	final RequestClient lowLevelClient;
+	RequestClient lowLevelClient;
 	private transient List<RequestCompletionCallback> completionCallbacks;
 	/** The whiteboard where ClientRequests report their progress*/
 	private transient Whiteboard whiteboard;
@@ -548,6 +552,8 @@ public class FCPClient {
 	}
 
 	public void init(ObjectContainer container) {
+		if(!container.ext().isActive(this))
+			throw new IllegalStateException("Initialising but not activated");
 		container.activate(runningPersistentRequests, 2);
 		container.activate(completedUnackedRequests, 2);
 		container.activate(clientRequestsByIdentifier, 2);
@@ -555,6 +561,12 @@ public class FCPClient {
 		assert runningPersistentRequests != null;
 		assert completedUnackedRequests != null;
 		assert clientRequestsByIdentifier != null;
+		if(lowLevelClient == null) {
+			System.err.println("No lowLevelClient for "+this+" but other fields exist.");
+			System.err.println("This means your database has been corrupted slightly, probably by a bug in Freenet.");
+			System.err.println("We are trying to recover ...");
+			lowLevelClient = createRequestClient(persistenceType == ClientRequest.PERSIST_FOREVER);
+		}
 		assert lowLevelClient != null;
 	}
 
