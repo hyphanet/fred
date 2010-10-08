@@ -233,18 +233,21 @@ public class FCPClient {
 			boolean removedFromRunning = false;
 			if(req == null) {
 				for(ClientRequest r : completedUnackedRequests) {
-					container.activate(r, 1);
+					if(persistenceType == ClientRequest.PERSIST_FOREVER)
+						container.activate(r, 1);
 					if(r.getIdentifier().equals(identifier)) {
 						req = r;
 						completedUnackedRequests.remove(r);
 						Logger.error(this, "Found completed unacked request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
 						break;
 					}
-					container.deactivate(r, 1);
+					if(persistenceType == ClientRequest.PERSIST_FOREVER)
+						container.deactivate(r, 1);
 				}
 				if(req == null) {
 					for(ClientRequest r : runningPersistentRequests) {
-						container.activate(r, 1);
+						if(persistenceType == ClientRequest.PERSIST_FOREVER)
+							container.activate(r, 1);
 						if(r.getIdentifier().equals(identifier)) {
 							req = r;
 							runningPersistentRequests.remove(r);
@@ -252,7 +255,8 @@ public class FCPClient {
 							Logger.error(this, "Found running request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
 							break;
 						}
-						container.deactivate(r, 1);
+						if(persistenceType == ClientRequest.PERSIST_FOREVER)
+							container.deactivate(r, 1);
 					}
 				}
 				if(req == null) return false;
