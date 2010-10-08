@@ -127,11 +127,14 @@ public class PeerMessageQueue {
 					return;
 				}
 			}
-			emptyItemsWithID.remove(list);
-			addToNonEmptyForward(list);
+			if(emptyItemsWithID != null)
+				emptyItemsWithID.remove(list);
+			else
+				emptyItemsWithID = new DoublyLinkedListImpl<Items>();
+			addToNonEmptyForwardInner(list);
 		}
 		
-		private void addToNonEmptyForward(Items list) {
+		private void addToNonEmptyForwardInner(Items list) {
 			Enumeration<Items> it = nonEmptyItemsWithID.elements();
 			while(it.hasMoreElements()) {
 				Items compare = it.nextElement();
@@ -149,6 +152,8 @@ public class PeerMessageQueue {
 		}
 		
 		private void addToNonEmptyBackward(Items list) {
+			if(nonEmptyItemsWithID == null)
+				nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 			Enumeration<Items> it = nonEmptyItemsWithID.reverseElements();
 			while(it.hasMoreElements()) {
 				Items compare = it.nextElement();
@@ -160,6 +165,8 @@ public class PeerMessageQueue {
 		}
 
 		private void addToEmptyBackward(Items list) {
+			if(emptyItemsWithID == null)
+				emptyItemsWithID = new DoublyLinkedListImpl<Items>();
 			Enumeration<Items> it = emptyItemsWithID.reverseElements();
 			while(it.hasMoreElements()) {
 				Items compare = it.nextElement();
@@ -296,8 +303,12 @@ public class PeerMessageQueue {
 							emptyItemsWithID.remove(tracker);
 							addToEmptyBackward(tracker);
 						} else {
-							nonEmptyItemsWithID.remove(tracker);
-							addToNonEmptyBackward(tracker);
+							if(nonEmptyItemsWithID == null) { 
+								Logger.error(this, "Tracker empty yet non empty items with ID does not exist?!?");
+							} else {
+								nonEmptyItemsWithID.remove(tracker);
+								addToNonEmptyBackward(tracker);
+							}
 						}
 					}
 				}
@@ -404,6 +415,7 @@ public class PeerMessageQueue {
 
 		private void clearOldNonUrgent(long now) {
 			while(true) {
+				if(emptyItemsWithID == null) return;
 				if(emptyItemsWithID.isEmpty()) return;
 				Items list = emptyItemsWithID.head();
 				if(list.timeLastSent == -1 || now - list.timeLastSent > FORGET_AFTER) {
@@ -415,6 +427,7 @@ public class PeerMessageQueue {
 		}
 
 		public void clear() {
+			emptyItemsWithID = null;
 			nonEmptyItemsWithID = null;
 			itemsByID = null;
 			itemsNonUrgent = null;
