@@ -482,8 +482,13 @@ public class PeerMessageQueue {
 			if(itemsByID != null) {
 				list = itemsByID.get(id);
 				if(list != null) {
-					if(list.remove(item))
+					if(list.remove(item)) {
+						if(list.items.isEmpty()) {
+							nonEmptyItemsWithID.remove(list);
+							addToEmptyBackward(list);
+						}
 						return true;
+					}
 				}
 			}
 			if(itemsNonUrgent != null)
