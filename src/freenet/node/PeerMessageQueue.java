@@ -147,7 +147,7 @@ public class PeerMessageQueue {
 			while(it.hasMoreElements()) {
 				Items compare = it.nextElement();
 				if(compare.timeLastSent >= list.timeLastSent) {
-					nonEmptyItemsWithID.insertPrev(list, compare);
+					nonEmptyItemsWithID.insertPrev(compare, list);
 					return;
 				}
 			}
@@ -167,7 +167,7 @@ public class PeerMessageQueue {
 			while(it.hasMoreElements()) {
 				Items compare = it.nextElement();
 				if(compare.timeLastSent <= list.timeLastSent) {
-					nonEmptyItemsWithID.insertNext(list, compare);
+					nonEmptyItemsWithID.insertNext(compare, list);
 					return;
 				}
 			}
@@ -181,7 +181,7 @@ public class PeerMessageQueue {
 			while(it.hasMoreElements()) {
 				Items compare = it.nextElement();
 				if(compare.timeLastSent <= list.timeLastSent) {
-					emptyItemsWithID.insertNext(list, compare);
+					emptyItemsWithID.insertNext(compare, list);
 					return;
 				}
 			}
