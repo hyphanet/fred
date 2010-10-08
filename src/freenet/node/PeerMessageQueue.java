@@ -374,7 +374,6 @@ public class PeerMessageQueue {
 					else
 						list = prev.getNext();
 					messages.add(item);
-					list.timeLastSent = now;
 					addedNone = false;
 					if(oversize) return size;
 				}
