@@ -320,9 +320,15 @@ public class PeerMessageQueue {
 						tracker.timeLastSent = now;
 						// Demote the corresponding tracker to maintain round-robin.
 						if(tracker.items.isEmpty()) {
-							emptyItemsWithID.remove(tracker);
-							addToEmptyBackward(tracker);
+							// FIXME remove paranoia
+							if(emptyItemsWithID == null) {
+								Logger.error(this, "Tracker empty yet non empty items list does not exist?!?");
+							} else {
+								emptyItemsWithID.remove(tracker);
+								addToEmptyBackward(tracker);
+							}
 						} else {
+							// FIXME remove paranoia
 							if(nonEmptyItemsWithID == null) { 
 								Logger.error(this, "Tracker not empty yet non empty items with ID does not exist?!?");
 							} else {
