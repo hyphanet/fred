@@ -34,7 +34,7 @@ public abstract class ClientRequester {
 	/** The RequestClient, used to determine whether this request is 
 	 * persistent, and also we round-robin between different RequestClient's
 	 * in scheduling within a given priority class and retry count. */
-	protected final RequestClient client;
+	protected RequestClient client;
 	/** The set of queued low-level requests or inserts for this request or
 	 * insert. */
 	protected final SendableRequestSet requests;
@@ -184,6 +184,18 @@ public abstract class ClientRequester {
 				// Obviously broken, possibly associated with a busted FCPClient.
 				// Lets fail it.
 				Logger.error(this, "Stored and active "+this+" but client is null!");
+				// REDFLAG this leaks a RequestClient. IMHO this is better than the alternative.
+				this.client = new RequestClient() {
+
+					public boolean persistent() {
+						return true;
+					}
+
+					public void removeFrom(ObjectContainer container) {
+						container.delete(this);
+					}
+					
+				};
 				cancel(container, context);
 				return;
 			} else if(container.ext().isStored(this) && !container.ext().isActive(this)) {
