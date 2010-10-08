@@ -22,12 +22,14 @@ import freenet.support.MutableBoolean;
 public class PeerMessageQueue {
 
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -117,8 +119,8 @@ public class PeerMessageQueue {
 					it.remove();
 					moved++;
 				} else {
-					if(logMINOR && moved > 0)
-						Logger.minor(this, "Moved "+moved+" items to urgent round-robin");
+					if(logDEBUG && moved > 0)
+						Logger.debug(this, "Moved "+moved+" items to urgent round-robin");
 					return;
 				}
 			}
@@ -286,6 +288,7 @@ public class PeerMessageQueue {
 			assert(maxSize >= minSize);
 			if(size < 0) size = -size; // FIXME remove extra paranoia
 			if(itemsNonUrgent == null) return size;
+			int added = 0;
 			for(ListIterator<MessageItem> items = itemsNonUrgent.listIterator();items.hasNext();) {
 				MessageItem item = items.next();
 				int thisSize = item.getLength();
@@ -296,6 +299,8 @@ public class PeerMessageQueue {
 						oversize = true;
 					} else {
 						// Send what we have so far.
+						if(logDEBUG && added != 0)
+							Logger.debug(this, "Returning with "+added+" non-urgent messages (have more but they don't fit)");
 						return -size;
 					}
 				}
@@ -321,8 +326,14 @@ public class PeerMessageQueue {
 						}
 					}
 				}
-				if(oversize) return size;
+				added++;
+				if(oversize) {
+					if(logDEBUG) Logger.debug(this, "Returning with non-urgent oversize message");
+					return size;
+				}
 			}
+			if(logDEBUG && added != 0)
+				Logger.debug(this, "Returning with "+added+" non-urgent messages (all gone)");
 			return size;
 		}
 
@@ -348,6 +359,7 @@ public class PeerMessageQueue {
 			assert(minSize >= 0);
 			assert(maxSize >= minSize);
 			if(size < 0) size = -size; // FIXME remove extra paranoia
+			int added = 0;
 			while(true) {
 				boolean addedNone = true;
 				int lists = 0;
@@ -364,6 +376,8 @@ public class PeerMessageQueue {
 							oversize = true;
 						} else {
 							// Send what we have so far.
+							if(logDEBUG && added != 0)
+								Logger.debug(this, "Added "+added+" urgent messages, could add more but out of space at "+size);
 							return -size;
 						}
 					}
@@ -384,9 +398,16 @@ public class PeerMessageQueue {
 						list = prev.getNext();
 					messages.add(item);
 					addedNone = false;
-					if(oversize) return size;
+					if(oversize) {
+						if(logDEBUG) Logger.debug(this, "Returning with oversize urgent message");
+						return size;
+					}
 				}
-				if(addedNone) return size;
+				if(addedNone) {
+					if(logDEBUG && added != 0)
+						Logger.debug(this, "Added "+added+" urgent messages, size now "+size+" no more queued at this priority");
+					return size;
+				}
 			}
 		}
 
@@ -432,8 +453,8 @@ public class PeerMessageQueue {
 					emptyItemsWithID.remove(list);
 					removed++;
 				} else {
-					if(logMINOR && removed > 0)
-						Logger.minor(this, "Removed "+removed+" old empty UID trackers");
+					if(logDEBUG && removed > 0)
+						Logger.debug(this, "Removed "+removed+" old empty UID trackers");
 					break;
 				}
 			}
