@@ -544,10 +544,10 @@ public class FCPClient {
 		container.activate(completedUnackedRequests, 2);
 		container.activate(clientRequestsByIdentifier, 2);
 		container.activate(lowLevelClient, 2);
-		assert lowLevelClient != null;
 		assert runningPersistentRequests != null;
 		assert completedUnackedRequests != null;
 		assert clientRequestsByIdentifier != null;
+		assert lowLevelClient != null;
 	}
 
 	public boolean objectCanNew(ObjectContainer container) {
@@ -555,7 +555,14 @@ public class FCPClient {
 			Logger.error(this, "Not storing non-persistent request in database", new Exception("error"));
 			return false;
 		}
+		if(lowLevelClient == null)
+			throw new NullPointerException(); // Better it happens here ...
 		return true;
+	}
+	
+	public void objectCanUpdate(ObjectContainer container) {
+		if(lowLevelClient == null)
+			throw new NullPointerException(); // Better it happens here ...
 	}
 
 	public Whiteboard getWhiteboard(){
