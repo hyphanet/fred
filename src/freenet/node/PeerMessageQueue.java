@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -61,6 +62,9 @@ public class PeerMessageQueue {
 		/** Using DoublyLinkedListImpl so that we can move stuff around without the 
 		 * iterator failing, and also delete efficiently. */
 		DoublyLinkedListImpl<Items> nonEmptyItemsWithID;
+		/** Items which have been sent within the last 10 minutes, so we need to track
+		 * them for good round-robin, but which we don't have anything queued on right now. */
+		DoublyLinkedListImpl<Items> emptyItemsWithID;
 		Map<Long, Items> itemsByID;
 		/** Non-urgent messages. Same order as in Items, so stuff to send first is at
 		 * the beginning. */
@@ -100,11 +104,69 @@ public class PeerMessageQueue {
 							// already in progress; it is fairer to send the new item first.
 							nonEmptyItemsWithID.unshift(list);
 							itemsByID.put(id, list);
+						} else {
+							if(list.items.isEmpty()) {
+								// It already exists, so it has a valid time.
+								// Which is probably in the past, so use Forward.
+								moveFromEmptyToNonEmptyForward(list);
+							}
 						}
 					}
 					list.addLast(item);
 					it.remove();
 				} else return;
+			}
+		}
+
+		private void moveFromEmptyToNonEmptyForward(Items list) {
+			// Presumably is in emptyItemsWithID
+			assert(list.items.isEmpty());
+			if(logMINOR) {
+				if(list.getParent() == nonEmptyItemsWithID) {
+					Logger.error(this, "Already in non-empty yet empty?!");
+					return;
+				}
+			}
+			emptyItemsWithID.remove(list);
+			addToNonEmptyForward(list);
+		}
+		
+		private void addToNonEmptyForward(Items list) {
+			Enumeration<Items> it = nonEmptyItemsWithID.elements();
+			while(it.hasMoreElements()) {
+				Items compare = it.nextElement();
+				if(compare.timeLastSent >= list.timeLastSent) {
+					nonEmptyItemsWithID.insertPrev(list, compare);
+					return;
+				}
+			}
+		}
+
+		private void moveFromEmptyToNonEmptyBackward(Items list) {
+			// Presumably is in emptyItemsWithID
+			emptyItemsWithID.remove(list);
+			addToNonEmptyBackward(list);
+		}
+		
+		private void addToNonEmptyBackward(Items list) {
+			Enumeration<Items> it = nonEmptyItemsWithID.reverseElements();
+			while(it.hasMoreElements()) {
+				Items compare = it.nextElement();
+				if(compare.timeLastSent <= list.timeLastSent) {
+					nonEmptyItemsWithID.insertNext(list, compare);
+					return;
+				}
+			}
+		}
+
+		private void addToEmptyBackward(Items list) {
+			Enumeration<Items> it = emptyItemsWithID.reverseElements();
+			while(it.hasMoreElements()) {
+				Items compare = it.nextElement();
+				if(compare.timeLastSent <= list.timeLastSent) {
+					nonEmptyItemsWithID.insertNext(list, compare);
+					return;
+				}
 			}
 		}
 
@@ -125,6 +187,12 @@ public class PeerMessageQueue {
 					list = new Items(id);
 					nonEmptyItemsWithID.unshift(list);
 					itemsByID.put(id, list);
+				} else {
+					if(list.items.isEmpty()) {
+						// It already exists, so it has a valid time.
+						// Which is probably in the past, so use Forward.
+						moveFromEmptyToNonEmptyForward(list);
+					}
 				}
 			}
 			list.addFirst(item);
@@ -222,9 +290,15 @@ public class PeerMessageQueue {
 					long id = item.getID();
 					Items tracker = itemsByID.get(id);
 					if(tracker != null) {
+						tracker.timeLastSent = now;
 						// Demote the corresponding tracker to maintain round-robin.
-						nonEmptyItemsWithID.remove(tracker);
-						nonEmptyItemsWithID.push(tracker);
+						if(tracker.items.isEmpty()) {
+							emptyItemsWithID.remove(tracker);
+							addToEmptyBackward(tracker);
+						} else {
+							nonEmptyItemsWithID.remove(tracker);
+							addToNonEmptyBackward(tracker);
+						}
 					}
 				}
 				if(oversize) return size;
@@ -261,25 +335,6 @@ public class PeerMessageQueue {
 				lists += nonEmptyItemsWithID.size();
 				Items list = nonEmptyItemsWithID.head();
 				for(int i=0;i<lists && list != null;i++) {
-					Long id;
-					id = list.id;
-					
-					if(list.items.isEmpty()) {
-						if(list.timeLastSent != -1 && now - list.timeLastSent > FORGET_AFTER) {
-							// Remove it
-							Items prev = list.getPrev();
-							nonEmptyItemsWithID.remove(list);
-							itemsByID.remove(id);
-							if(prev == null)
-								list = nonEmptyItemsWithID.head();
-							else
-								list = prev.getNext();
-						} else {
-							// Skip it
-							list = list.getNext();
-						}
-						continue;
-					}
 					MessageItem item = list.items.getFirst();
 					int thisSize = item.getLength();
 					boolean oversize = false;
@@ -297,7 +352,12 @@ public class PeerMessageQueue {
 					// Move to end of list.
 					Items prev = list.getPrev();
 					nonEmptyItemsWithID.remove(list);
-					nonEmptyItemsWithID.push(list);
+					list.timeLastSent = now;
+					if(!list.items.isEmpty()) {
+						addToNonEmptyBackward(list);
+					} else {
+						addToEmptyBackward(list);
+					}
 					if(prev == null)
 						list = nonEmptyItemsWithID.head();
 					else
@@ -325,6 +385,7 @@ public class PeerMessageQueue {
 			synchronized(PeerMessageQueue.this) {
 				// Urgent messages first.
 				moveToUrgent(now);
+				clearOldNonUrgent(now);
 				size = addUrgentMessages(size, minSize, maxSize, now, messages);
 				if(size < 0) {
 					size = -size;
@@ -338,6 +399,18 @@ public class PeerMessageQueue {
 					incomplete.value = true;
 				}
 				return size;
+			}
+		}
+
+		private void clearOldNonUrgent(long now) {
+			while(true) {
+				if(emptyItemsWithID.isEmpty()) return;
+				Items list = emptyItemsWithID.head();
+				if(list.timeLastSent == -1 || now - list.timeLastSent > FORGET_AFTER) {
+					itemsByID.remove(list);
+					emptyItemsWithID.remove(list);
+				} else
+					break;
 			}
 		}
 
