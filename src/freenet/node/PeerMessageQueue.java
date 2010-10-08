@@ -60,7 +60,7 @@ public class PeerMessageQueue {
 
 		/** Using DoublyLinkedListImpl so that we can move stuff around without the 
 		 * iterator failing, and also delete efficiently. */
-		DoublyLinkedListImpl<Items> itemsWithID;
+		DoublyLinkedListImpl<Items> nonEmptyItemsWithID;
 		Map<Long, Items> itemsByID;
 		/** Non-urgent messages. Same order as in Items, so stuff to send first is at
 		 * the beginning. */
@@ -86,9 +86,9 @@ public class PeerMessageQueue {
 					Items list;
 					if(itemsByID == null) {
 						itemsByID = new HashMap<Long, Items>();
-						itemsWithID = new DoublyLinkedListImpl<Items>();
+						nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 						list = new Items(id);
-						itemsWithID.push(list);
+						nonEmptyItemsWithID.push(list);
 						itemsByID.put(id, list);
 					} else {
 						list = itemsByID.get(id);
@@ -98,7 +98,7 @@ public class PeerMessageQueue {
 							// addLast() is typically called by sendAsync().
 							// If there are later items they are probably block transfers that are
 							// already in progress; it is fairer to send the new item first.
-							itemsWithID.unshift(list);
+							nonEmptyItemsWithID.unshift(list);
 							itemsByID.put(id, list);
 						}
 					}
@@ -115,15 +115,15 @@ public class PeerMessageQueue {
 			Items list;
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, Items>();
-				itemsWithID = new DoublyLinkedListImpl<Items>();
+				nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 				list = new Items(id);
-				itemsWithID.push(list);
+				nonEmptyItemsWithID.push(list);
 				itemsByID.put(id, list);
 			} else {
 				list = itemsByID.get(id);
 				if(list == null) {
 					list = new Items(id);
-					itemsWithID.unshift(list);
+					nonEmptyItemsWithID.unshift(list);
 					itemsByID.put(id, list);
 				}
 			}
@@ -132,8 +132,8 @@ public class PeerMessageQueue {
 
 		public int size() {
 			int size = 0;
-			if(itemsWithID != null)
-				for(Items items : itemsWithID)
+			if(nonEmptyItemsWithID != null)
+				for(Items items : nonEmptyItemsWithID)
 					size += items.items.size();
 			if(itemsNonUrgent != null)
 				size += itemsNonUrgent.size();
@@ -141,8 +141,8 @@ public class PeerMessageQueue {
 		}
 
 		public int addTo(MessageItem[] output, int ptr) {
-			if(itemsWithID != null)
-				for(Items list : itemsWithID)
+			if(nonEmptyItemsWithID != null)
+				for(Items list : nonEmptyItemsWithID)
 					for(MessageItem item : list.items)
 						output[ptr++] = item;
 			if(itemsNonUrgent != null)
@@ -156,8 +156,8 @@ public class PeerMessageQueue {
 				t = Math.min(t, itemsNonUrgent.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
 				if(t <= now) return t;
 			}
-			if(itemsWithID != null) {
-				for(Items items : itemsWithID) {
+			if(nonEmptyItemsWithID != null) {
+				for(Items items : nonEmptyItemsWithID) {
 					if(items.items.size() == 0) continue;
 					// It is possible that something requeued isn't urgent, so check anyway.
 					t = Math.min(t, items.items.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
@@ -184,8 +184,8 @@ public class PeerMessageQueue {
 					if(length > maxSize) return length;
 				}
 			}
-			if(itemsWithID != null) {
-				for(Items list : itemsWithID) {
+			if(nonEmptyItemsWithID != null) {
+				for(Items list : nonEmptyItemsWithID) {
 					for(MessageItem item : list.items) {
 						int thisLen = item.getLength();
 						length += thisLen;
@@ -223,8 +223,8 @@ public class PeerMessageQueue {
 					Items tracker = itemsByID.get(id);
 					if(tracker != null) {
 						// Demote the corresponding tracker to maintain round-robin.
-						itemsWithID.remove(tracker);
-						itemsWithID.push(tracker);
+						nonEmptyItemsWithID.remove(tracker);
+						nonEmptyItemsWithID.push(tracker);
 					}
 				}
 				if(oversize) return size;
@@ -257,9 +257,9 @@ public class PeerMessageQueue {
 			while(true) {
 				boolean addedNone = true;
 				int lists = 0;
-				if(itemsWithID == null) return size;
-				lists += itemsWithID.size();
-				Items list = itemsWithID.head();
+				if(nonEmptyItemsWithID == null) return size;
+				lists += nonEmptyItemsWithID.size();
+				Items list = nonEmptyItemsWithID.head();
 				for(int i=0;i<lists && list != null;i++) {
 					Long id;
 					id = list.id;
@@ -268,10 +268,10 @@ public class PeerMessageQueue {
 						if(list.timeLastSent != -1 && now - list.timeLastSent > FORGET_AFTER) {
 							// Remove it
 							Items prev = list.getPrev();
-							itemsWithID.remove(list);
+							nonEmptyItemsWithID.remove(list);
 							itemsByID.remove(id);
 							if(prev == null)
-								list = itemsWithID.head();
+								list = nonEmptyItemsWithID.head();
 							else
 								list = prev.getNext();
 						} else {
@@ -296,10 +296,10 @@ public class PeerMessageQueue {
 					list.items.removeFirst();
 					// Move to end of list.
 					Items prev = list.getPrev();
-					itemsWithID.remove(list);
-					itemsWithID.push(list);
+					nonEmptyItemsWithID.remove(list);
+					nonEmptyItemsWithID.push(list);
 					if(prev == null)
-						list = itemsWithID.head();
+						list = nonEmptyItemsWithID.head();
 					else
 						list = prev.getNext();
 					messages.add(item);
@@ -342,7 +342,7 @@ public class PeerMessageQueue {
 		}
 
 		public void clear() {
-			itemsWithID = null;
+			nonEmptyItemsWithID = null;
 			itemsByID = null;
 			itemsNonUrgent = null;
 		}
@@ -385,8 +385,8 @@ public class PeerMessageQueue {
 		enqueuePrioritizedMessageItem(item);
 		int x = 0;
 		for(PrioQueue pq : queuesByPriority) {
-			if(pq.itemsWithID != null) {
-				for(PrioQueue.Items q : pq.itemsWithID)
+			if(pq.nonEmptyItemsWithID != null) {
+				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items) {
 						x += it.getLength() + 2;
 						if(x > 1024)
@@ -400,8 +400,8 @@ public class PeerMessageQueue {
 	public synchronized long getMessageQueueLengthBytes() {
 		long x = 0;
 		for(PrioQueue pq : queuesByPriority) {
-			if(pq.itemsWithID != null)
-				for(PrioQueue.Items q : pq.itemsWithID)
+			if(pq.nonEmptyItemsWithID != null)
+				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items)
 						x += it.getLength() + 2;
 		}
