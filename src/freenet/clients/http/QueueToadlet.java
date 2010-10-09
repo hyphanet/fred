@@ -1633,14 +1633,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		if(canRestart) {
 			deleteDiv.addChild("br");
-			deleteDiv.addChild("#", l10n("disableFilter"));
+			// FIXME: Split stuff with a permanent redirect to a separate grouping and use QueueToadlet.follow here?
+			String restartName = NodeL10n.getBase().getString(/*followRedirect ? "QueueToadlet.follow" : */"QueueToadlet.restart");
+			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", restartName });
 			HTMLNode input = deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] {"checkbox", "disableFilterData", "disableFilterData" });
 			if(disableFilterChecked) {
 				input.addAttribute("checked", "checked");
 			}
-			// FIXME: Split stuff with a permanent redirect to a separate grouping and use QueueToadlet.follow here?
-			String restartName = NodeL10n.getBase().getString(/*followRedirect ? "QueueToadlet.follow" : */"QueueToadlet.restart");
-			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", restartName });
+			deleteDiv.addChild("#", l10n("disableFilter"));
 		}
 		return deleteDiv;
 	}
