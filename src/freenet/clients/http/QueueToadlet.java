@@ -1632,6 +1632,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", NodeL10n.getBase().getString("QueueToadlet.removeFilesFromList") });
 		}
 		if(canRestart) {
+			deleteDiv.addChild("br");
 			deleteDiv.addChild("#", l10n("disableFilter"));
 			HTMLNode input = deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] {"checkbox", "disableFilterData", "disableFilterData" });
 			if(disableFilterChecked) {
