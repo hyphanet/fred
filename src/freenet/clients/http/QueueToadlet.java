@@ -239,6 +239,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						HTMLNode line = infoList.addChild("li");
 						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.sizeLabel") + " " + size);
 					}
+					infoList.addChild("#", l10n("deleteFileFromTemp"));
 					infoList.addChild("input", new String[] { "type", "name", "value", "checked" },
 							new String[] { "checkbox", "identifier-"+part, identifier, "checked" });
 				}
