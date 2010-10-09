@@ -1732,7 +1732,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		HTMLNode table = form.addChild("table", "class", "requests");
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
-		headerRow.addChild("th");
 
 		// Checkbox header
 		headerRow.addChild("th"); // No description
