@@ -3301,7 +3301,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if (bloomSize == -1)
 				bloomSize = (int) Math.min(maxTotalDatastoreSize / 2048, Integer.MAX_VALUE);
 			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
-			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild
+			        : bloomSize / 6 * 8;
 			// Increase size by 10% to allow some space for removing keys. Even a 2-bit counting filter gets saturated.
 			bloomFilterSizeInM *= 1.1;
 
@@ -3422,7 +3422,7 @@ public class Node implements TimeSkewDetectorCallback {
 		try {
 			int bloomSize = (int) Math.min(maxTotalClientCacheSize / 2048, Integer.MAX_VALUE);
 			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
-			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild
+			        : (bloomSize) / 6 * 8;
 
 			final CHKStore chkClientcache = new CHKStore();
 			final SaltedHashFreenetStore<CHKBlock> chkDataFS = makeClientcache(bloomFilterSizeInM, "CHK", true, chkClientcache, dontResizeOnStart, clientCacheMasterKey);
