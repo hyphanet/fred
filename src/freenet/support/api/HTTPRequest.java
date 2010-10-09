@@ -181,4 +181,6 @@ public interface HTTPRequest {
 	/** Get the length of the original uploaded raw data for a POST. */
 	public int getContentLength();
 
+	public String[] getParts();
+
 }

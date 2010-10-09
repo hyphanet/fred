@@ -780,4 +780,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return Integer.parseInt(slen);
 	}
 
+	public String[] getParts() {
+		return parts.keySet().toArray(new String[parts.size()]);
+	}
+
 }
