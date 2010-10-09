@@ -210,15 +210,17 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				HTMLNode deleteForm = ctx.addFormChild(deleteNode, path(), "queueDeleteForm");
 				HTMLNode infoList = deleteForm.addChild("ul");
 				
-				for(String identifier : request.getParts()) {
-					if(!identifier.startsWith("identifier-")) continue;
-					identifier = identifier.substring("identifier-".length());
-					if(identifier.length() > MAX_IDENTIFIER_LENGTH) continue;
+				for(String part : request.getParts()) {
+					if(!part.startsWith("identifier-")) continue;
+					part = part.substring("identifier-".length());
+					if(part.length() > 50) continue; // It's just a number 
 					
-					String filename = request.getPartAsString("filename-"+identifier, MAX_FILENAME_LENGTH);
-					String keyString = request.getPartAsString("key-"+identifier, MAX_KEY_LENGTH);
-					String type = request.getPartAsString("type-"+identifier, MAX_TYPE_LENGTH);
-					String size = request.getPartAsString("size-"+identifier, 50);
+					String identifier = request.getPartAsString("identifier-"+part, MAX_IDENTIFIER_LENGTH);
+					if(identifier == null) continue;
+					String filename = request.getPartAsString("filename-"+part, MAX_FILENAME_LENGTH);
+					String keyString = request.getPartAsString("key-"+part, MAX_KEY_LENGTH);
+					String type = request.getPartAsString("type-"+part, MAX_TYPE_LENGTH);
+					String size = request.getPartAsString("size-"+part, 50);
 					HTMLNode line = infoList.addChild("li");
 					if(filename != null) {
 						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.filenameLabel")+" ");
@@ -236,7 +238,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.sizeLabel") + " " + size);
 					}
 					line.addChild("input", new String[] { "type", "name", "value", "checked" },
-							new String[] { "checkbox", "identifier-"+identifier, "true", "checked" });
+							new String[] { "checkbox", "identifier-"+part, identifier, "checked" });
 				}
 				
 				content.addChild("p", l10n("confirmDelete"));
@@ -256,7 +258,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					for(String part : request.getParts()) {
 						if(!part.startsWith("identifier-")) continue;
 						identifier = part.substring("identifier-".length());
-						if(identifier.length() > MAX_IDENTIFIER_LENGTH) continue;
+						if(identifier.length() > 50) continue;
+						identifier = request.getPartAsString(part, MAX_IDENTIFIER_LENGTH);
 						if(logMINOR) Logger.minor(this, "Removing "+identifier);
 						fcp.removeGlobalRequestBlocking(identifier);
 					}
@@ -281,7 +284,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				for(String part : request.getParts()) {
 					if(!part.startsWith("identifier-")) continue;
 					identifier = part.substring("identifier-".length());
-					if(identifier.length() > MAX_IDENTIFIER_LENGTH) continue;
+					if(identifier.length() > 50) continue;
+					identifier = request.getPartAsString(part, MAX_IDENTIFIER_LENGTH);
 					if(logMINOR) Logger.minor(this, "Restarting "+identifier);
 					try {
 						fcp.restartBlocking(identifier, filterData);
@@ -409,7 +413,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				for(String part : request.getParts()) {
 					if(!part.startsWith("identifier-")) continue;
 					identifier = part.substring("identifier-".length());
-					if(identifier.length() > MAX_IDENTIFIER_LENGTH) continue;
+					if(identifier.length() > 50) continue;
+					identifier = request.getPartAsString(part, MAX_IDENTIFIER_LENGTH);
 					try {
 						fcp.modifyGlobalRequestBlocking(identifier, null, newPriority);
 					} catch (DatabaseDisabledException e) {
@@ -1801,10 +1806,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.compatibilityMode"));
 			}
 		}
+		int x = 0;
 		for (ClientRequest clientRequest : requests) {
 			container.activate(clientRequest, 1);
 			HTMLNode requestRow = table.addChild("tr", "class", "priority" + clientRequest.getPriority());
-			requestRow.addChild(createCheckboxCell(clientRequest, container));
+			requestRow.addChild(createCheckboxCell(clientRequest, container, x++));
 
 			for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
 				int column = columns[columnIndex];
@@ -1871,11 +1877,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return formDiv;
 	}
 
-	private HTMLNode createCheckboxCell(ClientRequest clientRequest, ObjectContainer container) {
+	private HTMLNode createCheckboxCell(ClientRequest clientRequest, ObjectContainer container, int counter) {
 		HTMLNode cell = new HTMLNode("td", "class", "checkbox-cell");
 		String identifier = clientRequest.getIdentifier();
 		cell.addChild("input", new String[] { "type", "name", "value" },
-				new String[] { "checkbox", "identifier-"+identifier, "true" } );
+				new String[] { "checkbox", "identifier-"+counter, identifier } );
 		FreenetURI uri;
 		long size = -1;
 		String filename = null;
@@ -1890,15 +1896,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		if(uri != null) {
 			cell.addChild("input", new String[] { "type", "name", "value" },
-					new String[] { "hidden", "key-"+identifier, uri.toASCIIString() });
+					new String[] { "hidden", "key-"+counter, uri.toASCIIString() });
 			filename = uri.getPreferredFilename();
 		}
 		if(size != -1)
 			cell.addChild("input", new String[] { "type", "name", "value" },
-					new String[] { "hidden", "size-"+identifier, Long.toString(size) });
+					new String[] { "hidden", "size-"+counter, Long.toString(size) });
 		if(filename != null)
 			cell.addChild("input", new String[] { "type", "name", "value" },
-					new String[] { "hidden", "size-"+identifier, filename });
+					new String[] { "hidden", "size-"+counter, filename });
 		return cell;
 	}
 
