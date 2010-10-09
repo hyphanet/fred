@@ -278,7 +278,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				writePermanentRedirect(ctx, "Done", path());
 				return;
 			} else if(request.isPartSet("restart_request") && (request.getPartAsString("restart_request", 32).length() > 0)) {
-				boolean filterData = request.isPartSet("filterData");
+				boolean disableFilterData = request.isPartSet("disableFilterData");
+				
 				
 				String identifier = "";
 				for(String part : request.getParts()) {
@@ -288,7 +289,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					identifier = request.getPartAsString(part, MAX_IDENTIFIER_LENGTH);
 					if(logMINOR) Logger.minor(this, "Restarting "+identifier);
 					try {
-						fcp.restartBlocking(identifier, filterData);
+						fcp.restartBlocking(identifier, disableFilterData);
 					} catch (DatabaseDisabledException e) {
 						sendPersistenceDisabledError(ctx);
 						return;

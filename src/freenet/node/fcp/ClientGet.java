@@ -1016,7 +1016,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	@Override
-	public boolean restart(boolean filterData, ObjectContainer container, ClientContext context) {
+	public boolean restart(ObjectContainer container, ClientContext context, final boolean disableFilterData) {
 		if(!canRestart()) return false;
 		FreenetURI redirect;
 		synchronized(this) {
@@ -1046,12 +1046,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				container.activate(fctx, 1);
 				container.activate(fctx.filterData, 1);
 			}
-			fctx.filterData = filterData;
+			if(disableFilterData)
+				fctx.filterData = false;
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
 		try {
-			if(getter.restart(redirect, filterData, container, context)) {
+			if(getter.restart(redirect, fctx.filterData, container, context)) {
 				synchronized(this) {
 					if(redirect != null) {
 						if(persistenceType == PERSIST_FOREVER)

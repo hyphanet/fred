@@ -488,7 +488,7 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	@Override
-	public boolean restart(boolean filterData, ObjectContainer container, ClientContext context) {
+	public boolean restart(ObjectContainer container, ClientContext context, final boolean disableFilterData) {
 		if(!canRestart()) return false;
 		setVarsRestart(container);
 		try {
