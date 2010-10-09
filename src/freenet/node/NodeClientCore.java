@@ -875,9 +875,16 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		public void completed(boolean success);
 	}
+	
+	long makeUID() {
+		while(true) {
+			long uid = random.nextLong();
+			if(uid != -1) return uid;
+		}
+	}
 
 	public void asyncGet(Key key, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache) {
-		final long uid = random.nextLong();
+		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
 		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET);
 		if(!node.lockUID(uid, isSSK, false, false, true, tag)) {
@@ -975,7 +982,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 */
 	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
-		long uid = random.nextLong();
+		long uid = makeUID();
 		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL);
 		if(!node.lockUID(uid, false, false, false, true, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
@@ -1098,7 +1105,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
-		long uid = random.nextLong();
+		long uid = makeUID();
 		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL);
 		if(!node.lockUID(uid, true, false, false, true, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
@@ -1232,7 +1239,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		byte[] headers = block.getHeaders();
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
 		CHKInsertSender is;
-		long uid = random.nextLong();
+		long uid = makeUID();
 		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL);
 		if(!node.lockUID(uid, false, true, false, true, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
@@ -1351,7 +1358,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public void realPutSSK(SSKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) throws LowLevelPutException {
 		SSKInsertSender is;
-		long uid = random.nextLong();
+		long uid = makeUID();
 		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL);
 		if(!node.lockUID(uid, true, true, false, true, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
