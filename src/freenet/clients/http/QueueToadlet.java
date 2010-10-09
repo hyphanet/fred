@@ -1319,9 +1319,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "completedDownloadToTemp");
 			HTMLNode completedDownloadsToTempContent = pageMaker.getInfobox("completed_requests", NodeL10n.getBase().getString("QueueToadlet.completedDinTempDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToTemp.size()) }), contentNode, "request-completed", false);
 			if (advancedModeEnabled) {
-				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_IDENTIFIER, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY, LIST_COMPAT_MODE }, priorityClasses, advancedModeEnabled, false, container, "completed-temp", false, false, false));
+				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY, LIST_COMPAT_MODE }, priorityClasses, advancedModeEnabled, false, container, "completed-temp", false, false, false));
 			} else {
-				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_SIZE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "completed-temp", false, false, false));
+				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_RECOMMEND, LIST_SIZE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "completed-temp", false, false, false));
 			}
 		}
 
@@ -1329,9 +1329,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "completedDownloadToDisk");
 			HTMLNode completedToDiskInfoboxContent = pageMaker.getInfobox("completed_requests", NodeL10n.getBase().getString("QueueToadlet.completedDinDownloadDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToDisk.size()) }), contentNode, "request-completed", false);
 			if (advancedModeEnabled) {
-				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY, LIST_COMPAT_MODE }, priorityClasses, advancedModeEnabled, false, container, "completed-disk", true, false, false));
+				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY, LIST_COMPAT_MODE }, priorityClasses, advancedModeEnabled, false, container, "completed-disk", true, false, false));
 			} else {
-				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "completed-disk", true, false, false));
+				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "completed-disk", true, false, false));
 			}
 		}
 
@@ -1339,9 +1339,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "completedUpload");
 			HTMLNode completedUploadInfoboxContent = pageMaker.getInfobox("completed_requests", NodeL10n.getBase().getString("QueueToadlet.completedU", new String[]{ "size" }, new String[]{ String.valueOf(completedUpload.size()) }), contentNode, "download-completed", false);
 			if (advancedModeEnabled) {
-				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "completed-upload-file", false, false, false));
+				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "completed-upload-file", false, false, false));
 			} else  {
-				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "completed-upload-file", false, false, false));
+				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "completed-upload-file", false, false, false));
 			}
 		}
 
@@ -1349,9 +1349,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "completedDirUpload");
 			HTMLNode completedUploadDirContent = pageMaker.getInfobox("completed_requests", NodeL10n.getBase().getString("QueueToadlet.completedUDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDirUpload.size()) }), contentNode, "download-completed", false);
 			if (advancedModeEnabled) {
-				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_CHECKBOX, LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "completed-upload-dir", false, false, false));
+				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "completed-upload-dir", false, false, false));
 			} else {
-				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_CHECKBOX, LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "completed-upload-dir", false, false, false));
+				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "completed-upload-dir", false, false, false));
 			}
 		}
 
@@ -1359,9 +1359,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "failedDownload");
 			HTMLNode failedContent = pageMaker.getInfobox("failed_requests", NodeL10n.getBase().getString("QueueToadlet.failedD", new String[]{ "size" }, new String[]{ String.valueOf(failedDownload.size()) }), contentNode, "download-failed", false);
 			if (advancedModeEnabled) {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download", false, true, false));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download", false, true, false));
 			} else {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download", false, true, false));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download", false, true, false));
 			}
 		}
 
@@ -1369,9 +1369,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "failedUpload");
 			HTMLNode failedContent = pageMaker.getInfobox("failed_requests", NodeL10n.getBase().getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedUpload.size()) }), contentNode, "upload-failed", false);
 			if (advancedModeEnabled) {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_CHECKBOX, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "failed-upload-file", false, true, false));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "failed-upload-file", false, true, false));
 			} else {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_CHECKBOX, LIST_FILENAME, LIST_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "failed-upload-file", false, true, false));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "failed-upload-file", false, true, false));
 			}
 		}
 
@@ -1379,9 +1379,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "failedDirUpload");
 			HTMLNode failedContent = pageMaker.getInfobox("failed_requests", NodeL10n.getBase().getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedDirUpload.size()) }), contentNode, "upload-failed", false);
 			if (advancedModeEnabled) {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_CHECKBOX, LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "failed-upload-dir", false, true, false));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "failed-upload-dir", false, true, false));
 			} else {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_CHECKBOX, LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "failed-upload-dir", false, true, false));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "failed-upload-dir", false, true, false));
 			}
 		}
 
@@ -1406,9 +1406,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				failedContent.addChild("p", l10n("mimeProblemFetchAnyway"));
 				Collections.sort(getters, jobComparator);
 				if (advancedModeEnabled) {
-					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download-file-badmime", false, true, true));
+					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download-file-badmime", false, true, true));
 				} else {
-					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download-file-badmime", false, true, true));
+					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download-file-badmime", false, true, true));
 				}
 			}
 		}
@@ -1427,9 +1427,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				failedContent.addChild("p", l10n("mimeProblemFetchAnyway"));
 				Collections.sort(getters, jobComparator);
 				if (advancedModeEnabled) {
-					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download-file-unknownmime", false, true, true));
+					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download-file-unknownmime", false, true, true));
 				} else {
-					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download-file-unknownmime", false, true, true));
+					failedContent.addChild(createRequestTable(pageMaker, ctx, getters, new int[] { LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "failed-download-file-unknownmime", false, true, true));
 				}
 			}
 
@@ -1439,9 +1439,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "uncompletedDownload");
 			HTMLNode uncompletedContent = pageMaker.getInfobox("requests_in_progress", NodeL10n.getBase().getString("QueueToadlet.wipD", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDownload.size()) }), contentNode, "download-progressing", false);
 			if (advancedModeEnabled) {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY, LIST_COMPAT_MODE }, priorityClasses, advancedModeEnabled, false, container, "uncompleted-download", false, false, false));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY, LIST_COMPAT_MODE }, priorityClasses, advancedModeEnabled, false, container, "uncompleted-download", false, false, false));
 			} else {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_CHECKBOX, LIST_RECOMMEND, LIST_SIZE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "uncompleted-download", false, false, false));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_RECOMMEND, LIST_SIZE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container, "uncompleted-download", false, false, false));
 			}
 		}
 
@@ -1449,9 +1449,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "uncompletedUpload");
 			HTMLNode uncompletedContent = pageMaker.getInfobox("requests_in_progress", NodeL10n.getBase().getString("QueueToadlet.wipU", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedUpload.size()) }), contentNode, "upload-progressing", false);
 			if (advancedModeEnabled) {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_CHECKBOX, LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "uncompleted-upload-file", false, false, false));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "uncompleted-upload-file", false, false, false));
 			} else {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_CHECKBOX, LIST_FILENAME, LIST_SIZE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_KEY, LIST_PERSISTENCE }, priorityClasses, advancedModeEnabled, true, container, "uncompleted-upload-file", false, false, false));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_KEY, LIST_PERSISTENCE }, priorityClasses, advancedModeEnabled, true, container, "uncompleted-upload-file", false, false, false));
 			}
 		}
 
@@ -1459,9 +1459,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "uncompletedDirUpload");
 			HTMLNode uncompletedContent = pageMaker.getInfobox("requests_in_progress", NodeL10n.getBase().getString("QueueToadlet.wipDU", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDirUpload.size()) }), contentNode, "download-progressing upload-progressing", false);
 			if (advancedModeEnabled) {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_CHECKBOX, LIST_IDENTIFIER, LIST_FILES, LIST_PRIORITY, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "uncompleted-upload-dir", false, false, false));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_PRIORITY, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container, "uncompleted-upload-dir", false, false, false));
 			} else {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_CHECKBOX, LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_KEY, LIST_PERSISTENCE }, priorityClasses, advancedModeEnabled, true, container, "uncompleted-upload-dir", false, false, false));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_LAST_ACTIVITY, LIST_KEY, LIST_PERSISTENCE }, priorityClasses, advancedModeEnabled, true, container, "uncompleted-upload-dir", false, false, false));
 			}
 		}
 
@@ -1734,11 +1734,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
 		headerRow.addChild("th");
 
+		// Checkbox header
+		headerRow.addChild("th"); // No description
+		
 		for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
 			int column = columns[columnIndex];
-			if (column == LIST_CHECKBOX) {
-				headerRow.addChild("th"); // No description
-			} else if (column == LIST_IDENTIFIER) {
+			if (column == LIST_IDENTIFIER) {
 				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=id" : "?sortBy=id&reversed")).addChild("#", NodeL10n.getBase().getString("QueueToadlet.identifier"));
 			} else if (column == LIST_SIZE) {
 				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=size" : "?sortBy=size&reversed")).addChild("#", NodeL10n.getBase().getString("QueueToadlet.size"));
@@ -1773,12 +1774,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		for (ClientRequest clientRequest : requests) {
 			container.activate(clientRequest, 1);
 			HTMLNode requestRow = table.addChild("tr", "class", "priority" + clientRequest.getPriority());
+			requestRow.addChild(createCheckboxCell(clientRequest));
 
 			for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
 				int column = columns[columnIndex];
-				if (column == LIST_CHECKBOX) {
-					requestRow.addChild(createCheckboxCell(clientRequest));
-				} else if (column == LIST_IDENTIFIER) {
+				if (column == LIST_IDENTIFIER) {
 					if (clientRequest instanceof ClientGet) {
 						requestRow.addChild(createIdentifierCell(((ClientGet) clientRequest).getURI(container), clientRequest.getIdentifier(), false));
 					} else if (clientRequest instanceof ClientPutDir) {
