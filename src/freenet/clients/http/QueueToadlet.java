@@ -1619,7 +1619,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	
 	private HTMLNode createRecommendControl(PageMaker pageMaker, ToadletContext ctx) {
 		HTMLNode recommendDiv = new HTMLNode("div", "class", "request-recommend");
-		recommendDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends") });
+		recommendDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", NodeL10n.getBase().getString("QueueToadlet.recommendFilesToFriends") });
 		return recommendDiv;
 	}
 	
@@ -1627,9 +1627,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private HTMLNode createDeleteControl(PageMaker pageMaker, ToadletContext ctx, ObjectContainer container, boolean isDownloadToTemp, boolean canRestart, boolean disableFilterChecked) {
 		HTMLNode deleteDiv = new HTMLNode("div", "class", "request-delete");
 		if(isDownloadToTemp) {
-			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete_request", NodeL10n.getBase().getString("QueueToadlet.deleteFileFromTemp") });
+			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete_request", NodeL10n.getBase().getString("QueueToadlet.deleteFilesFromTemp") });
 		} else {
-			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", NodeL10n.getBase().getString("QueueToadlet.remove") });
+			deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", NodeL10n.getBase().getString("QueueToadlet.removeFilesFromList") });
 		}
 		if(canRestart) {
 			deleteDiv.addChild("#", l10n("disableFilter"));
