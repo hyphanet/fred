@@ -451,11 +451,12 @@ public abstract class ClientRequest {
 				clientTokenChanged = true;
 			}
 		}
-
+		
 		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
 			this.priorityClass = newPriorityClass;
 			ClientRequester r = getClientRequest();
 			if(persistenceType == PERSIST_FOREVER) container.activate(r, 1);
+			if(r.checkForBrokenClient(container, server.node.clientCore.clientContext)) return;
 			r.setPriorityClass(priorityClass, server.core.clientContext, container);
 			if(persistenceType == PERSIST_FOREVER) container.deactivate(r, 1);
 			priorityClassChanged = true;

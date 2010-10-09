@@ -178,6 +178,14 @@ public abstract class ClientRequester {
 			if(cancelled) return;
 			successfulBlocks++;
 		}
+		if(checkForBrokenClient(container, context)) return;
+		if(persistent()) container.store(this);
+		if(dontNotify) return;
+		notifyClients(container, context);
+	}
+
+	public boolean checkForBrokenClient(ObjectContainer container,
+			ClientContext context) {
 		if(container != null && client == null) {
 			if(container.ext().isStored(this) && container.ext().isActive(this)) {
 				// Data corruption?!?!?
@@ -197,17 +205,15 @@ public abstract class ClientRequester {
 					
 				};
 				cancel(container, context);
-				return;
+				return true;
 			} else if(container.ext().isStored(this) && !container.ext().isActive(this)) {
 				// Definitely a bug, hopefully a simple one.
 				Logger.error(this, "Not active in completedBlock on "+this, new Exception("error"));
-				return;
+				return true;
 			} else
 				throw new IllegalStateException("Client is null on persistent request "+this);
 		}
-		if(persistent()) container.store(this);
-		if(dontNotify) return;
-		notifyClients(container, context);
+		return false;
 	}
 
 	/** A block failed. Count it and notify our clients. */
