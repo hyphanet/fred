@@ -754,9 +754,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				
 				int x = 0;
 				for(String part : request.getParts()) {
-					if(!part.startsWith("key-")) continue;
-					String key = part.substring("key-".length());
-					if(key.length() > MAX_KEY_LENGTH) continue;
+					if(!part.startsWith("identifier-")) continue;
+					String key = request.getPartAsString("key-"+part.substring("identifier-".length()), MAX_KEY_LENGTH);
+					if(key == null || key.equals("")) continue;
 					form.addChild("#", NodeL10n.getBase().getString("QueueToadlet.key") + ":");
 					form.addChild("br");
 					form.addChild("#", key);
