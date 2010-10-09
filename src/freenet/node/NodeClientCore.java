@@ -876,6 +876,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		public void completed(boolean success);
 	}
 	
+	/** UID -1 is used internally, so never generate it. 
+	 * It is not however a problem if a node does use it; it will slow its messages down 
+	 * by them being round-robin'ed in PeerMessageQueue with messages with no UID, that's 
+	 * all. */
 	long makeUID() {
 		while(true) {
 			long uid = random.nextLong();
