@@ -204,6 +204,8 @@ public abstract class ClientRequester {
 					}
 					
 				};
+				container.store(client);
+				container.store(this);
 				cancel(container, context);
 				return true;
 			} else if(container.ext().isStored(this) && !container.ext().isActive(this)) {
