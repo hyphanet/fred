@@ -221,8 +221,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					String keyString = request.getPartAsString("key-"+part, MAX_KEY_LENGTH);
 					String type = request.getPartAsString("type-"+part, MAX_TYPE_LENGTH);
 					String size = request.getPartAsString("size-"+part, 50);
-					HTMLNode line = infoList.addChild("li");
 					if(filename != null) {
+						HTMLNode line = infoList.addChild("li");
 						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.filenameLabel")+" ");
 						if(keyString != null) {
 							line.addChild("a", "href", "/"+keyString, filename);
@@ -231,13 +231,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						}
 					}
 					if(type != null && !type.equals("")) {
+						HTMLNode line = infoList.addChild("li");
 						boolean finalized = request.isPartSet("finalizedType");
 						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { type }));
 					}
 					if(size != null) {
+						HTMLNode line = infoList.addChild("li");
 						line.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.sizeLabel") + " " + size);
 					}
-					line.addChild("input", new String[] { "type", "name", "value", "checked" },
+					infoList.addChild("input", new String[] { "type", "name", "value", "checked" },
 							new String[] { "checkbox", "identifier-"+part, identifier, "checked" });
 				}
 				
