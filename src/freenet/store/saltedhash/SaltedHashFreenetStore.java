@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.crypt.BlockCipher;

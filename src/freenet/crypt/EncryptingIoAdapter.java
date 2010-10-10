@@ -3,7 +3,7 @@ package freenet.crypt;
 import java.io.File;
 import java.io.IOException;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 
 import com.db4o.ext.Db4oIOException;
 import com.db4o.io.IoAdapter;

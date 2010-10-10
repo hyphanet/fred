@@ -39,7 +39,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.Db4o;

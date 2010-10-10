@@ -9,7 +9,7 @@ import java.security.MessageDigest;
 
 import net.i2p.util.NativeBigInteger;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 
 import com.db4o.ObjectContainer;
 
