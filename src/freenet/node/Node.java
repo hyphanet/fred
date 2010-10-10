@@ -2506,6 +2506,28 @@ public class Node implements TimeSkewDetectorCallback {
 
 		});
 
+		// periodically update rate estimates to display on the statistics page
+		getTicker().queueTimedJob(new Runnable() {
+				public void run() {
+					chkDatastore.updateRateEstimates();
+					chkDatacache.updateRateEstimates();
+					chkSlashdotcache.updateRateEstimates();
+					chkClientcache.updateRateEstimates();
+
+					sskDatastore.updateRateEstimates();
+					sskDatacache.updateRateEstimates();
+					sskSlashdotcache.updateRateEstimates();
+					sskClientcache.updateRateEstimates();
+
+					pubKeyDatastore.updateRateEstimates();
+					pubKeyDatacache.updateRateEstimates();
+					pubKeySlashdotcache.updateRateEstimates();
+					pubKeyClientcache.updateRateEstimates();
+
+					getTicker().queueTimedJob(this, StoreCallback.RATE_ESTIMATE_UPDATE_INTERVAL);
+				}
+			}, StoreCallback.RATE_ESTIMATE_UPDATE_INTERVAL);
+
 		nodeConfig.register("skipWrapperWarning", false, sortOrder++, true, false, "Node.skipWrapperWarning", "Node.skipWrapperWarningLong", new BooleanCallback() {
 
 			@Override

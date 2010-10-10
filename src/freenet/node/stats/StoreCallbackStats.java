@@ -64,11 +64,11 @@ public class StoreCallbackStats implements DataStoreStats {
 
 
 	public double accessRate(long nodeUptimeSeconds) {
-		return (1.0 * readRequests() / nodeUptimeSeconds);
+		return storeStats.accessRate();
 	}
 
 	public double writeRate(long nodeUptimeSeconds) {
-		return (1.0 * writes() / nodeUptimeSeconds);
+		return storeStats.writeRate();
 	}
 
 	public long falsePos() {

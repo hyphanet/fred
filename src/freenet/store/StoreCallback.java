@@ -10,6 +10,8 @@ import com.sleepycat.je.DatabaseException;
 import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
 
+import freenet.support.math.LinearRateEstimate;
+
 /**
  * @author toad
  */
@@ -76,6 +78,24 @@ public abstract class StoreCallback<T extends StorableBlock> {
 	
 	public long writes() {
 		return store.writes();
+	}
+
+	public static final int RATE_ESTIMATE_UPDATE_INTERVAL = 3000;    // milliseconds between samples
+	public static final int RATE_ESTIMATE_HISTORY_DURATION = 60000;  // duration over which the rate estimate is performed (in milliseconds)
+	private final LinearRateEstimate accessRateEstimate = new LinearRateEstimate(RATE_ESTIMATE_HISTORY_DURATION, RATE_ESTIMATE_UPDATE_INTERVAL);
+	private final LinearRateEstimate writeRateEstimate = new LinearRateEstimate(RATE_ESTIMATE_HISTORY_DURATION, RATE_ESTIMATE_UPDATE_INTERVAL);
+
+	public void updateRateEstimates() {
+		accessRateEstimate.report(hits()+misses());
+		writeRateEstimate.report(writes());
+	}
+
+	public double accessRate() {
+		return accessRateEstimate.currentValue();
+	}
+
+	public double writeRate() {
+		return writeRateEstimate.currentValue();
 	}
 
 	public long keyCount() {
