@@ -115,6 +115,16 @@ public abstract class ClientRequester {
 	 * Requests can be satisfied entirely from the datastore sometimes. */
 	protected boolean sentToNetwork;
 
+	protected synchronized void resetBlocks() {
+		totalBlocks = 0;
+		successfulBlocks = 0;
+		failedBlocks = 0;
+		fatallyFailedBlocks = 0;
+		minSuccessBlocks = 0;
+		blockSetFinalized = false;
+		sentToNetwork = false;
+	}
+	
 	/** The set of blocks has been finalised, total will not change any
 	 * more. Notify clients.
 	 * @param container The database. Must be non-null if the request or 

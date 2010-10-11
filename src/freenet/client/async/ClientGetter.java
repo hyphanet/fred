@@ -162,14 +162,15 @@ public class ClientGetter extends BaseClientGetter {
 					cancelled = false;
 					finished = false;
 				}
-				currentState = SingleFileFetcher.create(this, this,
-						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						true, container, context);
 				expectedMIME = null;
 				expectedSize = 0;
 				oldHashes = hashes;
 				finalBlocksRequired = 0;
 				finalBlocksTotal = 0;
+				resetBlocks();
+				currentState = SingleFileFetcher.create(this, this,
+						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
+						true, container, context);
 			}
 			if(persistent() && oldHashes != null) {
 				for(HashResult res : oldHashes) {
