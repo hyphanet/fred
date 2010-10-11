@@ -59,7 +59,12 @@ public class PeerMessageQueue {
 			}
 		}
 		
-		static final long FORGET_AFTER = 10*60*1000;
+		/** Maximum inter-packet time is 2 minutes for a block transfer (when we have bulk
+		 * flag this will be no higher, and it might be reduced to 30 seconds). Requests
+		 * can wait for 2 minutes now, maybe 10 minutes in future, but round-robin is 
+		 * intended for frequent messages - it doesn't matter in that case. So 3 minutes 
+		 * is plenty. */
+		static final long FORGET_AFTER = 3*60*1000;
 
 		/** Using DoublyLinkedListImpl so that we can move stuff around without the 
 		 * iterator failing, and also delete efficiently. */
