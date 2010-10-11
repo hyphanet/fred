@@ -165,6 +165,7 @@ public class ClientGetter extends BaseClientGetter {
 				expectedMIME = null;
 				expectedSize = 0;
 				oldHashes = hashes;
+				hashes = null;
 				finalBlocksRequired = 0;
 				finalBlocksTotal = 0;
 				resetBlocks();
