@@ -196,7 +196,7 @@ public abstract class ClientRequester {
 		notifyClients(container, context);
 	}
 	
-	UserAlert brokenClientAlert = new SimpleUserAlert(true, "Some broken downloads/uploads were cancelled. Please restart them.", "Some downloads/uploads were broken due to a bug (some time before 1287) causing unrecoverable database corruption. They have been cancelled. Please restart them from the Downloads or Uploads page.", "Some downloads/uploads were broken due to a pre-1287 bug, please restart them.", UserAlert.ERROR);
+	transient static final UserAlert brokenClientAlert = new SimpleUserAlert(true, "Some broken downloads/uploads were cancelled. Please restart them.", "Some downloads/uploads were broken due to a bug (some time before 1287) causing unrecoverable database corruption. They have been cancelled. Please restart them from the Downloads or Uploads page.", "Some downloads/uploads were broken due to a pre-1287 bug, please restart them.", UserAlert.ERROR);
 
 	public boolean checkForBrokenClient(ObjectContainer container,
 			ClientContext context) {
