@@ -67,8 +67,6 @@ public class NewPacketFormat implements PacketFormat {
 	private int watchListPointer = 0; //Index of the packet with the lowest sequence number
 	private int watchListOffset = nextSequenceNumber; //Sequence number of the packet at seqNumWatchList[watchListPointer]
 
-	private volatile int highestReceivedAck = -1;
-
 	private int usedBuffer = 0;
 	private int usedBufferOtherSide = 0;
 	private final Object bufferUsageLock = new Object();
@@ -138,8 +136,6 @@ public class NewPacketFormat implements PacketFormat {
 					nextRttPos = (nextRttPos + 1) % lastRtts.length;
 				}
 			}
-
-			if(highestReceivedAck < ack) highestReceivedAck = ack;
 		}
 
 		boolean dontAck = false;
