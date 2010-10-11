@@ -445,12 +445,15 @@ public class PeerMessageQueue {
 		int addPriorityMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean incomplete) {
 			synchronized(PeerMessageQueue.this) {
 				// Urgent messages first.
-				if(nonEmptyItemsWithID != null && nonEmptyItemsWithID.size() > 10)
-					Logger.minor(this, "Non-empty items with ID size is "+nonEmptyItemsWithID.size());
-				if(emptyItemsWithID != null && nonEmptyItemsWithID.size() > 10)
-					Logger.minor(this, "Empty items with ID size is "+emptyItemsWithID.size());
-				if(itemsByID != null && itemsByID.size() > 10)
-					Logger.minor(this, "Items by ID size is "+itemsByID.size());
+				if(logMINOR) {
+					int nonEmpty = nonEmptyItemsWithID == null ? 0 : nonEmptyItemsWithID.size();
+					int empty = emptyItemsWithID == null ? 0 : emptyItemsWithID.size();
+					int byID = itemsByID == null ? 0 : itemsByID.size();
+					if(nonEmpty + empty < byID) {
+						Logger.error(this, "Leak in Items? non empty = "+nonEmpty+" empty = "+empty+" by ID = "+byID+" on "+this);
+					} else if(logDEBUG)
+						Logger.minor(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
+				}
 				moveToUrgent(now);
 				clearOldNonUrgent(now);
 				size = addUrgentMessages(size, minSize, maxSize, now, messages);
