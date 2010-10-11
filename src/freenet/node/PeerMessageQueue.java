@@ -445,6 +445,12 @@ public class PeerMessageQueue {
 		int addPriorityMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean incomplete) {
 			synchronized(PeerMessageQueue.this) {
 				// Urgent messages first.
+				if(nonEmptyItemsWithID != null && nonEmptyItemsWithID.size() > 10)
+					Logger.minor(this, "Non-empty items with ID size is "+nonEmptyItemsWithID.size());
+				if(emptyItemsWithID != null && nonEmptyItemsWithID.size() > 10)
+					Logger.minor(this, "Empty items with ID size is "+emptyItemsWithID.size());
+				if(itemsByID != null && itemsByID.size() > 10)
+					Logger.minor(this, "Items by ID size is "+itemsByID.size());
 				moveToUrgent(now);
 				clearOldNonUrgent(now);
 				size = addUrgentMessages(size, minSize, maxSize, now, messages);
