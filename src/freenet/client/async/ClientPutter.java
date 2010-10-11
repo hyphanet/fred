@@ -506,6 +506,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @throws InsertException If the insert could not be restarted for some reason.
 	 * */
 	public boolean restart(boolean earlyEncode, ObjectContainer container, ClientContext context) throws InsertException {
+		checkForBrokenClient(container, context);
 		return start(earlyEncode, true, container, context);
 	}
 

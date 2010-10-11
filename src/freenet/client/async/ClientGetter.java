@@ -596,6 +596,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * @throws FetchException If something went wrong.
 	 */
 	public boolean restart(FreenetURI redirect, boolean filterData, ObjectContainer container, ClientContext context) throws FetchException {
+		checkForBrokenClient(container, context);
 		if(persistent()) {
 			container.activate(ctx, 1);
 			container.activate(ctx.filterData, 1);
