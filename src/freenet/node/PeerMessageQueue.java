@@ -483,7 +483,13 @@ public class PeerMessageQueue {
 					return;
 				}
 				if(list.timeLastSent == -1 || now - list.timeLastSent > FORGET_AFTER) {
-					itemsByID.remove(list);
+					// FIXME: Urgh, what a braindead API! remove(Object) on a Map<Long, Items> !?!?!?!
+					// Anyway we'd better check the return value!
+					Items old = itemsByID.remove(list.id);
+					if(old == null)
+						Logger.error(this, "List was not in the items by ID tracker: "+list.id);
+					else if(old != list)
+						Logger.error(this, "Different list in the items by ID tracker: "+old+" not "+list+" for "+list.id);
 					emptyItemsWithID.remove(list);
 					removed++;
 				} else {
