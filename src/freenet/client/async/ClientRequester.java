@@ -192,6 +192,7 @@ public abstract class ClientRequester {
 				// Obviously broken, possibly associated with a busted FCPClient.
 				// Lets fail it.
 				Logger.error(this, "Stored and active "+this+" but client is null!");
+				System.err.println("Cancelling download/upload because of bug causing database corruption. The bug has been fixed but the download/upload will be cancelled. You can restart it.");
 				// REDFLAG this leaks a RequestClient. IMHO this is better than the alternative.
 				this.client = new RequestClient() {
 
