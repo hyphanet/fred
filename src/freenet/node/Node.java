@@ -26,6 +26,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -4731,15 +4732,30 @@ public class Node implements TimeSkewDetectorCallback {
 			return recentlyCompletedIDs.contains(id);
 		}
 	}
+	
+	private ArrayList<Long> completedBuffer = new ArrayList<Long>();
+	
+	// Every this many slots, we tell all the PeerMessageQueue's to remove the old Items for the ID's in question.
+	// This prevents memory DoS amongst other things.
+	static final int COMPLETED_THRESHOLD = 128;
 
 	/**
 	 * A request completed (regardless of success).
 	 */
 	void completed(long id) {
+		Long[] list;
 		synchronized (recentlyCompletedIDs) {
 			recentlyCompletedIDs.push(id);
 			while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
 				recentlyCompletedIDs.pop();
+			completedBuffer.add(id);
+			if(completedBuffer.size() < COMPLETED_THRESHOLD) return;
+			list = completedBuffer.toArray(new Long[completedBuffer.size()]);
+			completedBuffer.clear();
+		}
+		for(PeerNode pn : peers.myPeers) {
+			if(!pn.isRoutingCompatible()) continue;
+			pn.removeUIDsFromMessageQueues(list);
 		}
 	}
 

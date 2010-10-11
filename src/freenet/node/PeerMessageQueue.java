@@ -536,7 +536,19 @@ public class PeerMessageQueue {
 				return false;
 		}
 
-
+		public void removeUIDs(Long[] list) {
+			if(itemsByID == null) return;
+			for(Long l : list) {
+				Items items = itemsByID.get(l);
+				if(items == null) continue;
+				if(items.items.isEmpty()) {
+					itemsByID.remove(l);
+					assert(emptyItemsWithID != null);
+					assert(items.getParent() == emptyItemsWithID);
+					emptyItemsWithID.remove(items);
+				}
+			}
+		}
 
 	}
 
@@ -706,6 +718,12 @@ public class PeerMessageQueue {
 		}
 		message.onFailed();
 		return true;
+	}
+
+	public synchronized void removeUIDsFromMessageQueues(Long[] list) {
+		for(PrioQueue queue : queuesByPriority) {
+			queue.removeUIDs(list);
+		}
 	}
 
 }

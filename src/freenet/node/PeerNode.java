@@ -4394,4 +4394,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return null;
 	}
 
+	void removeUIDsFromMessageQueues(Long[] list) {
+		this.messageQueue.removeUIDsFromMessageQueues(list);
+	}
+
 }
