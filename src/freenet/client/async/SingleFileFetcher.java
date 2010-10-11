@@ -342,7 +342,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(persistent) {
 			container.activate(this, 2);
 			// ,1's are probably redundant
-			container.activate(metadata, 100);
+			container.activate(metadata, Integer.MAX_VALUE);
 			container.activate(metaStrings, Integer.MAX_VALUE);
 			container.activate(thisKey, 5);
 			container.activate(ctx, 2); // for event producer and allowed mime types
