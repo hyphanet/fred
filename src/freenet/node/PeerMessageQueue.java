@@ -450,9 +450,9 @@ public class PeerMessageQueue {
 					int empty = emptyItemsWithID == null ? 0 : emptyItemsWithID.size();
 					int byID = itemsByID == null ? 0 : itemsByID.size();
 					if(nonEmpty + empty < byID) {
-						Logger.error(this, "Leak in Items? non empty = "+nonEmpty+" empty = "+empty+" by ID = "+byID+" on "+this);
+						Logger.error(this, "Leaking itemsByID? non empty = "+nonEmpty+" empty = "+empty+" by ID = "+byID+" on "+this);
 					} else if(logDEBUG)
-						Logger.minor(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
+						Logger.debug(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
 				}
 				moveToUrgent(now);
 				clearOldNonUrgent(now);
