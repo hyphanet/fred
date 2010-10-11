@@ -196,8 +196,10 @@ public abstract class ClientRequester {
 				// Obviously broken, possibly associated with a busted FCPClient.
 				// Lets fail it.
 				Logger.error(this, "Stored and active "+this+" but client is null!");
-				context.postUserAlert(brokenClientAlert);
-				System.err.println("Cancelling download/upload because of bug causing database corruption. The bug has been fixed but the download/upload will be cancelled. You can restart it.");
+				if(!isFinished()) {
+					context.postUserAlert(brokenClientAlert);
+					System.err.println("Cancelling download/upload because of bug causing database corruption. The bug has been fixed but the download/upload will be cancelled. You can restart it.");
+				}
 				// REDFLAG this leaks a RequestClient. IMHO this is better than the alternative.
 				this.client = new RequestClient() {
 
@@ -212,7 +214,9 @@ public abstract class ClientRequester {
 				};
 				container.store(client);
 				container.store(this);
-				cancel(container, context);
+				if(!isFinished()) {
+					cancel(container, context);
+				}
 				return true;
 			} else if(container.ext().isStored(this) && !container.ext().isActive(this)) {
 				// Definitely a bug, hopefully a simple one.
