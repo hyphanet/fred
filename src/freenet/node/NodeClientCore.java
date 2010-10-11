@@ -363,7 +363,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		storeChecker.setContext(clientContext);
 
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
-		clientContext.init(requestStarters);
+		clientContext.init(requestStarters, alerts);
 		initKeys(container);
 
 		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {

@@ -8,6 +8,8 @@ import com.db4o.ObjectContainer;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -183,6 +185,8 @@ public abstract class ClientRequester {
 		if(dontNotify) return;
 		notifyClients(container, context);
 	}
+	
+	UserAlert brokenClientAlert = new SimpleUserAlert(true, "Some broken downloads/uploads were cancelled. Please restart them.", "Some downloads/uploads were broken due to a bug (some time before 1287) causing unrecoverable database corruption. They have been cancelled. Please restart them from the Downloads or Uploads page.", "Some downloads/uploads were broken due to a pre-1287 bug, please restart them.", UserAlert.ERROR);
 
 	public boolean checkForBrokenClient(ObjectContainer container,
 			ClientContext context) {
@@ -192,6 +196,7 @@ public abstract class ClientRequester {
 				// Obviously broken, possibly associated with a busted FCPClient.
 				// Lets fail it.
 				Logger.error(this, "Stored and active "+this+" but client is null!");
+				context.postUserAlert(brokenClientAlert);
 				System.err.println("Cancelling download/upload because of bug causing database corruption. The bug has been fixed but the download/upload will be cancelled. You can restart it.");
 				// REDFLAG this leaks a RequestClient. IMHO this is better than the alternative.
 				this.client = new RequestClient() {
