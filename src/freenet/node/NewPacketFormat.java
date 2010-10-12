@@ -444,7 +444,7 @@ public class NewPacketFormat implements PacketFormat {
 		if(packet.getFragments().size() != 0) {
 			SentPacket sentPacket = null;
 			synchronized(sentPackets) {
-				sentPackets.get(packet.getSequenceNumber());
+				sentPacket = sentPackets.get(packet.getSequenceNumber());
 			}
 			if(sentPacket != null) sentPacket.sent();
 		}
