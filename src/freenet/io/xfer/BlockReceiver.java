@@ -34,6 +34,7 @@ import freenet.io.comm.RetrievalException;
 import freenet.node.Ticker;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.math.MedianMeanRunningAverage;
@@ -55,6 +56,17 @@ import freenet.support.math.MedianMeanRunningAverage;
  * @author ian
  */
 public class BlockReceiver implements AsyncMessageFilterCallback {
+
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	/*
 	 * RECEIPT_TIMEOUT must be less than 60 seconds because BlockTransmitter times out after not
@@ -83,8 +95,6 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	private boolean senderAborted;
 //	private final boolean _doTooLong;
 
-	boolean logMINOR=Logger.shouldLog(LogLevel.MINOR, this);
-	
 	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong) {
 		_sender = sender;
 		_prb = prb;
