@@ -243,6 +243,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				}
 			}
 			callback.blockReceiveFailed(retrievalException);
+			decRunningBlockReceives();
 		}
 
 		private void complete(byte[] ret) {
@@ -254,6 +255,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				completed = true;
 			}
 			callback.blockReceived(ret);
+			decRunningBlockReceives();
 		}
 
 		public boolean shouldTimeout() {
@@ -321,15 +323,17 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public void receive(BlockReceiverCompletion callback) {
 		startTime = System.currentTimeMillis();
 		this.callback = callback;
+		incRunningBlockReceives();
 		try {
 			waitNotification();
 		} catch (DisconnectedException e) {
 			RetrievalException retrievalException = new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
 			_prb.abort(retrievalException.getReason(), retrievalException.toString());
 			callback.blockReceiveFailed(retrievalException);
+			decRunningBlockReceives();
 		}
 	}
-		
+	
 	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	
 	private void maybeResetDiscardFilter() {
@@ -374,4 +378,17 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public synchronized boolean senderAborted() {
 		return senderAborted;
 	}
+	
+	static int runningBlockReceives = 0;
+	
+	private static synchronized void incRunningBlockReceives() {
+		runningBlockReceives++;
+		if(logMINOR) Logger.minor(BlockTransmitter.class, "Started a block receive, running: "+runningBlockReceives);
+	}
+	
+	private static synchronized void decRunningBlockReceives() {
+		runningBlockReceives--;
+		if(logMINOR) Logger.minor(BlockTransmitter.class, "Finished a block receive, running: "+runningBlockReceives);
+	}
+	
 }
