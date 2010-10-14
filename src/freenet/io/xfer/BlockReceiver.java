@@ -135,6 +135,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 //		}, TOO_LONG_TIMEOUT);
 //		}
 		int consecutiveMissingPacketReports = 0;
+		incRunningBlockReceives();
 		try {
 			MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
 			MessageFilter mfAllSent = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
@@ -238,6 +239,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			} catch (NotConnectedException e) {
 				//ignore
 			}
+			decRunningBlockReceives();
 		}
 	}
 	
@@ -285,4 +287,17 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public synchronized boolean senderAborted() {
 		return senderAborted;
 	}
+	
+	static int runningBlockReceives = 0;
+	
+	private static synchronized void incRunningBlockReceives() {
+		runningBlockReceives++;
+		if(logMINOR) Logger.minor(BlockTransmitter.class, "Started a block receive, running: "+runningBlockReceives);
+	}
+
+	private static synchronized void decRunningBlockReceives() {
+		runningBlockReceives--;
+		if(logMINOR) Logger.minor(BlockTransmitter.class, "Finished a block receive, running: "+runningBlockReceives);
+	}
+
 }
