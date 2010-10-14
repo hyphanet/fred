@@ -18,6 +18,7 @@
  */
 package freenet.io.xfer;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import freenet.support.Buffer;
@@ -37,7 +38,7 @@ public class PartiallyReceivedBlock {
 	boolean _aborted;
 	int _abortReason;
 	String _abortDescription;
-	LinkedList<PacketReceivedListener> _packetReceivedListeners = new LinkedList<PacketReceivedListener>();
+	ArrayList<PacketReceivedListener> _packetReceivedListeners = new ArrayList<PacketReceivedListener>();
 
 	public PartiallyReceivedBlock(int packets, int packetSize, byte[] data) {
 		if (data.length != packets * packetSize) {
