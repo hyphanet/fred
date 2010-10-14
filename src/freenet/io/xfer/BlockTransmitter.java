@@ -719,4 +719,8 @@ public class BlockTransmitter {
 	public String toString() {
 		return "BlockTransmitter for "+_uid+" to "+_destination.shortToString();
 	}
+
+	public synchronized static int getRunningSends() {
+		return runningBlockTransmits;
+	}
 }

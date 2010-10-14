@@ -13,6 +13,8 @@ import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
+import freenet.io.xfer.BlockReceiver;
+import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.node.Location;
 import freenet.node.Node;
@@ -943,6 +945,8 @@ public class StatisticsToadlet extends Toadlet {
 				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.offerReplys", 
 						new String[] { "chk", "ssk" }, new String[] { Integer.toString(numCHKOfferReplys), Integer.toString(numSSKOfferReplys) }));
 			}
+			activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.runningBlockTransfers", 
+					new String[] { "sends", "receives" }, new String[] { Integer.toString(BlockTransmitter.getRunningSends()), Integer.toString(BlockReceiver.getRunningReceives()) }));
 			return activityList;
 		}
 	}
