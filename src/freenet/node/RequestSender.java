@@ -318,6 +318,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		                		} catch (Throwable t) {
 		                			Logger.error(this, "Failed on "+this, t);
 		                			finish(INTERNAL_ERROR, p, true);
+	                			} finally {
+	                				synchronized(RequestSender.this) {
+	                					transferringFrom = null;
+	                				}
+	                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
 		                		}
 							}
 
@@ -337,6 +342,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		                		} catch (Throwable t) {
 		                			Logger.error(this, "Failed on "+this, t);
 		                			finish(INTERNAL_ERROR, p, true);
+	                			} finally {
+	                				synchronized(RequestSender.this) {
+	                					transferringFrom = null;
+	                				}
+	                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
 		                		}
 							}
                 				
