@@ -3,23 +3,19 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import java.util.TreeMap;
 import java.util.Vector;
 
 import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
-import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 /**
