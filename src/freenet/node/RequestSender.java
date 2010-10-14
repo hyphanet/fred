@@ -323,16 +323,21 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
 							public void blockReceiveFailed(
 									RetrievalException e) {
-								if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
-									Logger.normal(this, "Transfer failed (disconnect): "+e, e);
-								else
-									// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
-									Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+p, e);
-		                		finish(GET_OFFER_TRANSFER_FAILED, p, true);
-		                		// Backoff here anyway - the node really ought to have it!
-		               			p.transferFailed("RequestSenderGetOfferedTransferFailed");
-		                    	offers.deleteLastOffer();
-		                		node.nodeStats.failedBlockReceive(false, false, false);
+								try {
+									if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
+										Logger.normal(this, "Transfer failed (disconnect): "+e, e);
+									else
+										// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
+										Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+p, e);
+									finish(GET_OFFER_TRANSFER_FAILED, p, true);
+									// Backoff here anyway - the node really ought to have it!
+									p.transferFailed("RequestSenderGetOfferedTransferFailed");
+									offers.deleteLastOffer();
+									node.nodeStats.failedBlockReceive(false, false, false);
+		                		} catch (Throwable t) {
+		                			Logger.error(this, "Failed on "+this, t);
+		                			finish(INTERNAL_ERROR, p, true);
+		                		}
 							}
                 				
                 		});
