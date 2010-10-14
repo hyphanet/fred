@@ -1002,7 +1002,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(baseMetadata, 1);
 
 			}
-			metadataInserter.start(null, container, context);
+			metadataInserter.start(container, context);
 		} catch (InsertException e) {
 			fail(e, container, context);
 			return;
@@ -1134,7 +1134,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
 				}
-				metadataInserter.start(null, container, context);
+				metadataInserter.start(container, context);
 				if(persistent()) {
 					container.deactivate(metadataInserter, 1);
 					container.deactivate(m, 1);

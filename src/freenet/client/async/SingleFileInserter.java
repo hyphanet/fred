@@ -137,32 +137,7 @@ class SingleFileInserter implements ClientPutState {
 		if(logMINOR) Logger.minor(this, "Created "+this+" persistent="+persistent+" freeData="+freeData);
 	}
 	
-	public void start(SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws InsertException {
-		if(fs != null) {
-			String type = fs.get("Type");
-			if(type.equals("SplitHandler")) {
-				// Try to reconstruct SplitHandler.
-				// If we succeed, we bypass both compression and FEC encoding!
-				try {
-					SplitHandler sh = new SplitHandler(0, 0, false);
-					sh.start(fs, false, container, context);
-					boolean wasActive = true;
-					
-					if(persistent) {
-						wasActive = container.ext().isActive(cb);
-						if(!wasActive)
-							container.activate(cb, 1);
-					}
-					cb.onTransition(this, sh, container);
-					sh.schedule(container, context);
-					if(!wasActive)
-						container.deactivate(cb, 1);
-					return;
-				} catch (ResumeException e) {
-					Logger.error(this, "Failed to restore: "+e, e);
-				}
-			}
-		}
+	public void start(ObjectContainer container, ClientContext context) throws InsertException {
 		if(persistent) {
 			container.activate(block, 1); // will cascade
 		}
@@ -1202,7 +1177,7 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
-		start(null, container, context);
+		start(container, context);
 	}
 
 	public Object getToken() {

@@ -812,9 +812,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 			public void run() {
 				Logger.normal(this, "Resuming persistent requests");
-				// Call it anyway; if we are not lazy, it won't have to start any requests
-				// But it does other things too
-				fcpServer.finishStart();
 				if(persistentTempBucketFactory != null)
 					persistentTempBucketFactory.completedInit();
 				node.pluginManager.start(node.config);
@@ -1623,10 +1620,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public File getTempDir() {
 		return tempDir;
-	}
-
-	public boolean hasLoadedQueue() {
-		return fcpServer.hasFinishedStart();
 	}
 
 	/** Queue the offered key. */

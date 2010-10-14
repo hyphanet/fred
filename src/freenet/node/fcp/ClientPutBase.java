@@ -126,38 +126,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		publicURI = getPublicURI(this.uri);
 	}
 
-	public ClientPutBase(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws MalformedURLException {
-		super(fs, client2);
-		publicURI = getPublicURI(this.uri);
-		getCHKOnly = Fields.stringToBool(fs.get("CHKOnly"), false);
-		boolean dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
-		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
-		clientToken = fs.get("ClientToken");
-		finished = Fields.stringToBool(fs.get("Finished"), false);
-		//finished = false;
-		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
-		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
-		ctx.dontCompress = dontCompress;
-		ctx.eventProducer.addEventListener(this);
-		ctx.maxInsertRetries = maxRetries;
-		ctx.compressorDescriptor = fs.get("Codecs");
-		String genURI = fs.get("GeneratedURI");
-		if(genURI != null)
-			generatedURI = new FreenetURI(genURI);
-		if(finished) {
-			String ctime = fs.get("CompletionTime");
-			if(ctime != null)
-				completionTime = Long.parseLong(ctime);
-			if(!succeeded)
-				putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
-		}
-		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
-		if(fs.get("ForkOnCacheable") != null)
-			ctx.forkOnCacheable = fs.getBoolean("ForkOnCacheable", false);
-		else
-			ctx.forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
-	}
-
 	private FreenetURI getPublicURI(FreenetURI uri) throws MalformedURLException {
 		String type = uri.getKeyType();
 		if(type.equalsIgnoreCase("CHK")) {

@@ -29,13 +29,9 @@ import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
-import freenet.support.io.CannotCreateFromFieldSetException;
-import freenet.support.io.FileBucket;
-import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class ClientPut extends ClientPutBase {
 
@@ -151,7 +147,7 @@ public class ClientPut extends ClientPutBase {
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata, 
 				lowLevelClient,
-				null, this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, overrideSplitfileKey);
+				null, binaryBlob, server.core.clientContext, overrideSplitfileKey);
 	}
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
@@ -263,101 +259,9 @@ public class ClientPut extends ClientPutBase {
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata,
 				lowLevelClient,
-				null, this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey);
+				null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey);
 	}
 	
-	/**
-	 * Create from a persisted SimpleFieldSet.
-	 * Not very tolerant of errors, as the input was generated
-	 * by the node.
-	 * @throws PersistenceParseException 
-	 * @throws IOException 
-	 * @throws InsertException 
-	 */
-	public ClientPut(SimpleFieldSet fs, FCPClient client2, FCPServer server, ObjectContainer container) throws PersistenceParseException, IOException, InsertException {
-		super(fs, client2, server);
-		String mimeType = fs.get("Metadata.ContentType");
-
-		String from = fs.get("UploadFrom");
-		
-		if(from.equals("direct")) {
-			uploadFrom = ClientPutMessage.UPLOAD_FROM_DIRECT;
-		} else if(from.equals("disk")) {
-			uploadFrom = ClientPutMessage.UPLOAD_FROM_DISK;
-		} else if(from.equals("redirect")) {
-			uploadFrom = ClientPutMessage.UPLOAD_FROM_REDIRECT;
-		} else {
-				throw new PersistenceParseException("Unknown UploadFrom: "+from);
-		}
-		
-		ClientMetadata cm = new ClientMetadata(mimeType);
-		
-		boolean isMetadata = false;
-		
-		binaryBlob = fs.getBoolean("BinaryBlob", false);
-		targetFilename = fs.get("TargetFilename");
-		
-		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
-			origFilename = new File(fs.get("Filename"));
-			if(logMINOR)
-				Logger.minor(this, "Uploading from disk: "+origFilename+" for "+this);
-			data = new FileBucket(origFilename, true, false, false, false, false);
-			targetURI = null;
-		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
-			origFilename = null;
-			if(logMINOR)
-				Logger.minor(this, "Uploading from direct for "+this);
-			if(!finished) {
-				try {
-					data = SerializableToFieldSetBucketUtil.create(fs.subset("TempBucket"), server.core.random, server.core.persistentTempBucketFactory);
-				} catch (CannotCreateFromFieldSetException e) {
-					throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
-				}
-			} else {
-				if(logMINOR)
-					Logger.minor(this, "Finished already so not reading bucket for "+this);
-				data = null;
-			}
-			targetURI = null;
-		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
-			String target = fs.get("TargetURI");
-			targetURI = new FreenetURI(target);
-			if(logMINOR)
-				Logger.minor(this, "Uploading from redirect for "+this+" : "+targetURI);
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
-			byte[] d;
-			try {
-				d = m.writeToByteArray();
-			} catch (MetadataUnresolvedException e) {
-				// Impossible
-				Logger.error(this, "Impossible: "+e, e);
-				this.data = null;
-				clientMetadata = cm;
-				origFilename = null;
-				putter = null;
-				throw new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null);
-			}
-			data = new SimpleReadOnlyArrayBucket(d);
-			origFilename = null;
-			isMetadata = true;
-		} else {
-			throw new PersistenceParseException("shouldn't happen");
-		}
-		if(logMINOR) Logger.minor(this, "data = "+data);
-		this.clientMetadata = cm;
-		SimpleFieldSet oldProgress = fs.subset("progress");
-		if(finished) oldProgress = null; // Not useful any more
-		putter = new ClientPutter(this, data, this.uri, cm, ctx, 
-				priorityClass, getCHKOnly, isMetadata,
-				lowLevelClient,
-				oldProgress, targetFilename, binaryBlob, server.core.clientContext, null);
-		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage(container);
-			client.queueClientRequestMessage(msg, 0, container);
-		}
-		
-	}
-
 	@Override
 	void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException {
 		if(persistenceType != PERSIST_CONNECTION)

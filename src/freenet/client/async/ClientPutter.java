@@ -22,7 +22,6 @@ import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /** A high level insert. */
@@ -54,9 +53,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	private final boolean binaryBlob;
 	/** The final URI for the data. */
 	private FreenetURI uri;
-	/** SimpleFieldSet containing progress information from last startup.
-	 * Will be progressively cleared during startup. */
-	private SimpleFieldSet oldProgress;
 	private final byte[] overrideSplitfileCrypto;
 
         private static volatile boolean logMINOR;
@@ -87,7 +83,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass, boolean getCHKOnly,
-			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto) {
+			boolean isMetadata, RequestClient clientContext, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto) {
 		super(priorityClass, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
@@ -98,7 +94,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.ctx = ctx;
 		this.finished = false;
 		this.cancelled = false;
-		this.oldProgress = stored;
 		this.targetFilename = targetFilename;
 		this.binaryBlob = binaryBlob;
 		this.overrideSplitfileCrypto = overrideSplitfileCrypto;
@@ -185,7 +180,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			if(cancel) {
 				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
-				oldProgress = null;
 				return false;
 			}
 			synchronized(this) {
@@ -193,7 +187,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			if(cancel) {
 				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
-				oldProgress = null;
 				if(persistent())
 					container.store(this);
 				return false;
@@ -201,11 +194,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(logMINOR)
 				Logger.minor(this, "Starting insert: "+currentState);
 			if(currentState instanceof SingleFileInserter)
-				((SingleFileInserter)currentState).start(oldProgress, container, context);
+				((SingleFileInserter)currentState).start(container, context);
 			else
 				currentState.schedule(container, context);
 			synchronized(this) {
-				oldProgress = null;
 				cancel = cancelled;
 			}
 			if(persistent()) {
@@ -221,7 +213,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			Logger.error(this, "Failed to start insert: "+e, e);
 			synchronized(this) {
 				finished = true;
-				oldProgress = null;
 				currentState = null;
 			}
 			if(persistent())
@@ -234,7 +225,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			Logger.error(this, "Failed to start insert: "+e, e);
 			synchronized(this) {
 				finished = true;
-				oldProgress = null;
 				currentState = null;
 			}
 			if(persistent())
@@ -247,7 +237,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			Logger.error(this, "Failed to start insert: "+e, e);
 			synchronized(this) {
 				finished = true;
-				oldProgress = null;
 				currentState = null;
 			}
 			if(persistent())
@@ -292,7 +281,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			finished = true;
 			oldState = currentState;
 			currentState = null;
-			oldProgress = null;
 		}
 		if(oldState != null && persistent()) {
 			container.activate(oldState, 1);
@@ -323,7 +311,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			finished = true;
 			oldState = currentState;
 			currentState = null;
-			oldProgress = null;
 		}
 		if(oldState != null && persistent()) {
 			container.activate(oldState, 1);

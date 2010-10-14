@@ -143,11 +143,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 
-		if(!core.hasLoadedQueue()) {
-			writeError(NodeL10n.getBase().getString("QueueToadlet.notLoadedYetTitle"), NodeL10n.getBase().getString("QueueToadlet.notLoadedYet"), ctx, false);
-			return;
-		}
-
 		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
@@ -892,11 +887,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		// We ensure that we have a FCP server running
 		if(!fcp.enabled){
 			writeError(NodeL10n.getBase().getString("QueueToadlet.fcpIsMissing"), NodeL10n.getBase().getString("QueueToadlet.pleaseEnableFCP"), ctx, false);
-			return;
-		}
-
-		if(!core.hasLoadedQueue()) {
-			writeError(NodeL10n.getBase().getString("QueueToadlet.notLoadedYetTitle"), NodeL10n.getBase().getString("QueueToadlet.notLoadedYet"), ctx, false);
 			return;
 		}
 
