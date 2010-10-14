@@ -74,7 +74,7 @@ public class BlockTransmitter {
 	final long _uid;
 	final PartiallyReceivedBlock _prb;
 	private LinkedList<Integer> _unsent;
-	private MyRunnable _senderThread = new MyRunnable();
+	private BlockSenderJob _senderThread = new BlockSenderJob();
 	private BitArray _sentPackets;
 	final PacketThrottle throttle;
 	private long timeAllSent = -1;
@@ -99,7 +99,7 @@ public class BlockTransmitter {
 	
 	static int runningBlockTransmits = 0;
 	
-	class MyRunnable implements PrioRunnable {
+	class BlockSenderJob implements PrioRunnable {
 		
 		private boolean running = false;
 		
