@@ -304,19 +304,21 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                			br.receive(new BlockReceiverCompletion() {
                				
 							public void blockReceived(byte[] data) {
-		               			p.transferSuccess();
-		                		if(logMINOR) Logger.minor(this, "Received data");
-		                		// Received data
 		                		try {
+			                		// Received data
+			               			p.transferSuccess();
+			                		if(logMINOR) Logger.minor(this, "Received data");
 		                			verifyAndCommit(data);
+			                		finish(SUCCESS, p, true);
+			                		node.nodeStats.successfulBlockReceive();
 		                		} catch (KeyVerifyException e1) {
 		                			Logger.normal(this, "Got data but verify failed: "+e1, e1);
 		                			finish(GET_OFFER_VERIFY_FAILURE, p, true);
 		                       		offers.deleteLastOffer();
-		                			return;
+		                		} catch (Throwable t) {
+		                			Logger.error(this, "Failed on "+this, t);
+		                			finish(INTERNAL_ERROR, p, true);
 		                		}
-		                		finish(SUCCESS, p, true);
-		                		node.nodeStats.successfulBlockReceive();
 							}
 
 							public void blockReceiveFailed(
