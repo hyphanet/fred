@@ -91,7 +91,7 @@ public class BlockTransmitter {
 	 * sendAborted or allReceived? */
 	private boolean _receivedSendCompletion;
 	/** Was it an allReceived? */
-	private boolean _sendSucceeded;
+	private boolean _receivedSendSuccess;
 	/** Have we completed i.e. called the callback? */
 	private boolean _completed;
 	/** Have we failed e.g. due to PRB abort, disconnection? */
@@ -193,7 +193,7 @@ public class BlockTransmitter {
 					if(maybeAllSent()) {
 						if(maybeComplete()) {
 							complete = true;
-							success = _sendSucceeded;
+							success = _receivedSendSuccess;
 						} else {
 							scheduleTimeoutAfterBlockSends();
 							return false;
@@ -255,7 +255,7 @@ public class BlockTransmitter {
 						if(_completed) return;
 						if(!_receivedSendCompletion) {
 							_receivedSendCompletion = true;
-							_sendSucceeded = false;
+							_receivedSendSuccess = false;
 						}
 						//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
 						timeString=TimeUtil.formatTime((System.currentTimeMillis() - timeAllSent), 2, true);
@@ -438,7 +438,7 @@ public class BlockTransmitter {
 			}
 			synchronized(_senderThread) {
 				_receivedSendCompletion = true;
-				_sendSucceeded = true;
+				_receivedSendSuccess = true;
 				if(!maybeAllSent()) return;
 				if(!maybeComplete()) return;
 			}
@@ -481,7 +481,7 @@ public class BlockTransmitter {
 			boolean abort = false;
 			synchronized(_senderThread) {
 				_receivedSendCompletion = true;
-				_sendSucceeded = false;
+				_receivedSendSuccess = false;
 				complete = maybeFail();
 				if(complete) {
 					abort = !_sentSendAborted;
@@ -688,7 +688,7 @@ public class BlockTransmitter {
 					scheduleTimeoutAfterBlockSends();
 					return;
 				}
-				success = _sendSucceeded;
+				success = _receivedSendSuccess;
 			}
 			if(_callback != null)
 				_callback.blockTransferFinished(success);
