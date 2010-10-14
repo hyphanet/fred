@@ -396,5 +396,9 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		runningBlockReceives--;
 		if(logMINOR) Logger.minor(BlockTransmitter.class, "Finished a block receive, running: "+runningBlockReceives);
 	}
+
+	public synchronized static int getRunningReceives() {
+		return runningBlockReceives;
+	}
 	
 }
