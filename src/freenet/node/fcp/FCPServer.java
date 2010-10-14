@@ -371,7 +371,6 @@ public class FCPServer implements Runnable {
 		fcpConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.bindTo", "FcpServer.bindToLong", new FCPBindtoCallback(core));
 		fcpConfig.register("allowedHosts", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.allowedHosts", "FcpServer.allowedHostsLong", new FCPAllowedHostsCallback(core));
 		fcpConfig.register("allowedHostsFullAccess", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.allowedHostsFullAccess", "FcpServer.allowedHostsFullAccessLong", new FCPAllowedHostsFullAccessCallback(core));
-		boolean persistentDownloadsEnabled = fcpConfig.getBoolean("persistentDownloadsEnabled");
 		
 		AssumeDDADownloadIsAllowedCallback cb4;
 		AssumeDDAUploadIsAllowedCallback cb5;
