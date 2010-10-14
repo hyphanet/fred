@@ -848,6 +848,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 					return;
                 				}
                 				finish(SUCCESS, sentTo, false);
+                			} catch (Throwable t) {
+	                			Logger.error(this, "Failed on "+this, t);
+	                			finish(INTERNAL_ERROR, sentTo, true);
                 			} finally {
                 				synchronized(RequestSender.this) {
                 					transferringFrom = null;
@@ -896,6 +899,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
                 				}
                 				node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
+                			} catch (Throwable t) {
+	                			Logger.error(this, "Failed on "+this, t);
+	                			finish(INTERNAL_ERROR, sentTo, true);
                 			} finally {
                 				synchronized(RequestSender.this) {
                 					transferringFrom = null;
