@@ -331,6 +331,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			_prb.abort(retrievalException.getReason(), retrievalException.toString());
 			callback.blockReceiveFailed(retrievalException);
 			decRunningBlockReceives();
+		} catch(RuntimeException e) {
+			decRunningBlockReceives();
+			throw e;
+		} catch (Error e) {
+			decRunningBlockReceives();
+			throw e;
 		}
 	}
 	
