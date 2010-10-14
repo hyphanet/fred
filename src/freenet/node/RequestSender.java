@@ -301,6 +301,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		
                			if(logMINOR) Logger.minor(this, "Receiving data");
                			final PeerNode p = pn;
+               			receivingAsync = true;
                			br.receive(new BlockReceiverCompletion() {
                				
 							public void blockReceived(byte[] data) {
@@ -803,6 +804,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 	}, 60*1000);
                 	byte[] data;
                 	final PeerNode sentTo = next;
+           			receivingAsync = true;
                 	br.receive(new BlockReceiverCompletion() {
                 		
                 		public void blockReceived(byte[] data) {
@@ -1481,6 +1483,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private boolean sentAbortDownstreamTransfers;
 	private int abortDownstreamTransfersReason;
 	private String abortDownstreamTransfersDesc;
+	private boolean receivingAsync;
 	
 	private void sendAbortDownstreamTransfers(int reason, String desc) {
 		synchronized (listeners) {
