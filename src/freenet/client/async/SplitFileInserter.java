@@ -7,31 +7,28 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
-import freenet.support.math.MersenneTwister;
-
 import com.db4o.ObjectContainer;
 
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.ClientMetadata;
 import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
+import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.crypt.HashResult;
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
-import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
-import freenet.keys.Key;
 import freenet.support.Executor;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.math.MersenneTwister;
 
 public class SplitFileInserter implements ClientPutState {
 
@@ -328,110 +325,6 @@ public class SplitFileInserter implements ClientPutState {
 			}
 		}
 		throw new IllegalStateException("Unable to allocate cross data block!");
-	}
-
-	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, ARCHIVE_TYPE archiveType, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
-		this.topSize = 0;
-		this.topCompressedSize = 0;
-		hashCode = super.hashCode();
-		this.parent = parent;
-		this.archiveType = archiveType;
-		this.token = token;
-		this.finished = false;
-		this.isMetadata = metadata;
-		this.cm = clientMetadata;
-		this.getCHKOnly = getCHKOnly;
-		this.cb = cb;
-		this.ctx = ctx;
-		this.persistent = parent.persistent();
-		this.hashes = null;
-		this.hashThisLayerOnly = null;
-		this.deductBlocksFromSegments = 0;
-		this.specifySplitfileKeyInMetadata = false;
-		this.crossCheckBlocks = 0;
-		this.crossSegments = null;
-		context.jobRunner.setCommitThisTransaction();
-		// Don't read finished, wait for the segmentFinished()'s.
-		String length = fs.get("DataLength");
-		if(length == null) throw new ResumeException("No DataLength");
-		try {
-			dataLength = Long.parseLong(length);
-		} catch (NumberFormatException e) {
-			throw new ResumeException("Corrupt DataLength: "+e+" : "+length);
-		}
-		length = fs.get("DecompressedLength");
-		long dl = 0; // back compat
-		if(length != null) {
-			try {
-				dl = Long.parseLong(length);
-			} catch (NumberFormatException e) {
-				dl = -1;
-			}
-		}
-		decompressedLength = dl;
-		String tmp = fs.get("SegmentSize");
-		if(length == null) throw new ResumeException("No SegmentSize");
-		try {
-			segmentSize = Integer.parseInt(tmp);
-		} catch (NumberFormatException e) {
-			throw new ResumeException("Corrupt SegmentSize: "+e+" : "+length);
-		}
-		tmp = fs.get("CheckSegmentSize");
-		if(length == null) throw new ResumeException("No CheckSegmentSize");
-		try {
-			checkSegmentSize = Integer.parseInt(tmp);
-		} catch (NumberFormatException e) {
-			throw new ResumeException("Corrupt CheckSegmentSize: "+e+" : "+length);
-		}
-		String ccodec = fs.get("CompressionCodec");
-		COMPRESSOR_TYPE compressor = null;
-		if(ccodec != null) {
-			try {
-				compressor = COMPRESSOR_TYPE.valueOf(ccodec);
-			} catch (Throwable t) {
-				try {
-					short codecNo = Short.parseShort(ccodec);
-					compressor = COMPRESSOR_TYPE.getCompressorByMetadataID(codecNo);
-				} catch (NumberFormatException nfe) {
-					throw new ResumeException("Invalid compression codec: "+ccodec);
-				}
-			}
-		}
-		compressionCodec = compressor;
-		String scodec = fs.get("SplitfileCodec");
-		if(scodec == null) throw new ResumeException("No splitfile codec");
-		try {
-			splitfileAlgorithm = Short.parseShort(scodec);
-		} catch (NumberFormatException e) {
-			throw new ResumeException("Corrupt SplitfileCodec: "+e+" : "+scodec);
-		}
-		SimpleFieldSet segFS = fs.subset("Segments");
-		if(segFS == null) throw new ResumeException("No segments");
-		String segc = segFS.get("Count");
-		if(segc == null) throw new ResumeException("No segment count");
-		int segmentCount;
-		try {
-			segmentCount = Integer.parseInt(segc);
-		} catch (NumberFormatException e) {
-			throw new ResumeException("Corrupt segment count: "+e+" : "+segc);
-		}
-		segments = new SplitFileInserterSegment[segmentCount];
-
-		int dataBlocks = 0;
-		int checkBlocks = 0;
-
-		for(int i=0;i<segments.length;i++) {
-			String index = Integer.toString(i);
-			SimpleFieldSet segment = segFS.subset(index);
-			segFS.removeSubset(index);
-			if(segment == null) throw new ResumeException("No segment "+i);
-			segments[i] = new SplitFileInserterSegment(this, persistent, parent, segment, splitfileAlgorithm, ctx, getCHKOnly, i, context, container);
-			dataBlocks += segments[i].countDataBlocks();
-			checkBlocks += segments[i].countCheckBlocks();
-		}
-
-		this.countDataBlocks = dataBlocks;
-		this.countCheckBlocks = checkBlocks;
 	}
 
 	/**

@@ -27,7 +27,6 @@ import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -622,65 +621,6 @@ class SingleFileInserter implements ClientPutState {
 		@Override
 		public int hashCode() {
 			return hashCode;
-		}
-
-		/**
-		 * Create a SplitHandler from a stored progress SimpleFieldSet.
-		 * @param forceMetadata If true, the insert is metadata, regardless of what the
-		 * encompassing SplitFileInserter says (i.e. it's multi-level metadata).
-		 * @throws ResumeException Thrown if the resume fails.
-		 * @throws InsertException Thrown if some other error prevents the insert
-		 * from starting.
-		 */
-		void start(SimpleFieldSet fs, boolean forceMetadata, ObjectContainer container, ClientContext context) throws ResumeException, InsertException {
-			
-			boolean parentWasActive = true;
-			if(persistent) {
-				parentWasActive = container.ext().isActive(parent);
-				if(!parentWasActive)
-					container.activate(parent, 1);
-			}
-			
-			boolean meta = metadata || forceMetadata;
-			
-			// Don't include the booleans; wait for the callback.
-			
-			SimpleFieldSet sfiFS = fs.subset("SplitFileInserter");
-			if(sfiFS == null)
-				throw new ResumeException("No SplitFileInserter");
-			ClientPutState newSFI, newMetaPutter = null;
-			newSFI = new SplitFileInserter(parent, this, forceMetadata ? null : block.clientMetadata, ctx, getCHKOnly, meta, token, archiveType, sfiFS, container, context);
-			if(logMINOR) Logger.minor(this, "Starting "+newSFI+" for "+this);
-			fs.removeSubset("SplitFileInserter");
-			SimpleFieldSet metaFS = fs.subset("MetadataPutter");
-			if(metaFS != null) {
-				try {
-					String type = metaFS.get("Type");
-					if(type.equals("SplitFileInserter")) {
-						// FIXME insertAsArchiveManifest ?!?!?!
-						newMetaPutter = 
-							new SplitFileInserter(parent, this, null, ctx, getCHKOnly, true, token, archiveType, metaFS, container, context);
-					} else if(type.equals("SplitHandler")) {
-						newMetaPutter = new SplitHandler(origDataLength, origCompressedDataLength, origDataLength != 0);
-						((SplitHandler)newMetaPutter).start(metaFS, true, container, context);
-					}
-				} catch (ResumeException e) {
-					newMetaPutter = null;
-					Logger.error(this, "Caught "+e, e);
-					// Will be reconstructed later
-				}
-			}
-			if(logMINOR) Logger.minor(this, "Metadata putter "+metadataPutter+" for "+this);
-			fs.removeSubset("MetadataPutter");
-			synchronized(this) {
-				sfi = newSFI;
-				metadataPutter = newMetaPutter;
-			}
-			if(persistent) {
-				container.store(this);
-				if(!parentWasActive)
-					container.deactivate(parent, 1);
-			}
 		}
 
 		public SplitHandler(long origDataLength, long origCompressedDataLength, boolean allowSizes) {
