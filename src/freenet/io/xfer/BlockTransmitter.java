@@ -162,6 +162,11 @@ public class BlockTransmitter {
 						_callback.blockTransferFinished(false);
 					cleanup();
 				}
+				try {
+					sendAborted(RetrievalException.TIMED_OUT, "Sender unable to send packets quickly enough");
+				} catch (NotConnectedException e1) {
+					// Ignore
+				}
 				cancelItemsPending();
 				return false;
 			} catch (SyncSendWaitedTooLongException e) {
