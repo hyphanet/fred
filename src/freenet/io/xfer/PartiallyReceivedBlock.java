@@ -155,13 +155,18 @@ public class PartiallyReceivedBlock {
 		_packetReceivedListeners.remove(listener);
 	}
 
-	public synchronized void abort(int reason, String description) {
-		if(_aborted) return;
-		if(_receivedCount == _packets) return;
-		_aborted = true;
-		_abortReason = reason;
-		_abortDescription = description;
-		for (PacketReceivedListener prl : _packetReceivedListeners) {
+	public void abort(int reason, String description) {
+		PacketReceivedListener[] listeners;
+		synchronized(this) {
+			if(_aborted) return;
+			if(_receivedCount == _packets) return;
+			_aborted = true;
+			_abortReason = reason;
+			_abortDescription = description;
+			listeners = _packetReceivedListeners.toArray(new PacketReceivedListener[_packetReceivedListeners.size()]);
+			_packetReceivedListeners.clear();
+		}
+		for (PacketReceivedListener prl : listeners) {
 			prl.receiveAborted(reason, description);
 		}
 	}
