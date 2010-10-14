@@ -302,7 +302,8 @@ public class BlockTransmitter {
 
 	/** Complete? maybeAllSent() must have already returned true. This method checks 
 	 * _sendCompleted and then uses _completed to complete only once. LOCKING: Must be 
-	 * called with _senderThread held. */
+	 * called with _senderThread held. 
+	 * Caller must call the callback then call cleanup() outside the lock if this returns true. */
 	public boolean maybeComplete() {
 		if(!_receivedSendCompletion) {
 			if(logMINOR) Logger.minor(this, "maybeComplete() not completing because send not completed on "+this);
@@ -318,7 +319,8 @@ public class BlockTransmitter {
 		return true;
 	}
 	
-	/** Only fail once. Called on a drastic failure e.g. disconnection. */
+	/** Only fail once. Called on a drastic failure e.g. disconnection. 
+	 * Caller must call the callback then call cleanup() outside the lock if this returns true. */
 	public boolean maybeFail() {
 		if(_completed) {
 			if(logMINOR) Logger.minor(this, "maybeFail() already completed on "+this);
