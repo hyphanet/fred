@@ -331,7 +331,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		               			p.transferFailed("RequestSenderGetOfferedTransferFailed");
 		                    	offers.deleteLastOffer();
 		                		node.nodeStats.failedBlockReceive(false, false, false);
-		                		return;
 							}
                 				
                 		});
