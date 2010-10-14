@@ -163,6 +163,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	final int fullHeadersLengthMinimum;
 	final int fullHeadersLengthOneMessage;
+        
+        private long lastConnectivityStatusUpdate;
+        private Status lastConnectivityStatus;
 
 
 	public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
@@ -3148,9 +3151,16 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public Status getConnectivityStatus() {
+                if(System.currentTimeMillis() - lastConnectivityStatusUpdate < 3*60*1000)
+                    return lastConnectivityStatus;
+
+                Status value;
 		if(crypto.config.alwaysHandshakeAggressively())
-			return AddressTracker.Status.DEFINITELY_NATED;
-		return sock.getDetectedConnectivityStatus();
+                    value = AddressTracker.Status.DEFINITELY_NATED;
+                else
+                    value = sock.getDetectedConnectivityStatus();
+                
+                return lastConnectivityStatus = value;
 	}
 
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
