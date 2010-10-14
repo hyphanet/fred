@@ -34,16 +34,14 @@ public class TrivialTicker implements Ticker {
 		TimerTask t = new TimerTask() {
 			@Override
 			public void run() {
-				try {
-					if(job instanceof FastRunnable) {
-						job.run();
-					} else {
-						executor.execute(job, "Delayed task: "+job);
-					}
-				} finally {
-					synchronized(this) {
-						jobs.remove(job);
-					}
+				synchronized(this) {
+					jobs.remove(job); // We must do this before job.run() in case the job re-schedules itself.
+				}
+				
+				if(job instanceof FastRunnable) {
+					job.run();
+				} else {
+					executor.execute(job, "Delayed task: "+job);
 				}
 			}
 		};
@@ -63,18 +61,15 @@ public class TrivialTicker implements Ticker {
 
 			@Override
 			public void run() {
-				try {
-					if(job instanceof FastRunnable) {
-						job.run();
-					} else {
-						executor.execute(job, name);
-					}
-				} finally {
-					synchronized(this) {
-						jobs.remove(job);
-					}
+				synchronized(this) {
+					jobs.remove(job); // We must do this before job.run() in case the job re-schedules itself.
 				}
 				
+				if(job instanceof FastRunnable) {
+					job.run();
+				} else {
+					executor.execute(job, name);
+				}
 			}
 			
 		};

@@ -18,6 +18,7 @@
  */
 package freenet.io.xfer;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import freenet.support.Buffer;
@@ -38,7 +39,7 @@ public class PartiallyReceivedBlock {
 	boolean _aborted;
 	int _abortReason;
 	String _abortDescription;
-	LinkedList<PacketReceivedListener> _packetReceivedListeners = new LinkedList<PacketReceivedListener>();
+	ArrayList<PacketReceivedListener> _packetReceivedListeners = new ArrayList<PacketReceivedListener>();
 
 	public PartiallyReceivedBlock(int packets, int packetSize, byte[] data) {
 		if (data.length != packets * packetSize) {
@@ -156,14 +157,19 @@ public class PartiallyReceivedBlock {
 		_packetReceivedListeners.remove(listener);
 	}
 
-	public synchronized void abort(int reason, String description) {
-		if(_aborted) return;
-		if(_receivedCount == _packets) return;
-		Logger.normal(this, "Aborting PRB: "+reason+" : "+description, new Exception("debug"));
-		_aborted = true;
-		_abortReason = reason;
-		_abortDescription = description;
-		for (PacketReceivedListener prl : _packetReceivedListeners) {
+	public void abort(int reason, String description) {
+		PacketReceivedListener[] listeners;
+		synchronized(this) {
+			if(_aborted) return;
+			if(_receivedCount == _packets) return;
+			Logger.normal(this, "Aborting PRB: "+reason+" : "+description, new Exception("debug"));
+			_aborted = true;
+			_abortReason = reason;
+			_abortDescription = description;
+			listeners = _packetReceivedListeners.toArray(new PacketReceivedListener[_packetReceivedListeners.size()]);
+			_packetReceivedListeners.clear();
+		}
+		for (PacketReceivedListener prl : listeners) {
 			prl.receiveAborted(reason, description);
 		}
 	}

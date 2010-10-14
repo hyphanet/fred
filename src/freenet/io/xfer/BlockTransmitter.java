@@ -163,9 +163,7 @@ public class BlockTransmitter {
 					} catch (NotConnectedException e1) {
 						// Ignore
 					}
-					if(_callback != null)
-						_callback.blockTransferFinished(false);
-					cleanup();
+					callCallback(false);
 				}
 				cancelItemsPending();
 				return false;
@@ -177,8 +175,7 @@ public class BlockTransmitter {
 				}
 				Logger.error(this, "Impossible: Caught "+e+" on "+BlockTransmitter.this, e);
 				if(callFail) {
-					if(_callback != null)
-						_callback.blockTransferFinished(false);
+					callCallback(false);
 					cleanup();
 				}
 				return false;
@@ -204,8 +201,7 @@ public class BlockTransmitter {
 				}
 			}
 			if(complete) {
-				if(_callback != null)
-					_callback.blockTransferFinished(success);
+				callCallback(success);
 				cleanup();
 				return false; // No more blocks to send.
 			}
@@ -268,9 +264,7 @@ public class BlockTransmitter {
 						} catch (NotConnectedException e) {
 							// Ignore, it still failed
 						}
-						if(_callback != null)
-							_callback.blockTransferFinished(false);
-						cleanup();
+						callCallback(false);
 					}
 				}
 				
@@ -302,7 +296,8 @@ public class BlockTransmitter {
 
 	/** Complete? maybeAllSent() must have already returned true. This method checks 
 	 * _sendCompleted and then uses _completed to complete only once. LOCKING: Must be 
-	 * called with _senderThread held. */
+	 * called with _senderThread held. 
+	 * Caller must call the callback then call cleanup() outside the lock if this returns true. */
 	public boolean maybeComplete() {
 		if(!_receivedSendCompletion) {
 			if(logMINOR) Logger.minor(this, "maybeComplete() not completing because send not completed on "+this);
@@ -314,10 +309,12 @@ public class BlockTransmitter {
 		}
 		if(logMINOR) Logger.minor(this, "maybeComplete() completing on "+this);
 		_completed = true;
+		decRunningBlockTransmits();
 		return true;
 	}
 	
-	/** Only fail once. Called on a drastic failure e.g. disconnection. */
+	/** Only fail once. Called on a drastic failure e.g. disconnection. 
+	 * Caller must call the callback then call cleanup() outside the lock if this returns true. */
 	public boolean maybeFail() {
 		if(_completed) {
 			if(logMINOR) Logger.minor(this, "maybeFail() already completed on "+this);
@@ -330,6 +327,7 @@ public class BlockTransmitter {
 		}
 		if(logMINOR) Logger.minor(this, "maybeFail() completing on "+this);
 		_completed = true;
+		decRunningBlockTransmits();
 		return true;
 	}
 
@@ -344,11 +342,7 @@ public class BlockTransmitter {
 			callFail = maybeFail();
 			sendAbort = callFail && prepareSendAbort();
 		}
-		if(callFail) {
-			if(_callback != null)
-				_callback.blockTransferFinished(false);
-			cleanup();
-		}
+		if(callFail) callCallback(false);
 		if(sendAbort)
 			innerSendAborted(reason, desc);
 		cancelItemsPending();
@@ -442,9 +436,7 @@ public class BlockTransmitter {
 				if(!maybeAllSent()) return;
 				if(!maybeComplete()) return;
 			}
-			if(_callback != null)
-				_callback.blockTransferFinished(true);
-			cleanup();
+			callCallback(true);
 		}
 
 		public boolean shouldTimeout() {
@@ -498,10 +490,7 @@ public class BlockTransmitter {
 					// Ignore
 				}
 			}
-			if(complete) {
-				if(_callback != null) _callback.blockTransferFinished(false);
-				cleanup();
-			}
+			if(complete) callCallback(false);
 			cancelItemsPending();
 		}
 
@@ -537,8 +526,7 @@ public class BlockTransmitter {
 		synchronized(_senderThread) {
 			if(!maybeFail()) return;
 		}
-		if(_callback != null) _callback.blockTransferFinished(false);
-		cleanup();
+		callCallback(false);
 		// All MessageItems will already have been unqueued, no need to call cancelItemsPending().
 	}
 	
@@ -560,11 +548,7 @@ public class BlockTransmitter {
 				// Ignore
 			}
 		}
-		if(callFailCallback) {
-			if(_callback != null) 
-				_callback.blockTransferFinished(false);
-			cleanup();
-		}
+		if(callFailCallback) callCallback(false);
 		cancelItemsPending();
 	}
 
@@ -643,7 +627,6 @@ public class BlockTransmitter {
 		// shouldTimeout() should deal with them adequately, maybe we don't need to explicitly remove them.
 		if (myListener!=null)
 			_prb.removeListener(myListener);
-		decRunningBlockTransmits();
 	}
 
 	private class MyAsyncMessageCallback implements AsyncMessageCallback {
@@ -690,9 +673,7 @@ public class BlockTransmitter {
 				}
 				success = _receivedSendSuccess;
 			}
-			if(_callback != null)
-				_callback.blockTransferFinished(success);
-			cleanup();
+			callCallback(success);
 		}
 
 	};
@@ -711,6 +692,24 @@ public class BlockTransmitter {
 		return ret;
 	}
 	
+	public void callCallback(final boolean success) {
+		if(_callback != null) {
+			_executor.execute(new Runnable() {
+
+				public void run() {
+					try {
+						_callback.blockTransferFinished(success);
+					} finally {
+						cleanup();
+					}
+				}
+				
+			});
+		} else {
+			cleanup();
+		}
+	}
+
 	public PeerContext getDestination() {
 		return _destination;
 	}
