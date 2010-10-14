@@ -89,7 +89,7 @@ public class BlockTransmitter {
 
 	/** Have we received a completion acknowledgement from the other side - either a 
 	 * sendAborted or allReceived? */
-	private boolean _sendCompleted;
+	private boolean _receivedSendCompletion;
 	/** Was it an allReceived? */
 	private boolean _sendSucceeded;
 	/** Have we completed i.e. called the callback? */
@@ -112,7 +112,7 @@ public class BlockTransmitter {
 				while(true) {
 					int packetNo = -1;
 					synchronized(_senderThread) {
-						if(_failed || _sendCompleted || _completed) return;
+						if(_failed || _receivedSendCompletion || _completed) return;
 						if(_unsent.size() == 0) {
 							// Wait for PRB callback to tell us we have more packets.
 							return;
@@ -130,7 +130,7 @@ public class BlockTransmitter {
 		}
 		
 		public void schedule() {
-			if(_failed || _sendCompleted || _completed) return;
+			if(_failed || _receivedSendCompletion || _completed) return;
 			_executor.execute(this, "BlockTransmitter block sender for "+_uid+" to "+_destination);
 		}
 
@@ -253,8 +253,8 @@ public class BlockTransmitter {
 					String timeString;
 					synchronized(_senderThread) {
 						if(_completed) return;
-						if(!_sendCompleted) {
-							_sendCompleted = true;
+						if(!_receivedSendCompletion) {
+							_receivedSendCompletion = true;
 							_sendSucceeded = false;
 						}
 						//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
@@ -304,7 +304,7 @@ public class BlockTransmitter {
 	 * _sendCompleted and then uses _completed to complete only once. LOCKING: Must be 
 	 * called with _senderThread held. */
 	public boolean maybeComplete() {
-		if(!_sendCompleted) {
+		if(!_receivedSendCompletion) {
 			if(logMINOR) Logger.minor(this, "maybeComplete() not completing because send not completed on "+this);
 			return false;
 		}
@@ -437,7 +437,7 @@ public class BlockTransmitter {
 				}
 			}
 			synchronized(_senderThread) {
-				_sendCompleted = true;
+				_receivedSendCompletion = true;
 				_sendSucceeded = true;
 				if(!maybeAllSent()) return;
 				if(!maybeComplete()) return;
@@ -449,7 +449,7 @@ public class BlockTransmitter {
 
 		public boolean shouldTimeout() {
 			synchronized(_senderThread) {
-				if(_sendCompleted || _failed || _completed) return true; 
+				if(_receivedSendCompletion || _failed || _completed) return true; 
 			}
 			return false;
 		}
@@ -480,7 +480,7 @@ public class BlockTransmitter {
 			boolean complete = false;
 			boolean abort = false;
 			synchronized(_senderThread) {
-				_sendCompleted = true;
+				_receivedSendCompletion = true;
 				_sendSucceeded = false;
 				complete = maybeFail();
 				if(complete) {
@@ -507,7 +507,7 @@ public class BlockTransmitter {
 
 		public boolean shouldTimeout() {
 			synchronized(_senderThread) {
-				if(_sendCompleted || _failed || _completed) return true; 
+				if(_receivedSendCompletion || _failed || _completed) return true; 
 			}
 			return false;
 		}
