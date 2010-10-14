@@ -163,9 +163,7 @@ public class BlockTransmitter {
 					} catch (NotConnectedException e1) {
 						// Ignore
 					}
-					if(_callback != null)
-						_callback.blockTransferFinished(false);
-					cleanup();
+					callCallback(false);
 				}
 				cancelItemsPending();
 				return false;
@@ -177,8 +175,7 @@ public class BlockTransmitter {
 				}
 				Logger.error(this, "Impossible: Caught "+e+" on "+BlockTransmitter.this, e);
 				if(callFail) {
-					if(_callback != null)
-						_callback.blockTransferFinished(false);
+					callCallback(false);
 					cleanup();
 				}
 				return false;
@@ -204,8 +201,7 @@ public class BlockTransmitter {
 				}
 			}
 			if(complete) {
-				if(_callback != null)
-					_callback.blockTransferFinished(success);
+				callCallback(success);
 				cleanup();
 				return false; // No more blocks to send.
 			}
@@ -268,9 +264,7 @@ public class BlockTransmitter {
 						} catch (NotConnectedException e) {
 							// Ignore, it still failed
 						}
-						if(_callback != null)
-							_callback.blockTransferFinished(false);
-						cleanup();
+						callCallback(false);
 					}
 				}
 				
@@ -348,11 +342,7 @@ public class BlockTransmitter {
 			callFail = maybeFail();
 			sendAbort = callFail && prepareSendAbort();
 		}
-		if(callFail) {
-			if(_callback != null)
-				_callback.blockTransferFinished(false);
-			cleanup();
-		}
+		if(callFail) callCallback(false);
 		if(sendAbort)
 			innerSendAborted(reason, desc);
 		cancelItemsPending();
@@ -446,9 +436,7 @@ public class BlockTransmitter {
 				if(!maybeAllSent()) return;
 				if(!maybeComplete()) return;
 			}
-			if(_callback != null)
-				_callback.blockTransferFinished(true);
-			cleanup();
+			callCallback(true);
 		}
 
 		public boolean shouldTimeout() {
@@ -502,10 +490,7 @@ public class BlockTransmitter {
 					// Ignore
 				}
 			}
-			if(complete) {
-				if(_callback != null) _callback.blockTransferFinished(false);
-				cleanup();
-			}
+			if(complete) callCallback(false);
 			cancelItemsPending();
 		}
 
@@ -541,8 +526,7 @@ public class BlockTransmitter {
 		synchronized(_senderThread) {
 			if(!maybeFail()) return;
 		}
-		if(_callback != null) _callback.blockTransferFinished(false);
-		cleanup();
+		callCallback(false);
 		// All MessageItems will already have been unqueued, no need to call cancelItemsPending().
 	}
 	
@@ -564,11 +548,7 @@ public class BlockTransmitter {
 				// Ignore
 			}
 		}
-		if(callFailCallback) {
-			if(_callback != null) 
-				_callback.blockTransferFinished(false);
-			cleanup();
-		}
+		if(callFailCallback) callCallback(false);
 		cancelItemsPending();
 	}
 
@@ -693,9 +673,7 @@ public class BlockTransmitter {
 				}
 				success = _receivedSendSuccess;
 			}
-			if(_callback != null)
-				_callback.blockTransferFinished(success);
-			cleanup();
+			callCallback(success);
 		}
 
 	};
@@ -714,6 +692,24 @@ public class BlockTransmitter {
 		return ret;
 	}
 	
+	public void callCallback(final boolean success) {
+		if(_callback != null) {
+			_executor.execute(new Runnable() {
+
+				public void run() {
+					try {
+						_callback.blockTransferFinished(success);
+					} finally {
+						cleanup();
+					}
+				}
+				
+			});
+		} else {
+			cleanup();
+		}
+	}
+
 	public PeerContext getDestination() {
 		return _destination;
 	}
