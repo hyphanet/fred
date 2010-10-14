@@ -25,6 +25,7 @@ import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -60,6 +61,16 @@ public class BookmarkManager implements RequestClient {
 		}
 	}
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	public BookmarkManager(NodeClientCore n) {
 		putPaths("/", MAIN_CATEGORY);
 		this.node = n;
@@ -91,12 +102,6 @@ public class BookmarkManager implements RequestClient {
 				Logger.error(this, "Error reading the backup bookmark file !" + e.getMessage(), e);
 			}
 		}
-	}
-
-	private static volatile boolean logMINOR;
-
-	static {
-		Logger.registerClass(ClientGetter.class);
 	}
 
 	public void reAddDefaultBookmarks() {
@@ -181,7 +186,7 @@ public class BookmarkManager implements RequestClient {
 	}
 
 	public void addBookmark(String parentPath, Bookmark bookmark) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Adding bookmark " + bookmark + " to " + parentPath);
 		BookmarkCategory parent = getCategoryByPath(parentPath);
 		parent.addBookmark(bookmark);

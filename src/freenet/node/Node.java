@@ -26,6 +26,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,7 +40,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.Db4o;
@@ -711,6 +712,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public final Executor executor;
 	public final PacketSender ps;
+	public final PrioritisedTicker ticker;
 	final DNSRequester dnsr;
 	final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
@@ -1543,14 +1545,15 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(db != null) {
 			db.commit();
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "COMMITTED");
+			if(logMINOR) Logger.minor(this, "COMMITTED");
 		}
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
+		ticker = new PrioritisedTicker(this);
 		if(executor instanceof PooledExecutor)
-			((PooledExecutor)executor).setTicker(ps);
+			((PooledExecutor)executor).setTicker(ticker);
 
 		Logger.normal(Node.class, "Creating node...");
 
@@ -1728,7 +1731,7 @@ public class Node implements TimeSkewDetectorCallback {
 		peers.writePeers();
 		peers.updatePMUserAlert();
 
-		uptime = new UptimeEstimator(runDir, ps, darknetCrypto.identityHash);
+		uptime = new UptimeEstimator(runDir, ticker, darknetCrypto.identityHash);
 
 		// ULPRs
 
@@ -1871,6 +1874,9 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 
 		acceptSeedConnections = opennetConfig.getBoolean("acceptSeedConnections");
+		
+		if(acceptSeedConnections && opennet != null)
+			opennet.crypto.socket.getAddressTracker().setHugeTracker();
 
 		opennetConfig.finishedInitialization();
 
@@ -2480,12 +2486,12 @@ public class Node implements TimeSkewDetectorCallback {
 		maxSlashdotCacheKeys = (int) Math.min(maxSlashdotCacheSize / sizePerKey, Integer.MAX_VALUE);
 
 		chkSlashdotcache = new CHKStore();
-		chkSlashdotcacheStore = new SlashdotStore<CHKBlock>(chkSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		chkSlashdotcacheStore = new SlashdotStore<CHKBlock>(chkSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.tempBucketFactory);
 		pubKeySlashdotcache = new PubkeyStore();
-		pubKeySlashdotcacheStore = new SlashdotStore<DSAPublicKey>(pubKeySlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		pubKeySlashdotcacheStore = new SlashdotStore<DSAPublicKey>(pubKeySlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.tempBucketFactory);
 		getPubKey.setLocalSlashdotcache(pubKeySlashdotcache);
 		sskSlashdotcache = new SSKStore(getPubKey);
-		sskSlashdotcacheStore = new SlashdotStore<SSKBlock>(sskSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		sskSlashdotcacheStore = new SlashdotStore<SSKBlock>(sskSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ticker, this.clientCore.tempBucketFactory);
 
 		// MAXIMUM seclevel = no slashdot cache.
 
@@ -2604,7 +2610,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if(db != null) {
 			db.commit();
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "COMMITTED");
+			if(logMINOR) Logger.minor(this, "COMMITTED");
 			try {
 				if(!clientCore.lateInitDatabase(nodeDBHandle, db))
 					failLateInitDatabase();
@@ -2841,7 +2847,7 @@ public class Node implements TimeSkewDetectorCallback {
 			e.printStackTrace();
 		}
 		// DUMP DATABASE CONTENTS
-		if(Logger.shouldLog(LogLevel.DEBUG, ClientRequestScheduler.class) && database != null) {
+		if(logDEBUG && database != null) {
 		try {
 		System.err.println("DUMPING DATABASE CONTENTS:");
 		ObjectSet<Object> contents = database.queryByExample(new Object());
@@ -2962,7 +2968,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) throws IOException {
 		IoAdapter baseAdapter = dbConfig.io();
-		if(Logger.shouldLog(LogLevel.DEBUG, this))
+		if(logDEBUG)
 			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
 		try {
 			dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
@@ -3296,7 +3302,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if (bloomSize == -1)
 				bloomSize = (int) Math.min(maxTotalDatastoreSize / 2048, Integer.MAX_VALUE);
 			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
-			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild
+			        : bloomSize / 6 * 8;
 			// Increase size by 10% to allow some space for removing keys. Even a 2-bit counting filter gets saturated.
 			bloomFilterSizeInM *= 1.1;
 
@@ -3317,12 +3323,12 @@ public class Node implements TimeSkewDetectorCallback {
 			sskCacheFS.setAltStore(sskDataFS);
 
 			boolean delay =
-				chkDataFS.start(ps, false) |
-				chkCacheFS.start(ps, false) |
-				pubkeyDataFS.start(ps, false) |
-				pubkeyCacheFS.start(ps, false) |
-				sskDataFS.start(ps, false) |
-				sskCacheFS.start(ps, false);
+				chkDataFS.start(ticker, false) |
+				chkCacheFS.start(ticker, false) |
+				pubkeyDataFS.start(ticker, false) |
+				pubkeyCacheFS.start(ticker, false) |
+				sskDataFS.start(ticker, false) |
+				sskCacheFS.start(ticker, false);
 
 			if(delay) {
 
@@ -3337,12 +3343,12 @@ public class Node implements TimeSkewDetectorCallback {
 					public void run() {
 						System.err.println("Starting delayed init of datastore");
 						try {
-							chkDataFS.start(ps, true);
-							chkCacheFS.start(ps, true);
-							pubkeyDataFS.start(ps, true);
-							pubkeyCacheFS.start(ps, true);
-							sskDataFS.start(ps, true);
-							sskCacheFS.start(ps, true);
+							chkDataFS.start(ticker, true);
+							chkCacheFS.start(ticker, true);
+							pubkeyDataFS.start(ticker, true);
+							pubkeyCacheFS.start(ticker, true);
+							sskDataFS.start(ticker, true);
+							sskCacheFS.start(ticker, true);
 						} catch (IOException e) {
 							Logger.error(this, "Failed to start datastore: "+e, e);
 							System.err.println("Failed to start datastore: "+e);
@@ -3417,7 +3423,7 @@ public class Node implements TimeSkewDetectorCallback {
 		try {
 			int bloomSize = (int) Math.min(maxTotalClientCacheSize / 2048, Integer.MAX_VALUE);
 			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
-			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild
+			        : (bloomSize) / 6 * 8;
 
 			final CHKStore chkClientcache = new CHKStore();
 			final SaltedHashFreenetStore<CHKBlock> chkDataFS = makeClientcache(bloomFilterSizeInM, "CHK", true, chkClientcache, dontResizeOnStart, clientCacheMasterKey);
@@ -3427,9 +3433,9 @@ public class Node implements TimeSkewDetectorCallback {
 			final SaltedHashFreenetStore<SSKBlock> sskDataFS = makeClientcache(bloomFilterSizeInM, "SSK", true, sskClientcache, dontResizeOnStart, clientCacheMasterKey);
 
 			boolean delay =
-				chkDataFS.start(ps, false) |
-				pubkeyDataFS.start(ps, false) |
-				sskDataFS.start(ps, false);
+				chkDataFS.start(ticker, false) |
+				pubkeyDataFS.start(ticker, false) |
+				sskDataFS.start(ticker, false);
 
 			if(delay) {
 
@@ -3444,9 +3450,9 @@ public class Node implements TimeSkewDetectorCallback {
 					public void run() {
 						System.err.println("Starting delayed init of client-cache");
 						try {
-							chkDataFS.start(ps, true);
-							pubkeyDataFS.start(ps, true);
-							sskDataFS.start(ps, true);
+							chkDataFS.start(ticker, true);
+							pubkeyDataFS.start(ticker, true);
+							sskDataFS.start(ticker, true);
 						} catch (IOException e) {
 							Logger.error(this, "Failed to start client-cache: "+e, e);
 							System.err.println("Failed to start client-cache: "+e);
@@ -3499,7 +3505,7 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Initializing "+type+" Data"+store+" (" + maxStoreKeys + " keys)");
 
 		SaltedHashFreenetStore<T> fs = SaltedHashFreenetStore.<T>construct(storeDir, type+"-"+store, cb,
-		        random, maxKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ps : null, clientCacheMasterKey);
+		        random, maxKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !lateStart, lateStart ? ticker : null, clientCacheMasterKey);
 		cb.setStore(fs);
 		return fs;
 	}
@@ -3662,7 +3668,8 @@ public class Node implements TimeSkewDetectorCallback {
 		if(opennet != null)
 			opennet.start();
 		ps.start(nodeStats);
-		usm.start(ps);
+		ticker.start();
+		usm.start(ticker);
 
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
@@ -3722,7 +3729,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// After everything has been created, write the config file back to disk.
 		if(config instanceof FreenetFilePersistentConfig) {
 			FreenetFilePersistentConfig cfg = (FreenetFilePersistentConfig) config;
-			cfg.finishedInit(this.ps);
+			cfg.finishedInit(this.ticker);
 			cfg.setHasNodeStarted();
 		}
 		config.store();
@@ -4725,15 +4732,30 @@ public class Node implements TimeSkewDetectorCallback {
 			return recentlyCompletedIDs.contains(id);
 		}
 	}
+	
+	private ArrayList<Long> completedBuffer = new ArrayList<Long>();
+	
+	// Every this many slots, we tell all the PeerMessageQueue's to remove the old Items for the ID's in question.
+	// This prevents memory DoS amongst other things.
+	static final int COMPLETED_THRESHOLD = 128;
 
 	/**
 	 * A request completed (regardless of success).
 	 */
 	void completed(long id) {
+		Long[] list;
 		synchronized (recentlyCompletedIDs) {
 			recentlyCompletedIDs.push(id);
 			while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
 				recentlyCompletedIDs.pop();
+			completedBuffer.add(id);
+			if(completedBuffer.size() < COMPLETED_THRESHOLD) return;
+			list = completedBuffer.toArray(new Long[completedBuffer.size()]);
+			completedBuffer.clear();
+		}
+		for(PeerNode pn : peers.myPeers) {
+			if(!pn.isRoutingCompatible()) continue;
+			pn.removeUIDsFromMessageQueues(list);
 		}
 	}
 
@@ -5161,7 +5183,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public Ticker getTicker() {
-		return ps;
+		return ticker;
 	}
 
 	public int getUnclaimedFIFOSize() {
@@ -5630,7 +5652,7 @@ public class Node implements TimeSkewDetectorCallback {
 					System.arraycopy(keys.clientCacheMasterKey, 0, copied, 0, copied.length);
 					cachedClientCacheKey = copied;
 					// Wipe it if haven't specified datastore size in 10 minutes.
-					ps.queueTimedJob(new Runnable() {
+					ticker.queueTimedJob(new Runnable() {
 						public void run() {
 							synchronized(Node.this) {
 								MasterKeys.clear(cachedClientCacheKey);

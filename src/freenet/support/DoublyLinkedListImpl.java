@@ -118,7 +118,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     public final Enumeration<T> elements() {
         return forwardElements();
     }
-
+    
 	public boolean contains(T item) {
     	for(T i : this) {
     		if(i.equals(item))
@@ -397,7 +397,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
     /**
      * @return  an Enumeration of list elements from tail to head
      */
-    protected Enumeration<T> reverseElements() {
+    public Enumeration<T> reverseElements() {
         return new ReverseWalker();
     }
 

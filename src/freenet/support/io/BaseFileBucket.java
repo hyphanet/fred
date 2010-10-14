@@ -59,9 +59,13 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	public BaseFileBucket(File file, boolean deleteOnExit) {
 		if(file == null) throw new NullPointerException();
 		this.length = file.length();
-		if(deleteOnExit)
-			setDeleteOnExit(file);
+                maybeSetDeleteOnExit(deleteOnExit, file);
 	}
+
+        private void maybeSetDeleteOnExit(boolean deleteOnExit, File file) {
+        	if(deleteOnExit)
+			setDeleteOnExit(file);
+        }
 	
 	protected void setDeleteOnExit(File file) {
 		try {
@@ -165,7 +169,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			throws FileNotFoundException {
 			super(tempfile, false);
 			if(logMINOR)
-				Logger.minor(this, "Writing to "+tempfile+" for "+getFile()+" : "+this);
+				Logger.minor(FileBucketOutputStream.class, "Writing to "+tempfile+" for "+getFile()+" : "+this);
 			this.tempfile = tempfile;
 			resetLength();
 			this.restartCount = restartCount;
@@ -317,9 +321,10 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 	@Override
-	protected void finalize() {
+	protected void finalize() throws Throwable {
 		if(deleteOnFinalize())
 			free(true);
+                super.finalize();
 	}
 
 	/**

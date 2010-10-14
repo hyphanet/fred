@@ -19,6 +19,16 @@ import freenet.support.Logger.LogLevel;
  */
 public abstract class Fields {
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	/**
 	 * All possible chars for representing a number as a String. Used to
 	 * optimize numberList().
@@ -702,11 +712,11 @@ public abstract class Fields {
 			String multiplier = s.substring(0, x + 1).trim();
 			if(multiplier.indexOf('.') > -1 || multiplier.indexOf('E') > -1) {
 				res *= Double.parseDouble(multiplier);
-				if(Logger.shouldLog(LogLevel.MINOR, Fields.class))
+				if(logMINOR)
 					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as double: " + res);
 			} else {
 				res *= Long.parseLong(multiplier);
-				if(Logger.shouldLog(LogLevel.MINOR, Fields.class))
+				if(logMINOR)
 					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as long: " + res);
 			}
 		} catch(ArithmeticException e) {

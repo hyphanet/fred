@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Random;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 
 import com.db4o.ObjectContainer;
 
@@ -17,6 +17,7 @@ import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -39,7 +40,17 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private long dataLength;
 	private boolean readOnly;
 	private int lastOutputStream;
-	
+	 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	/**
 	 * Create a padded encrypted proxy bucket.
 	 * @param bucket The bucket which we are proxying to. Must be empty.
@@ -315,7 +326,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			if(size < min)
 				throw new IllegalStateException("???");
 			if((size >= min) && (size <= max)) {
-				if(Logger.shouldLog(LogLevel.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Padded: "+max+" was: "+dataLength+" for "+getName());
 				return max;
 			}
@@ -402,7 +413,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Removing from database: "+this);
 		bucket.removeFrom(container);
 		container.delete(this);

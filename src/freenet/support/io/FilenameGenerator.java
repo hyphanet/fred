@@ -7,6 +7,7 @@ import java.util.Random;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
@@ -17,6 +18,18 @@ public class FilenameGenerator {
     private transient Random random;
     private String prefix;
     private File tmpDir;
+
+
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
     /**
      * @param random
@@ -73,7 +86,7 @@ public class FilenameGenerator {
 			String filename = prefix + Long.toHexString(randomFilename);
 			File ret = new File(tmpDir, filename);
 			if(!ret.exists()) {
-				if(Logger.shouldLog(LogLevel.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Made random filename: "+ret, new Exception("debug"));
 				return randomFilename;
 			}

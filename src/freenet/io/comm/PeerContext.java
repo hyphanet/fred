@@ -7,6 +7,7 @@ import java.lang.ref.WeakReference;
 
 import freenet.io.xfer.PacketThrottle;
 import freenet.io.xfer.WaitedTooLongException;
+import freenet.node.MessageItem;
 import freenet.node.OutgoingPacketMangler;
 import freenet.node.SyncSendWaitedTooLongException;
 
@@ -33,15 +34,17 @@ public interface PeerContext {
 	/** Peer version, if this is supported, else -1 */
 	int getVersionNumber();
 
-	/** Send a message to the node */
-	public void sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
+	/** Send a message to the node 
+	 * @return */
+	public MessageItem sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
 
 	/** Send a throttled message to the node (may block for a long time).
+	 * @return 
 	 * @throws SyncSendWaitedTooLongException
 	 * @throws NotConnectedException If the peer is disconnected at the time of sending or becomes so later.
 	 * @throws PeerRestartedException If the peer is restarted.
 	 * */
-	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean waitForSent, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException;
+	public MessageItem sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean waitForSent, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException;
 
 	/** Get the current boot ID. This is a random number that changes every time the node starts up. */
 	public long getBootID();
@@ -65,4 +68,6 @@ public interface PeerContext {
 
 	/** Report a transfer failure */
 	void transferFailed(String reason);
+
+	boolean unqueueMessage(MessageItem item);
 }

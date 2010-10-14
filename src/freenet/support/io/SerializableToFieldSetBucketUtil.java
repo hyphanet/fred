@@ -4,6 +4,7 @@
 package freenet.support.io;
 
 import freenet.crypt.RandomSource;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -11,16 +12,25 @@ import freenet.support.api.Bucket;
 
 public class SerializableToFieldSetBucketUtil {
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	// FIXME use something other than ResumeException???
 	
 	public static Bucket create(SimpleFieldSet fs, RandomSource random, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		if(fs == null) {
-			if(Logger.shouldLog(LogLevel.MINOR, SerializableToFieldSetBucketUtil.class))
+			if(logMINOR)
 				Logger.minor(SerializableToFieldSetBucketUtil.class, "fs = null", new Exception("debug"));
 			return null;
 		}
 		String type = fs.get("Type");
-		if(Logger.shouldLog(LogLevel.MINOR, SerializableToFieldSetBucketUtil.class))
+		if(logMINOR)
 			Logger.minor(SerializableToFieldSetBucketUtil.class, "Creating: "+type);
 		if(type == null) {
 			throw new CannotCreateFromFieldSetException("No type");

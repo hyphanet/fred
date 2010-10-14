@@ -153,6 +153,7 @@ public class ClientGetter extends BaseClientGetter {
 			// FIXME synchronization is probably unnecessary.
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
 			// which can call onSuccess and thereby almost anything.
+			HashResult[] oldHashes = null;
 			synchronized(this) {
 				if(overrideURI != null) uri = overrideURI;
 				if(finished) {
@@ -161,9 +162,21 @@ public class ClientGetter extends BaseClientGetter {
 					cancelled = false;
 					finished = false;
 				}
+				expectedMIME = null;
+				expectedSize = 0;
+				oldHashes = hashes;
+				hashes = null;
+				finalBlocksRequired = 0;
+				finalBlocksTotal = 0;
+				resetBlocks();
 				currentState = SingleFileFetcher.create(this, this,
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
 						true, container, context);
+			}
+			if(persistent() && oldHashes != null) {
+				for(HashResult res : oldHashes) {
+					if(res != null) res.removeFrom(container);
+				}
 			}
 			if(cancelled) cancel();
 			// schedule() may deactivate stuff, so store it now.
@@ -596,6 +609,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * @throws FetchException If something went wrong.
 	 */
 	public boolean restart(FreenetURI redirect, boolean filterData, ObjectContainer container, ClientContext context) throws FetchException {
+		checkForBrokenClient(container, context);
 		if(persistent()) {
 			container.activate(ctx, 1);
 			container.activate(ctx.filterData, 1);

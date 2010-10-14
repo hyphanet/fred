@@ -28,6 +28,7 @@ import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -84,6 +85,16 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private boolean sentToNetwork;
 	private CompatibilityMode compatMessage;
 	private ExpectedHashes expectedHashes;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	/**
 	 * Create one for a global-queued request not made by FCP.
@@ -199,111 +210,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					uri, fctx, priorityClass,
 					lowLevelClient,
 					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
-	}
-
-	/**
-	 * Create a ClientGet from a request serialized to a SimpleFieldSet.
-	 * Can throw, and does minimal verification, as is dealing with data
-	 * supposedly serialized out by the node.
-	 * @throws IOException
-	 * @throws FetchException
-	 */
-	public ClientGet(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws IOException, FetchException {
-		super(fs, client2);
-
-		returnType = ClientGetMessage.parseValidReturnType(fs.get("ReturnType"));
-		String f = fs.get("Filename");
-		if(f != null)
-			targetFile = new File(f);
-		else
-			targetFile = null;
-		f = fs.get("TempFilename");
-		if(f != null)
-			tempFile = new File(f);
-		else
-			tempFile = null;
-		boolean ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
-		boolean dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
-		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
-		boolean filterData = Fields.stringToBool(fs.get("FilterData"),false);
-		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
-		fctx.eventProducer.addEventListener(this);
-		// ignoreDS
-		fctx.localRequestOnly = dsOnly;
-		fctx.ignoreStore = ignoreDS;
-		fctx.maxNonSplitfileRetries = maxRetries;
-		fctx.maxSplitfileBlockRetries = maxRetries;
-		fctx.filterData = filterData;
-		binaryBlob = Fields.stringToBool(fs.get("BinaryBlob"), false);
-		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
-		if(finished) {
-			if(succeeded) {
-				foundDataLength = Long.parseLong(fs.get("FoundDataLength"));
-				foundDataMimeType = fs.get("FoundDataMimeType");
-				SimpleFieldSet fs1 = fs.subset("PostFetchProtocolError");
-				if(fs1 != null)
-					postFetchProtocolErrorMessage = new ProtocolErrorMessage(fs1);
-			} else {
-				getFailedMessage = new GetFailedMessage(fs.subset("GetFailed"), false);
-			}
-		}
-		Bucket ret = null;
-		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
-			if (succeeded) {
-				ret = new FileBucket(targetFile, false, true, false, false, false);
-			} else {
-				ret = new FileBucket(tempFile, false, true, false, false, false);
-			}
-		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
-			ret = new NullBucket();
-		} else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-			try {
-				ret = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), server.core.random, server.core.persistentTempBucketFactory);
-				if(ret == null) throw new CannotCreateFromFieldSetException("ret == null");
-			} catch (CannotCreateFromFieldSetException e) {
-				Logger.error(this, "Cannot read: "+this+" : "+e, e);
-				try {
-					// Create a new temp bucket
-					if(persistenceType == PERSIST_FOREVER)
-						ret = server.core.persistentTempBucketFactory.makeBucket(fctx.maxOutputLength);
-					else
-						ret = server.core.tempBucketFactory.makeBucket(fctx.maxOutputLength);
-				} catch (IOException e1) {
-					Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
-					getter = null;
-					returnBucket = null;
-					throw new FetchException(FetchException.BUCKET_ERROR, e);
-				}
-			}
-		} else {
-			throw new IllegalArgumentException();
-		}
-		if(succeeded) {
-			if(foundDataLength < ret.size()) {
-				Logger.error(this, "Failing "+identifier+" because lost data");
-				succeeded = false;
-			}
-		}
-		if(ret == null)
-			Logger.error(this, "Impossible: ret = null in SFS constructor for "+this, new Exception("debug"));
-		returnBucket = ret;
-
-		String[] allowed = fs.getAll("AllowedMIMETypes");
-		if(allowed != null) {
-			fctx.allowedMIMETypes = new HashSet<String>();
-			for (String a : allowed)
-				fctx.allowedMIMETypes.add(a);
-		}
-
-		getter = new ClientGetter(this,
-				uri,
-				fctx, priorityClass,
-				lowLevelClient,
-				binaryBlob ? new NullBucket() : returnBucket,
-						binaryBlob ? returnBucket : null);
-
-		if(finished && succeeded)
-			allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime, this.foundDataMimeType);
 	}
 
 	/**
@@ -672,7 +578,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			finished = true;
 			started = true;
 		}
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed(null, container);
 		if(persistenceType == PERSIST_FOREVER) {
@@ -1005,7 +911,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	@Override
-	public boolean restart(boolean filterData, ObjectContainer container, ClientContext context) {
+	public boolean restart(ObjectContainer container, ClientContext context, final boolean disableFilterData) {
 		if(!canRestart()) return false;
 		FreenetURI redirect;
 		synchronized(this) {
@@ -1035,12 +941,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				container.activate(fctx, 1);
 				container.activate(fctx.filterData, 1);
 			}
-			fctx.filterData = filterData;
+			if(disableFilterData)
+				fctx.filterData = false;
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
 		try {
-			if(getter.restart(redirect, filterData, container, context)) {
+			if(getter.restart(redirect, fctx.filterData, container, context)) {
 				synchronized(this) {
 					if(redirect != null) {
 						if(persistenceType == PERSIST_FOREVER)

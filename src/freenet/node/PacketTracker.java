@@ -534,6 +534,8 @@ public class PacketTracker {
 					throttle.notifyOfPacketAcknowledged();
 					throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 				}
+			if(logMINOR)
+				Logger.minor(this, "Removed ack request, callbacks "+(callbacks[i] == null ? "(null)" : callbacks[i].length));
 		}
 		int cbCount = 0;
 		for(int i = 0; i < callbacks.length; i++) {
@@ -544,7 +546,7 @@ public class PacketTracker {
 					cbCount++;
 				}
 		}
-		if(cbCount > 0 && logMINOR)
+		if(logMINOR)
 			Logger.minor(this, "Executed " + cbCount + " callbacks");
 		try {
 			wouldBlock(true);
@@ -568,9 +570,9 @@ public class PacketTracker {
 		} catch(UpdatableSortedLinkedListKilledException e) {
 			// Ignore, we are processing an incoming packet
 		}
-		if(logMINOR)
-			Logger.minor(this, "Removed ack request");
 		callbacks = sentPacketsContents.getCallbacks(realSeqNo);
+		if(logMINOR)
+			Logger.minor(this, "Removed ack request, callbacks "+(callbacks == null ? "(null)" : callbacks.length));
 		byte[] buf = sentPacketsContents.get(realSeqNo);
 		long timeAdded = sentPacketsContents.getTime(realSeqNo);
 		if(sentPacketsContents.remove(realSeqNo))
@@ -943,6 +945,7 @@ public class PacketTracker {
 	 * @throws NotConnectedException 
 	 */
 	public void sentPacket(byte[] data, int seqNumber, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException {
+		if(logMINOR) Logger.minor(this, "Sent packet "+seqNumber+" length "+data.length+" with "+(callbacks == null ? "no callbacks" : callbacks.length));
 		if(callbacks != null)
 			for(int i = 0; i < callbacks.length; i++) {
 				if(callbacks[i] == null)

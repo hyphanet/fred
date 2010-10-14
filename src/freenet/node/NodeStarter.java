@@ -327,7 +327,6 @@ public class NodeStarter implements WrapperListener {
 			plug.start();
 		}
 
-		FNPPacketMangler.LOG_UNMATCHABLE_ERROR = true;
 		DNSRequester.DISABLE = noDNS;
 
 		return random;

@@ -14,7 +14,7 @@ import freenet.support.io.FileUtil;
 
 class Persister implements Runnable {
 
-	Persister(Persistable t, File persistTemp, File persistTarget, PacketSender ps) {
+	Persister(Persistable t, File persistTemp, File persistTarget, Ticker ps) {
 		this.persistable = t;
 		this.persistTemp = persistTemp;
 		this.persistTarget = persistTarget;
@@ -22,13 +22,13 @@ class Persister implements Runnable {
 	}
 	
 	// Subclass must set the others later
-	protected Persister(Persistable t, PacketSender ps) {
+	protected Persister(Persistable t, Ticker ps) {
 		this.persistable = t;
 		this.ps = ps;
 	}
 	
 	final Persistable persistable;
-	private final PacketSender ps;
+	private final Ticker ps;
 	File persistTemp;
 	File persistTarget;
 	private boolean started;

@@ -15,6 +15,7 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
@@ -25,6 +26,16 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	int counter;
 	InsertContext ctx;
 	final Map<Bucket, SingleBlockInserter> runningInserters;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	public SimpleHealingQueue(InsertContext context, short prio, int maxRunning) {
 		super(prio, new RequestClient() {
@@ -57,7 +68,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		}
 		try {
 			sbi.schedule(null, context);
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Started healing insert "+ctr+" for "+data);
 			return true;
 		} catch (Throwable e) {
@@ -97,7 +108,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		synchronized(this) {
 			runningInserters.remove(data);
 		}
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Successfully inserted healing block: "+sbi.getURINoEncode()+" for "+data+" ("+sbi.token+ ')');
 		data.free();
 	}
@@ -108,7 +119,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		synchronized(this) {
 			runningInserters.remove(data);
 		}
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Failed to insert healing block: "+sbi.getURINoEncode()+" : "+e+" for "+data+" ("+sbi.token+ ')', e);
 		data.free();
 	}

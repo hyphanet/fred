@@ -1,6 +1,5 @@
 package freenet.support.io;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,6 +12,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
@@ -50,7 +50,17 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	final BucketFactory bf;
 	private transient DBJobRunner dbJobRunner;
 	private final boolean cacheWholeBucket;
-	
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	/**
 	 * Create a segmented bucket chain bucket. This is a chain of buckets. The chain
 	 * is divided into segments, stored in the database, so we can have an arbitrarily
@@ -103,7 +113,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				}
 				if(segment != null) {
 					container.activate(segment, 1);
-					if(Logger.shouldLog(LogLevel.MINOR, SegmentedBucketChainBucket.this)) 
+					if(logMINOR)
 						Logger.minor(SegmentedBucketChainBucket.this, "Freeing segment "+segment);
 					segment.activateBuckets(container);
 					segment.free();
@@ -361,7 +371,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			@Override
 			public void close() throws IOException {
 				if(closed) return;
-				if(Logger.shouldLog(LogLevel.MINOR, this)) 
+				if(logMINOR)
 					Logger.minor(this, "Closing "+this+" for "+SegmentedBucketChainBucket.this);
 				if(baos != null && baos.size() > 0) {
 					if(bucketNo == segmentSize) {
@@ -422,7 +432,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	private transient boolean runningSegStore;
 	
 	protected SegmentedChainBucketSegment makeSegment(int index, final SegmentedChainBucketSegment oldSeg) {
-		if(Logger.shouldLog(LogLevel.MINOR, this)) 
+		if(logMINOR)
 			Logger.minor(this, "Make a segment for "+this+" index "+index+ "old "+oldSeg);
 		if(oldSeg != null) {
 			synchronized(this) {
@@ -567,7 +577,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				}
 				if(segment != null) {
 					container.activate(segment, 1);
-					if(Logger.shouldLog(LogLevel.MINOR, SegmentedBucketChainBucket.this)) 
+					if(logMINOR)
 						Logger.minor(SegmentedBucketChainBucket.this, "Clearing segment "+segment);
 					segment.clear(container);
 					synchronized(this) {
@@ -617,7 +627,6 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	 * this bucket could be enormous.
 	 */
 	synchronized boolean removeContents(ObjectContainer container) {
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		while(segments.size() > 0) {
 			Logger.normal(this, "Freeing unfinished unstored bucket "+this+" segments left "+segments.size());
 			// Remove the first so the space is reused at the beginning not at the end.

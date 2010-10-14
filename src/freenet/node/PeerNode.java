@@ -1044,7 +1044,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @param cb The callback to be called when the packet has been sent, or null.
 	* @param ctr A callback to tell how many bytes were used to send this message.
 	*/
-	public void sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException {
+	public MessageItem sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException {
 		if(ctr == null)
 			Logger.error(this, "Bytes not logged", new Exception("debug"));
 		if(logMINOR)
@@ -1066,6 +1066,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// Otherwise we do not need to wake up the PacketSender
 		// It will wake up before the maximum coalescing delay (100ms) because
 		// it wakes up every 100ms *anyway*.
+		return item;
+	}
+	
+	public boolean unqueueMessage(MessageItem message) {
+		if(logMINOR) Logger.minor(this, "Unqueueing message on "+this+" : "+message);
+		return messageQueue.removeMessage(message);
 	}
 
 	public long getMessageQueueLengthBytes() {
@@ -1076,7 +1082,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Returns the number of milliseconds that it is estimated to take to transmit the currently queued packets.
 	 */
 	public long getProbableSendQueueTime() {
-		return (long)(getMessageQueueLengthBytes()/(getThrottle().getBandwidth()+1.0));
+		double bandwidth = (getThrottle().getBandwidth()+1.0);
+		if(shouldThrottle())
+			bandwidth = Math.min(bandwidth, node.getOutputBandwidthLimit() / 2);
+		long length = getMessageQueueLengthBytes();
+		return (long)(1000.0*length/bandwidth);
 	}
 
 	/**
@@ -1455,12 +1465,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	static final int P_BURST_IF_DEFINITELY_FORWARDED = 20;
 
 	public boolean isBurstOnly() {
-		int status = outgoingMangler.getConnectivityStatus();
-		if(status == AddressTracker.DONT_KNOW) return false;
-		if(status == AddressTracker.DEFINITELY_NATED || status == AddressTracker.MAYBE_NATED) return false;
+		AddressTracker.Status status = outgoingMangler.getConnectivityStatus();
+		if(status == AddressTracker.Status.DONT_KNOW) return false;
+		if(status == AddressTracker.Status.DEFINITELY_NATED || status == AddressTracker.Status.MAYBE_NATED) return false;
 
 		// For now. FIXME try it with a lower probability when we're sure that the packet-deltas mechanisms works.
-		if(status == AddressTracker.MAYBE_PORT_FORWARDED) return false;
+		if(status == AddressTracker.Status.MAYBE_PORT_FORWARDED) return false;
 		long now = System.currentTimeMillis();
 		if(now - timeSetBurstNow > UPDATE_BURST_NOW_PERIOD) {
 			burstNow = (node.random.nextInt(P_BURST_IF_DEFINITELY_FORWARDED) == 0);
@@ -1868,7 +1878,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean routable = true;
 		boolean newer = false;
 		boolean older = false;
-		if(bogusNoderef) {
+		if(isSeed()) {
+                        routable = false;
+                        if(logMINOR) Logger.minor(this, "Not routing traffic to " + this + " it's for announcement.");
+                } else if(bogusNoderef) {
 			Logger.normal(this, "Not routing traffic to " + this + " - bogus noderef");
 			routable = false;
 			//FIXME: It looks like bogusNoderef will just be set to false a few lines later...
@@ -3462,28 +3475,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return Version.getArbitraryBuildNumber(getVersion(), -1);
 	}
 
-	private PacketThrottle _lastThrottle;
+	private final PacketThrottle _lastThrottle = new PacketThrottle(Node.PACKET_SIZE);
 
 	public PacketThrottle getThrottle() {
-		PacketThrottle newThrottle = null;
-		PacketThrottle prevThrottle = null;
-		synchronized(this) {
-			Peer peer = getPeer();
-			if(peer == null) {
-				// We haven't connected, prevent an NPE.
-				return null;
-			}
-			if(_lastThrottle != null) {
-				if(_lastThrottle.getPeer().equals(peer))
-					return _lastThrottle;
-			}
-			newThrottle = new PacketThrottle(peer, Node.PACKET_SIZE);
-			prevThrottle = _lastThrottle;
-			_lastThrottle = newThrottle;
-		}
-		if(prevThrottle != null)
-			prevThrottle.changedAddress(newThrottle);
-		return newThrottle;
+		return _lastThrottle;
 	}
 
 	/**
@@ -4102,23 +4097,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return resendBytesSent;
 	}
 
-	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
+	public MessageItem sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long deadline = System.currentTimeMillis() + timeout;
 		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
-		for(int i=0;i<100;i++) {
-			try {
-				getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback);
-				return;
-			} catch (ThrottleDeprecatedException e) {
-				// Try with the new throttle. We don't need it, we'll get it from getThrottle().
-				continue;
-			}
-		}
-		Logger.error(this, "Peer constantly changes its IP address!!: "+shortToString());
-		forceDisconnect(true);
-		if(callback != null)
-			callback.disconnected();
-		throw new NotConnectedException();
+		return getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback);
 	}
 
 	/**
@@ -4271,17 +4253,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(messageQueue.mustSendSize(minSize, maxSize))
 					mustSend = true;
 			}
+			
+		}
 
-			if(mustSend) {
-				int size = minSize;
-				size = messageQueue.addUrgentMessages(size, now, minSize, maxSize, messages);
-
-				// Now the not-so-urgent messages.
-				if(size >= 0) {
-					size = messageQueue.addNonUrgentMessages(size, now, minSize, maxSize, messages);
-				}
-			}
-
+		if(mustSend) {
+			messageQueue.addMessages(minSize, now, minSize, maxSize, messages);
 		}
 
 		if(messages.isEmpty() && keepalive) {
@@ -4416,6 +4392,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public synchronized ConnectionType getAddedReason() {
 		return null;
+	}
+
+	void removeUIDsFromMessageQueues(Long[] list) {
+		this.messageQueue.removeUIDsFromMessageQueues(list);
 	}
 
 }

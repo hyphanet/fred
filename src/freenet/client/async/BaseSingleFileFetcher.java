@@ -102,8 +102,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	/** Try again - returns true if we can retry */
 	protected boolean retry(ObjectContainer container, ClientContext context) {
-		if(isEmpty(container))
+		if(isEmpty(container)) {
+			if(logMINOR) Logger.minor(this, "Not retrying because empty");
 			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
+		}
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
 		int r;
@@ -111,7 +113,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			r = ++tracker.retryCount;
 		else
 			r = ++retryCount;
-		if(logMINOR && persistent)
+		if(logMINOR)
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+r+") on "+this+" finished="+finished+" cancelled="+cancelled);
 		if((r <= maxRetries) || (maxRetries == -1)) {
 			if(persistent && maxRetries != -1)
@@ -386,8 +388,19 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public synchronized long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
 		if(cancelled || finished) return -1;
 		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
-		if(tracker.cooldownWakeupTime < now) return 0;
-		return tracker.cooldownWakeupTime;
+		long wakeTime = tracker.cooldownWakeupTime;
+		if(wakeTime <= now)
+			tracker.cooldownWakeupTime = wakeTime = 0;
+		KeysFetchingLocally fetching = context.fetching;
+		if(wakeTime <= 0 && fetching.hasKey(getNodeKey(null, container), this, cancelled, container)) {
+			wakeTime = Long.MAX_VALUE;
+			// tracker.cooldownWakeupTime is only set for a real cooldown period, NOT when we go into hierarchical cooldown because the request is already running.
+		}
+		if(wakeTime == 0)
+			return 0;
+		HasCooldownCacheItem parentRGA = getParentGrabArray();
+		context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container, true);
+		return wakeTime;
 	}
 
 }

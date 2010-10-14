@@ -17,6 +17,8 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
 import freenet.node.Ticker;
+import freenet.node.useralerts.UserAlert;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.api.BucketFactory;
@@ -38,6 +40,7 @@ public class ClientContext {
 	private transient ClientRequestScheduler chkFetchScheduler;
 	private transient ClientRequestScheduler sskInsertScheduler;
 	private transient ClientRequestScheduler chkInsertScheduler;
+	private transient UserAlertManager alerts;
 	public transient final DBJobRunner jobRunner;
 	public transient final Executor mainExecutor;
 	public transient final long nodeDBHandle;
@@ -87,12 +90,13 @@ public class ClientContext {
 		this.cooldownTracker = new CooldownTracker();
 	}
 	
-	public void init(RequestStarterGroup starters) {
+	public void init(RequestStarterGroup starters, UserAlertManager alerts) {
 		this.sskFetchScheduler = starters.sskFetchScheduler;
 		this.chkFetchScheduler = starters.chkFetchScheduler;
 		this.sskInsertScheduler = starters.sskPutScheduler;
 		this.chkInsertScheduler = starters.chkPutScheduler;
 		this.fetching = chkFetchScheduler.fetchingKeys();
+		this.alerts = alerts;
 		this.cooldownTracker.startMaintenance(ticker);
 	}
 
@@ -270,6 +274,21 @@ public class ClientContext {
 	public void setPersistentBucketFactory(PersistentTempBucketFactory persistentTempBucketFactory, FilenameGenerator persistentFilenameGenerator) {
 		this.persistentBucketFactory = persistentTempBucketFactory;
 		this.persistentFG = persistentFilenameGenerator;
+	}
+
+	public void postUserAlert(final UserAlert alert) {
+		if(alerts == null) {
+			// Wait until after startup
+			ticker.queueTimedJob(new Runnable() {
+
+				public void run() {
+					alerts.register(alert);
+				}
+				
+			}, "Post alert", 0L, false, false);
+		} else {
+			alerts.register(alert);
+		}
 	}
 	
 }

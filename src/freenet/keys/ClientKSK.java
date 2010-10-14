@@ -9,7 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;

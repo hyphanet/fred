@@ -1078,7 +1078,7 @@ public class FreenetURI implements Cloneable {
 	}
 
 	public void objectOnDelete(ObjectContainer container) {
-		if(Logger.shouldLog(LogLevel.DEBUG, this)) Logger.debug(this, "Deleting URI", new Exception("debug"));
+		if(logDEBUG) Logger.debug(this, "Deleting URI", new Exception("debug"));
 	}
 
 	/** Is this key a USK? */

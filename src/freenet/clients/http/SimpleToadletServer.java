@@ -37,6 +37,7 @@ import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.Executor;
 import freenet.support.HTMLNode;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
@@ -110,6 +111,16 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	/** The IntervalPusherManager handles interval pushing*/
 	public IntervalPusherManager intervalPushManager;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	// Config Callbacks
 	private class FProxySSLCallback extends BooleanCallback  {
@@ -767,7 +778,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				return;
             if(conn == null)
                 continue; // timeout
-            if(Logger.shouldLog(LogLevel.MINOR, this))
+            if(logMINOR)
                 Logger.minor(this, "Accepted connection");
             SocketHandler sh = new SocketHandler(conn);
             sh.start();
@@ -788,7 +799,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
-			boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
 				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker);
@@ -934,7 +944,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public Ticker getTicker(){
-		return core.node.ps;
+		return core.node.getTicker();
 	}
 	
 	public NodeClientCore getCore(){

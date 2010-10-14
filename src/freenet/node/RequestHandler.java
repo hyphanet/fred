@@ -174,7 +174,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(passedInKeyBlock != null) {
 			tag.setServedFromDatastore();
 			returnLocalData(passedInKeyBlock);
-			node.nodeStats.remoteRequest(key instanceof NodeSSK, true, true, htl, key.toNormalizedDouble());
 			passedInKeyBlock = null; // For GC
 			return;
 		} else
@@ -540,6 +539,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							applyByteCounts();
 							unregisterRequestHandlerWithNode();
 						}
+						node.nodeStats.remoteRequest(key instanceof NodeSSK, true, true, htl, key.toNormalizedDouble());
 					}
 					
 				});

@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.crypt.BlockCipher;
@@ -441,7 +441,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 							keyCount.incrementAndGet();
 							return true;
 						} else if(((flag & Entry.ENTRY_WRONG_STORE) == Entry.ENTRY_WRONG_STORE)) {
-							firstWrongStoreIndex = i;
+							if (wrongStoreCount == 0)
+								firstWrongStoreIndex = i;
 							wrongStoreCount++;
 						}
 					}
@@ -456,45 +457,31 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					}
 				}
 
-				boolean clobberWrongStore = true;
-				if(firstWrongStoreIndex == -1)
-					clobberWrongStore = false;
-				else {
-					if(wrongStore) {
-						// Distribute cache slot clobbering evenly between the two.
-						int a = OPTION_MAX_PROBE;
-						int b = wrongStoreCount;
-						clobberWrongStore = random.nextInt(a+b) > a;
-					}
-				}
-
-				// No free slot
-				if(clobberWrongStore) {
-					// Use the first wrong-store slot.
-					// This is acceptable if we are writing wrong-store and is certainly acceptable if we are not.
-					// write to free block
-					int i = firstWrongStoreIndex;
-					if (logDEBUG)
-						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
-					bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
-					writeEntry(entry, offset[i]);
-					rebuildBloom = onWrite();
-					keyCount.incrementAndGet();
-					return true;
-				}
+				// There are no free slots for this Entry, so some slot will have to get overwritten.
+				int indexToOverwrite = -1;
 
 				if(wrongStore) {
-					if(logDEBUG) Logger.debug(this, "Won't overwrite non-wrong-store slots with wrong-store slots");
-					// We will not overwrite non-wrong-store slots with wrong-store ones.
-					return false;
+					// Distribute overwrites evenly between the right store and the wrong store.
+					int a = OPTION_MAX_PROBE;
+					int b = wrongStoreCount;
+					if(random.nextInt(a+b) < b)
+						// Allow the overwrite to happen in the wrong store.
+						indexToOverwrite = firstWrongStoreIndex;
+					else
+						// Force the overwrite to happen in the right store.
+						return false;
+				}
+				else {
+					// By default, overwrite offset[0] when not writing to wrong store.
+					indexToOverwrite = 0;
 				}
 
-				// no free blocks, overwrite the first one
+				// Do the overwriting.
 				if (logDEBUG)
-					Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
+					Logger.debug(this, "collision, write to i=" + indexToOverwrite + ", offset=" + offset[indexToOverwrite]);
 				bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
-				oldEntry = readEntry(offset[0], null, false);
-				writeEntry(entry, offset[0]);
+				oldEntry = readEntry(offset[indexToOverwrite], null, false);
+				writeEntry(entry, offset[indexToOverwrite]);
 				rebuildBloom = onWrite();
 				if (oldEntry.generation == generation)
 					bloomFilter.removeKey(oldEntry.getDigestedRoutingKey());
@@ -989,8 +976,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 *  +----+---------------+-------+-------+
 	 *  |0020| Est Key Count |  Gen  | Flags |
 	 *  +----+-------+-------+-------+-------+
-	 *  |0030|   K   |                       |
-	 *  +----+-------+-----------------------+
+	 *  |0030|   K   |      (reserved)       |
+	 *  +----+-------+-------+---------------+
+	 *  |0040|    writes     |     hits      |
+	 *  +----+---------------+---------------+
+	 *  |0050|    misses     | bloomFalsePos |
+	 *  +----+---------------+---------------+
 	 *
 	 *  Gen = Generation
 	 *    K = K for bloom filter

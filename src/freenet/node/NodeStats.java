@@ -329,7 +329,7 @@ public class NodeStats implements Persistable {
 		},false);
 		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
 
-		myMemoryChecker = new MemoryChecker(node.ps, aggressiveGCModificator);
+		myMemoryChecker = new MemoryChecker(node.getTicker(), aggressiveGCModificator);
 		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "NodeStat.memCheck", "NodeStat.memCheckLong",
 				new BooleanCallback(){
 					@Override
@@ -414,7 +414,7 @@ public class NodeStats implements Persistable {
 		});
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false,
-				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps, node.getRunDir());
+				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ticker, node.getRunDir());
 
 		SimpleFieldSet throttleFS = persister.read();
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
@@ -530,8 +530,19 @@ public class NodeStats implements Persistable {
 	 * Note that this only applies to data on the queue before calling shouldRejectRequest(): we
 	 * do *not* attempt to include any estimate of how much the request will add to it. This is
 	 * important because if we did, the AIMD may not have reached sufficient speed to transfer it
-	 * in 60 seconds yet, because it hasn't had enough data in transit to need to increase its speed. */
-	private static final double MAX_PEER_QUEUE_TIME = 1 * 60 * 1000.0;
+	 * in 60 seconds yet, because it hasn't had enough data in transit to need to increase its speed.
+	 * 
+	 * Interaction with output bandwidth liability: This must be slightly larger than the
+	 * output bandwidth liability time limit (combined for both types).
+	 * 
+	 * A fast peer can have slightly more than half our output limit queued in requests to run. 
+	 * If they all complete, they will take half the time limit. If they are all served from the 
+	 * store, this will be shown on the queue time. But the queue time is estimated based on 
+	 * using at most half the limit, so the time will be slightly over the overall limit. */
+	
+	// FIXME increase to 4 minutes when bulk/realtime flag merged!
+	
+	private static final double MAX_PEER_QUEUE_TIME = 2 * 60 * 1000.0;
 
 	private long lastAcceptedRequest = -1;
 
@@ -728,6 +739,20 @@ public class NodeStats implements Persistable {
 			limit += 10;
 			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
 		}
+		
+		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
+		// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
+		// Also, if things have broken, our overhead might be above our bandwidth limit,
+		// especially on a slow node.
+
+		// So impose a minimum of 20% of the bandwidth limit.
+		// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
+		// and we don't accept any requests because of that, so it remains that way...
+		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
+		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
+
+		double bandwidthAvailableOutput = outputAvailablePerSecond * limit;
+		// 90 seconds at full power; we have to leave some time for the search as well
 
 		if(preferInsert) {
 			// Allow some extra inserts.
@@ -759,21 +784,7 @@ public class NodeStats implements Persistable {
 			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
 			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
 		}
-		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
-		// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
-		// Also, if things have broken, our overhead might be above our bandwidth limit,
-		// especially on a slow node.
-
-		// So impose a minimum of 20% of the bandwidth limit.
-		// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
-		// and we don't accept any requests because of that, so it remains that way...
-		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
-		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
-
-		double bandwidthAvailableOutput = outputAvailablePerSecond * limit;
-		// 90 seconds at full power; we have to leave some time for the search as well
 		if(logMINOR) Logger.minor(this, "90 second limit: "+bandwidthAvailableOutput+" expected output liability: "+bandwidthLiabilityOutput);
-
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutput) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Output bandwidth liability", isLocal);

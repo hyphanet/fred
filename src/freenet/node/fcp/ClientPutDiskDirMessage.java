@@ -15,6 +15,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -36,6 +37,16 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	
 	final File dirname;
 	final boolean allowUnreadableFiles;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	public ClientPutDiskDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		super(fs);
@@ -69,7 +80,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
      */
     private HashMap<String, Object> makeBucketsByName(File thisdir, String prefix) throws MessageInvalidException {
     	
-    	if(Logger.shouldLog(LogLevel.MINOR, this))
+    	if(logMINOR)
     		Logger.minor(this, "Listing directory: "+thisdir);
     	
     	HashMap<String, Object> ret = new HashMap<String, Object>();

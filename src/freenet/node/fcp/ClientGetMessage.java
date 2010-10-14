@@ -13,6 +13,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -68,6 +69,16 @@ public class ClientGetMessage extends FCPMessage {
 	static final short RETURN_TYPE_NONE = 1; // not at all; to cache only; prefetch?
 	static final short RETURN_TYPE_DISK = 2; // to a file
 	static final short RETURN_TYPE_CHUNKED = 3; // FIXME implement: over FCP, as decoded
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	public ClientGetMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		short defaultPriority;
@@ -168,7 +179,7 @@ public class ClientGetMessage extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier, global);
 			}
 		}
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "max retries="+maxRetries);
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {

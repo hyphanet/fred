@@ -17,6 +17,7 @@ import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
 import freenet.support.URLDecoder;
@@ -46,7 +47,17 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	private URI strippedBaseURI;
 	private final FoundURICallback cb;
 	private final TagReplacerCallback trc;
-	
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc) {
 		this.baseURI = uri;
 		this.cb = cb;
@@ -107,7 +118,6 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		
 		URI uri;
 		URI resolved;
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		try {
 			if(logMINOR) Logger.minor(this, "Processing "+u);
 			uri = URIPreEncoder.encodeURI(u).normalize();
@@ -315,7 +325,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			
 			if(!noRelative)
 				uri = strippedBaseURI.relativize(uri);
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Returning "+uri.toASCIIString()+" from "+path+" from baseURI="+baseURI+" stripped base uri="+strippedBaseURI.toString());
 			return uri.toASCIIString();
 		} catch (URISyntaxException e) {

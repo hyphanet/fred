@@ -51,7 +51,7 @@ public class NodePinger implements Runnable {
         recalculateMean(peers);
         } finally {
         	// Requeue after to avoid exacerbating overload
-        	node.ps.queueTimedJob(this, 200);
+        	node.getTicker().queueTimedJob(this, 200);
         }
 	}
 

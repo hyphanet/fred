@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
+import freenet.support.LogThresholdCallback;
 
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -20,6 +21,18 @@ public class FCPConnectionOutputHandler implements Runnable {
 	final LinkedList<FCPMessage> outQueue;
 	// Synced on outQueue
 	private boolean closedOutputQueue;
+
+        private static volatile boolean logMINOR;
+        private static volatile boolean logDEBUG;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+                                logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+			}
+		});
+	}
 	
 	public FCPConnectionOutputHandler(FCPConnectionHandler handler) {
 		this.handler = handler;
@@ -37,7 +50,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 		try {
 			realRun();
 		} catch (IOException e) {
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Caught "+e, e);
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
@@ -94,7 +107,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
 
 	public void queue(FCPMessage msg) {
-		if(Logger.shouldLog(LogLevel.DEBUG, this))
+		if(logDEBUG)
 			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
 		if(msg == null) throw new NullPointerException();
 		synchronized(outQueue) {

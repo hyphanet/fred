@@ -136,7 +136,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		}
 		boolean forceFatal = false;
 		if(parent.isCancelled()) {
-			if(Logger.shouldLog(LogLevel.MINOR, this)) 
+			if(logMINOR)
 				Logger.minor(this, "Failing: cancelled");
 			e = new FetchException(FetchException.CANCELLED);
 			forceFatal = true;
@@ -319,7 +319,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
         	container.activate(segment.errors, 1);
         }
         if(parent.isCancelled()) {
-                if(Logger.shouldLog(LogLevel.MINOR, this))
+                if(logMINOR)
                         Logger.minor(this, "Failing: cancelled");
                 // Fail the segment.
                 segment.fail(new FetchException(FetchException.CANCELLED), container, context, false);
