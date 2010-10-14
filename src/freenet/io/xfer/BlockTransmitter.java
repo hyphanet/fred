@@ -314,6 +314,7 @@ public class BlockTransmitter {
 		}
 		if(logMINOR) Logger.minor(this, "maybeComplete() completing on "+this);
 		_completed = true;
+		decRunningBlockTransmits();
 		return true;
 	}
 	
@@ -330,6 +331,7 @@ public class BlockTransmitter {
 		}
 		if(logMINOR) Logger.minor(this, "maybeFail() completing on "+this);
 		_completed = true;
+		decRunningBlockTransmits();
 		return true;
 	}
 
@@ -643,7 +645,6 @@ public class BlockTransmitter {
 		// shouldTimeout() should deal with them adequately, maybe we don't need to explicitly remove them.
 		if (myListener!=null)
 			_prb.removeListener(myListener);
-		decRunningBlockTransmits();
 	}
 
 	private class MyAsyncMessageCallback implements AsyncMessageCallback {
