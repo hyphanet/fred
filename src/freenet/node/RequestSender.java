@@ -198,14 +198,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
             finish(INTERNAL_ERROR, null, false);
-        } finally {
-        	if(sentAbortDownstreamTransfers) {
-        		// We took on responsibility for unlocking.
-        		if(logMINOR) Logger.minor(this, "Unlocking after turtle");
-        		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, source == null, origTag);
-        	}
-        	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
         }
+    	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
     }
 
 	static final int MAX_HIGH_HTL_FAILURES = 5;
@@ -1208,6 +1202,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			opennetFinished = true;
 			notifyAll();
 		}
+		
+    	if(sentAbortDownstreamTransfers) {
+    		// We took on responsibility for unlocking.
+    		if(logMINOR) Logger.minor(this, "Unlocking after turtle");
+    		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, source == null, origTag);
+    	}
         
     }
 
