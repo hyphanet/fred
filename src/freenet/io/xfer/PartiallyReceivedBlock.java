@@ -33,7 +33,7 @@ public class PartiallyReceivedBlock {
 	byte[] _data;
 	boolean[] _received;
 	int _receivedCount;
-	int _packets, _packetSize;
+	public final int _packets, _packetSize;
 	boolean _aborted;
 	int _abortReason;
 	String _abortDescription;

@@ -13,6 +13,7 @@ import freenet.io.comm.Peer;
 import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -426,5 +427,4 @@ public class PacketSender implements Runnable {
 	protected String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("PacketSender."+key, pattern, value);
 	}
-
 }

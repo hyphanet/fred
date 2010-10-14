@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
+import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -226,6 +227,10 @@ public class PrioritisedTicker implements Ticker, Runnable {
 		synchronized(this) {
 			notifyAll();
 		}
+	}
+
+	public Executor getExecutor() {
+		return node.executor;
 	}
 
 }

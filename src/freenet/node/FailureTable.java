@@ -12,6 +12,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.xfer.BlockTransmitter;
+import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.CHKBlock;
@@ -475,7 +476,14 @@ public class FailureTable implements OOMHook {
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	final BlockTransmitter bt =
-        		new BlockTransmitter(node.usm, source, uid, prb, senderCounter, BlockTransmitter.NEVER_CASCADE);
+        		new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, senderCounter, BlockTransmitter.NEVER_CASCADE,
+        				new BlockTransmitterCompletion() {
+
+					public void blockTransferFinished(boolean success) {
+						node.unlockUID(uid, isSSK, false, false, true, false, tag);
+					}
+					
+				});
         	node.executor.execute(new PrioRunnable() {
 
 				public int getPriority() {
@@ -483,13 +491,7 @@ public class FailureTable implements OOMHook {
 				}
 
 				public void run() {
-					try {
-						bt.send(node.executor);
-					} catch (Throwable t) {
-						Logger.error(this, "Sending offered key failed: "+t, t);
-					} finally {
-						node.unlockUID(uid, isSSK, false, false, true, false, tag);
-					}
+					bt.sendAsync();
 				}
         		
         	}, "CHK offer sender");
