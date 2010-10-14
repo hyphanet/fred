@@ -158,14 +158,14 @@ public class BlockTransmitter {
 					callFail = maybeFail();
 				}
 				if(callFail) {
+					try {
+						sendAborted(RetrievalException.TIMED_OUT, "Sender unable to send packets quickly enough");
+					} catch (NotConnectedException e1) {
+						// Ignore
+					}
 					if(_callback != null)
 						_callback.blockTransferFinished(false);
 					cleanup();
-				}
-				try {
-					sendAborted(RetrievalException.TIMED_OUT, "Sender unable to send packets quickly enough");
-				} catch (NotConnectedException e1) {
-					// Ignore
 				}
 				cancelItemsPending();
 				return false;
@@ -259,12 +259,12 @@ public class BlockTransmitter {
 						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
 						callFail = maybeFail();
 					}
-					try {
-						sendAborted(RetrievalException.RECEIVER_DIED, "Haven't heard from you (receiver) in "+timeString);
-					} catch (NotConnectedException e) {
-						// Ignore, it still failed
-					}
 					if(callFail) {
+						try {
+							sendAborted(RetrievalException.RECEIVER_DIED, "Haven't heard from you (receiver) in "+timeString);
+						} catch (NotConnectedException e) {
+							// Ignore, it still failed
+						}
 						if(_callback != null)
 							_callback.blockTransferFinished(false);
 						cleanup();
@@ -338,8 +338,8 @@ public class BlockTransmitter {
 		boolean sendAbort = false;
 		synchronized(_senderThread) {
 			_failed = true;
-			sendAbort = prepareSendAbort();
 			callFail = maybeFail();
+			sendAbort = callFail && prepareSendAbort();
 		}
 		if(callFail) {
 			if(_callback != null)
@@ -354,6 +354,10 @@ public class BlockTransmitter {
 	/** Must be called synchronized on _senderThread */
 	private boolean prepareSendAbort() {
 		scheduleTimeoutAfterBlockSends();
+		if(blockSendsPending != 0) {
+			if(logMINOR) Logger.minor(this, "Not sending sendAborted until block sends finished on "+this);
+			return false;
+		}
 		if(_sentSendAborted) {
 			if(logMINOR) Logger.minor(this, "Not sending sendAborted on "+this);
 			return false;
@@ -476,8 +480,10 @@ public class BlockTransmitter {
 				_sendCompleted = true;
 				_sendSucceeded = false;
 				complete = maybeFail();
-				abort = !_sentSendAborted;
-				_sentSendAborted = true;
+				if(complete) {
+					abort = !_sentSendAborted;
+					_sentSendAborted = true;
+				}
 				if(logMINOR) Logger.minor(this, "Transfer got sendAborted on "+BlockTransmitter.this);
 			}
 			// FIXME we are acknowledging the cancel immediately, shouldn't we wait for the sends to finish since we won't unlock until then?
@@ -541,8 +547,8 @@ public class BlockTransmitter {
 			timeAllSent = -1;
 			_failed = true;
 			_senderThread.notifyAll();
-			sendAbort = prepareSendAbort();
 			callFailCallback = maybeFail();
+			sendAbort = callFailCallback && prepareSendAbort();
 		}
 		if(sendAbort) {
 			try {
