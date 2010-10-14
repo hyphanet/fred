@@ -198,8 +198,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
             finish(INTERNAL_ERROR, null, false);
+        } finally {
+        	if(status == NOT_FINISHED && !receivingAsync) {
+        		Logger.error(this, "Not finished: "+this);
+        		finish(INTERNAL_ERROR, null, false);
+        	}
+        	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
         }
-    	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
     }
 
 	static final int MAX_HIGH_HTL_FAILURES = 5;
