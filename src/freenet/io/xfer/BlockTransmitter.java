@@ -253,7 +253,10 @@ public class BlockTransmitter {
 					String timeString;
 					synchronized(_senderThread) {
 						if(_completed) return;
-						_sendCompleted = true;
+						if(!_sendCompleted) {
+							_sendCompleted = true;
+							_sendSucceeded = false;
+						}
 						//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
 						timeString=TimeUtil.formatTime((System.currentTimeMillis() - timeAllSent), 2, true);
 						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
