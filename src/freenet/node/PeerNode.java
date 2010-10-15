@@ -2405,7 +2405,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(logMINOR)
 			Logger.minor(this, "Parsing: \n" + fs);
 		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef) || forARK;
-		if(changedAnything)
+		if(changedAnything && !isSeed())
 			node.peers.writePeers();
 	}
 

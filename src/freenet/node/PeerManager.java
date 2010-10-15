@@ -528,24 +528,27 @@ public class PeerManager {
 								return;
 							done = true;
 						}
-						if(removePeer(pn))
+						if(removePeer(pn) && !pn.isSeed())
 							writePeers();
 					}
 				}, ctrDisconn);
 			} catch(NotConnectedException e) {
-				if(pn.isDisconnecting() && removePeer(pn))
+				if(pn.isDisconnecting() && removePeer(pn) && !pn.isSeed())
 					writePeers();
 				return;
 			}
-			node.getTicker().queueTimedJob(new Runnable() {
+                        if(!pn.isSeed()) {
+                            node.getTicker().queueTimedJob(new Runnable() {
 
-				public void run() {
-					if(pn.isDisconnecting() && removePeer(pn))
-						writePeers();
-				}
-			}, Node.MAX_PEER_INACTIVITY);
+                                public void run() {
+                                    if (pn.isDisconnecting() && removePeer(pn)) {
+                                        writePeers();
+                                    }
+                                }
+                            }, Node.MAX_PEER_INACTIVITY);
+                        }
 		} else
-			if(removePeer(pn))
+			if(removePeer(pn) && !pn.isSeed())
 				writePeers();
 	}
 	final ByteCounter ctrDisconn = new ByteCounter() {
