@@ -15,7 +15,6 @@ import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
 public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, PortForwardSensitiveSocketHandler {
@@ -32,8 +31,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private int _dropProbability;
 	// Icky layer violation, but we need to know the Node to work around the EvilJVMBug.
 	private final Node node;
-	private static boolean logMINOR;
-	private static boolean logDEBUG;
+        private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 	private boolean _isDone;
 	private volatile boolean _active = true;
 	private final int listenPort;
@@ -41,6 +40,10 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private boolean _started;
 	private long startTime;
 	private final IOStatisticCollector collector;
+
+        static {
+            Logger.registerClass(UdpSocketHandler.class);
+        }
 
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
 		this.node = node;
@@ -67,8 +70,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 //		}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = node.fastWeakRandom;
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		tracker = AddressTracker.create(node.lastBootID, node.runDir(), listenPort);
 		tracker.startSend(startupTime);
 	}
