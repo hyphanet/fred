@@ -47,8 +47,6 @@ public class NewPacketFormat implements PacketFormat {
 	private final PeerNode pn;
 	private final LinkedList<Integer> acks = new LinkedList<Integer>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
-	private final int[] lastRtts;
-	private int nextRttPos;
 
 	private int nextSequenceNumber = 0;
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
@@ -77,11 +75,6 @@ public class NewPacketFormat implements PacketFormat {
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
 		for(int i = 0; i < DMT.NUM_PRIORITIES; i++) {
 			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
-		}
-
-		lastRtts = new int[100];
-		for(int i = 0; i < lastRtts.length; i++) {
-			lastRtts[i] = -1;
 		}
 	}
 
@@ -132,8 +125,9 @@ public class NewPacketFormat implements PacketFormat {
 				SentPacket sent = sentPackets.remove(ack);
 				if(sent != null) {
 					long rtt = sent.acked();
-					lastRtts[nextRttPos] = (int) (Math.min(rtt, Integer.MAX_VALUE));
-					nextRttPos = (nextRttPos + 1) % lastRtts.length;
+					if(pn != null) {
+						pn.reportPing((int) (Math.min(rtt, Integer.MAX_VALUE)));
+					}
 				}
 			}
 		}
@@ -464,7 +458,7 @@ public class NewPacketFormat implements PacketFormat {
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) throws BlockedTooLongException {
 		//Mark packets as lost
 		synchronized(sentPackets) {
-			int avgRtt = Math.max(250, averageRTT());
+			double avgRtt = Math.max(250, averageRTT());
 			long curTime = System.currentTimeMillis();
 
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
@@ -645,17 +639,11 @@ fragments:
 		}
 	}
 
-	private int averageRTT() {
-		int avgRtt = 0;
-		int numRtts = 0;
-		for(int i = 0; i < lastRtts.length; i++) {
-			if(lastRtts[i] < 0) break;
-			avgRtt += lastRtts[i];
-			++numRtts;
+	private double averageRTT() {
+		if(pn != null) {
+			return pn.averagePingTime();
 		}
-
-		if(numRtts == 0) return 250;
-		return avgRtt / numRtts;
+		return 250;
 	}
 
 	private static class SentPacket {
