@@ -2135,7 +2135,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public long getBootID() {
 		return bootID;
 	}
-	private volatile Object arkFetcherSync = new Object();
+	private final Object arkFetcherSync = new Object();
 
 	void startARKFetcher() {
 		// FIXME any way to reduce locking here?
