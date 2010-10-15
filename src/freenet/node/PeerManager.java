@@ -37,7 +37,6 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -63,6 +62,7 @@ public class PeerManager {
 	PeerNode[] connectedPeers;
 	private String darkFilename;
 	private String openFilename;
+        String oldOpennetPeersFilename;
 	private PeerManagerUserAlert ua;	// Peers stuff
 	/** age of oldest never connected peer (milliseconds) */
 	private long oldestNeverConnectedDarknetPeerAge;
@@ -275,7 +275,8 @@ public class PeerManager {
 		if(pn.recordStatus())
 			addPeerNodeStatus(pn.getPeerNodeStatus(), pn, false);
 		pn.setPeerNodeStatus(System.currentTimeMillis());
-		updatePMUserAlert();
+		if(!pn.isSeed())
+                    updatePMUserAlert();
 		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
 			OpennetManager opennet = node.getOpennet();
 			if(opennet != null)
@@ -286,7 +287,6 @@ public class PeerManager {
 				return false;
 			}
 		}
-
 		notifyPeerStatusChangeListeners();
 		return true;
 	}
@@ -344,7 +344,7 @@ public class PeerManager {
 			}
 		}
 		pn.onRemove();
-		if(isInPeers)
+		if(isInPeers && !pn.isSeed())
 			updatePMUserAlert();
 		notifyPeerStatusChangeListeners();
 		return true;
@@ -383,7 +383,8 @@ public class PeerManager {
 			newConnectedPeers = a.toArray(newConnectedPeers);
 			connectedPeers = newConnectedPeers;
 		}
-		updatePMUserAlert();
+                if(!pn.isSeed())
+                    updatePMUserAlert();
 		node.lm.announceLocChange();
 		return true;
 	}
@@ -435,7 +436,8 @@ public class PeerManager {
 			if(logMINOR)
 				Logger.minor(this, "Connected peers: " + connectedPeers.length);
 		}
-		updatePMUserAlert();
+		if(!pn.isSeed())
+                    updatePMUserAlert();
 		node.lm.announceLocChange();
 	}
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
@@ -1180,7 +1182,7 @@ public class PeerManager {
 		String darknet = null;
 		String opennet = null;
 		String oldOpennetPeers = null;
-		String oldOpennetPeersFilename = null;
+
 		
 		synchronized(writePeersSync) {
 			if(darkFilename != null)
