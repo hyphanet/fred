@@ -147,7 +147,7 @@ public class ClientPut extends ClientPutBase {
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata, 
 				lowLevelClient,
-				null, binaryBlob, server.core.clientContext, overrideSplitfileKey);
+				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, overrideSplitfileKey);
 	}
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
@@ -259,7 +259,7 @@ public class ClientPut extends ClientPutBase {
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata,
 				lowLevelClient,
-				null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey);
+				this.uri.getDocName() == null ? targetFilename : null, binaryBlob, server.core.clientContext, message.overrideSplitfileCryptoKey);
 	}
 	
 	@Override
