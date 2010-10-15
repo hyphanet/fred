@@ -327,7 +327,7 @@ public class WelcomeToadlet extends Toadlet {
             if (request.isParameterSet("latestlog")) {
                 final File logs = new File(node.config.get("logger").getString("dirname") + File.separator + "freenet-latest.log");
 
-                this.writeHTMLReply(ctx, 200, "OK", FileUtil.readUTF(logs));
+                this.writeTextReply(ctx, 200, "OK", FileUtil.readUTF(logs));
                 return;
             } else if (request.isParameterSet("terminated")) {
                 if ((!request.isParameterSet("formPassword")) || !request.getParam("formPassword").equals(core.formPassword)) {
