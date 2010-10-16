@@ -420,7 +420,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		String lname = isExt ? "ext" : "main";
 		if(logMINOR)
 			Logger.minor(this, "sendUOMRequest"+name+"(" + source + "," + addOnFail + ")");
-		if(!source.isConnected())
+		if(!source.isConnected() || source.isSeed())
 			return;
 		final HashSet<PeerNode> sendingJar = isExt ? nodesSendingExtJar : nodesSendingMainJar;
 		final HashSet<PeerNode> askedSendJar = isExt ? nodesAskedSendExtJar : nodesAskedSendMainJar;
