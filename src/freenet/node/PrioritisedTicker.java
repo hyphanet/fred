@@ -38,6 +38,10 @@ public class PrioritisedTicker implements Ticker, Runnable {
 			// Ignore the name, we are only interested in the job, needed for noDupes.
 			return ((Job)o).job == job;
 		}
+		
+		public int hashCode() {
+			return job.hashCode();
+		}
 	}
 	
 	/** ~= Ticker :) */
