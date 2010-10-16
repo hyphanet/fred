@@ -63,9 +63,9 @@ public class PeerManager {
 	private String darkFilename;
         private String openFilename;
         private String oldOpennetPeersFilename;
-        private String darknetPeersStringCache = null;
-        private String opennetPeersStringCache = null;
-        private String oldOpennetPeersStringCache = null;
+        private int darknetPeersStringCache = -1;
+        private int opennetPeersStringCache = -1;
+        private int oldOpennetPeersStringCache = -1;
         private PeerManagerUserAlert ua;	// Peers stuff
 	/** age of oldest never connected peer (milliseconds) */
 	private long oldestNeverConnectedDarknetPeerAge;
@@ -1203,13 +1203,25 @@ public class PeerManager {
 
                 // TODO: use hashcode() or something if the memory usage is a problem?
 		synchronized(writePeerFileSync) {
-			if(newDarknetPeersString != null && !darknetPeersStringCache.equals(newDarknetPeersString))
-				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString);
-			if(newOldOpennetPeersString != null && !oldOpennetPeersStringCache.equals(newOldOpennetPeersString)) {
-				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString);
+			if(newDarknetPeersString != null) {
+				int hashCode = newDarknetPeersString.hashCode();
+				if(darknetPeersStringCache == -1 || darknetPeersStringCache != hashCode) {
+					darknetPeersStringCache = hashCode;
+					writePeersInner(darkFilename, newDarknetPeersString);
+				}
 			}
-			if(newOpennetPeersString != null && !opennetPeersStringCache.equals(newOpennetPeersString)) {
-				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString);
+			if(newOldOpennetPeersString != null) {
+				int hashCode = newOldOpennetPeersString.hashCode();
+				if(oldOpennetPeersStringCache == -1 || oldOpennetPeersStringCache != hashCode) {
+					oldOpennetPeersStringCache = hashCode;
+					writePeersInner(oldOpennetPeersFilename, newOldOpennetPeersString);
+				}
+			}
+			if(newOpennetPeersString != null) {
+				int hashCode = newOpennetPeersString.hashCode();
+				if(opennetPeersStringCache == -1 || opennetPeersStringCache != hashCode) {
+					writePeersInner(openFilename, newOpennetPeersString);
+				}
 			}
 		}
 	}
