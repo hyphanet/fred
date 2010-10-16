@@ -117,6 +117,7 @@ public class OOMHandler {
 			WrapperManager.requestThreadDump(); // Will probably crash, but never mind...
 		} finally {
 			isOOM = false;
+			WrapperManager.restart();
 		}
 	}
 }
