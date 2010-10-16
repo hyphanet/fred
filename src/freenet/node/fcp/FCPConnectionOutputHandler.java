@@ -73,8 +73,10 @@ public class FCPConnectionOutputHandler implements Runnable {
 		while(true) {
 			boolean closed;
 			FCPMessage msg = null;
+			boolean flushed = false;
 			while(true) {
 				closed = handler.isClosed();
+				boolean shouldFlush = false;
 				synchronized(outQueue) {
 					if(outQueue.isEmpty()) {
 						if(closed) {
@@ -82,15 +84,24 @@ public class FCPConnectionOutputHandler implements Runnable {
 							outQueue.notifyAll();
 							break;
 						}
-						os.flush();
-						try {
-							outQueue.wait();
-						} catch (InterruptedException e) {
-							// Ignore
+						if(!flushed)
+							shouldFlush = true;
+						else {
+							try {
+								outQueue.wait();
+							} catch (InterruptedException e) {
+								// Ignore
+							}
+							continue;
 						}
-						continue;
 					}
 					msg = outQueue.removeFirst();
+				}
+				if(shouldFlush) {
+					os.flush();
+					flushed = true;
+					continue;
+				} else {
 					break;
 				}
 			}
@@ -102,6 +113,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 				}
 			} else {
 				msg.send(os);
+				flushed = false;
 			}
 		}
 	}
