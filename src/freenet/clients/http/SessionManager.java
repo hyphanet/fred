@@ -7,7 +7,10 @@ import java.net.URI;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import freenet.support.CurrentTimeUTC;
@@ -69,7 +72,8 @@ public final class SessionManager {
 
 		private final UUID mID;
 		private final String mUserID;
-		
+		private final Map<String, Object> mAttributes = new HashMap<String, Object>();
+
 		private long mExpiresAtTime;
 		
 		private Session(String myUserID, long currentTime) {
@@ -103,6 +107,64 @@ public final class SessionManager {
 		private void updateExpiresAtTime(long currentTime) {
 			mExpiresAtTime = currentTime + SessionManager.MAX_SESSION_IDLE_TIME;
 		}
+
+		/**
+		 * Returns whether this session contains an attribute with the given
+		 * name.
+		 *
+		 * @param name
+		 *            The name of the attribute to check for
+		 * @return {@code true} if this session contains an attribute with the
+		 *         given name, {@code false} otherwise
+		 */
+		public boolean hasAttribute(String name) {
+			return mAttributes.containsKey(name);
+		}
+
+		/**
+		 * Returns the value of the attribute with the given name. If there is
+		 * no attribute with the given name, {@code null} is returned.
+		 *
+		 * @param name
+		 *            The name of the attribute whose value to get
+		 * @return The value of the attribute, or {@code null}
+		 */
+		public Object getAttribute(String name) {
+			return mAttributes.get(name);
+		}
+
+		/**
+		 * Sets the value of the attribute with the given name.
+		 *
+		 * @param name
+		 *            The name of the attribute whose value to set
+		 * @param value
+		 *            The new value of the attribute
+		 */
+		public void setAttribute(String name, Object value) {
+			mAttributes.put(name, value);
+		}
+
+		/**
+		 * Removes the attribute with the given name. Nothing will happen if
+		 * there is no attribute with the given name.
+		 *
+		 * @param name
+		 *            The name of the attribute to remove
+		 */
+		public void removeAttribute(String name) {
+			mAttributes.remove(name);
+		}
+
+		/**
+		 * Returns the names of all currently existing attributes.
+		 *
+		 * @return The names of all attributes
+		 */
+		public Set<String> getAttributeNames() {
+			return mAttributes.keySet();
+		}
+
 	}
 
 	private final LRUHashtable<UUID, Session> mSessionsByID = new LRUHashtable<UUID, Session>();
