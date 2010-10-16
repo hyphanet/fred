@@ -61,9 +61,12 @@ public class PeerManager {
 	/** All the peers we are actually connected to */
 	PeerNode[] connectedPeers;
 	private String darkFilename;
-	private String openFilename;
-        String oldOpennetPeersFilename;
-	private PeerManagerUserAlert ua;	// Peers stuff
+        private String openFilename;
+        private String oldOpennetPeersFilename;
+        private String darknetPeersStringCache = null;
+        private String opennetPeersStringCache = null;
+        private String oldOpennetPeersStringCache = null;
+        private PeerManagerUserAlert ua;	// Peers stuff
 	/** age of oldest never connected peer (milliseconds) */
 	private long oldestNeverConnectedDarknetPeerAge;
 	/** Next time to update oldestNeverConnectedPeerAge */
@@ -1182,30 +1185,30 @@ public class PeerManager {
 	}
 
 	private void writePeersInner() {
-		String darknet = null;
-		String opennet = null;
-		String oldOpennetPeers = null;
-
+                String newDarknetPeersString = null,
+                        newOpennetPeersString = null,
+                        newOldOpennetPeersString =null;
 		
 		synchronized(writePeersSync) {
 			if(darkFilename != null)
-				darknet = getDarknetPeersString();
+				newDarknetPeersString = getDarknetPeersString();
 			OpennetManager om = node.getOpennet();
 			if(om != null) {
 				if(openFilename != null)
-					opennet = getOpennetPeersString();
+					newOpennetPeersString = getOpennetPeersString();
 				oldOpennetPeersFilename = om.getOldPeersFilename();
-				oldOpennetPeers = getOldOpennetPeersString(om);
+				newOldOpennetPeersString = getOldOpennetPeersString(om);
 			}
 		}
-		
+
+                // TODO: use hashcode() or something if the memory usage is a problem?
 		synchronized(writePeerFileSync) {
-			if(darknet != null)
-				writePeersInner(darkFilename, darknet);
-			if(oldOpennetPeers != null) {
-				if(opennet != null)
-					writePeersInner(openFilename, opennet);
-				writePeersInner(oldOpennetPeersFilename, oldOpennetPeers);
+			if(newDarknetPeersString != null && !darknetPeersStringCache.equals(newDarknetPeersString))
+				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString);
+			if(newOldOpennetPeersString != null && !oldOpennetPeersStringCache.equals(newOldOpennetPeersString)) {
+				if(newOpennetPeersString != null && !opennetPeersStringCache.equals(newOpennetPeersString))
+					writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString);
+				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString);
 			}
 		}
 	}
