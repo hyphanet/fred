@@ -146,6 +146,7 @@ public class LocationManager implements ByteCounter {
 			public void run() {
 				try {
 					clearOldSwapChains();
+					removeTooOldQueuedItems();
 				} finally {
 					node.ticker.queueTimedJob(this, 10*1000);
 				}

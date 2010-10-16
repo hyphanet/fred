@@ -109,7 +109,6 @@ public class PacketSender implements Runnable {
 					stats.maybeUpdatePeerManagerUserAlertStats(now);
 					stats.maybeUpdateNodeIOStats(now);
 					pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
-					node.lm.removeTooOldQueuedItems();
 
 					if (logMINOR)
 						Logger.minor(PacketSender.class,
