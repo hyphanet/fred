@@ -69,6 +69,8 @@ class Persister implements Runnable {
                 fs.writeTo(fos);
                 fos.close();
                 FileUtil.renameTo(persistTemp, persistTarget);
+            } catch (FileNotFoundException e) {
+            	Logger.error(this, "Could not store throttle data to disk: "+e, e);
             } catch (IOException e) {
                 persistTemp.delete();
             } finally {
