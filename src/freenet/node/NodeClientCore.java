@@ -1765,6 +1765,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 		WrapperManager.requestThreadDump();
 		System.err.println("Out of memory: Emergency shutdown to protect database integrity in progress...");
+		WrapperManager.restart();
 		System.exit(NodeInitException.EXIT_OUT_OF_MEMORY_PROTECTING_DATABASE);
 	}
 
