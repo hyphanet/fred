@@ -3363,9 +3363,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return false;
 	}
 
-	protected synchronized void invalidate() {
-		isRoutable = false;
+	final void invalidate(long now) {
+		synchronized(this) {
+			isRoutable = false;
+		}
 		Logger.normal(this, "Invalidated " + this);
+		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
 	public void maybeOnConnect() {
