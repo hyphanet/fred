@@ -3292,16 +3292,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(peerNodeStatus == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
 			long delta = localRoutingBackedOffUntil - now + 1;
 			if(delta > 0)
-				node.ticker.queueTimedJob(new FastRunnable() {
-					
-					public void run() {
-						setPeerNodeStatus(System.currentTimeMillis(), true);
-					}
-					
-				}, delta);
+				node.ticker.queueTimedJob(checkStatusAfterBackoff, "Update status for "+this, delta, true, true);
 		}
 		return peerNodeStatus;
 	}
+	
+	private final Runnable checkStatusAfterBackoff = new Runnable() {
+		
+		public void run() {
+			setPeerNodeStatus(System.currentTimeMillis(), true);
+		}
+		
+	};
 
 	public abstract boolean recordStatus();
 
