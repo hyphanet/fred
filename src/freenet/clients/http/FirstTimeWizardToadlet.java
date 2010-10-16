@@ -206,7 +206,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						// Add password form
 						HTMLNode p = div.addChild("p");
 						p.addChild("label", "for", "passwordBox", l10nSec("setPasswordLabel")+":");
-						p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
+						p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "password", "masterPassword" });
 					}
 				}
 			}
