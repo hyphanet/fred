@@ -78,9 +78,55 @@ public class PacketSender implements Runnable {
 		myThread.start();
 	}
 
+        private void schedulePeriodicJob() {
+                node.ticker.queueTimedJob(new Runnable() {
+
+                        public void run() {
+                            try {
+                                long now = System.currentTimeMillis();
+                                if(logMINOR) Logger.minor(PacketSender.class, "Starting shedulePeriodicJob() at "+now);
+                                PeerManager pm;
+                                PeerNode[] nodes;
+
+                                synchronized (PacketSender.class) {
+                                    pm = node.peers;
+                                    nodes = pm.myPeers;
+                                }
+                                // Run the time sensitive status updater separately
+                                for (int i = 0; i < nodes.length; i++) {
+                                    PeerNode pn = nodes[i];
+                                    // Only routing backed off nodes should need status updating since everything else
+                                    // should get updated immediately when it's changed
+                                    if (pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+                                        pn.setPeerNodeStatus(now);
+                                    }
+                                }
+                                pm.maybeLogPeerNodeStatusSummary(now);
+                                pm.maybeUpdateOldestNeverConnectedDarknetPeerAge(now);
+                                stats.maybeUpdatePeerManagerUserAlertStats(now);
+                                stats.maybeUpdateNodeIOStats(now);
+                                pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
+                                node.lm.removeTooOldQueuedItems();
+
+
+                                if (now - lastClearedOldSwapChains > 10000) {
+                                    node.lm.clearOldSwapChains();
+                                    lastClearedOldSwapChains = now;
+                                }
+
+                                if(logMINOR) Logger.minor(PacketSender.class, "Finished running shedulePeriodicJob() at "+System.currentTimeMillis());
+                            } finally {
+                                schedulePeriodicJob();
+                            }
+                        }
+                }, 60*1000);
+        }
+
 	public void run() {
 		if(logMINOR) Logger.minor(this, "In PacketSender.run()");
 		freenet.support.Logger.OSThread.logPID(this);
+
+                schedulePeriodicJob();
 		/*
 		 * Index of the point in the nodes list at which we sent a packet and then
 		 * ran out of bandwidth. We start the loop from here next time.
@@ -103,28 +149,16 @@ public class PacketSender implements Runnable {
 
 	private int realRun(int brokeAt) {
 		long now = System.currentTimeMillis();
-		PeerManager pm = node.peers;
-		PeerNode[] nodes = pm.myPeers;
-		// Run the time sensitive status updater separately
-		for(int i = 0; i < nodes.length; i++) {
-			PeerNode pn = nodes[i];
-			// Only routing backed off nodes should need status updating since everything else
-			// should get updated immediately when it's changed
-			if(pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-				pn.setPeerNodeStatus(now);
-		}
-		pm.maybeLogPeerNodeStatusSummary(now);
-		pm.maybeUpdateOldestNeverConnectedDarknetPeerAge(now);
-		stats.maybeUpdatePeerManagerUserAlertStats(now);
-		stats.maybeUpdateNodeIOStats(now);
-		pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
+                PeerManager pm;
+		PeerNode[] nodes;
+
+                synchronized (PacketSender.class) {
+                    pm = node.peers;
+                    nodes = pm.myPeers;
+                }
+
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;
-		// Needs to be run very frequently. Maybe change to a regular once per second schedule job?
-		// Maybe not worth it as it is fairly lightweight.
-		// FIXME given the lock contention, maybe it's worth it? What about
-		// running it on the UdpSocketHandler thread? That would surely be better...?
-		node.lm.removeTooOldQueuedItems();
 
 		boolean canSendThrottled = false;
 
@@ -260,11 +294,6 @@ public class PacketSender implements Runnable {
 				}
 			}
 
-		}
-
-		if(now - lastClearedOldSwapChains > 10000) {
-			node.lm.clearOldSwapChains();
-			lastClearedOldSwapChains = now;
 		}
 
 		long oldNow = now;
