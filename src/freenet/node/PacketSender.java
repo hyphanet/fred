@@ -57,7 +57,6 @@ public class PacketSender implements Runnable {
 	final NativeThread myThread;
 	final Node node;
 	NodeStats stats;
-	long lastClearedOldSwapChains;
 	long lastReportedNoPackets;
 	long lastReceivedPacketFromAnyNode;
 	private Vector<ResendPacketItem> rpiTemp;
@@ -78,49 +77,49 @@ public class PacketSender implements Runnable {
 		myThread.start();
 	}
 
-        private void schedulePeriodicJob() {
-                node.ticker.queueTimedJob(new Runnable() {
+	private void schedulePeriodicJob() {
+		
+		node.ticker.queueTimedJob(new Runnable() {
 
-                        public void run() {
-                            try {
-                                long now = System.currentTimeMillis();
-                                if(logMINOR) Logger.minor(PacketSender.class, "Starting shedulePeriodicJob() at "+now);
-                                PeerManager pm;
-                                PeerNode[] nodes;
+			public void run() {
+				try {
+					long now = System.currentTimeMillis();
+					if (logMINOR)
+						Logger.minor(PacketSender.class,
+								"Starting shedulePeriodicJob() at " + now);
+					PeerManager pm;
+					PeerNode[] nodes;
 
-                                synchronized (PacketSender.class) {
-                                    pm = node.peers;
-                                    nodes = pm.myPeers;
-                                }
-                                // Run the time sensitive status updater separately
-                                for (int i = 0; i < nodes.length; i++) {
-                                    PeerNode pn = nodes[i];
-                                    // Only routing backed off nodes should need status updating since everything else
-                                    // should get updated immediately when it's changed
-                                    if (pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-                                        pn.setPeerNodeStatus(now);
-                                    }
-                                }
-                                pm.maybeLogPeerNodeStatusSummary(now);
-                                pm.maybeUpdateOldestNeverConnectedDarknetPeerAge(now);
-                                stats.maybeUpdatePeerManagerUserAlertStats(now);
-                                stats.maybeUpdateNodeIOStats(now);
-                                pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
-                                node.lm.removeTooOldQueuedItems();
+					synchronized (PacketSender.class) {
+						pm = node.peers;
+						nodes = pm.myPeers;
+					}
+					// Run the time sensitive status updater separately
+					for (int i = 0; i < nodes.length; i++) {
+						PeerNode pn = nodes[i];
+						// Only routing backed off nodes should need status
+						// updating since everything else
+						// should get updated immediately when it's changed
+						if (pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+							pn.setPeerNodeStatus(now);
+						}
+					}
+					pm.maybeLogPeerNodeStatusSummary(now);
+					pm.maybeUpdateOldestNeverConnectedDarknetPeerAge(now);
+					stats.maybeUpdatePeerManagerUserAlertStats(now);
+					stats.maybeUpdateNodeIOStats(now);
+					pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
 
-
-                                if (now - lastClearedOldSwapChains > 10000) {
-                                    node.lm.clearOldSwapChains();
-                                    lastClearedOldSwapChains = now;
-                                }
-
-                                if(logMINOR) Logger.minor(PacketSender.class, "Finished running shedulePeriodicJob() at "+System.currentTimeMillis());
-                            } finally {
-                                schedulePeriodicJob();
-                            }
-                        }
-                }, 1000);
-        }
+					if (logMINOR)
+						Logger.minor(PacketSender.class,
+								"Finished running shedulePeriodicJob() at "
+										+ System.currentTimeMillis());
+				} finally {
+					node.ticker.queueTimedJob(this, 1000);
+				}
+			}
+		}, 1000);
+	}
 
 	public void run() {
 		if(logMINOR) Logger.minor(this, "In PacketSender.run()");

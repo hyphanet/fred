@@ -3690,7 +3690,7 @@ public class Node implements TimeSkewDetectorCallback {
 		ipDetector.start();
 
 		// Start sending swaps
-		lm.startSender();
+		lm.start();
 
 		// Node Updater
 		try{
