@@ -94,8 +94,9 @@ public class FCPConnectionOutputHandler implements Runnable {
 							}
 							continue;
 						}
+					} else {
+						msg = outQueue.removeFirst();
 					}
-					msg = outQueue.removeFirst();
 				}
 				if(shouldFlush) {
 					os.flush();
