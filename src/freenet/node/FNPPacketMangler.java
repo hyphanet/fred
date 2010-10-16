@@ -3151,7 +3151,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public Status getConnectivityStatus() {
-                if(System.currentTimeMillis() - lastConnectivityStatusUpdate < 3*60*1000)
+		long now = System.currentTimeMillis();
+                if(now - lastConnectivityStatusUpdate < 3*60*1000)
                     return lastConnectivityStatus;
 
                 Status value;
@@ -3159,7 +3160,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                     value = AddressTracker.Status.DEFINITELY_NATED;
                 else
                     value = sock.getDetectedConnectivityStatus();
-                
+        
+		lastConnectivityStatusUpdate = now;
+		
                 return lastConnectivityStatus = value;
 	}
 
