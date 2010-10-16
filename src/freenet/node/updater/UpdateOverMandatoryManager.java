@@ -420,8 +420,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		String lname = isExt ? "ext" : "main";
 		if(logMINOR)
 			Logger.minor(this, "sendUOMRequest"+name+"(" + source + "," + addOnFail + ")");
-		if(!source.isConnected() || source.isSeed())
-			return;
+		if(!source.isConnected() || source.isSeed()) {
+                    if(logMINOR) Logger.minor(this, "Not sending UOM "+lname+" request to "+source+" (disconnected or seednode)");
+                    return;
+                }
 		final HashSet<PeerNode> sendingJar = isExt ? nodesSendingExtJar : nodesSendingMainJar;
 		final HashSet<PeerNode> askedSendJar = isExt ? nodesAskedSendExtJar : nodesAskedSendMainJar;
 		synchronized(this) {
@@ -1188,7 +1190,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final String name = isExt ? "ext" : "main";
 
                 if(source.isOpennet() && updateManager.isSeednode()) {
-                    if(logMINOR) Logger.minor(this, "Peer "+source+" asked us for the blob file for "+name+"; We are a seenode, so we ignore it!");
+					Logger.normal(this, "Peer "+source+" asked us for the blob file for "+name+"; We are a seenode, so we ignore it!");
                     return;
                 }
                 // Do we have the data?
