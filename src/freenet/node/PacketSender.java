@@ -144,8 +144,9 @@ public class PacketSender implements Runnable {
 		for(int i = 0; i < nodes.length; i++) {
 			int idx = (i + brokeAt + 1) % nodes.length;
 			PeerNode pn = nodes[idx];
+                        final long lastReceivedPacketTime = pn.lastReceivedPacketTime();
 			lastReceivedPacketFromAnyNode =
-				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
+				Math.max(lastReceivedPacketTime, lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
 				// Might as well do it properly.
@@ -160,7 +161,7 @@ public class PacketSender implements Runnable {
 					continue;
 
 				// Is the node dead?
-				if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
+				if(now - lastReceivedPacketTime > pn.maxTimeBetweenReceivedPackets()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
 					pn.disconnected(false, false /* hopefully will recover, transient network glitch */);
 					continue;
