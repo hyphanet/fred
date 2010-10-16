@@ -1184,12 +1184,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		updateManager.node.clientCore.alerts.unregister(alert);
 	}
 
-	public boolean handleRequestJar(Message m, final PeerNode source, boolean isExt) {
+	public void handleRequestJar(Message m, final PeerNode source, boolean isExt) {
 		final String name = isExt ? "ext" : "main";
 
                 if(source.isOpennet() && updateManager.isSeednode()) {
                     if(logMINOR) Logger.minor(this, "Peer "+source+" asked us for the blob file for "+name+"; We are a seenode, so we ignore it!");
-                    return true;
+                    return;
                 }
                 // Do we have the data?
 
@@ -1199,7 +1199,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		if(data == null) {
 			Logger.normal(this, "Peer " + source + " asked us for the blob file for the "+name+" jar but we don't have it!");
 			// Probably a race condition on reconnect, hopefully we'll be asked again
-			return true;
+			return;
 		}
 
 		final long uid = m.getLong(DMT.UID);
@@ -1209,7 +1209,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			raf = new RandomAccessFileWrapper(data, "r");
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
-			return true;
+			return;
 		}
 
 		final PartiallyReceivedBulk prb;
@@ -1221,7 +1221,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(IOException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but we can't determine the file size: " + e, e);
 			raf.close();
-			return true;
+			return;
 		}
 
 		final BulkTransmitter bt;
@@ -1230,7 +1230,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(DisconnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected: " + e, e);
 			raf.close();
-			return true;
+			return;
 		}
 
 		final Runnable r = new Runnable() {
@@ -1281,12 +1281,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}, updateManager.ctr);
 		} catch(NotConnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingExt: " + e, e);
-			return true;
+			return;
 		}
 
-		return true;
-		
-		
 	}
 	
 	public boolean handleSendingMain(Message m, final PeerNode source) {

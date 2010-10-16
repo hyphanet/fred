@@ -143,9 +143,11 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.UOMSendingRevocation && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
 		} else if(spec == DMT.UOMRequestMain && source.isRealConnection()) {
-			return node.nodeUpdater.uom.handleRequestJar(m, source, false);
+			node.nodeUpdater.uom.handleRequestJar(m, source, false);
+			return true;
 		} else if(spec == DMT.UOMRequestExtra && source.isRealConnection()) {
-			return node.nodeUpdater.uom.handleRequestJar(m, source, true);
+			node.nodeUpdater.uom.handleRequestJar(m, source, true);
+			return true;
 		} else if(spec == DMT.UOMSendingMain && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
 		} else if(spec == DMT.UOMSendingExtra && source.isRealConnection()) {
