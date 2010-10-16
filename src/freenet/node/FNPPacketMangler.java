@@ -3152,18 +3152,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	public Status getConnectivityStatus() {
 		long now = System.currentTimeMillis();
-                if(now - lastConnectivityStatusUpdate < 3*60*1000)
-                    return lastConnectivityStatus;
+		if (now - lastConnectivityStatusUpdate < 3 * 60 * 1000)
+			return lastConnectivityStatus;
 
-                Status value;
-		if(crypto.config.alwaysHandshakeAggressively())
-                    value = AddressTracker.Status.DEFINITELY_NATED;
-                else
-                    value = sock.getDetectedConnectivityStatus();
-        
+		Status value;
+		if (crypto.config.alwaysHandshakeAggressively())
+			value = AddressTracker.Status.DEFINITELY_NATED;
+		else
+			value = sock.getDetectedConnectivityStatus();
+
 		lastConnectivityStatusUpdate = now;
-		
-                return lastConnectivityStatus = value;
+
+		return lastConnectivityStatus = value;
 	}
 
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {

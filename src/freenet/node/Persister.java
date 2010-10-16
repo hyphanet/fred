@@ -59,23 +59,23 @@ class Persister implements Runnable {
 	}
 	
 	private void persistThrottle() {
-            if (logMINOR) {
-                Logger.minor(this, "Trying to persist throttles...");
-            }
-            SimpleFieldSet fs = persistable.persistThrottlesToFieldSet();
-            FileOutputStream fos = null;
-            try {
-                fos = new FileOutputStream(persistTemp);
-                fs.writeTo(fos);
-                fos.close();
-                FileUtil.renameTo(persistTemp, persistTarget);
-            } catch (FileNotFoundException e) {
-            	Logger.error(this, "Could not store throttle data to disk: "+e, e);
-            } catch (IOException e) {
-                persistTemp.delete();
-            } finally {
-                Closer.close(fos);
-            }
+		if (logMINOR) {
+			Logger.minor(this, "Trying to persist throttles...");
+		}
+		SimpleFieldSet fs = persistable.persistThrottlesToFieldSet();
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(persistTemp);
+			fs.writeTo(fos);
+			fos.close();
+			FileUtil.renameTo(persistTemp, persistTarget);
+		} catch (FileNotFoundException e) {
+			Logger.error(this, "Could not store throttle data to disk: " + e, e);
+		} catch (IOException e) {
+			persistTemp.delete();
+		} finally {
+			Closer.close(fos);
+		}
 	}
 
 	public SimpleFieldSet read() {
