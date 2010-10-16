@@ -83,18 +83,6 @@ public class PacketSender implements Runnable {
 
 			public void run() {
 				try {
-					node.lm.clearOldSwapChains();
-				} finally {
-					node.ticker.queueTimedJob(this, 10*1000);
-				}
-			}
-			
-		}, 10*1000);
-		
-		node.ticker.queueTimedJob(new Runnable() {
-
-			public void run() {
-				try {
 					long now = System.currentTimeMillis();
 					if (logMINOR)
 						Logger.minor(PacketSender.class,

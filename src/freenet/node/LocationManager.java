@@ -138,9 +138,20 @@ public class LocationManager implements ByteCounter {
      * Start a thread to send FNPSwapRequests every second when
      * we are not locked.
      */
-    public void startSender() {
+    public void start() {
     	if(node.enableSwapping)
     		node.getTicker().queueTimedJob(sender, STARTUP_DELAY);
+		node.ticker.queueTimedJob(new Runnable() {
+
+			public void run() {
+				try {
+					clearOldSwapChains();
+				} finally {
+					node.ticker.queueTimedJob(this, 10*1000);
+				}
+			}
+			
+		}, 10*1000);
     }
 
     /**
