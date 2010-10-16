@@ -1189,7 +1189,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
                 if(source.isOpennet() && updateManager.isSeednode()) {
                     if(logMINOR) Logger.minor(this, "Peer "+source+" asked us for the blob file for "+name+"; We are a seenode, so we ignore it!");
-                    return false;
+                    return true;
                 }
                 // Do we have the data?
 
