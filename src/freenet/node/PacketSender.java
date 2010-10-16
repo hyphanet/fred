@@ -301,7 +301,7 @@ public class PacketSender implements Runnable {
 		return brokeAt;
 	}
 
-	private HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
+	private final HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
 
 	private void onForceDisconnectBlockTooLong(PeerNode pn, BlockedTooLongException e) {
 		Peer p = pn.getPeer();
@@ -318,20 +318,24 @@ public class PacketSender implements Runnable {
 	}
 
 	@SuppressWarnings("unused")
-	private UserAlert peersDumpedBlockedTooLongAlert = new AbstractUserAlert() {
+	private final UserAlert peersDumpedBlockedTooLongAlert = new AbstractUserAlert() {
 
+        @Override
 		public String anchor() {
 			return "disconnectedStillNotAcked";
 		}
 
+        @Override
 		public String dismissButtonText() {
 			return null;
 		}
 
+        @Override
 		public short getPriorityClass() {
 			return UserAlert.ERROR;
 		}
 
+        @Override
 		public String getShortText() {
 			int sz;
 			synchronized(peersDumpedBlockedTooLong) {
@@ -340,6 +344,7 @@ public class PacketSender implements Runnable {
 			return l10n("somePeersDisconnectedBlockedTooLong", "count", Integer.toString(sz));
 		}
 
+        @Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			Peer[] peers;
@@ -356,8 +361,9 @@ public class PacketSender implements Runnable {
 			return div;
 		}
 
+        @Override
 		public String getText() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			Peer[] peers;
 			synchronized(peersDumpedBlockedTooLong) {
 				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
@@ -374,34 +380,42 @@ public class PacketSender implements Runnable {
 			return sb.toString();
 		}
 
+        @Override
 		public String getTitle() {
 			return getShortText();
 		}
 
+        @Override
 		public Object getUserIdentifier() {
 			return PacketSender.this;
 		}
 
+        @Override
 		public boolean isEventNotification() {
 			return false;
 		}
 
+        @Override
 		public boolean isValid() {
 			return true;
 		}
 
+        @Override
 		public void isValid(boolean validity) {
 			// Ignore
 		}
 
+        @Override
 		public void onDismiss() {
 			// Ignore
 		}
 
+        @Override
 		public boolean shouldUnregisterOnDismiss() {
 			return false;
 		}
 
+        @Override
 		public boolean userCanDismiss() {
 			return false;
 		}
