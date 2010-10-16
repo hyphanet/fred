@@ -1189,11 +1189,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	public void handleRequestJar(Message m, final PeerNode source, boolean isExt) {
 		final String name = isExt ? "ext" : "main";
 
-                if(source.isOpennet() && updateManager.isSeednode()) {
-					Logger.normal(this, "Peer "+source+" asked us for the blob file for "+name+"; We are a seenode, so we ignore it!");
-                    return;
-                }
-                // Do we have the data?
+		if (source.isOpennet() && updateManager.isSeednode()) {
+			Logger.normal(this, "Peer " + source
+					+ " asked us for the blob file for " + name
+					+ "; We are a seenode, so we ignore it!");
+			return;
+		}
+		// Do we have the data?
 
 		int version = isExt ? updateManager.newExtJarVersion() : updateManager.newMainJarVersion();
 		File data = isExt ? updateManager.getExtBlob(version) : updateManager.getMainBlob(version);
