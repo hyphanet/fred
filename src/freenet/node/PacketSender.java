@@ -87,23 +87,7 @@ public class PacketSender implements Runnable {
 					if (logMINOR)
 						Logger.minor(PacketSender.class,
 								"Starting shedulePeriodicJob() at " + now);
-					PeerManager pm;
-					PeerNode[] nodes;
-
-					synchronized (PacketSender.class) {
-						pm = node.peers;
-						nodes = pm.myPeers;
-					}
-					// Run the time sensitive status updater separately
-					for (int i = 0; i < nodes.length; i++) {
-						PeerNode pn = nodes[i];
-						// Only routing backed off nodes should need status
-						// updating since everything else
-						// should get updated immediately when it's changed
-						if (pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-							pn.setPeerNodeStatus(now);
-						}
-					}
+					PeerManager pm = node.peers;
 					pm.maybeLogPeerNodeStatusSummary(now);
 					pm.maybeUpdateOldestNeverConnectedDarknetPeerAge(now);
 					stats.maybeUpdatePeerManagerUserAlertStats(now);
