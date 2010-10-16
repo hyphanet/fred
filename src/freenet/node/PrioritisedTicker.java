@@ -2,28 +2,25 @@ package freenet.node;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.TreeMap;
 
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
+import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
 
 public class PrioritisedTicker implements Ticker, Runnable {
 	
 	private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
