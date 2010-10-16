@@ -118,6 +118,9 @@ public class FCPConnectionOutputHandler implements Runnable {
 		}
 	}
 
+	/** FIXME make configurable */
+	private static final long MAX_QUEUE_LENGTH = 1024;
+	
 	public void queue(FCPMessage msg) {
 		if(logDEBUG)
 			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
@@ -128,8 +131,12 @@ public class FCPConnectionOutputHandler implements Runnable {
 				// FIXME throw something???
 				return;
 			}
-			outQueue.add(msg);
-			outQueue.notifyAll();
+			if(outQueue.size() >= MAX_QUEUE_LENGTH) {
+				Logger.error(this, "Dropping FCP message to "+handler+" : "+outQueue.size()+" messages queued - maybe client died?");
+			} else {
+				outQueue.add(msg);
+				outQueue.notifyAll();
+			}
 		}
 	}
 
