@@ -625,7 +625,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 					// Add password form
 					p = inner.addChild("p");
 					p.addChild("label", "for", "passwordBox", l10nSec("setPassword"));
-					p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
+					p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "password", "masterPassword" });
 				}
 			}
 		}
@@ -643,12 +643,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode cell = row.addChild("td");
 		cell.addChild("label", "for", "oldPasswordBox", l10nSec("oldPasswordLabel"));
 		cell = row.addChild("td");
-		cell.addChild("input", new String[] { "id", "type", "name", "size" }, new String[] { "oldPasswordBox", "text", "oldPassword", "100" });
+		cell.addChild("input", new String[] { "id", "type", "name", "size" }, new String[] { "oldPasswordBox", "password", "oldPassword", "100" });
 		row = table.addChild("tr");
 		cell = row.addChild("td");
 		cell.addChild("label", "for", "newPasswordBox", l10nSec("newPasswordLabel"));
 		cell = row.addChild("td");
-		cell.addChild("input", new String[] { "id", "type", "name", "size" }, new String[] { "passwordBox", "text", "masterPassword", "100" });
+		cell.addChild("input", new String[] { "id", "type", "name", "size" }, new String[] { "passwordBox", "password", "masterPassword", "100" });
 		HTMLNode p = inner.addChild("p");
 		p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "changePassword", l10nSec("changePasswordButton") });
 	}
@@ -737,7 +737,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 
 		HTMLNode form = forFirstTimeWizard ? ctx.addFormChild(content, "/wizard/", "masterPasswordForm") :
 			ctx.addFormChild(content, "/seclevels/", "masterPasswordForm");
-		form.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "masterPassword", "100" });
+		form.addChild("input", new String[] { "type", "name", "size" }, new String[] { "password", "masterPassword", "100" });
 		if(physicalSecurityLevel != null) {
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.physicalThreatLevel", physicalSecurityLevel });
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "true" });
