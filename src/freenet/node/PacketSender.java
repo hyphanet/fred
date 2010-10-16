@@ -119,7 +119,7 @@ public class PacketSender implements Runnable {
                                 schedulePeriodicJob();
                             }
                         }
-                }, 60*1000);
+                }, 1000);
         }
 
 	public void run() {
