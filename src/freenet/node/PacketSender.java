@@ -57,7 +57,6 @@ public class PacketSender implements Runnable {
 	final NativeThread myThread;
 	final Node node;
 	NodeStats stats;
-	long lastClearedOldSwapChains;
 	long lastReportedNoPackets;
 	long lastReceivedPacketFromAnyNode;
 	private Vector<ResendPacketItem> rpiTemp;
@@ -79,6 +78,19 @@ public class PacketSender implements Runnable {
 	}
 
 	private void schedulePeriodicJob() {
+		
+		node.ticker.queueTimedJob(new Runnable() {
+
+			public void run() {
+				try {
+					node.lm.clearOldSwapChains();
+				} finally {
+					node.ticker.queueTimedJob(this, 10*1000);
+				}
+			}
+			
+		}, 10*1000);
+		
 		node.ticker.queueTimedJob(new Runnable() {
 
 			public void run() {
@@ -111,17 +123,12 @@ public class PacketSender implements Runnable {
 					pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
 					node.lm.removeTooOldQueuedItems();
 
-					if (now - lastClearedOldSwapChains > 10000) {
-						node.lm.clearOldSwapChains();
-						lastClearedOldSwapChains = now;
-					}
-
 					if (logMINOR)
 						Logger.minor(PacketSender.class,
 								"Finished running shedulePeriodicJob() at "
 										+ System.currentTimeMillis());
 				} finally {
-					schedulePeriodicJob();
+					node.ticker.queueTimedJob(this, 1000);
 				}
 			}
 		}, 1000);
