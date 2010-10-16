@@ -1325,4 +1325,7 @@ public class NodeUpdateManager {
 		updater.arm(wasRunning);
 	}
 
+        protected boolean isSeednode() {
+            return (node.isOpennetEnabled() && node.wantAnonAuth());
+        }
 }
