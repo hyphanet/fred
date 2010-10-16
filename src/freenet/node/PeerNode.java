@@ -3289,8 +3289,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(peerNodeStatus!=oldPeerNodeStatus){
 			notifyPeerNodeStatusChangeListeners();
 		}
+		if(peerNodeStatus == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+			long delta = localRoutingBackedOffUntil - now + 1;
+			if(delta > 0)
+				node.ticker.queueTimedJob(checkStatusAfterBackoff, "Update status for "+this, delta, true, true);
+		}
 		return peerNodeStatus;
 	}
+	
+	private final Runnable checkStatusAfterBackoff = new Runnable() {
+		
+		public void run() {
+			setPeerNodeStatus(System.currentTimeMillis(), true);
+		}
+		
+	};
 
 	public abstract boolean recordStatus();
 
@@ -3352,9 +3365,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return false;
 	}
 
-	protected synchronized void invalidate() {
-		isRoutable = false;
+	final void invalidate(long now) {
+		synchronized(this) {
+			isRoutable = false;
+		}
 		Logger.normal(this, "Invalidated " + this);
+		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
 	public void maybeOnConnect() {

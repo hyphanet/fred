@@ -1201,7 +1201,6 @@ public class PeerManager {
 			}
 		}
 
-                // TODO: use hashcode() or something if the memory usage is a problem?
 		synchronized(writePeerFileSync) {
 			if(newDarknetPeersString != null) {
 				int hashCode = newDarknetPeersString.hashCode();
