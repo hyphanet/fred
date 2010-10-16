@@ -1860,7 +1860,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		// Update sendHandshakeTime; don't send another handshake for a while.
 		// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
-		if(!isSeed())
+		if(!(isSeed() && this instanceof SeedServerPeerNode))
                     calcNextHandshake(true, true, false);
 		stopARKFetcher();
 		try {
