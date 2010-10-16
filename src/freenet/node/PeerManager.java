@@ -1206,9 +1206,10 @@ public class PeerManager {
 			if(newDarknetPeersString != null && !darknetPeersStringCache.equals(newDarknetPeersString))
 				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString);
 			if(newOldOpennetPeersString != null && !oldOpennetPeersStringCache.equals(newOldOpennetPeersString)) {
-				if(newOpennetPeersString != null && !opennetPeersStringCache.equals(newOpennetPeersString))
-					writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString);
 				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString);
+			}
+			if(newOpennetPeersString != null && !opennetPeersStringCache.equals(newOpennetPeersString)) {
+				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString);
 			}
 		}
 	}
