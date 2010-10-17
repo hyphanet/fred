@@ -51,19 +51,23 @@ public class NewPacketFormat implements PacketFormat {
 	private int nextSequenceNumber = 0;
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private int nextMessageID = 0;
-	private int messageWindowPtrAcked = nextMessageID; //The first message id that hasn't been acked by the receiver
+	/** The first message id that hasn't been acked by the receiver */
+	private int messageWindowPtrAcked = nextMessageID;
 	private final SparseBitmap ackedMessages = new SparseBitmap();
 
 	private int highestReceivedSequenceNumber = nextSequenceNumber - 1;
 	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
 	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
-	private int messageWindowPtrReceived = nextMessageID; //The first message id that hasn't been fully received
+	/** The first message id that hasn't been fully received */
+	private int messageWindowPtrReceived = nextMessageID;
 	private final SparseBitmap receivedMessages= new SparseBitmap();
 
 	private SessionKey watchListKey;
 	private byte[][] seqNumWatchList;
-	private int watchListPointer = 0; //Index of the packet with the lowest sequence number
-	private int watchListOffset = nextSequenceNumber; //Sequence number of the packet at seqNumWatchList[watchListPointer]
+	/** Index of the packet with the lowest sequence number */
+	private int watchListPointer = 0;
+	/** Sequence number of the packet at seqNumWatchList[watchListPointer] */
+	private int watchListOffset = nextSequenceNumber;
 
 	private int usedBuffer = 0;
 	private int usedBufferOtherSide = 0;
