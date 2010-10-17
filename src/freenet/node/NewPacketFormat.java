@@ -395,9 +395,11 @@ public class NewPacketFormat implements PacketFormat {
 				paddedLen = 64 + pn.node.fastWeakRandom.nextInt(32);
 			} else {
 				paddedLen = ((packetLength + 63) / 64) * 64;
-				paddedLen += pn.node.fastWeakRandom.nextInt(64);
-				if(packetLength <= maxPacketSize && paddedLen > maxPacketSize)
+				if(paddedLen < maxPacketSize) {
+					paddedLen += pn.node.fastWeakRandom.nextInt(Math.min(64, maxPacketSize - paddedLen));
+				} else if((packetLength <= maxPacketSize) && (paddedLen > maxPacketSize)) {
 					paddedLen = maxPacketSize;
+				}
 			}
 		}
 
