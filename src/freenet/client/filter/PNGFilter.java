@@ -199,7 +199,7 @@ public class PNGFilter implements ContentDataFilter {
 					throwError("No IHDR chunk!", "No IHDR chunk!");
 
 				if (!skip && "IEND".equals(chunkTypeString)) {
-					if (hasSeenIEND) // XXX impossible code path: it should have throwed as "IEND not last chunk" 
+					if (hasSeenIEND)
 						throwError("Two IEND chunks detected!!", "Two IEND chunks detected!!");
 					hasSeenIEND = true;
 					validChunkType = true;
@@ -224,12 +224,6 @@ public class PNGFilter implements ContentDataFilter {
 						if (HARMLESS_CHUNK_TYPES[i].equals(chunkTypeString))
 							validChunkType = true;
 					}
-				}
-
-				if (dis.available() < 1) {
-					if (!(hasSeenIEND && hasSeenIHDR))
-						throwError("Missing IEND or IHDR!", "Missing IEND or IHDR!");
-					finished = true;
 				}
 
 				if ("text".equalsIgnoreCase(chunkTypeString) || "itxt".equalsIgnoreCase(chunkTypeString)
@@ -261,6 +255,10 @@ public class PNGFilter implements ContentDataFilter {
 				}
 				lastChunkType = chunkTypeString;
 			}
+
+			if (!(hasSeenIEND && hasSeenIHDR))
+				throwError("Missing IEND or IHDR!", "Missing IEND or IHDR!");
+                        
 			if (hasSeenIEND && dis.available() > 0)
 				throwError("IEND not last chunk", "IEND not last chunk");
 		} catch (ArrayIndexOutOfBoundsException e) {
@@ -293,11 +291,17 @@ public class PNGFilter implements ContentDataFilter {
 		try {
 			inputStream = inputBucket.getInputStream();
 			outputStream = outputBucket.getOutputStream();
-			Logger.setupStdoutLogging(LogLevel.MINOR, "");
+			Logger.setupStdoutLogging(LogLevel.DEBUG, "");
 			ContentFilter.filter(inputStream, outputStream, "image/png",
 					new URI("http://127.0.0.1:8888/"), null, null, null);
 			inputStream.close();
 			outputStream.close();
+                } catch (DataFilterException e) {
+                        System.out.println("UnsafeContentTypeException: " + e.getMessage());
+                        e.printStackTrace();
+                } catch (UnsafeContentTypeException e) {
+			System.out.println("UnsafeContentTypeException: " + e.getMessage());
+                        e.printStackTrace();
 		} catch (IOException e) {
 			System.out.println("Bucket error?: " + e.getMessage());
 		} catch (URISyntaxException e) {
