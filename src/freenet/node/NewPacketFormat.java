@@ -336,8 +336,10 @@ public class NewPacketFormat implements PacketFormat {
 
 		NPFPacket p = NPFPacket.create(payload);
 
-		if(seqNumGreaterThan(sequenceNumber, highestReceivedSequenceNumber, 31)) {
-			highestReceivedSequenceNumber = sequenceNumber;
+		synchronized(this) {
+			if(seqNumGreaterThan(sequenceNumber, highestReceivedSequenceNumber, 31)) {
+				highestReceivedSequenceNumber = sequenceNumber;
+			}
 		}
 
 		return p;
