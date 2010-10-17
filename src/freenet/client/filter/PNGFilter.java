@@ -153,20 +153,22 @@ public class PNGFilter implements ContentDataFilter {
 				chunkTypeString = sb.toString();
 				if (logMINOR)
 					Logger.minor(this, "name " + chunkTypeString);
+				if (dos != null)
+					dos.write(chunkTypeBytes);
 
 				// Content of the chunk
 				byte[] chunkData = new byte[length];
-				dis.readFully(chunkData, 0, length);
-                                offset+=length;
-				if (logMINOR)
+                                if(length > 0) {
+                                    dis.readFully(chunkData, 0, length);
+                                    offset+=length;
+                                    if (logMINOR)
 					if (logDEBUG)
 						Logger.minor(this, "data (offset=0x"+Long.toHexString(offset)+") "+ (chunkData.length == 0 ? "null" : HexUtil.bytesToHex(chunkData)));
 					else
 						Logger.minor(this, "data " + chunkData.length);
-				if (dos != null)
-					dos.write(chunkTypeBytes);
-				if (dos != null)
+                                    if (dos != null)
 					dos.write(chunkData);
+                                }
 
 				// CRC of the chunk
 				byte[] crcLengthBytes = new byte[4];
@@ -181,7 +183,8 @@ public class PNGFilter implements ContentDataFilter {
 					        + ((crcLengthBytes[2] & 0xff) << 8) + (crcLengthBytes[3] & 0xff)) & 0x00000000ffffffffL;
 					CRC32 crc = new CRC32();
 					crc.update(chunkTypeBytes);
-					crc.update(chunkData);
+					if(length > 0)
+                                            crc.update(chunkData);
 					long computedCRC = crc.getValue();
 
 					if (readCRC != computedCRC) {
