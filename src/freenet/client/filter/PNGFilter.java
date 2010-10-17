@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.zip.CRC32;
@@ -22,10 +21,11 @@ import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
-import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 
 /**
  * Content filter for PNG's. Only allows valid chunks (valid CRC, known chunk type).
@@ -87,10 +87,12 @@ public class PNGFilter implements ContentDataFilter {
 		InputStream is = null;
 		DataInputStream dis = null;
 		try {
+                        long offset = 0;
 			dis = new DataInputStream(input);
 			// Check the header
 			byte[] headerCheck = new byte[pngHeader.length];
 			dis.readFully(headerCheck);
+                        offset+=pngHeader.length;
 			if (!Arrays.equals(headerCheck, pngHeader)) {
 				// Throw an exception
 				String message = l10n("invalidHeader");
@@ -124,16 +126,18 @@ public class PNGFilter implements ContentDataFilter {
 				// Length of the chunk
 				byte[] lengthBytes = new byte[4];
 				dis.readFully(lengthBytes);
+                                offset+=4;
 
 				int length = ((lengthBytes[0] & 0xff) << 24) + ((lengthBytes[1] & 0xff) << 16)
 				        + ((lengthBytes[2] & 0xff) << 8) + (lengthBytes[3] & 0xff);
 				if (logMINOR)
-					Logger.minor(this, "length " + length);
+					Logger.minor(this, "length " + length+ "(offset=0x"+Long.toHexString(offset)+") ");
 				if (dos != null)
 					dos.write(lengthBytes);
 
 				// Type of the chunk : Should match [a-zA-Z]{4}
 				dis.readFully(lengthBytes);
+                                offset+=4;
 				StringBuilder sb = new StringBuilder();
 				byte[] chunkTypeBytes = new byte[4];
 				for (int i = 0; i < 4; i++) {
@@ -153,9 +157,10 @@ public class PNGFilter implements ContentDataFilter {
 				// Content of the chunk
 				byte[] chunkData = new byte[length];
 				dis.readFully(chunkData, 0, length);
+                                offset+=length;
 				if (logMINOR)
 					if (logDEBUG)
-						Logger.minor(this, "data " + (chunkData.length == 0 ? "null" : HexUtil.bytesToHex(chunkData)));
+						Logger.minor(this, "data (offset=0x"+Long.toHexString(offset)+") "+ (chunkData.length == 0 ? "null" : HexUtil.bytesToHex(chunkData)));
 					else
 						Logger.minor(this, "data " + chunkData.length);
 				if (dos != null)
@@ -166,6 +171,8 @@ public class PNGFilter implements ContentDataFilter {
 				// CRC of the chunk
 				byte[] crcLengthBytes = new byte[4];
 				dis.readFully(crcLengthBytes);
+                                offset+=4;
+                                if(logMINOR) Logger.minor(this, "CRC offset=0x"+Long.toHexString(offset));
 				if (dos != null)
 					dos.write(crcLengthBytes);
 
@@ -289,14 +296,15 @@ public class PNGFilter implements ContentDataFilter {
 		InputStream inputStream = null;
 		OutputStream outputStream = null;
 		try {
-			inputStream = inputBucket.getInputStream();
-			outputStream = outputBucket.getOutputStream();
+			inputStream = new BufferedInputStream(inputBucket.getInputStream());
+			outputStream = new BufferedOutputStream(outputBucket.getOutputStream());
 			Logger.setupStdoutLogging(LogLevel.DEBUG, "");
                         Logger.registerClass(PNGFilter.class);
 
 			ContentFilter.filter(inputStream, outputStream, "image/png",
 					new URI("http://127.0.0.1:8888/"), null, null, null);
 			inputStream.close();
+                        outputStream.flush();
 			outputStream.close();
 		} finally {
 			Closer.close(inputStream);
