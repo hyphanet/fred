@@ -280,7 +280,7 @@ public class PNGFilter implements ContentDataFilter {
 		return;
 	}
 
-	public static void main(String arg[]) {
+	public static void main(String arg[]) throws Throwable {
 		final File fin = new File("/tmp/test.png");
 		final File fout = new File("/tmp/test2.png");
 		fout.delete();
@@ -292,21 +292,12 @@ public class PNGFilter implements ContentDataFilter {
 			inputStream = inputBucket.getInputStream();
 			outputStream = outputBucket.getOutputStream();
 			Logger.setupStdoutLogging(LogLevel.DEBUG, "");
+                        Logger.registerClass(PNGFilter.class);
+
 			ContentFilter.filter(inputStream, outputStream, "image/png",
 					new URI("http://127.0.0.1:8888/"), null, null, null);
 			inputStream.close();
 			outputStream.close();
-                } catch (DataFilterException e) {
-                        System.out.println("UnsafeContentTypeException: " + e.getMessage());
-                        e.printStackTrace();
-                } catch (UnsafeContentTypeException e) {
-			System.out.println("UnsafeContentTypeException: " + e.getMessage());
-                        e.printStackTrace();
-		} catch (IOException e) {
-			System.out.println("Bucket error?: " + e.getMessage());
-		} catch (URISyntaxException e) {
-			System.out.println("Internal error: " + e.getMessage());
-		} catch (InvalidThresholdException e) {
 		} finally {
 			Closer.close(inputStream);
 			Closer.close(outputStream);
