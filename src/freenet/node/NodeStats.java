@@ -1209,7 +1209,7 @@ public class NodeStats implements Persistable {
 			}
 		}
 		
-		if(source != null) {
+		if(source != null && !dontTellPeer) {
 			// FIXME tell local as well somehow?
 			source.onSetPeerAllocation(input, (int)thisAllocation, transfersPerInsert);
 		}
