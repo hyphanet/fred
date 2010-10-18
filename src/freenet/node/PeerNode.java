@@ -4504,10 +4504,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
 				loadStats.outputBandwidthPeerLimit, loadStats.inputBandwidthPeerLimit,
 				loadStats.outputBandwidthUpperLimit, loadStats.inputBandwidthUpperLimit,
-				runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput),
-				runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput),
-				otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput),
-				otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput));
+				runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput, false),
+				runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput, true),
+				otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput, false),
+				otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput, true));
 	}
 	
 	public synchronized PeerLoadStats getLastIncomingLoadStats() {
