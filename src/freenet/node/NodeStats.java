@@ -1188,6 +1188,8 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 
+	static final boolean SEND_LOAD_STATS_NOTICES = false;
+	
 	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer, int transfersPerInsert) {
 		
 		int peers = node.peers.countConnectedPeers();
@@ -1209,7 +1211,7 @@ public class NodeStats implements Persistable {
 			}
 		}
 		
-		if(source != null && !dontTellPeer) {
+		if(SEND_LOAD_STATS_NOTICES && source != null && !dontTellPeer) {
 			// FIXME tell local as well somehow?
 			source.onSetPeerAllocation(input, (int)thisAllocation, transfersPerInsert);
 		}
