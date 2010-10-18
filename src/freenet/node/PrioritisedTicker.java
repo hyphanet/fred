@@ -110,14 +110,16 @@ public class PrioritisedTicker implements Ticker, Runnable {
 					if(jobsToRun == null)
 						jobsToRun = new ArrayList<Job>();
 					Object o = timedJobsByTime.remove(tRun);
-					timedJobsQueued.remove(o);
 					if(o instanceof Job[]) {
 						Job[] r = (Job[]) o;
-						for(int i = 0; i < r.length; i++)
+						for(int i = 0; i < r.length; i++) {
 							jobsToRun.add(r[i]);
+							timedJobsQueued.remove(r[i]);
+						}
 					} else {
 						Job r = (Job) o;
 						jobsToRun.add(r);
+						timedJobsQueued.remove(r);
 					}
 				} else {
 					sleepTime = Math.min(sleepTime, tRun.longValue() - now);
