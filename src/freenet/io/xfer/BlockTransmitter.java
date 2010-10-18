@@ -288,8 +288,12 @@ public class BlockTransmitter {
 			_senderThread.notifyAll();
 			return true;
 		}
-		if(blockSendsPending == 0 && _failed)
+		if(blockSendsPending == 0 && _failed) {
+			timeAllSent = System.currentTimeMillis();
+			if(logMINOR)
+				Logger.minor(this, "Sent blocks and failed on "+this);
 			return true;
+		}
 		if(logMINOR) Logger.minor(this, "maybeAllSent: block sends pending = "+blockSendsPending+" unsent = "+_unsent.size()+" on "+this);
 		return false;
 	}
