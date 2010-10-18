@@ -4514,4 +4514,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return lastIncomingLoadStats;
 	}
 
+	public void postUnlock(UIDTag uidTag) {
+		// Ignore
+		// FIXME will be used later on in new-load-management
+	}
+
 }
