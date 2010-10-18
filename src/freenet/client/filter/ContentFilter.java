@@ -243,7 +243,7 @@ public class ContentFilter {
 					int bytesRead, totalRead = 0;
 					while(true) {
 						bytesRead = input.read(charsetBuffer, totalRead, bufferSize-totalRead);
-						if(bytesRead == -1 || bytesRead == 0) break;
+						if(bytesRead == -1) break;
 						totalRead += bytesRead;
 					}
 					input.reset();
