@@ -1127,7 +1127,7 @@ public class NodeStats implements Persistable {
 			// So impose a minimum of 20% of the bandwidth limit.
 			// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
 			// and we don't accept any requests because of that, so it remains that way...
-			Logger.error(this, "Non-overhead fraction is "+nonOverheadFraction+" - assuming this is self-inflicted and using default");
+			Logger.warning(this, "Non-overhead fraction is "+nonOverheadFraction+" - assuming this is self-inflicted and using default");
 			nonOverheadFraction = MIN_NON_OVERHEAD;
 		}
 		if(nonOverheadFraction > 1.0) {
