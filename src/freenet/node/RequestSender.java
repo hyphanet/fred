@@ -1594,11 +1594,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		node.failureTable.onFinalFailure(key, transferringFrom(), htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 
-	public boolean abortedDownstreamTransfers() {
+	public synchronized boolean abortedDownstreamTransfers() {
 		return sentAbortDownstreamTransfers;
 	}
 
-	public boolean mustUnlock() {
+	public synchronized boolean mustUnlock() {
 		return mustUnlock;
 	}
 
