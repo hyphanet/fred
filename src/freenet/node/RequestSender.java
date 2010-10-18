@@ -1598,4 +1598,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		return sentAbortDownstreamTransfers;
 	}
 
+	public boolean mustUnlock() {
+		return mustUnlock;
+	}
+
 }

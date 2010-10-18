@@ -1099,7 +1099,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			if(rs == null || !rs.abortedDownstreamTransfers())
+			if(rs == null || !(rs.abortedDownstreamTransfers() || rs.mustUnlock()))
 				node.unlockUID(uid, false, false, true, false, true, tag);
 		}
 	}
@@ -1213,7 +1213,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 			}
 		} finally {
-			if(rs == null || !rs.abortedDownstreamTransfers())
+			if(rs == null || !(rs.abortedDownstreamTransfers() || rs.mustUnlock()))
 				node.unlockUID(uid, true, false, true, false, true, tag);
 		}
 	}
