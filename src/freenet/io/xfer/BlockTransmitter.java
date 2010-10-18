@@ -247,6 +247,7 @@ public class BlockTransmitter {
 				public void run() {
 					boolean callFail;
 					String timeString;
+					String abortReason;
 					synchronized(_senderThread) {
 						if(_completed) return;
 						if(!_receivedSendCompletion) {
@@ -254,13 +255,20 @@ public class BlockTransmitter {
 							_receivedSendSuccess = false;
 						}
 						//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
-						timeString=TimeUtil.formatTime((System.currentTimeMillis() - timeAllSent), 2, true);
-						Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
+						if(_failed) {
+							// Already failed, we were just waiting for the acknowledgement sendAborted.
+							Logger.error(this, "Terminating send after failure on "+this);
+							abortReason = "Already failed and no acknowledgement";
+						} else {
+							timeString=TimeUtil.formatTime((System.currentTimeMillis() - timeAllSent), 2, true);
+							Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
+							abortReason = "Haven't heard from you (receiver) in "+timeString;
+						}
 						callFail = maybeFail();
 					}
 					if(callFail) {
 						try {
-							sendAborted(RetrievalException.RECEIVER_DIED, "Haven't heard from you (receiver) in "+timeString);
+							sendAborted(RetrievalException.RECEIVER_DIED, abortReason);
 						} catch (NotConnectedException e) {
 							// Ignore, it still failed
 						}
