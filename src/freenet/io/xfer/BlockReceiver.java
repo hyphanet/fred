@@ -142,7 +142,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				synchronized(BlockReceiver.this) {
 					senderAborted = true;
 				}
-				complete(new RetrievalException(m1.getInt(DMT.REASON), desc));
+				complete(m1.getInt(DMT.REASON), desc);
 				return;
 			}
 			if ((m1 != null) && (m1.getSpec().equals(DMT.packetTransmit))) {
@@ -175,7 +175,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				} catch (AbortedException e) {
 					// We didn't cause it?!
 					Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e, e);
-					complete(new RetrievalException(RetrievalException.UNKNOWN, "Aborted?"));
+					complete(RetrievalException.UNKNOWN, "Aborted?");
 					return;
 				}
 				if(logMINOR)
@@ -208,10 +208,10 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			} catch (AbortedException e1) {
 				// We didn't cause it?!
 				Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e1, e1);
-				complete(new RetrievalException(RetrievalException.UNKNOWN, "Aborted?"));
+				complete(RetrievalException.UNKNOWN, "Aborted?");
 				return;
 			} catch (NotConnectedException e1) {
-				complete(new RetrievalException(RetrievalException.SENDER_DISCONNECTED));
+				complete(RetrievalException.SENDER_DISCONNECTED, RetrievalException.getErrString(RetrievalException.SENDER_DISCONNECTED));
 				return;
 			}
 			try {
@@ -235,8 +235,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				if(_prb.allReceived()) return;
 				if (consecutiveMissingPacketReports >= MAX_CONSECUTIVE_MISSING_PACKET_REPORTS) {
 					_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests");
-					complete(new RetrievalException(RetrievalException.SENDER_DIED,
-							"Sender unresponsive to resend requests"));
+					complete(RetrievalException.SENDER_DIED,
+							"Sender unresponsive to resend requests");
 					return;
 				}
 				for (int x = 0; x < _prb.getNumPackets(); x++) {
@@ -247,7 +247,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			} catch (AbortedException e) {
 				// We didn't cause it?!
 				Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e, e);
-				complete(new RetrievalException(RetrievalException.UNKNOWN, "Aborted?"));
+				complete(RetrievalException.UNKNOWN, "Aborted?");
 				return;
 			}
 			consecutiveMissingPacketReports++;
@@ -260,11 +260,11 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		}
 		
 		public void onDisconnect(PeerContext ctx) {
-			complete(new RetrievalException(RetrievalException.SENDER_DISCONNECTED));
+			complete(RetrievalException.SENDER_DISCONNECTED, RetrievalException.getErrString(RetrievalException.SENDER_DISCONNECTED));
 		}
 		
 		public void onRestarted(PeerContext ctx) {
-			complete(new RetrievalException(RetrievalException.SENDER_DISCONNECTED));
+			complete(RetrievalException.SENDER_DISCONNECTED, RetrievalException.getErrString(RetrievalException.SENDER_DISCONNECTED));
 		}
 
 		public int getPriority() {
@@ -275,7 +275,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	private boolean completed;
 	
-	private void complete(RetrievalException retrievalException) {
+	private void complete(int reason, String description) {
 		synchronized(this) {
 			if(completed) {
 				if(logMINOR) Logger.minor(this, "Already completed");
@@ -284,7 +284,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			completed = true;
 		}
 		_prb.removeListener(myListener);
-		_prb.abort(retrievalException.getReason(), retrievalException.toString());
+		_prb.abort(reason, description);
 		// Send the abort whether we have received one or not.
 		// If we are cancelling due to failing to turtle, we need to tell the sender
 		// this otherwise he will keep sending, wasting a lot of bandwidth on packets
@@ -295,7 +295,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		} catch (NotConnectedException e) {
 			// Ignore at this point.
 		}
-		callback.blockReceiveFailed(retrievalException);
+		callback.blockReceiveFailed(new RetrievalException(reason, description));
 		decRunningBlockReceives();
 	}
 
@@ -337,7 +337,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 					}
 
 					public void receiveAborted(int reason, String description) {
-						complete(new RetrievalException(reason, description));
+						complete(reason, description);
 					}
 				});
 			} catch (AbortedException e) {
