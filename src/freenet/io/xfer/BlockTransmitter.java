@@ -302,7 +302,7 @@ public class BlockTransmitter {
 				Logger.minor(this, "Sent blocks and failed on "+this);
 			return true;
 		}
-		if(logMINOR) Logger.minor(this, "maybeAllSent: block sends pending = "+blockSendsPending+" unsent = "+_unsent.size()+" on "+this);
+		if(logMINOR) Logger.minor(this, "maybeAllSent: block sends pending = "+blockSendsPending+" unsent = "+_unsent.size()+" sent = "+getNumSent()+" on "+this);
 		return false;
 	}
 
