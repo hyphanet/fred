@@ -296,10 +296,10 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	private long timeStartedWaiting = -1;
 	
 	private void waitNotification(int timeout) throws DisconnectedException {
-		_usm.addAsyncFilter(relevantMessages(timeout), notificationWaiter, _ctr);
 		synchronized(this) {
 			timeStartedWaiting = System.currentTimeMillis();
 		}
+		_usm.addAsyncFilter(relevantMessages(timeout), notificationWaiter, _ctr);
 	}
 	
 	private MessageFilter relevantMessages(int timeout) {
