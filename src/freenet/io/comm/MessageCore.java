@@ -352,7 +352,7 @@ public class MessageCore {
 					}
 				}
 			}
-			if (ret == null && timeout > System.currentTimeMillis()) {
+			if (ret == null && timeout >= System.currentTimeMillis()) {
 				if(logMINOR) Logger.minor(this, "Not in _unclaimed");
 			    // Insert filter into filter list in order of timeout
 				ListIterator<MessageFilter> i = _filters.listIterator();
