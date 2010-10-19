@@ -689,6 +689,7 @@ fragments:
 					if(removed != null) {
 						completedMessagesSize += wrapper.getLength();
 
+						boolean couldSend = npf.canSend();
 						synchronized(npf.ackedMessages) {
 							npf.ackedMessages.add(wrapper.getMessageID(), wrapper.getMessageID());
 
@@ -704,6 +705,10 @@ fragments:
 							} else {
 								npf.ackedMessages.remove(oldWindow, npf.messageWindowPtrAcked);
 							}
+						}
+						if(!couldSend && npf.canSend()) {
+							//We aren't blocked anymore, notify packet sender
+							npf.pn.node.ps.wakeUp();
 						}
 					}
 				}
