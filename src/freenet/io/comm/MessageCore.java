@@ -325,6 +325,7 @@ public class MessageCore {
 		long now = System.currentTimeMillis();
 		long messageDropTime = now - MAX_UNCLAIMED_FIFO_ITEM_LIFETIME;
 		long messageLifeTime = 0;
+		long timeout = filter.getTimeout();
 		synchronized (_filters) {
 			//Once in the list, it is up to the callback system to trigger the disconnection, however, we may
 			//have disconnected between check above and locking, so we *must* check again.
@@ -362,7 +363,7 @@ public class MessageCore {
 						break;
 					}
 					MessageFilter mf = i.next();
-					if (mf.getTimeout() > filter.getTimeout()) {
+					if (mf.getTimeout() > timeout) {
 						i.previous();
 						i.add(filter);
 						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
