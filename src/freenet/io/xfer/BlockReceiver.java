@@ -184,6 +184,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 					if(gotAllSent)
 						// Multiple allSent's don't extend the timeouts.
 						truncateTimeout = true;
+					gotAllSent = true;
 				}
 			}
 			try {
