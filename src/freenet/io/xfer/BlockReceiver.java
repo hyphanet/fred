@@ -127,6 +127,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	// This prevents malicious or broken nodes from trickling transfers forever by sending the same packets over and over.
 	static final boolean CHECK_DUPES = true;
 	
+	private boolean gotAllSent;
+	
 	private AsyncMessageFilterCallback notificationWaiter = new SlowAsyncMessageFilterCallback() {
 
 		public void onMatched(Message m1) {
@@ -173,10 +175,13 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 					complete(RetrievalException.UNKNOWN, "Aborted?");
 					return;
 				}
-			}
-			if(m1.getSpec().equals(DMT.allSent)) {
-				onTimeout();
-				return;
+			} else if (m1 != null && m1.getSpec().equals(DMT.allSent)) {
+				synchronized(BlockReceiver.this) {
+					if(completed) return;
+					if(gotAllSent)
+						// Multiple allSent's don't extend the timeouts.
+						truncateTimeout = true;
+				}
 			}
 			try {
 				if(_prb.allReceived()) {
