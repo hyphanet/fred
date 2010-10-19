@@ -146,7 +146,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				complete(m1.getInt(DMT.REASON), desc);
 				return;
 			}
-            int timeout = RECEIPT_TIMEOUT;
+            boolean truncateTimeout = false;
 			if ((m1 != null) && (m1.getSpec().equals(DMT.packetTransmit))) {
 				// packetTransmit received
 				int packetNo = m1.getInt(DMT.PACKET_NO);
@@ -158,9 +158,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 						// Transmitter sent the same packet twice?!?!?
 						Logger.error(this, "Already received the packet - DoS??? on "+this+" uid "+_uid+" from "+_sender);
 						// Does not extend timeouts.
-						synchronized(this) {
-							timeout = (int)(Math.min(RECEIPT_TIMEOUT, timeStartedWaiting + RECEIPT_TIMEOUT - System.currentTimeMillis()));
-						}
+						truncateTimeout = true;
 					} else {
 						_prb.addPacket(packetNo, data);
 						// Check that we have what the sender thinks we have
@@ -211,7 +209,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			try {
 				// Even if timeout <= 0, we still add the filter, because we want to receive any messages that are already buffered before we timeout.
-				waitNotification(timeout);
+				waitNotification(truncateTimeout);
 			} catch (DisconnectedException e) {
 				onDisconnect(null);
 				return;
@@ -295,9 +293,16 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 
 	private long timeStartedWaiting = -1;
 	
-	private void waitNotification(int timeout) throws DisconnectedException {
+	private void waitNotification(boolean truncateTimeout) throws DisconnectedException {
+		int timeout;
+		long now = System.currentTimeMillis();
 		synchronized(this) {
-			timeStartedWaiting = System.currentTimeMillis();
+			if(truncateTimeout) {
+				timeout = (int)Math.min(timeStartedWaiting + RECEIPT_TIMEOUT - now, RECEIPT_TIMEOUT);
+			} else {
+				timeStartedWaiting = now;
+				timeout = RECEIPT_TIMEOUT;
+			}
 		}
 		_usm.addAsyncFilter(relevantMessages(timeout), notificationWaiter, _ctr);
 	}
@@ -339,7 +344,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		}
 		incRunningBlockReceives();
 		try {
-			waitNotification(RECEIPT_TIMEOUT);
+			waitNotification(false);
 		} catch (DisconnectedException e) {
 			RetrievalException retrievalException = new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
 			_prb.abort(retrievalException.getReason(), retrievalException.toString());
