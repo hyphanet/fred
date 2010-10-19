@@ -283,6 +283,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			completed = true;
 		}
+		_prb.removeListener(myListener);
 		_prb.abort(retrievalException.getReason(), retrievalException.toString());
 		// Send the abort whether we have received one or not.
 		// If we are cancelling due to failing to turtle, we need to tell the sender
@@ -306,6 +307,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			completed = true;
 		}
+		_prb.removeListener(myListener);
 		callback.blockReceived(ret);
 		decRunningBlockReceives();
 	}
@@ -321,9 +323,34 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		return mfPacketTransmit.or(mfAllSent.or(mfSendAborted));
 	}
 
+	PartiallyReceivedBlock.PacketReceivedListener myListener;
+	
 	public void receive(BlockReceiverCompletion callback) {
 		startTime = System.currentTimeMillis();
 		this.callback = callback;
+		synchronized(_prb) {
+			try {
+				_prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
+
+					public void packetReceived(int packetNo) {
+						// Ignore
+					}
+
+					public void receiveAborted(int reason, String description) {
+						complete(new RetrievalException(reason, description));
+					}
+				});
+			} catch (AbortedException e) {
+				try {
+					callback.blockReceived(_prb.getBlock());
+					return;
+				} catch (AbortedException e1) {
+					e = e1;
+				}
+				callback.blockReceiveFailed(new RetrievalException(_prb._abortReason, _prb._abortDescription));
+				return;
+			}
+		}
 		incRunningBlockReceives();
 		try {
 			waitNotification();
