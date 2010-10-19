@@ -293,17 +293,17 @@ public class NewPacketFormat implements PacketFormat {
 			watchListOffset = (int) ((0l + watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
+outer:
 		for(int i = 0; i < seqNumWatchList.length; i++) {
 			int index = (watchListPointer + i) % seqNumWatchList.length;
 			for(int j = 0; j < seqNumWatchList[index].length; j++) {
-				if(seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) break;
-				if(j == (seqNumWatchList[index].length - 1)) {
-					int sequenceNumber = (int) ((0l + watchListOffset + i) % NUM_SEQNUMS);
-					if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
-					NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
-					if(p != null) return p;
-				}
+				if(seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) continue outer;
 			}
+			
+			int sequenceNumber = (int) ((0l + watchListOffset + i) % NUM_SEQNUMS);
+			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
+			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
+			if(p != null) return p;
 		}
 
 		return null;
