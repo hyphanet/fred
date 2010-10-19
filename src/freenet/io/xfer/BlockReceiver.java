@@ -225,22 +225,23 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		}
 		
 		private void complete(RetrievalException retrievalException) {
-			boolean receivedAbort;
 			synchronized(this) {
 				if(completed) {
 					if(logMINOR) Logger.minor(this, "Already completed");
 					return;
 				}
 				completed = true;
-				receivedAbort = senderAborted;
 			}
 			_prb.abort(retrievalException.getReason(), retrievalException.toString());
-			if(receivedAbort) {
-				try {
-					sendAborted(_prb._abortReason, _prb._abortDescription);
-				} catch (NotConnectedException e) {
-					// Ignore at this point.
-				}
+			// Send the abort whether we have received one or not.
+			// If we are cancelling due to failing to turtle, we need to tell the sender
+			// this otherwise he will keep sending, wasting a lot of bandwidth on packets
+			// that we will ignore. If we are cancelling because the sender has told us 
+			// to, we need to acknowledge that.
+			try {
+				sendAborted(_prb._abortReason, _prb._abortDescription);
+			} catch (NotConnectedException e) {
+				// Ignore at this point.
 			}
 			callback.blockReceiveFailed(retrievalException);
 			decRunningBlockReceives();
