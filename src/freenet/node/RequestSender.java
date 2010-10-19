@@ -826,7 +826,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				transferTime = tEnd - tStart;
                 				boolean turtle;
                 				boolean turtleBackedOff;
-                				synchronized(this) {
+                				synchronized(RequestSender.this) {
                 					turtle = turtleMode;
                 					turtleBackedOff = sentBackoffTurtle;
                 					sentBackoffTurtle = true;
@@ -868,7 +868,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				RetrievalException e) {
                 			try {
                 				boolean turtle;
-                				synchronized(this) {
+                				synchronized(RequestSender.this) {
                 					turtle = turtleMode;
                 					transferringFrom = null;
                 				}
