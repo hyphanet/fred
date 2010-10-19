@@ -22,7 +22,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 
 import freenet.support.Buffer;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * @author ian
@@ -32,6 +34,19 @@ import freenet.support.Logger;
  */
 public class PartiallyReceivedBlock {
 
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+			}
+		});
+	}
+	
 	byte[] _data;
 	boolean[] _received;
 	int _receivedCount;
@@ -160,8 +175,14 @@ public class PartiallyReceivedBlock {
 	public void abort(int reason, String description) {
 		PacketReceivedListener[] listeners;
 		synchronized(this) {
-			if(_aborted) return;
-			if(_receivedCount == _packets) return;
+			if(_aborted) {
+				if(logMINOR) Logger.minor(this, "Already aborted");
+				return;
+			}
+			if(_receivedCount == _packets) {
+				if(logMINOR) Logger.minor(this, "Already received");
+				return;
+			}
 			Logger.normal(this, "Aborting PRB: "+reason+" : "+description, new Exception("debug"));
 			_aborted = true;
 			_abortReason = reason;
