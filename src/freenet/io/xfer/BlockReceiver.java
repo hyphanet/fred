@@ -131,8 +131,6 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	private AsyncMessageFilterCallback notificationWaiter = new SlowAsyncMessageFilterCallback() {
 
-		private boolean completed;
-		
 		public void onMatched(Message m1) {
             if(logMINOR)
             	Logger.minor(this, "Received "+m1);
@@ -224,41 +222,6 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 		}
 		
-		private void complete(RetrievalException retrievalException) {
-			synchronized(this) {
-				if(completed) {
-					if(logMINOR) Logger.minor(this, "Already completed");
-					return;
-				}
-				completed = true;
-			}
-			_prb.abort(retrievalException.getReason(), retrievalException.toString());
-			// Send the abort whether we have received one or not.
-			// If we are cancelling due to failing to turtle, we need to tell the sender
-			// this otherwise he will keep sending, wasting a lot of bandwidth on packets
-			// that we will ignore. If we are cancelling because the sender has told us 
-			// to, we need to acknowledge that.
-			try {
-				sendAborted(_prb._abortReason, _prb._abortDescription);
-			} catch (NotConnectedException e) {
-				// Ignore at this point.
-			}
-			callback.blockReceiveFailed(retrievalException);
-			decRunningBlockReceives();
-		}
-
-		private void complete(byte[] ret) {
-			synchronized(this) {
-				if(completed) {
-					if(logMINOR) Logger.minor(this, "Already completed");
-					return;
-				}
-				completed = true;
-			}
-			callback.blockReceived(ret);
-			decRunningBlockReceives();
-		}
-
 		public boolean shouldTimeout() {
 			return false;
 		}
@@ -310,6 +273,43 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		
 	};
 	
+	private boolean completed;
+	
+	private void complete(RetrievalException retrievalException) {
+		synchronized(this) {
+			if(completed) {
+				if(logMINOR) Logger.minor(this, "Already completed");
+				return;
+			}
+			completed = true;
+		}
+		_prb.abort(retrievalException.getReason(), retrievalException.toString());
+		// Send the abort whether we have received one or not.
+		// If we are cancelling due to failing to turtle, we need to tell the sender
+		// this otherwise he will keep sending, wasting a lot of bandwidth on packets
+		// that we will ignore. If we are cancelling because the sender has told us 
+		// to, we need to acknowledge that.
+		try {
+			sendAborted(_prb._abortReason, _prb._abortDescription);
+		} catch (NotConnectedException e) {
+			// Ignore at this point.
+		}
+		callback.blockReceiveFailed(retrievalException);
+		decRunningBlockReceives();
+	}
+
+	private void complete(byte[] ret) {
+		synchronized(this) {
+			if(completed) {
+				if(logMINOR) Logger.minor(this, "Already completed");
+				return;
+			}
+			completed = true;
+		}
+		callback.blockReceived(ret);
+		decRunningBlockReceives();
+	}
+
 	private void waitNotification() throws DisconnectedException {
 		_usm.addAsyncFilter(relevantMessages(), notificationWaiter, _ctr);
 	}
