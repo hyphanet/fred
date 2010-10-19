@@ -153,6 +153,9 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				Buffer data = (Buffer) m1.getObject(DMT.DATA);
 				int missing = 0;
 				try {
+					synchronized(BlockReceiver.this) {
+						if(completed) return;
+					}
 					if(CHECK_DUPES && _prb.isReceived(packetNo)) {
 						// Transmitter sent the same packet twice?!?!?
 						Logger.error(this, "Already received the packet - DoS??? on "+this+" uid "+_uid+" from "+_sender);
