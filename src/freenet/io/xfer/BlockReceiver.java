@@ -223,7 +223,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		}
 		
 		public boolean shouldTimeout() {
-			return false;
+			return completed;
 		}
 		
 		public void onTimeout() {
