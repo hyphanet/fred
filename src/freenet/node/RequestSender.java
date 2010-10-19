@@ -1171,6 +1171,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	boolean turtle;
     	
         synchronized(this) {
+        	if(status != NOT_FINISHED) {
+        		if(logMINOR) Logger.minor(this, "Status already set to "+status+" - returning on "+this+" would be setting "+code+" from "+next);
+        		return;
+        	}
             status = code;
             notifyAll();
             turtle = turtleMode;
