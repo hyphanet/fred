@@ -142,20 +142,16 @@ public class PartiallyReceivedBlock {
 	}
 
 	public synchronized boolean allReceived() throws AbortedException {
+		if(_receivedCount == _packets) return true;
 		if (_aborted) {
 			throw new AbortedException("PRB is aborted");
 		}
-		return _receivedCount == _packets;
+		return false;
 	}
 	
 	public synchronized byte[] getBlock() throws AbortedException {
-		if (_aborted) {
-			throw new AbortedException("PRB is aborted");
-		}
-		if (!allReceived()) {
-			throw new RuntimeException("Tried to get block before all packets received");
-		}
-		return _data;
+		if(allReceived()) return _data;
+		throw new RuntimeException("Tried to get block before all packets received");
 	}
 	
 	public synchronized Buffer getPacket(int x) throws AbortedException {
