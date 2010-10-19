@@ -4314,20 +4314,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	private HashMap<Key,RequestSender> turtlingTransfers = new HashMap<Key,RequestSender>();
 
-	public boolean registerTurtleTransfer(RequestSender sender) {
+	public String registerTurtleTransfer(RequestSender sender) {
 		Key key = sender.key;
 		synchronized(turtlingTransfers) {
 			if(turtlingTransfers.size() >= MAX_TURTLES_PER_PEER) {
 				Logger.warning(this, "Too many turtles for peer");
-				return false;
+				return "Too many turtles for peer";
 			}
 			if(turtlingTransfers.containsKey(key)) {
 				Logger.error(this, "Already fetching key from peer");
-				return false;
+				return "Already fetching key from peer";
 			}
 			turtlingTransfers.put(key, sender);
 			Logger.normal(this, "Turtles for "+getPeer()+" : "+turtlingTransfers.size());
-			return true;
+			return null;
 		}
 	}
 
