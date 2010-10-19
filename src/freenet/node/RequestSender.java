@@ -889,6 +889,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 					// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
                 					Logger.normal(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+sentTo, e);
                 				// We do an ordinary backoff in all cases.
+                				// This includes the case where we decide not to turtle the request. This is reasonable as if it had completely quickly we wouldn't have needed to make that choice.
                 				sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 				finish(TRANSFER_FAILED, sentTo, false);
                 				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
