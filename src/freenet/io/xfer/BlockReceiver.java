@@ -237,7 +237,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			_prb.abort(retrievalException.getReason(), retrievalException.toString());
 			if(receivedAbort) {
 				try {
-					sendAborted(retrievalException.getReason(), retrievalException.getMessage());
+					sendAborted(_prb._abortReason, _prb._abortDescription);
 				} catch (NotConnectedException e) {
 					// Ignore at this point.
 				}
