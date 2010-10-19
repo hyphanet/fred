@@ -304,6 +304,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                			br.receive(new BlockReceiverCompletion() {
                				
 							public void blockReceived(byte[] data) {
+                				synchronized(RequestSender.this) {
+                					transferringFrom = null;
+                				}
+                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
 		                		try {
 			                		// Received data
 			               			p.transferSuccess();
@@ -318,16 +322,15 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		                		} catch (Throwable t) {
 		                			Logger.error(this, "Failed on "+this, t);
 		                			finish(INTERNAL_ERROR, p, true);
-	                			} finally {
-	                				synchronized(RequestSender.this) {
-	                					transferringFrom = null;
-	                				}
-	                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
 		                		}
 							}
 
 							public void blockReceiveFailed(
 									RetrievalException e) {
+                				synchronized(RequestSender.this) {
+                					transferringFrom = null;
+                				}
+                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
 								try {
 									if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 										Logger.normal(this, "Transfer failed (disconnect): "+e, e);
@@ -342,11 +345,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		                		} catch (Throwable t) {
 		                			Logger.error(this, "Failed on "+this, t);
 		                			finish(INTERNAL_ERROR, p, true);
-	                			} finally {
-	                				synchronized(RequestSender.this) {
-	                					transferringFrom = null;
-	                				}
-	                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
 		                		}
 							}
                 				
@@ -832,7 +830,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 					turtle = turtleMode;
                 					turtleBackedOff = sentBackoffTurtle;
                 					sentBackoffTurtle = true;
+                					transferringFrom = null;
                 				}
+                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 				if(!turtle)
                 					sentTo.transferSuccess();
                 				else {
@@ -861,11 +861,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			} catch (Throwable t) {
 	                			Logger.error(this, "Failed on "+this, t);
 	                			finish(INTERNAL_ERROR, sentTo, true);
-                			} finally {
-                				synchronized(RequestSender.this) {
-                					transferringFrom = null;
-                				}
-                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 			}
                 		}
                 		
@@ -875,7 +870,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				boolean turtle;
                 				synchronized(this) {
                 					turtle = turtleMode;
+                					transferringFrom = null;
                 				}
+                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 				if(turtle) {
                 					if(e.getReason() != RetrievalException.GONE_TO_TURTLE_MODE) {
                 						Logger.normal(this, "TURTLE FAILED: "+key+" for "+this+" : "+e);
@@ -912,11 +909,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			} catch (Throwable t) {
 	                			Logger.error(this, "Failed on "+this, t);
 	                			finish(INTERNAL_ERROR, sentTo, true);
-                			} finally {
-                				synchronized(RequestSender.this) {
-                					transferringFrom = null;
-                				}
-                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 			}
                 		}
                 		
