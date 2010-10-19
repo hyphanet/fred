@@ -107,7 +107,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 //		_doTooLong = doTooLong;
 	}
 
-	public void sendAborted(int reason, String desc) throws NotConnectedException {
+	private void sendAborted(int reason, String desc) throws NotConnectedException {
 		synchronized(this) {
 			if(sentAborted) return;
 			sentAborted = true;
