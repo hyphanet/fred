@@ -118,6 +118,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 
 	}
 	
+	private int consecutiveMissingPacketReports = 0;
+	
 	private BlockReceiverCompletion callback;
 	
 	private long startTime;
@@ -147,6 +149,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
             boolean truncateTimeout = false;
 			if ((m1 != null) && (m1.getSpec().equals(DMT.packetTransmit))) {
+				consecutiveMissingPacketReports = 0;
 				// packetTransmit received
 				int packetNo = m1.getInt(DMT.PACKET_NO);
 				BitArray sent = (BitArray) m1.getObject(DMT.SENT);
@@ -230,16 +233,31 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			synchronized(this) {
 				if(completed) return;
 			}
+			LinkedList<Integer> missing = new LinkedList<Integer>();
 			try {
 				if(_prb.allReceived()) return;
-				_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests");
-				complete(RetrievalException.SENDER_DIED,
-						"Sender unresponsive to resend requests");
-				return;
+				if (consecutiveMissingPacketReports >= MAX_CONSECUTIVE_MISSING_PACKET_REPORTS) {
+					_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests");
+					complete(RetrievalException.SENDER_DIED,
+							"Sender unresponsive to resend requests");
+					return;
+				}
+				for (int x = 0; x < _prb.getNumPackets(); x++) {
+					if (!_prb.isReceived(x)) {
+						missing.add(x);
+					}
+				}
 			} catch (AbortedException e) {
 				// We didn't cause it?!
 				Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e, e);
 				complete(RetrievalException.UNKNOWN, "Aborted?");
+				return;
+			}
+			consecutiveMissingPacketReports++;
+			try {
+				waitNotification();
+			} catch (DisconnectedException e) {
+				onDisconnect(null);
 				return;
 			}
 		}
