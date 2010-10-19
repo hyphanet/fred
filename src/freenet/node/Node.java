@@ -5572,9 +5572,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public void makeTurtle(RequestSender sender) {
 		// Registration
 		// FIXME check the datastore.
-		if(!this.registerTurtleTransfer(sender)) {
+		String reason = registerTurtleTransfer(sender);
+		if(reason != null) {
 			// Too many turtles running, or already two turtles for this key (we allow two in case one peer turtles as a DoS).
-			sender.killTurtle();
+			sender.killTurtle(reason);
 			Logger.warning(this, "Didn't make turtle (global) for key "+sender.key+" for "+sender);
 			return;
 		}
@@ -5583,11 +5584,12 @@ public class Node implements TimeSkewDetectorCallback {
 			// Race condition, it has finished, avoid NPE
 			return;
 		}
-		if(!from.registerTurtleTransfer(sender)) {
+		reason = from.registerTurtleTransfer(sender);
+		if(reason != null) {
 			// Too many turtles running, or already a turtle for this key.
 			// Abort it.
 			unregisterTurtleTransfer(sender);
-			sender.killTurtle();
+			sender.killTurtle(reason);
 			Logger.warning(this, "Didn't make turtle (peer) for key "+sender.key+" for "+sender);
 			return;
 		}
@@ -5611,27 +5613,27 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private HashMap<Key,RequestSender[]> turtlingTransfers = new HashMap<Key,RequestSender[]>();
 
-	private boolean registerTurtleTransfer(RequestSender sender) {
+	private String registerTurtleTransfer(RequestSender sender) {
 		Key key = sender.key;
 		synchronized(turtlingTransfers) {
 			if(getNumIncomingTurtles() >= MAX_TURTLES) {
 				Logger.warning(this, "Too many turtles running globally");
-				return false;
+				return "Too many turtles running globally";
 			}
 			if(!turtlingTransfers.containsKey(key)) {
 				turtlingTransfers.put(key, new RequestSender[] { sender });
 				Logger.normal(this, "Running turtles (a): "+getNumIncomingTurtles()+" : "+turtlingTransfers.size());
-				return true;
+				return null;
 			} else {
 				RequestSender[] senders = turtlingTransfers.get(key);
 				if(senders.length >= MAX_TURTLES_PER_KEY) {
 					Logger.warning(this, "Too many turtles for key globally");
-					return false;
+					return "Too many turtles for key globally";
 				}
 				for(int i=0;i<senders.length;i++) {
 					if(senders[i] == sender) {
 						Logger.error(this, "Registering turtle for "+sender+" : "+key+" twice! (globally)");
-						return false;
+						return "Registering turtle for "+sender+" : "+key+" twice! (globally)";
 					}
 				}
 				RequestSender[] newSenders = new RequestSender[senders.length+1];
@@ -5639,7 +5641,7 @@ public class Node implements TimeSkewDetectorCallback {
 				newSenders[senders.length] = sender;
 				turtlingTransfers.put(key, newSenders);
 				Logger.normal(this, "Running turtles (b): "+getNumIncomingTurtles()+" : "+turtlingTransfers.size());
-				return true;
+				return null;
 			}
 		}
 	}
