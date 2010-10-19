@@ -888,6 +888,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				else
                 					// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
                 					Logger.normal(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+sentTo, e);
+                				// We do an ordinary backoff in all cases.
                 				sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 				finish(TRANSFER_FAILED, sentTo, false);
                 				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
@@ -895,6 +896,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				boolean timeout = (!br.senderAborted()) &&
                 				(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
                 						|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT);
+                				// But we only do a transfer backoff (which is separate, and starts at a higher threshold) if we timed out i.e. not if upstream turtled.
                 				if(timeout) {
                 					// Looks like a timeout. Backoff, even if it's a turtle.
                 					if(logMINOR) Logger.minor(this, "Timeout transferring data : "+e, e);
