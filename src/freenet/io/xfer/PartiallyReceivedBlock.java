@@ -176,7 +176,7 @@ public class PartiallyReceivedBlock {
 		PacketReceivedListener[] listeners;
 		synchronized(this) {
 			if(_aborted) {
-				if(logMINOR) Logger.minor(this, "Already aborted");
+				if(logMINOR) Logger.minor(this, "Already aborted "+this+" : reason="+_abortReason+" description="+_abortDescription);
 				return;
 			}
 			if(_receivedCount == _packets) {
