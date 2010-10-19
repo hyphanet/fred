@@ -360,14 +360,14 @@ public class MessageCore {
 					if (!i.hasNext()) {
 						i.add(filter);
 						if(logMINOR) Logger.minor(this, "Added at end");
-						break;
+						return;
 					}
 					MessageFilter mf = i.next();
 					if (mf.getTimeout() > timeout) {
 						i.previous();
 						i.add(filter);
 						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
-						break;
+						return;
 					}
 				}
 			}
