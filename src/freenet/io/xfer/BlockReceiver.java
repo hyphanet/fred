@@ -18,9 +18,6 @@
  */
 package freenet.io.xfer;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-
 import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
