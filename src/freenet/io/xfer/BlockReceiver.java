@@ -125,6 +125,11 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	private long startTime;
 	
+	// If false, don't check for duplicate messages from the sender.
+	// Turn off if e.g. we know that the PRB is already partially received when we start the transfer.
+	// This prevents malicious or broken nodes from trickling transfers forever by sending the same packets over and over.
+	static final boolean CHECK_DUPES = true;
+	
 	private AsyncMessageFilterCallback notificationWaiter = new SlowAsyncMessageFilterCallback() {
 
 		public void onMatched(Message m1) {
@@ -141,6 +146,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				complete(m1.getInt(DMT.REASON), desc);
 				return;
 			}
+            int timeout = RECEIPT_TIMEOUT;
 			if ((m1 != null) && (m1.getSpec().equals(DMT.packetTransmit))) {
 				// packetTransmit received
 				int packetNo = m1.getInt(DMT.PACKET_NO);
@@ -148,15 +154,24 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				Buffer data = (Buffer) m1.getObject(DMT.DATA);
 				int missing = 0;
 				try {
-					_prb.addPacket(packetNo, data);
-					// Check that we have what the sender thinks we have
-					for (int x = 0; x < sent.getSize(); x++) {
-						if (sent.bitAt(x) && !_prb.isReceived(x)) {
-							missing++;
+					if(CHECK_DUPES && _prb.isReceived(packetNo)) {
+						// Transmitter sent the same packet twice?!?!?
+						Logger.error(this, "Already received the packet - DoS??? on "+this+" uid "+_uid+" from "+_sender);
+						// Does not extend timeouts.
+						synchronized(this) {
+							timeout = (int)(Math.min(RECEIPT_TIMEOUT, timeStartedWaiting + RECEIPT_TIMEOUT - System.currentTimeMillis()));
 						}
+					} else {
+						_prb.addPacket(packetNo, data);
+						// Check that we have what the sender thinks we have
+						for (int x = 0; x < sent.getSize(); x++) {
+							if (sent.bitAt(x) && !_prb.isReceived(x)) {
+								missing++;
+							}
+						}
+						if(logMINOR && missing != 0) 
+							Logger.minor(this, "Packets which the sender says it has sent but we have not received: "+missing);
 					}
-					if(logMINOR && missing != 0) 
-						Logger.minor(this, "Packets which the sender says it has sent but we have not received: "+missing);
 				} catch (AbortedException e) {
 					// We didn't cause it?!
 					Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e, e);
@@ -172,7 +187,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				if(_prb.allReceived()) {
 					_usm.send(_sender, DMT.createAllReceived(_uid), _ctr);
 					discardEndTime=System.currentTimeMillis()+CLEANUP_TIMEOUT;
-					discardFilter=relevantMessages();
+					discardFilter=relevantMessages(CLEANUP_TIMEOUT);
 					maybeResetDiscardFilter();
 					long endTime = System.currentTimeMillis();
 					long transferTime = (endTime - startTime);
@@ -195,7 +210,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				return;
 			}
 			try {
-				waitNotification();
+				// Even if timeout <= 0, we still add the filter, because we want to receive any messages that are already buffered before we timeout.
+				waitNotification(timeout);
 			} catch (DisconnectedException e) {
 				onDisconnect(null);
 				return;
@@ -277,14 +293,19 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		decRunningBlockReceives();
 	}
 
-	private void waitNotification() throws DisconnectedException {
-		_usm.addAsyncFilter(relevantMessages(), notificationWaiter, _ctr);
+	private long timeStartedWaiting = -1;
+	
+	private void waitNotification(int timeout) throws DisconnectedException {
+		_usm.addAsyncFilter(relevantMessages(timeout), notificationWaiter, _ctr);
+		synchronized(this) {
+			timeStartedWaiting = System.currentTimeMillis();
+		}
 	}
 	
-	private MessageFilter relevantMessages() {
-		MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
-		MessageFilter mfAllSent = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
-		MessageFilter mfSendAborted = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
+	private MessageFilter relevantMessages(int timeout) {
+		MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(timeout).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
+		MessageFilter mfAllSent = MessageFilter.create().setTimeout(timeout).setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
+		MessageFilter mfSendAborted = MessageFilter.create().setTimeout(timeout).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
 		return mfPacketTransmit.or(mfAllSent.or(mfSendAborted));
 	}
 
@@ -318,7 +339,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		}
 		incRunningBlockReceives();
 		try {
-			waitNotification();
+			waitNotification(RECEIPT_TIMEOUT);
 		} catch (DisconnectedException e) {
 			RetrievalException retrievalException = new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
 			_prb.abort(retrievalException.getReason(), retrievalException.toString());
