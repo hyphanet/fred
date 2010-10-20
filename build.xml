@@ -79,7 +79,9 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<!-- Miscellaneous                                                       -->
 	<!-- =================================================================== -->
 
-	<target name="all" depends="clean-all, dist, doc" description="clean-builds everything"/>
+	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
+
+	<target name="all" depends="package, doc" description="build everything"/>
 
 	<target name="clean-all" depends="clean, clean-doc, clean-gjs, clean-ext" description="clean all build products *and dependencies* (ext, gjs)"/>
 
@@ -174,7 +176,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 		</copy>
 	</target>
 
-	<target name="dist" depends="build, unit" description="build standard components (Freenet daemon)" >
+	<target name="package" depends="build, unit" description="build standard components (Freenet daemon)" >
 		<jar jarfile="${lib}/freenet-cvs-snapshot.jar" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet/node/Node"/>
