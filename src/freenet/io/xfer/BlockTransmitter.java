@@ -191,10 +191,7 @@ public class BlockTransmitter {
 						if(maybeComplete()) {
 							complete = true;
 							success = _receivedSendSuccess;
-						} else {
-							scheduleTimeoutAfterBlockSends();
-							return false;
-						}
+						} else return false;
 					} else {
 						return false;
 					}
@@ -314,6 +311,8 @@ public class BlockTransmitter {
 	public boolean maybeComplete() {
 		if(!_receivedSendCompletion) {
 			if(logMINOR) Logger.minor(this, "maybeComplete() not completing because send not completed on "+this);
+			// All the block sends have completed, wait for the other side to acknowledge or timeout.
+			scheduleTimeoutAfterBlockSends();
 			return false;
 		}
 		if(_completed) {
@@ -676,10 +675,7 @@ public class BlockTransmitter {
 				blockSendsPending--;
 				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
 				if(!maybeAllSent()) return;
-				if(!maybeComplete()) {
-					scheduleTimeoutAfterBlockSends();
-					return;
-				}
+				if(!maybeComplete()) return;
 				success = _receivedSendSuccess;
 			}
 			callCallback(success);
