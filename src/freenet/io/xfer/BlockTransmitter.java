@@ -157,12 +157,12 @@ public class BlockTransmitter {
 				synchronized(_senderThread) {
 					callFail = maybeFail();
 				}
+				try {
+					sendAborted(RetrievalException.TIMED_OUT, "Sender unable to send packets quickly enough");
+				} catch (NotConnectedException e1) {
+					// Ignore
+				}
 				if(callFail) {
-					try {
-						sendAborted(RetrievalException.TIMED_OUT, "Sender unable to send packets quickly enough");
-					} catch (NotConnectedException e1) {
-						// Ignore
-					}
 					callCallback(false);
 				}
 				cancelItemsPending();
@@ -264,12 +264,12 @@ public class BlockTransmitter {
 						}
 						callFail = maybeFail();
 					}
+					try {
+						sendAborted(RetrievalException.RECEIVER_DIED, abortReason);
+					} catch (NotConnectedException e) {
+						// Ignore, it still failed
+					}
 					if(callFail) {
-						try {
-							sendAborted(RetrievalException.RECEIVER_DIED, abortReason);
-						} catch (NotConnectedException e) {
-							// Ignore, it still failed
-						}
 						callCallback(false);
 					}
 				}
