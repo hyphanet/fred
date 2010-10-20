@@ -154,13 +154,17 @@ public class BlockTransmitter {
 			} catch (WaitedTooLongException e) {
 				Logger.normal(this, "Waited too long to send packet, aborting on "+BlockTransmitter.this);
 				boolean callFail = false;
+				boolean sendAborted;
 				synchronized(_senderThread) {
 					callFail = maybeFail();
+					sendAborted = prepareSendAbort();
 				}
-				try {
-					sendAborted(RetrievalException.TIMED_OUT, "Sender unable to send packets quickly enough");
-				} catch (NotConnectedException e1) {
-					// Ignore
+				if(sendAborted) {
+					try {
+						innerSendAborted(RetrievalException.TIMED_OUT, "Sender unable to send packets quickly enough");
+					} catch (NotConnectedException e1) {
+						// Ignore
+					}
 				}
 				if(callFail) {
 					callCallback(false);
@@ -246,6 +250,7 @@ public class BlockTransmitter {
 					boolean callFail;
 					String timeString;
 					String abortReason;
+					boolean sendAborted;
 					synchronized(_senderThread) {
 						if(_completed) return;
 						if(!_receivedSendCompletion) {
@@ -263,11 +268,14 @@ public class BlockTransmitter {
 							abortReason = "Haven't heard from you (receiver) in "+timeString;
 						}
 						callFail = maybeFail();
+						sendAborted = prepareSendAbort();
 					}
-					try {
-						sendAborted(RetrievalException.RECEIVER_DIED, abortReason);
-					} catch (NotConnectedException e) {
-						// Ignore, it still failed
+					if(sendAborted) {
+						try {
+							innerSendAborted(RetrievalException.RECEIVER_DIED, abortReason);
+						} catch (NotConnectedException e) {
+							// Ignore, it still failed
+						}
 					}
 					if(callFail) {
 						callCallback(false);
@@ -368,15 +376,6 @@ public class BlockTransmitter {
 		}
 		_sentSendAborted = true;
 		return true;
-	}
-	
-	/** Send the sendAborted message. Only send it once. Send it even if we have already
-	 * aborted, we are called in some cases when the PRB aborts. */
-	public void sendAborted(int reason, String desc) throws NotConnectedException {
-		synchronized(_senderThread) {
-			if(!prepareSendAbort()) return;
-		}
-		innerSendAborted(reason, desc);
 	}
 	
 	public void innerSendAborted(int reason, String desc) throws NotConnectedException {
