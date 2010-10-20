@@ -189,7 +189,6 @@ public class BlockTransmitter {
 			}
 			if(complete) {
 				callCallback(success);
-				cleanup();
 				return false; // No more blocks to send.
 			}
 			return true; // More blocks to send.
