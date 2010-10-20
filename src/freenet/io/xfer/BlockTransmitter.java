@@ -240,6 +240,7 @@ public class BlockTransmitter {
 	
 	public void scheduleTimeoutAfterBlockSends() {
 		synchronized(_senderThread) {
+			if(_receivedSendCompletion) return;
 			if(timeoutJob != null) return;
 			if(logMINOR) Logger.minor(this, "Scheduling timeout on "+this);
 			timeoutJob = new PrioRunnable() {
