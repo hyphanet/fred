@@ -450,14 +450,20 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	static int runningBlockReceives = 0;
 	
-	private static synchronized void incRunningBlockReceives() {
-		runningBlockReceives++;
-		if(logMINOR) Logger.minor(BlockTransmitter.class, "Started a block receive, running: "+runningBlockReceives);
+	private void incRunningBlockReceives() {
+		if(logMINOR) Logger.minor(this, "Starting block receive "+_uid);
+		synchronized(BlockReceiver.class) {
+			runningBlockReceives++;
+			if(logMINOR) Logger.minor(BlockTransmitter.class, "Started a block receive, running: "+runningBlockReceives);
+		}
 	}
 	
-	private static synchronized void decRunningBlockReceives() {
-		runningBlockReceives--;
-		if(logMINOR) Logger.minor(BlockTransmitter.class, "Finished a block receive, running: "+runningBlockReceives);
+	private void decRunningBlockReceives() {
+		if(logMINOR) Logger.minor(this, "Stopping block receive "+_uid);
+		synchronized(BlockReceiver.class) {
+			runningBlockReceives--;
+			if(logMINOR) Logger.minor(BlockTransmitter.class, "Finished a block receive, running: "+runningBlockReceives);
+		}
 	}
 
 	public synchronized static int getRunningReceives() {
