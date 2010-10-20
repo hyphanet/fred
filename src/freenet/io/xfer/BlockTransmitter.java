@@ -360,13 +360,8 @@ public class BlockTransmitter {
 		cancelItemsPending();
 	}
 	
-	/** Must be called synchronized on _senderThread */
+	/** Only send sendAborted once. LOCKING: Must be called synchronized on _senderThread */
 	private boolean prepareSendAbort() {
-		scheduleTimeoutAfterBlockSends();
-		if(blockSendsPending != 0) {
-			if(logMINOR) Logger.minor(this, "Not sending sendAborted until block sends finished on "+this);
-			return false;
-		}
 		if(_sentSendAborted) {
 			if(logMINOR) Logger.minor(this, "Not sending sendAborted on "+this);
 			return false;
