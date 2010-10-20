@@ -153,35 +153,21 @@ public class BlockTransmitter {
 				return false;
 			} catch (WaitedTooLongException e) {
 				Logger.normal(this, "Waited too long to send packet, aborting on "+BlockTransmitter.this);
-				boolean callFail = false;
-				boolean sendAborted;
+				Future fail;
 				synchronized(_senderThread) {
-					callFail = maybeFail();
-					sendAborted = prepareSendAbort();
+					fail = maybeFail(RetrievalException.TIMED_OUT, "Sender unable to send packets quickly enough");
 				}
-				if(sendAborted) {
-					try {
-						innerSendAborted(RetrievalException.TIMED_OUT, "Sender unable to send packets quickly enough");
-					} catch (NotConnectedException e1) {
-						// Ignore
-					}
-				}
-				if(callFail) {
-					callCallback(false);
-				}
+				fail.execute();
 				cancelItemsPending();
 				return false;
 			} catch (SyncSendWaitedTooLongException e) {
 				// Impossible, but lets cancel it anyway
-				boolean callFail = false;
+				Future fail;
 				synchronized(_senderThread) {
-					callFail = maybeFail();
+					fail = maybeFail(RetrievalException.UNKNOWN, "Impossible: SyncSendWaitedTooLong");
 				}
 				Logger.error(this, "Impossible: Caught "+e+" on "+BlockTransmitter.this, e);
-				if(callFail) {
-					callCallback(false);
-					cleanup();
-				}
+				fail.execute();
 				return false;
 			}
 			boolean success = false;
@@ -247,10 +233,9 @@ public class BlockTransmitter {
 			timeoutJob = new PrioRunnable() {
 				
 				public void run() {
-					boolean callFail;
 					String timeString;
 					String abortReason;
-					boolean sendAborted;
+					Future fail;
 					synchronized(_senderThread) {
 						if(_completed) return;
 						if(!_receivedSendCompletion) {
@@ -267,19 +252,9 @@ public class BlockTransmitter {
 							Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
 							abortReason = "Haven't heard from you (receiver) in "+timeString;
 						}
-						callFail = maybeFail();
-						sendAborted = prepareSendAbort();
+						fail = maybeFail(RetrievalException.RECEIVER_DIED, abortReason);
 					}
-					if(sendAborted) {
-						try {
-							innerSendAborted(RetrievalException.RECEIVER_DIED, abortReason);
-						} catch (NotConnectedException e) {
-							// Ignore, it still failed
-						}
-					}
-					if(callFail) {
-						callCallback(false);
-					}
+					fail.execute();
 				}
 				
 				public int getPriority() {
@@ -333,14 +308,27 @@ public class BlockTransmitter {
 		return true;
 	}
 	
+	interface Future {
+		void execute();
+	}
+	
+	private final Future nullFuture = new Future() {
+
+		public void execute() {
+			// Do nothing.
+		}
+		
+	};
+	
 	/** Only fail once. Called on a drastic failure e.g. disconnection. Unless we are sure
 	 * that we don't need to (e.g. on disconnection), the caller must call prepareSendAborted
 	 * afterwards, and if that returns true, send the sendAborted via innerSendAborted.
-	 * Caller must call the callback then call cleanup() outside the lock if this returns true. */
-	public boolean maybeFail() {
+	 * LOCKING: Must be called inside the _senderThread lock.
+	 * @return A Future which the caller must execute() outside the lock. */
+	public Future maybeFail(final int reason, final String description) {
 		if(_completed) {
 			if(logMINOR) Logger.minor(this, "maybeFail() already completed on "+this);
-			return false;
+			return nullFuture;
 		}
 		_failed = true;
 		if(!_receivedSendCompletion) {
@@ -348,44 +336,53 @@ public class BlockTransmitter {
 			// This is important for keeping track of how many transfers are actually running, which will be important for load management later on.
 			// The caller will immediately call prepareSendAbort() then innerSendAborted().
 			if(logMINOR) Logger.minor(this, "maybeFail() waiting for acknowledgement on "+this);
-			scheduleTimeoutAfterBlockSends();
-			return false;
+			if(_sentSendAborted) {
+				scheduleTimeoutAfterBlockSends();
+				return nullFuture; // Do nothing, waiting for timeout.
+			} else {
+				_sentSendAborted = true;
+				// Send the aborted, then wait.
+				return new Future() {
+
+					public void execute() {
+						try {
+							innerSendAborted(reason, description);
+							scheduleTimeoutAfterBlockSends();
+						} catch (NotConnectedException e) {
+							onDisconnect();
+						}
+					}
+					
+				};
+			}
 		}
 		if(blockSendsPending != 0) {
 			if(logMINOR) Logger.minor(this, "maybeFail() waiting for "+blockSendsPending+" block sends on "+this);
-			return false;
+			return nullFuture; // Wait for blockSendsPending to reach 0
 		}
 		if(logMINOR) Logger.minor(this, "maybeFail() completing on "+this);
 		_completed = true;
 		decRunningBlockTransmits();
-		return true;
-	}
+		return new Future() {
 
+			public void execute() {
+				callCallback(false);
+			}
+			
+		};
+	}
+	
 	/** Abort the send, and then send the sendAborted message. Don't do anything if the
 	 * send has already been aborted. */
 	public void abortSend(int reason, String desc) throws NotConnectedException {
 		if(logMINOR) Logger.minor(this, "Aborting send on "+this);
-		boolean callFail = false;
-		boolean sendAbort = false;
+		Future fail;
 		synchronized(_senderThread) {
 			_failed = true;
-			callFail = maybeFail();
-			sendAbort = prepareSendAbort();
+			fail = maybeFail(reason, desc);
 		}
-		if(callFail) callCallback(false);
-		if(sendAbort)
-			innerSendAborted(reason, desc);
+		fail.execute();
 		cancelItemsPending();
-	}
-	
-	/** Only send sendAborted once. LOCKING: Must be called synchronized on _senderThread */
-	private boolean prepareSendAbort() {
-		if(_sentSendAborted) {
-			if(logMINOR) Logger.minor(this, "Not sending sendAborted on "+this);
-			return false;
-		}
-		_sentSendAborted = true;
-		return true;
 	}
 	
 	public void innerSendAborted(int reason, String desc) throws NotConnectedException {
@@ -485,28 +482,14 @@ public class BlockTransmitter {
 		public void onMatched(Message msg) {
 			if(abortHandler.onAbort())
 				_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
-			boolean complete = false;
-			boolean abort = false;
+			Future fail;
 			synchronized(_senderThread) {
 				_receivedSendCompletion = true;
 				_receivedSendSuccess = false;
-				complete = maybeFail();
-				if(complete) {
-					abort = !_sentSendAborted;
-					_sentSendAborted = true;
-				}
+				fail = maybeFail(msg.getInt(DMT.REASON), msg.getString(DMT.DESCRIPTION));
 				if(logMINOR) Logger.minor(this, "Transfer got sendAborted on "+BlockTransmitter.this);
 			}
-			// FIXME we are acknowledging the cancel immediately, shouldn't we wait for the sends to finish since we won't unlock until then?
-			// I.e. by only aborting if maybeFail() returns true?
-			if(abort) {
-				try {
-					innerSendAborted(msg.getInt(DMT.REASON), msg.getString(DMT.DESCRIPTION));
-				} catch (NotConnectedException e) {
-					// Ignore
-				}
-			}
-			if(complete) callCallback(false);
+			fail.execute();
 			cancelItemsPending();
 		}
 
@@ -539,33 +522,24 @@ public class BlockTransmitter {
 		throttle.maybeDisconnected();
 		Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" because node disconnected while waiting");
 		//They disconnected, can't send an abort to them then can we?
+		Future fail;
 		synchronized(_senderThread) {
 			_receivedSendCompletion = true; // effectively
-			if(!maybeFail()) return;
+			fail = maybeFail(RetrievalException.SENDER_DISCONNECTED, "Sender disconnected");
 		}
-		callCallback(false);
-		// All MessageItems will already have been unqueued, no need to call cancelItemsPending().
+		fail.execute();
 	}
 	
 	private void onAborted(int reason, String description) {
 		if(logMINOR) Logger.minor(this, "Aborting on "+this);
-		boolean callFailCallback;
-		boolean sendAbort;
+		Future fail;
 		synchronized(_senderThread) {
 			timeAllSent = -1;
 			_failed = true;
 			_senderThread.notifyAll();
-			callFailCallback = maybeFail();
-			sendAbort = prepareSendAbort();
+			fail = maybeFail(reason, description);
 		}
-		if(sendAbort) {
-			try {
-				innerSendAborted(reason, description);
-			} catch (NotConnectedException e) {
-				// Ignore
-			}
-		}
-		if(callFailCallback) callCallback(false);
+		fail.execute();
 		cancelItemsPending();
 	}
 
