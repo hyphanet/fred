@@ -352,7 +352,7 @@ public class BlockTransmitter {
 		synchronized(_senderThread) {
 			_failed = true;
 			callFail = maybeFail();
-			sendAbort = callFail && prepareSendAbort();
+			sendAbort = prepareSendAbort();
 		}
 		if(callFail) callCallback(false);
 		if(sendAbort)
@@ -546,7 +546,7 @@ public class BlockTransmitter {
 			_failed = true;
 			_senderThread.notifyAll();
 			callFailCallback = maybeFail();
-			sendAbort = callFailCallback && prepareSendAbort();
+			sendAbort = prepareSendAbort();
 		}
 		if(sendAbort) {
 			try {
