@@ -333,7 +333,9 @@ public class BlockTransmitter {
 		return true;
 	}
 	
-	/** Only fail once. Called on a drastic failure e.g. disconnection. 
+	/** Only fail once. Called on a drastic failure e.g. disconnection. Unless we are sure
+	 * that we don't need to (e.g. on disconnection), the caller must call prepareSendAborted
+	 * afterwards, and if that returns true, send the sendAborted via innerSendAborted.
 	 * Caller must call the callback then call cleanup() outside the lock if this returns true. */
 	public boolean maybeFail() {
 		if(_completed) {
@@ -341,6 +343,14 @@ public class BlockTransmitter {
 			return false;
 		}
 		_failed = true;
+		if(!_receivedSendCompletion) {
+			// Don't actually timeout until after we have an acknowledgment of the transfer cancel.
+			// This is important for keeping track of how many transfers are actually running, which will be important for load management later on.
+			// The caller will immediately call prepareSendAbort() then innerSendAborted().
+			if(logMINOR) Logger.minor(this, "maybeFail() waiting for acknowledgement on "+this);
+			scheduleTimeoutAfterBlockSends();
+			return false;
+		}
 		if(blockSendsPending != 0) {
 			if(logMINOR) Logger.minor(this, "maybeFail() waiting for "+blockSendsPending+" block sends on "+this);
 			return false;
@@ -375,9 +385,6 @@ public class BlockTransmitter {
 			return false;
 		}
 		_sentSendAborted = true;
-		// We expect an acknowledgement.
-		if(!_receivedSendCompletion)
-			scheduleTimeoutAfterBlockSends();
 		return true;
 	}
 	
