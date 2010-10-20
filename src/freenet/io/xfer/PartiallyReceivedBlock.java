@@ -176,7 +176,11 @@ public class PartiallyReceivedBlock {
 		PacketReceivedListener[] listeners;
 		synchronized(this) {
 			if(_aborted) {
+<<<<<<< HEAD:src/freenet/io/xfer/PartiallyReceivedBlock.java
 				if(logMINOR) Logger.minor(this, "Already aborted "+this+" : reason="+_abortReason+" description="+_abortDescription);
+=======
+				if(logMINOR) Logger.minor(this, "Already aborted");
+>>>>>>> block-send-fixes:src/freenet/io/xfer/PartiallyReceivedBlock.java
 				return;
 			}
 			if(_receivedCount == _packets) {
