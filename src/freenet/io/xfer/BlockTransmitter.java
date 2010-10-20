@@ -531,6 +531,7 @@ public class BlockTransmitter {
 		Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" because node disconnected while waiting");
 		//They disconnected, can't send an abort to them then can we?
 		synchronized(_senderThread) {
+			_receivedSendCompletion = true; // effectively
 			if(!maybeFail()) return;
 		}
 		callCallback(false);
