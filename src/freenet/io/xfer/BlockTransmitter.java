@@ -332,7 +332,7 @@ public class BlockTransmitter {
 		}
 		_failed = true;
 		if(!_receivedSendCompletion) {
-			// Don't actually timeout until after we have an acknowledgment of the transfer cancel.
+			// Don't actually timeout until after we have an acknowledgement of the transfer cancel.
 			// This is important for keeping track of how many transfers are actually running, which will be important for load management later on.
 			// The caller will immediately call prepareSendAbort() then innerSendAborted().
 			if(logMINOR) Logger.minor(this, "maybeFail() waiting for acknowledgement on "+this);
