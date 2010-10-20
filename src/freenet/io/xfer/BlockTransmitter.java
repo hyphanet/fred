@@ -375,6 +375,9 @@ public class BlockTransmitter {
 			return false;
 		}
 		_sentSendAborted = true;
+		// We expect an acknowledgement.
+		if(!_receivedSendCompletion)
+			scheduleTimeoutAfterBlockSends();
 		return true;
 	}
 	
