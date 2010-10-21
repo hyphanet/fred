@@ -165,6 +165,7 @@ abstract class ClientRequestSchedulerBase {
 				if(logMINOR)
 					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
 				clientGrabber.addGrabber(client, requestGrabber, container, context);
+				// FIXME unnecessary as it knows its parent and addGrabber() will call it???
 				context.cooldownTracker.clearCachedWakeup(clientGrabber, persistent(), container);
 			}
 			requestGrabber.add(cr, req, container, context);
