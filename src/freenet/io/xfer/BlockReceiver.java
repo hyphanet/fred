@@ -18,8 +18,6 @@
  */
 package freenet.io.xfer;
 
-import java.util.LinkedList;
-
 import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -257,7 +255,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			consecutiveMissingPacketReports++;
 			try {
-				waitNotification(false);
+				waitNotification();
 			} catch (DisconnectedException e) {
 				onDisconnect(null);
 				return;
