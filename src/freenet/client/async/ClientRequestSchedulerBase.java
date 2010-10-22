@@ -225,6 +225,10 @@ abstract class ClientRequestSchedulerBase {
 				Logger.error(this, "Broken request while changing priority: "+req);
 				continue;
 			}
+			if(req.persistent() != persistent()) {
+				Logger.error(this, "Request persistence is "+req.persistent()+" but scheduler's is "+persistent()+" on "+this+" for "+req);
+				continue;
+			}
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
 			req.unregister(container, context, oldPrio);
 			//Remove from the starterQueue
