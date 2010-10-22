@@ -39,6 +39,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.FastRunnable;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.node.Ticker;
+import freenet.node.stats.StoreAccessStats;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
@@ -1070,10 +1071,14 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						raf.readLong(); // reserved
 						long w = raf.readLong();
 						writes.set(w);
+						initialWrites = w;
 						Logger.normal(this, "Set writes to saved value "+w);
 						hits.set(raf.readLong());
+						initialHits = hits.get();
 						misses.set(raf.readLong());
+						initialMisses = misses.get();
 						bloomFalsePos.set(raf.readLong());
+						initialBloomFalsePos = bloomFalsePos.get();
 					} catch (EOFException e) {
 						// Ignore, back compatibility.
 					}
@@ -1887,6 +1892,11 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private AtomicLong writes = new AtomicLong();
 	private AtomicLong keyCount = new AtomicLong();
 	private AtomicLong bloomFalsePos = new AtomicLong();
+	
+	private long initialHits;
+	private long initialMisses;
+	private long initialWrites;
+	private long initialBloomFalsePos;
 
 	public long hits() {
 		return hits.get();
@@ -1983,4 +1993,58 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	public String toString() {
 		return super.toString()+":"+name;
 	}
+	
+	public StoreAccessStats getSessionAccessStats() {
+		return new StoreAccessStats() {
+
+			@Override
+			public long hits() {
+				return hits.get() - initialHits;
+			}
+
+			@Override
+			public long misses() {
+				return misses.get() - initialMisses;
+			}
+
+			@Override
+			public long falsePos() {
+				return bloomFalsePos.get() - initialBloomFalsePos;
+			}
+
+			@Override
+			public long writes() {
+				return writes.get() - initialWrites;
+			}
+			
+		};
+	}
+
+	public StoreAccessStats getTotalAccessStats() {
+		return new StoreAccessStats() {
+
+			@Override
+			public long hits() {
+				return hits.get();
+			}
+
+			@Override
+			public long misses() {
+				return misses.get();
+			}
+
+			@Override
+			public long falsePos() {
+				return bloomFalsePos.get();
+			}
+
+			@Override
+			public long writes() {
+				return writes.get();
+			}
+			
+		};
+	}
+
+
 }
