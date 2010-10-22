@@ -18,7 +18,6 @@
  */
 package freenet.io.xfer;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 
 import freenet.io.comm.AsyncMessageFilterCallback;
@@ -87,8 +86,6 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	PeerContext _sender;
 	long _uid;
 	MessageCore _usm;
-	/** packet : Integer -> reportTime : Long * */
-	HashMap<Integer, Long> _recentlyReportedMissingPackets = new HashMap<Integer, Long>();
 	ByteCounter _ctr;
 	Ticker _ticker;
 	boolean sentAborted;
@@ -159,7 +156,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				int packetNo = m1.getInt(DMT.PACKET_NO);
 				BitArray sent = (BitArray) m1.getObject(DMT.SENT);
 				Buffer data = (Buffer) m1.getObject(DMT.DATA);
-				LinkedList<Integer> missing = new LinkedList<Integer>();
+				int missing = 0;
 				try {
 					synchronized(BlockReceiver.this) {
 						if(completed) return;
@@ -171,29 +168,14 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 						truncateTimeout = true;
 					} else {
 						_prb.addPacket(packetNo, data);
-						// Remove it from rrmp if its in there
-						_recentlyReportedMissingPackets.remove(packetNo);
 						// Check that we have what the sender thinks we have
 						for (int x = 0; x < sent.getSize(); x++) {
 							if (sent.bitAt(x) && !_prb.isReceived(x)) {
-								// Sender thinks we have a block which we don't, but have we already
-								// re-requested it recently?
-								Long resendTime = _recentlyReportedMissingPackets.get(x);
-								if ((resendTime == null) || (System.currentTimeMillis() > resendTime.longValue())) {
-									// Make a note of the earliest time we should resend this, based on the number of other
-									// packets we are already waiting for
-									long resendWait = System.currentTimeMillis()
-										+ (MAX_ROUND_TRIP_TIME + (_recentlyReportedMissingPackets.size() * MAX_SEND_INTERVAL));
-									_recentlyReportedMissingPackets.put(x, resendWait);
-									missing.add(x);
-								}
+								missing++;
 							}
 						}
-						if(logMINOR)
-							Logger.minor(this, "Missing: "+missing.size());
-						if (missing.size() > 0) {
-							consecutiveMissingPacketReports++;
-						}
+						if(logMINOR && missing != 0) 
+							Logger.minor(this, "Packets which the sender says it has sent but we have not received: "+missing);
 					}
 				} catch (AbortedException e) {
 					// We didn't cause it?!
