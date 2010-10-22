@@ -221,6 +221,10 @@ abstract class ClientRequestSchedulerBase {
 				if(persistent()) container.deactivate(req, 1);
 				continue;
 			}
+			if(req.isStorageBroken(container)) {
+				Logger.error(this, "Broken request while changing priority: "+req);
+				continue;
+			}
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
 			req.unregister(container, context, oldPrio);
 			//Remove from the starterQueue
