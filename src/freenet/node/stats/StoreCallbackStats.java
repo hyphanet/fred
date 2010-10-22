@@ -13,9 +13,9 @@ import freenet.store.StoreCallback;
 public class StoreCallbackStats implements DataStoreStats {
 
 	private final StoreCallback<?> storeStats;
-	private final NodeStoreStats nodeStats;
+	private final StoreLocationStats nodeStats;
 
-	public StoreCallbackStats(StoreCallback<?> delegate, NodeStoreStats nodeStats) {
+	public StoreCallbackStats(StoreCallback<?> delegate, StoreLocationStats nodeStats) {
 		this.storeStats = delegate;
 		this.nodeStats = nodeStats;
 	}
