@@ -665,8 +665,8 @@ public class NodeStats implements Persistable {
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(BANDWIDTH_LIABILITY_LIMIT_SECONDS);
 			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false);
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true);
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, true);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, true);
 			
 			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node);
 			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false);
@@ -1102,7 +1102,7 @@ public class NodeStats implements Persistable {
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
 		
-		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input);
+		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false);
 		
 		// If over the upper limit, reject.
 		
@@ -1160,7 +1160,7 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 
-	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input) {
+	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer) {
 		
 		int peers = node.peers.countConnectedPeers();
 		
@@ -1181,7 +1181,7 @@ public class NodeStats implements Persistable {
 			}
 		}
 		
-		if(source != null) {
+		if(source != null && !dontTellPeer) {
 			// FIXME tell local as well somehow?
 			source.onSetPeerAllocation(input, (int)thisAllocation);
 		}
