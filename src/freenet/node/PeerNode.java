@@ -1477,12 +1477,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	static final int P_BURST_IF_DEFINITELY_FORWARDED = 20;
 
 	public boolean isBurstOnly() {
-		int status = outgoingMangler.getConnectivityStatus();
-		if(status == AddressTracker.DONT_KNOW) return false;
-		if(status == AddressTracker.DEFINITELY_NATED || status == AddressTracker.MAYBE_NATED) return false;
+		AddressTracker.Status status = outgoingMangler.getConnectivityStatus();
+		if(status == AddressTracker.Status.DONT_KNOW) return false;
+		if(status == AddressTracker.Status.DEFINITELY_NATED || status == AddressTracker.Status.MAYBE_NATED) return false;
 
 		// For now. FIXME try it with a lower probability when we're sure that the packet-deltas mechanisms works.
-		if(status == AddressTracker.MAYBE_PORT_FORWARDED) return false;
+		if(status == AddressTracker.Status.MAYBE_PORT_FORWARDED) return false;
 		long now = System.currentTimeMillis();
 		if(now - timeSetBurstNow > UPDATE_BURST_NOW_PERIOD) {
 			burstNow = (node.random.nextInt(P_BURST_IF_DEFINITELY_FORWARDED) == 0);
@@ -1891,7 +1891,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean routable = true;
 		boolean newer = false;
 		boolean older = false;
-		if(bogusNoderef) {
+		if(isSeed()) {
+                        routable = false;
+                        if(logMINOR) Logger.minor(this, "Not routing traffic to " + this + " it's for announcement.");
+                } else if(bogusNoderef) {
 			Logger.normal(this, "Not routing traffic to " + this + " - bogus noderef");
 			routable = false;
 			//FIXME: It looks like bogusNoderef will just be set to false a few lines later...
@@ -4291,8 +4294,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		if(mustSend) {
-			int size = minSize;
-			size = messageQueue.addMessages(size, now, minSize, maxSize, messages);
+			messageQueue.addMessages(minSize, now, minSize, maxSize, messages);
 		}
 
 		if(messages.isEmpty() && keepalive) {
@@ -4947,4 +4949,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * allow them to reconnect. */
 	public abstract void fatalTimeout();
 	
+	void removeUIDsFromMessageQueues(Long[] list) {
+		this.messageQueue.removeUIDsFromMessageQueues(list);
+	}
+
 }

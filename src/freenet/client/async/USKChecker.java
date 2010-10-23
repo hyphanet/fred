@@ -10,6 +10,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSKBlock;
 import freenet.node.LowLevelGetException;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -21,10 +22,20 @@ class USKChecker extends BaseSingleFileFetcher {
 	final USKCheckerCallback cb;
 	private int dnfs;
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	USKChecker(USKCheckerCallback cb, ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(key, maxRetries, ctx, parent, false);
-        if(Logger.shouldLog(LogLevel.MINOR, this))
-        	Logger.minor(this, "Created USKChecker for "+key);
+                if(logMINOR)
+                    Logger.minor(USKChecker.class, "Created USKChecker for "+key);
 		this.cb = cb;
 	}
 	
@@ -43,8 +54,8 @@ class USKChecker extends BaseSingleFileFetcher {
 			container.activate(this, 1);
 			container.activate(cb, 1);
 		}
-        if(Logger.shouldLog(LogLevel.MINOR, this))
-        	Logger.minor(this, "onFailure: "+e+" for "+this);
+                if(logMINOR)
+                    Logger.minor(this, "onFailure: "+e+" for "+this);
 		// Firstly, can we retry?
 		boolean canRetry;
 		switch(e.code) {

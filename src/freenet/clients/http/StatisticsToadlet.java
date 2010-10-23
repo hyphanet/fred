@@ -13,6 +13,8 @@ import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
+import freenet.io.xfer.BlockReceiver;
+import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.node.Location;
 import freenet.node.Node;
@@ -27,6 +29,7 @@ import freenet.node.Version;
 import freenet.node.stats.DataStoreInstanceType;
 import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.StatsNotAvailableException;
+import freenet.node.stats.StoreAccessStats;
 import freenet.support.BandwidthStatsContainer;
 import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
@@ -532,6 +535,20 @@ public class StatisticsToadlet extends Toadlet {
 		for (Map.Entry<DataStoreInstanceType, DataStoreStats> entry : storeStats.entrySet()) {
 			DataStoreInstanceType instance = entry.getKey();
 			DataStoreStats stats = entry.getValue();
+			
+			StoreAccessStats sessionAccess = stats.getSessionAccessStats();
+			StoreAccessStats totalAccess;
+			long totalUptimeSeconds = 0;
+			try {
+				totalAccess = stats.getTotalAccessStats();
+				// FIXME this is not necessarily the same as the datastore's uptime if we've switched.
+				// Ideally we'd track uptime there too.
+				totalUptimeSeconds = 
+					node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime;
+			} catch (StatsNotAvailableException e) {
+				totalAccess = null;
+			}
+			
 			row = storeSizeTable.addChild("tr");
 			row.addChild("th", l10n(instance.store.name()) + "\n" + " (" + l10n(instance.key.name()) + ")");
 
@@ -539,17 +556,35 @@ public class StatisticsToadlet extends Toadlet {
 			row.addChild("td", thousandPoint.format(stats.capacity()));
 			row.addChild("td", SizeUtil.formatSize(stats.dataSize()));
 			row.addChild("td", fix3p1pct.format(stats.utilization()));
-			row.addChild("td", thousandPoint.format(stats.readRequests()));
-			row.addChild("td", thousandPoint.format(stats.successfulReads()));
+			row.addChild("td", thousandPoint.format(sessionAccess.readRequests()) +
+					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.readRequests())+")")));
+			row.addChild("td", thousandPoint.format(sessionAccess.successfulReads()) +
+					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.successfulReads())+")")));
 			try {
-				row.addChild("td", fix1p4.format(stats.successRate()) + "%");
+				String rate = fix1p4.format(sessionAccess.successRate()) + "%";
+				if(totalAccess != null) {
+					try {
+						rate += " (" + fix1p4.format(totalAccess.successRate()) + "%)";
+					} catch (StatsNotAvailableException e) {
+						// Ignore
+					}
+				}
+				row.addChild("td", rate);
 			} catch (StatsNotAvailableException e) {
 				row.addChild("td", "N/A");
 			}
-			row.addChild("td", thousandPoint.format(stats.writes()));
-			row.addChild("td", fix1p2.format(stats.accessRate(nodeUptimeSeconds)) + " /s");
-			row.addChild("td", fix1p2.format(stats.writeRate(nodeUptimeSeconds)) + " /s");
-			row.addChild("td", thousandPoint.format(stats.falsePos()));
+			row.addChild("td", thousandPoint.format(sessionAccess.writes()) +
+					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.writes())+")")));
+			String access = fix1p2.format(sessionAccess.accessRate(nodeUptimeSeconds)) + " /s";
+			if(totalAccess != null)
+				access += " (" + fix1p2.format(totalAccess.accessRate(totalUptimeSeconds)) + " /s)";
+			row.addChild("td", access);
+			access = fix1p2.format(sessionAccess.writeRate(nodeUptimeSeconds)) + " /s)";
+			if(totalAccess != null)
+				access += " (" + fix1p2.format(totalAccess.writeRate(totalUptimeSeconds)) + " /s)";
+			row.addChild("td", access);
+			row.addChild("td", thousandPoint.format(sessionAccess.falsePos()) +
+					(totalAccess == null ? "" : (" ("+thousandPoint.format(totalAccess.falsePos())+")")));
 			try {
 				row.addChild("td", fix1p4.format(stats.avgLocation()));
 			} catch (StatsNotAvailableException e) {
@@ -944,6 +979,8 @@ public class StatisticsToadlet extends Toadlet {
 				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.offerReplys", 
 						new String[] { "chk", "ssk" }, new String[] { Integer.toString(numCHKOfferReplys), Integer.toString(numSSKOfferReplys) }));
 			}
+			activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.runningBlockTransfers", 
+					new String[] { "sends", "receives" }, new String[] { Integer.toString(BlockTransmitter.getRunningSends()), Integer.toString(BlockReceiver.getRunningReceives()) }));
 			return activityList;
 		}
 	}

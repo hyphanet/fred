@@ -9,11 +9,14 @@ import java.util.List;
 import java.util.Map;
 
 import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Query;
 
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.fcp.whiteboard.Whiteboard;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.NullObject;
 import freenet.support.Logger.LogLevel;
@@ -41,18 +44,7 @@ public class FCPClient {
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
-		lowLevelClient = new RequestClient() {
-			// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-			public boolean persistent() {
-				return forever;
-			}
-			public void removeFrom(ObjectContainer container) {
-				if(forever)
-					container.delete(this);
-				else
-					throw new UnsupportedOperationException();
-			}
-		};
+		lowLevelClient = new FCPClientRequestClient(this, forever);
 		completionCallbacks = new ArrayList<RequestCompletionCallback>();
 		if(cb != null) completionCallbacks.add(cb);
 		this.whiteboard=whiteboard;
@@ -83,13 +75,23 @@ public class FCPClient {
 	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
 	private transient LinkedList<FCPClient> clientsWatching;
 	private final NullObject clientsWatchingLock = new NullObject();
-	final RequestClient lowLevelClient;
+	RequestClient lowLevelClient;
 	private transient List<RequestCompletionCallback> completionCallbacks;
 	/** The whiteboard where ClientRequests report their progress*/
 	private transient Whiteboard whiteboard;
 	/** Connection mode */
 	final short persistenceType;
-	
+	        
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	public synchronized FCPConnectionHandler getConnection() {
 		return currentConnection;
 	}
@@ -109,7 +111,7 @@ public class FCPClient {
 	 * acked yet, so it should be moved to the unacked-completed-requests set.
 	 */
 	public void finishedClientRequest(ClientRequest get, ObjectContainer container) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Finished client request", new Exception("debug"));
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		assert(get.persistenceType == persistenceType);
@@ -176,7 +178,7 @@ public class FCPClient {
 	public void register(ClientRequest cg, ObjectContainer container) throws IdentifierCollisionException {
 		assert(cg.persistenceType == persistenceType);
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Registering "+cg.getIdentifier());
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);
@@ -209,7 +211,6 @@ public class FCPClient {
 	public boolean removeByIdentifier(String identifier, boolean kill, FCPServer server, ObjectContainer container, ClientContext context) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		ClientRequest req;
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR) Logger.minor(this, "removeByIdentifier("+identifier+ ',' +kill+ ')');
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);
@@ -223,18 +224,21 @@ public class FCPClient {
 			boolean removedFromRunning = false;
 			if(req == null) {
 				for(ClientRequest r : completedUnackedRequests) {
-					container.activate(r, 1);
+					if(persistenceType == ClientRequest.PERSIST_FOREVER)
+						container.activate(r, 1);
 					if(r.getIdentifier().equals(identifier)) {
 						req = r;
 						completedUnackedRequests.remove(r);
 						Logger.error(this, "Found completed unacked request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
 						break;
 					}
-					container.deactivate(r, 1);
+					if(persistenceType == ClientRequest.PERSIST_FOREVER)
+						container.deactivate(r, 1);
 				}
 				if(req == null) {
 					for(ClientRequest r : runningPersistentRequests) {
-						container.activate(r, 1);
+						if(persistenceType == ClientRequest.PERSIST_FOREVER)
+							container.activate(r, 1);
 						if(r.getIdentifier().equals(identifier)) {
 							req = r;
 							runningPersistentRequests.remove(r);
@@ -242,7 +246,8 @@ public class FCPClient {
 							Logger.error(this, "Found running request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
 							break;
 						}
-						container.deactivate(r, 1);
+						if(persistenceType == ClientRequest.PERSIST_FOREVER)
+							container.deactivate(r, 1);
 					}
 				}
 				if(req == null) return false;
@@ -526,10 +531,35 @@ public class FCPClient {
 	}
 
 	public void init(ObjectContainer container) {
+		if(!container.ext().isActive(this))
+			throw new IllegalStateException("Initialising but not activated");
 		container.activate(runningPersistentRequests, 2);
 		container.activate(completedUnackedRequests, 2);
 		container.activate(clientRequestsByIdentifier, 2);
 		container.activate(lowLevelClient, 2);
+		assert runningPersistentRequests != null;
+		assert completedUnackedRequests != null;
+		assert clientRequestsByIdentifier != null;
+		if(lowLevelClient == null) {
+			System.err.println("No lowLevelClient for "+this+" but other fields exist.");
+			System.err.println("This means your database has been corrupted slightly, probably by a bug in Freenet.");
+			System.err.println("We are trying to recover ...");
+			Query q = container.query();
+			q.constrain(FCPClientRequestClient.class);
+			q.descend("client").constrain(this);
+			ObjectSet<FCPClientRequestClient> results = q.execute();
+			for(FCPClientRequestClient c : results) {
+				if(c.client != this) continue;
+				System.err.println("Found the old request client, eh???");
+				lowLevelClient = c;
+				break;
+			}
+			if(lowLevelClient == null)
+				lowLevelClient = new FCPClientRequestClient(this, persistenceType == ClientRequest.PERSIST_FOREVER);
+			container.store(lowLevelClient);
+			container.store(this);
+		}
+		//assert lowLevelClient != null;
 	}
 
 	public boolean objectCanNew(ObjectContainer container) {
@@ -537,7 +567,14 @@ public class FCPClient {
 			Logger.error(this, "Not storing non-persistent request in database", new Exception("error"));
 			return false;
 		}
+		if(lowLevelClient == null)
+			throw new NullPointerException(); // Better it happens here ...
 		return true;
+	}
+	
+	public void objectCanUpdate(ObjectContainer container) {
+		if(lowLevelClient == null)
+			throw new NullPointerException(); // Better it happens here ...
 	}
 
 	public Whiteboard getWhiteboard(){

@@ -1,9 +1,5 @@
 package freenet.node.fcp;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.net.MalformedURLException;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
@@ -11,14 +7,12 @@ import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.keys.FreenetURI;
-import freenet.keys.InsertableClientSSK;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.NativeThread;
 import freenet.support.io.SerializableToFieldSetBucket;
@@ -123,6 +117,7 @@ public abstract class ClientRequest {
 			assert(client.persistenceType == persistenceType);
 			lowLevelClient = client.lowLevelClient;
 		}
+		assert lowLevelClient != null;
 		this.startupTime = System.currentTimeMillis();
 	}
 
@@ -180,36 +175,6 @@ public abstract class ClientRequest {
 		this.startupTime = System.currentTimeMillis();
 	}
 
-	public ClientRequest(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
-		int hash = super.hashCode();
-		if(hash == 0) hash = 1;
-		hashCode = hash;
-		priorityClass = Short.parseShort(fs.get("PriorityClass"));
-		uri = new FreenetURI(fs.get("URI"));
-		identifier = fs.get("Identifier");
-		// We don't force the verbosity even if the request is meant to go on the global queue
-		verbosity = Integer.parseInt(fs.get("Verbosity"));
-		persistenceType = ClientRequest.parsePersistence(fs.get("Persistence"));
-		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
-			throw new IllegalArgumentException("Reading persistent get with type CONNECTION !!");
-		if(!((persistenceType == ClientRequest.PERSIST_FOREVER) || (persistenceType == ClientRequest.PERSIST_REBOOT)))
-			throw new IllegalArgumentException("Unknown persistence type "+ClientRequest.persistenceTypeString(persistenceType));
-		this.client = client2;
-		this.origHandler = null;
-		clientToken = fs.get("ClientToken");
-		finished = Fields.stringToBool(fs.get("Finished"), false);
-		global = Fields.stringToBool(fs.get("Global"), false);
-		charset = fs.get("Charset");
-		final String stime = fs.get("StartupTime");
-		this.startupTime = stime == null ? System.currentTimeMillis() : Fields.parseLong(stime);
-		completionTime = fs.getLong("CompletionTime", 0);
-		lastActivity = fs.getLong("LastActivity", 0);
-		if (finished)
-			started=true;
-		assert(client.persistenceType == persistenceType);
-		lowLevelClient = client.lowLevelClient;
-	}
-
 	/** Lost connection */
 	public abstract void onLostConnection(ObjectContainer container, ClientContext context);
 
@@ -245,85 +210,6 @@ public abstract class ClientRequest {
 		return Short.parseShort(string);
 	}
 
-	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server, ObjectContainer container, ClientContext context) throws IOException {
-		Runtime rt = Runtime.getRuntime();
-		if(logMINOR)
-			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use before loading request");
-		SimpleFieldSet fs = new SimpleFieldSet(br, false, false); // can get enormous
-		String clientName = fs.get("ClientName");
-		boolean isGlobal = Fields.stringToBool(fs.get("Global"), false);
-		if(clientName == null && !isGlobal) {
-			Logger.error(ClientRequest.class, "Discarding old request with no ClientName: "+fs);
-			System.err.println("Discarding old request with no ClientName (see logs)");
-			return null;
-		}
-		FCPClient client;
-		if(!isGlobal)
-			client = server.registerForeverClient(clientName, server.core, null, container);
-		else
-			client = server.globalForeverClient;
-		if(logMINOR)
-			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use loading request "+clientName+" "+fs.get("Identifier"));
-		try {
-			String type = fs.get("Type");
-			if(type.equals("GET")) {
-				ClientGet cg = new ClientGet(fs, client, server);
-				cg.register(container, true);
-				cg.start(container, context);
-				return cg;
-			} else if(type.equals("PUT")) {
-				final ClientPut cp = new ClientPut(fs, client, server, container);
-				client.register(cp, container);
-				DBJob start = new DBJob() {
-
-					public boolean run(ObjectContainer container, ClientContext context) {
-						cp.start(container, context);
-						try {
-							context.jobRunner.removeRestartJob(this, NativeThread.HIGH_PRIORITY, container);
-							return true;
-						} catch (DatabaseDisabledException e) {
-							// Impossible.
-							return false;
-						}
-					}
-					
-				};
-				context.jobRunner.queueRestartJob(start, NativeThread.HIGH_PRIORITY, container, false);
-				context.jobRunner.queue(start, NativeThread.HIGH_PRIORITY, false);
-				return cp;
-			} else if(type.equals("PUTDIR")) {
-				final ClientPutDir cp = new ClientPutDir(fs, client, server, container);
-				client.register(cp, container);
-				DBJob start = new DBJob() {
-
-					public boolean run(ObjectContainer container, ClientContext context) {
-						cp.start(container, context);
-						try {
-							context.jobRunner.removeRestartJob(this, NativeThread.HIGH_PRIORITY, container);
-							return true;
-						} catch (DatabaseDisabledException e) {
-							// Impossible.
-							return false;
-						}
-					}
-					
-				};
-				context.jobRunner.queueRestartJob(start, NativeThread.HIGH_PRIORITY, container, false);
-				context.jobRunner.queue(start, NativeThread.HIGH_PRIORITY, false);
-				return cp;
-			} else {
-				Logger.error(ClientRequest.class, "Unrecognized type: "+type);
-				return null;
-			}
-		} catch (PersistenceParseException e) {
-			Logger.error(ClientRequest.class, "Failed to parse request: "+e, e);
-			return null;
-		} catch (Throwable t) {
-			Logger.error(ClientRequest.class, "Failed to parse: "+t, t);
-			return null;
-		}
-	}
-	
 	abstract void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException;
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -425,7 +311,7 @@ public abstract class ClientRequest {
 
 	public abstract boolean canRestart();
 
-	public abstract boolean restart(boolean filterData, ObjectContainer container, ClientContext context) throws DatabaseDisabledException;
+	public abstract boolean restart(ObjectContainer container, ClientContext context, boolean disableFilterData) throws DatabaseDisabledException;
 
 	protected abstract FCPMessage persistentTagMessage(ObjectContainer container);
 
@@ -450,11 +336,12 @@ public abstract class ClientRequest {
 				clientTokenChanged = true;
 			}
 		}
-
+		
 		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
 			this.priorityClass = newPriorityClass;
 			ClientRequester r = getClientRequest();
 			if(persistenceType == PERSIST_FOREVER) container.activate(r, 1);
+			if(r.checkForBrokenClient(container, server.node.clientCore.clientContext)) return;
 			r.setPriorityClass(priorityClass, server.core.clientContext, container);
 			if(persistenceType == PERSIST_FOREVER) container.deactivate(r, 1);
 			priorityClassChanged = true;
@@ -490,7 +377,7 @@ public abstract class ClientRequest {
 		fs.put(name, bucket.toFieldSet());
 	}
 
-	public void restartAsync(final boolean filterData, final FCPServer server) throws DatabaseDisabledException {
+	public void restartAsync(final FCPServer server, final boolean disableFilterData) throws DatabaseDisabledException {
 		synchronized(this) {
 			this.started = false;
 		}
@@ -500,7 +387,7 @@ public abstract class ClientRequest {
 			public boolean run(ObjectContainer container, ClientContext context) {
 				container.activate(ClientRequest.this, 1);
 				try {
-					restart(filterData, container, context);
+					restart(container, context, disableFilterData);
 				} catch (DatabaseDisabledException e) {
 					// Impossible
 				}
@@ -518,7 +405,7 @@ public abstract class ClientRequest {
 
 				public void run() {
 					try {
-						restart(filterData, null, server.core.clientContext);
+						restart(null, server.core.clientContext, disableFilterData);
 					} catch (DatabaseDisabledException e) {
 						// Impossible
 					}

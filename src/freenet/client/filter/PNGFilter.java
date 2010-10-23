@@ -19,6 +19,7 @@ import java.util.zip.CRC32;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.HexUtil;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
@@ -56,6 +57,18 @@ public class PNGFilter implements ContentDataFilter {
 	// http://fresh.t-systems-sfr.com/unix/privat/pngcheck-2.3.0.tar.gz:a/pngcheck-2.3.0/pngcheck.c
 	};
 
+        private static volatile boolean logMINOR;
+        private static volatile boolean logDEBUG;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+                                logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+			}
+		});
+	}
+
 	PNGFilter(boolean deleteText, boolean deleteTimestamp, boolean checkCRCs) {
 		this.deleteText = deleteText;
 		this.deleteTimestamp = deleteTimestamp;
@@ -71,8 +84,6 @@ public class PNGFilter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs)
 			throws DataFilterException, IOException {
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		InputStream is = null;
 		DataInputStream dis = null;
 		try {
@@ -308,8 +319,7 @@ public class PNGFilter implements ContentDataFilter {
 		if (shortReason != null)
 			message += " - " + shortReason;
 		DataFilterException e = new DataFilterException(shortReason, shortReason, message);
-		if (Logger.shouldLog(LogLevel.NORMAL, this))
-			Logger.normal(this, "Throwing " + e, e);
+		Logger.normal(this, "Throwing " + e.getMessage(), e);
 		throw e;
 	}
 }

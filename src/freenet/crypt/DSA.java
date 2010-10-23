@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 
+import freenet.support.LogThresholdCallback;
 import java.math.BigInteger;
 import java.util.Random;
 
@@ -14,6 +15,18 @@ import freenet.support.Logger.LogLevel;
  * Implements the Digital Signature Algorithm (DSA) described in FIPS-186
  */
 public class DSA {
+
+    private static volatile boolean logMINOR;
+
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
 	// FIXME DSAgroupBigA is 256 bits long and therefore cannot accomodate
 	// all SHA-256 output's. Therefore we chop it down to 255 bits.
@@ -90,13 +103,13 @@ public class DSA {
 		try {
 			// 0<r<q has to be true
 			if((sig.getR().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getR()) < 1)) {
-				if(Logger.shouldLog(LogLevel.MINOR, DSA.class))
+				if(logMINOR)
 					Logger.minor(DSA.class, "r < 0 || r > q: r="+sig.getR()+" q="+kp.getQ());
 				return false;
 			}
 			// 0<s<q has to be true as well
 			if((sig.getS().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getS()) < 1)) {
-				if(Logger.shouldLog(LogLevel.MINOR, DSA.class))
+				if(logMINOR)
 					Logger.minor(DSA.class, "s < 0 || s > q: s="+sig.getS()+" q="+kp.getQ());
 				return false;
 			}
@@ -111,7 +124,7 @@ public class DSA {
 
 			//FIXME: is there a better way to handle this exception raised on the 'w=' line above?
 		} catch (ArithmeticException e) {  // catch error raised by invalid data
-			if(Logger.shouldLog(LogLevel.MINOR, DSA.class))
+			if(logMINOR)
 				Logger.minor(DSA.class, "Verify failed: "+e, e);
 			return false;                  // and report that that data is bad.
 		}

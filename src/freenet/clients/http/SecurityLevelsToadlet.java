@@ -21,6 +21,7 @@ import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.support.HTMLNode;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.Logger.LogLevel;
@@ -36,6 +37,16 @@ public class SecurityLevelsToadlet extends Toadlet {
 	public static final int MAX_PASSWORD_LENGTH = 1024;
 	private final NodeClientCore core;
 	private final Node node;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	SecurityLevelsToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
@@ -147,7 +158,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			String physicalThreatLevel = request.getPartAsString(configName, 128);
 			PHYSICAL_THREAT_LEVEL newPhysicalLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
 			PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.node.securityLevels.getPhysicalThreatLevel();
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "New physical threat level: "+newPhysicalLevel+" old = "+node.securityLevels.getPhysicalThreatLevel());
+			if(logMINOR) Logger.minor(this, "New physical threat level: "+newPhysicalLevel+" old = "+node.securityLevels.getPhysicalThreatLevel());
 			if(newPhysicalLevel != null) {
 				if(newPhysicalLevel == oldPhysicalLevel && newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
 					String password = request.getPartAsString("masterPassword", MAX_PASSWORD_LENGTH);

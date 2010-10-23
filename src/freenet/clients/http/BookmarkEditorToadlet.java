@@ -17,6 +17,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
@@ -39,6 +40,16 @@ public class BookmarkEditorToadlet extends Toadlet {
 	private final NodeClientCore core;
 	private final BookmarkManager bookmarkManager;
 	private String cutedPath;
+
+        private static volatile boolean logDEBUG;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+			}
+		});
+	}
 
 	BookmarkEditorToadlet(HighLevelSimpleClient client, NodeClientCore core, BookmarkManager bookmarks) {
 		super(client);
@@ -288,7 +299,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		HTMLNode addDefaultBookmarksForm = ctx.addFormChild(content, "", "AddDefaultBookmarks");
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", NodeL10n.getBase().getString("BookmarkEditorToadlet.addDefaultBookmarks")});
 
-		if(Logger.shouldLog(LogLevel.DEBUG, this))
+		if(logDEBUG)
 			Logger.debug(this, "Returning:\n"+pageNode.generate());
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());

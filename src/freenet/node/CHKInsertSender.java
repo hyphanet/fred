@@ -16,6 +16,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.BlockTransmitter;
+import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -46,10 +47,34 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		/** Did it succeed? */
 		boolean transferSucceeded;
 		
-		BackgroundTransfer(PeerNode pn, PartiallyReceivedBlock prb) {
+		BackgroundTransfer(final PeerNode pn, PartiallyReceivedBlock prb) {
 			this.pn = pn;
 			this.uid = CHKInsertSender.this.uid;
-			bt = new BlockTransmitter(node.usm, pn, uid, prb, CHKInsertSender.this, BlockTransmitter.NEVER_CASCADE, realTimeFlag);
+			bt = new BlockTransmitter(node.usm, node.getTicker(), pn, uid, prb, CHKInsertSender.this, BlockTransmitter.NEVER_CASCADE, realTimeFlag, 
+					new BlockTransmitterCompletion() {
+
+				public void blockTransferFinished(boolean success) {
+					BackgroundTransfer.this.completedTransfer(success);
+					// Double-check that the node is still connected. Pointless to wait otherwise.
+					if (pn.isConnected() && transferSucceeded) {
+						//synch-version: this.receivedNotice(waitForReceivedNotification(this));
+						//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
+						try {
+							node.usm.addAsyncFilter(getNotificationMessageFilter(), BackgroundTransfer.this, null);
+						} catch (DisconnectedException e) {
+							// Normal
+							if(logMINOR)
+								Logger.minor(this, "Disconnected while adding filter");
+							BackgroundTransfer.this.completedTransfer(false);
+							BackgroundTransfer.this.receivedNotice(false);
+						}
+					} else {
+						BackgroundTransfer.this.receivedNotice(false);
+						pn.localRejectedOverload("TransferFailedInsert");
+					}
+				}
+				
+			});
 		}
 		
 		void start() {
@@ -68,27 +93,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 		
 		private void realRun() {
-			this.completedTransfer(bt.send(node.executor));
-			// Double-check that the node is still connected. Pointless to wait otherwise.
-			if (pn.isConnected() && transferSucceeded) {
-				//synch-version: this.receivedNotice(waitForReceivedNotification(this));
-				//Add ourselves as a listener for the longterm completion message of this transfer, then gracefully exit.
-				try {
-					node.usm.addAsyncFilter(getNotificationMessageFilter(), this);
-				} catch (DisconnectedException e) {
-					// Normal
-					if(logMINOR)
-						Logger.minor(this, "Disconnected while adding filter");
-					this.completedTransfer(false);
-					this.receivedNotice(false);
-				}
-			} else {
-				this.receivedNotice(false);
-				pn.localRejectedOverload("TransferFailedInsert");
-			}
 			// REDFLAG: Load limiting:
 			// No confirmation that it has finished, and it won't finish immediately on the transfer finishing.
 			// So don't try to thisTag.removeRoutingTo(next), just assume it keeps running until the whole insert finishes.
+			bt.sendAsync();
 		}
 		
 		private void completedTransfer(boolean success) {
@@ -161,7 +169,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				pn.localRejectedOverload("InsertTimeoutNoFinalAck");
 				// First timeout. Wait for second timeout.
 				try {
-					node.usm.addAsyncFilter(getNotificationMessageFilter(), this);
+					node.usm.addAsyncFilter(getNotificationMessageFilter(), this, CHKInsertSender.this);
 				} catch (DisconnectedException e) {
 					// Normal
 					if(logMINOR)
@@ -368,7 +376,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	
             	forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE, source, realTimeFlag);
-            	uid = node.random.nextLong();
+            	uid = node.clientCore.makeUID();
             	Logger.normal(this, "FORKING CHK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
             	node.lockUID(uid, false, true, false, false, realTimeFlag, forkedRequestTag);

@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
+import freenet.support.LogThresholdCallback;
 
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -13,6 +14,16 @@ import freenet.support.api.Bucket;
 public class SegmentedChainBucketSegment {
 	
 	private final ArrayList<Bucket> buckets;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	public SegmentedChainBucketSegment(SegmentedBucketChainBucket bucket) {
 		this.buckets = new ArrayList<Bucket>();
@@ -29,7 +40,7 @@ public class SegmentedChainBucketSegment {
 	}
 
 	public void storeTo(ObjectContainer container) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Storing segment "+this);
 		for(Bucket bucket : buckets)
 			bucket.storeTo(container);

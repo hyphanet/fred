@@ -23,6 +23,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
@@ -41,7 +42,17 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	final FetchContext ctx;
 	final USKRetrieverCallback cb;
 	final USK origUSK;
-	
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	public USKRetriever(FetchContext fctx, short prio,  
 			RequestClient client, USKRetrieverCallback cb, USK origUSK) {
 		super(prio, client);
@@ -78,7 +89,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, final ClientGetState state, ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Success on "+this+" from "+state+" : length "+streamGenerator.size()+"mime type "+clientMetadata.getMIMEType());
 		DecompressorThreadManager decompressorManager = null;
 		OutputStream output = null;
@@ -102,7 +113,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			output = finalResult.getOutputStream();
 			// Decompress
 			if(decompressors != null) {
-				if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Decompressing...");
+				if(logMINOR) Logger.minor(this, "Decompressing...");
 				if(persistent()) {
 					container.activate(decompressors, 5);
 					container.activate(ctx, 1);

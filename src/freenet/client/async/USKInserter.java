@@ -95,11 +95,11 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(persistent)
 			container.activate(pubUSK, 5);
 		synchronized(this) {
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 			if(finished) return;
 			fetcher = context.uskManager.getFetcherForInsertDontSchedule(persistent ? pubUSK.clone() : pubUSK, parent.priorityClass, this, parent.getClient(), container, context, persistent);
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "scheduled: "+fetcher);
 		}
 		if(persistent) {
@@ -224,7 +224,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		synchronized(this) {
 			if(finished) return;
 			edition = edNo;
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+ ' ' +edition);
 			sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
 					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context, persistent, false, extraInserts, cryptoAlgorithm, forceCryptoKey);
@@ -259,7 +259,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(!targetURI.equals(realURI))
 			Logger.error(this, "URI should be "+targetURI+" actually is "+realURI);
 		else {
-			if(Logger.shouldLog(LogLevel.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "URI should be "+targetURI+" actually is "+realURI);
 			context.uskManager.updateKnownGood(pubUSK, edition, context);
 		}
@@ -448,7 +448,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Removing from database: "+this, new Exception("debug"));
 		// parent will remove self
 		if(freeData && data != null && container.ext().isStored(data)) {

@@ -11,6 +11,7 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -35,12 +36,22 @@ public class PersistentChosenBlock extends ChosenBlock {
 	private boolean insertSucceeded;
 	/** If a SendableInsert failed, failedPut will be set to the exception generated. Cannot be null if it failed. */
 	private LowLevelPutException failedPut;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	public PersistentChosenBlock(boolean isInsert, PersistentChosenRequest parent, SendableRequestItem token, Key key, ClientKey ckey, RequestScheduler sched) {
 		super(token, key, ckey, parent.localRequestOnly, parent.ignoreStore, parent.canWriteClientCache, parent.forkOnCacheable, parent.realTimeFlag, sched);
 		this.isInsert = isInsert;
 		this.parent = parent;
-		if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Created "+this+" for "+parent+" ckey="+ckey);
+		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parent+" ckey="+ckey);
 	}
 	
 	@Override

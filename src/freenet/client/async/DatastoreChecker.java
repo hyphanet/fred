@@ -3,7 +3,7 @@ package freenet.client.async;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;

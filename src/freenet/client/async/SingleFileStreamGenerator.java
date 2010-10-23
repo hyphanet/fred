@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import com.db4o.ObjectContainer;
+import freenet.support.LogThresholdCallback;
 
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -22,6 +23,16 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 	final private Bucket bucket;
 	final private boolean persistent;
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	SingleFileStreamGenerator(Bucket bucket, boolean persistent) {
 		this.bucket = bucket;
 		this.persistent = persistent;
@@ -30,14 +41,14 @@ public class SingleFileStreamGenerator implements StreamGenerator {
 	public void writeTo(OutputStream os, ObjectContainer container,
 			ClientContext context) throws IOException {
 		try{
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Generating Stream", new Exception("debug"));
+			if(logMINOR) Logger.minor(this, "Generating Stream", new Exception("debug"));
 			InputStream data = bucket.getInputStream();
 			FileUtil.copy(data, os, -1);
 			data.close();
 			os.close();
 			if(persistent) bucket.removeFrom(container);
 			bucket.free();
-			if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Stream completely generated", new Exception("debug"));
+			if(logMINOR) Logger.minor(this, "Stream completely generated", new Exception("debug"));
 		} finally {
 			Closer.close(bucket);
 			Closer.close(os);

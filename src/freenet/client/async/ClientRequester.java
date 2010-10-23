@@ -8,6 +8,8 @@ import com.db4o.ObjectContainer;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -34,7 +36,7 @@ public abstract class ClientRequester {
 	/** The RequestClient, used to determine whether this request is 
 	 * persistent, and also we round-robin between different RequestClient's
 	 * in scheduling within a given priority class and retry count. */
-	protected final RequestClient client;
+	protected RequestClient client;
 	/** The set of queued low-level requests or inserts for this request or
 	 * insert. */
 	protected final SendableRequestSet requests;
@@ -113,6 +115,16 @@ public abstract class ClientRequester {
 	 * Requests can be satisfied entirely from the datastore sometimes. */
 	protected boolean sentToNetwork;
 
+	protected synchronized void resetBlocks() {
+		totalBlocks = 0;
+		successfulBlocks = 0;
+		failedBlocks = 0;
+		fatallyFailedBlocks = 0;
+		minSuccessBlocks = 0;
+		blockSetFinalized = false;
+		sentToNetwork = false;
+	}
+	
 	/** The set of blocks has been finalised, total will not change any
 	 * more. Notify clients.
 	 * @param container The database. Must be non-null if the request or 
@@ -178,9 +190,52 @@ public abstract class ClientRequester {
 			if(cancelled) return;
 			successfulBlocks++;
 		}
+		if(checkForBrokenClient(container, context)) return;
 		if(persistent()) container.store(this);
 		if(dontNotify) return;
 		notifyClients(container, context);
+	}
+	
+	transient static final UserAlert brokenClientAlert = new SimpleUserAlert(true, "Some broken downloads/uploads were cancelled. Please restart them.", "Some downloads/uploads were broken due to a bug (some time before 1287) causing unrecoverable database corruption. They have been cancelled. Please restart them from the Downloads or Uploads page.", "Some downloads/uploads were broken due to a pre-1287 bug, please restart them.", UserAlert.ERROR);
+
+	public boolean checkForBrokenClient(ObjectContainer container,
+			ClientContext context) {
+		if(container != null && client == null) {
+			if(container.ext().isStored(this) && container.ext().isActive(this)) {
+				// Data corruption?!?!?
+				// Obviously broken, possibly associated with a busted FCPClient.
+				// Lets fail it.
+				Logger.error(this, "Stored and active "+this+" but client is null!");
+				if(!isFinished()) {
+					context.postUserAlert(brokenClientAlert);
+					System.err.println("Cancelling download/upload because of bug causing database corruption. The bug has been fixed but the download/upload will be cancelled. You can restart it.");
+				}
+				// REDFLAG this leaks a RequestClient. IMHO this is better than the alternative.
+				this.client = new RequestClient() {
+
+					public boolean persistent() {
+						return true;
+					}
+
+					public void removeFrom(ObjectContainer container) {
+						container.delete(this);
+					}
+					
+				};
+				container.store(client);
+				container.store(this);
+				if(!isFinished()) {
+					cancel(container, context);
+				}
+				return true;
+			} else if(container.ext().isStored(this) && !container.ext().isActive(this)) {
+				// Definitely a bug, hopefully a simple one.
+				Logger.error(this, "Not active in completedBlock on "+this, new Exception("error"));
+				return true;
+			} else
+				throw new IllegalStateException("Client is null on persistent request "+this);
+		}
+		return false;
 	}
 
 	/** A block failed. Count it and notify our clients. */

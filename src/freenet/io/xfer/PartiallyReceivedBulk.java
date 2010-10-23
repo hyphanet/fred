@@ -8,6 +8,7 @@ import java.io.IOException;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.RetrievalException;
 import freenet.support.BitArray;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.RandomAccessThing;
@@ -38,6 +39,16 @@ public class PartiallyReceivedBulk {
 	boolean _aborted;
 	int _abortReason;
 	String _abortDescription;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	/**
 	 * Construct a PartiallyReceivedBulk.
@@ -99,7 +110,7 @@ public class PartiallyReceivedBulk {
 			Logger.error(this, "Received block "+blockNum+" of "+blocks+" !");
 			return;
 		}
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Received block "+blockNum);
 		BulkTransmitter[] notifyBTs;
 		long fileOffset = (long)blockNum * (long)blockSize;
@@ -130,7 +141,7 @@ public class PartiallyReceivedBulk {
 	}
 
 	public void abort(int errCode, String why) {
-		if(Logger.shouldLog(LogLevel.NORMAL, this))
+		if(logMINOR)
 			Logger.normal(this, "Aborting "+this+": "+errCode+" : "+why, new Exception("debug"));
 		BulkTransmitter[] notifyBTs;
 		BulkReceiver notifyBR;

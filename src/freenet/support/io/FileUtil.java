@@ -21,6 +21,7 @@ import java.nio.charset.Charset;
 import java.util.Random;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.StringValidityChecker;
@@ -49,6 +50,16 @@ final public class FileUtil {
 		// The worst thing which can happen if we misdetect the filename charset is that downloads fail because the filenames are invalid:
 		// We disallow path and file separator characters anyway so its not possible to cause files to be stored in arbitrary places.
 		fileNameCharset = getFileEncodingCharset();
+	}
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
 	}
 
 	/**
@@ -207,7 +218,7 @@ final public class FileUtil {
 		DataInputStream dis = null;
 		FileOutputStream fos = null;
 		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
-		if(Logger.shouldLog(LogLevel.MINOR, FileUtil.class))
+		if(logMINOR)
 			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
 
 		try {

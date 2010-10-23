@@ -3,6 +3,7 @@ package freenet.client.async;
 import com.db4o.ObjectContainer;
 
 import freenet.client.SplitfileBlock;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
@@ -11,7 +12,17 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 
 	// LOCKING: MinimalSplitfileBlock is accessed by the client database thread and by the FEC threads.
 	// Therefore we need synchronization on data.
-	
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	public final int number;
 	private Bucket data;
 	boolean flag;
@@ -69,12 +80,12 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 		if(data != null)
 			data.storeTo(container);
 		container.store(this);
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Storing "+this+" with data: "+data+" id = "+container.ext().getID(this));
 	}
 
 	public synchronized void removeFrom(ObjectContainer container) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Removing "+this+" with data: "+data);
 		if(data != null) {
 			container.activate(data, 1);

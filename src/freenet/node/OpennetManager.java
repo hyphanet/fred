@@ -128,9 +128,7 @@ public class OpennetManager {
 	public static final double SCALING_CONSTANT = 12.0;
 	/** Minimum number of peers */
 	public static final int MIN_PEERS_FOR_SCALING = 10;
-	/** Maximum number of peers. Should be 40, cut to 35 for now to avoid
-	 * disconnects while updating from old build that had PANIC_MAX_PEERS
-	 * equal to 40. */
+	/** Maximum number of peers. */
 	public static final int MAX_PEERS_FOR_SCALING = 40;
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
 	public static final int PANIC_MAX_PEERS = 50;
@@ -604,7 +602,7 @@ public class OpennetManager {
 				}
 				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
-					if(Logger.shouldLog(LogLevel.MINOR, this))
+					if(logMINOR)
 						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected");
 					pn.setWasDropped();
 					return pn;
@@ -639,7 +637,7 @@ public class OpennetManager {
 				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
 					continue;
 				}
-				if(Logger.shouldLog(LogLevel.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
 							((connectionType == null) ? "" : ((System.currentTimeMillis() - timeLastDropped.get(connectionType))+" ms since last dropped peer of type "+connectionType)));
 				pn.setWasDropped();

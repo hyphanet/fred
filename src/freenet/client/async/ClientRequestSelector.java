@@ -193,10 +193,17 @@ class ClientRequestSelector implements KeysFetchingLocally {
 	
 	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context, long now) {
 		if(req == null) return null;
-		if(req.isCancelled(container)) return null;
-		if(req.getCooldownTime(container, context, now) != 0) return null;
+		if(req.isCancelled(container)) {
+			if(logMINOR) Logger.minor(this, "Request is cancelled: "+req);
+			return null;
+		}
+		if(req.getCooldownTime(container, context, now) != 0) {
+			if(logMINOR) Logger.minor(this, "Request is in cooldown: "+req);
+			return null;
+		}
 		SendableRequestItem token = req.chooseKey(this, req.persistent() ? container : null, context);
 		if(token == null) {
+			if(logMINOR) Logger.minor(this, "Choose key returned null: "+req);
 			return null;
 		} else {
 			Key key;
@@ -244,6 +251,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				ignoreStore = false;
 			}
 			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, realTimeFlag, sched);
+			if(logMINOR) Logger.minor(this, "Created "+ret+" for "+req);
 			return ret;
 		}
 	}
@@ -599,6 +607,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		synchronized(keysFetching) {
 			boolean ret = keysFetching.contains(key);
 			if(!ret) return ret;
+			// It is being fetched. Add the BaseSendableGet to the wait list so it gets woken up when the request finishes.
 			if(getterWaiting != null) {
 				if(persistent) {
 					Long[] waiting = persistentRequestsWaitingForKeysFetching.get(key);

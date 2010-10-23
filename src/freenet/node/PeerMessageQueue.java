@@ -1,12 +1,15 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
+import freenet.support.DoublyLinkedListImpl;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -20,12 +23,15 @@ import freenet.support.MutableBoolean;
 public class PeerMessageQueue {
 
 	private static volatile boolean logMINOR;
+	
+	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -41,7 +47,8 @@ public class PeerMessageQueue {
 	
 	private class PrioQueue {
 		
-		private class Items {
+		private class Items extends DoublyLinkedListImpl.Item<Items> {
+			/** List of messages to send. Stuff to send first is at the beginning. */
 			final LinkedList<MessageItem> items;
 			final long id;
 			long timeLastSent;
@@ -61,83 +68,169 @@ public class PeerMessageQueue {
 			}
 		}
 		
-		static final long FORGET_AFTER = 10*60*1000;
+		/** Maximum inter-packet time is 2 minutes for a block transfer (when we have bulk
+		 * flag this will be no higher, and it might be reduced to 30 seconds). Requests
+		 * can wait for 2 minutes now, maybe 10 minutes in future, but round-robin is 
+		 * intended for frequent messages - it doesn't matter in that case. So 3 minutes 
+		 * is plenty. */
+		static final long FORGET_AFTER = 3*60*1000;
 
-		LinkedList<Items> itemsWithID;
+		/** Using DoublyLinkedListImpl so that we can move stuff around without the 
+		 * iterator failing, and also delete efficiently. */
+		DoublyLinkedListImpl<Items> nonEmptyItemsWithID;
+		/** Items which have been sent within the last 10 minutes, so we need to track
+		 * them for good round-robin, but which we don't have anything queued on right now. */
+		DoublyLinkedListImpl<Items> emptyItemsWithID;
 		Map<Long, Items> itemsByID;
+		/** Non-urgent messages. Same order as in Items, so stuff to send first is at
+		 * the beginning. */
+		LinkedList<MessageItem> itemsNonUrgent;
 		// Construct structures lazily, we're protected by the overall synchronized.
 
+		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
+		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
-			if(item.msg == null) {
-				makeItemsNoID().addLast(item);
-				return;
-			}
-			Object o = item.msg.getObject(DMT.UID);
-			if(o == null || !(o instanceof Long)) {
-				makeItemsNoID().addLast(item);
-				return;
-			}
-			Long id = (Long) o;
-			Items list;
-			if(itemsByID == null) {
-				itemsByID = new HashMap<Long, Items>();
-				itemsWithID = new LinkedList<Items>();
-				list = new Items(id);
-				itemsWithID.add(list);
-				itemsByID.put(id, list);
-			} else {
-				list = itemsByID.get(id);
-				if(list == null) {
-					list = new Items(id);
-					// In order to ensure fairness, we add it at the beginning.
-					// This method is typically called by sendAsync().
-					// If there are later items they are probably block transfers that are
-					// already in progress; it is fairer to send the new item first.
-					itemsWithID.addFirst(list);
-					itemsByID.put(id, list);
+			if(itemsNonUrgent == null)
+				itemsNonUrgent = new LinkedList<MessageItem>();
+			itemsNonUrgent.addLast(item);
+		}
+		
+		private void moveToUrgent(long now) {
+			if(itemsNonUrgent == null) return;
+			ListIterator<MessageItem> it = itemsNonUrgent.listIterator();
+			int moved = 0;
+			while(it.hasNext()) {
+				MessageItem item = it.next();
+				if(item.submitted + PacketSender.MAX_COALESCING_DELAY <= now) {
+					// Move to urgent list
+					long id = item.getID();
+					Items list;
+					if(itemsByID == null) {
+						itemsByID = new HashMap<Long, Items>();
+						if(nonEmptyItemsWithID == null)
+							nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
+						list = new Items(id);
+						nonEmptyItemsWithID.push(list);
+						itemsByID.put(id, list);
+					} else {
+						list = itemsByID.get(id);
+						if(list == null) {
+							list = new Items(id);
+							if(nonEmptyItemsWithID == null)
+								nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
+							// In order to ensure fairness, we add it at the beginning.
+							// addLast() is typically called by sendAsync().
+							// If there are later items they are probably block transfers that are
+							// already in progress; it is fairer to send the new item first.
+							nonEmptyItemsWithID.unshift(list);
+							itemsByID.put(id, list);
+						} else {
+							if(list.items.isEmpty()) {
+								// It already exists, so it has a valid time.
+								// Which is probably in the past, so use Forward.
+								moveFromEmptyToNonEmptyForward(list);
+							}
+						}
+					}
+					list.addLast(item);
+					it.remove();
+					moved++;
+				} else {
+					if(logDEBUG && moved > 0)
+						Logger.debug(this, "Moved "+moved+" items to urgent round-robin");
+					return;
 				}
 			}
-			list.addLast(item);
 		}
 
-		private Items makeItemsNoID() {
-			if(itemsWithID == null)
-				itemsWithID = new LinkedList<Items>();
-			if(itemsByID == null)
-				itemsByID = new HashMap<Long, Items>();
-			Items itemsNoID = itemsByID.get(-1L);
-			if(itemsNoID == null) {
-				itemsNoID = new Items(-1L);
-				itemsWithID.add(itemsNoID);
-				itemsByID.put(-1L, itemsNoID);
+		private void moveFromEmptyToNonEmptyForward(Items list) {
+			// Presumably is in emptyItemsWithID
+			assert(list.items.isEmpty());
+			if(logMINOR) {
+				if(list.getParent() == nonEmptyItemsWithID) {
+					Logger.error(this, "Already in non-empty yet empty?!");
+					return;
+				}
 			}
-			return itemsNoID;
+			if(emptyItemsWithID != null)
+				emptyItemsWithID.remove(list);
+			addToNonEmptyForward(list);
+		}
+		
+		private void addToNonEmptyForward(Items list) {
+			if(nonEmptyItemsWithID == null)
+				nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
+			Enumeration<Items> it = nonEmptyItemsWithID.elements();
+			while(it.hasMoreElements()) {
+				Items compare = it.nextElement();
+				if(compare.timeLastSent >= list.timeLastSent) {
+					nonEmptyItemsWithID.insertPrev(compare, list);
+					return;
+				}
+			}
+			nonEmptyItemsWithID.unshift(list);
 		}
 
+		private void moveFromEmptyToNonEmptyBackward(Items list) {
+			// Presumably is in emptyItemsWithID
+			emptyItemsWithID.remove(list);
+			addToNonEmptyBackward(list);
+		}
+		
+		private void addToNonEmptyBackward(Items list) {
+			if(nonEmptyItemsWithID == null)
+				nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
+			Enumeration<Items> it = nonEmptyItemsWithID.reverseElements();
+			while(it.hasMoreElements()) {
+				Items compare = it.nextElement();
+				if(compare.timeLastSent <= list.timeLastSent) {
+					nonEmptyItemsWithID.insertNext(compare, list);
+					return;
+				}
+			}
+			nonEmptyItemsWithID.unshift(list);
+		}
+
+		private void addToEmptyBackward(Items list) {
+			if(emptyItemsWithID == null)
+				emptyItemsWithID = new DoublyLinkedListImpl<Items>();
+			Enumeration<Items> it = emptyItemsWithID.reverseElements();
+			while(it.hasMoreElements()) {
+				Items compare = it.nextElement();
+				if(compare.timeLastSent <= list.timeLastSent) {
+					emptyItemsWithID.insertNext(compare, list);
+					return;
+				}
+			}
+			emptyItemsWithID.unshift(list);
+		}
+
+		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
+		 * we tried to send it and failed); it is assumed to already be urgent. */
 		public void addFirst(MessageItem item) {
-			if(item.msg == null) {
-				makeItemsNoID().addFirst(item);
-				return;
-			}
-			Object o = item.msg.getObject(DMT.UID);
-			if(o == null || !(o instanceof Long)) {
-				makeItemsNoID().addFirst(item);
-				return;
-			}
-			Long id = (Long) o;
+			long id = item.getID();
 			Items list;
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, Items>();
-				itemsWithID = new LinkedList<Items>();
+				if(nonEmptyItemsWithID == null)
+					nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 				list = new Items(id);
-				itemsWithID.add(list);
+				nonEmptyItemsWithID.push(list);
 				itemsByID.put(id, list);
 			} else {
 				list = itemsByID.get(id);
 				if(list == null) {
 					list = new Items(id);
-					itemsWithID.addFirst(list);
+					if(nonEmptyItemsWithID == null)
+						nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
+					nonEmptyItemsWithID.unshift(list);
 					itemsByID.put(id, list);
+				} else {
+					if(list.items.isEmpty()) {
+						// It already exists, so it has a valid time.
+						// Which is probably in the past, so use Forward.
+						moveFromEmptyToNonEmptyForward(list);
+					}
 				}
 			}
 			list.addFirst(item);
@@ -145,26 +238,37 @@ public class PeerMessageQueue {
 
 		public int size() {
 			int size = 0;
-			if(itemsWithID != null)
-				for(Items items : itemsWithID)
+			if(nonEmptyItemsWithID != null)
+				for(Items items : nonEmptyItemsWithID)
 					size += items.items.size();
+			if(itemsNonUrgent != null)
+				size += itemsNonUrgent.size();
 			return size;
 		}
 
 		public int addTo(MessageItem[] output, int ptr) {
-			if(itemsWithID != null)
-				for(Items list : itemsWithID)
+			if(nonEmptyItemsWithID != null)
+				for(Items list : nonEmptyItemsWithID)
 					for(MessageItem item : list.items)
 						output[ptr++] = item;
+			if(itemsNonUrgent != null)
+				for(MessageItem item : itemsNonUrgent)
+					output[ptr++] = item;
 			return ptr;
 		}
 
 		public long getNextUrgentTime(long t, long now) {
-			if(itemsWithID != null) {
-				for(Items items : itemsWithID) {
+			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
+				t = Math.min(t, itemsNonUrgent.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
+				if(t <= now) return t;
+			}
+			if(nonEmptyItemsWithID != null) {
+				for(Items items : nonEmptyItemsWithID) {
 					if(items.items.size() == 0) continue;
+					// It is possible that something requeued isn't urgent, so check anyway.
 					t = Math.min(t, items.items.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
 					if(t <= now) return t;
+					return t;
 				}
 			}
 			return t;
@@ -179,8 +283,15 @@ public class PeerMessageQueue {
 		 * @return the resulting length after adding messages
 		 */
 		public int addSize(int length, int maxSize) {
-			if(itemsWithID != null) {
-				for(Items list : itemsWithID) {
+			if(itemsNonUrgent != null) {
+				for(MessageItem item : itemsNonUrgent) {
+					int thisLen = item.getLength();
+					length += thisLen;
+					if(length > maxSize) return length;
+				}
+			}
+			if(nonEmptyItemsWithID != null) {
+				for(Items list : nonEmptyItemsWithID) {
 					for(MessageItem item : list.items) {
 						int thisLen = item.getLength();
 						length += thisLen;
@@ -190,77 +301,107 @@ public class PeerMessageQueue {
 			}
 			return length;
 		}
-
-		/**
-		 * Add messages to <code>messages</code> until there are no more
-		 * messages to add or <code>size</code> would exceed
-		 * <code>maxSize</code>. If <code>size == maxSize</code>, a
-		 * message in the queue will be added even if it makes <code>size</code>
-		 * exceed <code>maxSize</code>. If <code>isUrgent</code> is set, only
-		 * messages that are considered urgent are added.
-		 *
-		 * @param size the current size of <code>messages</code>
-		 * @param minSize the size when <code>messages</code> is empty
-		 * @param maxSize the maximum size of <code>messages</code>
-		 * @param now the current time
-		 * @param messages the list that messages will be added to
-		 * @param isUrgent <code>true</code> if only urgent messages should be added
-		 * @return the size of <code>messages</code>, multiplied by -1 if there were
-		 * messages that didn't fit
-		 */
-		private int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, boolean isUrgent, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
+		
+		private int addNonUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
 			assert(size >= 0);
 			assert(minSize >= 0);
 			assert(maxSize >= minSize);
+			if(size < 0) size = -size; // FIXME remove extra paranoia
+			if(itemsNonUrgent == null) return size;
+			int added = 0;
+			for(ListIterator<MessageItem> items = itemsNonUrgent.listIterator();items.hasNext();) {
+				MessageItem item = items.next();
+				int thisSize = item.getLength();
+				boolean oversize = false;
+				if(size + 2 + thisSize > maxSize) {
+					if(size == minSize) {
+						// Won't fit regardless, send it on its own.
+						oversize = true;
+					} else {
+						// Send what we have so far.
+						if(logDEBUG && added != 0)
+							Logger.debug(this, "Returning with "+added+" non-urgent messages (have more but they don't fit)");
+						return -size;
+					}
+				}
+				size += 2 + thisSize;
+				items.remove();
+				messages.add(item);
+				if(itemsByID != null) {
+					long id = item.getID();
+					Items tracker = itemsByID.get(id);
+					if(tracker != null) {
+						tracker.timeLastSent = now;
+						// Demote the corresponding tracker to maintain round-robin.
+						if(tracker.items.isEmpty()) {
+							// FIXME remove paranoia
+							if(emptyItemsWithID == null) {
+								Logger.error(this, "Tracker empty yet non empty items list does not exist?!?");
+							} else {
+								emptyItemsWithID.remove(tracker);
+								addToEmptyBackward(tracker);
+							}
+						} else {
+							// FIXME remove paranoia
+							if(nonEmptyItemsWithID == null) { 
+								Logger.error(this, "Tracker not empty yet non empty items with ID does not exist?!?");
+							} else {
+								nonEmptyItemsWithID.remove(tracker);
+								addToNonEmptyBackward(tracker);
+							}
+						}
+					}
+				}
+				added++;
+				if(oversize) {
+					if(logDEBUG) Logger.debug(this, "Returning with non-urgent oversize message");
+					return size;
+				}
+			}
+			if(logDEBUG && added != 0)
+				Logger.debug(this, "Returning with "+added+" non-urgent messages (all gone)");
+			return size;
+		}
+
+		private int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
+			assert(size >= 0);
+			assert(minSize >= 0);
+			assert(maxSize >= minSize);
+			if(size < 0) size = -size; // FIXME remove extra paranoia
+			int added = 0;
 			while(true) {
 				boolean addedNone = true;
 				int lists = 0;
-				if(itemsWithID != null)
-					lists += itemsWithID.size();
-				int skipped = 0;
-				for(int i=0;i<lists;i++) {
-					Items list;
-					Long id;
-					list = itemsWithID.get(skipped);
-					id = list.id;
-					
+				if(nonEmptyItemsWithID == null) return size;
+				lists += nonEmptyItemsWithID.size();
+				Items list = nonEmptyItemsWithID.head();
+				for(int i=0;i<lists && list != null;i++) {
 					if(list.items.isEmpty()) {
-						if(list.timeLastSent != -1 && now - list.timeLastSent > FORGET_AFTER) {
-							// Remove it
-							itemsWithID.remove(0);
-							itemsByID.remove(id);
-						} else {
-							// Skip it
-							skipped++;
-						}
+						// Should not happen, but check for it anyway since it keeps happening. :(
+						Logger.error(this, "List is in nonEmptyItemsWithID yet it is empty?!: "+list);
+						nonEmptyItemsWithID.remove(list);
+						addToNonEmptyBackward(list);
+						if(nonEmptyItemsWithID.isEmpty()) return size;
+						list = nonEmptyItemsWithID.head();
 						continue;
 					}
 					MessageItem item = list.items.getFirst();
-					if(isUrgent && item.submitted + PacketSender.MAX_COALESCING_DELAY > now) break;
-					
 					int thisSize = item.getLength();
+					boolean oversize = false;
 					if(size + 2 + thisSize > maxSize) {
 						if(size == minSize) {
-							// Send it anyway, nothing else to send.
-							size += 2 + thisSize;
-							list.items.removeFirst();
-							list.timeLastSent = now;
-							// Move to end of list.
-							itemsWithID.remove(skipped);
-							itemsWithID.add(list);
-							messages.add(item);
-							return size;
+							// Won't fit regardless, send it on its own.
+							oversize = true;
+						} else {
+							// Send what we have so far.
+							if(logDEBUG && added != 0)
+								Logger.debug(this, "Added "+added+" urgent messages, could add more but out of space at "+size);
+							return -size;
 						}
-						return -size;
 					}
 					size += 2 + thisSize;
 					list.items.removeFirst();
 					// Move to end of list.
-					itemsWithID.remove(skipped);
-					itemsWithID.add(list);
-					messages.add(item);
-					list.timeLastSent = now;
-					addedNone = false;
 					if(mustSendLoadRT && item.sendLoadRT && !addPeerLoadStatsRT.value) {
 						if(size + 2 + MAX_PEER_LOAD_STATS_SIZE > maxSize) {
 							if(logMINOR) Logger.minor(this, "Unable to add load message (realtime) to packet");
@@ -278,11 +419,35 @@ public class PeerMessageQueue {
 							mustSendLoadBulk = false;
 						}
 					}
+					Items prev = list.getPrev();
+					nonEmptyItemsWithID.remove(list);
+					list.timeLastSent = now;
+					if(!list.items.isEmpty()) {
+						addToNonEmptyBackward(list);
+					} else {
+						addToEmptyBackward(list);
+					}
+					if(prev == null)
+						list = nonEmptyItemsWithID.head();
+					else
+						list = prev.getNext();
+					messages.add(item);
+					addedNone = false;
+					if(oversize) {
+						if(logDEBUG) Logger.debug(this, "Returning with oversize urgent message");
+						return size;
+					}
+				}
+				if(addedNone) {
+					if(logDEBUG && added != 0)
+						Logger.debug(this, "Added "+added+" urgent messages, size now "+size+" no more queued at this priority");
+					return size;
 				}
 				if(addedNone) return size;
 			}
 		}
 
+		
 		/**
 		 * Add urgent messages, then non-urgent messages. Add a load message if need to.
 		 * @param size
@@ -292,29 +457,15 @@ public class PeerMessageQueue {
 		 * @param messages
 		 * @return
 		 */
-		int addPriorityMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk, MutableBoolean incomplete) {
-			// Urgent messages first.
-			size = innerAddMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, true);
-			if(incomplete.value) return (incomplete.value ? -size : size);
-			// If no more urgent messages, try to add some non-urgent messages too.
-			size = innerAddMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, false);
-			return (incomplete.value ? -size : size);
-		}
-
-		private int innerAddMessages(int size, int minSize, int maxSize,
+		int addPriorityMessages(int size, int minSize, int maxSize,
 				long now, ArrayList<MessageItem> messages,
 				MutableBoolean addPeerLoadStatsRT,
-				MutableBoolean addPeerLoadStatsBulk, MutableBoolean incomplete,
-				boolean urgentOnly) {
+				MutableBoolean addPeerLoadStatsBulk, MutableBoolean incomplete) {
 			boolean alreadyAddedPeerLoadStatsRT = addPeerLoadStatsRT.value;
 			boolean alreadyAddedPeerLoadStatsBulk = addPeerLoadStatsBulk.value;
 			while(true) {
 				synchronized(PeerMessageQueue.this) {
-					size = addMessages(size, minSize, maxSize, now, messages, true, addPeerLoadStatsRT, addPeerLoadStatsBulk);
-				}
-				if(size < 0) {
-					incomplete.value = true;
-					size = -size;
+					size = innerAddMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete);
 				}
 				boolean recall = false;
 				if(addPeerLoadStatsRT.value && !alreadyAddedPeerLoadStatsRT) {
@@ -348,33 +499,108 @@ public class PeerMessageQueue {
 			return size;
 		}
 
+		private int innerAddMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk, MutableBoolean incomplete) {
+			synchronized(PeerMessageQueue.this) {
+				// Urgent messages first.
+				if(logMINOR) {
+					int nonEmpty = nonEmptyItemsWithID == null ? 0 : nonEmptyItemsWithID.size();
+					int empty = emptyItemsWithID == null ? 0 : emptyItemsWithID.size();
+					int byID = itemsByID == null ? 0 : itemsByID.size();
+					if(nonEmpty + empty < byID) {
+						Logger.error(this, "Leaking itemsByID? non empty = "+nonEmpty+" empty = "+empty+" by ID = "+byID+" on "+this);
+					} else if(logDEBUG)
+						Logger.debug(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
+				}
+				moveToUrgent(now);
+				clearOldNonUrgent(now);
+				size = addUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk);
+				if(size < 0) {
+					size = -size;
+					incomplete.value = true;
+					return size;
+				}
+				// If no more urgent messages, try to add some non-urgent messages too.
+				size = addNonUrgentMessages(size, minSize, maxSize, now, messages);
+				if(size < 0) {
+					size = -size;
+					incomplete.value = true;
+				}
+				return size;
+			}
+		}
+
+		private void clearOldNonUrgent(long now) {
+			int removed = 0;
+			if(emptyItemsWithID == null) return;
+			while(true) {
+				if(emptyItemsWithID.isEmpty()) return;
+				Items list = emptyItemsWithID.head();
+				if(!list.items.isEmpty()) {
+					// FIXME remove paranoia
+					Logger.error(this, "List with items in emptyItemsWithID!!");
+					emptyItemsWithID.remove(list);
+					addToNonEmptyBackward(list);
+					return;
+				}
+				if(list.timeLastSent == -1 || now - list.timeLastSent > FORGET_AFTER) {
+					// FIXME: Urgh, what a braindead API! remove(Object) on a Map<Long, Items> !?!?!?!
+					// Anyway we'd better check the return value!
+					Items old = itemsByID.remove(list.id);
+					if(old == null)
+						Logger.error(this, "List was not in the items by ID tracker: "+list.id);
+					else if(old != list)
+						Logger.error(this, "Different list in the items by ID tracker: "+old+" not "+list+" for "+list.id);
+					emptyItemsWithID.remove(list);
+					removed++;
+				} else {
+					if(logDEBUG && removed > 0)
+						Logger.debug(this, "Removed "+removed+" old empty UID trackers");
+					break;
+				}
+			}
+		}
+
 		public void clear() {
-			itemsWithID = null;
+			emptyItemsWithID = null;
+			nonEmptyItemsWithID = null;
 			itemsByID = null;
+			itemsNonUrgent = null;
 		}
 
 		public boolean removeMessage(MessageItem item) {
-			if(item.msg == null) {
-				return makeItemsNoID().remove(item);
-			}
-			Object o = item.msg.getObject(DMT.UID);
-			if(o == null || !(o instanceof Long)) {
-				return makeItemsNoID().remove(item);
-			}
-			Long id = (Long) o;
+			long id = item.getID();
 			Items list;
-			if(itemsByID == null) {
-				return false;
-			} else {
+			if(itemsByID != null) {
 				list = itemsByID.get(id);
-				if(list == null) {
-					return false;
+				if(list != null) {
+					if(list.remove(item)) {
+						if(list.items.isEmpty()) {
+							nonEmptyItemsWithID.remove(list);
+							addToEmptyBackward(list);
+						}
+						return true;
+					}
 				}
 			}
-			return list.remove(item);
+			if(itemsNonUrgent != null)
+				return itemsNonUrgent.remove(item);
+			else
+				return false;
 		}
 
-
+		public void removeUIDs(Long[] list) {
+			if(itemsByID == null) return;
+			for(Long l : list) {
+				Items items = itemsByID.get(l);
+				if(items == null) continue;
+				if(items.items.isEmpty()) {
+					itemsByID.remove(l);
+					assert(emptyItemsWithID != null);
+					assert(items.getParent() == emptyItemsWithID);
+					emptyItemsWithID.remove(items);
+				}
+			}
+		}
 
 	}
 
@@ -397,8 +623,15 @@ public class PeerMessageQueue {
 		enqueuePrioritizedMessageItem(item);
 		int x = 0;
 		for(PrioQueue pq : queuesByPriority) {
-			if(pq.itemsWithID != null) {
-				for(PrioQueue.Items q : pq.itemsWithID)
+			if(pq.itemsNonUrgent != null) {
+				for(MessageItem it : pq.itemsNonUrgent) {
+					x += it.getLength() + 2;
+					if(x > 1024)
+						break;
+				}
+			}
+			if(pq.nonEmptyItemsWithID != null) {
+				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items) {
 						x += it.getLength() + 2;
 						if(x > 1024)
@@ -412,8 +645,13 @@ public class PeerMessageQueue {
 	public synchronized long getMessageQueueLengthBytes() {
 		long x = 0;
 		for(PrioQueue pq : queuesByPriority) {
-			if(pq.itemsWithID != null)
-				for(PrioQueue.Items q : pq.itemsWithID)
+			if(pq.itemsNonUrgent != null) {
+				for(MessageItem it : pq.itemsNonUrgent) {
+					x += it.getLength() + 2;
+				}
+			}
+			if(pq.nonEmptyItemsWithID != null)
+				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items)
 						x += it.getLength() + 2;
 		}
@@ -577,6 +815,8 @@ public class PeerMessageQueue {
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete);
 			if(incomplete.value) return -size;
 		}
+
+		if(incomplete.value) size = -size;
 		return size;
 	}
 	
@@ -599,6 +839,12 @@ public class PeerMessageQueue {
 		}
 		message.onFailed();
 		return true;
+	}
+
+	public synchronized void removeUIDsFromMessageQueues(Long[] list) {
+		for(PrioQueue queue : queuesByPriority) {
+			queue.removeUIDs(list);
+		}
 	}
 
 }

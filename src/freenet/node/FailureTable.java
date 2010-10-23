@@ -12,6 +12,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.xfer.BlockTransmitter;
+import freenet.io.xfer.BlockTransmitter.BlockTransmitterCompletion;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.CHKBlock;
@@ -86,7 +87,7 @@ public class FailureTable implements OOMHook {
 		offerAuthenticatorKey = new byte[32];
 		node.random.nextBytes(offerAuthenticatorKey);
 		offerExecutor = new SerialExecutor(NativeThread.HIGH_PRIORITY);
-		node.ps.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
+		node.ticker.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
 	}
 	
 	public void start() {
@@ -479,24 +480,16 @@ public class FailureTable implements OOMHook {
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	final BlockTransmitter bt =
-        		new BlockTransmitter(node.usm, source, uid, prb, senderCounter, BlockTransmitter.NEVER_CASCADE, realTimeFlag);
-        	node.executor.execute(new PrioRunnable() {
+        		new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, senderCounter, BlockTransmitter.NEVER_CASCADE, realTimeFlag,
+        				new BlockTransmitterCompletion() {
 
-				public int getPriority() {
-					return NativeThread.HIGH_PRIORITY;
-				}
-
-				public void run() {
-					try {
-						bt.send(node.executor);
-					} catch (Throwable t) {
-						Logger.error(this, "Sending offered key failed: "+t, t);
-					} finally {
+					public void blockTransferFinished(boolean success) {
 						node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
 					}
-				}
-        		
-        	}, "CHK offer sender");
+					
+				});
+        	bt.sendAsync();
+        	
 		}
 	}
 
@@ -610,7 +603,7 @@ public class FailureTable implements OOMHook {
 			} catch (Throwable t) {
 				Logger.error(this, "FailureTableCleaner caught "+t, t);
 			} finally {
-				node.ps.queueTimedJob(this, CLEANUP_PERIOD);
+				node.ticker.queueTimedJob(this, CLEANUP_PERIOD);
 			}
 		}
 

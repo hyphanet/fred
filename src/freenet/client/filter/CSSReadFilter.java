@@ -17,6 +17,7 @@ import java.io.Writer;
 import java.util.HashMap;
 
 import freenet.support.HexUtil;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
@@ -24,9 +25,21 @@ import freenet.support.io.NullWriter;
 
 public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
+        private static volatile boolean logDEBUG;
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+                                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
-		if (Logger.shouldLog(LogLevel.DEBUG, this))
+		if (logDEBUG)
 			Logger.debug(
 				this,
 				"running "
@@ -59,9 +72,9 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	public String getCharset(byte [] input, int length, String charset) throws DataFilterException, IOException {
-		if(Logger.shouldLog(LogLevel.DEBUG, this))
+		if(logDEBUG)
 			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
-		if(input.length > getCharsetBufferSize() && Logger.shouldLog(LogLevel.MINOR, this)) {
+		if(input.length > getCharsetBufferSize() && logMINOR) {
 			Logger.minor(this, "More data than was strictly needed was passed to the charset extractor for extraction");
 		}
 		InputStream strm = new ByteArrayInputStream(input, 0, length);

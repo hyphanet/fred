@@ -31,6 +31,7 @@ import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.transport.ip.IPUtil;
+import java.util.Arrays;
 
 /**
  * Decide whether to announce, and announce if necessary to a node in the
@@ -198,12 +199,17 @@ public class Announcer {
 			Logger.minor(this, "Connecting some seednodes from "+seeds.size());
 		int count = 0;
 		while(count < CONNECT_AT_ONCE) {
-			if(seeds.size() == 0) break;
+			if(seeds.isEmpty()) break;
 			SimpleFieldSet fs = seeds.remove(node.random.nextInt(seeds.size()));
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, node.peers, false, om.crypto.packetMangler);
-				if(announcedToIdentities.contains(new ByteArrayWrapper(seed.identity))) {
+				if(node.wantAnonAuth() && Arrays.equals(node.getOpennetIdentity(), seed.identity)) {
+                                    if(logMINOR)
+                                        Logger.minor("Not adding: I am a seednode attempting to connect to myself!", seed.userToString());
+                                    continue;
+                                }
+                                if(announcedToIdentities.contains(new ByteArrayWrapper(seed.identity))) {
 					if(logMINOR)
 						Logger.minor(this, "Not adding: already announced-to: "+seed.userToString());
 					continue;

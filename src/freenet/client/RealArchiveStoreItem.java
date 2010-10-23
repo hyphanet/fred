@@ -6,6 +6,7 @@ package freenet.client;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
@@ -16,6 +17,16 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	private final MultiReaderBucket mb;
 	private final Bucket bucket;
 	private final long spaceUsed;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	/**
 	 * Create an ArchiveStoreElement from a TempStoreElement.
@@ -58,7 +69,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	
 	@Override
 	void innerClose() {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "innerClose(): "+this+" : "+bucket);
 		if(bucket == null) {
 			// This still happens. It is clearly impossible as we check in the constructor and throw if it is null.

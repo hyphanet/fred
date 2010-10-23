@@ -12,6 +12,7 @@ import com.db4o.query.Predicate;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
@@ -20,6 +21,16 @@ import freenet.support.io.NativeThread;
 public class NodeRestartJobsQueue {
 	
 	private final long nodeDBHandle;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	@SuppressWarnings("unchecked")
     public NodeRestartJobsQueue(long nodeDBHandle2) {
@@ -62,7 +73,7 @@ public class NodeRestartJobsQueue {
 	private Set<DBJob>[] dbJobsEarly;
 	
 	public synchronized void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) {
-		if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Queueing restart job "+job+" at priority "+priority+" early="+early);
+		if(logMINOR) Logger.minor(this, "Queueing restart job "+job+" at priority "+priority+" early="+early);
 		Set<DBJob> jobs = early ? dbJobsEarly[priority] : dbJobs[priority];
 		container.store(job);
 		container.activate(jobs, 1);

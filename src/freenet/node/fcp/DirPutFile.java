@@ -8,6 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ManifestElement;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -22,6 +23,16 @@ abstract class DirPutFile {
 
 	final String name;
 	ClientMetadata meta;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	public DirPutFile(SimpleFieldSet subset, String identifier, boolean global) throws MessageInvalidException {
 		this.name = subset.get("Name");
@@ -70,7 +81,7 @@ abstract class DirPutFile {
 		String n = name;
 		int idx = n.lastIndexOf('/');
 		if(idx != -1) n = n.substring(idx+1);
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Element name: "+name+" -> "+n);
 		return new ManifestElement(n, getData(), getMIMEType(), getData().size());
 	}

@@ -36,6 +36,7 @@ import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
+import freenet.config.WrapperConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.PartiallyReceivedBlock;
@@ -64,6 +65,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.ExecutorIdleCallback;
+import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
@@ -72,6 +74,7 @@ import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SizeUtil;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -180,7 +183,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		if(container != null)
 			initRestartJobs(nodeDBHandle, container);
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false,
-			"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ps, node.getRunDir());
+			"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ticker, node.getRunDir());
 
 		SimpleFieldSet throttleFS = persister.read();
 		if(logMINOR)
@@ -284,7 +287,26 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		persistentTempDir = new File(nodeConfig.getString("persistentTempDir"));
 		initPTBF(container, nodeConfig);
 
-		nodeConfig.register("maxRAMBucketSize", "128KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
+		// Allocate 10% of the RAM to the RAMBucketPool by default
+		int defaultRamBucketPoolSize;
+		long maxMemory = Runtime.getRuntime().maxMemory();
+		if(maxMemory == Long.MAX_VALUE || maxMemory <= 0)
+			defaultRamBucketPoolSize = 10;
+		else {
+			maxMemory /= (1024 * 1024);
+			if(maxMemory <= 0) // Still bogus
+				defaultRamBucketPoolSize = 10;
+			else {
+				// 10% of memory above 64MB, with a minimum of 1MB.
+				defaultRamBucketPoolSize = Math.min(Integer.MAX_VALUE, (int)((maxMemory - 64) / 10));
+				if(defaultRamBucketPoolSize <= 0) defaultRamBucketPoolSize = 1;
+			}
+		}
+		
+		// Max bucket size 5% of the total, minimum 32KB (one block, vast majority of buckets)
+		long maxBucketSize = Math.max(32768, (defaultRamBucketPoolSize * 1024 * 1024) / 20);
+		
+		nodeConfig.register("maxRAMBucketSize", SizeUtil.formatSizeWithoutSpace(maxBucketSize), sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
 			@Override
 			public Long get() {
@@ -298,7 +320,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				tempBucketFactory.setMaxRAMBucketSize(val);
 			}
 		}, true);
-		nodeConfig.register("RAMBucketPoolSize", "10MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
+
+		nodeConfig.register("RAMBucketPoolSize", defaultRamBucketPoolSize+"MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
 
 			@Override
 			public Long get() {
@@ -366,7 +389,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		useAIMDs = nodeConfig.getBoolean("useAIMDs");
 		requestStarters.setUseAIMDs(useAIMDs);
 		
-		clientContext.init(requestStarters);
+		clientContext.init(requestStarters, alerts);
 		initKeys(container);
 
 		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
@@ -720,7 +743,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		// That sucks though ... they are only changed ONCE, and they are used constantly.
 		// Also existing transient requests won't care about the changes; what we must guarantee
 		// is that new persistent jobs will be accepted.
-		node.ps.queueTimedJob(new Runnable() {
+		node.getTicker().queueTimedJob(new Runnable() {
 
 			public void run() {
 				clientDatabaseExecutor.start(node.executor, "Client database access thread");
@@ -815,9 +838,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 			public void run() {
 				Logger.normal(this, "Resuming persistent requests");
-				// Call it anyway; if we are not lazy, it won't have to start any requests
-				// But it does other things too
-				fcpServer.finishStart();
 				if(persistentTempBucketFactory != null)
 					persistentTempBucketFactory.completedInit();
 				node.pluginManager.start(node.config);
@@ -878,9 +898,20 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		public void completed(boolean success);
 	}
+	
+	/** UID -1 is used internally, so never generate it. 
+	 * It is not however a problem if a node does use it; it will slow its messages down 
+	 * by them being round-robin'ed in PeerMessageQueue with messages with no UID, that's 
+	 * all. */
+	long makeUID() {
+		while(true) {
+			long uid = random.nextLong();
+			if(uid != -1) return uid;
+		}
+	}
 
 	public void asyncGet(Key key, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
-		final long uid = random.nextLong();
+		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
 		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag);
 		if(!node.lockUID(uid, isSSK, false, false, true, realTimeFlag, tag)) {
@@ -978,7 +1009,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 */
 	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
-		long uid = random.nextLong();
+		long uid = makeUID();
 		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null, realTimeFlag);
 		if(!node.lockUID(uid, false, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
@@ -1098,7 +1129,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
-		long uid = random.nextLong();
+		long uid = makeUID();
 		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null, realTimeFlag);
 		if(!node.lockUID(uid, true, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
@@ -1232,7 +1263,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		byte[] headers = block.getHeaders();
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
 		CHKInsertSender is;
-		long uid = random.nextLong();
+		long uid = makeUID();
 		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null, realTimeFlag);
 		if(!node.lockUID(uid, false, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
@@ -1351,7 +1382,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public void realPutSSK(SSKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) throws LowLevelPutException {
 		SSKInsertSender is;
-		long uid = random.nextLong();
+		long uid = makeUID();
 		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null, realTimeFlag);
 		if(!node.lockUID(uid, true, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
@@ -1612,7 +1643,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	public Ticker getTicker() {
-		return node.ps;
+		return node.getTicker();
 	}
 
 	public Executor getExecutor() {
@@ -1625,10 +1656,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public File getTempDir() {
 		return tempDir;
-	}
-
-	public boolean hasLoadedQueue() {
-		return fcpServer.hasFinishedStart();
 	}
 
 	/** Queue the offered key. */

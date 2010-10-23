@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import freenet.l10n.NodeL10n;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -29,6 +30,16 @@ public class SubConfig implements Comparable<SubConfig> {
 	public final Config config;
 	final String prefix;
 	private boolean hasInitialized;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	public SubConfig(String prefix, Config config) {
 		this.config = config;
@@ -171,7 +182,7 @@ public class SubConfig implements Comparable<SubConfig> {
 	 */
 	public void finishedInitialization() {
 		hasInitialized = true;
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Finished initialization on "+this+" ("+prefix+')');
 	}
 
@@ -219,7 +230,6 @@ public class SubConfig implements Comparable<SubConfig> {
 		synchronized(this) {
 			entries = map.entrySet().toArray(entries);
 		}
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Prefix="+prefix);
 		for(int i=0;i<entries.length;i++) {

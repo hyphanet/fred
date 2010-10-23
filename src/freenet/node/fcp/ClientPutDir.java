@@ -5,11 +5,9 @@ package freenet.node.fcp;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
@@ -27,12 +25,8 @@ import freenet.client.async.SimpleManifestPutter;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
-import freenet.support.api.Bucket;
-import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
-import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class ClientPutDir extends ClientPutBase {
 
@@ -176,88 +170,6 @@ public class ClientPutDir extends ClientPutBase {
 		putter = p;
 	}
 
-
-
-	public ClientPutDir(SimpleFieldSet fs, FCPClient client, FCPServer server, ObjectContainer container) throws PersistenceParseException, IOException {
-		super(fs, client, server);
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		SimpleFieldSet files = fs.subset("Files");
-		defaultName = fs.get("DefaultName");
-		String type = fs.get("PutDirType");
-		if(type.equals("disk"))
-			wasDiskPut = true;
-		else
-			wasDiskPut = false;
-		// Flattened for disk, sort out afterwards
-		int fileCount = 0;
-		long size = 0;
-		Vector<ManifestElement> v = new Vector<ManifestElement>();
-		for(int i=0;;i++) {
-			String num = Integer.toString(i);
-			SimpleFieldSet subset = files.subset(num);
-			if(subset == null) break;
-			// Otherwise serialize
-			String name = subset.get("Name");
-			if(name == null)
-				throw new PersistenceParseException("No Name on "+i);
-			String contentTypeOverride = subset.get("Metadata.ContentType");
-			String uploadFrom = subset.get("UploadFrom");
-			Bucket data = null;
-			if(logMINOR) Logger.minor(this, "Parsing "+i);
-			if(logMINOR) Logger.minor(this, "UploadFrom="+uploadFrom);
-			ManifestElement me;
-			if((uploadFrom == null) || uploadFrom.equalsIgnoreCase("direct")) {
-				long sz = Long.parseLong(subset.get("DataLength"));
-				if(!finished) {
-					try {
-						data = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), server.core.random, server.core.persistentTempBucketFactory);
-					} catch (CannotCreateFromFieldSetException e) {
-						throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
-					}
-				} else {
-					data = null;
-				}
-				me = new ManifestElement(name, data, contentTypeOverride, sz);
-				fileCount++;
-			} else if(uploadFrom.equalsIgnoreCase("disk")) {
-				long sz = Long.parseLong(subset.get("DataLength"));
-				// Disk
-				String f = subset.get("Filename");
-				if(f == null)
-					throw new PersistenceParseException("UploadFrom=disk but no name on "+i);
-				File ff = new File(f);
-				if(!(ff.exists() && ff.canRead())) {
-					Logger.error(this, "File no longer exists, cancelling upload: "+ff);
-					throw new IOException("File no longer exists, cancelling upload: "+ff);
-				}
-				data = new FileBucket(ff, true, false, false, false, false);
-				me = new ManifestElement(name, data, contentTypeOverride, sz);
-				fileCount++;
-			} else if(uploadFrom.equalsIgnoreCase("redirect")) {
-				FreenetURI targetURI = new FreenetURI(subset.get("TargetURI"));
-				me = new ManifestElement(name, targetURI, contentTypeOverride);
-			} else
-				throw new PersistenceParseException("Don't know UploadFrom="+uploadFrom);
-			v.add(me);
-			if((data != null) && (data.size() > 0))
-				size += data.size();
-		}
-		manifestElements = SimpleManifestPutter.unflatten(v);
-		SimpleManifestPutter p = null;
-			if(!finished)
-				p = new SimpleManifestPutter(this, 
-						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, 
-						lowLevelClient,
-						earlyEncode, persistenceType == PERSIST_FOREVER, container, server.core.clientContext);
-		putter = p;
-		numberOfFiles = fileCount;
-		totalSize = size;
-		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage(container);
-			client.queueClientRequestMessage(msg, 0, container);
-		}
-	}
-
 	@Override
 	public void start(ObjectContainer container, ClientContext context) {
 		if(finished) return;
@@ -380,7 +292,7 @@ public class ClientPutDir extends ClientPutBase {
 	}
 
 	@Override
-	public boolean restart(boolean filterData, ObjectContainer container, ClientContext context) {
+	public boolean restart(ObjectContainer container, ClientContext context, final boolean disableFilterData) {
 		if(!canRestart()) return false;
 		setVarsRestart(container);
 		makePutter(container, context);

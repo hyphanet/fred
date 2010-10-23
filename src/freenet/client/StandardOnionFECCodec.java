@@ -7,6 +7,7 @@ import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.PureCode;
 
 import freenet.support.LRUHashtable;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -20,6 +21,16 @@ public class StandardOnionFECCodec extends FECCodec {
 	static boolean noNative;
 
 	private static final LRUHashtable<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = new LRUHashtable<MyKey, StandardOnionFECCodec>();
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	private static class MyKey {
 		/** Number of input blocks */
@@ -67,8 +78,6 @@ public class StandardOnionFECCodec extends FECCodec {
 		super(k, n);
 
 		loadFEC();
-
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	}
 
 	@Override

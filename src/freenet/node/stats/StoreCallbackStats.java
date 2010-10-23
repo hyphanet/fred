@@ -13,11 +13,17 @@ import freenet.store.StoreCallback;
 public class StoreCallbackStats implements DataStoreStats {
 
 	private final StoreCallback<?> storeStats;
-	private final NodeStoreStats nodeStats;
+	private final StoreLocationStats nodeStats;
+	public final StoreAccessStats sessionAccessStats;
+	/** If the store type does not support this, it will be null, to avoid producing bogus
+	 * numbers. */
+	public final StoreAccessStats totalAccessStats;
 
-	public StoreCallbackStats(StoreCallback<?> delegate, NodeStoreStats nodeStats) {
+	public StoreCallbackStats(StoreCallback<?> delegate, StoreLocationStats nodeStats) {
 		this.storeStats = delegate;
 		this.nodeStats = nodeStats;
+		this.sessionAccessStats = delegate.getSessionAccessStats();
+		this.totalAccessStats = delegate.getTotalAccessStats();
 	}
 
 	public long keys() {
@@ -30,49 +36,6 @@ public class StoreCallbackStats implements DataStoreStats {
 
 	public long dataSize() {
 		return keys() * storeStats.dataLength();
-	}
-
-	private long Hits() {
-		return storeStats.hits();
-	}
-
-	private long Misses() {
-		return storeStats.misses();
-	}
-
-	public long readRequests() {
-		return Hits() + Misses();
-	}
-
-	public long successfulReads() {
-		if (readRequests() > 0)
-			return Hits();
-		else
-			return 0;
-	}
-
-	public double successRate() throws StatsNotAvailableException {
-		if (readRequests() > 0)
-			return (100.0 * Hits() / readRequests());
-		else
-			throw new StatsNotAvailableException();
-	}
-
-	public long writes() {
-		return storeStats.writes();
-	}
-
-
-	public double accessRate(long nodeUptimeSeconds) {
-		return (1.0 * readRequests() / nodeUptimeSeconds);
-	}
-
-	public double writeRate(long nodeUptimeSeconds) {
-		return (1.0 * writes() / nodeUptimeSeconds);
-	}
-
-	public long falsePos() {
-		return storeStats.getBloomFalsePositive();
 	}
 
 	public double avgLocation() throws StatsNotAvailableException {
@@ -97,5 +60,14 @@ public class StoreCallbackStats implements DataStoreStats {
 
 	public double distanceStats() throws StatsNotAvailableException {
 		return nodeStats.distanceStats();
+	}
+	
+	public StoreAccessStats getSessionAccessStats() {
+		return sessionAccessStats;
+	}
+	
+	public StoreAccessStats getTotalAccessStats() throws StatsNotAvailableException {
+		if(totalAccessStats == null) throw new StatsNotAvailableException();
+		return totalAccessStats;
 	}
 }

@@ -11,6 +11,7 @@ import java.util.Map;
 
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.transport.ip.IPUtil;
@@ -32,6 +33,16 @@ public class NodeIPPortDetector {
 	private final NodeARKInserter arkPutter;
 	/** Last detected IP address */
 	Peer[] lastPeers;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	NodeIPPortDetector(Node node, NodeIPDetector ipDetector, NodeCrypto crypto, boolean enableARKs) {
 		this.node = node;
@@ -62,7 +73,6 @@ public class NodeIPPortDetector {
 	 * differently for each connection, we're stuffed, and we tell the user).
 	 */
 	Peer[] detectPrimaryPeers() {
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		ArrayList<Peer> addresses = new ArrayList<Peer>();
 		FreenetInetAddress[] addrs = detectPrimaryIPAddress();
 		for(int i=0;i<addrs.length;i++) {
@@ -83,7 +93,7 @@ public class NodeIPPortDetector {
 				if((p == null) || p.isNull()) continue;
 				// DNSRequester doesn't deal with our own node
 				if(!IPUtil.isValidAddress(p.getAddress(true), false)) continue;
-				if(Logger.shouldLog(LogLevel.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
 				if(countsByPeer.containsKey(p)) {
 					countsByPeer.put(p, countsByPeer.get(p) + 1);

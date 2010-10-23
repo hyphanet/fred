@@ -22,6 +22,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
+import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
@@ -108,6 +109,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private ArrayList<Listener> listeners=new ArrayList<Listener>();
 	
 	private boolean mustUnlock;
+    private boolean receivingAsync;
     
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -222,13 +224,17 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             Logger.error(this, "Caught "+t, t);
             finish(INTERNAL_ERROR, null, false);
         } finally {
-        	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
-        	boolean mustUnlock;
-        	synchronized(this) {
-        		mustUnlock = this.mustUnlock;
+        	if(status == NOT_FINISHED && !receivingAsync) {
+        		Logger.error(this, "Not finished: "+this);
+        		finish(INTERNAL_ERROR, null, false);
         	}
-        	if(mustUnlock)
-        		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, origTag);
+            boolean mustUnlock;
+            synchronized(this) {
+            	mustUnlock = this.mustUnlock;
+            }
+            if(mustUnlock)
+            	node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, origTag);
+        	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
         }
     }
 
@@ -250,7 +256,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         
         // First ask any nodes that have offered the data
         
-        OfferList offers = node.failureTable.getOffers(key);
+        final OfferList offers = node.failureTable.getOffers(key);
         
         if(offers != null) {
         	if(tryOffers(offers)) return;
@@ -735,7 +741,7 @@ loadWaiterLoop:
 
 	/** @return True if we successfully received the offer or failed fatally. False if we
      * should try the next offer and/or normal fetches. */
-	private boolean handleCHKOfferReply(Message reply, PeerNode pn, BlockOffer offer, OfferList offers) {
+	private boolean handleCHKOfferReply(Message reply, final PeerNode pn, BlockOffer offer, final OfferList offers) {
 		if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
@@ -769,36 +775,57 @@ loadWaiterLoop:
 				
         		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
         		
-        		try {
-        			if(logMINOR) Logger.minor(this, "Receiving data");
-        			byte[] data = br.receive();
-       				pn.transferSuccess();
-        			if(logMINOR) Logger.minor(this, "Received data");
-        			// Received data
-        			try {
-        				verifyAndCommit(data);
-        			} catch (KeyVerifyException e1) {
-        				Logger.normal(this, "Got data but verify failed: "+e1, e1);
-        				finish(GET_OFFER_VERIFY_FAILURE, pn, true);
-                		offers.deleteLastOffer();
-        				return true;
-        			}
-        			finish(SUCCESS, pn, true);
-        			node.nodeStats.successfulBlockReceive();
-        			return true;
-        		} catch (RetrievalException e) {
-					if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
-						Logger.normal(this, "Transfer failed (disconnect): "+e, e);
-					else
-						// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
-						Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
-        			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
-        			// Backoff here anyway - the node really ought to have it!
-       				pn.transferFailed("RequestSenderGetOfferedTransferFailed");
-            		offers.deleteLastOffer();
-        			node.nodeStats.failedBlockReceive(false, false, false);
-        			return true;
-        		}
+       			if(logMINOR) Logger.minor(this, "Receiving data");
+       			
+       			br.receive(new BlockReceiverCompletion() {
+       				
+       				public void blockReceived(byte[] data) {
+           				synchronized(RequestSender.this) {
+           					transferringFrom = null;
+           				}
+            				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
+	                		try {
+		                		// Received data
+		               			pn.transferSuccess();
+		                		if(logMINOR) Logger.minor(this, "Received data");
+	                			verifyAndCommit(data);
+		                		finish(SUCCESS, pn, true);
+		                		node.nodeStats.successfulBlockReceive();
+	                		} catch (KeyVerifyException e1) {
+	                			Logger.normal(this, "Got data but verify failed: "+e1, e1);
+	                			finish(GET_OFFER_VERIFY_FAILURE, pn, true);
+	                       		offers.deleteLastOffer();
+	                		} catch (Throwable t) {
+	                			Logger.error(this, "Failed on "+this, t);
+	                			finish(INTERNAL_ERROR, pn, true);
+	                		}
+						}
+
+						public void blockReceiveFailed(
+								RetrievalException e) {
+            				synchronized(RequestSender.this) {
+            					transferringFrom = null;
+            				}
+            				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
+							try {
+								if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
+									Logger.normal(this, "Transfer failed (disconnect): "+e, e);
+								else
+									// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
+									Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
+								finish(GET_OFFER_TRANSFER_FAILED, pn, true);
+								// Backoff here anyway - the node really ought to have it!
+								pn.transferFailed("RequestSenderGetOfferedTransferFailed");
+								offers.deleteLastOffer();
+								node.nodeStats.failedBlockReceive(false, false, false);
+	                		} catch (Throwable t) {
+	                			Logger.error(this, "Failed on "+this, t);
+	                			finish(INTERNAL_ERROR, pn, true);
+	                		}
+						}
+            				
+            		});
+       			return true;
         	} finally {
         		node.removeTransferringSender((NodeCHK)key, this);
         	}
@@ -1036,78 +1063,111 @@ loadWaiterLoop:
     	
     	node.addTransferringSender((NodeCHK)key, this);
     	
-    	try {
+    	prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
+    	
+    	synchronized(this) {
+    		notifyAll();
+    	}
+    	fireCHKTransferBegins();
+    	
+    	final long tStart = System.currentTimeMillis();
+    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
+    	
+    	if(logMINOR) Logger.minor(this, "Receiving data");
+    	synchronized(this) {
+    		transferringFrom = next;
+    	}
+    	byte[] data;
+    	
+    	
+    	// Found data
+    	
+    	// First get headers
+    	
+    	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
+    	
+    	// FIXME: Validate headers
+    	
+    	node.addTransferringSender((NodeCHK)key, this);
+    	
+    	prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
+    	
+    	synchronized(this) {
+    		notifyAll();
+        	receivingAsync = true;
+    	}
+    	fireCHKTransferBegins();
+    	
+    	if(logMINOR) Logger.minor(this, "Receiving data");
+    	final PeerNode from = next;
+    	final PeerNode sentTo = next;
+    	br.receive(new BlockReceiverCompletion() {
     		
-    		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-    		
-    		synchronized(this) {
-    			notifyAll();
-    		}
-    		fireCHKTransferBegins();
-			
-    		long tStart = System.currentTimeMillis();
-    		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
-    		
-    		try {
-    			if(logMINOR) Logger.minor(this, "Receiving data");
-    			synchronized(this) {
-    				transferringFrom = next;
-    			}
-    			byte[] data;
+    		public void blockReceived(byte[] data) {
     			try {
-    				data = br.receive();
-    			} finally {
-    				synchronized(this) {
+    				long tEnd = System.currentTimeMillis();
+    				transferTime = tEnd - tStart;
+    				synchronized(RequestSender.this) {
     					transferringFrom = null;
     				}
+    				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
+    				sentTo.transferSuccess();
+    				sentTo.successNotOverload();
+    				node.nodeStats.successfulBlockReceive();
+    				if(logMINOR) Logger.minor(this, "Received data");
+    				// Received data
+    				try {
+    					verifyAndCommit(data);
+    				} catch (KeyVerifyException e1) {
+    					Logger.normal(this, "Got data but verify failed: "+e1, e1);
+    					finish(VERIFY_FAILURE, sentTo, false);
+    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
+    					return;
+    				}
+    				finish(SUCCESS, sentTo, false);
+    			} catch (Throwable t) {
+    				Logger.error(this, "Failed on "+this, t);
+    				finish(INTERNAL_ERROR, sentTo, true);
     			}
-    			
-    			long tEnd = System.currentTimeMillis();
-    			this.transferTime = tEnd - tStart;
-   				next.transferSuccess();
-            	next.successNotOverload();
-            	node.nodeStats.successfulBlockReceive();
-    			if(logMINOR) Logger.minor(this, "Received data");
-    			// Received data
-    			try {
-    				verifyAndCommit(data);
-    			} catch (KeyVerifyException e1) {
-    				Logger.normal(this, "Got data but verify failed: "+e1, e1);
-    				finish(VERIFY_FAILURE, next, false);
-    				node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
-    				return;
-    			}
-    			finish(SUCCESS, next, false);
-    			return;
-    		} catch (RetrievalException e) {
-				if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
-					Logger.normal(this, "Transfer failed (disconnect): "+e, e);
-				else
-					// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
-					Logger.normal(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+next, e);
-				next.localRejectedOverload("TransferFailedRequest"+e.getReason());
-    			finish(TRANSFER_FAILED, next, false);
-    			node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
-				int reason = e.getReason();
-    			boolean timeout = (!br.senderAborted()) &&
-					(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
-					|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT);
-   				if(timeout) {
-   					// Looks like a timeout. Backoff, even if it's a turtle.
-   					if(logMINOR) Logger.minor(this, "Timeout transferring data : "+e, e);
-   					next.transferFailed(e.getErrString());
-   				} else {
-   					// Quick failure (in that we didn't have to timeout). Don't backoff.
-   					// Treat as a DNF.
-   					// If it was turtled, and then failed, still treat it as a DNF.
-						node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
-   				}
-       			node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
-    			return;
     		}
-    	} finally {
-    		node.removeTransferringSender((NodeCHK)key, this);
-    	}
+    		
+    		public void blockReceiveFailed(
+    				RetrievalException e) {
+    			try {
+    				synchronized(RequestSender.this) {
+    					transferringFrom = null;
+    				}
+    				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
+    				if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
+    					Logger.normal(this, "Transfer failed (disconnect): "+e, e);
+    				else
+    					// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
+    					Logger.normal(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+sentTo, e);
+    				sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason());
+    				finish(TRANSFER_FAILED, sentTo, false);
+    				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
+    				int reason = e.getReason();
+    				boolean timeout = (!br.senderAborted()) &&
+    				(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
+    						|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT);
+    				// But we only do a transfer backoff (which is separate, and starts at a higher threshold) if we timed out i.e. not if upstream turtled.
+    				if(timeout) {
+    					// Looks like a timeout. Backoff, even if it's a turtle.
+    					if(logMINOR) Logger.minor(this, "Timeout transferring data : "+e, e);
+    					sentTo.transferFailed(e.getErrString());
+    				} else {
+    					// Quick failure (in that we didn't have to timeout). Don't backoff.
+    					// Treat as a DNF.
+    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
+    				}
+    				node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
+    			} catch (Throwable t) {
+    				Logger.error(this, "Failed on "+this, t);
+    				finish(INTERNAL_ERROR, sentTo, true);
+    			}
+    		}
+    		
+    	});
 	}
 
 	/** @return True to continue waiting for this node, false to move on to another. */
@@ -1344,7 +1404,7 @@ loadWaiterLoop:
             		break;
             	}
             	
-            	if(logMINOR) Logger.minor(this, "Waiting for status change on "+this);
+            	if(logMINOR) Logger.minor(this, "Waiting for status change on "+this+" current is "+current+" status is "+status);
                 wait(deadline - now);
                 now = System.currentTimeMillis(); // Is used in the next iteration so needed even without the logging
                 
@@ -1371,6 +1431,10 @@ loadWaiterLoop:
     	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
         
         synchronized(this) {
+        	if(status != NOT_FINISHED) {
+        		if(logMINOR) Logger.minor(this, "Status already set to "+status+" - returning on "+this+" would be setting "+code+" from "+next);
+        		return;
+        	}
             status = code;
             notifyAll();
             if(status == SUCCESS)
@@ -1415,6 +1479,12 @@ loadWaiterLoop:
 			opennetFinished = true;
 			notifyAll();
 		}
+		
+    	if(mustUnlock) {
+    		// We took on responsibility for unlocking.
+    		if(logMINOR) Logger.minor(this, "Unlocking after turtle");
+    		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, source == null, realTimeFlag, origTag);
+    	}
         
     }
 
@@ -1423,7 +1493,7 @@ loadWaiterLoop:
     	MessageFilter mf = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
     	
     	try {
-			node.usm.addAsyncFilter(mf, new NullAsyncMessageFilterCallback());
+			node.usm.addAsyncFilter(mf, new NullAsyncMessageFilterCallback(), this);
 		} catch (DisconnectedException e) {
 			// Fine by me.
 		}
@@ -1691,8 +1761,8 @@ loadWaiterLoop:
 		return transferringFrom;
 	}
 
-	public void killTurtle() {
-		prb.abort(RetrievalException.TURTLE_KILLED, "Too many turtles / already have turtles for this key");
+	public void killTurtle(String description) {
+		prb.abort(RetrievalException.TURTLE_KILLED, description);
 		node.failureTable.onFinalFailure(key, transferringFrom(), htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 

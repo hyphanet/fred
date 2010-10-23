@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import com.sleepycat.je.DatabaseException;
 
+import freenet.node.stats.StoreAccessStats;
+
 public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
 
 	public NullFreenetStore(StoreCallback<T> callback) {
@@ -54,6 +56,36 @@ public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T
 
 	public long writes() {
 		return 0;
+	}
+
+	public StoreAccessStats getSessionAccessStats() {
+		return new StoreAccessStats() {
+
+			@Override
+			public long hits() {
+				return 0;
+			}
+
+			@Override
+			public long misses() {
+				return 0;
+			}
+
+			@Override
+			public long falsePos() {
+				return 0;
+			}
+
+			@Override
+			public long writes() {
+				return 0;
+			}
+			
+		};
+	}
+
+	public StoreAccessStats getTotalAccessStats() {
+		return null;
 	}
 
 }

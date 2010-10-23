@@ -10,7 +10,7 @@ import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;

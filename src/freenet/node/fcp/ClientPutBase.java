@@ -21,6 +21,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.Node;
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
@@ -63,6 +64,16 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public final static String SALT = "Salt";
 	public final static String FILE_HASH = "FileHash";
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
@@ -115,39 +126,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.realTimeFlag = realTimeFlag;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(this.uri);
-	}
-
-	public ClientPutBase(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws MalformedURLException {
-		super(fs, client2);
-		publicURI = getPublicURI(this.uri);
-		getCHKOnly = Fields.stringToBool(fs.get("CHKOnly"), false);
-		boolean dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
-		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
-		clientToken = fs.get("ClientToken");
-		finished = Fields.stringToBool(fs.get("Finished"), false);
-		//finished = false;
-		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
-		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
-		ctx.dontCompress = dontCompress;
-		ctx.eventProducer.addEventListener(this);
-		ctx.maxInsertRetries = maxRetries;
-		ctx.compressorDescriptor = fs.get("Codecs");
-		ctx.realTimeFlag = false;
-		String genURI = fs.get("GeneratedURI");
-		if(genURI != null)
-			generatedURI = new FreenetURI(genURI);
-		if(finished) {
-			String ctime = fs.get("CompletionTime");
-			if(ctime != null)
-				completionTime = Long.parseLong(ctime);
-			if(!succeeded)
-				putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
-		}
-		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
-		if(fs.get("ForkOnCacheable") != null)
-			ctx.forkOnCacheable = fs.getBoolean("ForkOnCacheable", false);
-		else
-			ctx.forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
 	}
 
 	private FreenetURI getPublicURI(FreenetURI uri) throws MalformedURLException {
@@ -214,7 +192,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				if(!uri.equals(generatedURI))
 					Logger.error(this, "onGeneratedURI("+uri+ ',' +state+") but already set generatedURI to "+generatedURI);
 				else
-					if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "onGeneratedURI() twice with same value: "+generatedURI+" -> "+uri);
+					if(logMINOR) Logger.minor(this, "onGeneratedURI() twice with same value: "+generatedURI+" -> "+uri);
 			} else {
 				generatedURI = uri;
 			}

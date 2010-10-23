@@ -18,6 +18,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.io.WritableToDataOutputStream;
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.Logger.LogLevel;
@@ -45,6 +46,17 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
     
     /** Code for 256-bit AES with PCFB and SHA-256 */
     public static final byte ALGO_AES_PCFB_256_SHA256 = 2;
+
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
     protected Key(byte[] routingKey) {
     	this.routingKey = routingKey;
@@ -155,7 +167,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 	    if(maxLength < 0)
 		    throw new IllegalArgumentException("maxlength="+maxLength);
         if(isCompressed) {
-        	if(Logger.shouldLog(LogLevel.MINOR, Key.class))
+        	if(logMINOR)
         		Logger.minor(Key.class, "Decompressing "+output.length+" bytes in decode with codec "+compressionAlgorithm);
             if(output.length < (shortLength ? 3 : 5)) throw new CHKDecodeException("No bytes to decompress");
             // Decompress

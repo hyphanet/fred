@@ -50,6 +50,16 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	protected int INTERVAL = Calendar.MINUTE;
 	protected int INTERVAL_MULTIPLIER = 5;
 
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
+
 	/** Name of the local host (called uname in Unix-like operating systems). */
 	private static String uname;
 	static {
@@ -276,7 +286,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 				System.err.println("Created log files");
 				startTime = gc.getTimeInMillis();
-		    	if(Logger.shouldLog(LogLevel.MINOR, this))
+		    	if(logMINOR)
 		    		Logger.minor(this, "Start time: "+gc+" -> "+startTime);
 				lastTime = startTime;
 				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
@@ -546,7 +556,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 				olf.filename.delete();
 				oldLogFilesDiskSpaceUsage -= olf.size;
-		    	if(Logger.shouldLog(LogLevel.MINOR, this))
+		    	if(logMINOR)
 		    		Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
 						" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
 			}
@@ -575,8 +585,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		File oldFile = null;
         if(latestFile.exists())
         	FileUtil.renameTo(latestFile, previousFile);
-        
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+
 		for(int i=0;i<files.length;i++) {
 			File f = files[i];
 			String name = f.getName();
@@ -1061,7 +1070,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			Iterator<OldLogFile> i = logFiles.iterator();
 			while(i.hasNext()) {
 				OldLogFile olf = i.next();
-		    	boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		    	if(logMINOR)
 		    		Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
 				if((time >= olf.start) && (time < olf.end)) {
@@ -1146,7 +1154,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 				olf.filename.delete();
 				oldLogFilesDiskSpaceUsage -= olf.size;
-				if(Logger.shouldLog(LogLevel.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
 							" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
 			}

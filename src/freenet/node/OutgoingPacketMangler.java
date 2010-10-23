@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.io.AddressTracker.Status;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.NotConnectedException;
@@ -118,7 +119,7 @@ public interface OutgoingPacketMangler {
 	 * Port forwarding status.
 	 * @return A status code from AddressTracker. FIXME make this more generic when we need to.
 	 */
-	public int getConnectivityStatus();
+	public Status getConnectivityStatus();
 
 	/**
 	 * Is there any reason not to allow this connection? E.g. limits on the number of nodes on

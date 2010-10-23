@@ -15,6 +15,7 @@ import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
@@ -50,7 +51,16 @@ public class BulkTransmitter {
 	private long finishTime=-1;
 	private String cancelReason;
 	private final ByteCounter ctr;
-	
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	/**
 	 * Create a bulk data transmitter.
 	 * @param prb The PartiallyReceivedBulk containing the file we want to send, or the part of it that we have so far.
@@ -99,7 +109,7 @@ public class BulkTransmitter {
 						public void onRestarted(PeerContext ctx) {
 							// Ignore
 						}
-			});
+			}, ctr);
 			prb.usm.addAsyncFilter(MessageFilter.create().setNoTimeout().setSource(peer).setType(DMT.FNPBulkReceivedAll).setField(DMT.UID, uid),
 					new AsyncMessageFilterCallback() {
 						public void onMatched(Message m) {
@@ -122,7 +132,7 @@ public class BulkTransmitter {
 						public void onRestarted(PeerContext ctx) {
 							// Ignore
 						}
-			});
+			}, ctr);
 		} catch (DisconnectedException e) {
 			cancel("Disconnected");
 			throw e;
@@ -164,7 +174,7 @@ public class BulkTransmitter {
 	}
 
 	public void cancel(String reason) {
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Cancelling "+this);
 		sendAbortedMessage();
 		synchronized(this) {
@@ -191,7 +201,6 @@ public class BulkTransmitter {
 	 * @return True if the file was successfully sent. False otherwise.
 	 */
 	public boolean send() {
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		long lastSentPacket = System.currentTimeMillis();
 outer:	while(true) {
 			if(prb.isAborted()) {
@@ -227,7 +236,7 @@ outer:	while(true) {
 							cancel("Packet send failed");
 							return false;
 						}
-						if(Logger.shouldLog(LogLevel.MINOR, this))
+						if(logMINOR)
 							Logger.minor(this, "Waiting for packets: remaining: "+inFlightPackets);
 						if(inFlightPackets == 0) break;
 						try {
@@ -323,12 +332,12 @@ outer:	while(true) {
 				if(failed) {
 					failedPacket = true;
 					BulkTransmitter.this.notifyAll();
-					if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Packet failed for "+BulkTransmitter.this);
+					if(logMINOR) Logger.minor(this, "Packet failed for "+BulkTransmitter.this);
 				} else {
 					inFlightPackets--;
 					if(inFlightPackets <= 0)
 						BulkTransmitter.this.notifyAll();
-					if(Logger.shouldLog(LogLevel.MINOR, this)) Logger.minor(this, "Packet sent "+BulkTransmitter.this+" remaining in flight: "+inFlightPackets);
+					if(logMINOR) Logger.minor(this, "Packet sent "+BulkTransmitter.this+" remaining in flight: "+inFlightPackets);
 				}
 			}
 		}

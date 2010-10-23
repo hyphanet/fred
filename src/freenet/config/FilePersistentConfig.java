@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
+import freenet.support.LogThresholdCallback;
 import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -33,6 +34,16 @@ public class FilePersistentConfig extends PersistentConfig {
 	final File tempFilename;
 	final protected String header;
 	protected final Object storeSync = new Object();
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 
 	public static FilePersistentConfig constructFilePersistentConfig(File f) throws IOException {
 		File filename = f;
@@ -142,7 +153,7 @@ public class FilePersistentConfig extends PersistentConfig {
 			throw new IllegalStateException("SHOULD NOT HAPPEN!!");
 
 		SimpleFieldSet fs = exportFieldSet();
-		if(Logger.shouldLog(LogLevel.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "fs = " + fs);
 		FileOutputStream fos = null;
 		try {

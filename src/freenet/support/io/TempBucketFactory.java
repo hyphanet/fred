@@ -11,19 +11,20 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
 import freenet.support.Executor;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import java.util.ArrayList;
 
 /**
  * Temporary Bucket Factory
@@ -52,7 +53,6 @@ public class TempBucketFactory implements BucketFactory {
 	private final RandomSource strongPRNG;
 	private final Random weakPRNG;
 	private final Executor executor;
-	private volatile boolean logMINOR;
 	private volatile boolean reallyEncrypt;
 	
 	/** How big can the defaultSize be for us to consider using RAMBuckets? */
@@ -66,6 +66,16 @@ public class TempBucketFactory implements BucketFactory {
 	final static int RAMBUCKET_CONVERSION_FACTOR = 4;
 	
 	final static boolean TRACE_BUCKET_LEAKS = false;
+
+        private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+			}
+		});
+	}
 	
 	public class TempBucket implements Bucket {
 		/** The underlying bucket itself */
@@ -77,7 +87,7 @@ public class TempBucketFactory implements BucketFactory {
 		/** A link to the "real" underlying outputStream, even if we migrated */
 		private OutputStream os = null;
 		/** All the open-streams to reset or close on migration or free() */
-		private final Vector<TempBucketInputStream> tbis;
+		private final ArrayList<TempBucketInputStream> tbis;
 		/** An identifier used to know when to deprecate the InputStreams */
 		private short osIndex;
 		/** A timestamp used to evaluate the age of the bucket and maybe consider it for a migration */
@@ -96,8 +106,8 @@ public class TempBucketFactory implements BucketFactory {
 			this.currentBucket = cur;
 			this.creationTime = now;
 			this.osIndex = 0;
-			this.tbis = new Vector<TempBucketInputStream>(1);
-			if(logMINOR) Logger.minor(this, "Created "+this, new Exception("debug"));
+			this.tbis = new ArrayList<TempBucketInputStream>(1);
+			if(logMINOR) Logger.minor(TempBucket.class, "Created "+this, new Exception("debug"));
 		}
 		
 		private synchronized void closeInputStreams(boolean forFree) {
@@ -177,10 +187,10 @@ public class TempBucketFactory implements BucketFactory {
 			// Hence we don't need to reset currentSize / _hasTaken() if a bucket is reused.
 			// FIXME we should migrate to disk rather than throwing.
 			hasWritten = true;
-			OutputStream os = new TempBucketOutputStream(++osIndex);
+			OutputStream tos = new TempBucketOutputStream(++osIndex);
 			if(logMINOR)
-				Logger.minor(this, "Got "+os+" for "+this, new Exception());
-			return os;
+				Logger.minor(this, "Got "+tos+" for "+this, new Exception());
+			return tos;
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
@@ -423,12 +433,13 @@ public class TempBucketFactory implements BucketFactory {
 		}
 		
 		@Override
-		protected void finalize() {
+		protected void finalize() throws Throwable {
 			if (!hasBeenFreed) {
 				if (TRACE_BUCKET_LEAKS)
 					Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this, tracer);
 				free();
 			}
+                        super.finalize();
 		}
 	}
 	
@@ -441,7 +452,6 @@ public class TempBucketFactory implements BucketFactory {
 		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
 		this.executor = executor;
-		this.logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
@@ -465,27 +475,22 @@ public class TempBucketFactory implements BucketFactory {
 	}
 	
 	public synchronized void setMaxRamUsed(long size) {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		maxRamUsed = size;
 	}
 	
 	public synchronized long getMaxRamUsed() {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		return maxRamUsed;
 	}
 	
 	public synchronized void setMaxRAMBucketSize(long size) {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		maxRAMBucketSize = size;
 	}
 	
 	public synchronized long getMaxRAMBucketSize() {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		return maxRAMBucketSize;
 	}
 	
 	public void setEncryption(boolean value) {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		reallyEncrypt = value;
 	}
 	
@@ -565,6 +570,8 @@ public class TempBucketFactory implements BucketFactory {
 		boolean shouldContinue = true;
 		// create a new list to avoid race-conditions
 		Queue<TempBucket> toMigrate = null;
+                if(logMINOR)
+			Logger.minor(this, "Starting cleanBucketQueue");
 		do {
 			synchronized(ramBucketQueue) {
 				final WeakReference<TempBucket> tmpBucketRef = ramBucketQueue.peek();

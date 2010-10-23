@@ -3,18 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
-import java.util.zip.GZIPInputStream;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -44,15 +38,14 @@ import freenet.node.RequestStarter;
 import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.Base64;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.Bucket;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
 /**
@@ -75,30 +68,20 @@ public class FCPServer implements Runnable {
 	final WeakHashMap<String, FCPClient> rebootClientsByName;
 	final FCPClient globalRebootClient;
 	FCPClient globalForeverClient;
-	private boolean enablePersistentDownloads;
-	private File persistentDownloadsFile;
-	private File persistentDownloadsTempFile;
-	/** Lock for persistence operations.
-	 * MUST ALWAYS BE THE OUTERMOST LOCK.
-	 */
-	private final Object persistenceSync = new Object();
 	final FetchContext defaultFetchContext;
 	public InsertContext defaultInsertContext;
 	public static final int QUEUE_MAX_RETRIES = -1;
 	public static final long QUEUE_MAX_DATA_SIZE = Long.MAX_VALUE;
 	private boolean assumeDownloadDDAIsAllowed;
 	private boolean assumeUploadDDAIsAllowed;
-	private boolean hasFinishedStart;
 	private final Whiteboard whiteboard=new Whiteboard();;
 	
-	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean persistentDownloadsEnabled, String persistentDownloadsDir, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, ObjectContainer container) throws IOException, InvalidConfigValueException {
+	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, ObjectContainer container) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
 		this.allowedHosts=allowedHosts;
 		this.allowedHostsFullAccess = new AllowedHosts(allowedHostsFullAccess);
 		this.port = port;
 		this.enabled = isEnabled;
-		this.enablePersistentDownloads = persistentDownloadsEnabled;
-		setPersistentDownloadsFile(new File(persistentDownloadsDir));
 		this.node = node;
 		this.core = core;
 		this.assumeDownloadDDAIsAllowed = assumeDDADownloadAllowed;
@@ -120,14 +103,6 @@ public class FCPServer implements Runnable {
 	public void load(ObjectContainer container) {
 		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, whiteboard, container);
 		globalForeverClient = persistentRoot.globalForeverClient;
-		
-		if(enabled && enablePersistentDownloads) {
-			Logger.error(this, "Persistent downloads enabled: attempting to migrate old persistent downloads to database...");
-			Logger.error(this, "Note that we will not write to downloads.dat.gz, we will read from it and rename it if migration is successful.");
-			loadPersistentRequests(container);
-		} else {
-			Logger.error(this, "Not loading persistent requests: enabled="+enabled+" enable persistent downloads="+enablePersistentDownloads);
-		}
 	}
 	
 	private void maybeGetNetworkInterface() {
@@ -334,24 +309,6 @@ public class FCPServer implements Runnable {
 		}		
 	}
 
-	static class PersistentDownloadsEnabledCallback extends BooleanCallback {
-		
-		boolean enabled;
-		
-		@Override
-		public Boolean get() {
-			return enabled;
-		}
-		
-		@Override
-		public void set(Boolean set) throws InvalidConfigValueException {
-			// This option will be removed completely soon, so there is little
-			// point in translating it. FIXME remove.
-			if(set.booleanValue() != enabled) throw new InvalidConfigValueException("Cannot disable/enable persistent download loading support on the fly");
-		}
-		
-	}
-
 	static class FCPAllowedHostsFullAccessCallback extends StringCallback  {
 		private final NodeClientCore node;
 		
@@ -372,23 +329,6 @@ public class FCPServer implements Runnable {
 		}
 		
 	}
-	static class PersistentDownloadsFileCallback extends StringCallback  {
-		
-		FCPServer server;
-		
-		@Override
-		public String get() {
-			return server.persistentDownloadsFile.toString();
-		}
-		
-		@Override
-		public void set(String val) throws InvalidConfigValueException {
-			File f = new File(val);
-			if(f.equals(server.persistentDownloadsFile)) return;
-			server.setPersistentDownloadsFile(f);
-		}
-	}
-
 	static class AssumeDDADownloadIsAllowedCallback extends BooleanCallback {
 		FCPServer server;
 
@@ -431,13 +371,6 @@ public class FCPServer implements Runnable {
 		fcpConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.bindTo", "FcpServer.bindToLong", new FCPBindtoCallback(core));
 		fcpConfig.register("allowedHosts", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.allowedHosts", "FcpServer.allowedHostsLong", new FCPAllowedHostsCallback(core));
 		fcpConfig.register("allowedHostsFullAccess", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.allowedHostsFullAccess", "FcpServer.allowedHostsFullAccessLong", new FCPAllowedHostsFullAccessCallback(core));
-		PersistentDownloadsFileCallback cb2;
-		PersistentDownloadsEnabledCallback enabledCB = new PersistentDownloadsEnabledCallback();
-		fcpConfig.register("persistentDownloadsEnabled", true, sortOrder++, true, true, "FcpServer.enablePersistentDownload", "FcpServer.enablePersistentDownloadLong", enabledCB);
-		fcpConfig.register("persistentDownloadsFile", "downloads.dat", sortOrder++, true, false, "FcpServer.filenameToStorePData", "FcpServer.filenameToStorePDataLong", cb2 = new PersistentDownloadsFileCallback());
-		String persistentDownloadsDir = fcpConfig.getString("persistentDownloadsFile");
-		boolean persistentDownloadsEnabled = fcpConfig.getBoolean("persistentDownloadsEnabled");
-		enabledCB.enabled = persistentDownloadsEnabled;
 		
 		AssumeDDADownloadIsAllowedCallback cb4;
 		AssumeDDAUploadIsAllowedCallback cb5;
@@ -448,59 +381,15 @@ public class FCPServer implements Runnable {
 			ssl = fcpConfig.getBoolean("ssl");
 		}
 		
-		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"), container);
+		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"), container);
 		
 		if(fcp != null) {
-			cb2.server = fcp;
 			cb4.server = fcp;
 			cb5.server = fcp;
 		}
 		
 		fcpConfig.finishedInitialization();
 		return fcp;
-	}
-
-	public void setPersistentDownloadsFile(File f) throws InvalidConfigValueException {
-		synchronized(persistenceSync) {
-			checkFile(f);
-			File temp = new File(f.getPath()+".tmp");
-			checkFile(temp);
-			// Else is ok
-			persistentDownloadsFile = f;
-			persistentDownloadsTempFile = temp;
-		}
-	}
-
-	private void checkFile(File f) throws InvalidConfigValueException {
-		if(f.isDirectory()) 
-			throw new InvalidConfigValueException(l10n("downloadsFileIsDirectory"));
-		if(f.isFile() && !(f.canRead() && f.canWrite()))
-			throw new InvalidConfigValueException(l10n("downloadsFileUnreadable"));
-		File parent = f.getParentFile();
-		if((parent != null) && !parent.exists())
-			throw new InvalidConfigValueException(l10n("downloadsFileParentDoesNotExist"));
-		if(!f.exists()) {
-			try {
-				if(!f.createNewFile()) {
-					if(f.exists()) {
-						if(!(f.canRead() && f.canWrite())) {
-							throw new InvalidConfigValueException(l10n("downloadsFileExistsCannotReadOrWrite"));
-						} // else ok
-					} else {
-						throw new InvalidConfigValueException(l10n("downloadsFileDoesNotExistCannotCreate"));
-					}
-				} else {
-					if(!(f.canRead() && f.canWrite())) {
-						throw new InvalidConfigValueException(l10n("downloadsFileCanCreateCannotReadOrWrite"));
-					}
-				}
-			} catch (IOException e) {
-				throw new InvalidConfigValueException(l10n("downloadsFileDoesNotExistCannotCreate")+ " : "+e.getLocalizedMessage());
-			} finally {
-				// Must be deleted, otherwise we will read from it and ignore the temp file => lose the queue.
-				f.delete();
-			}
-		}
 	}
 
 	private static String l10n(String key) {
@@ -552,70 +441,6 @@ public class FCPServer implements Runnable {
 		}
 		} else {
 			persistentRoot.maybeUnregisterClient(client, container);
-		}
-	}
-
-	private void loadPersistentRequests(ObjectContainer container) {
-		Logger.normal(this, "Loading persistent requests...");
-		FileInputStream fis = null;
-		BufferedInputStream bis = null;
-		GZIPInputStream gis = null;
-		try {
-			File file = new File(persistentDownloadsFile+".gz");
-			fis = new FileInputStream(file);
-			gis = new GZIPInputStream(fis);
-			bis = new BufferedInputStream(gis);
-			Logger.normal(this, "Loading persistent requests from "+file);
-			if (file.length() > 0) {
-				loadPersistentRequests(bis, container);
-			} else
-				throw new IOException("File empty"); // If it's empty, try the temp file.
-		} catch (IOException e) {
-			Logger.normal(this, "IOE : " + e.getMessage(), e);
-			File file = new File(persistentDownloadsTempFile+".gz");
-			Logger.normal(this, "Let's try to load "+file+" then.");
-			Closer.close(bis);
-			Closer.close(gis);
-			Closer.close(fis);
-			try {
-				fis = new FileInputStream(file);
-				bis = new BufferedInputStream(fis);
-				loadPersistentRequests(bis, container);
-			} catch (IOException e1) {
-				Logger.normal(this, "It's corrupted too : Not reading any persistent requests from disk: "+e1);
-				return;
-			}
-		} finally {
-			Closer.close(bis);
-			Closer.close(gis);
-			Closer.close(fis);
-		}
-	}
-	
-	private void loadPersistentRequests(InputStream is, ObjectContainer container) throws IOException {
-		synchronized(persistenceSync) {
-			InputStreamReader ris = new InputStreamReader(is, "UTF-8");
-			BufferedReader br = new BufferedReader(ris);
-			try {
-				String r = br.readLine();
-				int count;
-				try {
-					count = Integer.parseInt(r);
-				} catch(NumberFormatException e) {
-					Logger.error(this, "Corrupt persistent downloads file: cannot parse "+r+" as integer");
-					throw new IOException(e.toString());
-				}
-				for(int i = 0; i < count; i++) {
-					WrapperManager.signalStarting(20 * 60 * 1000);  // 20 minutes per request; must be >ds lock timeout (10 minutes)
-					System.out.println("Loading persistent request " + (i + 1) + " of " + count + "..."); // humans count from 1..
-					ClientRequest.readAndRegister(br, this, container, core.clientContext);
-				}
-				Logger.normal(this, "Loaded "+count+" persistent requests");
-			}
-			finally {
-				Closer.close(br);
-				Closer.close(ris);
-			}
 		}
 	}
 
@@ -929,43 +754,6 @@ public class FCPServer implements Runnable {
 	}
 
 	/**
-	 * Start requests which were not started immediately because it might have taken
-	 * some time to start them.
-	 */
-	public void finishStart() {
-		if(enablePersistentDownloads) {
-			boolean movedMain = false;
-			if(logMINOR) {
-				Logger.minor(this, "Persistent downloads file should be "+persistentDownloadsFile);
-				Logger.minor(this, "Persistent downloads temp file should be "+persistentDownloadsTempFile);
-			}
-			File from = new File(persistentDownloadsFile.getPath()+".gz");
-			File fromTemp = new File(persistentDownloadsTempFile.getPath()+".gz");
-			// Rename
-			if(from.exists()) {
-				File target = new File(from.getPath()+".old.pre-db4o");
-				if(logMINOR)
-					Logger.minor(this, "Trying to move "+persistentDownloadsFile+" to "+target);
-				if(from.renameTo(target)) {
-					Logger.error(this, "Successfully migrated persistent downloads and renamed "+from.getName()+" to "+target.getName());
-					movedMain = true;
-				}
-			}
-			if(fromTemp.exists()) {
-				File target = new File(fromTemp.getPath()+".old.pre-db4o");
-				if(logMINOR)
-					Logger.minor(this, "Trying to move "+fromTemp+" to "+target);
-				if(fromTemp.renameTo(target) && !movedMain)
-					Logger.error(this, "Successfully migrated persistent downloads and renamed "+fromTemp.getName()+" to "+target.getName());
-			}
-			
-		}
-		
-		hasFinishedStart = true;
-	}
-	
-	
-	/**
 	 * Returns the global FCP client.
 	 * 
 	 * @return The global FCP client
@@ -989,10 +777,6 @@ public class FCPServer implements Runnable {
 		return assumeUploadDDAIsAllowed;
 	}
 
-	public boolean hasFinishedStart() {
-		return hasFinishedStart;
-	}
-	
 	public void setCompletionCallback(RequestCompletionCallback cb) {
 		if(globalForeverClient != null)
 			globalForeverClient.addRequestCompletionCallback(cb);
@@ -1058,10 +842,10 @@ public class FCPServer implements Runnable {
 		}
 	}
 	
-	public boolean restartBlocking(final String identifier, final boolean filterData) throws DatabaseDisabledException {
+	public boolean restartBlocking(final String identifier, final boolean disableFilterData) throws DatabaseDisabledException {
 		ClientRequest req = globalRebootClient.getRequest(identifier, null);
 		if(req != null) {
-			req.restart(filterData, null, core.clientContext);
+			req.restart(null, core.clientContext, disableFilterData);
 			return true;
 		} else {
 			class OutputWrapper {
@@ -1080,7 +864,7 @@ public class FCPServer implements Runnable {
 					try {
 						ClientRequest req = globalForeverClient.getRequest(identifier, container);
 						if(req != null) {
-							req.restart(filterData, container, context);
+							req.restart(container, context, disableFilterData);
 							success = true;
 						}
 					} catch (DatabaseDisabledException e) {

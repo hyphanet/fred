@@ -23,7 +23,7 @@ import freenet.node.NodeStats.ByteCountersSnapshot;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
-import freenet.node.stats.NodeStoreStats;
+import freenet.node.stats.StoreLocationStats;
 import freenet.node.stats.StatsNotAvailableException;
 import freenet.store.CHKStore;
 import freenet.support.HTMLNode;
@@ -344,7 +344,7 @@ public class NodeStats implements Persistable {
 		},false);
 		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
 
-		myMemoryChecker = new MemoryChecker(node.ps, aggressiveGCModificator);
+		myMemoryChecker = new MemoryChecker(node.getTicker(), aggressiveGCModificator);
 		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "NodeStat.memCheck", "NodeStat.memCheckLong",
 				new BooleanCallback(){
 					@Override
@@ -429,7 +429,7 @@ public class NodeStats implements Persistable {
 		});
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false,
-				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps, node.getRunDir());
+				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ticker, node.getRunDir());
 
 		SimpleFieldSet throttleFS = persister.read();
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
@@ -2542,8 +2542,8 @@ public class NodeStats implements Persistable {
 	 *
 	 * @return stats for CHK Store
 	 */
-	public NodeStoreStats chkStoreStats() {
-		return new NodeStoreStats() {
+	public StoreLocationStats chkStoreStats() {
+		return new StoreLocationStats() {
 			public double avgLocation() {
 				return avgStoreCHKLocation.currentValue();
 			}
@@ -2571,8 +2571,8 @@ public class NodeStats implements Persistable {
 	 *
 	 * @return CHK cache stats
 	 */
-	public NodeStoreStats chkCacheStats() {
-		return new NodeStoreStats() {
+	public StoreLocationStats chkCacheStats() {
+		return new StoreLocationStats() {
 			public double avgLocation() {
 				return avgCacheCHKLocation.currentValue();
 			}
@@ -2600,8 +2600,8 @@ public class NodeStats implements Persistable {
 	 *
 	 * @return CHK Slashdotcache stats
 	 */
-	public NodeStoreStats chkSlashDotCacheStats() {
-		return new NodeStoreStats() {
+	public StoreLocationStats chkSlashDotCacheStats() {
+		return new StoreLocationStats() {
 			public double avgLocation() {
 				return avgSlashdotCacheCHKLocation.currentValue();
 			}
@@ -2629,8 +2629,8 @@ public class NodeStats implements Persistable {
 	 *
 	 * @return CHK ClientCache stats
 	 */
-	public NodeStoreStats chkClientCacheStats() {
-		return new NodeStoreStats() {
+	public StoreLocationStats chkClientCacheStats() {
+		return new StoreLocationStats() {
 			public double avgLocation() {
 				return avgClientCacheCHKLocation.currentValue();
 			}
@@ -2658,8 +2658,8 @@ public class NodeStats implements Persistable {
 	 *
 	 * @return stats for SSK Store
 	 */
-	public NodeStoreStats sskStoreStats() {
-		return new NodeStoreStats() {
+	public StoreLocationStats sskStoreStats() {
+		return new StoreLocationStats() {
 			public double avgLocation() {
 				return avgStoreSSKLocation.currentValue();
 			}
@@ -2687,8 +2687,8 @@ public class NodeStats implements Persistable {
 	 *
 	 * @return SSK cache stats
 	 */
-	public NodeStoreStats sskCacheStats() {
-		return new NodeStoreStats() {
+	public StoreLocationStats sskCacheStats() {
+		return new StoreLocationStats() {
 			public double avgLocation() {
 				return avgCacheSSKLocation.currentValue();
 			}
@@ -2716,8 +2716,8 @@ public class NodeStats implements Persistable {
 	 *
 	 * @return SSK Slashdotcache stats
 	 */
-	public NodeStoreStats sskSlashDotCacheStats() {
-		return new NodeStoreStats() {
+	public StoreLocationStats sskSlashDotCacheStats() {
+		return new StoreLocationStats() {
 			public double avgLocation() {
 				return avgSlashdotCacheSSKLocation.currentValue();
 			}
@@ -2745,8 +2745,8 @@ public class NodeStats implements Persistable {
 	 *
 	 * @return SSK ClientCache stats
 	 */
-	public NodeStoreStats sskClientCacheStats() {
-		return new NodeStoreStats() {
+	public StoreLocationStats sskClientCacheStats() {
+		return new StoreLocationStats() {
 			public double avgLocation() {
 				return avgClientCacheSSKLocation.currentValue();
 			}

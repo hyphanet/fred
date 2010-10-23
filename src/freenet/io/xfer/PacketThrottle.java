@@ -150,7 +150,7 @@ public class PacketThrottle {
 	
 	/** 
 	 * Send a throttled message.
-	 * @param cbForAsyncSend Callback to call when we send the message, etc. We will try
+	 * @param cbForAsyncSend cbForAsyncSend Callback to call when we send the message, etc. We will try
 	 * to call it even if we throw an exception etc. The caller may want to do this too,
 	 * in which case the callback should ignore multiple calls, which is a good idea 
 	 * anyway.

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
+import freenet.io.AddressTracker.Status;
 import freenet.io.comm.Peer.LocalAddressException;
 
 /**
@@ -33,6 +34,6 @@ public interface PacketSocketHandler extends SocketHandler {
 	public int getPacketSendThreshold();
 
 	/** Does this port appear to be port forwarded? @see AddressTracker */
-	int getDetectedConnectivityStatus();
+	Status getDetectedConnectivityStatus();
 
 }

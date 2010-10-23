@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
@@ -18,6 +19,18 @@ public class DNSRequester implements Runnable {
     private long lastLogTime;
     // Only set when doing simulations.
     static boolean DISABLE = false;
+
+
+    private static volatile boolean logMINOR;
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+            }
+        });
+    }
 
     DNSRequester(Node node) {
         this.node = node;
@@ -47,7 +60,7 @@ public class DNSRequester implements Runnable {
         PeerNode[] nodes = node.peers.myPeers;
         long now = System.currentTimeMillis();
         if((now - lastLogTime) > 1000) {
-        	if(Logger.shouldLog(LogLevel.MINOR, this))
+        	if(logMINOR)
         		Logger.minor(this, "Processing DNS Requests (log rate-limited)");
             lastLogTime = now;
         }
