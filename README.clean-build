@@ -33,6 +33,9 @@ most tedious step and needs to be done *before* the below command.
 
 == Clean-building ==
 
+You need to install both ant and ant-optional. If you are running Java 5, you
+also need to install js.jar from rhino[3]. (Java 6+ includes this already.)
+
 The pre-compiled components are freenet-ext.jar (ext) and the GWT-generated
 javascript (gjs). To do a clean-build of all of these from within the fred
 repository, run:
@@ -44,3 +47,4 @@ Be sure to note point (C) in the section above.
 [1] However, you still need to trust your compiler and operating system; see
 Ken Thompson's "Reflections on Trusting Trust".
 [2] http://packages.debian.org/source/sid/gwt
+[3] http://www.mozilla.org/rhino/
