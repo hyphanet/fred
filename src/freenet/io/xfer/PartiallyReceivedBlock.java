@@ -142,7 +142,10 @@ public class PartiallyReceivedBlock {
 	}
 
 	public synchronized boolean allReceived() throws AbortedException {
-		if(_receivedCount == _packets) return true;
+		if(_receivedCount == _packets) {
+			if(logDEBUG) Logger.debug(this, "Received "+_receivedCount+" of "+_packets);
+			return true;
+		}
 		if (_aborted) {
 			throw new AbortedException("PRB is aborted");
 		}
@@ -173,7 +176,7 @@ public class PartiallyReceivedBlock {
 		PacketReceivedListener[] listeners;
 		synchronized(this) {
 			if(_aborted) {
-				if(logMINOR) Logger.minor(this, "Already aborted");
+				if(logMINOR) Logger.minor(this, "Already aborted "+this+" : reason="+_abortReason+" description="+_abortDescription);
 				return;
 			}
 			if(_receivedCount == _packets) {

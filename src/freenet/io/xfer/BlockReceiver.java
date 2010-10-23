@@ -127,6 +127,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	// This prevents malicious or broken nodes from trickling transfers forever by sending the same packets over and over.
 	static final boolean CHECK_DUPES = true;
 	
+	private boolean gotAllSent;
+	
 	private AsyncMessageFilterCallback notificationWaiter = new SlowAsyncMessageFilterCallback() {
 
 		public void onMatched(Message m1) {
@@ -151,6 +153,9 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				Buffer data = (Buffer) m1.getObject(DMT.DATA);
 				int missing = 0;
 				try {
+					synchronized(BlockReceiver.this) {
+						if(completed) return;
+					}
 					if(CHECK_DUPES && _prb.isReceived(packetNo)) {
 						// Transmitter sent the same packet twice?!?!?
 						Logger.error(this, "Already received the packet - DoS??? on "+this+" uid "+_uid+" from "+_sender);
@@ -173,10 +178,14 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 					complete(RetrievalException.UNKNOWN, "Aborted?");
 					return;
 				}
-			}
-			if(m1.getSpec().equals(DMT.allSent)) {
-				onTimeout();
-				return;
+			} else if (m1 != null && m1.getSpec().equals(DMT.allSent)) {
+				synchronized(BlockReceiver.this) {
+					if(completed) return;
+					if(gotAllSent)
+						// Multiple allSent's don't extend the timeouts.
+						truncateTimeout = true;
+					gotAllSent = true;
+				}
 			}
 			try {
 				if(_prb.allReceived()) {
@@ -259,6 +268,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			completed = true;
 		}
+		if(logMINOR)
+			Logger.minor(this, "Transfer failed: "+reason+" : "+description);
 		_prb.removeListener(myListener);
 		_prb.abort(reason, description);
 		// Send the abort whether we have received one or not.
@@ -303,7 +314,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		}
 		_usm.addAsyncFilter(relevantMessages(timeout), notificationWaiter, _ctr);
 	}
-	
+
 	private MessageFilter relevantMessages(int timeout) {
 		MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(timeout).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
 		MessageFilter mfAllSent = MessageFilter.create().setTimeout(timeout).setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
@@ -403,14 +414,20 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	static int runningBlockReceives = 0;
 	
-	private static synchronized void incRunningBlockReceives() {
-		runningBlockReceives++;
-		if(logMINOR) Logger.minor(BlockTransmitter.class, "Started a block receive, running: "+runningBlockReceives);
+	private void incRunningBlockReceives() {
+		if(logMINOR) Logger.minor(this, "Starting block receive "+_uid);
+		synchronized(BlockReceiver.class) {
+			runningBlockReceives++;
+			if(logMINOR) Logger.minor(BlockTransmitter.class, "Started a block receive, running: "+runningBlockReceives);
+		}
 	}
 	
-	private static synchronized void decRunningBlockReceives() {
-		runningBlockReceives--;
-		if(logMINOR) Logger.minor(BlockTransmitter.class, "Finished a block receive, running: "+runningBlockReceives);
+	private void decRunningBlockReceives() {
+		if(logMINOR) Logger.minor(this, "Stopping block receive "+_uid);
+		synchronized(BlockReceiver.class) {
+			runningBlockReceives--;
+			if(logMINOR) Logger.minor(BlockTransmitter.class, "Finished a block receive, running: "+runningBlockReceives);
+		}
 	}
 
 	public synchronized static int getRunningReceives() {

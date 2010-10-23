@@ -8,7 +8,7 @@ package freenet.node.stats;
  *
  * @author nikotyan
  */
-public interface NodeStoreStats {
+public interface StoreLocationStats {
 
 	double avgLocation() throws StatsNotAvailableException;
 

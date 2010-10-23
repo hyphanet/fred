@@ -17,20 +17,6 @@ public interface DataStoreStats {
 
 	public double utilization();
 
-	public long readRequests();
-
-	public long successfulReads();
-
-	public double successRate() throws StatsNotAvailableException;
-
-	public long writes();
-
-	public double accessRate(long nodeUptimeSeconds);
-
-	public double writeRate(long nodeUptimeSeconds);
-
-	public long falsePos();
-
 	double avgLocation() throws StatsNotAvailableException;
 
 	double avgSuccess() throws StatsNotAvailableException;
@@ -40,4 +26,9 @@ public interface DataStoreStats {
 	double avgDist() throws StatsNotAvailableException;
 
 	double distanceStats() throws StatsNotAvailableException;
+	
+	StoreAccessStats getSessionAccessStats();
+	
+	StoreAccessStats getTotalAccessStats() throws StatsNotAvailableException;
+
 }

@@ -40,6 +40,7 @@ import freenet.crypt.RandomSource;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.node.stats.StoreAccessStats;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -2344,4 +2345,35 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		} 
 		 */
 	}
+    
+	public StoreAccessStats getSessionAccessStats() {
+		return new StoreAccessStats() {
+
+			@Override
+			public long hits() {
+				return hits;
+			}
+
+			@Override
+			public long misses() {
+				return misses;
+			}
+
+			@Override
+			public long falsePos() {
+				return 0;
+			}
+
+			@Override
+			public long writes() {
+				return writes;
+			}
+			
+		};
+	}
+
+	public StoreAccessStats getTotalAccessStats() {
+		return null;
+	}
+
 }

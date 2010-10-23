@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import com.sleepycat.je.DatabaseException;
 
+import freenet.node.stats.StoreAccessStats;
+
 /**
  * Datastore interface
  */
@@ -72,4 +74,8 @@ public interface FreenetStore<T extends StorableBlock> {
 	 * @return <code>false</code> <b>only</b> if the key does not exist in store.
 	 */
 	public boolean probablyInStore(byte[] routingKey);
+
+	public abstract StoreAccessStats getSessionAccessStats();
+
+	public abstract StoreAccessStats getTotalAccessStats();
 }
