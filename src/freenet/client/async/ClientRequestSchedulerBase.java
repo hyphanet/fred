@@ -165,6 +165,7 @@ abstract class ClientRequestSchedulerBase {
 				if(logMINOR)
 					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
 				clientGrabber.addGrabber(client, requestGrabber, container, context);
+				// FIXME unnecessary as it knows its parent and addGrabber() will call it???
 				context.cooldownTracker.clearCachedWakeup(clientGrabber, persistent(), container);
 			}
 			requestGrabber.add(cr, req, container, context);
@@ -218,6 +219,14 @@ abstract class ClientRequestSchedulerBase {
 			// FIXME call getSendableRequests() and do the sorting in ClientRequestScheduler.reregisterAll().
 			if(isInsert != isInsertScheduler || req.isSSK() != isSSKScheduler) {
 				if(persistent()) container.deactivate(req, 1);
+				continue;
+			}
+			if(req.isStorageBroken(container)) {
+				Logger.error(this, "Broken request while changing priority: "+req);
+				continue;
+			}
+			if(req.persistent() != persistent()) {
+				Logger.error(this, "Request persistence is "+req.persistent()+" but scheduler's is "+persistent()+" on "+this+" for "+req);
 				continue;
 			}
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.

@@ -11,6 +11,7 @@ import com.sleepycat.je.DatabaseException;
 
 import freenet.keys.KeyVerifyException;
 import freenet.node.Ticker;
+import freenet.node.stats.StoreAccessStats;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LogThresholdCallback;
@@ -248,4 +249,35 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	public synchronized void setLifetime(Long val) {
 		maxLifetime = val;
 	}
+	
+	public StoreAccessStats getSessionAccessStats() {
+		return new StoreAccessStats() {
+
+			@Override
+			public long hits() {
+				return hits;
+			}
+
+			@Override
+			public long misses() {
+				return misses;
+			}
+
+			@Override
+			public long falsePos() {
+				return 0;
+			}
+
+			@Override
+			public long writes() {
+				return writes;
+			}
+			
+		};
+	}
+
+	public StoreAccessStats getTotalAccessStats() {
+		return null;
+	}
+
 }
