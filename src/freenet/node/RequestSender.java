@@ -304,6 +304,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                			br.receive(new BlockReceiverCompletion() {
                				
 							public void blockReceived(byte[] data) {
+                				synchronized(RequestSender.this) {
+                					transferringFrom = null;
+                				}
+                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
 		                		try {
 			                		// Received data
 			               			p.transferSuccess();
@@ -318,16 +322,15 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		                		} catch (Throwable t) {
 		                			Logger.error(this, "Failed on "+this, t);
 		                			finish(INTERNAL_ERROR, p, true);
-	                			} finally {
-	                				synchronized(RequestSender.this) {
-	                					transferringFrom = null;
-	                				}
-	                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
 		                		}
 							}
 
 							public void blockReceiveFailed(
 									RetrievalException e) {
+                				synchronized(RequestSender.this) {
+                					transferringFrom = null;
+                				}
+                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
 								try {
 									if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 										Logger.normal(this, "Transfer failed (disconnect): "+e, e);
@@ -342,11 +345,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		                		} catch (Throwable t) {
 		                			Logger.error(this, "Failed on "+this, t);
 		                			finish(INTERNAL_ERROR, p, true);
-	                			} finally {
-	                				synchronized(RequestSender.this) {
-	                					transferringFrom = null;
-	                				}
-	                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
 		                		}
 							}
                 				
@@ -828,11 +826,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				transferTime = tEnd - tStart;
                 				boolean turtle;
                 				boolean turtleBackedOff;
-                				synchronized(this) {
+                				synchronized(RequestSender.this) {
                 					turtle = turtleMode;
                 					turtleBackedOff = sentBackoffTurtle;
                 					sentBackoffTurtle = true;
+                					transferringFrom = null;
                 				}
+                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 				if(!turtle)
                 					sentTo.transferSuccess();
                 				else {
@@ -861,11 +861,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			} catch (Throwable t) {
 	                			Logger.error(this, "Failed on "+this, t);
 	                			finish(INTERNAL_ERROR, sentTo, true);
-                			} finally {
-                				synchronized(RequestSender.this) {
-                					transferringFrom = null;
-                				}
-                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 			}
                 		}
                 		
@@ -873,9 +868,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				RetrievalException e) {
                 			try {
                 				boolean turtle;
-                				synchronized(this) {
+                				synchronized(RequestSender.this) {
                 					turtle = turtleMode;
+                					transferringFrom = null;
                 				}
+                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 				if(turtle) {
                 					if(e.getReason() != RetrievalException.GONE_TO_TURTLE_MODE) {
                 						Logger.normal(this, "TURTLE FAILED: "+key+" for "+this+" : "+e);
@@ -891,6 +888,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				else
                 					// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
                 					Logger.normal(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+sentTo, e);
+                				// We do an ordinary backoff in all cases.
+                				// This includes the case where we decide not to turtle the request. This is reasonable as if it had completely quickly we wouldn't have needed to make that choice.
                 				sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 				finish(TRANSFER_FAILED, sentTo, false);
                 				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
@@ -898,6 +897,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				boolean timeout = (!br.senderAborted()) &&
                 				(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
                 						|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT);
+                				// But we only do a transfer backoff (which is separate, and starts at a higher threshold) if we timed out i.e. not if upstream turtled.
                 				if(timeout) {
                 					// Looks like a timeout. Backoff, even if it's a turtle.
                 					if(logMINOR) Logger.minor(this, "Timeout transferring data : "+e, e);
@@ -912,11 +912,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			} catch (Throwable t) {
 	                			Logger.error(this, "Failed on "+this, t);
 	                			finish(INTERNAL_ERROR, sentTo, true);
-                			} finally {
-                				synchronized(RequestSender.this) {
-                					transferringFrom = null;
-                				}
-                				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 			}
                 		}
                 		
@@ -1176,6 +1171,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	boolean turtle;
     	
         synchronized(this) {
+        	if(status != NOT_FINISHED) {
+        		if(logMINOR) Logger.minor(this, "Status already set to "+status+" - returning on "+this+" would be setting "+code+" from "+next);
+        		return;
+        	}
             status = code;
             notifyAll();
             turtle = turtleMode;
@@ -1561,8 +1560,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		return transferringFrom;
 	}
 
-	public void killTurtle() {
-		prb.abort(RetrievalException.TURTLE_KILLED, "Too many turtles / already have turtles for this key");
+	public void killTurtle(String description) {
+		prb.abort(RetrievalException.TURTLE_KILLED, description);
 		node.failureTable.onFinalFailure(key, transferringFrom(), htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 

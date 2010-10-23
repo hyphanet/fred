@@ -7,6 +7,7 @@ import java.util.Enumeration;
 import com.sleepycat.je.DatabaseException;
 
 import freenet.keys.KeyVerifyException;
+import freenet.node.stats.StoreAccessStats;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
@@ -168,4 +169,35 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 			}
 		}
 	}
+	
+	public StoreAccessStats getSessionAccessStats() {
+		return new StoreAccessStats() {
+
+			@Override
+			public long hits() {
+				return hits;
+			}
+
+			@Override
+			public long misses() {
+				return misses;
+			}
+
+			@Override
+			public long falsePos() {
+				return 0;
+			}
+
+			@Override
+			public long writes() {
+				return writes;
+			}
+			
+		};
+	}
+
+	public StoreAccessStats getTotalAccessStats() {
+		return null;
+	}
+
 }

@@ -8,7 +8,7 @@ package freenet.node.stats;
  *
  * @author nikotyan
  */
-public class NotAvailNodeStoreStats implements NodeStoreStats {
+public class NotAvailNodeStoreStats implements StoreLocationStats {
 	public double avgLocation() throws StatsNotAvailableException {
 		throw new StatsNotAvailableException();
 	}
