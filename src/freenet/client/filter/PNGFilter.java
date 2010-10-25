@@ -17,9 +17,6 @@ import java.util.HashMap;
 import java.util.zip.CRC32;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.BitArray;
-import freenet.support.ByteBufferInputStream;
-import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -27,8 +24,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 
 /**
  * Content filter for PNG's. Only allows valid chunks (valid CRC, known chunk type).
@@ -115,13 +110,12 @@ public class PNGFilter implements ContentDataFilter {
 
 			// Check the chunks :
 			// @see http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.Summary-of-standard-chunks
-			boolean finished = false;
 			boolean hasSeenIHDR = false;
 			boolean hasSeenIEND = false;
 			boolean hasSeenIDAT = false;
 			String lastChunkType = "";
 
-			while (!finished) {
+			while (dis.available() > 0) {
 				boolean skip = false;
 				if (baos != null)
 					baos.reset();
@@ -341,9 +335,9 @@ public class PNGFilter implements ContentDataFilter {
 		InputStream inputStream = null;
 		OutputStream outputStream = null;
 		try {
-			inputStream = new BufferedInputStream(inputBucket.getInputStream());
-			outputStream = new BufferedOutputStream(outputBucket.getOutputStream());
-			Logger.setupStdoutLogging(LogLevel.DEBUG, "");
+			inputStream = inputBucket.getInputStream();
+			outputStream = outputBucket.getOutputStream();
+			Logger.setupStdoutLogging(LogLevel.MINOR, "");
                         Logger.registerClass(PNGFilter.class);
 
 			ContentFilter.filter(inputStream, outputStream, "image/png",
