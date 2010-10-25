@@ -143,6 +143,19 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("caption-side");
 		allelementVerifiers.add("clear");
 		allelementVerifiers.add("clip");
+                allelementVerifiers.add("column-break-before");
+                allelementVerifiers.add("column-break-after");
+                allelementVerifiers.add("column-break-inside");
+                allelementVerifiers.add("column-count");
+                allelementVerifiers.add("column-fill");
+                allelementVerifiers.add("column-gap");
+                allelementVerifiers.add("column-rule-color");
+                allelementVerifiers.add("column-rule-style");
+                allelementVerifiers.add("column-rule-width");
+                allelementVerifiers.add("column-span");
+//                allelementVerifiers.add("column-rule");
+                allelementVerifiers.add("column-width");
+//                allelementVerifiers.add("columns");
 		allelementVerifiers.add("color");
 		allelementVerifiers.add("content");
 		allelementVerifiers.add("counter-increment");
@@ -439,7 +452,63 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"sh"}));
 			allelementVerifiers.remove(element);
 		}
-		else if("color".equalsIgnoreCase(element))
+                else if("column-break-after".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","always","avoid","left","right", "page", "column", "avoid-page", "avoid-column" },ElementInfo.VISUALPAGEDMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("column-break-before".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","always","avoid","left","right", "page", "column", "avoid-page", "avoid-column" },ElementInfo.VISUALPAGEDMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("column-break-inside".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","avoid","avoid-page", "avoid-column"},ElementInfo.VISUALPAGEDMEDIA));
+			allelementVerifiers.remove(element);
+		}
+                else if("column-count".equalsIgnoreCase(element))
+                {
+                        elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
+			allelementVerifiers.remove(element);
+                }
+                else if("column-fill".equalsIgnoreCase(element))
+                {
+                        elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto", "balance"},ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+                }
+                else if("column-gap".equalsIgnoreCase(element))
+                {
+                        elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
+			allelementVerifiers.remove(element);
+                }
+                else if("column-rule-color".equalsIgnoreCase(element))
+                {
+
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"}));
+			allelementVerifiers.remove(element);
+                }
+                else if("column-rule-style".equalsIgnoreCase(element))
+                {
+                        elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"13<1,4>"}));
+			allelementVerifiers.remove(element);
+                }
+                else if("column-rule-width".equalsIgnoreCase(element))
+                {
+                        elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"14<1,4>"}));
+			allelementVerifiers.remove(element);
+                }
+                else if("column-span".equalsIgnoreCase(element))
+                {
+                        elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"1", "all"},ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+                }
+                else if("column-width".equalsIgnoreCase(element)) 
+                {
+                        elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
+			allelementVerifiers.remove(element);
+                }
+                else if ("color".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"}));
 			allelementVerifiers.remove(element);
@@ -937,8 +1006,6 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"in"}));
 			allelementVerifiers.remove(element);
 		}
-
-
 	}
 
 
