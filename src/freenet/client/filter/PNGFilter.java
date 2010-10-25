@@ -339,7 +339,6 @@ public class PNGFilter implements ContentDataFilter {
 			inputStream = inputBucket.getInputStream();
 			outputStream = outputBucket.getOutputStream();
 			Logger.setupStdoutLogging(LogLevel.MINOR, "");
-                        Logger.registerClass(PNGFilter.class);
 
 			ContentFilter.filter(inputStream, outputStream, "image/png",
 					new URI("http://127.0.0.1:8888/"), null, null, null);
