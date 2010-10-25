@@ -8,11 +8,14 @@ import java.io.IOException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 class Persister implements Runnable {
+        private static volatile boolean logMINOR;
+        static {
+            Logger.registerClass(Persister.class);
+        }
 
 	Persister(Persistable t, File persistTemp, File persistTarget, Ticker ps) {
 		this.persistable = t;
@@ -56,24 +59,23 @@ class Persister implements Runnable {
 	}
 	
 	private void persistThrottle() {
-		boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Trying to persist throttles...");
+		if (logMINOR) {
+			Logger.minor(this, "Trying to persist throttles...");
+		}
 		SimpleFieldSet fs = persistable.persistThrottlesToFieldSet();
+		FileOutputStream fos = null;
 		try {
-			FileOutputStream fos = new FileOutputStream(persistTemp);
-			try {
-				fs.writeTo(fos);
-				fos.close();
-				FileUtil.renameTo(persistTemp, persistTarget);
-			} catch (IOException e) {
-				persistTemp.delete();
-			} finally {
-				Closer.close(fos);
-			}
+			fos = new FileOutputStream(persistTemp);
+			fs.writeTo(fos);
+			fos.close();
+			FileUtil.renameTo(persistTemp, persistTarget);
 		} catch (FileNotFoundException e) {
-			Logger.error(this, "Could not store throttle data to disk: "+e, e);
-			return;
-                }
+			Logger.error(this, "Could not store throttle data to disk: " + e, e);
+		} catch (IOException e) {
+			persistTemp.delete();
+		} finally {
+			Closer.close(fos);
+		}
 	}
 
 	public SimpleFieldSet read() {

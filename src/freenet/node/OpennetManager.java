@@ -700,7 +700,7 @@ public class OpennetManager {
 		oldPeers.push(pn);
 	}
 
-	String getOldPeersFilename() {
+	final String getOldPeersFilename() {
 		return node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString();
 	}
 

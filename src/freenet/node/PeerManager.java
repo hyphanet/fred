@@ -37,7 +37,6 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -51,7 +50,10 @@ import freenet.support.io.FileUtil;
  */
 public class PeerManager {
 
-	private static boolean logMINOR;
+        private static volatile boolean logMINOR;
+        static {
+            Logger.registerClass(PeerManager.class);
+        }
 	/** Our Node */
 	final Node node;
 	/** All the peers we want to connect to */
@@ -59,8 +61,12 @@ public class PeerManager {
 	/** All the peers we are actually connected to */
 	PeerNode[] connectedPeers;
 	private String darkFilename;
-	private String openFilename;
-	private PeerManagerUserAlert ua;	// Peers stuff
+        private String openFilename;
+        private String oldOpennetPeersFilename;
+        private int darknetPeersStringCache = -1;
+        private int opennetPeersStringCache = -1;
+        private int oldOpennetPeersStringCache = -1;
+        private PeerManagerUserAlert ua;	// Peers stuff
 	/** age of oldest never connected peer (milliseconds) */
 	private long oldestNeverConnectedDarknetPeerAge;
 	/** Next time to update oldestNeverConnectedPeerAge */
@@ -123,7 +129,6 @@ public class PeerManager {
 	 */
 	public PeerManager(Node node) {
 		Logger.normal(this, "Creating PeerManager");
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		peerNodeStatuses = new HashMap<Integer, HashSet<PeerNode>>();
 		peerNodeStatusesDarknet = new HashMap<Integer, HashSet<PeerNode>>();
 		peerNodeRoutingBackoffReasons = new HashMap<String, HashSet<PeerNode>>();
@@ -273,7 +278,8 @@ public class PeerManager {
 		if(pn.recordStatus())
 			addPeerNodeStatus(pn.getPeerNodeStatus(), pn, false);
 		pn.setPeerNodeStatus(System.currentTimeMillis());
-		updatePMUserAlert();
+		if(!pn.isSeed())
+                    updatePMUserAlert();
 		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
 			OpennetManager opennet = node.getOpennet();
 			if(opennet != null)
@@ -284,7 +290,6 @@ public class PeerManager {
 				return false;
 			}
 		}
-
 		notifyPeerStatusChangeListeners();
 		return true;
 	}
@@ -342,7 +347,7 @@ public class PeerManager {
 			}
 		}
 		pn.onRemove();
-		if(isInPeers)
+		if(isInPeers && !pn.isSeed())
 			updatePMUserAlert();
 		notifyPeerStatusChangeListeners();
 		return true;
@@ -381,7 +386,8 @@ public class PeerManager {
 			newConnectedPeers = a.toArray(newConnectedPeers);
 			connectedPeers = newConnectedPeers;
 		}
-		updatePMUserAlert();
+                if(!pn.isSeed())
+                    updatePMUserAlert();
 		node.lm.announceLocChange();
 		return true;
 	}
@@ -392,7 +398,6 @@ public class PeerManager {
 	}
 
 	public void addConnectedPeer(PeerNode pn) {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(!pn.isRealConnection()) {
 			if(logMINOR)
 				Logger.minor(this, "Not a real connection: " + pn);
@@ -434,7 +439,8 @@ public class PeerManager {
 			if(logMINOR)
 				Logger.minor(this, "Connected peers: " + connectedPeers.length);
 		}
-		updatePMUserAlert();
+		if(!pn.isSeed())
+                    updatePMUserAlert();
 		node.lm.announceLocChange();
 	}
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
@@ -525,24 +531,27 @@ public class PeerManager {
 								return;
 							done = true;
 						}
-						if(removePeer(pn))
+						if(removePeer(pn) && !pn.isSeed())
 							writePeers();
 					}
 				}, ctrDisconn);
 			} catch(NotConnectedException e) {
-				if(pn.isDisconnecting() && removePeer(pn))
+				if(pn.isDisconnecting() && removePeer(pn) && !pn.isSeed())
 					writePeers();
 				return;
 			}
-			node.getTicker().queueTimedJob(new Runnable() {
+                        if(!pn.isSeed()) {
+                            node.getTicker().queueTimedJob(new Runnable() {
 
-				public void run() {
-					if(pn.isDisconnecting() && removePeer(pn))
-						writePeers();
-				}
-			}, Node.MAX_PEER_INACTIVITY);
+                                public void run() {
+                                    if (pn.isDisconnecting() && removePeer(pn) && !pn.isSeed()) {
+                                        writePeers();
+                                    }
+                                }
+                            }, Node.MAX_PEER_INACTIVITY);
+                        }
 		} else
-			if(removePeer(pn))
+			if(removePeer(pn) && !pn.isSeed())
 				writePeers();
 	}
 	final ByteCounter ctrDisconn = new ByteCounter() {
@@ -654,7 +663,6 @@ public class PeerManager {
 		// This is safe as they will add themselves when they
 		// reconnect, and they can't do it yet as we are synchronized.
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>(connectedPeers.length);
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		for(PeerNode pn : myPeers) {
 			if(pn == exclude)
 				continue;
@@ -1177,30 +1185,42 @@ public class PeerManager {
 	}
 
 	private void writePeersInner() {
-		String darknet = null;
-		String opennet = null;
-		String oldOpennetPeers = null;
-		String oldOpennetPeersFilename = null;
+                String newDarknetPeersString = null,
+                        newOpennetPeersString = null,
+                        newOldOpennetPeersString =null;
 		
 		synchronized(writePeersSync) {
 			if(darkFilename != null)
-				darknet = getDarknetPeersString();
+				newDarknetPeersString = getDarknetPeersString();
 			OpennetManager om = node.getOpennet();
 			if(om != null) {
 				if(openFilename != null)
-					opennet = getOpennetPeersString();
+					newOpennetPeersString = getOpennetPeersString();
 				oldOpennetPeersFilename = om.getOldPeersFilename();
-				oldOpennetPeers = getOldOpennetPeersString(om);
+				newOldOpennetPeersString = getOldOpennetPeersString(om);
 			}
 		}
-		
+
 		synchronized(writePeerFileSync) {
-			if(darknet != null)
-				writePeersInner(darkFilename, darknet);
-			if(oldOpennetPeers != null) {
-				if(opennet != null)
-					writePeersInner(openFilename, opennet);
-				writePeersInner(oldOpennetPeersFilename, oldOpennetPeers);
+			if(newDarknetPeersString != null) {
+				int hashCode = newDarknetPeersString.hashCode();
+				if(darknetPeersStringCache == -1 || darknetPeersStringCache != hashCode) {
+					darknetPeersStringCache = hashCode;
+					writePeersInner(darkFilename, newDarknetPeersString);
+				}
+			}
+			if(newOldOpennetPeersString != null) {
+				int hashCode = newOldOpennetPeersString.hashCode();
+				if(oldOpennetPeersStringCache == -1 || oldOpennetPeersStringCache != hashCode) {
+					oldOpennetPeersStringCache = hashCode;
+					writePeersInner(oldOpennetPeersFilename, newOldOpennetPeersString);
+				}
+			}
+			if(newOpennetPeersString != null) {
+				int hashCode = newOpennetPeersString.hashCode();
+				if(opennetPeersStringCache == -1 || opennetPeersStringCache != hashCode) {
+					writePeersInner(openFilename, newOpennetPeersString);
+				}
 			}
 		}
 	}
