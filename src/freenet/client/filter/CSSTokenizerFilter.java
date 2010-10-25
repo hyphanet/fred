@@ -1548,9 +1548,7 @@ class CSSTokenizerFilter {
 						{
 							String str1=strbuffer.substring(importIndex+7,strbuffer.length());
 							ParsedWord[] strparts=split(str1, false);
-							boolean broke = true;
 							if(strparts != null && strparts.length > 0 && (strparts[0] instanceof ParsedURL || strparts[0] instanceof ParsedString)) {
-								broke = false;
 								String uri;
 								if(strparts[0] instanceof ParsedString) {
 									uri = ((ParsedString)strparts[0]).getDecoded();
