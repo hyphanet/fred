@@ -224,6 +224,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("widows");
 		allelementVerifiers.add("width");
 		allelementVerifiers.add("word-spacing");
+                allelementVerifiers.add("word-wrap");
 		allelementVerifiers.add("z-index");
 
 
@@ -925,6 +926,10 @@ class CSSTokenizerFilter {
 		else if("word-spacing".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
+			allelementVerifiers.remove(element);
+		}else if("word-wrap".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal", "break-word"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("z-index".equalsIgnoreCase(element))
