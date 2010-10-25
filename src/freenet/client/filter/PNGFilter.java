@@ -213,8 +213,9 @@ public class PNGFilter implements ContentDataFilter {
                                                 if(colourType != 0 && colourType != 3)
                                                     throwError("Invalid colourType/bitDepth combination!",
                                                     "Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+                                                break;
                                             case 16:
-                                                if(colourType != 3)
+                                                if(colourType == 3)
                                                     throwError("Invalid colourType/bitDepth combination!",
                                                     "Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
                                             case 8:
