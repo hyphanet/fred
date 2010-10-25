@@ -325,6 +325,7 @@ public class MessageCore {
 		long now = System.currentTimeMillis();
 		long messageDropTime = now - MAX_UNCLAIMED_FIFO_ITEM_LIFETIME;
 		long messageLifeTime = 0;
+		long timeout = filter.getTimeout();
 		synchronized (_filters) {
 			//Once in the list, it is up to the callback system to trigger the disconnection, however, we may
 			//have disconnected between check above and locking, so we *must* check again.
@@ -351,7 +352,7 @@ public class MessageCore {
 					}
 				}
 			}
-			if (ret == null) {
+			if (ret == null && timeout >= System.currentTimeMillis()) {
 				if(logMINOR) Logger.minor(this, "Not in _unclaimed");
 			    // Insert filter into filter list in order of timeout
 				ListIterator<MessageFilter> i = _filters.listIterator();
@@ -359,14 +360,14 @@ public class MessageCore {
 					if (!i.hasNext()) {
 						i.add(filter);
 						if(logMINOR) Logger.minor(this, "Added at end");
-						break;
+						return;
 					}
 					MessageFilter mf = i.next();
-					if (mf.getTimeout() > filter.getTimeout()) {
+					if (mf.getTimeout() > timeout) {
 						i.previous();
 						i.add(filter);
 						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
-						break;
+						return;
 					}
 				}
 			}
@@ -375,6 +376,8 @@ public class MessageCore {
 			filter.setMessage(ret);
 			filter.onMatched(_executor);
 			filter.clearMatched();
+		} else {
+			filter.onTimedOut(_executor);
 		}
 	}
 

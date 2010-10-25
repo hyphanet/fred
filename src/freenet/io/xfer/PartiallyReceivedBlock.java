@@ -22,7 +22,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 
 import freenet.support.Buffer;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * @author ian
@@ -32,6 +34,19 @@ import freenet.support.Logger;
  */
 public class PartiallyReceivedBlock {
 
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+			}
+		});
+	}
+	
 	byte[] _data;
 	boolean[] _received;
 	int _receivedCount;
@@ -127,20 +142,19 @@ public class PartiallyReceivedBlock {
 	}
 
 	public synchronized boolean allReceived() throws AbortedException {
+		if(_receivedCount == _packets) {
+			if(logDEBUG) Logger.debug(this, "Received "+_receivedCount+" of "+_packets);
+			return true;
+		}
 		if (_aborted) {
 			throw new AbortedException("PRB is aborted");
 		}
-		return _receivedCount == _packets;
+		return false;
 	}
 	
 	public synchronized byte[] getBlock() throws AbortedException {
-		if (_aborted) {
-			throw new AbortedException("PRB is aborted");
-		}
-		if (!allReceived()) {
-			throw new RuntimeException("Tried to get block before all packets received");
-		}
-		return _data;
+		if(allReceived()) return _data;
+		throw new RuntimeException("Tried to get block before all packets received");
 	}
 	
 	public synchronized Buffer getPacket(int x) throws AbortedException {
@@ -152,6 +166,7 @@ public class PartiallyReceivedBlock {
 		}
 		return new Buffer(_data, x * _packetSize, _packetSize);
 	}
+	
 
 	public synchronized void removeListener(PacketReceivedListener listener) {
 		_packetReceivedListeners.remove(listener);
@@ -160,8 +175,14 @@ public class PartiallyReceivedBlock {
 	public void abort(int reason, String description) {
 		PacketReceivedListener[] listeners;
 		synchronized(this) {
-			if(_aborted) return;
-			if(_receivedCount == _packets) return;
+			if(_aborted) {
+				if(logMINOR) Logger.minor(this, "Already aborted "+this+" : reason="+_abortReason+" description="+_abortDescription);
+				return;
+			}
+			if(_receivedCount == _packets) {
+				if(logMINOR) Logger.minor(this, "Already received");
+				return;
+			}
 			Logger.normal(this, "Aborting PRB: "+reason+" : "+description, new Exception("debug"));
 			_aborted = true;
 			_abortReason = reason;

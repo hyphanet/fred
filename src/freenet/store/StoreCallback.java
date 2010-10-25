@@ -9,6 +9,7 @@ import com.sleepycat.je.DatabaseException;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
+import freenet.node.stats.StoreAccessStats;
 
 /**
  * @author toad
@@ -88,4 +89,15 @@ public abstract class StoreCallback<T extends StorableBlock> {
 
 	/** Generate a routing key from a full key */
 	public abstract byte[] routingKeyFromFullKey(byte[] keyBuf);
+
+	public StoreAccessStats getSessionAccessStats() {
+		return store.getSessionAccessStats();
+	}
+
+	/** Overall session access stats. We don't store the uptime in the datastore, so the
+	 * caller will have to pass in its own estimate of total uptime.
+	 * @return Null if not supported. */
+	public StoreAccessStats getTotalAccessStats() {
+		return store.getTotalAccessStats();
+	}
 }
