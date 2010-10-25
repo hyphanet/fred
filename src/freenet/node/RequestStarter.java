@@ -10,6 +10,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.HasCooldownCacheItem;
 import freenet.client.async.TransientChosenBlock;
 import freenet.keys.Key;
+import freenet.node.NodeStats.RejectReason;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -59,7 +60,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
 	/** If true, local requests are subject to shouldRejectRequest(). If false, they are only subject to the token
 	 * buckets and the thread limit. FIXME make configurable. */
-	private static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
+	static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
 	
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
@@ -154,7 +155,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 							}
 					} while(now < sleepUntil);
 				}
-				String reason;
+				RejectReason reason;
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
 					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT)) != null) {
 						if(logMINOR)

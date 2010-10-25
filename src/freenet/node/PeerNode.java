@@ -61,6 +61,9 @@ import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
+import freenet.node.NodeStats.ByteCountersSnapshot;
+import freenet.node.NodeStats.PeerLoadStats;
+import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.support.Base64;
@@ -4410,9 +4413,127 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized ConnectionType getAddedReason() {
 		return null;
 	}
+	
+	private int lastSentAllocationInput;
+	private int lastSentAllocationOutput;
+	private long timeLastSentAllocationNotice;
+	private long countAllocationNotices;
+	private PeerLoadStats lastFullStats;
+
+	public void onSetPeerAllocation(boolean input, int thisAllocation) {
+		boolean mustSend = false;
+		// FIXME review constants, how often are allocations actually sent?
+		synchronized(this) {
+			int last = input ? lastSentAllocationInput : lastSentAllocationOutput;
+			long now = System.currentTimeMillis();
+			if(now - timeLastSentAllocationNotice > 5000) {
+				if(logMINOR) Logger.minor(this, "Last sent allocation "+TimeUtil.formatTime(now - timeLastSentAllocationNotice));
+				mustSend = true;
+			} else {
+				if(thisAllocation > last * 1.05) {
+					if(logMINOR) Logger.minor(this, "Last allocation was "+last+" this is "+thisAllocation);
+					mustSend = true;
+				} else if(thisAllocation < last * 0.9) { 
+					if(logMINOR) Logger.minor(this, "Last allocation was "+last+" this is "+thisAllocation);
+					mustSend = true;
+				}
+			}
+			if(!mustSend) return;
+			timeLastSentAllocationNotice = now;
+			if(input)
+				lastSentAllocationInput = thisAllocation;
+			else
+				lastSentAllocationOutput = thisAllocation;
+			countAllocationNotices++;
+			if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+thisAllocation+" for "+input);
+		}
+		PeerLoadStats stats = node.nodeStats.createPeerLoadStats(this);
+		synchronized(this) {
+			lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
+			lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
+			if(lastFullStats != null && lastFullStats.equals(stats)) return;
+			lastFullStats = stats;
+		}
+		Message msg = DMT.createFNPPeerLoadStatus(stats);
+		try {
+			sendAsync(msg, null, node.nodeStats.allocationNoticesCounter);
+		} catch (NotConnectedException e) {
+			// Ignore
+		}
+	}
 
 	void removeUIDsFromMessageQueues(Long[] list) {
 		this.messageQueue.removeUIDsFromMessageQueues(list);
+	}
+
+	private PeerLoadStats lastIncomingLoadStats;
+	
+	public void reportLoadStatus(PeerLoadStats stat) {
+		if(logMINOR) Logger.minor(this, "Got load status : "+stat);
+		synchronized(this) {
+			lastIncomingLoadStats = stat;
+		}
+	}
+	
+	public class IncomingLoadSummaryStats {
+		public IncomingLoadSummaryStats(int totalRequests,
+				double outputBandwidthPeerLimit,
+				double inputBandwidthPeerLimit,
+				double outputBandwidthTotalLimit,
+				double inputBandwidthTotalLimit,
+				double usedOutput,
+				double usedInput,
+				double othersUsedOutput,
+				double othersUsedInput) {
+			runningRequestsTotal = totalRequests;
+			peerCapacityOutputBytes = (int)outputBandwidthPeerLimit;
+			peerCapacityInputBytes = (int)inputBandwidthPeerLimit;
+			totalCapacityOutputBytes = (int)outputBandwidthTotalLimit;
+			totalCapacityInputBytes = (int)inputBandwidthTotalLimit;
+			usedCapacityOutputBytes = (int) usedOutput;
+			usedCapacityInputBytes = (int) usedInput;
+			othersUsedCapacityOutputBytes = (int) othersUsedOutput;
+			othersUsedCapacityInputBytes = (int) othersUsedInput;
+		}
+		
+		public final int runningRequestsTotal;
+		public final int peerCapacityOutputBytes;
+		public final int peerCapacityInputBytes;
+		public final int totalCapacityOutputBytes;
+		public final int totalCapacityInputBytes;
+		public final int usedCapacityOutputBytes;
+		public final int usedCapacityInputBytes;
+		public final int othersUsedCapacityOutputBytes;
+		public final int othersUsedCapacityInputBytes;
+	}
+	
+	public IncomingLoadSummaryStats getIncomingLoadStats() {
+		PeerLoadStats loadStats;
+		synchronized(this) {
+			if(lastIncomingLoadStats == null) return null;
+			loadStats = lastIncomingLoadStats;
+		}
+		ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
+		ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
+		RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(this);
+		RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
+		boolean ignoreLocalVsRemoteBandwidthLiability = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+		return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
+				loadStats.outputBandwidthPeerLimit, loadStats.inputBandwidthPeerLimit,
+				loadStats.outputBandwidthUpperLimit, loadStats.inputBandwidthUpperLimit,
+				runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput),
+				runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput),
+				otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput),
+				otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput));
+	}
+	
+	public synchronized PeerLoadStats getLastIncomingLoadStats() {
+		return lastIncomingLoadStats;
+	}
+
+	public void postUnlock(UIDTag uidTag) {
+		// Ignore
+		// FIXME will be used later on in new-load-management
 	}
 
 }

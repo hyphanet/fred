@@ -30,8 +30,8 @@ public class RequestTag extends UIDTag {
 	String abortedDownstreamDesc;
 	boolean handlerDisconnected;
 
-	public RequestTag(boolean isSSK, START start) {
-		super();
+	public RequestTag(boolean isSSK, START start, PeerNode source) {
+		super(source);
 		this.start = start;
 		this.isSSK = isSSK;
 	}
@@ -99,6 +99,18 @@ public class RequestTag extends UIDTag {
 
 	public void handlerDisconnected() {
 		handlerDisconnected = true;
+	}
+
+	@Override
+	public int expectedTransfersIn(boolean ignoreLocalVsRemote,
+			int outwardTransfersPerInsert) {
+		return notRoutedOnwards ? 0 : 1;
+	}
+
+	@Override
+	public int expectedTransfersOut(boolean ignoreLocalVsRemote,
+			int outwardTransfersPerInsert) {
+		return (ignoreLocalVsRemote && source == null) ? 0 : 1;
 	}
 
 }

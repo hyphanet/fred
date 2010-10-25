@@ -11,8 +11,8 @@ public class OfferReplyTag extends UIDTag {
 
 	final boolean ssk;
 	
-	public OfferReplyTag(boolean isSSK) {
-		super();
+	public OfferReplyTag(boolean isSSK, PeerNode source) {
+		super(source);
 		ssk = isSSK;
 	}
 
@@ -22,6 +22,18 @@ public class OfferReplyTag extends UIDTag {
 		sb.append("Still present after ").append(TimeUtil.formatTime(age()));
 		sb.append(" : ssk=").append(ssk);
 		Logger.error(this, sb.toString());
+	}
+
+	@Override
+	public int expectedTransfersIn(boolean ignoreLocalVsRemote,
+			int outwardTransfersPerInsert) {
+		return 0;
+	}
+
+	@Override
+	public int expectedTransfersOut(boolean ignoreLocalVsRemote,
+			int outwardTransfersPerInsert) {
+		return 1;
 	}
 
 }

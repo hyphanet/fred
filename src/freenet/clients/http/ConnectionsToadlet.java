@@ -30,6 +30,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.NodeStats;
 import freenet.node.PeerManager;
 import freenet.node.PeerNode;
+import freenet.node.PeerNode.IncomingLoadSummaryStats;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
 import freenet.support.Fields;
@@ -410,6 +411,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_delta")).addChild("#", "Time\u00a0Delta");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "uptime")).addChild("#", "Reported\u00a0Uptime");
 					peerTableHeaderRow.addChild("th", "Transmit\u00a0Queue");
+					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity");
 				}
 				
 				SimpleColumn[] endCols = endColumnHeaders(mode >= PageMaker.MODE_ADVANCED);
@@ -825,6 +827,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", TimeUtil.formatTime(peerNodeStatus.getClockDelta()));
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", peerNodeStatus.getReportedUptimePercentage()+"%");
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getMessageQueueLengthBytes())+":"+TimeUtil.formatTime(peerNodeStatus.getMessageQueueLengthTime()));
+			IncomingLoadSummaryStats loadStats = peerNodeStatus.incomingLoadStats;
+			if(loadStats == null)
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
+			else
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStats.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStats.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStats.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStats.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStats.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStats.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStats.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStats.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStats.totalCapacityInputBytes));
 		}
 		
 		if(endCols != null) {

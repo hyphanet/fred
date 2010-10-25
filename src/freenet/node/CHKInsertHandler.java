@@ -160,7 +160,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
-            sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, false, forkOnCacheable, preferInsert, ignoreLowBackoff);
+            sender = node.makeInsertSender(key, htl, uid, tag, source, headers, prb, false, false, forkOnCacheable, preferInsert, ignoreLowBackoff);
         br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false);
         
         // Receive the data, off thread

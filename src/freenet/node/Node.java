@@ -4427,11 +4427,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @param ignoreLowBackoff
 	 * @param preferInsert
 	 */
-	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
+	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, InsertTag tag, PeerNode source,
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		CHKInsertSender is = null;
-		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
+		is = new CHKInsertSender(key, uid, tag, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 		is.start();
 		// CHKInsertSender adds itself to insertSenders
 		return is;
@@ -4450,7 +4450,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @param ignoreLowBackoff
 	 * @param preferInsert
 	 */
-	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
+	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, InsertTag tag, PeerNode source,
 			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
 		NodeSSK key = block.getKey();
 		if(key.getPubKey() == null) {
@@ -4460,7 +4460,7 @@ public class Node implements TimeSkewDetectorCallback {
 		getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), false, canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		SSKInsertSender is = null;
-		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
+		is = new SSKInsertSender(block, uid, tag, htl, source, this, fromStore, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
 		is.start();
 		return is;
 	}
@@ -4538,6 +4538,57 @@ public class Node implements TimeSkewDetectorCallback {
 			if(logMINOR) Logger.minor(this, "Unlocked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
 		}
 	}
+
+	public synchronized int countRequests(boolean local, boolean ssk, boolean insert, boolean offer) {
+		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
+		return map.size();
+	}
+	
+	public int countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer) {
+		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
+		synchronized(map) {
+		if(!requestsToNode) {
+			if((source == null) != local) return 0;
+			int count = 0;
+			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
+				UIDTag tag = entry.getValue();
+				if(tag.source == source) {
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey()+" from "+source);
+					count++;
+				}
+			}
+			return count;
+		} else {
+			// FIXME improve efficiency!
+			int count = 0;
+			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
+				UIDTag tag = entry.getValue();
+				// Ordinary requests can be routed to an offered key.
+				// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
+				if(tag.currentlyFetchingOfferedKeyFrom(source)) {
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+					count++;
+				} else if(tag.currentlyRoutingTo(source)) {
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+					count++;
+				}
+			}
+			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count);
+			return count;
+		}
+		}
+	}
+	
+	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
+			boolean insert, boolean offer) {
+		if(offer)
+			return getOfferTracker(ssk);
+		else if(insert)
+			return getInsertTracker(ssk, local);
+		else
+			return getRequestTracker(ssk, local);
+	}
+
 
 	private HashMap<Long, RequestTag> getRequestTracker(boolean ssk, boolean local) {
 		if(ssk) {
