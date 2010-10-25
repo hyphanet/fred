@@ -155,23 +155,23 @@ public class PNGFilter implements ContentDataFilter {
 
 				// Content of the chunk
 				byte[] chunkData = new byte[length];
-                                if(length > 0) {
-                                    dis.readFully(chunkData, 0, length);
-                                    offset+=length;
-                                    if (logMINOR)
-					if (logDEBUG)
-						Logger.minor(this, "data (offset=0x"+Long.toHexString(offset)+") "+ (chunkData.length == 0 ? "null" : HexUtil.bytesToHex(chunkData)));
-					else
-						Logger.minor(this, "data " + chunkData.length);
-                                    if (dos != null)
-					dos.write(chunkData);
-                                }
+				if(length > 0) {
+					dis.readFully(chunkData, 0, length);
+					offset+=length;
+					if (logMINOR)
+						if (logDEBUG)
+							Logger.minor(this, "data (offset=0x"+Long.toHexString(offset)+") "+ (chunkData.length == 0 ? "null" : HexUtil.bytesToHex(chunkData)));
+						else
+							Logger.minor(this, "data " + chunkData.length);
+					if (dos != null)
+						dos.write(chunkData);
+				}
 
 				// CRC of the chunk
 				byte[] crcLengthBytes = new byte[4];
 				dis.readFully(crcLengthBytes);
-                                offset+=4;
-                                if(logMINOR) Logger.minor(this, "CRC offset=0x"+Long.toHexString(offset));
+				offset+=4;
+				if(logMINOR) Logger.minor(this, "CRC offset=0x"+Long.toHexString(offset));
 				if (dos != null)
 					dos.write(crcLengthBytes);
 
@@ -198,46 +198,46 @@ public class PNGFilter implements ContentDataFilter {
 				if (!skip && "IHDR".equals(chunkTypeString)) { // http://www.w3.org/TR/PNG/#11IHDR
 					if (hasSeenIHDR)
 						throwError("Duplicate IHDR", "Two IHDR chunks detected!!");
-                                        if(length != 13)
-                                            throwError("IHDR length!= 13", "The length of the IHDR file is not 13");
-                                        long width = ((chunkData[0] & 0xff) << 24) + ((chunkData[1] & 0xff) << 16) + ((chunkData[2] & 0xff) << 8) + (chunkData[3] & 0xff);
-                                        long height = ((chunkData[4] & 0xff) << 24) + ((chunkData[5] & 0xff) << 16) + ((chunkData[6] & 0xff) << 8) + (chunkData[7] & 0xff);
-                                        if(width < 1 || height < 1)
-                                            throwError("Width or Height is invalid", "Width or Height is invalid (<1)");
-                                        int bitDepth = chunkData[8];
-                                        int colourType = chunkData[9];
-                                        switch (bitDepth) {
-                                            case 1:
-                                            case 2:
-                                            case 4:
-                                                if(colourType != 0 && colourType != 3)
-                                                    throwError("Invalid colourType/bitDepth combination!",
-                                                    "Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
-                                                break;
-                                            case 16:
-                                                if(colourType == 3)
-                                                    throwError("Invalid colourType/bitDepth combination!",
-                                                    "Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
-                                            case 8:
-                                                if(colourType == 0 || colourType ==2 || colourType ==3 || colourType ==4|| colourType ==6)
-                                                    break;
-                                            default: throwError("Invalid colourType/bitDepth combination!",
-                                                    "Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
-                                        }
-                                        int compressionMethod = chunkData[10];
-                                        if(compressionMethod != 0)
-                                            throwError("Invalid CompressionMethod", "Invalid CompressionMethod! "+compressionMethod);
-                                        int filterMethod = chunkData[11];
-                                        if(filterMethod != 0)
-                                            throwError("Invalid FilterMethod", "Invalid FilterMethod! "+filterMethod);
-                                        int interlaceMethod = chunkData[12];
-                                        if(interlaceMethod < 0 || interlaceMethod >1)
-                                            throwError("Invalid InterlaceMethod", "Invalid InterlaceMethod! "+interlaceMethod);
-
-                                        if(logMINOR)
-                                            Logger.minor(this, "Info from IHDR: width="+width+"px height="+height+"px bitDepth="+bitDepth+
-                                                    " colourType="+colourType+" compressionMethod="+compressionMethod+" filterMethod="+
-                                                    filterMethod+" interlaceMethod="+interlaceMethod);
+					if(length != 13)
+						throwError("IHDR length!= 13", "The length of the IHDR file is not 13");
+					long width = ((chunkData[0] & 0xff) << 24) + ((chunkData[1] & 0xff) << 16) + ((chunkData[2] & 0xff) << 8) + (chunkData[3] & 0xff);
+					long height = ((chunkData[4] & 0xff) << 24) + ((chunkData[5] & 0xff) << 16) + ((chunkData[6] & 0xff) << 8) + (chunkData[7] & 0xff);
+					if(width < 1 || height < 1)
+						throwError("Width or Height is invalid", "Width or Height is invalid (<1)");
+					int bitDepth = chunkData[8];
+					int colourType = chunkData[9];
+					switch (bitDepth) {
+					case 1:
+					case 2:
+					case 4:
+						if(colourType != 0 && colourType != 3)
+							throwError("Invalid colourType/bitDepth combination!",
+									"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+						break;
+					case 16:
+						if(colourType == 3)
+							throwError("Invalid colourType/bitDepth combination!",
+									"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+					case 8:
+						if(colourType == 0 || colourType ==2 || colourType ==3 || colourType ==4|| colourType ==6)
+							break;
+					default: throwError("Invalid colourType/bitDepth combination!",
+							"Invalid colourType/bitDepth combination! ("+colourType+'|'+bitDepth+')');
+					}
+					int compressionMethod = chunkData[10];
+					if(compressionMethod != 0)
+						throwError("Invalid CompressionMethod", "Invalid CompressionMethod! "+compressionMethod);
+					int filterMethod = chunkData[11];
+					if(filterMethod != 0)
+						throwError("Invalid FilterMethod", "Invalid FilterMethod! "+filterMethod);
+					int interlaceMethod = chunkData[12];
+					if(interlaceMethod < 0 || interlaceMethod >1)
+						throwError("Invalid InterlaceMethod", "Invalid InterlaceMethod! "+interlaceMethod);
+					
+					if(logMINOR)
+						Logger.minor(this, "Info from IHDR: width="+width+"px height="+height+"px bitDepth="+bitDepth+
+								" colourType="+colourType+" compressionMethod="+compressionMethod+" filterMethod="+
+								filterMethod+" interlaceMethod="+interlaceMethod);
 					hasSeenIHDR = true;
 					validChunkType = true;
 				}
