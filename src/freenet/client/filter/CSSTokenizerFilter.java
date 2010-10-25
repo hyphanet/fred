@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 
 package freenet.client.filter;
+import freenet.support.HexUtil;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -1339,7 +1340,7 @@ class CSSTokenizerFilter {
 			bomPossible = false;
 			prevc=c;
 			c=(char) x;
-			if(logDEBUG) Logger.debug(this, "Read: "+c);
+			if(logDEBUG) Logger.debug(this, "Read: "+c+ " 0x"+Integer.toHexString(c));
 			if(prevc=='/' && c=='*' && currentState!=STATE1INQUOTE && currentState!=STATE2INQUOTE && currentState!=STATE3INQUOTE&&currentState!=STATECOMMENT)
 			{
 				stateBeforeComment=currentState;
@@ -1635,7 +1636,7 @@ class CSSTokenizerFilter {
 				if(!isState1Present)
 				{
 					String s = buffer.toString().trim();
-					if(!(s.equals("") || s.equals("<") || s.equals("<!") || s.equals("<!-") || s.equals("<!--")))
+					if(!(s.equals("") || s.equals("/") || s.equals("<") || s.equals("<!") || s.equals("<!-") || s.equals("<!--")))
 						currentState=STATE2;
 				}
 				if(logDEBUG) Logger.debug(this, "STATE1 default CASE: "+c);
@@ -2158,15 +2159,12 @@ class CSSTokenizerFilter {
 					if(prevc=='*')
 					{
 						currentState=stateBeforeComment;
-						if(logDEBUG) Logger.debug(this, "Exiting the comment state");
+						if(logDEBUG) Logger.debug(this, "Exiting the comment state "+currentState);
 					}
 					break;
 				}
 				break;
-
-
 			}
-
 		}
 
 		if(logDEBUG) Logger.debug(this, "Filtered tokens: \""+filteredTokens+"\"");
@@ -3951,11 +3949,11 @@ outer:		for(int i=0;i<value.length;i++) {
         try {
             inputStream = inputBucket.getInputStream();
             outputStream = outputBucket.getOutputStream();
-            Logger.setupStdoutLogging(Logger.LogLevel.MINOR, "");
+            Logger.setupStdoutLogging(Logger.LogLevel.DEBUG, "");
             Logger.registerClass(CSSTokenizerFilter.class);
 
             ContentFilter.filter(inputStream, outputStream, "text/css",
-                    new URI("http://127.0.0.1:8888/"), null, null, null);
+                    new URI("http://127.0.0.1:8888/freenet:USK@ZupQjDFZSc3I4orBpl1iTEAPZKo2733RxCUbZ2Q7iH0,EO8Tuf8SP3lnDjQdAPdCM2ve2RaUEN8m-hod3tQ5oQE,AQACAAE/jFreesite/19/Style/"), null, null, null);
             inputStream.close();
             outputStream.flush();
             outputStream.close();
