@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -50,14 +51,11 @@ class CSSTokenizerFilter {
 		isInline = false;
 	}
 
-//	private static PrintStream log;
-
 	public static void log(String s)
 	{
 		Logger.debug(CSSTokenizerFilter.class,s);
-		//System.out.println("CSSTokenizerFilter: "+s);
-		//log.println(s);
 	}
+        
 	CSSTokenizerFilter(Reader r, Writer w, FilterCallback cb, String charset, boolean stopAtDetectedCharset, boolean isInline) {
 		this.r=r;
 		this.w = w;
@@ -65,11 +63,6 @@ class CSSTokenizerFilter {
 		passedCharset = charset;
 		this.stopAtDetectedCharset = stopAtDetectedCharset;
 		this.isInline = isInline;
-//		try {
-//			log = new PrintStream(new FileOutputStream("log"));
-//		} catch (FileNotFoundException e) {
-//			throw new Error(e);
-//		}
 	}
 
 	public boolean isValidURI(String URI)
@@ -111,8 +104,8 @@ class CSSTokenizerFilter {
 	// FIXME this is probably overkill, initialising all of them on startup would probably be cleaner code, less synchronization, at very little memory cost.
 	// FIXME check how many bytes we save by lazy init here.
 
-	static Map<String, CSSPropertyVerifier> elementVerifiers = new HashMap<String, CSSPropertyVerifier>();
-	static HashSet<String> allelementVerifiers=new HashSet<String>();
+	private final static Map<String, CSSPropertyVerifier> elementVerifiers = new HashMap<String, CSSPropertyVerifier>();
+	private final static HashSet<String> allelementVerifiers=new HashSet<String>();
 	//Reference http://www.w3.org/TR/CSS2/propidx.html
 	static {
 		allelementVerifiers.add("azimuth");
@@ -1010,12 +1003,12 @@ class CSSTokenizerFilter {
 		if(logDEBUG) log("varifying element/selector: \""+elementString+"\"");
 		String HTMLelement="",pseudoClass="",className="",id="";
 		boolean isValid=true;
-		StringBuffer fBuffer=new StringBuffer();
+		StringBuilder fBuffer=new StringBuilder();
 		ArrayList<String> attSelections = null;
 		while(elementString.indexOf('[')!=-1 && elementString.indexOf(']')!=-1 && (elementString.indexOf('[')<elementString.indexOf(']')))
 		{
 			String attSelection=elementString.substring(elementString.indexOf('[')+1,elementString.indexOf(']')).trim();
-			StringBuffer buf=new StringBuffer(elementString);
+			StringBuilder buf=new StringBuilder(elementString);
 			buf.delete(elementString.indexOf('['), elementString.indexOf(']')+1);
 			elementString=buf.toString();
 			if(logDEBUG) log("attSelection="+attSelection+"  elementString="+elementString);
@@ -1135,15 +1128,23 @@ class CSSTokenizerFilter {
 			if(isValid)
 			{
 				fBuffer.append(HTMLelement);
-				if(className!="")
-					fBuffer.append("."+className);
-				else if(id!="")
-					fBuffer.append("#"+id);
-				if(pseudoClass!="")
-					fBuffer.append(":"+pseudoClass);
+				if(className!="") {
+					fBuffer.append('.');
+                                        fBuffer.append(className);
+                                } else if(id!="") {
+					fBuffer.append('#');
+                                        fBuffer.append(id);
+                                }
+				if(pseudoClass!="") {
+					fBuffer.append(':');
+                                        fBuffer.append(pseudoClass);
+                                }
 				if(attSelections!=null) {
-					for(String attSelection:attSelections)
-						fBuffer.append("["+attSelection+"]");
+					for(String attSelection:attSelections) {
+						fBuffer.append('[');
+                                                fBuffer.append(attSelection);
+                                                fBuffer.append(']');
+                                        }
 				}
 				return fBuffer.toString();
 			}
@@ -1286,8 +1287,8 @@ class CSSTokenizerFilter {
 		int currentState=1;
 		boolean isState1Present=false;
 		String elements[]=null;
-		StringBuffer filteredTokens=new StringBuffer();
-		StringBuffer buffer=new StringBuffer();
+		StringBuilder filteredTokens=new StringBuilder();
+		StringBuilder buffer=new StringBuilder();
 		int openBraces=0;
 		String defaultMedia="screen";
 		String[] currentMedia=new String[] {defaultMedia};
@@ -1564,7 +1565,7 @@ class CSSTokenizerFilter {
 								ArrayList<String> medias = commaListFromIdentifiers(strparts, 1);
 
 								if(medias != null) { // None gives [0], broke gives null
-									StringBuffer output = new StringBuffer();
+									StringBuilder output = new StringBuilder();
 									output.append("@import url(\"");
 									try {
 										// Add ?maybecharset= even though there might be a ?type= with a charset, we will ignore maybecharset if there is.
@@ -1961,7 +1962,11 @@ class CSSTokenizerFilter {
 						if(changedAnything(words)) propertyValue = reconstruct(words);
 						filteredTokens.append(whitespaceBeforeProperty);
 						whitespaceBeforeProperty = "";
-						filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue+";");
+						filteredTokens.append(propertyName);
+                                                filteredTokens.append(':');
+                                                filteredTokens.append(whitespaceAfterColon);
+                                                filteredTokens.append(propertyValue);
+                                                filteredTokens.append(';');
 						if(logDEBUG) log("STATE3 CASE ;: appending "+ propertyName+":"+propertyValue);
 						if(logDEBUG) log("filtered tokens now: \""+filteredTokens.toString()+"\"");
 					} else {
@@ -2027,7 +2032,10 @@ class CSSTokenizerFilter {
 								if(changedAnything(words)) propertyValue = reconstruct(words);
 								filteredTokens.append(whitespaceBeforeProperty);
 								whitespaceBeforeProperty = "";
-								filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue);
+								filteredTokens.append(propertyName);
+                                                                filteredTokens.append(':');
+                                                                filteredTokens.append(whitespaceAfterColon);
+                                                                filteredTokens.append(propertyValue);
 								if(logDEBUG) log("STATE3 CASE }: appending "+ propertyName+":"+propertyValue);
 							}
 						} else {
@@ -2246,7 +2254,7 @@ class CSSTokenizerFilter {
 				} else if(word instanceof SimpleParsedWord) {
 					String data = ((SimpleParsedWord)word).original;
 					String[] split = FilterUtils.removeWhiteSpace(data.split(","),false);
-					for(String s : split) medias.add(s);
+                                        medias.addAll(Arrays.asList(split));
 				} else return null;
 			}
 		}
@@ -2269,17 +2277,18 @@ class CSSTokenizerFilter {
 			if(!changed)
 				return original;
 			else {
-				StringBuffer out = new StringBuffer();
+				StringBuilder out = new StringBuilder();
 				innerEncode(unicode, out);
 				return out.toString();
 			}
 		}
 
+                @Override
 		public String toString() {
 			return super.toString()+":\""+original+"\"";
 		}
 
-		abstract protected void innerEncode(boolean unicode, StringBuffer out);
+		abstract protected void innerEncode(boolean unicode, StringBuilder out);
 
 	}
 
@@ -2302,7 +2311,7 @@ class CSSTokenizerFilter {
 			this.decoded = decoded;
 		}
 
-		protected void innerEncode(boolean unicode, StringBuffer out) {
+		protected void innerEncode(boolean unicode, StringBuilder out) {
 			char prevc = 0;
 			char c = 0;
 			for(int i=0;i<decoded.length();i++) {
@@ -2318,7 +2327,7 @@ class CSSTokenizerFilter {
 
 		abstract protected boolean mustEncode(char c, int i, char prevc, boolean unicode);
 
-		private void encodeChar(char c, StringBuffer sb) {
+		private void encodeChar(char c, StringBuilder sb) {
 			String s = Integer.toHexString(c);
 			sb.append('\\');
 			if(s.length() == 6)
@@ -2393,7 +2402,8 @@ class CSSTokenizerFilter {
 			return false;
 		}
 
-		protected void innerEncode(boolean unicode, StringBuffer out) {
+                @Override
+		protected void innerEncode(boolean unicode, StringBuilder out) {
 			out.append(stringChar);
 			super.innerEncode(unicode, out);
 			out.append(stringChar);
@@ -2407,7 +2417,8 @@ class CSSTokenizerFilter {
 			super(original, decoded, changed || stringChar == 0, stringChar == 0 ? '"' : stringChar);
 		}
 
-		protected void innerEncode(boolean unicode, StringBuffer out) {
+                @Override
+		protected void innerEncode(boolean unicode, StringBuilder out) {
 			out.append("url(");
 			super.innerEncode(unicode, out);
 			out.append(')');
@@ -2425,7 +2436,8 @@ class CSSTokenizerFilter {
 			super(original, decoded, changed);
 		}
 
-		protected void innerEncode(boolean unicode, StringBuffer out) {
+                @Override
+		protected void innerEncode(boolean unicode, StringBuilder out) {
 			out.append("attr(");
 			super.innerEncode(unicode, out);
 			out.append(')');
@@ -2446,7 +2458,7 @@ class CSSTokenizerFilter {
 		}
 
 		@Override
-		protected void innerEncode(boolean unicode, StringBuffer out) {
+		protected void innerEncode(boolean unicode, StringBuilder out) {
 			out.append(original);
 		}
 
@@ -2467,7 +2479,7 @@ class CSSTokenizerFilter {
 		private final ParsedString separatorString;
 
 		@Override
-		protected void innerEncode(boolean unicode, StringBuffer out) {
+		protected void innerEncode(boolean unicode, StringBuilder out) {
 			if(separatorString != null)
 				out.append("counters(");
 			else
@@ -2509,12 +2521,12 @@ class CSSTokenizerFilter {
 		 * \r into a space, so we just ignore the \n. */
 		boolean eatLF = false;
 		/** The original token */
-		StringBuffer origToken = new StringBuffer(input.length());
+		StringBuilder origToken = new StringBuilder(input.length());
 		/** The decoded token */
-		StringBuffer decodedToken = new StringBuffer(input.length());
+		StringBuilder decodedToken = new StringBuilder(input.length());
 		/** We don't like the original token, it bends the spec in unacceptable ways */
 		boolean dontLikeOrigToken = false;
-		StringBuffer escape = new StringBuffer(6);
+		StringBuilder escape = new StringBuilder(6);
 		boolean couldBeIdentifier = true;
 		boolean addComma = false;
 		// Brackets prevent tokenisation, see e.g. rgb().
@@ -2738,7 +2750,7 @@ class CSSTokenizerFilter {
 	}
 
 
-	private static ParsedWord parseToken(StringBuffer origToken, StringBuffer decodedToken, boolean dontLikeOrigToken, boolean couldBeIdentifier) {
+	private static ParsedWord parseToken(StringBuilder origToken, StringBuilder decodedToken, boolean dontLikeOrigToken, boolean couldBeIdentifier) {
 		if(origToken.length() > 2) {
 			char c = origToken.charAt(0);
 			if(c == '\'' || c == '\"') {
@@ -3001,15 +3013,13 @@ class CSSTokenizerFilter {
 			if(allowedValues!=null)
 			{
 				this.allowedValues=new HashSet<String>();
-				for(int i=0;i<allowedValues.length;i++)
-					this.allowedValues.add(allowedValues[i]);
+                                this.allowedValues.addAll(Arrays.asList(allowedValues));
 			}
 
 			if(allowedMedia!=null)
 			{
 				this.allowedMedia=new HashSet<String>();
-				for(int i=0;i<allowedMedia.length;i++)
-					this.allowedMedia.add(allowedMedia[i]);
+                                this.allowedMedia.addAll(Arrays.asList(allowedMedia));
 			}
 			if(parseExpression!=null)
 				this.parserExpressions=parseExpression.clone();
@@ -3419,11 +3429,13 @@ class CSSTokenizerFilter {
 		 */
 		public static String getStringFromArray(String[] parts,int lowerIndex,int upperIndex)
 		{
-			StringBuffer buffer=new StringBuffer();
+			StringBuilder buffer=new StringBuilder();
 			if(parts!=null && lowerIndex<parts.length)
 			{
-				for(int i=lowerIndex;i<upperIndex && i<parts.length;i++)
-					buffer.append(parts[i]+ " ");
+				for(int i=lowerIndex;i<upperIndex && i<parts.length;i++) {
+					buffer.append(parts[i]);
+                                        buffer.append(' ');
+                                }
 				return buffer.toString();
 			}
 			else
@@ -3503,7 +3515,7 @@ class CSSTokenizerFilter {
 
 		static String toString(ParsedWord[] words) {
 			if(words == null) return null;
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			boolean first = true;
 			for(ParsedWord word : words) {
 				if(!first) sb.append(",");
@@ -3848,7 +3860,7 @@ outer:		for(int i=0;i<value.length;i++) {
 
 		private boolean possiblyValidFontWords(ArrayList<String> fontWords) {
 			if(ElementInfo.disallowUnknownSpecificFonts) {
-				StringBuffer sb = new StringBuffer();
+				StringBuilder sb = new StringBuilder();
 				boolean first = true;
 				for(String s : fontWords) {
 					if(!first) sb.append(' ');
@@ -3872,7 +3884,7 @@ outer:		for(int i=0;i<value.length;i++) {
 				if(isGenericFamily(fontWords.get(0).toLowerCase()))
 					return true;
 			}
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			boolean first = true;
 			for(String s : fontWords) {
 				if(!first) sb.append(' ');
