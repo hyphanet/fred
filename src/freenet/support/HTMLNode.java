@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-public class HTMLNode implements XMLCharacterClasses {
+public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	
 	private static final Pattern namePattern = Pattern.compile("^[" + NAME + "]*$");
 	private static final Pattern simpleNamePattern = Pattern.compile("^[A-Za-z][A-Za-z0-9]*$");
@@ -25,6 +25,15 @@ public class HTMLNode implements XMLCharacterClasses {
 
 	protected final List<HTMLNode> children = new ArrayList<HTMLNode>();
 
+	public HTMLNode clone() {
+		try {
+			return (HTMLNode)super.clone();
+		} catch (CloneNotSupportedException e) {
+			// Impossible
+			throw new Error(e);
+		}
+	}
+	
 	public HTMLNode(String name) {
 		this(name, null);
 	}
