@@ -492,6 +492,7 @@ public class BaseL10n {
 	 * @param patterns Patterns to replace, ${ and } are not included.
 	 * @param values Replacement values.
 	 */
+	@Deprecated
 	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, String[] values) {
 		String result = HTMLEncoder.encode(getString(key));
 		assert (patterns.length == values.length);
@@ -499,6 +500,36 @@ public class BaseL10n {
 			result = result.replaceAll("\\$\\{" + patterns[i] + "\\}", quoteReplacement(values[i]));
 		}
 		node.addChild("%", result);
+	}
+	
+	/** This is *much* safer */
+	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
+		String value = getString(key);
+		
+		int x;
+outer:
+		while(value.length() > 0 && (x = value.indexOf("${")) != -1) {
+			String before = value.substring(0, x);
+			if(before.length() > 0)
+				node.addChild("#", before);
+			value = value.substring(x);
+			int y = value.indexOf('}');
+			if(y == -1) {
+				Logger.error(this, "Unclosed braces in l10n value \""+value+"\" for key "+key);
+				return;
+			}
+			String lookup = value.substring(0, y);
+			value = value.substring(y+1);
+			for(int i=0;i<patterns.length;i++) {
+				if(patterns[i].equals(lookup)) {
+					node.addChild(values[i]);
+					continue outer;
+				}
+			}
+			Logger.error(this, "Unknown substitution \""+lookup+"\" in key "+key+" value \""+value+"\"");
+		}
+		if(value.length() > 0)
+			node.addChild("#", value);
 	}
 	
 	public String[] getAllNamesWithPrefix(String prefix){
