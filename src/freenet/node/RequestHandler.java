@@ -678,12 +678,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		byte[] noderef = rs.waitForOpennetNoderef();
 		if(noderef == null || 
 				node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
-			if(finishOpennetNoRelayInner(om)) {
-				applyByteCounts();
-				unregisterRequestHandlerWithNode();
-			} else {
-				ackOpennet();
-			}
+			finishOpennetNoRelayInner(om);
+			return;
 		}
 
 		finishOpennetRelay(noderef, om);
@@ -694,23 +690,27 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	/**
 	 * Send our noderef to the request source, wait for a reply, if we get one add it. Called when either the request
 	 * wasn't routed, or the node it was routed to didn't return a noderef.
-	 * @return True if we sent a noderef, or failed sending one due to disconnection, in
-	 * which case the caller should call applyByteCounts(); unregisterRequestHandlerWithNode();
-	 * false if we didn't send a reference because e.g. we don't need one, so the caller
-	 * should call ackOpennet().
+	 * 
+	 * Completion: Will call ackOpennet() to send an ack downstream if we didn't send a 
+	 * noderef; if we did, it will call applyByteCounts(); unregisterRequestHandlerWithNode().
+	 * Either way, they get called, possibly asynchronously.
 	 */
-	private boolean finishOpennetNoRelayInner(OpennetManager om) {
+	private void finishOpennetNoRelayInner(OpennetManager om) {
 		if(logMINOR)
 			Logger.minor(this, "Finishing opennet: sending own reference");
-		if(!om.wantPeer(null, false, false, false, ConnectionType.PATH_FOLDING))
-			return false; // Don't want a reference
+		if(!om.wantPeer(null, false, false, false, ConnectionType.PATH_FOLDING)) {
+			ackOpennet();
+			return; // Don't want a reference
+		}
 
 		try {
 			om.sendOpennetRef(false, uid, source, om.crypto.myCompressedFullRef(), this);
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "Can't send opennet ref because node disconnected on " + this);
 			// Oh well...
-			return true;
+			applyByteCounts();
+			unregisterRequestHandlerWithNode();
+			return;
 		}
 
 		// Wait for response
@@ -720,7 +720,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
 		// in all cases he should unlock.
 		finishOpennetNoRelayInner(om, noderef);
-		return true;
+		applyByteCounts();
+		unregisterRequestHandlerWithNode();
 	}
 
 	private void finishOpennetNoRelayInner(OpennetManager om, byte[] noderef) {
