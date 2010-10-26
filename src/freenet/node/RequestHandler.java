@@ -662,6 +662,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 	
+	/** Acknowledge the opennet path folding attempt without sending a reference. Once
+	 * the send completes (asynchronously), unlock everything. */
 	private void ackOpennet() {
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
 		sendTerminal(msg);
