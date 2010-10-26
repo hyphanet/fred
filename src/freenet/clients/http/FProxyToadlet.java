@@ -343,7 +343,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(filterChecked) f.addAttribute("checked", "checked");
 			filterControl.addChild("div", l10n("filterDataMessage"));
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace",
-					new String[] { "page", "/link" }, new HTMLNode[] { DOWNLOADS_LINK, HTMLNode.slashA });
+					new String[] { "page" }, new HTMLNode[] { DOWNLOADS_LINK });
 		}
 	}
 	
