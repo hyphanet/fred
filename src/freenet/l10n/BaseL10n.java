@@ -531,7 +531,7 @@ public class BaseL10n {
 			
 			for(int i=0;i<patterns.length;i++) {
 				if(patterns[i].equals(lookup)) {
-					subnode = values[i].clone();
+					subnode = values[i];
 					break;
 				}
 			}
@@ -539,17 +539,18 @@ public class BaseL10n {
 			String searchFor = "${/"+lookup+"}";
 			x = value.indexOf(searchFor);
 			if(x == -1) {
-				// It goes up to the end of the tag
+				// It goes up to the end of the tag. It has no contents.
 				if(subnode != null) {
 					node.addChild(subnode);
-					addL10nSubstitutionInner(subnode, key, value, patterns, values);
-				} else {
-					addL10nSubstitutionInner(node, key, value, patterns, values);
 				}
+				addL10nSubstitutionInner(node, key, value, patterns, values);
+				value = value.substring(x + searchFor.length());
 			} else {
+				// It has contents. Must recurse.
 				String inner = value.substring(0, x);
 				String rest = value.substring(x + searchFor.length());
 				if(subnode != null) {
+					subnode = subnode.clone();
 					node.addChild(subnode);
 					addL10nSubstitutionInner(subnode, key, inner, patterns, values);
 				} else {
