@@ -2732,7 +2732,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			NodeL10n.getBase().addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail",
 					new String[] { "count", "link", "/link" },
-					new HTMLNode[] { new HTMLNode("#", Integer.toString(peers.length)), new HTMLNode("a", "href", "/?_CHECKED_HTTP_=https://bugs.freenetproject.org/view.php?id=2692"), new HTMLNode("/a") });
+					new HTMLNode[] { HTMLNode.text(peers.length), HTMLNode.link("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/view.php?id=2692"), HTMLNode.slashA });
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());

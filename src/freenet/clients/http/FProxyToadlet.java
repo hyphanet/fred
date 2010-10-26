@@ -288,6 +288,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(tmpRange != null) tmpRange.free();
 		}
 	}
+	
+	static final HTMLNode DOWNLOADS_LINK = QueueToadlet.DOWNLOADS_LINK;
 
 	private static void addDownloadOptions(ToadletContext ctx, HTMLNode optionList, FreenetURI key, String mimeType, boolean disableFiltration, boolean dontShowFilter, NodeClientCore core) {
 		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
@@ -311,7 +313,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton") });
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk",
 					new String[] { "dir", "page", "/link" },
-					new HTMLNode[] { new HTMLNode("#", core.getDownloadDir().getAbsolutePath()), new HTMLNode("a", "href", "/downloads/"), new HTMLNode("/a") });
+					new HTMLNode[] { HTMLNode.link(core.getDownloadDir().getAbsolutePath()), DOWNLOADS_LINK, HTMLNode.slashA });
 			if(!dontShowFilter) {
 				HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
 				HTMLNode f = filterControl.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "filterData", "filterData"});
@@ -320,8 +322,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 			if (threatLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
 				NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadToDiskSecurityWarning",
-						new String[] {"bold", "/bold"},
-						new HTMLNode[] { new HTMLNode("strong"), new HTMLNode("/strong")});
+						new String[] {"bold", "/bold"}, HTMLNode.STRONG_PAIR);
 				//optionForm.addChild("#", l10n("downloadToDiskSecurityWarning") + " ");
 			}
 		}
@@ -342,7 +343,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(filterChecked) f.addAttribute("checked", "checked");
 			filterControl.addChild("div", l10n("filterDataMessage"));
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace",
-					new String[] { "page", "/link" }, new HTMLNode[] { new HTMLNode("a", "href", "/downloads"), new HTMLNode("/a") });
+					new String[] { "page", "/link" }, new HTMLNode[] { DOWNLOADS_LINK, HTMLNode.slashA });
 		}
 	}
 	

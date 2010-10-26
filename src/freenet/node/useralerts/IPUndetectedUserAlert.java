@@ -50,7 +50,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 		if(node.ipDetector.noDetectPlugins()) {
 			HTMLNode p = new HTMLNode("p");
 			NodeL10n.getBase().addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "/plugins", "config", "/config" },
-					new HTMLNode[] { new HTMLNode("a", "href", "/plugins/"), new HTMLNode("/a"), new HTMLNode("a", "href", "/config/node"), new HTMLNode("/a") });
+					new HTMLNode[] { HTMLNode.link("/plugins/"), HTMLNode.slashA, HTMLNode.link("/config/node"), HTMLNode.slashA });
 			return p;
 		}
 		HTMLNode textNode = new HTMLNode("div");
@@ -59,7 +59,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 		
 		NodeL10n.getBase().addL10nSubstitution(textNode, "IPUndetectedUserAlert."+(node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"), 
 				new String[] { "link", "/link" },
-				new HTMLNode[] { new HTMLNode("a", "href", "/config/"+sc.getPrefix()), new HTMLNode("/a") });
+				new HTMLNode[] { HTMLNode.link("/config/"+sc.getPrefix()), HTMLNode.slashA });
 		addPortForwardSuggestion(textNode);
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/"+sc.getPrefix(), "post" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });

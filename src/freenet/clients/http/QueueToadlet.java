@@ -2166,6 +2166,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	static final String PATH_UPLOADS = "/uploads/";
 	static final String PATH_DOWNLOADS = "/downloads/";
+	
+	static final HTMLNode DOWNLOADS_LINK = 
+		HTMLNode.link(PATH_DOWNLOADS).setReadOnly();
+	static final HTMLNode UPLOADS_LINK =
+		HTMLNode.link(PATH_UPLOADS).setReadOnly();
 
 	@Override
 	public String path() {
@@ -2204,7 +2209,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
 					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size" },
-					new HTMLNode[] { new HTMLNode("a", "href", path()+uri.toASCIIString()), new HTMLNode("/a"), new HTMLNode("/"+uri.toASCIIString()), new HTMLNode("/a"), new HTMLNode("#", uri.getPreferredFilename()), new HTMLNode("#", SizeUtil.formatSize(size)) } );
+					new HTMLNode[] { HTMLNode.link(path()+uri.toASCIIString()), HTMLNode.slashA, HTMLNode.link("/"+uri.toASCIIString()), HTMLNode.slashA, HTMLNode.text(uri.getPreferredFilename()), HTMLNode.text(SizeUtil.formatSize(size))});
 			return text;
 		}
 
@@ -2261,7 +2266,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
 					new String[] { "link", "/link", "filename", "size" },
-					new HTMLNode[] { new HTMLNode("a", "href", "/"+uri.toASCIIString()), new HTMLNode("/a"), new HTMLNode("#", uri.getPreferredFilename()), new HTMLNode("#", SizeUtil.formatSize(size)) });
+					new HTMLNode[] { HTMLNode.link("/"+uri.toASCIIString()), HTMLNode.slashA, HTMLNode.text(uri.getPreferredFilename()), HTMLNode.text(SizeUtil.formatSize(size))});
 			return text;
 		}
 
@@ -2320,7 +2325,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
 					new String[] { "link", "/link", "filename", "size", "files" },
-					new HTMLNode[] { new HTMLNode("a", "href", "/"+uri.toASCIIString()), new HTMLNode("/a"), new HTMLNode("#", name), new HTMLNode("#", SizeUtil.formatSize(size)), new HTMLNode("#", Integer.toString(files)) });
+					new HTMLNode[] { HTMLNode.link("/"+uri.toASCIIString()), HTMLNode.slashA, HTMLNode.text(name), HTMLNode.text(SizeUtil.formatSize(size)), HTMLNode.text(files) });
 			return text;
 		}
 

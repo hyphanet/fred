@@ -240,6 +240,8 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		// a summary of alerts. With a status bar, we only show full errors here.
 		return createAlerts(true);
 	}
+	
+	static final HTMLNode ALERTS_LINK = new HTMLNode("a", "href", "/alerts/").setReadOnly();
 
 	/**
 	 * Write the alert summary as HTML to a StringBuilder
@@ -336,8 +338,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		if(!oneLine) {
 			summaryContent.addChild("#", alertSummaryString.toString() + separator + " ");
 			NodeL10n.getBase().addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
-				new String[] { "link", "/link" },
-				new HTMLNode[] { new HTMLNode("a", "href", "/alerts/"), new HTMLNode("/a") });
+				new String[] { "link", "/link" }, new HTMLNode[] { ALERTS_LINK, HTMLNode.slashA });
 		} else {
 			summaryContent.addChild("a", "href", "/alerts/", NodeL10n.getBase().getString("StatusBar.alerts") + " " + alertSummaryString.toString());
 		}

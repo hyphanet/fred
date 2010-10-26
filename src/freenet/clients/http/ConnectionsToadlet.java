@@ -668,18 +668,21 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		drawNoderefBox(contentNode, ctx, getNoderef());
 	}
 	
+	static final HTMLNode REF_LINK = HTMLNode.link("myref.fref").setReadOnly();
+	static final HTMLNode REFTEXT_LINK = HTMLNode.link("myref.txt").setReadOnly();
+	
 	static void drawNoderefBox(HTMLNode contentNode, ToadletContext ctx, SimpleFieldSet fs) {
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
 		// FIXME better way to deal with this sort of thing???
 		NodeL10n.getBase().addL10nSubstitution(headerReferenceInfobox, "DarknetConnectionsToadlet.myReferenceHeader",
 				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
-				new HTMLNode[] { new HTMLNode("a", "href", "myref.fref"), new HTMLNode("/a"), new HTMLNode("a", "href", "myref.txt"), new HTMLNode("/a") });
+				new HTMLNode[] { REF_LINK, HTMLNode.slashA, REFTEXT_LINK, HTMLNode.slashA });
 		HTMLNode referenceInfoboxContent = referenceInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode warningSentence = referenceInfoboxContent.addChild("p");
 		NodeL10n.getBase().addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
 				new String[] { "bold", "/bold" },
-				new HTMLNode[] { new HTMLNode("b"), new HTMLNode("/b") });
+				HTMLNode.STRONG_PAIR);
 		referenceInfoboxContent.addChild("pre", "id", "reference", fs.toString() + '\n');
 	}
 

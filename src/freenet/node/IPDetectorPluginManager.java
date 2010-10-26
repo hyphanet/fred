@@ -65,11 +65,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(portsNotForwarded.length == 1) {
 				NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.forwardPort"+keySuffix, 
 						new String[] { "port", "link", "/link" }, 
-						new HTMLNode[] { new HTMLNode("#", Integer.toString(Math.abs(portsNotForwarded[0]))), new HTMLNode("/a") }); 
+						new HTMLNode[] { HTMLNode.text(Math.abs(portsNotForwarded[0])), HTMLNode.link(url), HTMLNode.slashA }); 
 			} else if(portsNotForwarded.length == 2) {
 				NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPorts"+keySuffix, 
 						new String[] { "port1", "port2", "link", "/link" }, 
-						new HTMLNode[] { new HTMLNode("#", Integer.toString(Math.abs(portsNotForwarded[0]))), new HTMLNode("#", Integer.toString(Math.abs(portsNotForwarded[1]))), new HTMLNode("a", "href", url), new HTMLNode("/a") });
+						new HTMLNode[] { HTMLNode.text(Math.abs(portsNotForwarded[0])), HTMLNode.text(Math.abs(portsNotForwarded[1])), HTMLNode.link(url), HTMLNode.slashA});
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
 			}
@@ -196,10 +196,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(suggestPortForward) {
 				if(portsNotForwarded.length == 1) {
 					NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
-							new HTMLNode[] { new HTMLNode("a", "href", "/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues"), new HTMLNode("/a"), new HTMLNode("#", Integer.toString(portsNotForwarded[0])) });
+							new HTMLNode[] { HTMLNode.link("/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues"), HTMLNode.slashA, HTMLNode.text(portsNotForwarded[0])});
 				} else {
 					NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardTwoPortsWithLink", new String[] { "link", "/link", "port1", "port2" },
-							new HTMLNode[] { new HTMLNode("a", "href", "/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues"), new HTMLNode("/a"), new HTMLNode("#", Integer.toString(portsNotForwarded[0])), new HTMLNode("#", Integer.toString(portsNotForwarded[1])) });
+							new HTMLNode[] { HTMLNode.link("/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues"), HTMLNode.slashA, HTMLNode.text(portsNotForwarded[0]), HTMLNode.text(portsNotForwarded[1]) });
 				}
 			}
 			return div;
