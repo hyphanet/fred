@@ -35,7 +35,9 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 
 	public HTMLNode clone() {
 		try {
-			return (HTMLNode)super.clone();
+			HTMLNode node = (HTMLNode)super.clone();
+			node.readOnly = false;
+			return node;
 		} catch (CloneNotSupportedException e) {
 			// Impossible
 			throw new Error(e);
