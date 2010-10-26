@@ -502,7 +502,8 @@ public class BaseL10n {
 		node.addChild("%", result);
 	}
 	
-	/** This is *much* safer */
+	/** This is *much* safer. Callers won't accidentally pass in unencoded strings and
+	 * cause vulnerabilities. Callers should try to reuse parameters if possible. */
 	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
 		String value = getString(key);
 		
