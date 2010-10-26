@@ -14,9 +14,16 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	private static final Pattern namePattern = Pattern.compile("^[" + NAME + "]*$");
 	private static final Pattern simpleNamePattern = Pattern.compile("^[A-Za-z][A-Za-z0-9]*$");
 	/** Do not modify! */
-	public static final HTMLNode slashA = new HTMLNode("/a");
+	public static final HTMLNode slashA = new HTMLNode("/a").setReadOnly();
 
 	protected final String name;
+	
+	private boolean readOnly;
+	
+	public HTMLNode setReadOnly() {
+		readOnly = true;
+		return this;
+	}
 
 	/** Text to be inserted between tags, or possibly raw HTML. Only non-null if name
 	 * is "#" (= text) or "%" (= raw HTML). Otherwise the constructor will allocate a
@@ -91,6 +98,8 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	}
 
 	public void addAttribute(String attributeName, String attributeValue) {
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
 		if (attributeName == null)
 			throw new IllegalArgumentException("Cannot add an attribute with a null name");
 		if (attributeValue == null)
@@ -107,6 +116,8 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	}
 
 	public HTMLNode addChild(HTMLNode childNode) {
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
 		if (childNode == null) throw new NullPointerException();
 		//since an efficient algorithm to check the loop presence 
 		//is not present, at least it checks if we are trying to
@@ -120,6 +131,8 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	}
 	
 	public void addChildren(HTMLNode[] childNodes) {
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
 		for (int i = 0, c = childNodes.length; i < c; i++) {
 			addChild(childNodes[i]);
 		}
@@ -250,6 +263,8 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	}
 	
 	public void setContent(String newContent){
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
 		content=newContent;
 	}
 	
