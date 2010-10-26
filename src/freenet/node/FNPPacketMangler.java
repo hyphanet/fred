@@ -2731,8 +2731,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
 			}
 			NodeL10n.getBase().addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail",
-					new String[] { "count", "link", "/link" },
-					new HTMLNode[] { HTMLNode.text(peers.length), HTMLNode.link("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/view.php?id=2692"), HTMLNode.slashA });
+					new String[] { "count", "link" },
+					new HTMLNode[] { HTMLNode.text(peers.length), HTMLNode.link("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/view.php?id=2692") });
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());

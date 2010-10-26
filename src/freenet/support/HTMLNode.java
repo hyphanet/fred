@@ -13,11 +13,7 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	
 	private static final Pattern namePattern = Pattern.compile("^[" + NAME + "]*$");
 	private static final Pattern simpleNamePattern = Pattern.compile("^[A-Za-z][A-Za-z0-9]*$");
-	/** Do not modify! */
-	public static final HTMLNode slashA = new HTMLNode("/a").setReadOnly();
 	public static HTMLNode STRONG = new HTMLNode("strong").setReadOnly();
-	public static HTMLNode slashSTRONG = new HTMLNode("/strong").setReadOnly();
-	public static final HTMLNode[] STRONG_PAIR = new HTMLNode[] { STRONG, slashSTRONG };
 
 	protected final String name;
 	
