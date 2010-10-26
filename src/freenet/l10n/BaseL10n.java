@@ -558,6 +558,8 @@ public class BaseL10n {
 				value = rest;
 			}
 		}
+		if(!value.isEmpty())
+			node.addChild("#", value);
 	}
 	
 	public String[] getAllNamesWithPrefix(String prefix){
