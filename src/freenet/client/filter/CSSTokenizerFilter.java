@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 
 package freenet.client.filter;
-import freenet.support.HexUtil;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -153,9 +152,9 @@ class CSSTokenizerFilter {
                 allelementVerifiers.add("column-rule-style");
                 allelementVerifiers.add("column-rule-width");
                 allelementVerifiers.add("column-span");
-//                allelementVerifiers.add("column-rule");
+		allelementVerifiers.add("column-rule");
                 allelementVerifiers.add("column-width");
-//                allelementVerifiers.add("columns");
+		allelementVerifiers.add("columns");
 		allelementVerifiers.add("color");
 		allelementVerifiers.add("content");
 		allelementVerifiers.add("counter-increment");
@@ -469,7 +468,7 @@ class CSSTokenizerFilter {
 		}
                 else if("column-count".equalsIgnoreCase(element))
                 {
-                        elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
+                        elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto"},ElementInfo.VISUALMEDIA,new String[]{"in"}));
 			allelementVerifiers.remove(element);
                 }
                 else if("column-fill".equalsIgnoreCase(element))
@@ -498,6 +497,16 @@ class CSSTokenizerFilter {
                         elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"14<1,4>"}));
 			allelementVerifiers.remove(element);
                 }
+		else if("column-rule".equalsIgnoreCase(element))
+                {
+			// column-rule-width
+			auxilaryVerifiers[54] = new CSSPropertyVerifier(null,null,null,new String[]{"14<1,4>"});
+			// border-style
+			auxilaryVerifiers[55] = new CSSPropertyVerifier(null,null,null,new String[]{"13<1,4>"});
+			// color || transparent 13
+                        elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"54a55a15"}));
+			allelementVerifiers.remove(element);
+                }
                 else if("column-span".equalsIgnoreCase(element))
                 {
                         elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"1", "all"},ElementInfo.VISUALMEDIA));
@@ -508,6 +517,16 @@ class CSSTokenizerFilter {
                         elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
 			allelementVerifiers.remove(element);
                 }
+		else if("columns".equalsIgnoreCase(element))
+		{
+			// column-width
+			auxilaryVerifiers[52]=new CSSPropertyVerifier(new String[]{"auto"},new String[]{"le"},null,true);
+			// column-count
+			auxilaryVerifiers[53]=new CSSPropertyVerifier(new String[]{"auto"},new String[]{"in"},null,true);
+
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"52a53"}));
+			allelementVerifiers.remove(element);
+		}
                 else if ("color".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"}));
