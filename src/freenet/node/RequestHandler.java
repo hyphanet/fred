@@ -715,17 +715,20 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		byte[] noderef = om.waitForOpennetNoderef(true, source, uid, this);
 		
-		return finishOpennetNoRelayInner(om, noderef);
+		// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
+		// in all cases he should unlock.
+		finishOpennetNoRelayInner(om, noderef);
+		return true;
 	}
 
-	private boolean finishOpennetNoRelayInner(OpennetManager om, byte[] noderef) {
+	private void finishOpennetNoRelayInner(OpennetManager om, byte[] noderef) {
 		if(noderef == null)
-			return false;
+			return;
 
 		SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, source, false);
 
 		if(ref == null)
-			return false;
+			return;
 
 		try {
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null)
@@ -739,7 +742,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		} catch(ReferenceSignatureVerificationException e) {
 			Logger.error(this, "Bad signature on opennet noderef for " + this + " from " + source + " : " + e, e);
 		}
-		return true;
 	}
 
 	/**
