@@ -636,12 +636,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		OpennetManager om = node.getOpennet();
 		if(om != null &&
 			(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
-				if(finishOpennetInner(om)) {
-					applyByteCounts();
-					unregisterRequestHandlerWithNode();
-				} else {
-					ackOpennet();
-				}
+			finishOpennetInner(om);
 		} else {
 			ackOpennet();
 		}
@@ -675,18 +670,25 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	/**
 	 * @param om
-	 * @return True if we have either sent a noderef or have failed due to disconnect; the
-	 * caller should call applyByteCounts; unregisterRequestHandlerWithNode. False if we
-	 * are unable to send a noderef because there isn't one to send, and the caller should
-	 * call ackOpennet(). */
-	private boolean finishOpennetInner(OpennetManager om) {
+	 * Completion: Will either call ackOpennet(), sending an ack downstream and then 
+	 * unlocking after this has been sent (asynchronously), or will unlock itself if we
+	 * sent a noderef (after we have handled the incoming noderef / ack / timeout). 
+	 */
+	private void finishOpennetInner(OpennetManager om) {
 		byte[] noderef = rs.waitForOpennetNoderef();
 		if(noderef == null || 
-				node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0)
-			return finishOpennetNoRelayInner(om);
+				node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
+			if(finishOpennetNoRelayInner(om)) {
+				applyByteCounts();
+				unregisterRequestHandlerWithNode();
+			} else {
+				ackOpennet();
+			}
+		}
 
 		finishOpennetRelay(noderef, om);
-		return true;
+		applyByteCounts();
+		unregisterRequestHandlerWithNode();
 	}
 
 	/**
