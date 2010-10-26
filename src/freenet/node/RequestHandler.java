@@ -663,10 +663,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	private boolean finishOpennetInner(OpennetManager om) {
 		byte[] noderef = rs.waitForOpennetNoderef();
-		if(noderef == null)
-			return finishOpennetNoRelayInner(om);
-
-		if(node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0)
+		if(noderef == null || 
+				node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0)
 			return finishOpennetNoRelayInner(om);
 
 		finishOpennetRelay(noderef, om);
