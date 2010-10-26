@@ -692,9 +692,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	/**
 	 * Send our noderef to the request source, wait for a reply, if we get one add it. Called when either the request
 	 * wasn't routed, or the node it was routed to didn't return a noderef.
-	 * @return True if success, or lost connection, in which case the caller should call
-	 * applyByteCounts(); unregisterRequestHandlerWithNode(); false if we didn't try to
-	 * send a reference because we don't need one and the caller should call ackOpennet().
+	 * @return True if we sent a noderef, or failed sending one due to disconnection, in
+	 * which case the caller should call applyByteCounts(); unregisterRequestHandlerWithNode();
+	 * false if we didn't send a reference because e.g. we don't need one, so the caller
+	 * should call ackOpennet().
 	 */
 	private boolean finishOpennetNoRelayInner(OpennetManager om) {
 		if(logMINOR)
