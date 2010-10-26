@@ -24,6 +24,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.OpennetManager.NoderefCallback;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -650,12 +651,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		OpennetManager om = node.getOpennet();
 
 		if(om != null && (source.isOpennet() || node.passOpennetRefsThroughDarknet())) {
-			if(finishOpennetNoRelayInner(om)) {
-				applyByteCounts();
-				unregisterRequestHandlerWithNode();
-			} else {
-				ackOpennet();
-			}
+			finishOpennetNoRelayInner(om);
 		} else {
 			ackOpennet();
 		}
@@ -683,19 +679,17 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 
 		finishOpennetRelay(noderef, om);
-		applyByteCounts();
-		unregisterRequestHandlerWithNode();
 	}
 
 	/**
 	 * Send our noderef to the request source, wait for a reply, if we get one add it. Called when either the request
 	 * wasn't routed, or the node it was routed to didn't return a noderef.
 	 * 
-	 * Completion: Will call ackOpennet() to send an ack downstream if we didn't send a 
-	 * noderef; if we did, it will call applyByteCounts(); unregisterRequestHandlerWithNode().
-	 * Either way, they get called, possibly asynchronously.
+	 * Completion: Will ack downstream if necessary (if we didn't send a noderef), and will
+	 * in any case call applyByteCounts(); unregisterRequestHandlerWithNode() asynchronously,
+	 * either after receiving the noderef, or after sending the ack.
 	 */
-	private void finishOpennetNoRelayInner(OpennetManager om) {
+	private void finishOpennetNoRelayInner(final OpennetManager om) {
 		if(logMINOR)
 			Logger.minor(this, "Finishing opennet: sending own reference");
 		if(!om.wantPeer(null, false, false, false, ConnectionType.PATH_FOLDING)) {
@@ -714,14 +708,18 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 
 		// Wait for response
-
-		byte[] noderef = om.waitForOpennetNoderef(true, source, uid, this);
 		
-		// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
-		// in all cases he should unlock.
-		finishOpennetNoRelayInner(om, noderef);
-		applyByteCounts();
-		unregisterRequestHandlerWithNode();
+		om.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
+
+			public void gotNoderef(byte[] noderef) {
+				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
+				// in all cases he should unlock.
+				finishOpennetNoRelayInner(om, noderef);
+				applyByteCounts();
+				unregisterRequestHandlerWithNode();
+			}
+			
+		});
 	}
 
 	private void finishOpennetNoRelayInner(OpennetManager om, byte[] noderef) {
@@ -751,41 +749,55 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * Called when the node we routed the request to returned a valid noderef, and we don't want it.
 	 * So we relay it downstream to somebody who does, and wait to relay the response back upstream.
 	 * 
-	 * Completion: The caller must always call applyByteCounts(); unregisterRequestHandlerWithNode() 
+	 * Completion: Will call applyByteCounts(); unregisterRequestHandlerWithNode() asynchronously 
 	 * after this method returns.
 	 * @param noderef
 	 * @param om
 	 */
-	private void finishOpennetRelay(byte[] noderef, OpennetManager om) {
+	private void finishOpennetRelay(byte[] noderef, final OpennetManager om) {
 		if(logMINOR)
 			Logger.minor(this, "Finishing opennet: relaying reference from " + rs.successFrom());
 		// Send it back to the handler, then wait for the ConnectReply
-		PeerNode dataSource = rs.successFrom();
+		final PeerNode dataSource = rs.successFrom();
 
 		try {
 			om.sendOpennetRef(false, uid, source, noderef, this);
 		} catch(NotConnectedException e) {
 			// Lost contact with request source, nothing we can do
+			applyByteCounts();
+			unregisterRequestHandlerWithNode();
 			return;
 		}
 
 		// Now wait for reply from the request source.
+		
+		om.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
 
-		byte[] newNoderef = om.waitForOpennetNoderef(true, source, uid, this);
-
-		if(newNoderef == null)
-			// Already sent a ref, no way to tell upstream that we didn't receive one. :(
-			return;
-
-		// Send it forward to the data source, if it is valid.
-
-		if(om.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null)
-			try {
-				om.sendOpennetRef(true, uid, dataSource, newNoderef, this);
-			} catch(NotConnectedException e) {
-				// How sad
-				return;
+			public void gotNoderef(byte[] newNoderef) {
+				
+				if(newNoderef == null) {
+					// Already sent a ref, no way to tell upstream that we didn't receive one. :(
+				} else {
+					
+					// Send it forward to the data source, if it is valid.
+					
+					if(om.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null)
+						try {
+							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this);
+						} catch(NotConnectedException e) {
+							// How sad
+						}
+				}
+				
+				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
+				// in all cases he should unlock.
+				applyByteCounts();
+				unregisterRequestHandlerWithNode();
 			}
+			
+		});
+
+
 	}
 	private int sentBytes;
 	private int receivedBytes;
