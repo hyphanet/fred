@@ -631,15 +631,16 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private void finishOpennetChecked() throws NotConnectedException {
 		OpennetManager om = node.getOpennet();
 		if(om != null &&
-			(node.passOpennetRefsThroughDarknet() || source.isOpennet()) &&
-			finishOpennetInner(om)) {
-			applyByteCounts();
-			unregisterRequestHandlerWithNode();
-			return;
+			(node.passOpennetRefsThroughDarknet() || source.isOpennet())) {
+				if(finishOpennetInner(om)) {
+					applyByteCounts();
+					unregisterRequestHandlerWithNode();
+				} else {
+					ackOpennet();
+				}
+		} else {
+			ackOpennet();
 		}
-
-		Message msg = DMT.createFNPOpennetCompletedAck(uid);
-		sendTerminal(msg);
 	}
 
 	/**
@@ -649,14 +650,19 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private void finishOpennetNoRelay() throws NotConnectedException {
 		OpennetManager om = node.getOpennet();
 
-		if(om != null && (source.isOpennet() || node.passOpennetRefsThroughDarknet()) &&
-			finishOpennetNoRelayInner(om)) {
-			applyByteCounts();
-			unregisterRequestHandlerWithNode();
-			return;
+		if(om != null && (source.isOpennet() || node.passOpennetRefsThroughDarknet())) {
+			if(finishOpennetNoRelayInner(om)) {
+				applyByteCounts();
+				unregisterRequestHandlerWithNode();
+			} else {
+				ackOpennet();
+			}
+		} else {
+			ackOpennet();
 		}
-
-		// Otherwise just ack it.
+	}
+	
+	private void ackOpennet() {
 		Message msg = DMT.createFNPOpennetCompletedAck(uid);
 		sendTerminal(msg);
 	}
