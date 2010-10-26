@@ -544,7 +544,6 @@ public class BaseL10n {
 				if(subnode != null) {
 					node.addChild(subnode);
 				}
-				addL10nSubstitutionInner(node, key, value, patterns, values);
 			} else {
 				// It has contents. Must recurse.
 				String inner = value.substring(0, x);
