@@ -627,6 +627,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * Either send an ack, indicating we've finished and aren't interested in opennet, 
 	 * or wait for a noderef and relay it and wait for a response and relay that,
 	 * or send our own noderef and wait for a response and add that.
+	 * 
+	 * One way or another this method must call applyByteCounts; unregisterRequestHandlerWithNode.
+	 * This happens asynchronously via ackOpennet() if we are unable to send a noderef. It
+	 * happens explicitly otherwise.
 	 */
 	private void finishOpennetChecked() throws NotConnectedException {
 		OpennetManager om = node.getOpennet();
@@ -669,6 +673,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		sendTerminal(msg);
 	}
 
+	/**
+	 * @param om
+	 * @return True if we have either sent a noderef or have failed due to disconnect; the
+	 * caller should call applyByteCounts; unregisterRequestHandlerWithNode. False if we
+	 * are unable to send a noderef because there isn't one to send, and the caller should
+	 * call ackOpennet(). */
 	private boolean finishOpennetInner(OpennetManager om) {
 		byte[] noderef = rs.waitForOpennetNoderef();
 		if(noderef == null || 
@@ -682,7 +692,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	/**
 	 * Send our noderef to the request source, wait for a reply, if we get one add it. Called when either the request
 	 * wasn't routed, or the node it was routed to didn't return a noderef.
-	 * @return True if success, or lost connection; false if we need to send an ack.
+	 * @return True if success, or lost connection, in which case the caller should call
+	 * applyByteCounts(); unregisterRequestHandlerWithNode(); false if we didn't try to
+	 * send a reference because we don't need one and the caller should call ackOpennet().
 	 */
 	private boolean finishOpennetNoRelayInner(OpennetManager om) {
 		if(logMINOR)
@@ -732,6 +744,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	/**
 	 * Called when the node we routed the request to returned a valid noderef, and we don't want it.
 	 * So we relay it downstream to somebody who does, and wait to relay the response back upstream.
+	 * 
+	 * Completion: The caller must always call applyByteCounts(); unregisterRequestHandlerWithNode() 
+	 * after this method returns.
 	 * @param noderef
 	 * @param om
 	 */
