@@ -15,6 +15,9 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 	private static final Pattern simpleNamePattern = Pattern.compile("^[A-Za-z][A-Za-z0-9]*$");
 	/** Do not modify! */
 	public static final HTMLNode slashA = new HTMLNode("/a").setReadOnly();
+	public static HTMLNode STRONG = new HTMLNode("strong").setReadOnly();
+	public static HTMLNode slashSTRONG = new HTMLNode("/strong").setReadOnly();
+	public static final HTMLNode[] STRONG_PAIR = new HTMLNode[] { STRONG, slashSTRONG };
 
 	protected final String name;
 	
@@ -304,6 +307,26 @@ public class HTMLNode implements XMLCharacterClasses, Cloneable {
 			return children.get(0).generate(tagBuffer);
 		}
 
+	}
+
+	public static HTMLNode link(String path) {
+		return new HTMLNode("a", "href", path);
+	}
+
+	public static HTMLNode text(String text) {
+		return new HTMLNode("#", text);
+	}
+	
+	public static HTMLNode text(int count) {
+		return new HTMLNode("#", Integer.toString(count));
+	}
+
+	public static HTMLNode text(long count) {
+		return new HTMLNode("#", Long.toString(count));
+	}
+
+	public static HTMLNode text(short count) {
+		return new HTMLNode("#", Short.toString(count));
 	}
 
 }
