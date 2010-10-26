@@ -311,7 +311,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton") });
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk",
 					new String[] { "dir", "page", "/link" },
-					new String[] { HTMLEncoder.encode(core.getDownloadDir().getAbsolutePath()), "<a href=\"/downloads\">", "</a>" });
+					new HTMLNode[] { new HTMLNode("#", core.getDownloadDir().getAbsolutePath()), new HTMLNode("a", "href", "/downloads/"), new HTMLNode("/a") });
 			if(!dontShowFilter) {
 				HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
 				HTMLNode f = filterControl.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "filterData", "filterData"});
@@ -321,7 +321,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if (threatLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
 				NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadToDiskSecurityWarning",
 						new String[] {"bold", "/bold"},
-						new String[] {"<strong>", "</strong>"});
+						new HTMLNode[] { new HTMLNode("strong"), new HTMLNode("/strong")});
 				//optionForm.addChild("#", l10n("downloadToDiskSecurityWarning") + " ");
 			}
 		}
@@ -342,7 +342,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(filterChecked) f.addAttribute("checked", "checked");
 			filterControl.addChild("div", l10n("filterDataMessage"));
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace",
-					new String[] { "page", "/link" }, new String[] { "<a href=\"/downloads\">", "</a>" });
+					new String[] { "page", "/link" }, new HTMLNode[] { new HTMLNode("a", "href", "/downloads"), new HTMLNode("/a") });
 		}
 	}
 	

@@ -337,7 +337,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			summaryContent.addChild("#", alertSummaryString.toString() + separator + " ");
 			NodeL10n.getBase().addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
 				new String[] { "link", "/link" },
-				new String[] { "<a href=\"/alerts/\">", "</a>" });
+				new HTMLNode[] { new HTMLNode("a", "href", "/alerts/"), new HTMLNode("/a") });
 		} else {
 			summaryContent.addChild("a", "href", "/alerts/", NodeL10n.getBase().getString("StatusBar.alerts") + " " + alertSummaryString.toString());
 		}

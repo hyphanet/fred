@@ -203,7 +203,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		} else if (neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
 			NodeL10n.getBase().addL10nSubstitution(alertNode, "PeerManagerUserAlert.tooManyNeverConnectedWithLink",
 					new String[] { "link", "/link", "count" },
-					new String[] { "<a href=\"/friends/myref.fref\">", "</a>", Integer.toString(neverConn) });
+					new HTMLNode[] { new HTMLNode("a", "href", "/friends/myref.fref"), new HTMLNode("/a"), new HTMLNode("#", Integer.toString(neverConn)) });
 		} else if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("connError", "count", Integer.toString(connError)));
 		} else if (disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD && !darknetDefinitelyPortForwarded && !darknetAssumeNAT) {

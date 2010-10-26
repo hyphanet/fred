@@ -2204,7 +2204,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
 					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size" },
-					new String[] { "<a href=\""+path()+uri.toASCIIString()+"\">", "</a>", "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", uri.getPreferredFilename(), SizeUtil.formatSize(size) } );
+					new HTMLNode[] { new HTMLNode("a", "href", path()+uri.toASCIIString()), new HTMLNode("/a"), new HTMLNode("/"+uri.toASCIIString()), new HTMLNode("/a"), new HTMLNode("#", uri.getPreferredFilename()), new HTMLNode("#", SizeUtil.formatSize(size)) } );
 			return text;
 		}
 
@@ -2261,7 +2261,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
 					new String[] { "link", "/link", "filename", "size" },
-					new String[] { "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", uri.getPreferredFilename(), SizeUtil.formatSize(size) } );
+					new HTMLNode[] { new HTMLNode("a", "href", "/"+uri.toASCIIString()), new HTMLNode("/a"), new HTMLNode("#", uri.getPreferredFilename()), new HTMLNode("#", SizeUtil.formatSize(size)) });
 			return text;
 		}
 
@@ -2320,7 +2320,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode text = new HTMLNode("div");
 			NodeL10n.getBase().addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
 					new String[] { "link", "/link", "filename", "size", "files" },
-					new String[] { "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
+					new HTMLNode[] { new HTMLNode("a", "href", "/"+uri.toASCIIString()), new HTMLNode("/a"), new HTMLNode("#", name), new HTMLNode("#", SizeUtil.formatSize(size)), new HTMLNode("#", Integer.toString(files)) });
 			return text;
 		}
 

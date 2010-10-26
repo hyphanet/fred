@@ -365,7 +365,7 @@ public class PacketSender implements Runnable {
 			}
 			NodeL10n.getBase().addL10nSubstitution(div, "PacketSender.somePeersDisconnectedBlockedTooLongDetail",
 					new String[] { "count", "link", "/link" }
-					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/\">", "</a>" });
+					, new HTMLNode[] { new HTMLNode("#", Integer.toString(peers.length)), new HTMLNode("a", "href", "/?_CHECKED_HTTP_=https://bugs.freenetproject.org/"), new HTMLNode("/a") });
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());

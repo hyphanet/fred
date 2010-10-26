@@ -92,7 +92,7 @@ public class BookmarkItem extends Bookmark {
 		public HTMLNode getHTMLText() {
             HTMLNode n = new HTMLNode("div");
             NodeL10n.getBase().addL10nSubstitution(n, "BookmarkItem.bookmarkUpdatedWithLink", new String[]{"link", "/link", "name", "edition"},
-                    new String[]{"<a href=\"/" + key.toString() + "\">", "</a>", HTMLEncoder.encode(name), Long.toString(key.getSuggestedEdition())});
+            		new HTMLNode[] { new HTMLNode("a", "href", "/"+key), new HTMLNode("/a"), new HTMLNode("#", name), new HTMLNode("#", Long.toString(key.getSuggestedEdition())) });
             return n;
         }
 

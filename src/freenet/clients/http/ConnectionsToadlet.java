@@ -674,12 +674,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		// FIXME better way to deal with this sort of thing???
 		NodeL10n.getBase().addL10nSubstitution(headerReferenceInfobox, "DarknetConnectionsToadlet.myReferenceHeader",
 				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
-				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" });
+				new HTMLNode[] { new HTMLNode("a", "href", "myref.fref"), new HTMLNode("/a"), new HTMLNode("a", "href", "myref.txt"), new HTMLNode("/a") });
 		HTMLNode referenceInfoboxContent = referenceInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode warningSentence = referenceInfoboxContent.addChild("p");
 		NodeL10n.getBase().addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
 				new String[] { "bold", "/bold" },
-				new String[] { "<b>", "</b>" });
+				new HTMLNode[] { new HTMLNode("b"), new HTMLNode("/b") });
 		referenceInfoboxContent.addChild("pre", "id", "reference", fs.toString() + '\n');
 	}
 
