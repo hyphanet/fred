@@ -502,35 +502,62 @@ public class BaseL10n {
 		node.addChild("%", result);
 	}
 	
-	/** This is *much* safer. Callers won't accidentally pass in unencoded strings and
-	 * cause vulnerabilities. Callers should try to reuse parameters if possible. */
 	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
 		String value = getString(key);
-		
+		addL10nSubstitutionInner(node, key, value, patterns, values);
+	}
+	
+	/** This is *much* safer. Callers won't accidentally pass in unencoded strings and
+	 * cause vulnerabilities. Callers should try to reuse parameters if possible. */
+	private void addL10nSubstitutionInner(HTMLNode node, String key, String value, String[] patterns, HTMLNode[] values) {
 		int x;
-outer:
-		while(value.length() > 0 && (x = value.indexOf("${")) != -1) {
+		while(!value.isEmpty() && (x = value.indexOf("${")) != -1) {
 			String before = value.substring(0, x);
 			if(before.length() > 0)
 				node.addChild("#", before);
 			value = value.substring(x);
 			int y = value.indexOf('}');
 			if(y == -1) {
-				Logger.error(this, "Unclosed braces in l10n value \""+value+"\" for key "+key);
+				Logger.error(this, "Unclosed braces in l10n value \""+value+"\" for "+key);
 				return;
 			}
-			String lookup = value.substring(0, y);
-			value = value.substring(y+1);
+			String lookup = value.substring(2, y);
+			if(lookup.startsWith("/")) {
+				Logger.error(this, "Starts with / in "+key);
+				return;
+			}
+			
+			HTMLNode subnode = null;
+			
 			for(int i=0;i<patterns.length;i++) {
 				if(patterns[i].equals(lookup)) {
-					node.addChild(values[i]);
-					continue outer;
+					subnode = values[i].clone();
+					break;
 				}
 			}
-			Logger.error(this, "Unknown substitution \""+lookup+"\" in key "+key+" value \""+value+"\"");
+
+			String searchFor = "${/"+lookup+"}";
+			x = value.indexOf(searchFor);
+			if(x == -1) {
+				// It goes up to the end of the tag
+				if(subnode != null) {
+					node.addChild(subnode);
+					addL10nSubstitutionInner(subnode, key, value, patterns, values);
+				} else {
+					addL10nSubstitutionInner(node, key, value, patterns, values);
+				}
+			} else {
+				String inner = value.substring(0, x);
+				String rest = value.substring(x + searchFor.length());
+				if(subnode != null) {
+					node.addChild(subnode);
+					addL10nSubstitutionInner(subnode, key, inner, patterns, values);
+				} else {
+					addL10nSubstitutionInner(node, key, inner, patterns, values);
+				}
+				value = rest;
+			}
 		}
-		if(value.length() > 0)
-			node.addChild("#", value);
 	}
 	
 	public String[] getAllNamesWithPrefix(String prefix){
