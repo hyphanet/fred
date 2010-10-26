@@ -522,6 +522,7 @@ public class BaseL10n {
 				return;
 			}
 			String lookup = value.substring(2, y);
+			value = value.substring(y+1);
 			if(lookup.startsWith("/")) {
 				Logger.error(this, "Starts with / in "+key);
 				return;
@@ -544,7 +545,6 @@ public class BaseL10n {
 					node.addChild(subnode);
 				}
 				addL10nSubstitutionInner(node, key, value, patterns, values);
-				value = value.substring(x + searchFor.length());
 			} else {
 				// It has contents. Must recurse.
 				String inner = value.substring(0, x);
