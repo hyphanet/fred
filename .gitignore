@@ -14,5 +14,5 @@
 *.ipr
 *.iws
 .*
-/build.properties
 *~
+/override.properties
