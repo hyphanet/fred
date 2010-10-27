@@ -53,6 +53,7 @@ public class OpennetPeerNode extends PeerNode {
 		DROPPABLE,
 		TOO_NEW_PEER,
 		TOO_LOW_UPTIME,
+		PREFERRED_PEER,
 		RECONNECT_GRACE_PERIOD
 	}
 	
@@ -63,6 +64,9 @@ public class OpennetPeerNode extends PeerNode {
 	/** Is the peer droppable? 
 	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason. */ 
 	public NOT_DROP_REASON isDroppableWithReason(boolean ignoreDisconnect) {
+		if (isPreferred()) {
+			return NOT_DROP_REASON.PREFERRED_PEER;
+		}
 		long now = System.currentTimeMillis();
 		int status = getPeerNodeStatus();
 		long age = now - getPeerAddedTime();
