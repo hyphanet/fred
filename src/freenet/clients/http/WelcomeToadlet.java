@@ -463,7 +463,7 @@ public class WelcomeToadlet extends Toadlet {
         } else {
 			// Warn that search plugin is not loaded.
 			HTMLNode textSpan = searchBoxContent.addChild("span", "class", "search-not-availible-warning");
-			NodeL10n.getBase().addL10nSubstitution(textSpan, "WelcomeToadlet.searchPluginNotLoaded", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/plugins/" });
+			NodeL10n.getBase().addL10nSubstitution(textSpan, "WelcomeToadlet.searchPluginNotLoaded", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/plugins/") });
 		}
 		
 
