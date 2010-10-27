@@ -25,6 +25,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.node.PeerManager.LocationUIDPair;
+import freenet.model.SmallWorldLinkModel;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -118,13 +119,16 @@ public class LocationManager implements ByteCounter {
     /**
      * @param l
      */
-    public synchronized void setLocation(double l) {
+    public void setLocation(double l) {
     	if(l < 0.0 || l > 1.0) {
     		Logger.error(this, "Setting invalid location: "+l, new Exception("error"));
     		return;
     	}
+		synchronized (this) {
         this.loc = l;
         timeLocSet = System.currentTimeMillis();
+		}
+		updatePreferredPeerStatuses();
     }
 
     public synchronized void updateLocationChangeSession(double newLoc) {
@@ -133,6 +137,30 @@ public class LocationManager implements ByteCounter {
 		if(logMINOR) Logger.minor(this, "updateLocationChangeSession: oldLoc: "+oldLoc+" -> newLoc: "+newLoc+" moved: "+diff);
 		this.locChangeSession += diff;
     }
+
+	private Object preferredPeerStatusUpdateLock=new Object();
+
+	public void updatePreferredPeerStatuses() {
+		synchronized (preferredPeerStatusUpdateLock) {
+			int numPeers=node.getMaxOpennetPeers();
+			if (numPeers<1)
+				return;
+			SmallWorldLinkModel model=new SmallWorldLinkModel(numPeers);
+			model.setFreenetLocation(getLocation());
+			List<PeerNode> allPeers=node.peers.listConnectedPeersByCHKSuccessRate();
+			for (PeerNode peer : allPeers) {
+				if (!peer.isConnected())
+					continue;
+				double location=peer.getLocation();
+				if (location >= 0.0) {
+					peer.setPreferred(model.fillSlot(location, peer));
+				}
+			}
+			idealLocations=model.getIdealLocations();
+		}
+	}
+
+	public double[] idealLocations;
 
     /**
      * Start a thread to send FNPSwapRequests every second when
@@ -153,6 +181,16 @@ public class LocationManager implements ByteCounter {
 			}
 			
 		}, 10*1000);
+		node.ticker.queueTimedJob(new Runnable() {
+			public void run() {
+				try {
+					updatePreferredPeerStatuses();
+				} finally {
+					node.ticker.queueTimedJob(this, 5*60*1000);
+				}
+			}
+		}, 5*60*1000);
+		
     }
 
     /**

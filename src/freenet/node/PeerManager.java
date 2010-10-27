@@ -15,6 +15,8 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -442,6 +444,7 @@ public class PeerManager {
 		if(!pn.isSeed())
                     updatePMUserAlert();
 		node.lm.announceLocChange();
+		node.lm.updatePreferredPeerStatuses();
 	}
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
 //        double minDist = 1.1;
@@ -732,6 +735,31 @@ public class PeerManager {
 			peers[i].sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_DIFFNODEREF, false, 0, false);
 		}
 	}
+
+	public List<PeerNode> listConnectedPeersByCHKSuccessRate() {
+		PeerNode[] peers = connectedPeers;
+		//@bug optimize double-copy / but must have mutable copy for sort
+		List<PeerNode> retval=new ArrayList<PeerNode>(Arrays.asList(peers));
+		Collections.sort(retval, chkSuccessComparator);
+		if (peers.length>1) {
+			//paranoia: make sure we sorted them the right order!
+			double head=retval.get(0).getPeerCHKSuccessRate();
+			double tail=retval.get(peers.length-1).getPeerCHKSuccessRate();
+			if (head < tail) {
+				//remove this once it works
+				throw new Error("sort direction is wrong");
+			}
+		}
+		return retval;
+	}
+
+	private static final Comparator<PeerNode> chkSuccessComparator=new Comparator<PeerNode>() {
+		public int compare(PeerNode p1, PeerNode p2) {
+			if (p1.getPeerCHKSuccessRate()<p2.getPeerCHKSuccessRate())
+				return -1;
+			return 1;
+		}
+	};
 
 	public PeerNode getRandomPeer() {
 		return getRandomPeer(null);
