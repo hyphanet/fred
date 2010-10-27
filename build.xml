@@ -11,10 +11,12 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<!-- Global properties                                                   -->
 	<!-- =================================================================== -->
 
-	<!-- user overrides (properties are immutable, so OK to set these here) -->
-	<property file="build.properties" />
-	<property name="javac.args" value="-Xlint"/>
-	<property name="java.class.dirs" value="/usr/share/java"/>
+	<!-- user overrides (properties are immutable, so set overrides first) -->
+	<property file="override.properties"/>
+	<property file="build.properties"/>
+	<condition property="java.class.dirs" value="${java.class.dirs.user}" else="${java.home}/lib">
+		<available file="${java.class.dirs.user}"/>
+	</condition>
 
 	<property name="main.src" value="src"/>
 	<property name="main.make" value="build/main"/>
@@ -34,7 +36,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<property name="lib.contrib" location="${lib}/freenet-ext.jar"/>
 	<path id="lib.path">
 		<fileset dir="${lib}" includes="**/*.jar"/>
-		<fileset dir="${java.class.dirs}" erroronmissingdir="false">
+		<fileset dir="${java.class.dirs}">
 			<include name="junit.jar"/>
 		</fileset>
 	</path>
@@ -46,11 +48,10 @@ of speech, and without decentralization the network would be vulnerable to attac
 
 	<property name="gjs.dst" value="${main.src}/freenet/clients/http/staticfiles/freenetjs"/>
 	<property name="gjs.dir" value="generator/js"/>
-	<property name="gjs.lib" value="${gjs.dir}/lib"/>
 	<path id="gjs.lib.path">
-		<fileset dir="${gjs.lib}" includes="*.jar" erroronmissingdir="false"/>
+		<fileset dir="${gjs.dir}" includes="lib/*.jar"/>
 		<pathelement location="${gjs.dir}/war/WEB-INF/classes"/>
-		<fileset dir="${java.class.dirs}" erroronmissingdir="false">
+		<fileset dir="${java.class.dirs}">
 			<include name="gwt-dev-linux.jar"/>
 			<include name="gwt-user.jar"/>
 			<include name="commons-collections3.jar"/>
