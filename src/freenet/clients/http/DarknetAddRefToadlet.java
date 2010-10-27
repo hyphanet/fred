@@ -90,7 +90,8 @@ public class DarknetAddRefToadlet extends Toadlet {
 		HTMLNode p = boxContent.addChild("p");
 		
 		if(installer != null)
-			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerWindows", new String[] { "filename", "get-windows", "/link" }, new String[] { HTMLEncoder.encode(installer.getCanonicalPath()), "<a href=\""+HTMLEncoder.encode(path() + installer.toString())+"\">", "</a>"});
+			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerWindows", new String[] { "filename", "get-windows" },
+					new HTMLNode[] { HTMLNode.text(installer.getCanonicalPath()), HTMLNode.link(path()+installer.toString()) });
 		else
 			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerWindowsNotYet", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/"+node.nodeUpdater.getInstallerWindowsURI().toString()) });
 		
@@ -102,7 +103,8 @@ public class DarknetAddRefToadlet extends Toadlet {
 		p = boxContent.addChild("p");
 		
 		if(installer != null)
-			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerNonWindows", new String[] { "filename", "get-nonwindows", "/link", "shortfilename" }, new String[] { HTMLEncoder.encode(installer.getCanonicalPath()), "<a href=\""+HTMLEncoder.encode(path()+shortFilename)+"\">", "</a>", shortFilename});
+			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerNonWindows", new String[] { "filename", "get-nonwindows", "shortfilename" },
+					new HTMLNode[] { HTMLNode.text(installer.getCanonicalPath()), HTMLNode.link(path()+shortFilename), HTMLNode.text(shortFilename) });
 		else
 			NodeL10n.getBase().addL10nSubstitution(p, "DarknetAddRefToadlet.explainInstallerNonWindowsNotYet", new String[] { "link", "shortfilename" }, new HTMLNode[] { HTMLNode.link("/"+node.nodeUpdater.getInstallerNonWindowsURI().toString()), HTMLNode.text(shortFilename) });
 			
