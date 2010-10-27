@@ -57,7 +57,7 @@ public class NewPacketFormatTest extends TestCase {
 		receiver.createPacket(512, senderQueue); //Sent, but lost
 
 		try {
-			Thread.sleep(1000); //RTT should be small
+			Thread.sleep(1000); //RTT is 250ms by default since there is no PeerNode to track it
 		} catch (InterruptedException e) { fail(); }
 
 		NPFPacket resend1 = sender.createPacket(512, senderQueue);
