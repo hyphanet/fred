@@ -515,7 +515,15 @@ public class BaseL10n {
 	 * HTMLNode representing a tag closure, so callers will need to change their code to
 	 * not pass in /link or similar, and in some cases will need to change the l10n 
 	 * strings themselves to always close the tag properly, rather than using a generic
-	 * /link for multiple links as we use in some places. */
+	 * /link for multiple links as we use in some places.
+	 * 
+	 * Example:
+	 * 
+	 * addL10nSubstitution(html, "TranslationLookup.string", new String[] { "link", "text" },
+	 *   new HTMLNode[] { HTMLNode.link("/KSK@gpl.txt"), HTMLNode.text("blah") })
+	 * 
+	 * TranslationLookup.string=This is a ${link}link${/link} about ${text}.
+	 */
 	private void addL10nSubstitutionInner(HTMLNode node, String key, String value, String[] patterns, HTMLNode[] values) {
 		int x;
 		while(!value.isEmpty() && (x = value.indexOf("${")) != -1) {
