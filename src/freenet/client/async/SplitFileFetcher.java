@@ -690,6 +690,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	// It shouldn't be referred to by anything but it's good to detect such problems.
 	private boolean removed = false;
 	
+	/** Remove from the database, but only if all the cross-segments have finished.
+	 * If not, wait for them to report in. */
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			toRemove = true;
@@ -720,6 +722,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		innerRemoveFrom(container, context);
 	}
 	
+	/** Actually do the remove from the database. */
 	public void innerRemoveFrom(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(removed) {
@@ -768,6 +771,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		container.delete(this);
 	}
 
+	/** Call fetcherFinished() on all the segments. Necessary when we have cross-segment
+	 * redundancy, because we cannot free the data blocks until the cross-segment encodes
+	 * have finished.
+	 * @param container
+	 * @param context
+	 */
 	private void finishSegments(ObjectContainer container, ClientContext context) {
 		for(int i=0;i<segments.length;i++) {
 			SplitFileFetcherSegment segment = segments[i];
@@ -806,6 +815,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		return true;
 	}
 
+	/** A cross-segment has completed. When all the cross-segments have completed, and 
+	 * removeFrom() has been called, we call innerRemoveFrom() to finish removing the 
+	 * fetcher from the database. If the splitfile is not persistent, we still need to 
+	 * call finishSegments() on each. */
 	public boolean onFinishedCrossSegment(ObjectContainer container, ClientContext context, SplitFileFetcherCrossSegment seg) {
 		boolean allGone = true;
 		for(int i=0;i<crossSegments.length;i++) {
