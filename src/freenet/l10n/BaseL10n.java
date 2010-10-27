@@ -508,7 +508,14 @@ public class BaseL10n {
 	}
 	
 	/** This is *much* safer. Callers won't accidentally pass in unencoded strings and
-	 * cause vulnerabilities. Callers should try to reuse parameters if possible. */
+	 * cause vulnerabilities. Callers should try to reuse parameters if possible. We 
+	 * automatically close each tag: When a pattern ${name} is matched, we search for
+	 * ${/name}. If we find it, we make the tag enclose everything between the two; if we
+	 * can't find it, we just add it with no children. It is not possible to create an
+	 * HTMLNode representing a tag closure, so callers will need to change their code to
+	 * not pass in /link or similar, and in some cases will need to change the l10n 
+	 * strings themselves to always close the tag properly, rather than using a generic
+	 * /link for multiple links as we use in some places. */
 	private void addL10nSubstitutionInner(HTMLNode node, String key, String value, String[] patterns, HTMLNode[] values) {
 		int x;
 		while(!value.isEmpty() && (x = value.indexOf("${")) != -1) {
