@@ -2025,8 +2025,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			fetcherHalfFinished = true;
 			finish = encoderFinished;
 		}
-		if(finish) freeDecodedData(container, false);
-		else {
+		if(finish) {
+			if(crossCheckBlocks == 0) freeDecodedData(container, false);
+		} else {
 			if(logMINOR) Logger.minor(this, "Fetcher half-finished but fetcher not finished on "+this);
 		}
 		if(persistent) container.store(this);
@@ -2066,7 +2067,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		if(finish) {
 			if(persistent) removeFrom(container, context);
 		} else if(half) {
-			freeDecodedData(container, false);
+			if(crossCheckBlocks == 0)
+				freeDecodedData(container, false);
 			if(persistent) container.store(this);
 			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
 		} else {
