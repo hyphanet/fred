@@ -264,7 +264,7 @@ class NPFPacket {
 		return true;
 	}
 
-	int oldMsgIDLength;
+	private int oldMsgIDLength;
 	public int addMessageFragment(MessageFragment frag) {
 		length += frag.length();
 		fragments.add(frag);
