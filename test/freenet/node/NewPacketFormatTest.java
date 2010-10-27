@@ -75,7 +75,6 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
-		PeerMessageQueue receiverQueue = new PeerMessageQueue();
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
@@ -97,7 +96,6 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
-		PeerMessageQueue receiverQueue = new PeerMessageQueue();
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
