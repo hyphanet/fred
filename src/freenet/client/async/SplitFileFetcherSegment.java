@@ -2029,7 +2029,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			finish = encoderFinished;
 		}
 		if(finish) {
-			if(crossCheckBlocks == 0) freeDecodedData(container, false);
+			if(crossCheckBlocks == 0) 
+				freeDecodedData(container, false);
+			// Else wait for the whole splitfile to complete in fetcherFinished(), and then free decoded data in removeFrom().
 		} else {
 			if(logMINOR) Logger.minor(this, "Fetcher half-finished but fetcher not finished on "+this);
 		}
@@ -2072,6 +2074,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		} else if(half) {
 			if(crossCheckBlocks == 0)
 				freeDecodedData(container, false);
+			// Else wait for the whole splitfile to complete in fetcherFinished(), and then free decoded data in removeFrom().
 			if(persistent) container.store(this);
 			if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
 		} else {
