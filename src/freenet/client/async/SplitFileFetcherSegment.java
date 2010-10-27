@@ -1981,6 +1981,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(!finished) {
+			Logger.error(this, "Removing "+this+" but not finished, fetcher finished "+fetcherFinished+" fetcher half finished "+fetcherHalfFinished+" encoder finished "+encoderFinished);
+		}
 		if(logMINOR) Logger.minor(this, "removing "+this);
 		context.cooldownTracker.remove(this, true, container);
 		freeDecodedData(container, true);
