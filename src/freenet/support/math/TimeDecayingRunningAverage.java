@@ -60,7 +60,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     /**
      *
      * @param defaultValue
-     * @param halfLife
+     * @param halfLife - in milliseconds
      * @param min
      * @param max
      * @param callback
@@ -85,7 +85,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     /**
      *
      * @param defaultValue
-     * @param halfLife
+     * @param halfLife - in milliseconds
      * @param min
      * @param max
      * @param fs
@@ -127,7 +127,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     /**
      *
      * @param defaultValue
-     * @param halfLife
+     * @param halfLife - in milliseconds
      * @param min
      * @param max
      * @param dis
