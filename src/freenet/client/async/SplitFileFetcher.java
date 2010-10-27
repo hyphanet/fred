@@ -818,7 +818,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	/** A cross-segment has completed. When all the cross-segments have completed, and 
 	 * removeFrom() has been called, we call innerRemoveFrom() to finish removing the 
 	 * fetcher from the database. If the splitfile is not persistent, we still need to 
-	 * call finishSegments() on each. */
+	 * call finishSegments() on each. 
+	 * @return True if we finished the fetcher (and removed the segment from the database
+	 * or called finishSegments()). */
 	public boolean onFinishedCrossSegment(ObjectContainer container, ClientContext context, SplitFileFetcherCrossSegment seg) {
 		boolean allGone = true;
 		for(int i=0;i<crossSegments.length;i++) {
