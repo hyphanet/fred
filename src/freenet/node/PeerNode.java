@@ -226,6 +226,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long timeLastReceivedProbeRequest;
 	/** Average interval between probe requests */
 	private final RunningAverage probeRequestsInterval;
+	protected final RunningAverage percentCHKSuccess;
 	/** Should we decrement HTL when it is at the maximum?
 	* This decision is made once per node to prevent giving
 	* away information that can make correlation attacks much
@@ -610,7 +611,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
 		probeRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS);
-
+		percentCHKSuccess = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		
 		// Not connected yet; need to handshake
 		isConnected = false;
 
@@ -1165,6 +1167,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public synchronized long getPeerAddedTime() {
 		return peerAddedTime;
+	}
+
+	public double getPeerCHKSuccessRate() {
+		return percentCHKSuccess.currentValue();
 	}
 
 	/**
@@ -3623,7 +3629,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/** Called when a request or insert succeeds. Used by opennet. */
 	public abstract void onSuccess(boolean insert, boolean ssk);
-
+	public abstract void onFailure(boolean insert, boolean ssk);
+	
 	/** Called when a delayed disconnect is occurring. Tell the node that it is being disconnected, but
 	 * that the process may take a while. */
 	public void notifyDisconnecting() {

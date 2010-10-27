@@ -1237,6 +1237,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         } else {
         	node.nodeStats.requestCompleted(false, source != null, key instanceof NodeSSK);
 			fireRequestSenderFinished(code);
+			if (next != null) {
+				//@bug: this might only penalize the last node attempted
+        		next.onFailure(false, key instanceof NodeSSK);
+        	}
 		}
         
 		synchronized(this) {

@@ -1547,7 +1547,12 @@ public class DarknetPeerNode extends PeerNode {
 
 	@Override
 	public void onSuccess(boolean insert, boolean ssk) {
-		// Ignore it
+		if (!ssk) percentCHKSuccess.report(1.0);
+	}
+	
+	@Override
+	public void onFailure(boolean insert, boolean ssk) {
+		if (!ssk) percentCHKSuccess.report(0.0);
 	}
 
 	@Override

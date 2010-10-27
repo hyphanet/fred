@@ -738,8 +738,14 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         		notifyAll();
         	}
         	
-        if(status == SUCCESS && next != null)
-        	next.onSuccess(true, false);
+        if (next != null) {
+			if (status == SUCCESS) {
+				next.onSuccess(true, false);
+			} else {
+				//@bug: this might only penalize the last node attempted
+				next.onFailure(true, false);
+			}
+		}
         
         if(logMINOR) Logger.minor(this, "Returning from finish()");
     }

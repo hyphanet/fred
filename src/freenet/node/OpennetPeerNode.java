@@ -106,9 +106,15 @@ public class OpennetPeerNode extends PeerNode {
 	
 	@Override
 	public void onSuccess(boolean insert, boolean ssk) {
+		if (!ssk) percentCHKSuccess.report(1.0);
 		if(insert || ssk) return;
 		timeLastSuccess = System.currentTimeMillis();
 		opennet.onSuccess(this);
+	}
+	
+	@Override
+	public void onFailure(boolean insert, boolean ssk) {
+		if (!ssk) percentCHKSuccess.report(0.0);
 	}
 
 	@Override

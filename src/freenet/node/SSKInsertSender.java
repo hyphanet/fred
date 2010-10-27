@@ -545,8 +545,14 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     		notifyAll();
         }
 
-        if(code == SUCCESS && next != null)
-        	next.onSuccess(true, true);
+        if (next != null) {
+			if (code == SUCCESS) {
+				next.onSuccess(true, true);
+			} else {
+				//@bug: this might only penalize the last node attempted
+				next.onFailure(true, true);
+			}
+		}
         
         if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString());
         // Nothing to wait for, no downstream transfers, just exit.
