@@ -838,7 +838,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(!allGone) break;
 			}
 		}
-		if(!toRemove) return false;
+		synchronized(this) {
+			if(persistent && !toRemove) {
+				// Waiting for removeFrom().
+				return false;
+			}
+		}
 		if(allGone) {
 			if(persistent)
 				innerRemoveFrom(container, context);
