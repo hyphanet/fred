@@ -412,7 +412,7 @@ outer:
 		}
 
 		byte[] data = new byte[paddedLen];
-		packet.toBytes(data, HMAC_LENGTH, pn.node.fastWeakRandom);
+		packet.toBytes(data, HMAC_LENGTH, pn.paddingGen);
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
 

@@ -23,6 +23,8 @@ import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
+import org.spaceroots.mantissa.random.MersenneTwister;
+
 import net.i2p.util.NativeBigInteger;
 import freenet.client.FetchResult;
 import freenet.client.async.USKRetriever;
@@ -383,6 +385,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	private PacketFormat packetFormat;
+	MersenneTwister paddingGen;
 
 	/**
 	 * If this returns true, we will generate the identity from the pubkey.
@@ -737,6 +740,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else {
 			packetFormat = new NewPacketFormat(this, 0, 0);
 		}
+
+		byte buffer[] = new byte[16];
+		node.random.nextBytes(buffer);
+		paddingGen = new MersenneTwister(buffer);
 
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
