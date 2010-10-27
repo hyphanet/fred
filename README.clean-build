@@ -11,7 +11,7 @@ effort than the default build path; help in easing this would be appreciated.
 == Considerations ==
 
 A. The fred repo needs to know where the contrib repo is. By default, it looks
-in ../contrib. You can override this by setting contrib.dir in build.proprties.
+in ../contrib. You can override this by setting contrib.dir in build.properties.
 
 B. You may need to install extra Java libraries. These are listed in build.xml,
 in the <path> elements. If you already have these installed, but ANT can't find
