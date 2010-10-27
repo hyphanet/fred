@@ -50,16 +50,16 @@ public class NewPacketFormat implements PacketFormat {
 
 	private int nextSequenceNumber;
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
-	private int nextMessageID = 0;
+	private int nextMessageID;
 	/** The first message id that hasn't been acked by the receiver */
-	private int messageWindowPtrAcked = nextMessageID;
+	private int messageWindowPtrAcked;
 	private final SparseBitmap ackedMessages = new SparseBitmap();
 
 	private int highestReceivedSequenceNumber;
 	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
 	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
 	/** The first message id that hasn't been fully received */
-	private int messageWindowPtrReceived = nextMessageID;
+	private int messageWindowPtrReceived;
 	private final SparseBitmap receivedMessages= new SparseBitmap();
 
 	private SessionKey watchListKey;
@@ -73,7 +73,7 @@ public class NewPacketFormat implements PacketFormat {
 	private int usedBufferOtherSide = 0;
 	private final Object bufferUsageLock = new Object();
 
-	public NewPacketFormat(PeerNode pn, int sequenceNumber) {
+	public NewPacketFormat(PeerNode pn, int sequenceNumber, int messageID) {
 		this.pn = pn;
 
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
@@ -84,6 +84,10 @@ public class NewPacketFormat implements PacketFormat {
 		nextSequenceNumber = sequenceNumber;
 		highestReceivedSequenceNumber = sequenceNumber - 1;
 		watchListOffset = sequenceNumber;
+
+		nextMessageID = messageID % NUM_MESSAGE_IDS;
+		messageWindowPtrAcked = nextMessageID;
+		messageWindowPtrReceived = nextMessageID;
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now) {

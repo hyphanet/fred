@@ -1143,11 +1143,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
 		byte[] ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
 
-		byte[] seqNumData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
-		int seqNum = ((seqNumData[0] & 0xFF) << 24)
-		                | ((seqNumData[1] & 0xFF) << 16)
-		                | ((seqNumData[2] & 0xFF) << 8)
-		                | (seqNumData[3] & 0xFF);
+		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
+		int seqNum = ((sharedData[0] & 0xFF) << 24)
+		                | ((sharedData[1] & 0xFF) << 16)
+		                | ((sharedData[2] & 0xFF) << 8)
+		                | (sharedData[3] & 0xFF);
+		int initialMsgID = ((sharedData[4] & 0xFF) << 24)
+		                | ((sharedData[5] & 0xFF) << 16)
+		                | ((sharedData[6] & 0xFF) << 8)
+		                | (sharedData[7] & 0xFF);
 
 		c.initialize(Ke);
 		final PCFBMode pk = PCFBMode.create(c);
@@ -1250,7 +1254,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 
-		long newTrackerID = pn.completedHandshake(bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher, ivNonce, seqNum);
+		long newTrackerID = pn.completedHandshake(bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher, ivNonce, seqNum, initialMsgID);
 
 		if(newTrackerID > 0) {
 
@@ -1480,7 +1484,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		c.initialize(pn.jfkKs);
 		ivCipher.initialize(pn.ivKey);
 
-		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey, ivCipher, pn.ivNonce, pn.initialSeqNum) >= 0) {
+		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey, ivCipher, pn.ivNonce, pn.initialSeqNum, pn.initialMsgID) >= 0) {
 			if(dontWant) {
 				node.peers.disconnect(pn, true, true, true);
 			} else {
@@ -1500,6 +1504,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.ivKey = null;
 		pn.ivNonce = null;
 		pn.initialSeqNum = 0;
+		pn.initialMsgID = 0;
 		// We want to clear it here so that new handshake requests
 		// will be sent with a different DH pair
 		pn.setKeyAgreementSchemeContext(null);
@@ -1594,11 +1599,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
 		pn.ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
 
-		byte[] seqNumData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
-		pn.initialSeqNum = ((seqNumData[0] & 0xFF) << 24)
-		                | ((seqNumData[1] & 0xFF) << 16)
-		                | ((seqNumData[2] & 0xFF) << 8)
-		                | (seqNumData[3] & 0xFF);
+		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
+		pn.initialSeqNum = ((sharedData[0] & 0xFF) << 24)
+		                | ((sharedData[1] & 0xFF) << 16)
+		                | ((sharedData[2] & 0xFF) << 8)
+		                | (sharedData[3] & 0xFF);
+		pn.initialMsgID = ((sharedData[4] & 0xFF) << 24)
+		                | ((sharedData[5] & 0xFF) << 16)
+		                | ((sharedData[6] & 0xFF) << 8)
+		                | (sharedData[7] & 0xFF);
 
 		c.initialize(pn.jfkKe);
 		PCFBMode pcfb = PCFBMode.create(c);
