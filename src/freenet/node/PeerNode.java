@@ -1041,6 +1041,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 
+	private boolean preferred;
+
+	/**
+	 * Returns true if this peer is presently the "best" peer for a certain address
+	 * range; that is it occupies one of our favored slots by peer-location & success-rate.
+	 */
+	public boolean isPreferred() {
+		return preferred;
+	}
+
+	public void setPreferred(final boolean preferred) {
+		this.preferred=preferred;
+	}
+
 	/**
 	* Send a message, off-thread, to this node.
 	* @param msg The message to be sent.
