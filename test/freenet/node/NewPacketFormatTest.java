@@ -77,8 +77,6 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue receiverQueue = new PeerMessageQueue();
 
-		setUpRTT(50, sender, senderQueue, receiver, receiverQueue);
-
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue);
@@ -100,8 +98,6 @@ public class NewPacketFormatTest extends TestCase {
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue receiverQueue = new PeerMessageQueue();
-
-		setUpRTT(50, sender, senderQueue, receiver, receiverQueue);
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
@@ -132,19 +128,5 @@ public class NewPacketFormatTest extends TestCase {
 
 		//Same message, new sequence number ie. resend
 		assertEquals(0, receiver.handleDecryptedPacket(packet1).size());
-	}
-
-	private void setUpRTT(long delay, NewPacketFormat sender, PeerMessageQueue senderQueue, NewPacketFormat receiver, PeerMessageQueue receiverQueue)
-	                throws BlockedTooLongException {
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1], null, false, null, (short) 0));
-		NPFPacket s = sender.createPacket(512, senderQueue);
-		receiver.handleDecryptedPacket(s);
-		try {
-			Thread.sleep(delay);
-		} catch(InterruptedException e) {
-
-		}
-		NPFPacket r = receiver.createPacket(512, receiverQueue);
-		sender.handleDecryptedPacket(r);
 	}
 }
