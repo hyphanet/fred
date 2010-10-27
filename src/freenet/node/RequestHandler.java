@@ -512,6 +512,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(key instanceof NodeSSK) {
 			sendSSK(block.getRawHeaders(), block.getRawData(), needsPubKey, ((SSKBlock) block).getPubKey());
 			status = RequestSender.SUCCESS; // for byte logging
+			// Assume local SSK sending will succeed?
+			node.nodeStats.remoteRequest(true, true, true, htl, key.toNormalizedDouble());
 		} else if(block instanceof CHKBlock) {
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
 			PartiallyReceivedBlock prb =
@@ -540,7 +542,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							applyByteCounts();
 							unregisterRequestHandlerWithNode();
 						}
-						node.nodeStats.remoteRequest(key instanceof NodeSSK, true, true, htl, key.toNormalizedDouble());
+						node.nodeStats.remoteRequest(false, success, true, htl, key.toNormalizedDouble());
 					}
 					
 				});
