@@ -115,8 +115,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return Double.compare(firstNode.getPReject(), secondNode.getPReject());
 			}else if(sortBy.equals(("idle"))){
 				return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
+			}else if(sortBy.equals("successrate_p")){
+				return Double.compare(firstNode.getRecentSuccessPercent(), secondNode.getRecentSuccessPercent());
 			}else if(sortBy.equals("time_routable")){
-				return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
+				return Double.compare(secondNode.getPercentTimeRoutableConnection(), firstNode.getPercentTimeRoutableConnection());
 			}else if(sortBy.equals("total_traffic")){
 				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalOutputBytes();
 				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
@@ -401,7 +403,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "idle")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("idleTime"), "border-bottom: 1px dotted; cursor: help;" }, l10n("idleTimeTitle"));
 				if(hasPrivateNoteColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "privnote")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("privateNote"), "border-bottom: 1px dotted; cursor: help;" }, l10n("privateNoteTitle"));
- 
+
+				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "successrate_p")).addChild("span", new String[] { "title", "style" }, new String[] { "Recent success rate (may indicate topological goodness).", "border-bottom: 1px dotted; cursor: help;" }, "% Recent CHK Success");
+
 				if(mode >= PageMaker.MODE_ADVANCED) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_routable")).addChild("#", "%\u00a0Time Routable");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "selection_percentage")).addChild("#", "%\u00a0Selection");
@@ -808,6 +812,15 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		if(hasPrivateNoteColumn())
 			drawPrivateNoteColumn(peerRow, peerNodeStatus, fProxyJavascriptEnabled);
 
+		// % chk success rate
+		{
+			String preferred="";
+			if (peerNodeStatus.isPreferred())
+				preferred=" (+)";
+			HTMLNode pRecentSuccessCell = peerRow.addChild("td", "class", "peer-backoff"); // FIXME
+			pRecentSuccessCell.addChild("#", fix1.format(peerNodeStatus.getRecentSuccessPercent())+preferred);
+		}
+		
 		if(advancedModeEnabled) {
 			// percent of time connected column
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", fix1.format(peerNodeStatus.getPercentTimeRoutableConnection()));

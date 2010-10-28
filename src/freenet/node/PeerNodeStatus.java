@@ -110,6 +110,8 @@ public class PeerNodeStatus {
 	public final IncomingLoadSummaryStats incomingLoadStats;
 
 	private final boolean preferred;
+	
+	private final double pRecentSuccess;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
@@ -168,6 +170,11 @@ public class PeerNodeStatus {
 		messageQueueLengthTime = peerNode.getProbableSendQueueTime();
 		incomingLoadStats = peerNode.getIncomingLoadStats();
 		this.preferred=peerNode.isPreferred();
+		this.pRecentSuccess=peerNode.getPeerCHKSuccessRate();
+	}
+
+	public double getRecentSuccessPercent() {
+		return pRecentSuccess;
 	}
 
 	public boolean isPreferred() {
