@@ -590,6 +590,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		}
 		// FIXME get rid of this.
+		container.commit();
 		ClientRequester.checkAll(container, clientContext);
 	}
 

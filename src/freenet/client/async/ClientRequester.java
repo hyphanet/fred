@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
@@ -405,6 +407,10 @@ public abstract class ClientRequester {
 					System.out.println("Checking for broken client: "+req);
 					if(!req.checkForBrokenClient(container, clientContext))
 						System.out.println("Request is clean.");
+					else {
+						WrapperManager.signalStarting(5*60*1000);
+						container.commit();
+					}
 				}
 			} catch (Throwable t) {
 				Logger.error(ClientRequester.class, "Caught error while checking on startup", t);
