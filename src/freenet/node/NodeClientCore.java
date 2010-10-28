@@ -590,8 +590,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		}
 		// FIXME get rid of this.
-		container.commit();
-		ClientRequester.checkAll(container, clientContext);
+		if(container != null) {
+			container.commit();
+			ClientRequester.checkAll(container, clientContext);
+		}
 	}
 
 	private void initPTBF(ObjectContainer container, SubConfig nodeConfig) throws NodeInitException {
