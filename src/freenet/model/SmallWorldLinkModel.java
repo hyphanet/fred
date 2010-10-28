@@ -123,6 +123,7 @@ public final class SmallWorldLinkModel {
      * Returns the "change in location" which would best
      * satisfy the current model with the given peers.
      * e.g. if all our peers are 0.2 off-ideal, it will return 0.2...
+	 * @bug: does not work b/c absolutePeerLocation is clobbered/tainted in fillSlot
      */
     public double getAvgLinkDeviation() {
 	int count=0;

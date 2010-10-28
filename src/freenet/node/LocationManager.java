@@ -149,11 +149,15 @@ public class LocationManager implements ByteCounter {
 			model.setFreenetLocation(getLocation());
 			List<PeerNode> allPeers=node.peers.listConnectedPeersByCHKSuccessRate();
 			for (PeerNode peer : allPeers) {
-				if (!peer.isConnected())
+				if (!peer.isConnected()) {
+					peer.setPreferred(false);
 					continue;
+				}
 				double location=peer.getLocation();
 				if (location >= 0.0) {
 					peer.setPreferred(model.fillSlot(location, peer));
+				} else {
+					peer.setPreferred(false);
 				}
 			}
 			idealLocations=model.getIdealLocations();
