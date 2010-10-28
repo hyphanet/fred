@@ -416,10 +416,16 @@ public class OpennetManager {
 			int maxPeers = getNumberOfConnectedPeersToAim();
 			int size = getSize();
 			if(size == maxPeers && nodeToAddNow == null && canAdd) {
+				boolean force=false;
+				//If we need a peer around that location... make room.
+				if (nodeToAddNow!=null && node.getLocationManager().recentLinkModel!=null) {
+					//NB: once the peer is added, we will recalculate preferred peers, this is temporary
+					force=node.getLocationManager().recentLinkModel.fillSlot(nodeToAddNow.getLocation(), nodeToAddNow);
+				}
 				// Allow an offer to be predicated on throwing out a connected node,
 				// provided that we meet the other criteria e.g. time since last added,
 				// node isn't too new.
-				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType);
+				PeerNode toDrop = peerToDrop(noDisconnect, force, nodeToAddNow != null, connectionType);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop (in first bit), still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));

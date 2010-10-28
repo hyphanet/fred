@@ -157,8 +157,11 @@ public class LocationManager implements ByteCounter {
 				}
 			}
 			idealLocations=model.getIdealLocations();
+			recentLinkModel=model;
 		}
 	}
+
+	public SmallWorldLinkModel recentLinkModel;
 
 	public double[] idealLocations;
 

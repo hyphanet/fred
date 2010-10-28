@@ -160,7 +160,7 @@ public final class SmallWorldLinkModel {
      * if the slot was not yet filled. Has no effect if slot was
      * already occupied.
      */
-    public boolean fillSlot(double location, Object impl) {
+    public synchronized boolean fillSlot(double location, Object impl) {
 	location-=offset;
 	if (location<0.0)
 	    location+=1.0;
