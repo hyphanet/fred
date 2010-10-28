@@ -606,6 +606,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	public void schedule(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(cancelled) return;
+			if(completed) return;
 		}
 		context.getSskFetchScheduler().schedTransient.addPendingKeys(this);
 		updatePriorities();
