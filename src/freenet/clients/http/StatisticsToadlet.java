@@ -1269,6 +1269,12 @@ public class StatisticsToadlet extends Toadlet {
 			peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(peerLocation, false, (1.0 - peerNodeStatus.getPReject())), ((peerNodeStatus.isConnected())?"connected":"disconnected") }, ((peerNodeStatus.isOpennet())?(peerNodeStatus.isPreferred()?"+":"o"):"x"));
 		}
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(myLocation, true, 1.0), "me" }, "x");
+		double[] idealLocations=node.getLocationManager().idealLocations;
+		if (idealLocations!=null) {
+			for (double loc : idealLocations) {
+				peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(loc, true, 1.0), "me" }, ".");
+			}
+		}
 		//
 		double histogramPercent;
 		for (int i = 0; i < HISTOGRAM_LENGTH; i++) {
