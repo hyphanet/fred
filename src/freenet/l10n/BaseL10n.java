@@ -526,7 +526,7 @@ public class BaseL10n {
 	 */
 	private void addL10nSubstitutionInner(HTMLNode node, String key, String value, String[] patterns, HTMLNode[] values) {
 		int x;
-		while(!value.isEmpty() && (x = value.indexOf("${")) != -1) {
+		while(!value.equals("") && (x = value.indexOf("${")) != -1) {
 			String before = value.substring(0, x);
 			if(before.length() > 0)
 				node.addChild("#", before);
@@ -573,7 +573,7 @@ public class BaseL10n {
 				value = rest;
 			}
 		}
-		if(!value.isEmpty())
+		if(!value.equals(""))
 			node.addChild("#", value);
 	}
 	
