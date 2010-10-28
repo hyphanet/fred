@@ -345,6 +345,18 @@ public abstract class ClientRequester {
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(client, 1);
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(client == null)
+			throw new NullPointerException();
+		return true;
+	}
+
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(client == null)
+			throw new NullPointerException();
+		return true;
+	}
 
 	/** Add a low-level request to the list of requests belonging to this high-level request (request here
 	 * includes inserts). */
