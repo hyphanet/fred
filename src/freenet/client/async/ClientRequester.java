@@ -397,13 +397,17 @@ public abstract class ClientRequester {
 			ClientContext clientContext) {
 		ObjectSet<ClientRequester> requesters = container.query(ClientRequester.class);
 		for(ClientRequester req : requesters) {
-			System.out.println("Checking "+req);
-			if(req.isCancelled() || req.isFinished()) {
-				System.out.println("Cancelled or finished");
-			} else {
-				System.out.println("Checking for broken client: "+req);
-				if(!req.checkForBrokenClient(container, clientContext))
-					System.out.println("Request is clean.");
+			try {
+				System.out.println("Checking "+req);
+				if(req.isCancelled() || req.isFinished()) {
+					System.out.println("Cancelled or finished");
+				} else {
+					System.out.println("Checking for broken client: "+req);
+					if(!req.checkForBrokenClient(container, clientContext))
+						System.out.println("Request is clean.");
+				}
+			} catch (Throwable t) {
+				Logger.error(ClientRequester.class, "Caught error while checking on startup", t);
 			}
 			container.deactivate(req, 1);
 		}
