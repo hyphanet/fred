@@ -53,6 +53,8 @@ of speech, and without decentralization the network would be vulnerable to attac
 		<pathelement location="${gjs.dir}/war/WEB-INF/classes"/>
 		<fileset dir="${java.class.dirs}">
 			<include name="gwt-dev-linux.jar"/>
+			<include name="gwt-dev-windows.jar"/>
+			<include name="gwt-dev.jar"/>
 			<include name="gwt-user.jar"/>
 			<include name="commons-collections3.jar"/>
 			<include name="ant.jar"/>
@@ -82,7 +84,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 
 	<target name="dist" depends="clean-all, all" description="clean-build everything"/>
 
-	<target name="all" depends="package, doc" description="build everything, incl. docs and deps* (ext, gjs)"/>
+	<target name="all" depends="package, doc" description="build everything, incl. docs"/>
 
 	<target name="clean-all" depends="clean, clean-doc, clean-gjs, clean-ext" description="clean all build products"/>
 
