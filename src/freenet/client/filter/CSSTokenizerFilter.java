@@ -275,7 +275,8 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("background-attachment".equalsIgnoreCase(element)){
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"scroll","fixed","inherit"},ElementInfo.VISUALMEDIA));
+			auxilaryVerifiers[60] = new CSSPropertyVerifier(new String[]{"local","scroll","fixed"}, null, null, true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"60<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("background-color".equalsIgnoreCase(element)){
@@ -284,7 +285,8 @@ class CSSTokenizerFilter {
 
 		}
 		else if("background-image".equalsIgnoreCase(element)){
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","inherit"},ElementInfo.VISUALMEDIA,new String[]{"ur"}));
+			auxilaryVerifiers[56] = new CSSPropertyVerifier(new String[] {"none"},new String[]{"ur"},null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"56<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("background-position".equalsIgnoreCase(element))
@@ -294,7 +296,10 @@ class CSSTokenizerFilter {
 		}
 		else if("background-repeat".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"repeat","repeat-x","repeat-y","no-repeat","inherit"},ElementInfo.VISUALMEDIA,null));
+			auxilaryVerifiers[57] = new CSSPropertyVerifier(new String[]{"repeat","space","round","no-repeat"},null,null,true);
+			auxilaryVerifiers[58] = new CSSPropertyVerifier(new String[]{"repeat-x","repeat-y"}, null, null, true);
+			auxilaryVerifiers[59] = new CSSPropertyVerifier(null, null, new String[]{"58","57<1,2>"}, true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"59<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("background".equalsIgnoreCase(element))
