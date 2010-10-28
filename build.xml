@@ -15,7 +15,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<property file="override.properties"/>
 	<property file="build.properties"/>
 	<condition property="java.class.dirs" value="${java.class.dirs.user}" else="${java.home}/lib">
-		<available file="${java.class.dirs.user}"/>
+		<available file="${java.class.dirs.user}" type="dir"/>
 	</condition>
 
 	<property name="main.src" value="src"/>
@@ -116,7 +116,9 @@ of speech, and without decentralization the network would be vulnerable to attac
 
 	<target name="init">
 		<mkdir dir="${main.make}"/>
+		<mkdir dir="${main.dst}"/>
 		<mkdir dir="${test.make}"/>
+		<mkdir dir="${test.dst}"/>
 	</target>
 
 	<target name="dep" depends="dep-ext, dep-gjs"/>
@@ -195,9 +197,6 @@ of speech, and without decentralization the network would be vulnerable to attac
 	</target>
 
 	<target name="unit-build" depends="build, dep-junit" unless="${test.skip}">
-		<delete dir="${test.make}"/>
-		<mkdir dir="${test.make}"/>
-
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on" source="1.5" target="1.5">
 			<compilerarg line="${javac.args}"/>
 			<classpath>
@@ -266,7 +265,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 	</target>
 
 	<target name="build-ext" depends="suppress-ext" unless="${suppress.ext}">
-		<ant antfile="build.xml" dir="${contrib.dir}" inheritAll="false"/>
+		<ant inheritAll="false" antfile="${contrib.dir}/build.xml" />
 		<copy file="${contrib.dst}/freenet-ext.jar" todir="${lib}"/>
 	</target>
 

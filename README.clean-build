@@ -10,12 +10,14 @@ effort than the default build path; help in easing this would be appreciated.
 
 == Considerations ==
 
+(Properties can be set in override.properties, similar to build.properties)
+
 A. The fred repo needs to know where the contrib repo is. By default, it looks
-in ../contrib. You can override this by setting contrib.dir in build.properties.
+in ../contrib, but you can override this by setting the "contrib.dir" property.
 
 B. You may need to install extra Java libraries. These are listed in build.xml,
 in the <path> elements. If you already have these installed, but ANT can't find
-them, you can try setting the "java.class.dirs" property.
+them, you can try setting the "java.class.dirs.user" property.
 
 B.1. If you're doing a clean-build for security reasons, then you'll want to
 clean-build these libraries too. Google's source package for GWT actually uses
@@ -34,7 +36,8 @@ most tedious step and needs to be done *before* the below command.
 == Clean-building ==
 
 You need to install both ant and ant-optional. If you are running Java 5, you
-also need to install js.jar from rhino[3]. (Java 6+ includes this already.)
+also need to install js.jar from rhino[3] and bsf.jar from apache[4]. (Java 6+
+includes both of these already.)
 
 The pre-compiled components are freenet-ext.jar (ext) and the GWT-generated
 javascript (gjs). To do a clean-build of all of these from within the fred
@@ -48,3 +51,5 @@ Be sure to note point (C) in the section above.
 Ken Thompson's "Reflections on Trusting Trust".
 [2] http://packages.debian.org/source/sid/gwt
 [3] http://www.mozilla.org/rhino/
+[4] http://jakarta.apache.org/bsf/ On Debian, bug #601685 prevents libbsf-java
+from working with rhino, but fix (provided in the report) is fairly simple.
