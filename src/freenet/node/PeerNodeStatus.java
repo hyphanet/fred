@@ -109,6 +109,8 @@ public class PeerNodeStatus {
 	
 	public final IncomingLoadSummaryStats incomingLoadStats;
 
+	private final boolean preferred;
+
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
 		if(p == null) {
@@ -165,6 +167,11 @@ public class PeerNodeStatus {
 		messageQueueLengthBytes = peerNode.getMessageQueueLengthBytes();
 		messageQueueLengthTime = peerNode.getProbableSendQueueTime();
 		incomingLoadStats = peerNode.getIncomingLoadStats();
+		this.preferred=peerNode.isPreferred();
+	}
+
+	public boolean isPreferred() {
+		return preferred;
 	}
 	
 	public long getMessageQueueLengthBytes() {
