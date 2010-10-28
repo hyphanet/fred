@@ -1969,7 +1969,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(persistent) container.activate(block, 1);
 			Bucket data = block.getData();
 			if(data != null) {
-				Logger.error(this, "Check block "+i+" still present in removeFrom()! on "+this);
 				if(persistent) container.activate(data, 1);
 				data.free();
 			}
