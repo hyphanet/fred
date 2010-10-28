@@ -248,7 +248,6 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<!-- =================================================================== -->
 
 	<target name="dep-ext" description="ensure that the Freenet dependencies are available">
-		<property name="suppress.ext" value="true"/>
 		<trydep property="contrib.present">
 			<condition><available classname="freenet.node.ExtVersion" classpathref="lib.path"/></condition>
 			<tasks>
@@ -264,14 +263,18 @@ of speech, and without decentralization the network would be vulnerable to attac
 			verbose="true" usetimestamp="true"/>
 	</target>
 
-	<target name="build-ext" unless="${suppress.ext}">
+	<target name="build-ext" depends="suppress-ext" unless="${suppress.ext}">
 		<ant antfile="build.xml" dir="${contrib.dir}" inheritAll="false"/>
 		<copy file="${contrib.dst}/freenet-ext.jar" todir="${lib}"/>
 	</target>
 
-	<target name="clean-ext">
+	<target name="clean-ext" depends="suppress-ext" unless="${suppress.ext}">
 		<ant antfile="build.xml" dir="${contrib.dir}" inheritAll="false" target="clean"/>
 		<delete file="${lib}/freenet-ext.jar"/>
+	</target>
+
+	<target name="suppress-ext" if="${suppress.ext}">
+		<echo message="suppress.ext is set to true, so clean-ext and build-ext will skip" />
 	</target>
 
 	<!-- =================================================================== -->
@@ -279,7 +282,6 @@ of speech, and without decentralization the network would be vulnerable to attac
 	<!-- =================================================================== -->
 
 	<target name="dep-gjs" description="ensure that GWT-generated javascript is available">
-		<property name="suppress.gjs" value="true"/>
 		<trydep property="gjs.present">
 			<condition><available file="${gjs.dst}" type="dir"/></condition>
 			<tasks>
@@ -299,7 +301,7 @@ of speech, and without decentralization the network would be vulnerable to attac
 		</trydep>
 	</target>
 
-	<target name="build-gjs" unless="${suppress.gjs}">
+	<target name="build-gjs" depends="suppress-gjs" unless="${suppress.gjs}">
 		<ant antfile="build.xml" dir="${gjs.dir}">
 			<reference refid="gjs.lib.path" torefid="project.class.path"/>
 		</ant>
@@ -312,8 +314,12 @@ of speech, and without decentralization the network would be vulnerable to attac
 		</exec>
 	</target>
 
-	<target name="clean-gjs">
+	<target name="clean-gjs" depends="suppress-gjs" unless="${suppress.gjs}">
 		<ant antfile="build.xml" dir="${gjs.dir}" target="deleteGenerated"/>
+	</target>
+
+	<target name="suppress-gjs" if="${suppress.gjs}">
+		<echo message="suppress.gjs is set to true, so clean-gjs and build-gjs will skip" />
 	</target>
 
 	<!-- =================================================================== -->
