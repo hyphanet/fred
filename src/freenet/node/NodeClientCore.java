@@ -17,6 +17,7 @@ import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
@@ -588,6 +589,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				killedDatabase = true;
 			}
 		}
+		// FIXME get rid of this.
+		ClientRequester.checkAll(container, clientContext);
 	}
 
 	private void initPTBF(ObjectContainer container, SubConfig nodeConfig) throws NodeInitException {
