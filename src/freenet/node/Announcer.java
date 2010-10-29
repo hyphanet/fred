@@ -495,7 +495,7 @@ public class Announcer {
 		System.out.println("Announcement to "+seed.userToString()+" starting...");
 		if(logMINOR)
 			Logger.minor(this, "Announcement to "+seed.userToString()+" starting...");
-		AnnounceSender sender = new AnnounceSender(node.getLocation(), om, node, new AnnouncementCallback() {
+		AnnounceSender sender = new AnnounceSender(node.getLocationManager().getAnnounceLocation(), om, node, new AnnouncementCallback() {
 			private int totalAdded;
 			private int totalNotWanted;
 			public void addedNode(PeerNode pn) {

@@ -169,6 +169,20 @@ public class LocationManager implements ByteCounter {
 
 	public double[] idealLocations;
 
+	/**
+	 * The location to which to send an announcement, usually our location unless
+	 * one or more preferred slots are available.
+	 */
+	public double getAnnounceLocation() {
+		if (recentLinkModel!=null) {
+			double retval=recentLinkModel.getEmptySlotLocation();
+			if (retval>=0.0) {
+				return retval;
+			}
+		}
+		return node.getLocation();
+	}
+
     /**
      * Start a thread to send FNPSwapRequests every second when
      * we are not locked.

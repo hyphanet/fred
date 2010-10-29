@@ -156,6 +156,23 @@ public final class SmallWorldLinkModel {
 	return fillSlot(location, null);
     }
 
+	/**
+	 * Returns the location of an arbitrary-but-empty slot,
+	 * or -1.0 if DNE.
+	 */
+	public double getEmptySlotLocation() {
+		for (Slot slot : list) {
+			if (slot.peerImpl!=null) {
+				return wrapHigh(slot.location+offset);
+			}
+		}
+		Slot slot=closestPeer;
+		if (slot.peerImpl!=null) {
+			return wrapHigh(slot.location+offset);
+		}
+		return -1.0;
+	}
+
     /**
      * Feeds the model a peer to hold in a given slot. Returns true
      * if the slot was not yet filled. Has no effect if slot was
