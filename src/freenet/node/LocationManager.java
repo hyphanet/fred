@@ -192,6 +192,7 @@ public class LocationManager implements ByteCounter {
 			public void run() {
 				try {
 					updatePreferredPeerStatuses();
+					node.getOpennet().dropOnePeerIfFull();
 				} finally {
 					node.ticker.queueTimedJob(this, 5*60*1000);
 				}

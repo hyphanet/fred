@@ -549,6 +549,26 @@ public class OpennetManager {
 		return false;
 	}
 
+	void dropOnePeerIfFull() {
+		if (getSize() < getNumberOfConnectedPeersToAim()) {
+			if(logMINOR)
+				Logger.minor(this, "Still gathering opennet peers");
+			return;
+		}
+		if(logMINOR)
+			Logger.minor(this, "Dropping one opennet peer");
+		PeerNode toDrop;
+		toDrop = peerToDrop(false, false, false, null);
+		if(toDrop == null) toDrop = peerToDrop(false, true, false, null);
+		if(toDrop == null) return;
+		synchronized(this) {
+			peersLRU.remove(toDrop);
+		}
+		if(logMINOR)
+			Logger.minor(this, "Dropping "+toDrop);
+		node.peers.disconnect(toDrop, true, true, true);
+	}
+
 	void dropExcessPeers() {
 		while(getSize() > getNumberOfConnectedPeersToAim()) {
 			if(logMINOR)
