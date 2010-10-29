@@ -145,6 +145,10 @@ public class LocationManager implements ByteCounter {
 			int numPeers=node.getMaxOpennetPeers();
 			if (numPeers<1)
 				return;
+			if (numPeers>12) {
+				//@bug: getMaxOpennetPeers() is not the correct function, it returns 40 when target should be 12.
+				numPeers=12;
+			}
 			SmallWorldLinkModel model=new SmallWorldLinkModel(numPeers);
 			model.setFreenetLocation(getLocation());
 			List<PeerNode> allPeers=node.peers.listConnectedPeersByCHKSuccessRate();
