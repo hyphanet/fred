@@ -3578,8 +3578,12 @@ public class Node implements TimeSkewDetectorCallback {
 			@Override
 			public void realRun() {
 				try {
+					if (storeEnvironment==null) {
+						System.err.println("storeEnvironment is null");
+					} else {
 					storeEnvironment.close();
 					System.err.println("Successfully closed all datastores.");
+					}
 				} catch (final Throwable t) {
 					System.err.println("Caught "+t+" closing environment");
 					t.printStackTrace();
