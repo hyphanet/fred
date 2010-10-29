@@ -54,6 +54,9 @@ public class ArchiveContext {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		for(Object uri : soFar) {
+			((FreenetURI)uri).removeFrom(container);
+		}
 		container.delete(soFar);
 		container.delete(this);
 	}
