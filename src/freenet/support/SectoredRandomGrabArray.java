@@ -489,7 +489,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		container.delete(this);
 	}
 
-	public void maybeRemove(RemoveRandom r, ObjectContainer container) {
+	public void maybeRemove(RemoveRandom r, ObjectContainer container, ClientContext context) {
 		int count = 0;
 		int finalSize;
 		synchronized(this) {
@@ -523,7 +523,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			boolean active = true;
 			if(persistent) active = container.ext().isActive(parent);
 			if(!active) container.activate(parent, 1);
-			parent.maybeRemove(this, container);
+			parent.maybeRemove(this, container, context);
 			if(!active) container.deactivate(parent, 1);
 		}
 	}
