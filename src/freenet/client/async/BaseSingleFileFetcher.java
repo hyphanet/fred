@@ -188,7 +188,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	@Override
 	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
-		context.cooldownTracker.remove(this, cancelled, container);
+		context.cooldownTracker.remove(this, persistent, container);
 		super.unregister(container, context, oldPrio);
 	}
 
