@@ -518,13 +518,13 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		} else if(persistent) {
 			container.store(this);
 			r.removeFrom(container);
-			if(finalSize == 0 && parent != null) {
-				boolean active = true;
-				if(persistent) active = container.ext().isActive(parent);
-				if(!active) container.activate(parent, 1);
-				parent.maybeRemove(this, container);
-				if(!active) container.deactivate(parent, 1);
-			}
+		}
+		if(finalSize == 0 && parent != null) {
+			boolean active = true;
+			if(persistent) active = container.ext().isActive(parent);
+			if(!active) container.activate(parent, 1);
+			parent.maybeRemove(this, container);
+			if(!active) container.deactivate(parent, 1);
 		}
 	}
 
