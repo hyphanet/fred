@@ -98,12 +98,14 @@ public class PeerManager {
 	private final Runnable writePeersRunnable = new Runnable() {
 
 		public void run() {
-			if(shouldWritePeers) {
-				shouldWritePeers = false;
-				writePeersInner();
+			try {
+				if(shouldWritePeers) {
+					shouldWritePeers = false;
+					writePeersInner();
+				}
+			} finally {
+				node.getTicker().queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
 			}
-			
-			node.getTicker().queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
 		}
 	};
 	
