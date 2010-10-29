@@ -38,6 +38,14 @@ public class ArchiveContext {
 			container.activate(soFar, Integer.MAX_VALUE);
 		if(soFar.size() > maxArchiveLevels)
 			throw new ArchiveFailureException(ArchiveFailureException.TOO_MANY_LEVELS);
+		FreenetURI uri = key;
+		if(container != null)
+			uri = uri.clone();
+		soFar.add(uri);
+		if(container != null) {
+			container.store(uri);
+			container.store(soFar);
+		}
 	}
 
 	public void removeFrom(ObjectContainer container) {
