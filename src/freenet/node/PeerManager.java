@@ -746,8 +746,7 @@ public class PeerManager {
 			double head=retval.get(0).getPeerCHKSuccessRate();
 			double tail=retval.get(peers.length-1).getPeerCHKSuccessRate();
 			if (head < tail) {
-				//remove this once it works
-				throw new Error("sort direction is wrong");
+				System.err.println("CHKSuccessRate sort direction is wrong");
 			}
 		}
 		return retval;
@@ -756,8 +755,8 @@ public class PeerManager {
 	private static final Comparator<PeerNode> chkSuccessComparator=new Comparator<PeerNode>() {
 		public int compare(PeerNode p1, PeerNode p2) {
 			if (p1.getPeerCHKSuccessRate()<p2.getPeerCHKSuccessRate())
-				return -1;
-			return 1;
+				return 1;
+			return -1;
 		}
 	};
 
