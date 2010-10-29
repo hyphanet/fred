@@ -19,7 +19,7 @@ import freenet.keys.FreenetURI;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class ArchiveContext {
 
-	private HashSet soFar = new HashSet();
+	private HashSet soFar;
 	final int maxArchiveLevels;
 	final long maxArchiveSize;
 	
@@ -36,6 +36,11 @@ public class ArchiveContext {
 	public synchronized void doLoopDetection(FreenetURI key, ObjectContainer container) throws ArchiveFailureException {
 		if(container != null)
 			container.activate(soFar, Integer.MAX_VALUE);
+		if(soFar == null) {
+			soFar = new HashSet();
+			if(container != null)
+				container.store(soFar);
+		}
 		if(soFar.size() > maxArchiveLevels)
 			throw new ArchiveFailureException(ArchiveFailureException.TOO_MANY_LEVELS);
 		FreenetURI uri = key;
