@@ -2057,6 +2057,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			}
 		}
 		if(persistent) removeFrom(container, context);
+		else freeDecodedData(container, true);
 	}
 	
 	private void encoderFinished(ObjectContainer container, ClientContext context) {
