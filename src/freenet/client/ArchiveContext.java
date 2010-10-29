@@ -19,7 +19,7 @@ import freenet.keys.FreenetURI;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class ArchiveContext {
 
-	HashSet soFar = new HashSet();
+	private HashSet soFar = new HashSet();
 	final int maxArchiveLevels;
 	final long maxArchiveSize;
 	
