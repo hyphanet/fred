@@ -33,7 +33,9 @@ public class ArchiveContext {
 	 *
 	 * The URI provided is expected to be a reasonably unique identifier for the archive.
 	 */
-	public synchronized void doLoopDetection(FreenetURI key) throws ArchiveFailureException {
+	public synchronized void doLoopDetection(FreenetURI key, ObjectContainer container) throws ArchiveFailureException {
+		if(container != null)
+			container.activate(soFar, Integer.MAX_VALUE);
 		if(soFar.size() > maxArchiveLevels)
 			throw new ArchiveFailureException(ArchiveFailureException.TOO_MANY_LEVELS);
 	}

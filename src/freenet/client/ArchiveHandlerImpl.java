@@ -40,12 +40,12 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	}
 
 	public Bucket get(String internalName, ArchiveContext archiveContext,
-			ArchiveManager manager)
+			ArchiveManager manager, ObjectContainer container)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException {
 
 		// Do loop detection on the archive that we are about to fetch.
-		archiveContext.doLoopDetection(key);
+		archiveContext.doLoopDetection(key, container);
 
 		if(forceRefetchArchive) return null;
 
@@ -62,9 +62,9 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	}
 
 	public Bucket getMetadata(ArchiveContext archiveContext,
-			ArchiveManager manager) throws ArchiveFailureException,
+			ArchiveManager manager, ObjectContainer container) throws ArchiveFailureException,
 			ArchiveRestartException, MetadataParseException, FetchException {
-		return get(".metadata", archiveContext, manager);
+		return get(".metadata", archiveContext, manager, container);
 	}
 
 	public void extractToCache(Bucket bucket, ArchiveContext actx,

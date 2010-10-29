@@ -480,7 +480,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				metadata = null; // Copied to archiveMetadata, so do not need to clear it
 				// ah is set. This means we are currently handling an archive.
 				Bucket metadataBucket;
-				metadataBucket = ah.getMetadata(actx, context.archiveManager);
+				metadataBucket = ah.getMetadata(actx, context.archiveManager, persistent ? container : null);
 				if(metadataBucket != null) {
 					try {
 						metadata = Metadata.construct(metadataBucket);
@@ -551,7 +551,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
 				String filename = metadata.getArchiveInternalName();
 				if(logMINOR) Logger.minor(this, "Fetching "+filename);
-				Bucket dataBucket = ah.get(filename, actx, context.archiveManager);
+				Bucket dataBucket = ah.get(filename, actx, context.archiveManager, persistent ? container : null);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
 					final Metadata newMetadata;
@@ -650,7 +650,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
 				String filename = metadata.getArchiveInternalName();
 				if(logMINOR) Logger.minor(this, "Fetching "+filename);
-				Bucket dataBucket = ah.get(filename, actx, context.archiveManager);
+				Bucket dataBucket = ah.get(filename, actx, context.archiveManager, persistent ? container : null);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
 					final Bucket out;
