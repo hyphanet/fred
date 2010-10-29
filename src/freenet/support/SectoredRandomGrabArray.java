@@ -515,6 +515,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			// This is not unusual, it was e.g. removed because of being empty.
 			// And it has already been removeFrom()'ed.
 			if(logMINOR) Logger.minor(this, "Not in parent: "+r+" for "+this, new Exception("error"));
+			context.cooldownTracker.removeCachedWakeup(this, persistent, container);
 		} else if(persistent) {
 			container.store(this);
 			r.removeFrom(container);
@@ -523,6 +524,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			boolean active = true;
 			if(persistent) active = container.ext().isActive(parent);
 			if(!active) container.activate(parent, 1);
+			context.cooldownTracker.removeCachedWakeup(this, persistent, container);
 			parent.maybeRemove(this, container, context);
 			if(!active) container.deactivate(parent, 1);
 		}
