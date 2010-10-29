@@ -142,6 +142,11 @@ public class LocationManager implements ByteCounter {
 
 	public void updatePreferredPeerStatuses() {
 		synchronized (preferredPeerStatusUpdateLock) {
+			OpennetManager opennet=node.getOpennet();
+			if (opennet==null || !opennet.topologyEnforcement) {
+				return;
+			}
+
 			int numPeers=node.getMaxOpennetPeers();
 			if (numPeers<1)
 				return;
@@ -209,8 +214,13 @@ public class LocationManager implements ByteCounter {
 		node.ticker.queueTimedJob(new Runnable() {
 			public void run() {
 				try {
-					updatePreferredPeerStatuses();
-					node.getOpennet().dropOnePeerIfFull();
+					OpennetManager opennet=node.getOpennet();
+					if (opennet!=null && opennet.topologyEnforcement) {
+						updatePreferredPeerStatuses();
+						node.getOpennet().dropOnePeerIfFull();
+					} else {
+						recentLinkModel=null;
+					}
 				} finally {
 					node.ticker.queueTimedJob(this, 5*60*1000);
 				}

@@ -1790,6 +1790,26 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 
+		 opennetConfig.register("topologyEnforcement", true, 0, true, true, "Node.opennetTopologyEnforcement", "Node.opennetTopologyEnforcementLong", new BooleanCallback() {
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					if (opennet==null) return false;
+					return opennet.topologyEnforcement;
+				}
+			}
+			@Override
+			public void set(Boolean val) {
+				OpennetManager o;
+				synchronized(Node.this) {
+					if(opennet == null) return;
+					opennet.topologyEnforcement=val;
+				}
+			}
+		});
+		if (opennet!=null)
+			opennet.topologyEnforcement = opennetConfig.getBoolean("topologyEnforcement");
+
 		opennetConfig.register("maxOpennetPeers", OpennetManager.MAX_PEERS_FOR_SCALING, 1, true, false, "Node.maxOpennetPeers",
 				"Node.maxOpennetPeersLong", new IntCallback() {
 					@Override

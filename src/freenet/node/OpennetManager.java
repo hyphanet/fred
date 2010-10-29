@@ -107,6 +107,9 @@ public class OpennetManager {
 	 * since an offer may not be accepted. */
 	public static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
 
+
+	public static volatile boolean topologyEnforcement=true;
+
 	private static volatile boolean logMINOR;
 
 	static {
