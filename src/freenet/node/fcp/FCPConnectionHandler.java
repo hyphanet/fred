@@ -17,6 +17,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.node.RequestClient;
 import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -89,6 +90,17 @@ public class FCPConnectionHandler implements Closeable {
 	private final HashMap<String, DirectoryAccess> checkedDirectories = new HashMap<String, DirectoryAccess>();
 	// DDACheckJobs in flight
 	private final HashMap<File, DDACheckJob> inTestDirectories = new HashMap<File, DDACheckJob>();
+	public final RequestClient connectionRequestClient = new RequestClient() {
+		
+		public boolean persistent() {
+			return false;
+		}
+		
+		public void removeFrom(ObjectContainer container) {
+			throw new UnsupportedOperationException();
+		}
+		
+	};
 	
 	public FCPConnectionHandler(Socket s, FCPServer server) {
 		this.sock = s;
