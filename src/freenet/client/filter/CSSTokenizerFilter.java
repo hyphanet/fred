@@ -112,15 +112,26 @@ class CSSTokenizerFilter {
 	static {
 		allelementVerifiers.add("azimuth");
 		allelementVerifiers.add("background-attachment");
+		allelementVerifiers.add("background-clip");
 		allelementVerifiers.add("background-color");
 		allelementVerifiers.add("background-image");
+		allelementVerifiers.add("background-origin");
 		allelementVerifiers.add("background-position");
 		allelementVerifiers.add("background-repeat");
+		allelementVerifiers.add("background-size");
 		allelementVerifiers.add("background");
 		allelementVerifiers.add("border-collapse");
 		allelementVerifiers.add("border-color");
+		allelementVerifiers.add("border-top-color");
+		allelementVerifiers.add("border-bottom-color");
+		allelementVerifiers.add("border-right-color");
+		allelementVerifiers.add("border-left-color");
 		allelementVerifiers.add("border-spacing");
 		allelementVerifiers.add("border-style");
+		allelementVerifiers.add("border-top-style");
+		allelementVerifiers.add("border-bottom-style");
+		allelementVerifiers.add("border-left-style");
+		allelementVerifiers.add("border-right-style");
 		allelementVerifiers.add("border-left");
 		allelementVerifiers.add("border-top");
 		allelementVerifiers.add("border-right");
@@ -137,8 +148,24 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("border-bottom-width");
 		allelementVerifiers.add("border-left-width");
 		allelementVerifiers.add("border-width");
+		allelementVerifiers.add("border-top-width");
+		allelementVerifiers.add("border-bottom-width");
+		allelementVerifiers.add("border-left-width");
+		allelementVerifiers.add("border-right-width");
+		allelementVerifiers.add("border-radius");
+		allelementVerifiers.add("border-top-radius");
+		allelementVerifiers.add("border-bottom-radius");
+		allelementVerifiers.add("border-left-radius");
+		allelementVerifiers.add("border-right-radius");
+		allelementVerifiers.add("border-image-source");
+		allelementVerifiers.add("border-image-slice");
+		allelementVerifiers.add("border-image-width");
+		allelementVerifiers.add("border-image-outset");
+		allelementVerifiers.add("border-image-repeat");
+// TODO:css3		allelementVerifiers.add("border-image");
 		allelementVerifiers.add("border");
 		allelementVerifiers.add("bottom");
+		allelementVerifiers.add("box-decoration-break");
 		allelementVerifiers.add("caption-side");
 		allelementVerifiers.add("clear");
 		allelementVerifiers.add("clip");
@@ -255,12 +282,19 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[3]=new CSSPropertyVerifier(new String[]{"top","center","bottom"},new String[]{"pe","le"},null,true);
 		auxilaryVerifiers[4]=new CSSPropertyVerifier(new String[]{"left","center","right"},null,null,true);
 		auxilaryVerifiers[5]=new CSSPropertyVerifier(new String[]{"top","center","bottom"},null,null,true);
+		//<border-color>
+		auxilaryVerifiers[11]=new CSSPropertyVerifier(new String[] {"transparent"},new String[]{"co"},null,true);
 		//<border-style>
 		auxilaryVerifiers[13]=new CSSPropertyVerifier(new String[]{"none","hidden","dotted","dashed","solid","double","groove","ridge","inset","outset", "inherit"},new String[]{"le"},null,true);
 		//<border-width>
 		auxilaryVerifiers[14]=new CSSPropertyVerifier(new String[]{"thin","medium","thick"},new String[]{"le"},null,true);
 		//<border-top-color>
 		auxilaryVerifiers[15]=new CSSPropertyVerifier(new String[] {"transparent","inherit"},new String[]{"co"},null,true);
+		// <background-clip> <background-origin>
+		auxilaryVerifiers[61]=new CSSPropertyVerifier(new String[] {"border-box", "padding-box", "content-box"},null,null,true);
+		// <border-radius>
+		auxilaryVerifiers[64]=new CSSPropertyVerifier(null,new String[] {"le", "pe"},null,true);
+		
 	}
 	/* This function loads a verifier object in elementVerifiers.
 	 * After the object has been loaded, property name is removed from allelementVerifier.
@@ -279,6 +313,12 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"60<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
+		else if("background-clip".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"61<1,65535>"}, true,true));
+			allelementVerifiers.remove(element);
+
+		}
 		else if("background-color".equalsIgnoreCase(element)){
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"transparent","inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"}));
 			allelementVerifiers.remove(element);
@@ -289,8 +329,14 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"56<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
-		else if("background-position".equalsIgnoreCase(element))
+		else if("background-origin".equalsIgnoreCase(element))
 		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"61<1,65535>"}, true,true));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("background-position".equalsIgnoreCase(element))
+		{       // FIXME: css3 http://www.w3.org/TR/css3-background/#background-position
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"2 3?","4a5"}));
 			allelementVerifiers.remove(element);
 		}
@@ -302,9 +348,16 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"59<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
-		else if("background".equalsIgnoreCase(element))
+		else if("background-size".equalsIgnoreCase(element))
 		{
-
+			auxilaryVerifiers[61] = new CSSPropertyVerifier(new String[]{"auto"},new String[]{ "le", "pe"},null,true);
+			auxilaryVerifiers[62] = new CSSPropertyVerifier(new String[]{"cover", "contain"}, null, null, true);
+			auxilaryVerifiers[63] = new CSSPropertyVerifier(null, null, new String[]{"61<1,2>", "62"}, true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"63<1,65535>"}, true,true));
+			allelementVerifiers.remove(element);
+		}
+		else if("background".equalsIgnoreCase(element))
+		{    // FIXME: CSS3 http://www.w3.org/TR/css3-background/#background
 			//background-attachment
 			auxilaryVerifiers[6]=new CSSPropertyVerifier(new String[] {"scroll","fixed","inherit"},null,null,true);
 			//background-color
@@ -318,7 +371,6 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"6a7a8a9a10"}));
 			allelementVerifiers.remove(element);
 		}
-
 		else if("border-collapse".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"collapse","separate","inherit"},ElementInfo.VISUALMEDIA));
@@ -327,10 +379,29 @@ class CSSTokenizerFilter {
 		}
 		else if("border-color".equalsIgnoreCase(element))
 		{
-			auxilaryVerifiers[11]=new CSSPropertyVerifier(new String[] {"transparent"},new String[]{"co"},null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"},new String[]{"11<1,4>"}));
 			allelementVerifiers.remove(element);
 
+		}
+		else if("border-top-color".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, new String[]{"11"}, ElementInfo.VISUALMEDIA, true));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-bottom-color".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, new String[]{"11"}, ElementInfo.VISUALMEDIA, true));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-left-color".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, new String[]{"11"}, ElementInfo.VISUALMEDIA, true));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-right-color".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, new String[]{"11"}, ElementInfo.VISUALMEDIA, true));
+			allelementVerifiers.remove(element);
 		}
 		else if("border-spacing".equalsIgnoreCase(element))
 		{
@@ -341,6 +412,26 @@ class CSSTokenizerFilter {
 		else if("border-style".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"13<1,4>"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-top-style".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, new String[]{"13"}, ElementInfo.VISUALMEDIA, true));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-bottom-style".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, new String[]{"13"}, ElementInfo.VISUALMEDIA, true));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-left-style".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, new String[]{"13"}, ElementInfo.VISUALMEDIA, true));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-right-style".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null, null, new String[]{"13"}, ElementInfo.VISUALMEDIA, true));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-left".equalsIgnoreCase(element))
@@ -429,14 +520,96 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"14<1,4>"}));
 			allelementVerifiers.remove(element);
 		}
+		else if("border-top-width".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"14"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-bottom-width".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"14"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-left-width".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"14"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-right-width".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"14"}));
+			allelementVerifiers.remove(element);
+		}
 		else if("border".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"13a14a15"}));
 			allelementVerifiers.remove(element);
 		}
+		else if("border-radius".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[65]=new CSSPropertyVerifier(new String[]{"/"},null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"64<1,4>", "64<1,4> 65 64<1,4>"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-top-radius".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"64<1,2>"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-bottom-radius".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"64<1,2>"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-left-radius".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"64<1,2>"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-right-radius".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"64<1,2>"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-image-source".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"none"},ElementInfo.VISUALMEDIA,new String[]{"ur"},null));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-image-slice".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[66]=new CSSPropertyVerifier(null,new String[]{"pe","in"},null,true);
+			auxilaryVerifiers[67]=new CSSPropertyVerifier(new String[]{"fill"},null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"66<1,4> 67?"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-image-width".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[68]=new CSSPropertyVerifier(new String[]{"auto"},new String[]{"le","pe","in"},null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"68<1,4>"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-image-outset".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[69]=new CSSPropertyVerifier(null,new String[]{"le","in"},null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"69<1,4>"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-image-repeat".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[70]=new CSSPropertyVerifier(new String[]{"stretch","repeat","round"},null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"70<1,2>"}));
+			allelementVerifiers.remove(element);
+		}
 		else if("bottom".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("box-decoration-break".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"slice","clone"},ElementInfo.VISUALMEDIA,null));
 			allelementVerifiers.remove(element);
 
 		}
