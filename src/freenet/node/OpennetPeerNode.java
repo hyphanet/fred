@@ -64,7 +64,7 @@ public class OpennetPeerNode extends PeerNode {
 	/** Is the peer droppable? 
 	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason. */ 
 	public NOT_DROP_REASON isDroppableWithReason(boolean ignoreDisconnect) {
-		if (isPreferred()) {
+		if (isPreferred() && isConnected() && isRoutable()) {
 			return NOT_DROP_REASON.PREFERRED_PEER;
 		}
 		long now = System.currentTimeMillis();
