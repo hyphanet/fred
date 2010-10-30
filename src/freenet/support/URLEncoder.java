@@ -14,6 +14,10 @@ public class URLEncoder {
 	// Moved here from FProxy by amphibian
 	final static String safeURLCharacters = "*-_./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
+	public static String getSafeURLCharacters() {
+		return safeURLCharacters;
+	}
+	
 	public final static String encode(String URL, String force, boolean ascii) {
 		return encode(URL, force, ascii, "");
 	}
