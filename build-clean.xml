@@ -25,13 +25,13 @@ build-dependency on ant-optional, libbsf-java and rhino.
 
 	<property name="main.src" value="src"/>
 	<property name="main.make" value="build/main"/>
-	<property name="main.dst" value="dist"/><!--UNUSED-->
+	<property name="main.dst" value="dist"/>
 
 	<property name="test.src" value="test"/>
 	<property name="test.make" value="build/test"/>
-	<property name="test.dst" value="run"/><!--UNUSED-->
+	<property name="test.dst" value="run"/>
 
-	<property name="doc.dst" value="javadoc"/>
+	<property name="doc.dst" value="javadoc"/><!-- UNUSED -->
 	<property name="doc.api" value="javadoc"/>
 
 	<property name="version.src" value="freenet/node/Version.java" />
@@ -316,7 +316,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<mkdir dir="${doc.api}"/>
 	</target>
 
-	<target name="javadoc" depends="init-doc, dep">
+	<target name="javadoc" depends="init-doc, dep" unless="${doc.skip}">
 		<javadoc classpathref="lib.path" sourcepath="${main.src}" destdir="${doc.api}" use="true">
 			<fileset dir="${main.src}" includes="**/*.java" />
 			<classpath refid="lib.path"/>
@@ -328,7 +328,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<!-- currently freenet has no other documentation apart from javadocs -->
 	</target>
 
-	<target name="clean-doc">
+	<target name="clean-doc" unless="${doc.skip}">
 		<delete dir="${doc.api}"/>
 	</target>
 
