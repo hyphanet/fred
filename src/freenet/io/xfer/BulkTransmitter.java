@@ -189,7 +189,6 @@ public class BulkTransmitter {
 		prb.remove(this);
 		synchronized(BulkTransmitter.class) {
 			transfersCompleted++;
-			transfersSucceeded++;
 		}
 	}
 
