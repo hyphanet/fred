@@ -311,6 +311,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 		}
 
+		boolean didntTryOldOpennetPeers;
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
 			// Try old opennet connections.
@@ -321,16 +322,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				for(int i=0;i<oldPeers.length;i++) {
 					if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true, now)) return;
 				}
-			}
-		}
+				didntTryOldOpennetPeers = false;
+			} else
+				didntTryOldOpennetPeers = true;
+		} else
+			didntTryOldOpennetPeers = false;
 		if(node.wantAnonAuth()) {
 			if(tryProcessAuthAnon(buf, offset, length, peer)) return;
 		}
 
                 // Don't log too much if we are a seednode
-                if(logMINOR && crypto.isOpennet && node.wantAnonAuth())
-                    Logger.minor(this,"Unmatchable packet from "+peer);
-                else
+                if(logMINOR && crypto.isOpennet && node.wantAnonAuth()) {
+                	if(!didntTryOldOpennetPeers)
+                		Logger.minor(this,"Unmatchable packet from "+peer);
+                } else
                     Logger.normal(this,"Unmatchable packet from "+peer);
 	}
 
