@@ -184,6 +184,7 @@ public final class SmallWorldLinkModel {
 	    location+=1.0;
 	double lastLocation=0.0;
 	double nextLocation;
+	boolean first=true;
 	//For this initial implementation, slot "boundaries" are
 	//reasoned to be halfway between either node's location.
 	ListIterator<Slot> i=list.listIterator();
@@ -200,6 +201,8 @@ public final class SmallWorldLinkModel {
 	    //@bug: is underflow possible here? w/ how many peers?
 	    double leftBoundary=(lastLocation+slot.location)/2;
 	    double rightBoundary=(slot.location+nextLocation)/2;
+	    if (first)
+		leftBoundary=0.0;
 	    if (leftBoundary < location && location < rightBoundary) {
 		//This is our slot!
 		if (slot.peerImpl!=null) {
@@ -211,13 +214,15 @@ public final class SmallWorldLinkModel {
 		}
 	    } 
 	    lastLocation=slot.location;
+	    first=false;
 	}
 	nextLocation=1.0;
 	Slot slot=closestPeer;
 	//sanity check
 	{
 	    double leftBoundary=(lastLocation+slot.location)/2;
-	    double rightBoundary=(slot.location+nextLocation)/2;
+	    //double rightBoundary=(slot.location+nextLocation)/2;
+	    double rightBoundary=1.0;
 	    if (leftBoundary <= location && location <= rightBoundary) {
 		//This is our slot!
 	    } else {
