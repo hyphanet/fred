@@ -184,8 +184,10 @@ public class BulkTransmitter {
 		synchronized(this) {
 			if(cancelled || finished) {
 				Logger.error(this, "Already finished in cancel("+reason+"): cancelled="+cancelled+" finished="+finished+" for uid "+uid+" to "+peer, new Exception("error"));
-			} else
+			} else {
+				if(logMINOR) Logger.minor(this, "Cancelling ("+reason+") on "+uid+" to "+peer);
 				completed = true;
+			}
 			cancelled = true;
 			cancelReason = reason;
 			notifyAll();
@@ -206,8 +208,10 @@ public class BulkTransmitter {
 		synchronized(this) {
 			if(cancelled || finished) {
 				Logger.error(this, "Already finished in completed(): cancelled="+cancelled+" finished="+finished+" for uid "+uid+" to "+peer, new Exception("error"));
-			} else
+			} else {
+				if(logMINOR) Logger.minor(this, "Completing on "+uid+" to "+peer);
 				completed = true;
+			}
 			finished = true;
 			finishTime = System.currentTimeMillis();
 			notifyAll();
