@@ -374,15 +374,15 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			schedule(end-now, null, context);
 		} else {
-			uskManager.unsubscribe(origUSK, this);
-			uskManager.onFinished(this);
-			context.getSskFetchScheduler().schedTransient.removePendingKeys((KeyListener)this);
-			long ed = uskManager.lookupLatestSlot(origUSK);
 			USKFetcherCallback[] cb;
 			synchronized(this) {
 				completed = true;
 				cb = callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 			}
+			uskManager.unsubscribe(origUSK, this);
+			uskManager.onFinished(this);
+			context.getSskFetchScheduler().schedTransient.removePendingKeys((KeyListener)this);
+			long ed = uskManager.lookupLatestSlot(origUSK);
 			byte[] data;
 			if(lastRequestData == null)
 				data = null;
