@@ -180,48 +180,32 @@ public class BulkTransmitter {
 		if(logMINOR)
 			Logger.minor(this, "Cancelling "+this);
 		sendAbortedMessage();
-		boolean completed = false;
 		synchronized(this) {
-			if(cancelled || finished) {
-				Logger.error(this, "Already finished in cancel("+reason+"): cancelled="+cancelled+" finished="+finished+" for uid "+uid+" to "+peer, new Exception("error"));
-			} else {
-				if(logMINOR) Logger.minor(this, "Cancelling ("+reason+") on "+uid+" to "+peer);
-				completed = true;
-			}
+			if(cancelled || finished) return;
 			cancelled = true;
 			cancelReason = reason;
 			notifyAll();
 		}
 		prb.remove(this);
-		if(completed) {
-			synchronized(BulkTransmitter.class) {
-				transfersCompleted++;
-				transfersSucceeded++;
-			}
+		synchronized(BulkTransmitter.class) {
+			transfersCompleted++;
+			transfersSucceeded++;
 		}
 	}
 
 	/** Like cancel(), but without the negative overtones: The client says it's got everything,
 	 * we believe them (even if we haven't sent everything; maybe they had a partial). */
 	public void completed() {
-		boolean completed = false;
 		synchronized(this) {
-			if(cancelled || finished) {
-				Logger.error(this, "Already finished in completed(): cancelled="+cancelled+" finished="+finished+" for uid "+uid+" to "+peer, new Exception("error"));
-			} else {
-				if(logMINOR) Logger.minor(this, "Completing on "+uid+" to "+peer);
-				completed = true;
-			}
+			if(cancelled || finished) return;
 			finished = true;
 			finishTime = System.currentTimeMillis();
 			notifyAll();
 		}
 		prb.remove(this);
-		if(completed) {
-			synchronized(BulkTransmitter.class) {
-				transfersCompleted++;
-				transfersSucceeded++;
-			}
+		synchronized(BulkTransmitter.class) {
+			transfersCompleted++;
+			transfersSucceeded++;
 		}
 	}
 	
