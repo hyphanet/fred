@@ -470,7 +470,9 @@ public class PeerManager {
 //    }
 //
 	/**
-	 * Find the node with the given Peer address.
+	 * Find the node with the given Peer address. Used by FNPPacketMangler to try to 
+	 * quickly identify a peer by the address of the packet. Includes 
+	 * non-isRealConnection()'s since they can also be connected.
 	 */
 	public PeerNode getByPeer(Peer peer) {
 		PeerNode[] peerList = myPeers;
