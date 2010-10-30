@@ -17,6 +17,7 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
+import freenet.io.xfer.BulkTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeStats.ByteCountersSnapshot;
 import freenet.node.NodeStats.PeerLoadStats;
@@ -1777,6 +1778,12 @@ public class NodeStats implements Persistable {
 			row.addChild("td", fix3p3pct.format((double)succeeded / total));
 			row.addChild("td", thousandPoint.format(total));
 		}
+		
+		long[] bulkSuccess = BulkTransmitter.transferSuccess();
+		row = list.addChild("tr");
+		row.addChild("td", l10n("bulkSends"));
+		row.addChild("td", fix3p3pct.format(((double)bulkSuccess[1])/((double)bulkSuccess[0])));
+		row.addChild("td", Long.toString(bulkSuccess[0]));
 	}
 
 	/* Total bytes sent by requests and inserts, excluding payload */

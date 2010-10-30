@@ -51,6 +51,9 @@ public class BulkTransmitter {
 	private long finishTime=-1;
 	private String cancelReason;
 	private final ByteCounter ctr;
+	
+	private static long transfersCompleted;
+	private static long transfersSucceeded;
 
         private static volatile boolean logMINOR;
 	static {
@@ -177,23 +180,45 @@ public class BulkTransmitter {
 		if(logMINOR)
 			Logger.minor(this, "Cancelling "+this);
 		sendAbortedMessage();
+		boolean completed = false;
 		synchronized(this) {
+			if(cancelled || finished) {
+				Logger.error(this, "Already finished in cancel("+reason+"): cancelled="+cancelled+" finished="+finished, new Exception("error"));
+			} else
+				completed = true;
 			cancelled = true;
 			cancelReason = reason;
 			notifyAll();
 		}
 		prb.remove(this);
+		if(completed) {
+			synchronized(BulkTransmitter.class) {
+				transfersCompleted++;
+				transfersSucceeded++;
+			}
+		}
 	}
 
 	/** Like cancel(), but without the negative overtones: The client says it's got everything,
 	 * we believe them (even if we haven't sent everything; maybe they had a partial). */
 	public void completed() {
+		boolean completed = false;
 		synchronized(this) {
+			if(cancelled || finished) {
+				Logger.error(this, "Already finished in completed(): cancelled="+cancelled+" finished="+finished, new Exception("error"));
+			} else
+				completed = true;
 			finished = true;
 			finishTime = System.currentTimeMillis();
 			notifyAll();
 		}
 		prb.remove(this);
+		if(completed) {
+			synchronized(BulkTransmitter.class) {
+				transfersCompleted++;
+				transfersSucceeded++;
+			}
+		}
 	}
 	
 	/**
@@ -363,5 +388,9 @@ outer:	while(true) {
 	
 	public String getCancelReason() {
 		return cancelReason;
+	}
+	
+	public static synchronized long[] transferSuccess() {
+		return new long[] { transfersCompleted, transfersSucceeded };
 	}
 }
