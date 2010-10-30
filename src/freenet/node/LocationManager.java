@@ -157,20 +157,33 @@ public class LocationManager implements ByteCounter {
 			SmallWorldLinkModel model=new SmallWorldLinkModel(numPeers);
 			model.setFreenetLocation(getLocation());
 			List<PeerNode> allPeers=node.peers.listConnectedPeersByCHKSuccessRate();
+			System.err.println("calculating preferences from "+allPeers.size()+" possible peers");
+			try {
 			for (PeerNode peer : allPeers) {
-				if (!peer.isConnected() || !peer.isRoutable()) {
+				if (!peer.isRoutable()) {
 					peer.setPreferred(false);
+					System.err.println("non-pref (not-routable): "+peer);
 					continue;
 				}
 				double location=peer.getLocation();
 				if (location >= 0.0) {
-					peer.setPreferred(model.fillSlot(location, peer));
+					boolean preferred=model.fillSlot(location, peer);
+					peer.setPreferred(preferred);
+					if (preferred) {
+						System.err.println("YES-pref: "+peer+" ("+location+")");
+					} else {
+						System.err.println("non-pref (slot full): "+peer+" ("+location+")");
+					}
 				} else {
 					peer.setPreferred(false);
+					System.err.println("non-pref (no location): "+peer);
 				}
 			}
 			idealLocations=model.getIdealLocations();
 			recentLinkModel=model;
+			} catch (Throwable t) {
+				t.printStackTrace();
+			}
 		}
 	}
 
