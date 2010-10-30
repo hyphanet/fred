@@ -475,16 +475,12 @@ public class PeerManager {
 	public PeerNode getByPeer(Peer peer) {
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
-			if(!peerList[i].isRealConnection())
-				continue;
 			if(peer.equals(peerList[i].getPeer()))
 				return peerList[i];
 		}
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(int i = 0; i < peerList.length; i++) {
-			if(!peerList[i].isRealConnection())
-				continue;
 			if(addr.equals(peerList[i].getPeer().getFreenetAddress()))
 				return peerList[i];
 		}
