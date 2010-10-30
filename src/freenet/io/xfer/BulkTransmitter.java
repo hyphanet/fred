@@ -17,6 +17,7 @@ import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -308,7 +309,8 @@ outer:	while(true) {
 					Logger.minor(this, "Canclled: not connected "+this);
 				return false;
 			} catch (WaitedTooLongException e) {
-				Logger.error(this, "Failed to send bulk packet "+blockNo+" for "+this);
+				long rtt = peer.getThrottle().getRoundTripTime();
+				Logger.error(this, "Failed to send bulk packet "+blockNo+" for "+this+" RTT is "+TimeUtil.formatTime(rtt));
 				return false;
 			} catch (SyncSendWaitedTooLongException e) {
 				// Impossible
