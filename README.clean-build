@@ -12,8 +12,8 @@ effort than the default build path; help in easing this would be appreciated.
 
 (Properties can be set in override.properties, similar to build.properties)
 
-A. The fred repo needs to know where the contrib repo is. By default, it looks
-in ../contrib, but you can override this by setting the "contrib.dir" property.
+A. The build scripts need to know where the contrib repo is. By default, they
+look in ../contrib; you can override this by setting `contrib.dir`.
 
 B. You may need to install extra Java libraries. These are listed in build.xml,
 in the <path> elements. If you already have these installed, but ANT can't find
@@ -35,17 +35,25 @@ most tedious step and needs to be done *before* the below command.
 
 == Clean-building ==
 
-You need to install both ant and ant-optional. If you are running Java 5, you
-also need to install js.jar from rhino[3] and bsf.jar from apache[4]. (Java 6+
-includes both of these already.)
-
 The pre-compiled components are freenet-ext.jar (ext) and the GWT-generated
-javascript (gjs). To do a clean-build of all of these from within the fred
-repository, run:
+javascript (gjs). The former is a separate package ("contrib"), whereas the
+latter is strictly contained within this package.
 
-  $ ant -Dsuppress.gjs=false -Dsuppress.ext=false all
+To use the build scripts, you need to install ant. To compile all of the above
+completely from source, the recommended method is to use build-clean.xml:
 
-Be sure to note point (C) in the section above.
+$ ... # retrieve and build external packages (e.g. contrib)
+$ ... # set build properties
+$ ant -f build-clean.xml dist
+
+NOTE: the default checkout of this package contains some pre-built javascript;
+running `dist` will remove it and re-build it from source. You can also remove
+it separately by running the `clean-gjs` target.
+
+(It is possible to use build.xml to do the above in fewer steps, but it needs
+extra libraries - ant-optional, and (if Java 5) bsf[3] and rhino[4]. Also, it
+won't abort immediately if building a component fails; it'll first try to
+retrieve pre-built blobs of that component. This may not be what you want.)
 
 [1] However, you still need to trust your compiler and operating system; see
 Ken Thompson's "Reflections on Trusting Trust".

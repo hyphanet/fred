@@ -1,6 +1,6 @@
 /bin
 /build
-/build-test
+/dist
 /freenet-*
 /javadoc
 /junitvmwatcher*
