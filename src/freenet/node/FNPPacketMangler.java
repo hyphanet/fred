@@ -292,18 +292,22 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				pn = anonPeers[i];
 				if(pn == opn) continue;
 				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) return;
-				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
-					pn.changedIP(peer);
-					return;
-				}
-				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
-					pn.changedIP(peer);
-					return;
-				}
-				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
-					pn.changedIP(peer);
-					return;
-				}
+			}
+		}
+		for(int i=0;i<anonPeers.length;i++) {
+			pn = anonPeers[i];
+			if(pn == opn) continue;
+			if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
+				pn.changedIP(peer);
+				return;
+			}
+			if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
+				pn.changedIP(peer);
+				return;
+			}
+			if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
+				pn.changedIP(peer);
+				return;
 			}
 		}
 
