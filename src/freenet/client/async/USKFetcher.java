@@ -383,8 +383,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				completed = true;
 				cb = callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 			}
-			// In case of race condition.
-			uskManager.unsubscribe(origUSK, this);
 			byte[] data;
 			if(lastRequestData == null)
 				data = null;
