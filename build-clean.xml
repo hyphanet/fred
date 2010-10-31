@@ -13,15 +13,29 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	</description>
 
 	<!-- =================================================================== -->
+	<!-- Helper tasks                                                        -->
+	<!-- =================================================================== -->
+
+	<macrodef name="proppath" description="set a property to a path if it exists">
+		<attribute name="name"/>
+		<attribute name="path"/>
+		<attribute name="else" default="."/>
+		<attribute name="type" default="dir"/>
+		<sequential>
+			<condition property="@{name}" value="@{path}" else="@{else}">
+				<available file="@{path}" type="@{type}"/>
+			</condition>
+		</sequential>
+	</macrodef>
+
+	<!-- =================================================================== -->
 	<!-- Global properties                                                   -->
 	<!-- =================================================================== -->
 
 	<!-- user overrides (properties are immutable, so set overrides first) -->
 	<property file="override.properties"/>
 	<property file="build.properties"/>
-	<condition property="java.class.dirs" value="${java.class.dirs.user}" else="${java.home}/lib">
-		<available file="${java.class.dirs.user}" type="dir"/>
-	</condition>
+	<proppath name="java.class.dirs" path="${java.class.dirs.user}" else="${java.home}/lib"/>
 
 	<property name="main.src" value="src"/>
 	<property name="main.make" value="build/main"/>
@@ -38,7 +52,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<property name="version.make" value="freenet/node/Version.class" />
 
 	<property name="lib" value="lib"/>
-	<property name="lib.contrib.dir" value="${contrib.dir}"/>
+	<proppath name="lib.contrib.dir" path="${contrib.dir}" else="${lib}"/>
 	<path id="lib.path">
 		<fileset dir="${lib.contrib.dir}" includes="**/*.jar"/>
 		<fileset dir="${lib}" includes="**/*.jar"/>
