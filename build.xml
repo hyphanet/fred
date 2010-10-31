@@ -12,7 +12,7 @@ available (possibly using *pre-built blobs*). This requires the optional ANT
 tasks (ant-apache-bsf) and (if using Java &lt;6) bsf and rhino.
 	</description>
 
-	<import file="build-clean.xml" as="solo"/>
+	<import file="build-clean.xml"/>
 
 	<!-- =================================================================== -->
 	<!-- Dependencies (contrib, ie. freenet-ext.jar)                         -->
