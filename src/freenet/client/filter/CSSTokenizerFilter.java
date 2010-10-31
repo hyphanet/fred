@@ -162,10 +162,11 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("border-image-width");
 		allelementVerifiers.add("border-image-outset");
 		allelementVerifiers.add("border-image-repeat");
-// TODO:css3		allelementVerifiers.add("border-image");
+		allelementVerifiers.add("border-image");
 		allelementVerifiers.add("border");
 		allelementVerifiers.add("bottom");
 		allelementVerifiers.add("box-decoration-break");
+		allelementVerifiers.add("box-shadow");
 		allelementVerifiers.add("caption-side");
 		allelementVerifiers.add("clear");
 		allelementVerifiers.add("clip");
@@ -294,7 +295,24 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[61]=new CSSPropertyVerifier(new String[] {"border-box", "padding-box", "content-box"},null,null,true);
 		// <border-radius>
 		auxilaryVerifiers[64]=new CSSPropertyVerifier(null,new String[] {"le", "pe"},null,true);
-		
+
+		// <shadow>
+		auxilaryVerifiers[71]=new CSSPropertyVerifier(new String[]{"inset"}, null, null, true);
+		auxilaryVerifiers[72]=new CSSPropertyVerifier(null, new String[]{"le"}, null, true);
+		auxilaryVerifiers[73]=new CSSPropertyVerifier(null, new String[]{"co"}, null, true);
+		auxilaryVerifiers[74]=new CSSPropertyVerifier(null, null, new String[]{"72<1,4>",}, true);
+		auxilaryVerifiers[75]=new CSSPropertyVerifier(null, null, new String[]{"71a74a73"}, true);
+
+		// <border-image-source>
+		auxilaryVerifiers[76]=new CSSPropertyVerifier(new String[]{"none"},new String[]{"ur"},null,true);
+
+		// <border-image-slice>
+		auxilaryVerifiers[68]=new CSSPropertyVerifier(new String[]{"auto"},new String[]{"le","pe","in"},null,true);
+		auxilaryVerifiers[77]=new CSSPropertyVerifier(null,null,new String[]{"68<1,4>"},true);
+
+		// <border-image-repeat>
+		auxilaryVerifiers[70]=new CSSPropertyVerifier(new String[]{"stretch","repeat","round"},null,null,true);
+		auxilaryVerifiers[78]=new CSSPropertyVerifier(null,null,new String[]{"70<1,2>"},true);
 	}
 	/* This function loads a verifier object in elementVerifiers.
 	 * After the object has been loaded, property name is removed from allelementVerifier.
@@ -573,7 +591,7 @@ class CSSTokenizerFilter {
 		}
 		else if("border-image-source".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"none"},ElementInfo.VISUALMEDIA,new String[]{"ur"},null));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"76"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-image-slice".equalsIgnoreCase(element))
@@ -585,8 +603,7 @@ class CSSTokenizerFilter {
 		}
 		else if("border-image-width".equalsIgnoreCase(element))
 		{
-			auxilaryVerifiers[68]=new CSSPropertyVerifier(new String[]{"auto"},new String[]{"le","pe","in"},null,true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"68<1,4>"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"77"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-image-outset".equalsIgnoreCase(element))
@@ -597,8 +614,12 @@ class CSSTokenizerFilter {
 		}
 		else if("border-image-repeat".equalsIgnoreCase(element))
 		{
-			auxilaryVerifiers[70]=new CSSPropertyVerifier(new String[]{"stretch","repeat","round"},null,null,true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"70<1,2>"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"78"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("border-image".equalsIgnoreCase(element))
+		{ // FIXME: css3: not sure how to do the rest
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"76a77a78"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("bottom".equalsIgnoreCase(element))
@@ -610,6 +631,12 @@ class CSSTokenizerFilter {
 		else if("box-decoration-break".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"slice","clone"},ElementInfo.VISUALMEDIA,null));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("box-shadow".equalsIgnoreCase(element))
+		{ // way more permissive than it should be
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"none"}, ElementInfo.VISUALMEDIA, null, new String[]{"75<1,65535>"}, true, true));
 			allelementVerifiers.remove(element);
 
 		}
