@@ -39,9 +39,9 @@ public final class MessageFilter {
 
     private boolean _matched;
     private PeerContext _droppedConnection;
-	private MessageType _type;
-    private HashMap<String, Object> _fields = new HashMap<String, Object>();
-    private List<String> _fieldList = new LinkedList<String>();
+    private MessageType _type;
+    private final HashMap<String, Object> _fields = new HashMap<String, Object>();
+    private final List<String> _fieldList = new LinkedList<String>();
     private PeerContext _source;
     private long _timeout;
     /** If true, timeouts are relative to the start of waiting, if false, they are relative to

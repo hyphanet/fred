@@ -372,7 +372,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 			if (peerNodeStatuses.length == 0) {
 				NodeL10n.getBase().addL10nSubstitution(peerTableInfoboxContent, "DarknetConnectionsToadlet.noPeersWithHomepageLink", 
-						new String[] { "link", "/link" }, new String[] { "<a href=\"/\">", "</a>" });
+						new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/") });
 			} else {
 				HTMLNode peerForm = null;
 				HTMLNode peerTable;
@@ -413,6 +413,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Bulk");
 					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity\u00a0Realtime");
 					peerTableHeaderRow.addChild("th", "Transmit\u00a0Queue");
+					peerTableHeaderRow.addChild("th", "Peer\u00a0Capacity");
 				}
 				
 				SimpleColumn[] endCols = endColumnHeaders(mode >= PageMaker.MODE_ADVANCED);
@@ -669,18 +670,21 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		drawNoderefBox(contentNode, ctx, getNoderef());
 	}
 	
+	static final HTMLNode REF_LINK = HTMLNode.link("myref.fref").setReadOnly();
+	static final HTMLNode REFTEXT_LINK = HTMLNode.link("myref.txt").setReadOnly();
+	
 	static void drawNoderefBox(HTMLNode contentNode, ToadletContext ctx, SimpleFieldSet fs) {
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
 		// FIXME better way to deal with this sort of thing???
 		NodeL10n.getBase().addL10nSubstitution(headerReferenceInfobox, "DarknetConnectionsToadlet.myReferenceHeader",
-				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
-				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" });
+				new String[] { "linkref", "linktext" },
+				new HTMLNode[] { REF_LINK, REFTEXT_LINK });
 		HTMLNode referenceInfoboxContent = referenceInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode warningSentence = referenceInfoboxContent.addChild("p");
 		NodeL10n.getBase().addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
-				new String[] { "bold", "/bold" },
-				new String[] { "<b>", "</b>" });
+				new String[] { "bold" },
+				new HTMLNode[] { HTMLNode.STRONG });
 		referenceInfoboxContent.addChild("pre", "id", "reference", fs.toString() + '\n');
 	}
 
@@ -838,6 +842,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			else
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsRT.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsRT.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsRT.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityInputBytes));
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getMessageQueueLengthBytes())+":"+TimeUtil.formatTime(peerNodeStatus.getMessageQueueLengthTime()));
+			IncomingLoadSummaryStats loadStats = peerNodeStatus.incomingLoadStats;
+			if(loadStats == null)
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
+			else
+				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStats.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStats.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStats.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStats.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStats.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStats.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStats.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStats.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStats.totalCapacityInputBytes));
 		}
 		
 		if(endCols != null) {

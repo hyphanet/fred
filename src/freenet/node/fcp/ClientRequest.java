@@ -94,17 +94,7 @@ public abstract class ClientRequest {
 		this.global = global;
 		if(persistenceType == PERSIST_CONNECTION) {
 			this.origHandler = handler;
-			lowLevelClient = new RequestClient() {
-
-				public boolean persistent() {
-					return false;
-				}
-
-				public void removeFrom(ObjectContainer container) {
-					throw new UnsupportedOperationException();
-				}
-				
-			};
+			lowLevelClient = origHandler.connectionRequestClient;
 			this.client = null;
 		} else {
 			origHandler = null;

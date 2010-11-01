@@ -227,6 +227,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	if(status == NOT_FINISHED && !receivingAsync) {
         		Logger.error(this, "Not finished: "+this);
         		finish(INTERNAL_ERROR, null, false);
+        	} else if(!receivingAsync) {
+            	boolean mustUnlock;
+            	synchronized(this) {
+            		mustUnlock = this.mustUnlock;
+            	}
+            	if(mustUnlock)
+            		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, origTag);
         	}
             boolean mustUnlock;
             synchronized(this) {

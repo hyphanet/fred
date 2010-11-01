@@ -25,9 +25,11 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.RetrievalException;
+import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
@@ -43,6 +45,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
@@ -700,7 +703,7 @@ public class OpennetManager {
 		oldPeers.push(pn);
 	}
 
-	String getOldPeersFilename() {
+	final String getOldPeersFilename() {
 		return node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString();
 	}
 
@@ -820,6 +823,33 @@ public class OpennetManager {
 		innerSendOpennetRef(xferUID, padded, peer, ctr);
 	}
 
+	interface NoderefCallback {
+		void gotNoderef(byte[] noderef);
+	}
+	
+	private class SyncNoderefCallback implements NoderefCallback {
+
+		byte[] returned;
+		boolean finished;
+		
+		public synchronized void gotNoderef(byte[] noderef) {
+			returned = noderef;
+			finished = true;
+			notifyAll();
+		}
+		
+		public synchronized byte[] waitForResult() {
+			while(!finished)
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			return returned;
+		}
+		
+	}
+	
 	/**
 	 * Wait for an opennet noderef.
 	 * @param isReply If true, wait for an FNPOpennetConnectReply[New], if false wait for an FNPOpennetConnectDestination[New].
@@ -827,6 +857,12 @@ public class OpennetManager {
 	 * @return An opennet noderef.
 	 */
 	public byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr) {
+		SyncNoderefCallback cb = new SyncNoderefCallback();
+		waitForOpennetNoderef(isReply, source, uid, ctr, cb);
+		return cb.waitForResult();
+	}
+	
+	public void waitForOpennetNoderef(final boolean isReply, final PeerNode source, final long uid, final ByteCounter ctr, final NoderefCallback callback) {
 		// FIXME remove back compat code
 		MessageFilter mf =
 			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
@@ -839,30 +875,56 @@ public class OpennetManager {
 				setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
 			mf = mfAck.or(mf);
 		}
-		Message msg;
-
 		try {
-			msg = node.usm.waitFor(mf, ctr);
+			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+				
+				boolean completed;
+
+				public void onMatched(Message msg) {
+					if (msg.getSpec() == DMT.FNPOpennetCompletedAck) {
+						// Acked (only possible if !isReply)
+						complete(null);
+					} else {
+						// Noderef bulk transfer
+						long xferUID = msg.getLong(DMT.TRANSFER_UID);
+						int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
+						int realLength = msg.getInt(DMT.NODEREF_LENGTH);
+						complete(innerWaitForOpennetNoderef(xferUID, paddedLength, realLength, source, isReply, uid, false, ctr));
+					}
+				}
+
+				public boolean shouldTimeout() {
+					return false;
+				}
+
+				public void onTimeout() {
+					complete(null);
+				}
+
+				public void onDisconnect(PeerContext ctx) {
+					complete(null);
+				}
+
+				public void onRestarted(PeerContext ctx) {
+					complete(null);
+				}
+
+				public int getPriority() {
+					return NativeThread.NORM_PRIORITY;
+				}
+				
+				private void complete(byte[] buf) {
+					synchronized(this) {
+						if(completed) return;
+						completed = true;
+					}
+					callback.gotNoderef(buf);
+				}
+				
+			}, ctr);
 		} catch (DisconnectedException e) {
-			Logger.normal(this, "No opennet response because node disconnected on "+this);
-			return null; // Lost connection with request source
+			callback.gotNoderef(null);
 		}
-
-		if (msg == null) {
-			// Timeout
-			Logger.normal(this, "Timeout waiting for opennet peer on "+this);
-			return null;
-		}
-
-		if (msg.getSpec() == DMT.FNPOpennetCompletedAck) {
-			return null; // Acked (only possible if !isReply)
-		}
-
-		// Noderef bulk transfer
-		long xferUID = msg.getLong(DMT.TRANSFER_UID);
-		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
-		int realLength = msg.getInt(DMT.NODEREF_LENGTH);
-		return innerWaitForOpennetNoderef(xferUID, paddedLength, realLength, source, isReply, uid, false, ctr);
 	}
 
 	byte[] innerWaitForOpennetNoderef(long xferUID, int paddedLength, int realLength, PeerNode source, boolean isReply, long uid, boolean sendReject, ByteCounter ctr) {

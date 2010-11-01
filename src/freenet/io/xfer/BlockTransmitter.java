@@ -698,7 +698,7 @@ public class BlockTransmitter {
 					}
 				}
 				
-			});
+			}, "BlockTransmitter completion callback");
 		} else {
 			cleanup();
 		}

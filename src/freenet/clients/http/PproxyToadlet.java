@@ -513,6 +513,7 @@ public class PproxyToadlet extends Toadlet {
 		if(isLowSecLevel)
 			input.addAttribute("checked", "true");
 		addOfficialForm.addChild("#", l10n("pluginSourceHTTPS"));
+		addOfficialForm.addChild("#", " ");
 		if(node.getOpennet() == null)
 			addOfficialForm.addChild("b").addChild("font", "color", "red", l10n("pluginSourceHTTPSWarningDarknet"));
 		else

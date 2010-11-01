@@ -19,7 +19,7 @@ import freenet.keys.FreenetURI;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class ArchiveContext {
 
-	HashSet soFar = new HashSet();
+	private HashSet soFar;
 	final int maxArchiveLevels;
 	final long maxArchiveSize;
 	
@@ -33,13 +33,33 @@ public class ArchiveContext {
 	 *
 	 * The URI provided is expected to be a reasonably unique identifier for the archive.
 	 */
-	public synchronized void doLoopDetection(FreenetURI key) throws ArchiveFailureException {
+	public synchronized void doLoopDetection(FreenetURI key, ObjectContainer container) throws ArchiveFailureException {
+		if(container != null)
+			container.activate(soFar, Integer.MAX_VALUE);
+		if(soFar == null) {
+			soFar = new HashSet();
+			if(container != null)
+				container.store(soFar);
+		}
 		if(soFar.size() > maxArchiveLevels)
 			throw new ArchiveFailureException(ArchiveFailureException.TOO_MANY_LEVELS);
+		FreenetURI uri = key;
+		if(container != null)
+			uri = uri.clone();
+		soFar.add(uri);
+		if(container != null) {
+			container.store(uri);
+			container.store(soFar);
+		}
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		container.delete(soFar);
+		if(soFar != null) {
+			for(Object uri : soFar) {
+				((FreenetURI)uri).removeFrom(container);
+			}
+			container.delete(soFar);
+		}
 		container.delete(this);
 	}
 }

@@ -37,7 +37,6 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
-import freenet.support.Logger.LogLevel;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -51,7 +50,10 @@ import freenet.support.io.FileUtil;
  */
 public class PeerManager {
 
-	private static boolean logMINOR;
+        private static volatile boolean logMINOR;
+        static {
+            Logger.registerClass(PeerManager.class);
+        }
 	/** Our Node */
 	final Node node;
 	/** All the peers we want to connect to */
@@ -59,8 +61,16 @@ public class PeerManager {
 	/** All the peers we are actually connected to */
 	PeerNode[] connectedPeers;
 	private String darkFilename;
-	private String openFilename;
-	private PeerManagerUserAlert ua;	// Peers stuff
+        private String openFilename;
+        private String oldOpennetPeersFilename;
+        // FIXME either track dirty status separately for each of the three files,
+        // or implement a cheaper cache e.g. a secure hash, maybe with file size as a 
+        // short-cut. String.hashCode() unfortunately will give way too many false 
+        // positives and thus result in not writing important changes.
+        private String darknetPeersStringCache = null;
+        private String opennetPeersStringCache = null;
+        private String oldOpennetPeersStringCache = null;
+        private PeerManagerUserAlert ua;	// Peers stuff
 	/** age of oldest never connected peer (milliseconds) */
 	private long oldestNeverConnectedDarknetPeerAge;
 	/** Next time to update oldestNeverConnectedPeerAge */
@@ -88,12 +98,14 @@ public class PeerManager {
 	private final Runnable writePeersRunnable = new Runnable() {
 
 		public void run() {
-			if(shouldWritePeers) {
-				shouldWritePeers = false;
-				writePeersInner();
+			try {
+				if(shouldWritePeers) {
+					shouldWritePeers = false;
+					writePeersInner();
+				}
+			} finally {
+				node.getTicker().queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
 			}
-			
-			node.getTicker().queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
 		}
 	};
 	
@@ -123,7 +135,6 @@ public class PeerManager {
 	 */
 	public PeerManager(Node node) {
 		Logger.normal(this, "Creating PeerManager");
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		peerNodeStatuses = new HashMap<Integer, HashSet<PeerNode>>();
 		peerNodeStatusesDarknet = new HashMap<Integer, HashSet<PeerNode>>();
 		peerNodeRoutingBackoffReasons = new HashMap<String, HashSet<PeerNode>>();
@@ -273,7 +284,8 @@ public class PeerManager {
 		if(pn.recordStatus())
 			addPeerNodeStatus(pn.getPeerNodeStatus(), pn, false);
 		pn.setPeerNodeStatus(System.currentTimeMillis());
-		updatePMUserAlert();
+		if(!pn.isSeed())
+                    updatePMUserAlert();
 		if((!ignoreOpennet) && pn instanceof OpennetPeerNode) {
 			OpennetManager opennet = node.getOpennet();
 			if(opennet != null)
@@ -284,7 +296,6 @@ public class PeerManager {
 				return false;
 			}
 		}
-
 		notifyPeerStatusChangeListeners();
 		return true;
 	}
@@ -342,7 +353,7 @@ public class PeerManager {
 			}
 		}
 		pn.onRemove();
-		if(isInPeers)
+		if(isInPeers && !pn.isSeed())
 			updatePMUserAlert();
 		notifyPeerStatusChangeListeners();
 		return true;
@@ -381,7 +392,8 @@ public class PeerManager {
 			newConnectedPeers = a.toArray(newConnectedPeers);
 			connectedPeers = newConnectedPeers;
 		}
-		updatePMUserAlert();
+                if(!pn.isSeed())
+                    updatePMUserAlert();
 		node.lm.announceLocChange();
 		return true;
 	}
@@ -392,7 +404,6 @@ public class PeerManager {
 	}
 
 	public void addConnectedPeer(PeerNode pn) {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		if(!pn.isRealConnection()) {
 			if(logMINOR)
 				Logger.minor(this, "Not a real connection: " + pn);
@@ -434,7 +445,8 @@ public class PeerManager {
 			if(logMINOR)
 				Logger.minor(this, "Connected peers: " + connectedPeers.length);
 		}
-		updatePMUserAlert();
+		if(!pn.isSeed())
+                    updatePMUserAlert();
 		node.lm.announceLocChange();
 	}
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
@@ -458,14 +470,22 @@ public class PeerManager {
 //    }
 //
 	/**
-	 * Find the node with the given Peer address.
+	 * Find the node with the given Peer address. Used by FNPPacketMangler to try to 
+	 * quickly identify a peer by the address of the packet. Includes 
+	 * non-isRealConnection()'s since they can also be connected.
 	 */
 	public PeerNode getByPeer(Peer peer) {
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
-			if(!peerList[i].isRealConnection())
-				continue;
 			if(peer.equals(peerList[i].getPeer()))
+				return peerList[i];
+		}
+		// Try a match by IP address if we can't match exactly by IP:port.
+		FreenetInetAddress addr = peer.getFreenetAddress();
+		for(int i = 0; i < peerList.length; i++) {
+			Peer p = peerList[i].getPeer();
+			if(p == null) continue;
+			if(addr.equals(p.getFreenetAddress()))
 				return peerList[i];
 		}
 		return null;
@@ -525,24 +545,27 @@ public class PeerManager {
 								return;
 							done = true;
 						}
-						if(removePeer(pn))
+						if(removePeer(pn) && !pn.isSeed())
 							writePeers();
 					}
 				}, ctrDisconn);
 			} catch(NotConnectedException e) {
-				if(pn.isDisconnecting() && removePeer(pn))
+				if(pn.isDisconnecting() && removePeer(pn) && !pn.isSeed())
 					writePeers();
 				return;
 			}
-			node.getTicker().queueTimedJob(new Runnable() {
+                        if(!pn.isSeed()) {
+                            node.getTicker().queueTimedJob(new Runnable() {
 
-				public void run() {
-					if(pn.isDisconnecting() && removePeer(pn))
-						writePeers();
-				}
-			}, Node.MAX_PEER_INACTIVITY);
+                                public void run() {
+                                    if (pn.isDisconnecting() && removePeer(pn) && !pn.isSeed()) {
+                                        writePeers();
+                                    }
+                                }
+                            }, Node.MAX_PEER_INACTIVITY);
+                        }
 		} else
-			if(removePeer(pn))
+			if(removePeer(pn) && !pn.isSeed())
 				writePeers();
 	}
 	final ByteCounter ctrDisconn = new ByteCounter() {
@@ -654,7 +677,6 @@ public class PeerManager {
 		// This is safe as they will add themselves when they
 		// reconnect, and they can't do it yet as we are synchronized.
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>(connectedPeers.length);
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		for(PeerNode pn : myPeers) {
 			if(pn == exclude)
 				continue;
@@ -1173,30 +1195,30 @@ public class PeerManager {
 	}
 
 	private void writePeersInner() {
-		String darknet = null;
-		String opennet = null;
-		String oldOpennetPeers = null;
-		String oldOpennetPeersFilename = null;
+                String newDarknetPeersString = null,
+                        newOpennetPeersString = null,
+                        newOldOpennetPeersString =null;
 		
 		synchronized(writePeersSync) {
 			if(darkFilename != null)
-				darknet = getDarknetPeersString();
+				newDarknetPeersString = getDarknetPeersString();
 			OpennetManager om = node.getOpennet();
 			if(om != null) {
 				if(openFilename != null)
-					opennet = getOpennetPeersString();
+					newOpennetPeersString = getOpennetPeersString();
 				oldOpennetPeersFilename = om.getOldPeersFilename();
-				oldOpennetPeers = getOldOpennetPeersString(om);
+				newOldOpennetPeersString = getOldOpennetPeersString(om);
 			}
 		}
-		
+
 		synchronized(writePeerFileSync) {
-			if(darknet != null)
-				writePeersInner(darkFilename, darknet);
-			if(oldOpennetPeers != null) {
-				if(opennet != null)
-					writePeersInner(openFilename, opennet);
-				writePeersInner(oldOpennetPeersFilename, oldOpennetPeers);
+			if(newDarknetPeersString != null && !newDarknetPeersString.equals(darknetPeersStringCache))
+				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString);
+			if(newOldOpennetPeersString != null && !newOldOpennetPeersString.equals(oldOpennetPeersStringCache)) {
+				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString);
+			}
+			if(newOpennetPeersString != null && !newOpennetPeersString.equals(opennetPeersStringCache)) {
+				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString);
 			}
 		}
 	}

@@ -39,8 +39,8 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 		
 		HTMLNode textNode = new HTMLNode("div");
 		NodeL10n.getBase().addL10nSubstitution(textNode, "InvalidAddressOverrideUserAlert.unknownAddressWithConfigLink", 
-				new String[] { "link", "/link" }, 
-				new String[] { "<a href=\"/config/node\">", "</a>" });
+				new String[] { "link" }, 
+				new HTMLNode[] { HTMLNode.link("/config/node")});
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/node", "post" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");

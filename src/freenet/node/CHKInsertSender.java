@@ -97,6 +97,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			// No confirmation that it has finished, and it won't finish immediately on the transfer finishing.
 			// So don't try to thisTag.removeRoutingTo(next), just assume it keeps running until the whole insert finishes.
 			bt.sendAsync();
+			// REDFLAG: Load limiting:
+			// No confirmation that it has finished, and it won't finish immediately on the transfer finishing.
+			// So don't try to thisTag.removeRoutingTo(next), just assume it keeps running until the whole insert finishes.
 		}
 		
 		private void completedTransfer(boolean success) {

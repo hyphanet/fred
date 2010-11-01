@@ -31,12 +31,9 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
-import freenet.support.RandomGrabArray;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
 
@@ -52,15 +49,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final transient ClientRequestSelector selector;
 	
 	private static volatile boolean logMINOR;
+        private static volatile boolean logDEBUG;
 	
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			}
-		});
+		Logger.registerClass(ClientRequestScheduler.class);
 	}
 	
 	public static class PrioritySchedulerCallback extends StringCallback implements EnumerableOptionCallback {
@@ -236,6 +228,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 								return true;
 							}
 							
+                                                        @Override
 							public String toString() {
 								return "registerInsert";
 							}
@@ -465,13 +458,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	static final int WARNING_STARTER_QUEUE_SIZE = 800;
 	private static final long WAIT_AFTER_NOTHING_TO_START = 60*1000;
 	
-	private transient LinkedList<PersistentChosenRequest> starterQueue = new LinkedList<PersistentChosenRequest>();
+	private final transient LinkedList<PersistentChosenRequest> starterQueue = new LinkedList<PersistentChosenRequest>();
 	
 	/**
 	 * Called by RequestStarter to find a request to run.
 	 */
 	public ChosenBlock grabRequest() {
-		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		while(true) {
 			PersistentChosenRequest reqGroup = null;
 			synchronized(starterQueue) {
@@ -636,6 +628,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			fillRequestStarterQueue(container, context);
 			return false;
 		}
+        @Override
 		public String toString() {
 			return "fillRequestStarterQueue";
 		}
@@ -758,7 +751,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		short prio = req.getPriorityClass(container);
 		if(logMINOR)
 			Logger.minor(this, "Maybe adding to starter queue: prio="+prio);
-		boolean logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 		synchronized(starterQueue) {
 			boolean betterThanSome = false;
 			int size = 0;
@@ -904,6 +896,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.deactivate(succeeded, 1);
 						return false;
 					}
+                                        @Override
 					public String toString() {
 						return "BaseSendableGet succeeded";
 					}
@@ -938,6 +931,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						schedCore.tripPendingKey(key, block, container, clientContext);
 						return false;
 					}
+                                        @Override
 					public String toString() {
 						return "tripPendingKey";
 					}
@@ -1086,6 +1080,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.deactivate(get, 1);
 						return false;
 					}
+                                        @Override
 					public String toString() {
 						return "SendableGet onFailure";
 					}
@@ -1112,6 +1107,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.deactivate(insert, 1);
 						return false;
 					}
+                                        @Override
 					public String toString() {
 						return "SendableInsert onFailure";
 					}

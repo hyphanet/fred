@@ -1,27 +1,26 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
 
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
 import freenet.support.Logger.LogLevel;
+import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
 
 public class PrioritisedTicker implements Ticker, Runnable {
 	
 	private static volatile boolean logMINOR;
-	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -39,10 +38,15 @@ public class PrioritisedTicker implements Ticker, Runnable {
 			// Ignore the name, we are only interested in the job, needed for noDupes.
 			return ((Job)o).job == job;
 		}
+		
+		public int hashCode() {
+			return job.hashCode();
+		}
 	}
 	
 	/** ~= Ticker :) */
 	private final TreeMap<Long, Object> timedJobsByTime;
+	private final HashSet<Object> timedJobsQueued;
 	final Node node;
 	final NativeThread myThread;
 	static final int MAX_SLEEP_TIME = 200;
@@ -50,6 +54,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	PrioritisedTicker(Node node) {
 		this.node = node;
 		timedJobsByTime = new TreeMap<Long, Object>();
+		timedJobsQueued = new HashSet<Object>();
 		myThread = new NativeThread(this, "Ticker thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
 	}
@@ -107,11 +112,14 @@ public class PrioritisedTicker implements Ticker, Runnable {
 					Object o = timedJobsByTime.remove(tRun);
 					if(o instanceof Job[]) {
 						Job[] r = (Job[]) o;
-						for(int i = 0; i < r.length; i++)
+						for(int i = 0; i < r.length; i++) {
 							jobsToRun.add(r[i]);
+							timedJobsQueued.remove(r[i]);
+						}
 					} else {
 						Job r = (Job) o;
 						jobsToRun.add(r);
+						timedJobsQueued.remove(r);
 					}
 				} else {
 					sleepTime = Math.min(sleepTime, tRun.longValue() - now);
@@ -195,10 +203,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 		Long l = Long.valueOf(offset + now);
 		synchronized(timedJobsByTime) {
 			if(noDupes) {
-				if(timedJobsByTime.containsValue(new Job(name, runner))) {
-					// O(n) but this is okay as it is only used by Announcer.
-					// If you replace this with a lookup set, be *very* careful to ensure that the two are consistent,
-					// otherwise we can forget important recurring jobs e.g. Announcer.
+				if(timedJobsQueued.contains(new Job(name, runner))) {
 					Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
 					return;
 				}
@@ -215,6 +220,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 				jobs[jobs.length - 1] = job;
 				timedJobsByTime.put(l, jobs);
 			}
+			timedJobsQueued.add(job);
 		}
 		if(offset < MAX_SLEEP_TIME) {
 			wakeUp();

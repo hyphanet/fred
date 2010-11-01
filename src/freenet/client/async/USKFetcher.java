@@ -374,15 +374,15 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			schedule(end-now, null, context);
 		} else {
-			uskManager.unsubscribe(origUSK, this);
-			uskManager.onFinished(this);
-			context.getSskFetchScheduler().schedTransient.removePendingKeys((KeyListener)this);
-			long ed = uskManager.lookupLatestSlot(origUSK);
 			USKFetcherCallback[] cb;
 			synchronized(this) {
 				completed = true;
 				cb = callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 			}
+			uskManager.unsubscribe(origUSK, this);
+			uskManager.onFinished(this);
+			context.getSskFetchScheduler().schedTransient.removePendingKeys((KeyListener)this);
+			long ed = uskManager.lookupLatestSlot(origUSK);
 			byte[] data;
 			if(lastRequestData == null)
 				data = null;
@@ -604,6 +604,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	public void schedule(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(cancelled) return;
+			if(completed) return;
 		}
 		context.getSskFetchScheduler().schedTransient.addPendingKeys(this);
 		updatePriorities();
@@ -613,7 +614,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		boolean bye = false;
 		synchronized(this) {
 			valueAtSchedule = Math.max(lookedUp+1, valueAtSchedule);
-			bye = cancelled;
+			bye = cancelled || completed;
 			if(!cancelled) {
 				
 				// subscribe() above may have called onFoundEdition and thus added a load of stuff. If so, we don't need to do so here.

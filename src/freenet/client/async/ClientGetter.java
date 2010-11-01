@@ -155,6 +155,8 @@ public class ClientGetter extends BaseClientGetter {
 			// which can call onSuccess and thereby almost anything.
 			HashResult[] oldHashes = null;
 			synchronized(this) {
+				if(restart)
+					clearCountersOnRestart();
 				if(overrideURI != null) uri = overrideURI;
 				if(finished) {
 					if(!restart) return false;
@@ -206,6 +208,15 @@ public class ClientGetter extends BaseClientGetter {
 			container.deactivate(currentState, 1);
 		}
 		return true;
+	}
+
+	protected void clearCountersOnRestart() {
+		this.archiveRestarts = 0;
+		this.expectedMIME = null;
+		this.expectedSize = 0;
+		this.finalBlocksRequired = 0;
+		this.finalBlocksTotal = 0;
+		super.clearCountersOnRestart();
 	}
 
 	/**

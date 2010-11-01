@@ -594,7 +594,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 			boolean active = true;
 			if(persistent) active = container.ext().isActive(parent);
 			if(!active) container.activate(parent, 1);
-			parent.maybeRemove(this, container);
+			parent.maybeRemove(this, container, context);
 			if(!active) container.deactivate(parent, 1);
 		}
 	}

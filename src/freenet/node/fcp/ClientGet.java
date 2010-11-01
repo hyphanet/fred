@@ -920,23 +920,35 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			finished = false;
 			redirect =
 				getFailedMessage == null ? null : getFailedMessage.redirectURI;
-			if(persistenceType == PERSIST_FOREVER && getFailedMessage != null)
+			if(persistenceType == PERSIST_FOREVER && getFailedMessage != null) {
+				container.activate(getFailedMessage, 1);
 				getFailedMessage.removeFrom(container);
+			}
 			this.getFailedMessage = null;
-			if(persistenceType == PERSIST_FOREVER && allDataPending != null)
+			if(persistenceType == PERSIST_FOREVER && allDataPending != null) {
+				container.activate(allDataPending, 1);
 				allDataPending.removeFrom(container);
+			}
 			this.allDataPending = null;
-			if(persistenceType == PERSIST_FOREVER && postFetchProtocolErrorMessage != null)
+			if(persistenceType == PERSIST_FOREVER && postFetchProtocolErrorMessage != null) {
+				container.activate(postFetchProtocolErrorMessage, 1);
 				postFetchProtocolErrorMessage.removeFrom(container);
+			}
 			this.postFetchProtocolErrorMessage = null;
-			if(persistenceType == PERSIST_FOREVER && progressPending != null)
+			if(persistenceType == PERSIST_FOREVER && progressPending != null) {
+				container.activate(progressPending, 1);
 				progressPending.removeFrom(container);
+			}
 			this.progressPending = null;
-			if(persistenceType == PERSIST_FOREVER && compatMessage != null)
+			if(persistenceType == PERSIST_FOREVER && compatMessage != null) {
+				container.activate(compatMessage, 1);
 				compatMessage.removeFrom(container);
+			}
 			compatMessage = null;
-			if(persistenceType == PERSIST_FOREVER && expectedHashes != null)
+			if(persistenceType == PERSIST_FOREVER && expectedHashes != null) {
+				container.activate(expectedHashes, 1);
 				expectedHashes.removeFrom(container);
+			}
 				expectedHashes = null;
 			started = false;
 			if(persistenceType == PERSIST_FOREVER) {

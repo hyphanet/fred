@@ -390,7 +390,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		}
 		_usm.addAsyncFilter(relevantMessages(timeout), notificationWaiter, _ctr);
 	}
-	
+
 	private MessageFilter relevantMessages(int timeout) {
 		MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(timeout).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
 		MessageFilter mfAllSent = MessageFilter.create().setTimeout(timeout).setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);

@@ -73,8 +73,10 @@ public class FCPConnectionOutputHandler implements Runnable {
 		while(true) {
 			boolean closed;
 			FCPMessage msg = null;
+			boolean flushed = false;
 			while(true) {
 				closed = handler.isClosed();
+				boolean shouldFlush = false;
 				synchronized(outQueue) {
 					if(outQueue.isEmpty()) {
 						if(closed) {
@@ -82,15 +84,25 @@ public class FCPConnectionOutputHandler implements Runnable {
 							outQueue.notifyAll();
 							break;
 						}
-						os.flush();
-						try {
-							outQueue.wait();
-						} catch (InterruptedException e) {
-							// Ignore
+						if(!flushed)
+							shouldFlush = true;
+						else {
+							try {
+								outQueue.wait();
+							} catch (InterruptedException e) {
+								// Ignore
+							}
+							continue;
 						}
-						continue;
+					} else {
+						msg = outQueue.removeFirst();
 					}
-					msg = outQueue.removeFirst();
+				}
+				if(shouldFlush) {
+					os.flush();
+					flushed = true;
+					continue;
+				} else {
 					break;
 				}
 			}
@@ -102,10 +114,14 @@ public class FCPConnectionOutputHandler implements Runnable {
 				}
 			} else {
 				msg.send(os);
+				flushed = false;
 			}
 		}
 	}
 
+	/** FIXME make configurable */
+	private static final long MAX_QUEUE_LENGTH = 1024;
+	
 	public void queue(FCPMessage msg) {
 		if(logDEBUG)
 			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
@@ -116,8 +132,12 @@ public class FCPConnectionOutputHandler implements Runnable {
 				// FIXME throw something???
 				return;
 			}
-			outQueue.add(msg);
-			outQueue.notifyAll();
+			if(outQueue.size() >= MAX_QUEUE_LENGTH) {
+				Logger.error(this, "Dropping FCP message to "+handler+" : "+outQueue.size()+" messages queued - maybe client died?");
+			} else {
+				outQueue.add(msg);
+				outQueue.notifyAll();
+			}
 		}
 	}
 

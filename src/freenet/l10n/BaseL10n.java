@@ -492,6 +492,7 @@ public class BaseL10n {
 	 * @param patterns Patterns to replace, ${ and } are not included.
 	 * @param values Replacement values.
 	 */
+	@Deprecated
 	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, String[] values) {
 		String result = HTMLEncoder.encode(getString(key));
 		assert (patterns.length == values.length);
@@ -499,6 +500,81 @@ public class BaseL10n {
 			result = result.replaceAll("\\$\\{" + patterns[i] + "\\}", quoteReplacement(values[i]));
 		}
 		node.addChild("%", result);
+	}
+	
+	public void addL10nSubstitution(HTMLNode node, String key, String[] patterns, HTMLNode[] values) {
+		String value = getString(key);
+		addL10nSubstitutionInner(node, key, value, patterns, values);
+	}
+	
+	/** This is *much* safer. Callers won't accidentally pass in unencoded strings and
+	 * cause vulnerabilities. Callers should try to reuse parameters if possible. We 
+	 * automatically close each tag: When a pattern ${name} is matched, we search for
+	 * ${/name}. If we find it, we make the tag enclose everything between the two; if we
+	 * can't find it, we just add it with no children. It is not possible to create an
+	 * HTMLNode representing a tag closure, so callers will need to change their code to
+	 * not pass in /link or similar, and in some cases will need to change the l10n 
+	 * strings themselves to always close the tag properly, rather than using a generic
+	 * /link for multiple links as we use in some places.
+	 * 
+	 * Example:
+	 * 
+	 * addL10nSubstitution(html, "TranslationLookup.string", new String[] { "link", "text" },
+	 *   new HTMLNode[] { HTMLNode.link("/KSK@gpl.txt"), HTMLNode.text("blah") })
+	 * 
+	 * TranslationLookup.string=This is a ${link}link${/link} about ${text}.
+	 */
+	private void addL10nSubstitutionInner(HTMLNode node, String key, String value, String[] patterns, HTMLNode[] values) {
+		int x;
+		while(!value.equals("") && (x = value.indexOf("${")) != -1) {
+			String before = value.substring(0, x);
+			if(before.length() > 0)
+				node.addChild("#", before);
+			value = value.substring(x);
+			int y = value.indexOf('}');
+			if(y == -1) {
+				Logger.error(this, "Unclosed braces in l10n value \""+value+"\" for "+key);
+				return;
+			}
+			String lookup = value.substring(2, y);
+			value = value.substring(y+1);
+			if(lookup.startsWith("/")) {
+				Logger.error(this, "Starts with / in "+key);
+				return;
+			}
+			
+			HTMLNode subnode = null;
+			
+			for(int i=0;i<patterns.length;i++) {
+				if(patterns[i].equals(lookup)) {
+					subnode = values[i];
+					break;
+				}
+			}
+
+			String searchFor = "${/"+lookup+"}";
+			x = value.indexOf(searchFor);
+			if(x == -1) {
+				// It goes up to the end of the tag. It has no contents.
+				if(subnode != null) {
+					node.addChild(subnode);
+				}
+			} else {
+				// It has contents. Must recurse.
+				String inner = value.substring(0, x);
+				String rest = value.substring(x + searchFor.length());
+				if(subnode != null) {
+					subnode = subnode.clone();
+					node.addChild(subnode);
+					addL10nSubstitutionInner(subnode, key, inner, patterns, values);
+				} else {
+					addL10nSubstitutionInner(node, key, inner, patterns, values);
+				}
+				value = rest;
+			}
+		}
+		if(!value.equals(""))
+			node.addChild("#", value);
 	}
 	
 	public String[] getAllNamesWithPrefix(String prefix){

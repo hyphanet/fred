@@ -17,6 +17,7 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
+import freenet.io.xfer.BulkTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node.CountedRequests;
 import freenet.node.NodeStats.ByteCountersSnapshot;
@@ -935,11 +936,15 @@ public class NodeStats implements Persistable {
 				ByteCountersSnapshot byteCountersSent, boolean input) {
 			
 			if(input)
-				return this.expectedTransfersInCHK * 32768 +
-					this.expectedTransfersInSSK * 2048;
+				return this.expectedTransfersInCHK * (32768+256) +
+					this.expectedTransfersInSSK * (2048+256) +
+					this.expectedTransfersOutCHK * TRANSFER_OUT_IN_OVERHEAD +
+					this.expectedTransfersOutSSK * TRANSFER_OUT_IN_OVERHEAD;
 			else
-				return this.expectedTransfersOutCHK * 32768 +
-					this.expectedTransfersOutSSK * 2048;
+				return this.expectedTransfersOutCHK * (32768+256) +
+					this.expectedTransfersOutSSK * (2048+256) +
+					expectedTransfersInCHK * TRANSFER_IN_OUT_OVERHEAD +
+					expectedTransfersInSSK * TRANSFER_IN_OUT_OVERHEAD;
 		}
 
 		/**
@@ -950,6 +955,14 @@ public class NodeStats implements Persistable {
 		}
 
 	}
+	
+	// Look plausible from my node-throttle.dat stats as of 01/11/2010.
+	/** Output bytes required for an inbound transfer. Includes e.g. sending the request
+	 * in the first place. */
+	static final int TRANSFER_IN_OUT_OVERHEAD = 256;
+	/** Input bytes required for an outbound transfer. Includes e.g. sending the insert
+	 * etc. */
+	static final int TRANSFER_OUT_IN_OVERHEAD = 256;
 	
 	static class RejectReason {
 		public final String name;
@@ -1099,12 +1112,12 @@ public class NodeStats implements Persistable {
 				return new RejectReason("Peer's queue will take too long to transfer", false);
 			}
 		}
-
+		
 		synchronized(this) {
 			if(logMINOR) Logger.minor(this, "Accepting request? (isSSK="+isSSK+")");
 			lastAcceptedRequest = now;
 		}
-
+		
 		pInstantRejectIncoming.report(0.0);
 
 		// Accept
@@ -1151,7 +1164,7 @@ public class NodeStats implements Persistable {
 			// So impose a minimum of 20% of the bandwidth limit.
 			// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
 			// and we don't accept any requests because of that, so it remains that way...
-			Logger.error(this, "Non-overhead fraction is "+nonOverheadFraction+" - assuming this is self-inflicted and using default");
+			Logger.warning(this, "Non-overhead fraction is "+nonOverheadFraction+" - assuming this is self-inflicted and using default");
 			nonOverheadFraction = MIN_NON_OVERHEAD;
 		}
 		if(nonOverheadFraction > 1.0) {
@@ -1214,6 +1227,8 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 
+	static final boolean SEND_LOAD_STATS_NOTICES = false;
+	
 	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean realTimeFlag, boolean dontTellPeer, int transfersPerInsert) {
 		
 		int peers = node.peers.countConnectedPeers();
@@ -1235,7 +1250,7 @@ public class NodeStats implements Persistable {
 			}
 		}
 		
-		if(source != null && !dontTellPeer) {
+		if(SEND_LOAD_STATS_NOTICES && source != null && !dontTellPeer) {
 			// FIXME tell local as well somehow?
 			source.onSetPeerAllocation(input, (int)thisAllocation, realTimeFlag, transfersPerInsert);
 		}
@@ -1832,6 +1847,12 @@ public class NodeStats implements Persistable {
 			row.addChild("td", fix3p3pct.format((double)succeeded / total));
 			row.addChild("td", thousandPoint.format(total));
 		}
+		
+		long[] bulkSuccess = BulkTransmitter.transferSuccess();
+		row = list.addChild("tr");
+		row.addChild("td", l10n("bulkSends"));
+		row.addChild("td", fix3p3pct.format(((double)bulkSuccess[1])/((double)bulkSuccess[0])));
+		row.addChild("td", Long.toString(bulkSuccess[0]));
 	}
 
 	/* Total bytes sent by requests and inserts, excluding payload */
@@ -2883,14 +2904,20 @@ public class NodeStats implements Persistable {
 		synchronized(this) {
 			int transfersPerAnnouncement = getTransfersPerAnnounce();
 			int running = runningAnnouncements.size();
-			if(running >= MAX_ANNOUNCEMENTS) return false;
+			if(running >= MAX_ANNOUNCEMENTS) {
+				if(logMINOR) Logger.minor(this, "Too many announcements running: "+running);
+				return false;
+			}
 			// Liability-style limiting as well.
 			int perTransfer = OpennetManager.PADDED_NODEREF_SIZE;
 			// Must all complete in 30 seconds. That is the timeout for one block.
 			int bandwidthIn30Secs = limit * 30;
-			if(perTransfer * transfersPerAnnouncement * running > bandwidthIn30Secs) 
+			if(perTransfer * transfersPerAnnouncement * running > bandwidthIn30Secs) {
+				if(logMINOR) Logger.minor(this, "Can't complete "+running+" announcements in 30 secs");
 				return false;
+			}
 			runningAnnouncements.add(uid);
+			if(logMINOR) Logger.minor(this, "Accepting announcement "+uid);
 			return true;
 		}
 	}
@@ -2898,4 +2925,5 @@ public class NodeStats implements Persistable {
 	public synchronized void endAnnouncement(long uid) {
 		runningAnnouncements.remove(uid);
 	}
+	
 }

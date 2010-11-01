@@ -1,279 +1,132 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- ant build file for Freenet -->
-
-<project name="Freenet" default="dist" basedir=".">
+<project name="freenet-autodep" default="all" basedir=".">
 	<description>
-		This file builds Freenet: What is Freenet?
+Freenet is free software that lets you publish and retrieve information without
+fear of censorship. To achieve this, the network is entirely decentralized, and
+all actions are anonymous. Without anonymity, there can never be true freedom
+of speech, and without decentralization the network would be vulnerable to attack.
 
-		Freenet is free software which lets you publish and obtain information on the Internet without fear of censorship. To achieve this freedom, the network is entirely decentralized and publishers and consumers of information are anonymous. Without anonymity there can never be true freedom of speech, and without decentralization the network would be vulnerable to attack.
-
-		Possible targets: compile, dist (default), clean
+This file is to build Freenet with minimal effort. It will check for Freenet's
+dependencies and requirements, and will try to satisfy these if they are not
+available (possibly using *pre-built blobs*). This requires the optional ANT
+tasks (ant-apache-bsf) and (if using Java &lt;6) bsf and rhino.
 	</description>
 
-	<!-- Give user a chance to override without editing this file
-			(and without typing -D each time it compiles it) -->
-	<property file="build.properties" />
+	<import file="build-clean.xml"/>
 
+	<!-- =================================================================== -->
+	<!-- Dependencies (contrib, ie. freenet-ext.jar)                         -->
+	<!-- =================================================================== -->
 
-	<!-- set global properties for this build -->
-	<property name="src" location="src"/>
-	<property name="test" location="test"/>
-	<property name="build" location="build"/>
-	<property name="build-test" location="build-test"/>
-	<property name="lib" location="lib"/>
-	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
-	<property name="javadoc" location="javadoc"/>
-	<property name="minExtVersion" value="-1"/>
-	<property name="recommendedExtVersion" value="-1"/>
-	<property name="GWT.generatedjs" value="${src}/freenet/clients/http/staticfiles/freenetjs"/>
-	<property name="GWT.lib" value="generator/js/lib"/>
-	<property name="GWT.lib.dev" value="${GWT.lib}/gwt-dev.jar"/>
-	<property name="GWT.lib.user" value="${GWT.lib}/gwt-user.jar"/>
-	<property name="version.src" value="freenet/node/Version.java" />
-	<property name="version.build" value="freenet/node/Version.class" />
-	<property name="junit.location" value="/usr/share/java/junit.jar"/>
-	<available file="${junit.location}" property="junit.present"/>
-
-	<path id="lib.path">
-		<pathelement location="${freenet-ext.location}"/>
-		<pathelement location="gnu-crypto.jar"/>
-		<pathelement location="javax-security.jar"/>
-		<pathelement location="javax-crypto.jar"/>
-	</path>
-
-	<assertions>
-		<enable/>
-	</assertions>
-
-	<exec executable="git"
-		failifexecutionfails="false"
-		errorProperty="git.errror"
-		outputproperty="git.describe"
-		resultproperty="git.result">
-		<arg value="describe" />
-		<arg value="--always" />
-		<arg value="--abbrev=4" />
-	</exec>
-	<condition property="git.revision" value="${git.describe}" else="@unknown@">
-		<and>
-			<equals arg1="${git.result}" arg2="0" />
-			<isset property="git.describe" />
-		</and>
-	</condition>
-	
-
-	<target name="mkdir">
-		<mkdir dir="${build}"/>
-		<mkdir dir="${build-test}"/>
-		<mkdir dir="${lib}"/>
+	<target name="dep-ext" description="try to ensure that Freenet-related dependencies are available">
+		<trydep property="contrib.present">
+			<condition><available classname="freenet.node.ExtVersion" classpathref="lib.path"/></condition>
+			<tasks>
+				<antcall target="build-ext"/>
+				<antcall target="get-ext"/>
+			</tasks>
+			<fail message="could neither build nor download freenet-ext.jar"/>
+		</trydep>
 	</target>
 
-	<target name="env" depends="mkdir"   description="Learn about the environment">
-		<available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
-		<!-- available file="${junit.location}" property="junit.present"/ -->
-		<available file="${GWT.generatedjs}" type="dir" property="generatedjs.present"/>
-		<echo level="verbose">Javascript generation present:${generatedjs.present}</echo>
-		<available file="${GWT.lib.dev}" property="GWT.lib.dev.present"/>
-		<echo level="verbose">gwt-dev-linux.jar present:${GWT.lib.dev.present}</echo>
-		<available file="${GWT.lib.user}" property="GWT.lib.user.present"/>
-		<echo level="verbose">gwt-user.jar present:${GWT.lib.user.present}</echo>
-	</target>
-	
-	<target name="get-GWT-lib-dev" depends="env" unless="GWT.lib.dev.present">
-		<mkdir dir="${GWT.lib}"/>
-		<get src="http://localhost/gwt-dev.jar" 
-			dest="${GWT.lib}/gwt-dev.jar" 
-			verbose="true"
-			usetimestamp="true"/>
-		<property name="GWT.lib.dev.present" value="true"/>
-	</target>
-	
-	<target name="get-GWT-lib-user" depends="env" unless="GWT.lib.user.present">
-		<mkdir dir="${GWT.lib}"/>
-		<get src="http://localhost/gwt-user.jar" 
-			dest="${GWT.lib}/gwt-user.jar" 
-			verbose="true"
-			usetimestamp="true"/>
-		<property name="GWT.lib.user.present" value="true"/>
-	</target>
-	
-	<target name="get-GWT-libs" unless="generatedjs.present">
-	    <antcall target="get-GWT-lib-dev"/>
-	    <antcall target="get-GWT-lib-user"/>
-	</target>
-	
-	<target name="generate-js" depends="env,get-GWT-libs" unless="generatedjs.present">
-		<ant antfile="build.xml" dir="generator/js"/>
+	<target name="get-ext">
+		<get src="http://checksums.freenetproject.org/cc/freenet-ext.jar" dest="${lib}"
+			verbose="true" usetimestamp="true"/>
 	</target>
 
-	<target name="get-extjar" depends="env" unless="freenet-ext.present"
-		description="Download some external libraries which Freenet relies on">
-		<mkdir dir="${lib}"/>
-		<get src="http://checksums.freenetproject.org/cc/freenet-ext.jar"
-			dest="${freenet-ext.location}"
-			verbose="true"
-			usetimestamp="true"/>
-		<property name="freenet-ext.present" value="true"/>
+	<target name="build-ext" depends="suppress-ext" unless="${suppress.ext}">
+		<ant inheritAll="false" antfile="${contrib.dir}/build.xml" />
 	</target>
 
-	<condition property="do.junit" value="true">
-		<and>
-			<isfalse value="${skip_tests}" />
-			<isset property="junit.present" />
-		</and>
-	</condition>
-	<!-- ================================================== -->
-
-	<target name="compile" depends="get-extjar, generate-js">
-		<!-- Create the time stamp -->
-		<tstamp/>
-
-		<!-- Create the Version file with patched revision number in ${build} -->
-		<copy file="${src}/${version.src}" tofile="${build}/${version.src}" overwrite="true" />
-		<delete file="${build}/${version.build}" quiet="true" />
-		<replace file="${build}/${version.src}">
-			<replacefilter token="@custom@" value="${git.revision}"/>
-		</replace>
-		<echo message="Updated build version to ${git.revision} in ${build}/${version.src}"/>
-
-		<!-- Create the build directory structure used by compile -->
-		<javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.5" target="1.5">
-			<compilerarg value="-Xlint"/>
-			<!-- tell javac to find Version.java in ${build}, not ${src} -->
-			<sourcepath>
-				<pathelement path="${build}"/>
-			</sourcepath>
-			<classpath>
-				<path refid="lib.path"/>
-			</classpath>
-			<!-- following a very temporary list of files to be build -->
-			<include name="freenet/**/*.java"/>
-			<include name="net/i2p/util/*.java"/>
-			<include name="org/**/*.java"/>
-			<exclude name="**/package-info.java"/>
-			<exclude name="${version.src}"/>
-		</javac>
-
-		<!-- Force compile of Version.java in case compile of ${src} didn't trigger it -->
-		<javac srcdir="${build}" destdir="${build}" debug="on" optimize="on" source="1.5" target="1.5">
-			<classpath>
-				<path refid="lib.path"/>
-			</classpath>
-			<include name="${version.src}"/>
-		</javac>
-
-		<!-- Copy web interface static files to the build dir -->
-		<copy todir="${build}/freenet/clients/http/staticfiles">
-			<fileset dir="${src}/freenet/clients/http/staticfiles"/>
-		</copy>
-		<!-- Copy translation files to the build dir -->
-		<copy todir="${build}/freenet/l10n">
-			<fileset dir="${src}/freenet/l10n">
-				<include name="freenet.l10n.*.properties"/>
-				<include name="freenet.l10n.*.tab"/>
-			</fileset>
-		</copy>
-
+	<target name="clean-ext" depends="suppress-ext" unless="${suppress.ext}">
+		<ant inheritAll="false" antfile="${contrib.dir}/build.xml" target="clean"/>
 	</target>
 
-
-	<!-- ================================================== -->
-
-	<target name="dist" depends="compile,unit" description="generate the distribution" >
-		<!-- Create the distribution directory -->
-		<jar jarfile="${lib}/freenet-cvs-snapshot.jar" basedir="${build}">
-			<manifest>
-				<attribute name="Main-Class" value="freenet/node/Node"/>
-				<attribute name="Built-By" value="${user.name}"/>
-				<attribute name="Required-Ext-Version" value="${minExtVersion}"/>
-				<attribute name="Recommended-Ext-Version" value="${recommendedExtVersion}"/>
-				<attribute name="Class-Path" value="freenet-ext.jar" />
-				<section name="common">
-					<attribute name="Specification-Title" value="Freenet"/>
-					<attribute name="Specification-Version" value="0.7.5"/>
-					<attribute name="Specification-Vendor" value="freenetproject.org"/>
-					<attribute name="Implementation-Title" value="Freenet"/>
-					<attribute name="Implementation-Version" value="0.7.5 ${TODAY} ${git.revision}"/>
-					<attribute name="Implementation-Vendor" value="Freenetproject.org"/>
-				</section>
-			</manifest>
-			<exclude name="${version.src}"/>
-		</jar>
+	<target name="suppress-ext" if="${suppress.ext}">
+		<echo message="suppress.ext is set to true, so clean-ext and build-ext will skip" />
 	</target>
 
-	<!-- ================================================== -->
+	<!-- =================================================================== -->
+	<!-- Generate GWT code                                                   -->
+	<!-- =================================================================== -->
 
-	<target name="unit-build" depends="compile" if="do.junit">
-		<delete dir="${build-test}"/>
-		<mkdir dir="${build-test}"/>
-
-		<javac srcdir="${test}" destdir="${build-test}" debug="on" optimize="on" source="1.5" target="1.5">
-			<classpath>
-				<path refid="lib.path"/>
-				<pathelement path="${build}"/>
-				<pathelement location="${junit.location}"/>
-			</classpath>
-			<compilerarg value="-Xlint"/>
-			<include name="**/*.java"/>
-			<exclude name="*.java"/>
-		</javac>
-		<copy todir="${build-test}/freenet/client/filter/png">
-			<fileset dir="${test}/freenet/client/filter/png"/>
-		</copy>
-		<copy todir="${build-test}/freenet/client/filter/bmp">
-			<fileset dir="${test}/freenet/client/filter/bmp"/>
-		</copy>
+	<target name="dep-gjs" description="try to ensure that the GWT-generated javascript is available">
+		<trydep property="gjs.present">
+			<condition><available file="${gjs.dst}" type="dir"/></condition>
+			<tasks>
+				<antcall target="build-gjs"/>
+				<antcall target="checkout-gjs"/>
+			</tasks>
+			<fail message="could neither build nor checkout generated javascript"/>
+		</trydep>
 	</target>
 
-	<target name="unit" depends="unit-build" if="do.junit">
-		<junit printsummary="yes" fork="yes" haltonfailure="yes">
-			<classpath>
-				<path refid="lib.path"/>
-				<pathelement path="${build}"/>
-				<pathelement path="${build-test}"/>
-				<pathelement location="${junit.location}"/>
-			</classpath>
-
-			<formatter type="plain" usefile="false"/>
-
-			<batchtest fork="yes">
-				<fileset dir="${build-test}">
-					<include name="**/*Test.class"/>
-				</fileset>
-			</batchtest>
-			<sysproperty key="benchmark" value="${benchmark}" />
-			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
-			<!-- It appears we need to specify this here explicitly -->
-			<assertions>
-				<enable />
-			</assertions>
-		</junit>
+	<target name="checkout-gjs" depends="clean-gjs" description="checkout pre-generated javascript from VCS">
+		<exec executable="git">
+			<arg value="checkout" />
+			<arg value="${gjs.dst}" />
+		</exec>
 	</target>
 
-	<!-- ================================================== -->
+	<!-- =================================================================== -->
+	<!-- Helper tasks                                                        -->
+	<!-- =================================================================== -->
 
-	<target name="clean" description="Delete class files and docs dir.">
-		<delete dir="${build}"/>
-		<delete dir="${build-test}"/>
-	</target>
-	<target name="distclean" description="Delete class files, lib dir and docs dir.">
-		<delete dir="${build}"/>
-		<delete dir="${build-test}"/>
-		<delete dir="${lib}"/>
-		<delete dir="${javadoc}"/>
-		<ant antfile="build.xml" target="deleteGenerated" dir="generator/js"/>
-		<!--<delete dir="${GWT.lib}"/>
-		Don't delete GWT dir -->
-	</target>
+	<scriptdef name="trydep" language="javascript">
+		<!-- property to test for to see if the dependency has been satisfied -->
+		<attribute name="property"/>
+		<!-- "condition" task to maybe set the above property -->
+		<element name="condition" type="condition"/>
+		<!-- tasks to run, one by one, until the property is set -->
+		<element name="tasks" classname="org.apache.tools.ant.Target"/>
+		<!-- optional "fail" task to run, if none of the tasks succeeded -->
+		<element name="fail" type="fail"/>
+		<!-- optional name of dependency, used in the default fail message -->
+		<attribute name="name"/>
+		<![CDATA[
+			var prop = attributes.get("property")
+			var cond = elements.get("condition").get(0)
+			if (!prop) { self.fail("trydep: property attribute not given"); }
+			cond.getProxy().setProperty(prop)
 
+			function condition() {
+				cond.execute()
+				return project.getProperty(prop)
+			}
 
-	<target name="javadoc">
-		<javadoc sourcepath="${src}" destdir="${javadoc}" use="true">
-			<fileset dir="${src}" includes="**/*.java" />
-			<classpath>
-				<pathelement location="${freenet-ext.location}"/>
-			</classpath>
-			<link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
-		</javadoc>
-	</target>
+			var taskel = elements.get("tasks")
+			var tasks = taskel? taskel.get(0).getTasks(): []
+
+			var name = attributes.get("name")
+			var desc = name? "dependency " + name: "property " + prop
+			var failel = elements.get("fail")
+			var failtask = failel? failel.get(0): null
+
+			function trydep() {
+				if (condition()) { return; }
+				for (var i=0; i<tasks.length; ++i) {
+					task = tasks[i]
+					task.maybeConfigure()
+					self.log("trying to satisfy " + desc + "...")
+					try {
+						task.execute()
+					} catch (e) {
+						if (!(e.javaException instanceof org.apache.tools.ant.BuildException)) { throw e; }
+						self.log("task failed: " + e.javaException)
+					}
+
+					if (condition()) { return; }
+				}
+
+				if (failtask) {
+					failtask.execute();
+				} else {
+					self.fail("could not satisfy " + desc);
+				}
+			}
+
+			trydep()
+		]]>
+	</scriptdef>
+
 </project>

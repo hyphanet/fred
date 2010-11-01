@@ -46,8 +46,6 @@ public class NodeCHK extends Key {
     
 	/** Crypto algorithm */
 	final byte cryptoAlgorithm;
-    /** The size of the data */
-	public static final int BLOCK_SIZE = 32768;
 
 	public static final byte BASE_TYPE = 1;
 

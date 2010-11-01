@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicLong;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
@@ -163,6 +164,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	final int fullHeadersLengthMinimum;
 	final int fullHeadersLengthOneMessage;
+        
+        private long lastConnectivityStatusUpdate;
+        private Status lastConnectivityStatus;
 
 
 	public FNPPacketMangler(Node node, NodeCrypto crypt, PacketSocketHandler sock) {
@@ -190,6 +194,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 	}
 
+	private static final AtomicLong successfullyDecodedPackets = new AtomicLong();
+	private static final AtomicLong failedDecodePackets = new AtomicLong();
 
 	/**
 	 * Packet format:
@@ -205,7 +211,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * E_session_pcfb(data) // IV = first 32 bytes of packet
 	 *
 	 */
-
+	
 	/**
 	 * Decrypt and authenticate packet.
 	 * Then feed it to USM.checkFilters.
@@ -233,19 +239,34 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(logMINOR) Logger.minor(this, "Trying exact match");
 			if(length > HEADERS_LENGTH_MINIMUM) {
 				if(logMINOR) Logger.minor(this, "Trying current key tracker for exact match");
-				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker(), now)) return;
+				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker(), now)) {
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
 				// Try with old key
 				if(logMINOR) Logger.minor(this, "Trying previous key tracker for exact match");
-				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker(), now)) return;
+				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker(), now)) {
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
 				// Try with unverified key
 				if(logMINOR) Logger.minor(this, "Trying unverified key tracker for exact match");
-				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker(), now)) return;
+				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker(), now)) {
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
 			}
 			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {
 				// Might be an auth packet
-				if(tryProcessAuth(buf, offset, length, opn, peer, false, now)) return;
+				if(tryProcessAuth(buf, offset, length, opn, peer, false, now)) {
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
 				// Might be a reply to an anon auth packet
-				if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) return;
+				if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) {
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
 			}
 		}
 		PeerNode[] peers = crypto.getPeerNodes();
@@ -258,18 +279,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 					return;
 				}
 				if(logDEBUG) Logger.debug(this, "Trying previous key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 					return;
 				}
 				if(logDEBUG) Logger.debug(this, "Trying unverified key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 					return;
 				}
 			}
@@ -280,7 +304,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			for(int i=0;i<peers.length;i++) {
 				pn = peers[i];
 				if(pn == opn) continue;
-				if(tryProcessAuth(buf, offset, length, pn, peer,false, now)) return;
+				if(tryProcessAuth(buf, offset, length, pn, peer,false, now)) {
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
 			}
 		}
 		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
@@ -288,22 +315,35 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			for(int i=0;i<anonPeers.length;i++) {
 				pn = anonPeers[i];
 				if(pn == opn) continue;
-				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) return;
+				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
+			}
+		}
+		if(length > HEADERS_LENGTH_MINIMUM) {
+			for(int i=0;i<anonPeers.length;i++) {
+				pn = anonPeers[i];
+				if(pn == opn) continue;
 				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
 					pn.changedIP(peer);
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 					return;
 				}
 				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
 					pn.changedIP(peer);
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 					return;
 				}
 				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
 					pn.changedIP(peer);
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 					return;
 				}
 			}
 		}
 
+		boolean didntTryOldOpennetPeers;
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
 			// Try old opennet connections.
@@ -314,17 +354,31 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				for(int i=0;i<oldPeers.length;i++) {
 					if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true, now)) return;
 				}
-			}
-		}
+				didntTryOldOpennetPeers = false;
+			} else
+				didntTryOldOpennetPeers = true;
+		} else
+			didntTryOldOpennetPeers = false;
 		if(node.wantAnonAuth()) {
 			if(tryProcessAuthAnon(buf, offset, length, peer)) return;
 		}
 
                 // Don't log too much if we are a seednode
-                if(logMINOR && crypto.isOpennet && node.wantAnonAuth())
-                    Logger.minor(this,"Unmatchable packet from "+peer);
-                else
+                if(logMINOR && crypto.isOpennet && node.wantAnonAuth()) {
+                	if(!didntTryOldOpennetPeers)
+                		Logger.minor(this,"Unmatchable packet from "+peer);
+                } else
                     Logger.normal(this,"Unmatchable packet from "+peer);
+                
+                if(logMINOR && !didntTryOldOpennetPeers)
+                	failedDecodePackets.incrementAndGet();
+	}
+	
+	public static long[] getDecodedPackets() {
+		if(!logMINOR) return null;
+		long decoded = successfullyDecodedPackets.get();
+		long failed = failedDecodePackets.get();
+		return new long[] { decoded, decoded+failed };
 	}
 
 	/**
@@ -2728,8 +2782,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
 			}
 			NodeL10n.getBase().addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail",
-					new String[] { "count", "link", "/link" }
-					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/view.php?id=2692\">", "</a>" });
+					new String[] { "count", "link" },
+					new HTMLNode[] { HTMLNode.text(peers.length), HTMLNode.link("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/view.php?id=2692") });
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());
@@ -3148,9 +3202,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public Status getConnectivityStatus() {
-		if(crypto.config.alwaysHandshakeAggressively())
-			return AddressTracker.Status.DEFINITELY_NATED;
-		return sock.getDetectedConnectivityStatus();
+		long now = System.currentTimeMillis();
+		if (now - lastConnectivityStatusUpdate < 3 * 60 * 1000)
+			return lastConnectivityStatus;
+
+		Status value;
+		if (crypto.config.alwaysHandshakeAggressively())
+			value = AddressTracker.Status.DEFINITELY_NATED;
+		else
+			value = sock.getDetectedConnectivityStatus();
+
+		lastConnectivityStatusUpdate = now;
+
+		return lastConnectivityStatus = value;
 	}
 
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {

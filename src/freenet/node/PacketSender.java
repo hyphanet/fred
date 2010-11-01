@@ -57,7 +57,6 @@ public class PacketSender implements Runnable {
 	final NativeThread myThread;
 	final Node node;
 	NodeStats stats;
-	long lastClearedOldSwapChains;
 	long lastReportedNoPackets;
 	long lastReceivedPacketFromAnyNode;
 	private Vector<ResendPacketItem> rpiTemp;
@@ -78,9 +77,39 @@ public class PacketSender implements Runnable {
 		myThread.start();
 	}
 
+	private void schedulePeriodicJob() {
+		
+		node.ticker.queueTimedJob(new Runnable() {
+
+			public void run() {
+				try {
+					long now = System.currentTimeMillis();
+					if (logMINOR)
+						Logger.minor(PacketSender.class,
+								"Starting shedulePeriodicJob() at " + now);
+					PeerManager pm = node.peers;
+					pm.maybeLogPeerNodeStatusSummary(now);
+					pm.maybeUpdateOldestNeverConnectedDarknetPeerAge(now);
+					stats.maybeUpdatePeerManagerUserAlertStats(now);
+					stats.maybeUpdateNodeIOStats(now);
+					pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
+
+					if (logMINOR)
+						Logger.minor(PacketSender.class,
+								"Finished running shedulePeriodicJob() at "
+										+ System.currentTimeMillis());
+				} finally {
+					node.ticker.queueTimedJob(this, 1000);
+				}
+			}
+		}, 1000);
+	}
+
 	public void run() {
 		if(logMINOR) Logger.minor(this, "In PacketSender.run()");
 		freenet.support.Logger.OSThread.logPID(this);
+
+                schedulePeriodicJob();
 		/*
 		 * Index of the point in the nodes list at which we sent a packet and then
 		 * ran out of bandwidth. We start the loop from here next time.
@@ -103,28 +132,16 @@ public class PacketSender implements Runnable {
 
 	private int realRun(int brokeAt) {
 		long now = System.currentTimeMillis();
-		PeerManager pm = node.peers;
-		PeerNode[] nodes = pm.myPeers;
-		// Run the time sensitive status updater separately
-		for(int i = 0; i < nodes.length; i++) {
-			PeerNode pn = nodes[i];
-			// Only routing backed off nodes should need status updating since everything else
-			// should get updated immediately when it's changed
-			if(pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-				pn.setPeerNodeStatus(now);
-		}
-		pm.maybeLogPeerNodeStatusSummary(now);
-		pm.maybeUpdateOldestNeverConnectedDarknetPeerAge(now);
-		stats.maybeUpdatePeerManagerUserAlertStats(now);
-		stats.maybeUpdateNodeIOStats(now);
-		pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
+                PeerManager pm;
+		PeerNode[] nodes;
+
+                synchronized (PacketSender.class) {
+                    pm = node.peers;
+                    nodes = pm.myPeers;
+                }
+
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;
-		// Needs to be run very frequently. Maybe change to a regular once per second schedule job?
-		// Maybe not worth it as it is fairly lightweight.
-		// FIXME given the lock contention, maybe it's worth it? What about
-		// running it on the UdpSocketHandler thread? That would surely be better...?
-		node.lm.removeTooOldQueuedItems();
 
 		boolean canSendThrottled = false;
 
@@ -144,8 +161,9 @@ public class PacketSender implements Runnable {
 		for(int i = 0; i < nodes.length; i++) {
 			int idx = (i + brokeAt + 1) % nodes.length;
 			PeerNode pn = nodes[idx];
+                        final long lastReceivedPacketTime = pn.lastReceivedPacketTime();
 			lastReceivedPacketFromAnyNode =
-				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
+				Math.max(lastReceivedPacketTime, lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
 				// Might as well do it properly.
@@ -160,7 +178,7 @@ public class PacketSender implements Runnable {
 					continue;
 
 				// Is the node dead?
-				if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
+				if(now - lastReceivedPacketTime > pn.maxTimeBetweenReceivedPackets()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
 					pn.disconnected(false, false /* hopefully will recover, transient network glitch */);
 					continue;
@@ -171,8 +189,7 @@ public class PacketSender implements Runnable {
 					 updateVersionRoutablity() on all our peers. We don't disconnect the peer, but mark it
 					 as being incompatible.
 					 */
-					pn.invalidate();
-					pn.setPeerNodeStatus(now);
+					pn.invalidate(now);
 					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible: "+pn);
 					continue;
 				}
@@ -265,11 +282,6 @@ public class PacketSender implements Runnable {
 
 		}
 
-		if(now - lastClearedOldSwapChains > 10000) {
-			node.lm.clearOldSwapChains();
-			lastClearedOldSwapChains = now;
-		}
-
 		long oldNow = now;
 
 		// Send may have taken some time
@@ -305,7 +317,7 @@ public class PacketSender implements Runnable {
 		return brokeAt;
 	}
 
-	private HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
+	private final HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
 
 	private void onForceDisconnectBlockTooLong(PeerNode pn, BlockedTooLongException e) {
 		Peer p = pn.getPeer();
@@ -322,20 +334,24 @@ public class PacketSender implements Runnable {
 	}
 
 	@SuppressWarnings("unused")
-	private UserAlert peersDumpedBlockedTooLongAlert = new AbstractUserAlert() {
+	private final UserAlert peersDumpedBlockedTooLongAlert = new AbstractUserAlert() {
 
+        @Override
 		public String anchor() {
 			return "disconnectedStillNotAcked";
 		}
 
+        @Override
 		public String dismissButtonText() {
 			return null;
 		}
 
+        @Override
 		public short getPriorityClass() {
 			return UserAlert.ERROR;
 		}
 
+        @Override
 		public String getShortText() {
 			int sz;
 			synchronized(peersDumpedBlockedTooLong) {
@@ -344,6 +360,7 @@ public class PacketSender implements Runnable {
 			return l10n("somePeersDisconnectedBlockedTooLong", "count", Integer.toString(sz));
 		}
 
+        @Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			Peer[] peers;
@@ -351,8 +368,8 @@ public class PacketSender implements Runnable {
 				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
 			}
 			NodeL10n.getBase().addL10nSubstitution(div, "PacketSender.somePeersDisconnectedBlockedTooLongDetail",
-					new String[] { "count", "link", "/link" }
-					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/\">", "</a>" });
+					new String[] { "count", "link" }
+					, new HTMLNode[] { HTMLNode.text(peers.length), HTMLNode.link("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/")});
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());
@@ -360,8 +377,9 @@ public class PacketSender implements Runnable {
 			return div;
 		}
 
+        @Override
 		public String getText() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			Peer[] peers;
 			synchronized(peersDumpedBlockedTooLong) {
 				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
@@ -378,34 +396,42 @@ public class PacketSender implements Runnable {
 			return sb.toString();
 		}
 
+        @Override
 		public String getTitle() {
 			return getShortText();
 		}
 
+        @Override
 		public Object getUserIdentifier() {
 			return PacketSender.this;
 		}
 
+        @Override
 		public boolean isEventNotification() {
 			return false;
 		}
 
+        @Override
 		public boolean isValid() {
 			return true;
 		}
 
+        @Override
 		public void isValid(boolean validity) {
 			// Ignore
 		}
 
+        @Override
 		public void onDismiss() {
 			// Ignore
 		}
 
+        @Override
 		public boolean shouldUnregisterOnDismiss() {
 			return false;
 		}
 
+        @Override
 		public boolean userCanDismiss() {
 			return false;
 		}

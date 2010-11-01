@@ -7,8 +7,6 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
@@ -44,7 +42,6 @@ import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.PluginManager.OfficialPluginDescription;
 import freenet.support.Logger;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.BucketTools;
@@ -120,11 +117,14 @@ public class NodeUpdateManager {
 
 	public final UpdateOverMandatoryManager uom;
 
-	private boolean logMINOR;
+	private static volatile boolean logMINOR;
 	private boolean disabledThisSession;
 
+        static {
+            Logger.registerClass(NodeUpdateManager.class);
+        }
+        
 	public NodeUpdateManager(Node node, Config config) throws InvalidConfigValueException {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.node = node;
 		this.hasBeenBlown = false;
 		shouldUpdateExt = NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
@@ -409,7 +409,6 @@ public class NodeUpdateManager {
 	 * @throws InvalidConfigValueException If enable=true and we are not running under the wrapper.
 	 */
 	void enable(boolean enable) throws InvalidConfigValueException {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 //		if(!node.isUsingWrapper()){
 //			Logger.normal(this, "Don't try to start the updater as we are not running under the wrapper.");
 //			return;
@@ -662,7 +661,6 @@ public class NodeUpdateManager {
 
 	/** Check whether there is an update to deploy. If there is, do it. */
 	private void deployUpdate() {
-		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		try {
 			synchronized(this) {
 				if(disabledThisSession) {
@@ -1327,4 +1325,7 @@ public class NodeUpdateManager {
 		updater.arm(wasRunning);
 	}
 
+        protected boolean isSeednode() {
+            return (node.isOpennetEnabled() && node.wantAnonAuth());
+        }
 }

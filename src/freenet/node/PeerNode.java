@@ -1873,7 +1873,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		// Update sendHandshakeTime; don't send another handshake for a while.
 		// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
-		calcNextHandshake(true, true, false);
+		if(!(isSeed() && this instanceof SeedServerPeerNode))
+                    calcNextHandshake(true, true, false);
 		stopARKFetcher();
 		try {
 			// First, the new noderef
@@ -2147,7 +2148,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public long getBootID() {
 		return bootID;
 	}
-	private volatile Object arkFetcherSync = new Object();
+	private final Object arkFetcherSync = new Object();
 
 	void startARKFetcher() {
 		// FIXME any way to reduce locking here?
@@ -2417,7 +2418,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(logMINOR)
 			Logger.minor(this, "Parsing: \n" + fs);
 		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef) || forARK;
-		if(changedAnything)
+		if(changedAnything && !isSeed())
 			node.peers.writePeers();
 	}
 
@@ -3325,8 +3326,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(peerNodeStatus!=oldPeerNodeStatus){
 			notifyPeerNodeStatusChangeListeners();
 		}
+		if(peerNodeStatus == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+			long delta = localRoutingBackedOffUntil - now + 1;
+			if(delta > 0)
+				node.ticker.queueTimedJob(checkStatusAfterBackoff, "Update status for "+this, delta, true, true);
+		}
 		return peerNodeStatus;
 	}
+	
+	private final Runnable checkStatusAfterBackoff = new Runnable() {
+		
+		public void run() {
+			setPeerNodeStatus(System.currentTimeMillis(), true);
+		}
+		
+	};
 
 	public abstract boolean recordStatus();
 
@@ -3388,9 +3402,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return false;
 	}
 
-	protected synchronized void invalidate() {
-		isRoutable = false;
+	final void invalidate(long now) {
+		synchronized(this) {
+			isRoutable = false;
+		}
 		Logger.normal(this, "Invalidated " + this);
+		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
 	public void maybeOnConnect() {
@@ -4415,9 +4432,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			boolean mustSend = false;
 			Message msg;
 			// FIXME review constants, how often are allocations actually sent?
+			long now = System.currentTimeMillis();
 			synchronized(this) {
 				int last = input ? lastSentAllocationInput : lastSentAllocationOutput;
-				long now = System.currentTimeMillis();
 				if(now - timeLastSentAllocationNotice > 5000) {
 					if(logMINOR) Logger.minor(this, "Last sent allocation "+TimeUtil.formatTime(now - timeLastSentAllocationNotice));
 					mustSend = true;
@@ -4952,5 +4969,5 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	void removeUIDsFromMessageQueues(Long[] list) {
 		this.messageQueue.removeUIDsFromMessageQueues(list);
 	}
-
+	
 }

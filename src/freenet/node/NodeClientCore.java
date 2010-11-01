@@ -17,6 +17,7 @@ import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
@@ -613,6 +614,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			} catch (Db4oException e) {
 				killedDatabase = true;
 			}
+		}
+		// FIXME get rid of this.
+		if(container != null) {
+			container.commit();
+			ClientRequester.checkAll(container, clientContext);
 		}
 	}
 
@@ -1801,6 +1807,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 		WrapperManager.requestThreadDump();
 		System.err.println("Out of memory: Emergency shutdown to protect database integrity in progress...");
+		WrapperManager.restart();
 		System.exit(NodeInitException.EXIT_OUT_OF_MEMORY_PROTECTING_DATABASE);
 	}
 

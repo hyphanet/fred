@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -167,6 +168,15 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 */
 	public boolean hasParameters() {
 		return ! this.parameterNameValuesMap.isEmpty();
+	}
+
+	/**
+	 * Returns the names of all parameters.
+	 *
+	 * @return The names of all parameters
+	 */
+	public Collection<String> getParameterNames() {
+		return parameterNameValuesMap.keySet();
 	}
 
 	/**

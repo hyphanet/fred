@@ -1,31 +1,63 @@
-There are a number of complications when rebuilding Freenet fully from source.
+These are instructions on how to rebuild Freenet completely from source.
 
-First, freenet-ext.jar:
+It is difficult for everyone to build all components, so the default Freenet
+source package ships with some pre-compiled binaries. However, this means that
+users need to trust that these binaries haven't been compromised.
 
-Check out the source, then do:
-ant -f freenet_ext/build.xml
+For the paranoid, we offer the option of building these binaries yourself, so
+that this extra trust is not necessary[1]. Unfortunately, this involves more
+effort than the default build path; help in easing this would be appreciated.
 
-If on 64-bit, do:
-ant -Dbits=64 -f freenet_ext/build.xml
+== Considerations ==
 
-If you want to set the revision, add -Dgit.revision=`git describe` to the above command line.
+(Properties can be set in override.properties, similar to build.properties)
 
-Note that ant will rebuild all of the java code in freenet-ext.jar, but there is a good deal of native code that won't be rebuilt; we ship a freenet-ext.jar including binaries for several platforms, if you want to build them yourself then remove all the old binaries and build them manually. They should be in fec, NativeBigInteger, NativeThread, win_wrapper and wrapper.
+A. The build scripts need to know where the contrib repo is. By default, they
+look in ../contrib; you can override this by setting `contrib.dir`.
 
-Second, if you distclean Freenet, the GWT-generated javascript will be deleted. To rebuild it you need gwt-dev-linux.jar and gwt-user.jar in lib/. The easy way out is either not to do distclean, or put Google's binaries in. Unfortunately, a fully clean build of Google Web Toolkit will involve a good deal of manual work. And they don't even provide a source tarball. We suggest you start by checking out the following:
+B. You may need to install extra Java libraries. These are listed in build.xml,
+in the <path> elements. If you already have these installed, but ANT can't find
+them, you can try setting the "java.class.dirs.user" property.
 
-svn checkout http://google-web-toolkit.googlecode.com/svn/releases/1.7/ release-1.7
-svn checkout http://google-web-toolkit.googlecode.com/svn/tools/
+B.1. If you're doing a clean-build for security reasons, then you'll want to
+clean-build these libraries too. Google's source package for GWT actually uses
+many binary components during the build process, which makes a clean-build next
+to impossible; however (e.g.) Debian's GWT source package[2] is pure source.
 
-(When I looked into it was on the 27th of August 2009, so the SVN rev was approximately 6019)
+B.2. It's also a good idea to make sure you received the source code correctly.
+Most modern package managers (e.g. APT) have signature verification, or you can
+try HTTPS (e.g. logged in on googlecode).
 
-We strongly recommend you get a Google Code account and use https, for example:
+C. There is a good deal of native code in freenet-ext.jar that won't be rebuilt
+by our automatic build-scripts. You'll need to do this manually; they are: fec,
+NativeBigInteger, NativeThread, win_wrapper and wrapper. This is probably the
+most tedious step and needs to be done *before* the below command.
 
-svn checkout --username matthew.toseland https://google-web-toolkit.googlecode.com/svn/releases/1.7/ release-1.7
-svn checkout --username matthew.toseland https://google-web-toolkit.googlecode.com/svn/tools/
+== Clean-building ==
 
-It will prompt you for your password, enter your google code password.
+The pre-compiled components are freenet-ext.jar (ext) and the GWT-generated
+javascript (gjs). The former is a separate package ("contrib"), whereas the
+latter is strictly contained within this package.
 
-Unfortunately there are a lot of .jar's as well as native code binaries in tools/. Whether any of these are executed during the build process is unclear; there are e.g. ant jars. There are native code binaries in the release dir too I think, but we don't need them. But they get built into the gwt-dev-linux.jar anyway. Rebuilding all the jar's in tools/ will be a fairly major project by itself. Some have source zip's and some don't, and anyway for a clean build you shouldn't trust the source tarballs.
+To use the build scripts, you need to install ant. To compile all of the above
+completely from source, the recommended method is to use build-clean.xml:
 
-Help with automating this would be appreciated!
+$ ... # retrieve and build external packages (e.g. contrib)
+$ ... # set build properties
+$ ant -f build-clean.xml dist
+
+NOTE: the default checkout of this package contains some pre-built javascript;
+running `dist` will remove it and re-build it from source. You can also remove
+it separately by running the `clean-gjs` target.
+
+(It is possible to use build.xml to do the above in fewer steps, but it needs
+extra libraries - ant-optional, and (if Java 5) bsf[3] and rhino[4]. Also, it
+won't abort immediately if building a component fails; it'll first try to
+retrieve pre-built blobs of that component. This may not be what you want.)
+
+[1] However, you still need to trust your compiler and operating system; see
+Ken Thompson's "Reflections on Trusting Trust".
+[2] http://packages.debian.org/source/sid/gwt
+[3] http://www.mozilla.org/rhino/
+[4] http://jakarta.apache.org/bsf/ On Debian, bug #601685 prevents libbsf-java
+from working with rhino, but fix (provided in the report) is fairly simple.

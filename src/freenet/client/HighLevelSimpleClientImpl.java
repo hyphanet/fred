@@ -86,7 +86,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	 * FECCodec.standardOnionCheckBlocks will automatically reduce check blocks to compensate for more than half data blocks. */
 	public static final int SPLITFILE_BLOCKS_PER_SEGMENT = 136;
 	public static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
-	public static final int EXTRA_INSERTS_SINGLE_BLOCK = 0;
+	public static final int EXTRA_INSERTS_SINGLE_BLOCK = 2;
 	public static final int EXTRA_INSERTS_SPLITFILE_HEADER = 2;
 	/*Whether or not to filter fetched content*/
 	static final boolean FILTER_DATA = false;
