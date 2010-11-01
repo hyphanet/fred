@@ -19,6 +19,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.l10n.NodeL10n;
+import freenet.node.Node.CountedRequests;
 import freenet.node.NodeStats.ByteCountersSnapshot;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
@@ -612,29 +613,29 @@ public class NodeStats implements Persistable {
 		
 		public final PeerNode peer;
 		/** These do not include those from the peer */
-		public final int numOtherCHKRequests;
-		public final int numOtherSSKRequests;
-		public final int numOtherCHKInserts;
-		public final int numOtherSSKInserts;
-		public final int numOtherCHKOffered;
-		public final int numOtherSSKOffered;
+		public final int expectedTransfersOutCHK;
+		public final int expectedTransfersInCHK;
+		public final int expectedTransfersOutSSK;
+		public final int expectedTransfersInSSK;
 		public final double outputBandwidthLowerLimit;
 		public final double outputBandwidthUpperLimit;
 		public final double outputBandwidthPeerLimit;
 		public final double inputBandwidthLowerLimit;
 		public final double inputBandwidthUpperLimit;
 		public final double inputBandwidthPeerLimit;
+		public final int totalRequests;
+		public final int averageTransfersOutPerInsert;
 		
 		public boolean equals(Object o) {
 			if(!(o instanceof PeerLoadStats)) return false;
 			PeerLoadStats s = (PeerLoadStats)o;
 			if(s.peer != peer) return false;
-			if(s.numOtherCHKRequests != numOtherCHKRequests) return false;
-			if(s.numOtherSSKRequests != numOtherSSKRequests) return false;
-			if(s.numOtherCHKInserts != numOtherCHKInserts) return false;
-			if(s.numOtherSSKInserts != numOtherSSKInserts) return false;
-			if(s.numOtherCHKOffered != numOtherCHKOffered) return false;
-			if(s.numOtherSSKOffered != numOtherSSKOffered) return false;
+			if(s.expectedTransfersOutCHK != expectedTransfersOutCHK) return false;
+			if(s.expectedTransfersInCHK != expectedTransfersInCHK) return false;
+			if(s.expectedTransfersOutSSK != expectedTransfersOutSSK) return false;
+			if(s.expectedTransfersInSSK != expectedTransfersInSSK) return false;
+			if(s.totalRequests != totalRequests) return false;
+			if(s.averageTransfersOutPerInsert != averageTransfersOutPerInsert) return false;
 			if(s.outputBandwidthLowerLimit != outputBandwidthLowerLimit) return false;
 			if(s.outputBandwidthUpperLimit != outputBandwidthUpperLimit) return false;
 			if(s.outputBandwidthPeerLimit != outputBandwidthPeerLimit) return false;
@@ -646,10 +647,11 @@ public class NodeStats implements Persistable {
 		
 		public String toString() {
 			return peer.toString()+":output:{lower="+outputBandwidthLowerLimit+",upper="+outputBandwidthUpperLimit+",this="+outputBandwidthPeerLimit+"},input:lower="+inputBandwidthLowerLimit+",upper="+inputBandwidthUpperLimit+",peer="+inputBandwidthPeerLimit+"},requests:"+
-				numOtherCHKRequests+","+numOtherSSKRequests+","+numOtherCHKInserts+","+numOtherSSKInserts+","+numOtherCHKOffered+","+numOtherSSKOffered;
+				"in:"+expectedTransfersInCHK+"chk/"+expectedTransfersInSSK+"ssk:out:"+
+				expectedTransfersOutCHK+"chk/"+expectedTransfersOutSSK+"ssk";
 		}
 		
-		public PeerLoadStats(PeerNode peer) {
+		public PeerLoadStats(PeerNode peer, int transfersPerInsert) {
 			this.peer = peer;
 			long[] total = node.collector.getTotalIO();
 			long totalSent = total[0];
@@ -666,42 +668,43 @@ public class NodeStats implements Persistable {
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(BANDWIDTH_LIABILITY_LIMIT_SECONDS);
 			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, true);
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, true);
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, true, transfersPerInsert);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, true, transfersPerInsert);
 			
-			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node);
-			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false);
-			numOtherCHKRequests = runningGlobal.numRemoteCHKRequests + runningGlobal.numLocalCHKRequests - (runningLocal.numRemoteCHKRequests + runningLocal.numLocalCHKRequests);
-			numOtherSSKRequests = runningGlobal.numRemoteSSKRequests + runningGlobal.numLocalSSKRequests - (runningLocal.numRemoteSSKRequests + runningLocal.numLocalSSKRequests);
-			numOtherCHKInserts = runningGlobal.numRemoteCHKInserts + runningGlobal.numLocalCHKInserts - (runningLocal.numRemoteCHKInserts + runningLocal.numLocalCHKInserts);
-			numOtherSSKInserts = runningGlobal.numRemoteSSKInserts + runningGlobal.numLocalSSKInserts - (runningLocal.numRemoteSSKInserts + runningLocal.numLocalSSKInserts);
-			numOtherCHKOffered = runningGlobal.numCHKOfferReplies - runningLocal.numCHKOfferReplies;
-			numOtherSSKOffered = runningGlobal.numSSKOfferReplies - runningLocal.numSSKOfferReplies;
+			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
+			
+			this.averageTransfersOutPerInsert = transfersPerInsert;
+			
+			RunningRequestsSnapshot runningGlobal = new RunningRequestsSnapshot(node, ignoreLocalVsRemote, transfersPerInsert);
+			RunningRequestsSnapshot runningLocal = new RunningRequestsSnapshot(node, peer, false, ignoreLocalVsRemote, transfersPerInsert);
+			expectedTransfersInCHK = runningGlobal.expectedTransfersInCHK - runningLocal.expectedTransfersInCHK;
+			expectedTransfersInSSK = runningGlobal.expectedTransfersInSSK - runningLocal.expectedTransfersInSSK;
+			expectedTransfersOutCHK = runningGlobal.expectedTransfersOutCHK - runningLocal.expectedTransfersOutCHK;
+			expectedTransfersOutSSK = runningGlobal.expectedTransfersOutSSK - runningLocal.expectedTransfersOutSSK;
+			totalRequests = runningGlobal.totalRequests - runningLocal.totalRequests;
 		}
 
 		public PeerLoadStats(PeerNode source, Message m) {
 			peer = source;
 			if(m.getSpec() == DMT.FNPPeerLoadStatusInt) {
-				numOtherCHKRequests = m.getInt(DMT.OTHER_RUNNING_CHK_REQUESTS);
-				numOtherCHKInserts = m.getInt(DMT.OTHER_RUNNING_CHK_INSERTS);
-				numOtherCHKOffered = m.getInt(DMT.OTHER_RUNNING_CHK_OFFERS);
-				numOtherSSKRequests = m.getInt(DMT.OTHER_RUNNING_SSK_REQUESTS);
-				numOtherSSKInserts = m.getInt(DMT.OTHER_RUNNING_SSK_INSERTS);
-				numOtherSSKOffered = m.getInt(DMT.OTHER_RUNNING_SSK_OFFERS);
+				expectedTransfersInCHK = m.getInt(DMT.OTHER_TRANSFERS_IN_CHK);
+				expectedTransfersInSSK = m.getInt(DMT.OTHER_TRANSFERS_IN_SSK);
+				expectedTransfersOutCHK = m.getInt(DMT.OTHER_TRANSFERS_OUT_CHK);
+				expectedTransfersOutSSK = m.getInt(DMT.OTHER_TRANSFERS_OUT_SSK);
+				averageTransfersOutPerInsert = m.getInt(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT);
+
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusShort) {
-				numOtherCHKRequests = m.getShort(DMT.OTHER_RUNNING_CHK_REQUESTS) & 0xFFFF;
-				numOtherCHKInserts = m.getShort(DMT.OTHER_RUNNING_CHK_INSERTS) & 0xFFFF;
-				numOtherCHKOffered = m.getShort(DMT.OTHER_RUNNING_CHK_OFFERS) & 0xFFFF;
-				numOtherSSKRequests = m.getShort(DMT.OTHER_RUNNING_SSK_REQUESTS) & 0xFFFF;
-				numOtherSSKInserts = m.getShort(DMT.OTHER_RUNNING_SSK_INSERTS) & 0xFFFF;
-				numOtherSSKOffered = m.getShort(DMT.OTHER_RUNNING_SSK_OFFERS) & 0xFFFF;
+				expectedTransfersInCHK = m.getShort(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFFFF;
+				expectedTransfersInSSK = m.getShort(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFFFF;
+				expectedTransfersOutCHK = m.getShort(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFFFF;
+				expectedTransfersOutSSK = m.getShort(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFFFF;
+				averageTransfersOutPerInsert = m.getShort(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT) & 0xFFFF;
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusByte) {
-				numOtherCHKRequests = m.getByte(DMT.OTHER_RUNNING_CHK_REQUESTS) & 0xFF;
-				numOtherCHKInserts = m.getByte(DMT.OTHER_RUNNING_CHK_INSERTS) & 0xFF;
-				numOtherCHKOffered = m.getByte(DMT.OTHER_RUNNING_CHK_OFFERS) & 0xFF;
-				numOtherSSKRequests = m.getByte(DMT.OTHER_RUNNING_SSK_REQUESTS) & 0xFF;
-				numOtherSSKInserts = m.getByte(DMT.OTHER_RUNNING_SSK_INSERTS) & 0xFF;
-				numOtherSSKOffered = m.getByte(DMT.OTHER_RUNNING_SSK_OFFERS) & 0xFF;
+				expectedTransfersInCHK = m.getByte(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFF;
+				expectedTransfersInSSK = m.getByte(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFF;
+				expectedTransfersOutCHK = m.getByte(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFF;
+				expectedTransfersOutSSK = m.getByte(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFF;
+				averageTransfersOutPerInsert = m.getByte(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT) & 0xFF;
 			} else throw new IllegalArgumentException();
 			outputBandwidthLowerLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_LOWER_LIMIT);
 			outputBandwidthUpperLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_UPPER_LIMIT);
@@ -709,6 +712,7 @@ public class NodeStats implements Persistable {
 			inputBandwidthLowerLimit = m.getInt(DMT.INPUT_BANDWIDTH_LOWER_LIMIT);
 			inputBandwidthUpperLimit = m.getInt(DMT.INPUT_BANDWIDTH_UPPER_LIMIT);
 			inputBandwidthPeerLimit = m.getInt(DMT.INPUT_BANDWIDTH_PEER_LIMIT);
+			totalRequests = -1;
 		}
 
 		public RunningRequestsSnapshot getOtherRunningRequests() {
@@ -762,28 +766,44 @@ public class NodeStats implements Persistable {
 	
 	class RunningRequestsSnapshot {
 		
-		int numLocalCHKRequests;
-		int numLocalSSKRequests;
-		int numLocalCHKInserts;
-		int numLocalSSKInserts;
-		int numRemoteCHKRequests;
-		int numRemoteSSKRequests;
-		int numRemoteCHKInserts;
-		int numRemoteSSKInserts;
-		int numCHKOfferReplies;
-		int numSSKOfferReplies;
+		int expectedTransfersOutCHK;
+		int expectedTransfersInCHK;
+		int expectedTransfersOutSSK;
+		int expectedTransfersInSSK;
+		int totalRequests;
+		int averageTransfersPerInsert;
 		
-		RunningRequestsSnapshot(Node node) {
-			numLocalCHKRequests = node.getNumLocalCHKRequests();
-			numLocalSSKRequests = node.getNumLocalSSKRequests();
-			numLocalCHKInserts = node.getNumLocalCHKInserts();
-			numLocalSSKInserts = node.getNumLocalSSKInserts();
-			numRemoteCHKRequests = node.getNumRemoteCHKRequests();
-			numRemoteSSKRequests = node.getNumRemoteSSKRequests();
-			numRemoteCHKInserts = node.getNumRemoteCHKInserts();
-			numRemoteSSKInserts = node.getNumRemoteSSKInserts();
-			numCHKOfferReplies = node.getNumCHKOfferReplies();
-			numSSKOfferReplies = node.getNumSSKOfferReplies();
+		RunningRequestsSnapshot(Node node, boolean ignoreLocalVsRemote, int transfersPerInsert) {
+			int transfersInSSK = 0;
+			int transfersOutSSK = 0;
+			int transfersInCHK = 0;
+			int transfersOutCHK = 0;
+			this.averageTransfersPerInsert = transfersPerInsert;
+			CountedRequests count;
+			count = node.countRequests(true, false, false, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
+			count = node.countRequests(true, true, false, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
+			count = node.countRequests(true, false, true, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
+			count = node.countRequests(true, true, true, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
+			count = node.countRequests(false, false, false, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
+			count = node.countRequests(false, true, false, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
+			count = node.countRequests(false, false, true, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
+			count = node.countRequests(false, true, true, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
+			count = node.countRequests(false, false, false, true, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
+			count = node.countRequests(false, true, false, true, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
+			this.expectedTransfersInCHK = transfersInCHK;
+			this.expectedTransfersInSSK = transfersInSSK;
+			this.expectedTransfersOutCHK = transfersOutCHK;
+			this.expectedTransfersOutSSK = transfersOutSSK;
 		}
 		
 		/**
@@ -792,90 +812,133 @@ public class NodeStats implements Persistable {
 		 * @param requestsToNode If true, count requests sent to the node and currently
 		 * running. If false, count requests originated by the node.
 		 */
-		RunningRequestsSnapshot(Node node, PeerNode source, boolean requestsToNode) {
-			numLocalCHKRequests = node.countRequests(source, requestsToNode, true, false, false, false);
-			numLocalSSKRequests = node.countRequests(source, requestsToNode, true, true, false, false);
-			numLocalCHKInserts = node.countRequests(source, requestsToNode, true, false, true, false);
-			numLocalSSKInserts = node.countRequests(source, requestsToNode, true, true, true, false);
-			numRemoteCHKRequests = node.countRequests(source, requestsToNode, false, false, false, false);
-			numRemoteSSKRequests = node.countRequests(source, requestsToNode, false, true, false, false);
-			numRemoteCHKInserts = node.countRequests(source, requestsToNode, false, false, true, false);
-			numRemoteSSKInserts = node.countRequests(source, requestsToNode, false, true, true, false);
-			numCHKOfferReplies = node.countRequests(source, requestsToNode, false, false, false, true);
-			numSSKOfferReplies = node.countRequests(source, requestsToNode, false, true, false, true);
+		RunningRequestsSnapshot(Node node, PeerNode source, boolean requestsToNode, boolean ignoreLocalVsRemote, int transfersPerInsert) {
+			int transfersInSSK = 0;
+			int transfersOutSSK = 0;
+			int transfersInCHK = 0;
+			int transfersOutCHK = 0;
+			int reqs = 0;
+			this.averageTransfersPerInsert = transfersPerInsert;
+			// We are calculating what part of their resources we use. Therefore, we have
+			// to see it from their point of view - meaning all the requests are remote.
+			if(requestsToNode) ignoreLocalVsRemote = true;
+			CountedRequests count;
+			count = node.countRequests(source, requestsToNode, true, false, false, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
+			reqs += count.total;
+			count = node.countRequests(source, requestsToNode, true, true, false, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
+			reqs += count.total;
+			count = node.countRequests(source, requestsToNode, true, false, true, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
+			reqs += count.total;
+			count = node.countRequests(source, requestsToNode, true, true, true, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
+			reqs += count.total;
+			count = node.countRequests(source, requestsToNode, false, false, false, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
+			reqs += count.total;
+			count = node.countRequests(source, requestsToNode, false, true, false, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
+			reqs += count.total;
+			count = node.countRequests(source, requestsToNode, false, false, true, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
+			reqs += count.total;
+			count = node.countRequests(source, requestsToNode, false, true, true, false, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
+			reqs += count.total;
+			count = node.countRequests(source, requestsToNode, false, false, false, true, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInCHK += count.expectedTransfersIn; transfersOutCHK += count.expectedTransfersOut;
+			reqs += count.total;
+			count = node.countRequests(source, requestsToNode, false, true, false, true, transfersPerInsert, ignoreLocalVsRemote);
+			transfersInSSK += count.expectedTransfersIn; transfersOutSSK += count.expectedTransfersOut;
+			reqs += count.total;
+			this.expectedTransfersInCHK = transfersInCHK;
+			this.expectedTransfersInSSK = transfersInSSK;
+			this.expectedTransfersOutCHK = transfersOutCHK;
+			this.expectedTransfersOutSSK = transfersOutSSK;
+			this.totalRequests = reqs;
 		}
 
 		public RunningRequestsSnapshot(PeerLoadStats stats) {
 			// Assume they are all remote.
-			this.numRemoteCHKInserts = stats.numOtherCHKInserts;
-			this.numRemoteCHKRequests = stats.numOtherCHKRequests;
-			this.numRemoteSSKInserts = stats.numOtherSSKInserts;
-			this.numRemoteSSKRequests = stats.numOtherSSKRequests;
-			this.numCHKOfferReplies = stats.numOtherCHKOffered;
-			this.numSSKOfferReplies = stats.numOtherSSKOffered;
-			this.numLocalCHKInserts = 0;
-			this.numLocalSSKInserts = 0;
-			this.numLocalCHKRequests = 0;
-			this.numLocalSSKRequests = 0;
+			this.expectedTransfersInCHK = stats.expectedTransfersInCHK;
+			this.expectedTransfersInSSK = stats.expectedTransfersInSSK;
+			this.expectedTransfersOutCHK = stats.expectedTransfersOutCHK;
+			this.expectedTransfersOutSSK = stats.expectedTransfersOutSSK;
+			this.totalRequests = stats.totalRequests;
+			this.averageTransfersPerInsert = stats.averageTransfersOutPerInsert;
 		}
 
 		public void decrement(boolean isSSK, boolean isInsert,
-				boolean isOfferReply) {
-			if(isOfferReply) {
-				if(isSSK) numSSKOfferReplies--;
-				else numCHKOfferReplies--;
+				boolean isOfferReply, int transfersOutPerInsert, boolean hasInStore) {
+			if(isInsert) {
+				if(isSSK)
+					expectedTransfersOutSSK -= transfersOutPerInsert;
+				else
+					expectedTransfersOutCHK -= transfersOutPerInsert;
 			} else {
-				if(isInsert) {
-					if(isSSK) numRemoteSSKInserts--;
-					else numRemoteCHKInserts--;
-				} else {
-					if(isSSK) numRemoteSSKRequests--;
-					else numRemoteCHKRequests--;
-				}
+				if(isSSK)
+					expectedTransfersOutSSK--;
+				else
+					expectedTransfersOutCHK--;
 			}
+			if(!(isOfferReply || hasInStore)) {
+				if(isSSK)
+					expectedTransfersInSSK--;
+				else
+					expectedTransfersInCHK--;
+			}
+			totalRequests--;
 		}
 
 		public void log() {
-			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
+			log(null);
+		}
+		
+		public void log(PeerNode source) {
+			String message = 
+				"Running (adjusted): CHK in: "+expectedTransfersInCHK+" out: "+expectedTransfersOutCHK+
+					" SSK in: "+expectedTransfersInSSK+" out: "+expectedTransfersOutSSK
+					+" total="+totalRequests+(source == null ? "" : (" for "+source));
+			if(expectedTransfersInCHK < 0 || expectedTransfersOutCHK < 0 ||
+					expectedTransfersInSSK < 0 || expectedTransfersOutSSK < 0)
+				Logger.error(this, message);
+			else
+				if(logMINOR) Logger.minor(this, message);
 		}
 
 		public double calculate(boolean ignoreLocalVsRemoteBandwidthLiability,
-				ByteCountersSnapshot byteCountersSent) {
+				ByteCountersSnapshot byteCountersSent, boolean input) {
 			
-			if(ignoreLocalVsRemoteBandwidthLiability) {
-				return 
-					byteCountersSent.successfulChkFetchBytes * (numRemoteCHKRequests + numLocalCHKRequests) +
-					byteCountersSent.successfulSskFetchBytes * (numRemoteSSKRequests + numLocalSSKRequests) +
-					byteCountersSent.successfulChkInsertBytes * (numRemoteCHKInserts + numLocalCHKInserts) +
-					byteCountersSent.successfulSskInsertBytes * (numRemoteSSKInserts + numLocalSSKInserts);
-			} else {
-			return
-				byteCountersSent.successfulChkFetchBytes * numRemoteCHKRequests +
-				// Local requests don't relay data, so use the local average
-				byteCountersSent.localChkFetchBytes * numLocalCHKRequests +
-				byteCountersSent.successfulSskFetchBytes * numRemoteSSKRequests +
-				// Local requests don't relay data, so use the local average
-				byteCountersSent.localSskFetchBytes * numLocalSSKRequests +
-				// Inserts are the same for remote as local for sent bytes
-				byteCountersSent.successfulChkInsertBytes * numRemoteCHKInserts +
-				byteCountersSent.successfulChkInsertBytes * numLocalCHKInserts +
-				// Inserts are the same for remote as local for sent bytes
-				byteCountersSent.successfulSskInsertBytes * numRemoteSSKInserts +
-				byteCountersSent.successfulSskInsertBytes * numLocalSSKInserts +
-				byteCountersSent.successfulChkOfferReplyBytes * numCHKOfferReplies +
-				byteCountersSent.successfulSskOfferReplyBytes * numSSKOfferReplies;
-			}
-			
+			if(input)
+				return this.expectedTransfersInCHK * (32768+256) +
+					this.expectedTransfersInSSK * (2048+256) +
+					this.expectedTransfersOutCHK * TRANSFER_OUT_IN_OVERHEAD +
+					this.expectedTransfersOutSSK * TRANSFER_OUT_IN_OVERHEAD;
+			else
+				return this.expectedTransfersOutCHK * (32768+256) +
+					this.expectedTransfersOutSSK * (2048+256) +
+					expectedTransfersInCHK * TRANSFER_IN_OUT_OVERHEAD +
+					expectedTransfersInSSK * TRANSFER_IN_OUT_OVERHEAD;
 		}
 
+		/**
+		 * @return The number of requests running or -1 if not known (remote doesn't tell us).
+		 */
 		public int totalRequests() {
-			return numLocalCHKRequests + numLocalSSKRequests + numLocalCHKInserts + 
-				numLocalSSKInserts + numRemoteCHKRequests + numRemoteSSKRequests + 
-				numRemoteCHKInserts + numRemoteSSKInserts + numCHKOfferReplies + 
-				numSSKOfferReplies;
+			return totalRequests;
 		}
-		
+
 	}
+	
+	// Look plausible from my node-throttle.dat stats as of 01/11/2010.
+	/** Output bytes required for an inbound transfer. Includes e.g. sending the request
+	 * in the first place. */
+	static final int TRANSFER_IN_OUT_OVERHEAD = 256;
+	/** Input bytes required for an outbound transfer. Includes e.g. sending the insert
+	 * etc. */
+	static final int TRANSFER_OUT_IN_OVERHEAD = 256;
 	
 	static class RejectReason {
 		public final String name;
@@ -958,12 +1021,14 @@ public class NodeStats implements Persistable {
 		// Reject request if the result of all our current requests completing simultaneously would be that
 		// some of them timeout.
 		
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node);
+		int transfersPerInsert = outwardTransfersPerInsert();
+		
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert);
 		
 		if(!isLocal) {
 			// If not local, is already locked.
 			// So we need to decrement the relevant value, to counteract this and restore the SSK:CHK balance.
-			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply);
+			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersPerInsert, hasInStore);
 		}
 
 		if(logMINOR)
@@ -983,13 +1048,13 @@ public class NodeStats implements Persistable {
 		// Multiply by limit: X seconds at full power should be able to clear the transfers even if all the requests succeed.
 		
 		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), byteCountersSent, requestsSnapshot, false, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply);  
+				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert);  
 		if(ret != null) return new RejectReason(ret, true);
 		
 		ByteCountersSnapshot byteCountersReceived = new ByteCountersSnapshot(true);
 		
 		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), byteCountersReceived, requestsSnapshot, true, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply);  
+				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert);  
 		if(ret != null) return new RejectReason(ret, true);
 		
 		// Do we have the bandwidth?
@@ -1035,6 +1100,11 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 	
+	public int outwardTransfersPerInsert() {
+		// FIXME compute an average
+		return 1;
+	}
+
 	private double getInputBandwidthUpperLimit(long limit) {
 		return node.getInputBandwidthLimit() * limit;
 	}
@@ -1095,15 +1165,15 @@ public class NodeStats implements Persistable {
 	private String checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
 			ByteCountersSnapshot byteCountersSent,
 			RunningRequestsSnapshot requestsSnapshot, boolean input, long limit,
-			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply) {
+			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert) {
 		String name = input ? "Input" : "Output";
 		double bandwidthAvailableOutputLowerLimit = bandwidthAvailableOutputUpperLimit / 2;
 		
-		double bandwidthLiabilityOutput = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersSent);
+		double bandwidthLiabilityOutput = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersSent, input);
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
 		
-		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false);
+		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert);
 		
 		// If over the upper limit, reject.
 		
@@ -1121,40 +1191,10 @@ public class NodeStats implements Persistable {
 			if(logMINOR)
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation);
 			
-			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent);
+			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, byteCountersSent, ignoreLocalVsRemoteBandwidthLiability, hasInStore, transfersPerInsert, input);
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
-			}
-			
-			// Fair sharing between request types.
-			// The old mechanism incremented each request type, so that we would only accept
-			// a request of a given type if there was enough space for one of each type without exceeding the limit.
-			// I suspect this didn't do anything, since it's effectively just a lower limit, resulting in the smallest 
-			// requests continuing to be largely accepted and largely exclude the larger ones.
-			// Also the old mechanism wasn't compatible with fair sharing between peers anyway.
-			
-			// So lets do something different. Reject if the given type is using 75%+ of the upper limit.
-			
-			double typeUsed;
-			
-			if(isInsert) {
-				if(isSSK) {
-					typeUsed = (requestsSnapshot.numRemoteSSKInserts + requestsSnapshot.numLocalSSKInserts) * successfulSskInsertBytesSentAverage.currentValue();
-				} else {
-					typeUsed = (requestsSnapshot.numRemoteCHKInserts + requestsSnapshot.numLocalCHKInserts) * successfulChkInsertBytesSentAverage.currentValue();
-				}
-			} else {
-				if(isSSK) {
-					typeUsed = (requestsSnapshot.numRemoteSSKRequests + requestsSnapshot.numLocalSSKRequests) * successfulSskFetchBytesSentAverage.currentValue();
-				} else {
-					typeUsed = (requestsSnapshot.numRemoteCHKRequests + requestsSnapshot.numLocalCHKRequests) * successfulChkFetchBytesSentAverage.currentValue();
-				}
-			}
-			
-			if(typeUsed > 0.75 * bandwidthAvailableOutputUpperLimit) {
-				rejected(name+" bandwidth liability: fairness between types", isLocal);
-				return name+" bandwidth liability: fairness between types for "+(isSSK?"SSK":"CHK")+" "+(isInsert?"insert":"request"+" (running "+typeUsed+" threshold 75% of "+bandwidthAvailableOutputUpperLimit+")");
 			}
 			
 		}
@@ -1163,7 +1203,7 @@ public class NodeStats implements Persistable {
 
 	static final boolean SEND_LOAD_STATS_NOTICES = false;
 	
-	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer) {
+	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer, int transfersPerInsert) {
 		
 		int peers = node.peers.countConnectedPeers();
 		
@@ -1186,21 +1226,23 @@ public class NodeStats implements Persistable {
 		
 		if(SEND_LOAD_STATS_NOTICES && source != null && !dontTellPeer) {
 			// FIXME tell local as well somehow?
-			source.onSetPeerAllocation(input, (int)thisAllocation);
+			source.onSetPeerAllocation(input, (int)thisAllocation, transfersPerInsert);
 		}
 		
 		return thisAllocation;
 		
 	}
 
-	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters) {
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source, false);
+	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, ByteCountersSnapshot byteCounters, boolean ignoreLocalVsRemote, boolean hasInStore, int transfersOutPerInsert, boolean input) {
+		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemote, transfersOutPerInsert);
 		
 		if(source != null) {
-			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply);
+			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersOutPerInsert, hasInStore);
 		}
 		
-		return requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCounters);
+		requestsSnapshot.log(source);
+		
+		return requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCounters, input);
 	}
 
 	/** @return True if we should reject the request.
@@ -2786,6 +2828,26 @@ public class NodeStats implements Persistable {
 		return result;
 	}
 
+	public PeerLoadStats createPeerLoadStats(PeerNode peer, int transfersPerInsert) {
+		return new PeerLoadStats(peer, transfersPerInsert);
+	}
+
+	public PeerLoadStats parseLoadStats(PeerNode source, Message m) {
+		return new PeerLoadStats(source, m);
+	}
+
+	public ByteCountersSnapshot getByteCounters(boolean input) {
+		return new ByteCountersSnapshot(input);
+	}
+
+	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode, int transfersPerInsert) {
+		return new RunningRequestsSnapshot(node, peerNode, true, false, outwardTransfersPerInsert());
+	}
+	
+	public boolean ignoreLocalVsRemoteBandwidthLiability() {
+		return ignoreLocalVsRemoteBandwidthLiability;
+	}
+	
 	private int totalAnnouncements;
 	private int totalAnnounceForwards;
 	
@@ -2837,23 +2899,4 @@ public class NodeStats implements Persistable {
 		runningAnnouncements.remove(uid);
 	}
 	
-	public PeerLoadStats createPeerLoadStats(PeerNode peer) {
-		return new PeerLoadStats(peer);
-	}
-
-	public PeerLoadStats parseLoadStats(PeerNode source, Message m) {
-		return new PeerLoadStats(source, m);
-	}
-
-	public ByteCountersSnapshot getByteCounters(boolean input) {
-		return new ByteCountersSnapshot(input);
-	}
-
-	public RunningRequestsSnapshot getRunningRequestsTo(PeerNode peerNode) {
-		return new RunningRequestsSnapshot(node, peerNode, true);
-	}
-	
-	public boolean ignoreLocalVsRemoteBandwidthLiability() {
-		return ignoreLocalVsRemoteBandwidthLiability;
-	}
 }

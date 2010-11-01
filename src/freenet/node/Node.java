@@ -4539,44 +4539,82 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public synchronized int countRequests(boolean local, boolean ssk, boolean insert, boolean offer) {
-		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
-		return map.size();
+	public class CountedRequests {
+		final int total;
+		final int expectedTransfersOut;
+		final int expectedTransfersIn;
+		private CountedRequests(int count, int out, int in) {
+			total = count;
+			expectedTransfersOut = out;
+			expectedTransfersIn = in;
+		}
 	}
 	
-	public int countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer) {
+	public synchronized CountedRequests countRequests(boolean local, boolean ssk, boolean insert, boolean offer, int transfersPerInsert, boolean ignoreLocalVsRemote) {
 		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
 		synchronized(map) {
-		if(!requestsToNode) {
-			if((source == null) != local) return 0;
 			int count = 0;
+			int transfersOut = 0;
+			int transfersIn = 0;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
-				if(tag.source == source) {
-					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey()+" from "+source);
-					count++;
-				}
+				count++;
+				transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
+				transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+				if(logDEBUG) Logger.debug(this, "UID "+entry.getKey()+" : out "+transfersOut+" in "+transfersIn);
 			}
-			return count;
+			return new CountedRequests(count, transfersOut, transfersIn);
+		}
+	}
+	
+	public CountedRequests countRequests(PeerNode source, boolean requestsToNode, boolean local, boolean ssk, boolean insert, boolean offer, int transfersPerInsert, boolean ignoreLocalVsRemote) {
+		HashMap<Long, ? extends UIDTag> map = getTracker(local, ssk, insert, offer);
+		synchronized(map) {
+		int count = 0;
+		int transfersOut = 0;
+		int transfersIn = 0;
+		if(!requestsToNode) {
+			// If a request is adopted by us as a result of a timeout, it can be in the 
+			// remote map despite having source == null. However, if a request is in the 
+			// local map it will always have source == null.
+			if(source != null && local) return new CountedRequests(0, 0, 0);
+			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
+				UIDTag tag = entry.getValue();
+				if(tag.getSource() == source) {
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" from "+entry.getKey()+" from "+source);
+					count++;
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
+				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
+			}
+			return new CountedRequests(count, transfersOut, transfersIn);
 		} else {
 			// FIXME improve efficiency!
-			int count = 0;
 			for(Map.Entry<Long, ? extends UIDTag> entry : map.entrySet()) {
 				UIDTag tag = entry.getValue();
 				// Ordinary requests can be routed to an offered key.
 				// So we *DO NOT* care whether it's an ordinary routed relayed request or a GetOfferedKey, if we are counting outgoing requests.
 				if(tag.currentlyFetchingOfferedKeyFrom(source)) {
-					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
 					count++;
 				} else if(tag.currentlyRoutingTo(source)) {
-					if(logMINOR) Logger.minor(this, "Counting "+tag+" for "+entry.getKey());
+					if(logMINOR) Logger.minor(this, "Counting "+tag+" to "+entry.getKey());
+					transfersOut += tag.expectedTransfersOut(ignoreLocalVsRemote, transfersPerInsert);
+					transfersIn += tag.expectedTransfersIn(ignoreLocalVsRemote, transfersPerInsert);
 					count++;
-				}
+				} else if(logDEBUG) Logger.debug(this, "Not counting "+entry.getKey());
 			}
-			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count);
-			return count;
+			if(logMINOR) Logger.minor(this, "Counted for "+(local?"local":"remote")+" "+(ssk?"ssk":"chk")+" "+(insert?"insert":"request")+" "+(offer?"offer":"")+" : "+count+" of "+map.size()+" for "+source);
+			return new CountedRequests(count, transfersOut, transfersIn);
 		}
 		}
+	}
+	
+	void reassignTagToSelf(UIDTag tag) {
+		// The tag remains remote, but we flag it as adopted.
+		tag.reassignToSelf();
 	}
 	
 	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,

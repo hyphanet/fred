@@ -164,7 +164,7 @@ public class PeerNodeStatus {
 		this.reportedUptimePercentage = peerNode.getUptime();
 		messageQueueLengthBytes = peerNode.getMessageQueueLengthBytes();
 		messageQueueLengthTime = peerNode.getProbableSendQueueTime();
-		incomingLoadStats = peerNode.getIncomingLoadStats();
+		incomingLoadStats = peerNode.outputLoadTracker().getIncomingLoadStats();
 	}
 	
 	public long getMessageQueueLengthBytes() {

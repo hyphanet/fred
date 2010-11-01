@@ -36,7 +36,7 @@ public class RequestTag extends UIDTag {
 		this.isSSK = isSSK;
 	}
 
-	public void setRequestSenderFinished(int status) {
+	public synchronized void setRequestSenderFinished(int status) {
 		requestSenderFinishedCode = status;
 	}
 
@@ -48,7 +48,7 @@ public class RequestTag extends UIDTag {
 		this.handlerThrew = t;
 	}
 
-	public void setServedFromDatastore() {
+	public synchronized void setServedFromDatastore() {
 		servedFromDatastore = true;
 	}
 
@@ -102,15 +102,22 @@ public class RequestTag extends UIDTag {
 	}
 
 	@Override
-	public int expectedTransfersIn(boolean ignoreLocalVsRemote,
+	public synchronized int expectedTransfersIn(boolean ignoreLocalVsRemote,
 			int outwardTransfersPerInsert) {
 		return notRoutedOnwards ? 0 : 1;
 	}
 
 	@Override
-	public int expectedTransfersOut(boolean ignoreLocalVsRemote,
+	public synchronized int expectedTransfersOut(boolean ignoreLocalVsRemote,
 			int outwardTransfersPerInsert) {
-		return (ignoreLocalVsRemote && source == null) ? 0 : 1;
+		if(completedDownstreamTransfers) return 0;
+		return ((!isLocal()) || ignoreLocalVsRemote) ? 1 : 0;
+	}
+	
+	private boolean completedDownstreamTransfers;
+
+	public synchronized void completedDownstreamTransfers() {
+		this.completedDownstreamTransfers = true;
 	}
 
 }

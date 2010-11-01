@@ -1,5 +1,6 @@
 package freenet.node;
 
+import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
 /**
@@ -11,11 +12,8 @@ import java.util.HashSet;
 public abstract class UIDTag {
 	
 	final long createdTime;
-	// FIXME weak reference? purge on drop?
-	// weak reference has the disadvantage that if it's cleared it would be counted as local?
-	// Maybe we could compare to the local vs remote on the subclass?
-	// in theory when disconnect we will remove it anyway, so i guess it's not a big deal?
-	final PeerNode source;
+	final boolean wasLocal;
+	private final WeakReference<PeerNode> sourceRef;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -28,7 +26,8 @@ public abstract class UIDTag {
 	
 	UIDTag(PeerNode source) {
 		createdTime = System.currentTimeMillis();
-		this.source = source;
+		this.sourceRef = source == null ? null : source.myRef;
+		wasLocal = source == null;
 	}
 
 	public abstract void logStillPresent(Long uid);
@@ -99,5 +98,36 @@ public abstract class UIDTag {
 	
 	public synchronized void setNotRoutedOnwards() {
 		this.notRoutedOnwards = true;
+	}
+
+	private boolean reassigned;
+	
+	/** Get the effective source node (e.g. for load management). This is null if the tag 
+	 * was reassigned to us. */
+	public synchronized PeerNode getSource() {
+		if(reassigned) return null;
+		if(wasLocal) return null;
+		return sourceRef.get();
+	}
+
+	/** Reassign the tag to us rather than its original sender. */
+	public synchronized void reassignToSelf() {
+		if(wasLocal) return;
+		reassigned = true;
+	}
+	
+	/** Was the request originated locally? This returns the original answer: It is not
+	 * affected by reassigning to self. */
+	public boolean wasLocal() {
+		return wasLocal;
+	}
+	
+	/** Is the request local now? I.e. was it either originated locally or reassigned to
+	 * self? */
+	public boolean isLocal() {
+		if(wasLocal) return true;
+		synchronized(this) {
+			return reassigned;
+		}
 	}
 }
