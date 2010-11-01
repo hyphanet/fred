@@ -157,12 +157,13 @@ public class LocationManager implements ByteCounter {
 			SmallWorldLinkModel model=new SmallWorldLinkModel(numPeers);
 			model.setFreenetLocation(getLocation());
 			List<PeerNode> allPeers=node.peers.listConnectedPeersByCHKSuccessRate();
-			System.err.println("calculating preferences from "+allPeers.size()+" possible peers");
+			int numPreferred=0;
+			if (logMINOR) Logger.minor(this, "calculating preferences from "+allPeers.size()+" possible peers");
 			try {
 			for (PeerNode peer : allPeers) {
 				if (!peer.isRoutable()) {
 					peer.setPreferred(false);
-					System.err.println("non-pref (not-routable): "+peer);
+					if(logMINOR) Logger.minor(this, "non-pref (not-routable): "+peer);
 					continue;
 				}
 				double location=peer.getLocation();
@@ -170,15 +171,17 @@ public class LocationManager implements ByteCounter {
 					boolean preferred=model.fillSlot(location, peer);
 					peer.setPreferred(preferred);
 					if (preferred) {
-						System.err.println("YES-pref: "+peer+" ("+location+")");
+						numPreferred++;
+						if(logMINOR) Logger.minor(this, "YES-pref: "+peer+" ("+location+")");
 					} else {
-						System.err.println("non-pref (slot full): "+peer+" ("+location+")");
+						if(logMINOR) Logger.minor(this, "non-pref (slot full): "+peer+" ("+location+")");
 					}
 				} else {
 					peer.setPreferred(false);
-					System.err.println("non-pref (no location): "+peer);
+					if(logMINOR) Logger.minor(this, "non-pref (no location): "+peer);
 				}
 			}
+			if(logMINOR) Logger.minor(this, numPreferred+" preferred peers out of "+allPeers.size()+" possible");
 			idealLocations=model.getIdealLocations();
 			recentLinkModel=model;
 			} catch (Throwable t) {
