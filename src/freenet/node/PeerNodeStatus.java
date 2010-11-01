@@ -113,8 +113,6 @@ public class PeerNodeStatus {
 	private final long messageQueueLengthTime;
 	// int's because that's what they are transferred as
 	
-	public final IncomingLoadSummaryStats incomingLoadStats;
-
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
 		if(p == null) {
@@ -172,7 +170,6 @@ public class PeerNodeStatus {
 		incomingLoadStatsBulk = peerNode.getIncomingLoadStats(false);
 		messageQueueLengthBytes = peerNode.getMessageQueueLengthBytes();
 		messageQueueLengthTime = peerNode.getProbableSendQueueTime();
-		incomingLoadStats = peerNode.outputLoadTracker().getIncomingLoadStats();
 	}
 	
 	public long getMessageQueueLengthBytes() {

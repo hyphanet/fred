@@ -842,11 +842,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			else
 				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStatsRT.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStatsRT.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStatsRT.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStatsRT.totalCapacityInputBytes));
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getMessageQueueLengthBytes())+":"+TimeUtil.formatTime(peerNodeStatus.getMessageQueueLengthTime()));
-			IncomingLoadSummaryStats loadStats = peerNodeStatus.incomingLoadStats;
-			if(loadStats == null)
-				peerRow.addChild("td", "class", "peer-idle" /* FIXME */);
-			else
-				peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", loadStats.runningRequestsTotal+"reqs:out:"+SizeUtil.formatSize(loadStats.usedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStats.othersUsedCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStats.peerCapacityOutputBytes)+"/"+SizeUtil.formatSize(loadStats.totalCapacityOutputBytes)+":in:"+SizeUtil.formatSize(loadStats.usedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStats.othersUsedCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStats.peerCapacityInputBytes)+"/"+SizeUtil.formatSize(loadStats.totalCapacityInputBytes));
 		}
 		
 		if(endCols != null) {
