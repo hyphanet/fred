@@ -18,7 +18,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
-/** This toadlet creates a png image with the specified text. */
+/** This toadlet creates a PNG image with the specified text. */
 public class ImageCreatorToadlet extends Toadlet {
 
 	/** The default width */
@@ -28,7 +28,9 @@ public class ImageCreatorToadlet extends Toadlet {
 	public static final int		DEFAULT_HEIGHT	= 100;
 
 	/**
-	 * The last modification time of the class, it is required for the client-side cache. If anyone makes modifications to this class, this needs to be updated
+	 * The last modification time of the class, it is required for the
+	 * client-side cache.
+	 * If anyone makes modifications to this class, this needs to be updated.
 	 */
 	public static final Date	LAST_MODIFIED	= new Date(1248256659000l);
 

@@ -17,6 +17,7 @@ import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -51,6 +52,9 @@ public class BulkTransmitter {
 	private long finishTime=-1;
 	private String cancelReason;
 	private final ByteCounter ctr;
+	
+	private static long transfersCompleted;
+	private static long transfersSucceeded;
 
         private static volatile boolean logMINOR;
 	static {
@@ -178,22 +182,31 @@ public class BulkTransmitter {
 			Logger.minor(this, "Cancelling "+this);
 		sendAbortedMessage();
 		synchronized(this) {
+			if(cancelled || finished) return;
 			cancelled = true;
 			cancelReason = reason;
 			notifyAll();
 		}
 		prb.remove(this);
+		synchronized(BulkTransmitter.class) {
+			transfersCompleted++;
+		}
 	}
 
 	/** Like cancel(), but without the negative overtones: The client says it's got everything,
 	 * we believe them (even if we haven't sent everything; maybe they had a partial). */
 	public void completed() {
 		synchronized(this) {
+			if(cancelled || finished) return;
 			finished = true;
 			finishTime = System.currentTimeMillis();
 			notifyAll();
 		}
 		prb.remove(this);
+		synchronized(BulkTransmitter.class) {
+			transfersCompleted++;
+			transfersSucceeded++;
+		}
 	}
 	
 	/**
@@ -296,7 +309,8 @@ outer:	while(true) {
 					Logger.minor(this, "Canclled: not connected "+this);
 				return false;
 			} catch (WaitedTooLongException e) {
-				Logger.error(this, "Failed to send bulk packet "+blockNo+" for "+this);
+				long rtt = peer.getThrottle().getRoundTripTime();
+				Logger.error(this, "Failed to send bulk packet "+blockNo+" for "+this+" RTT is "+TimeUtil.formatTime(rtt));
 				return false;
 			} catch (SyncSendWaitedTooLongException e) {
 				// Impossible
@@ -363,5 +377,9 @@ outer:	while(true) {
 	
 	public String getCancelReason() {
 		return cancelReason;
+	}
+	
+	public static synchronized long[] transferSuccess() {
+		return new long[] { transfersCompleted, transfersSucceeded };
 	}
 }

@@ -63,9 +63,13 @@ public class PeerManager {
 	private String darkFilename;
         private String openFilename;
         private String oldOpennetPeersFilename;
-        private int darknetPeersStringCache = -1;
-        private int opennetPeersStringCache = -1;
-        private int oldOpennetPeersStringCache = -1;
+        // FIXME either track dirty status separately for each of the three files,
+        // or implement a cheaper cache e.g. a secure hash, maybe with file size as a 
+        // short-cut. String.hashCode() unfortunately will give way too many false 
+        // positives and thus result in not writing important changes.
+        private String darknetPeersStringCache = null;
+        private String opennetPeersStringCache = null;
+        private String oldOpennetPeersStringCache = null;
         private PeerManagerUserAlert ua;	// Peers stuff
 	/** age of oldest never connected peer (milliseconds) */
 	private long oldestNeverConnectedDarknetPeerAge;
@@ -94,12 +98,14 @@ public class PeerManager {
 	private final Runnable writePeersRunnable = new Runnable() {
 
 		public void run() {
-			if(shouldWritePeers) {
-				shouldWritePeers = false;
-				writePeersInner();
+			try {
+				if(shouldWritePeers) {
+					shouldWritePeers = false;
+					writePeersInner();
+				}
+			} finally {
+				node.getTicker().queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
 			}
-			
-			node.getTicker().queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
 		}
 	};
 	
@@ -464,14 +470,20 @@ public class PeerManager {
 //    }
 //
 	/**
-	 * Find the node with the given Peer address.
+	 * Find the node with the given Peer address. Used by FNPPacketMangler to try to 
+	 * quickly identify a peer by the address of the packet. Includes 
+	 * non-isRealConnection()'s since they can also be connected.
 	 */
 	public PeerNode getByPeer(Peer peer) {
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
-			if(!peerList[i].isRealConnection())
-				continue;
 			if(peer.equals(peerList[i].getPeer()))
+				return peerList[i];
+		}
+		// Try a match by IP address if we can't match exactly by IP:port.
+		FreenetInetAddress addr = peer.getFreenetAddress();
+		for(int i = 0; i < peerList.length; i++) {
+			if(addr.equals(peerList[i].getPeer().getFreenetAddress()))
 				return peerList[i];
 		}
 		return null;
@@ -1202,25 +1214,13 @@ public class PeerManager {
 		}
 
 		synchronized(writePeerFileSync) {
-			if(newDarknetPeersString != null) {
-				int hashCode = newDarknetPeersString.hashCode();
-				if(darknetPeersStringCache == -1 || darknetPeersStringCache != hashCode) {
-					darknetPeersStringCache = hashCode;
-					writePeersInner(darkFilename, newDarknetPeersString);
-				}
+			if(newDarknetPeersString != null && !newDarknetPeersString.equals(darknetPeersStringCache))
+				writePeersInner(darkFilename, darknetPeersStringCache = newDarknetPeersString);
+			if(newOldOpennetPeersString != null && !newOldOpennetPeersString.equals(oldOpennetPeersStringCache)) {
+				writePeersInner(oldOpennetPeersFilename, oldOpennetPeersStringCache = newOldOpennetPeersString);
 			}
-			if(newOldOpennetPeersString != null) {
-				int hashCode = newOldOpennetPeersString.hashCode();
-				if(oldOpennetPeersStringCache == -1 || oldOpennetPeersStringCache != hashCode) {
-					oldOpennetPeersStringCache = hashCode;
-					writePeersInner(oldOpennetPeersFilename, newOldOpennetPeersString);
-				}
-			}
-			if(newOpennetPeersString != null) {
-				int hashCode = newOpennetPeersString.hashCode();
-				if(opennetPeersStringCache == -1 || opennetPeersStringCache != hashCode) {
-					writePeersInner(openFilename, newOpennetPeersString);
-				}
+			if(newOpennetPeersString != null && !newOpennetPeersString.equals(opennetPeersStringCache)) {
+				writePeersInner(openFilename, opennetPeersStringCache = newOpennetPeersString);
 			}
 		}
 	}

@@ -3,7 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
 
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
@@ -344,6 +347,18 @@ public abstract class ClientRequester {
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(client, 1);
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(client == null)
+			throw new NullPointerException();
+		return true;
+	}
+
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(client == null)
+			throw new NullPointerException();
+		return true;
+	}
 
 	/** Add a low-level request to the list of requests belonging to this high-level request (request here
 	 * includes inserts). */
@@ -377,6 +392,31 @@ public abstract class ClientRequester {
 		}
 		if(persistent())
 			container.deactivate(requests, 1);
+	}
+
+	/** FIXME get rid. */
+	public static void checkAll(ObjectContainer container,
+			ClientContext clientContext) {
+		ObjectSet<ClientRequester> requesters = container.query(ClientRequester.class);
+		for(ClientRequester req : requesters) {
+			try {
+				System.out.println("Checking "+req);
+				if(req.isCancelled() || req.isFinished()) {
+					System.out.println("Cancelled or finished");
+				} else {
+					System.out.println("Checking for broken client: "+req);
+					if(!req.checkForBrokenClient(container, clientContext))
+						System.out.println("Request is clean.");
+					else {
+						WrapperManager.signalStarting(5*60*1000);
+						container.commit();
+					}
+				}
+			} catch (Throwable t) {
+				Logger.error(ClientRequester.class, "Caught error while checking on startup", t);
+			}
+			container.deactivate(req, 1);
+		}
 	}
 
 }

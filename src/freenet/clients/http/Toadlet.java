@@ -67,6 +67,9 @@ public abstract class Toadlet {
 
 	private String supportedMethodsCache;
 
+	/**
+	 * TODO: not used?!
+	 */
 	private void handleUnhandledRequest(URI uri, Bucket data, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
 		PageNode page = toadletContext.getPageMaker().getPageNode(l10n("notSupportedTitle"), toadletContext);
 		HTMLNode pageNode = page.outer;
@@ -135,6 +138,7 @@ public abstract class Toadlet {
 	FetchResult fetch(FreenetURI uri, long maxSize, RequestClient clientContext, FetchContext fctx) throws FetchException {
 		// For now, just run it blocking.
 		FetchWaiter fw = new FetchWaiter();
+		@SuppressWarnings("unused")
 		ClientGetter getter = client.fetch(uri, 1, clientContext, fw, fctx);
 		return fw.waitForCompletion();
 
@@ -155,10 +159,9 @@ public abstract class Toadlet {
 		return client.insert(insert, getCHKOnly, filenameHint);
 	}
 
-	/*
-	 * Client calls to write a reply to the HTTP requestor.
+	/**
+	 * Client calls to write a reply to the HTTP requester.
 	 */
-	
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, byte[] data, int offset, int length) throws ToadletContextClosedException, IOException {
 		ctx.sendReplyHeaders(code, desc, null, mimeType, length);
 		ctx.writeData(data, offset, length);
@@ -213,6 +216,18 @@ public abstract class Toadlet {
 		context.writeData(buffer, startIndex, length);
 	}
 	
+	/**
+	 * Do a permanent redirect (HTTP Status 301).
+	 *
+	 * This will write rudimentary HTML, but typically browsers will follow
+	 * the Location header.
+	 * TODO Refactor with writeTemporaryRedirect.
+	 * @param ctx
+	 * @param msg
+	 * @param location
+	 * @throws ToadletContextClosedException
+	 * @throws IOException
+	 */
 	static void writePermanentRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
 		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
 		mvt.put("Location", location);
@@ -232,6 +247,18 @@ public abstract class Toadlet {
 		ctx.writeData(buf, 0, buf.length);
 	}
 	
+	/**
+	 * Do a temporary redirect (HTTP Status 302).
+	 *
+	 * This will write rudimentary HTML, but typically browsers will follow
+	 * the Location header.
+	 * TODO Refactor with writePermanentRedirect.
+	 * @param ctx
+	 * @param msg Message to be used in HTML (not visible in general).
+	 * @param location New location (URL)
+	 * @throws ToadletContextClosedException
+	 * @throws IOException
+	 */
 	protected void writeTemporaryRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
 		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
 		mvt.put("Location", location);

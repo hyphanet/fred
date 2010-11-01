@@ -34,7 +34,7 @@ public class TrivialTicker implements Ticker {
 		TimerTask t = new TimerTask() {
 			@Override
 			public void run() {
-				synchronized(this) {
+				synchronized(TrivialTicker.this) {
 					jobs.remove(job); // We must do this before job.run() in case the job re-schedules itself.
 				}
 				
@@ -61,7 +61,7 @@ public class TrivialTicker implements Ticker {
 
 			@Override
 			public void run() {
-				synchronized(this) {
+				synchronized(TrivialTicker.this) {
 					jobs.remove(job); // We must do this before job.run() in case the job re-schedules itself.
 				}
 				

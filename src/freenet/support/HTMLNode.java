@@ -13,8 +13,16 @@ public class HTMLNode implements XMLCharacterClasses {
 	
 	private static final Pattern namePattern = Pattern.compile("^[" + NAME + "]*$");
 	private static final Pattern simpleNamePattern = Pattern.compile("^[A-Za-z][A-Za-z0-9]*$");
+	public static HTMLNode STRONG = new HTMLNode("strong").setReadOnly();
 
 	protected final String name;
+	
+	private boolean readOnly;
+	
+	public HTMLNode setReadOnly() {
+		readOnly = true;
+		return this;
+	}
 
 	/** Text to be inserted between tags, or possibly raw HTML. Only non-null if name
 	 * is "#" (= text) or "%" (= raw HTML). Otherwise the constructor will allocate a
@@ -45,6 +53,21 @@ public class HTMLNode implements XMLCharacterClasses {
 		this(name, attributeNames, attributeValues, null);
 	}
 
+	protected HTMLNode(HTMLNode node, boolean clearReadOnly) {
+		attributes.putAll(node.attributes);
+		children.addAll(node.children);
+		content = node.content;
+		name = node.name;
+		if(clearReadOnly)
+			readOnly = false;
+		else
+			readOnly = node.readOnly;
+	}
+	
+	public HTMLNode clone() {
+		return new HTMLNode(this, true);
+	}
+	
 	protected boolean checkNamePattern(String str) {		
 		return simpleNamePattern.matcher(str).matches() || namePattern.matcher(str).matches();
 	}
@@ -80,6 +103,8 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 
 	public void addAttribute(String attributeName, String attributeValue) {
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
 		if (attributeName == null)
 			throw new IllegalArgumentException("Cannot add an attribute with a null name");
 		if (attributeValue == null)
@@ -96,6 +121,8 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 
 	public HTMLNode addChild(HTMLNode childNode) {
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
 		if (childNode == null) throw new NullPointerException();
 		//since an efficient algorithm to check the loop presence 
 		//is not present, at least it checks if we are trying to
@@ -109,6 +136,8 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 	
 	public void addChildren(HTMLNode[] childNodes) {
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
 		for (int i = 0, c = childNodes.length; i < c; i++) {
 			addChild(childNodes[i]);
 		}
@@ -239,6 +268,8 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 	
 	public void setContent(String newContent){
+		if(readOnly)
+			throw new IllegalArgumentException("Read only");
 		content=newContent;
 	}
 	
@@ -278,6 +309,26 @@ public class HTMLNode implements XMLCharacterClasses {
 			return children.get(0).generate(tagBuffer);
 		}
 
+	}
+
+	public static HTMLNode link(String path) {
+		return new HTMLNode("a", "href", path);
+	}
+
+	public static HTMLNode text(String text) {
+		return new HTMLNode("#", text);
+	}
+	
+	public static HTMLNode text(int count) {
+		return new HTMLNode("#", Integer.toString(count));
+	}
+
+	public static HTMLNode text(long count) {
+		return new HTMLNode("#", Long.toString(count));
+	}
+
+	public static HTMLNode text(short count) {
+		return new HTMLNode("#", Short.toString(count));
 	}
 
 }

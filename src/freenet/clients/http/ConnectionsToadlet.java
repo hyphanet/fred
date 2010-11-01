@@ -372,7 +372,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 			if (peerNodeStatuses.length == 0) {
 				NodeL10n.getBase().addL10nSubstitution(peerTableInfoboxContent, "DarknetConnectionsToadlet.noPeersWithHomepageLink", 
-						new String[] { "link", "/link" }, new String[] { "<a href=\"/\">", "</a>" });
+						new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/") });
 			} else {
 				HTMLNode peerForm = null;
 				HTMLNode peerTable;
@@ -668,18 +668,21 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		drawNoderefBox(contentNode, ctx, getNoderef());
 	}
 	
+	static final HTMLNode REF_LINK = HTMLNode.link("myref.fref").setReadOnly();
+	static final HTMLNode REFTEXT_LINK = HTMLNode.link("myref.txt").setReadOnly();
+	
 	static void drawNoderefBox(HTMLNode contentNode, ToadletContext ctx, SimpleFieldSet fs) {
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
 		// FIXME better way to deal with this sort of thing???
 		NodeL10n.getBase().addL10nSubstitution(headerReferenceInfobox, "DarknetConnectionsToadlet.myReferenceHeader",
-				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
-				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" });
+				new String[] { "linkref", "linktext" },
+				new HTMLNode[] { REF_LINK, REFTEXT_LINK });
 		HTMLNode referenceInfoboxContent = referenceInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode warningSentence = referenceInfoboxContent.addChild("p");
 		NodeL10n.getBase().addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
-				new String[] { "bold", "/bold" },
-				new String[] { "<b>", "</b>" });
+				new String[] { "bold" },
+				new HTMLNode[] { HTMLNode.STRONG });
 		referenceInfoboxContent.addChild("pre", "id", "reference", fs.toString() + '\n');
 	}
 

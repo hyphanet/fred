@@ -489,7 +489,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		container.delete(this);
 	}
 
-	public void maybeRemove(RemoveRandom r, ObjectContainer container) {
+	public void maybeRemove(RemoveRandom r, ObjectContainer container, ClientContext context) {
 		int count = 0;
 		int finalSize;
 		synchronized(this) {
@@ -515,16 +515,18 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			// This is not unusual, it was e.g. removed because of being empty.
 			// And it has already been removeFrom()'ed.
 			if(logMINOR) Logger.minor(this, "Not in parent: "+r+" for "+this, new Exception("error"));
+			context.cooldownTracker.removeCachedWakeup(this, persistent, container);
 		} else if(persistent) {
 			container.store(this);
 			r.removeFrom(container);
-			if(finalSize == 0 && parent != null) {
-				boolean active = true;
-				if(persistent) active = container.ext().isActive(parent);
-				if(!active) container.activate(parent, 1);
-				parent.maybeRemove(this, container);
-				if(!active) container.deactivate(parent, 1);
-			}
+		}
+		if(finalSize == 0 && parent != null) {
+			boolean active = true;
+			if(persistent) active = container.ext().isActive(parent);
+			if(!active) container.activate(parent, 1);
+			context.cooldownTracker.removeCachedWakeup(this, persistent, container);
+			parent.maybeRemove(this, container, context);
+			if(!active) container.deactivate(parent, 1);
 		}
 	}
 

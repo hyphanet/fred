@@ -17,6 +17,7 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
+import freenet.io.xfer.BulkTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node.CountedRequests;
 import freenet.node.NodeStats.ByteCountersSnapshot;
@@ -1807,6 +1808,12 @@ public class NodeStats implements Persistable {
 			row.addChild("td", fix3p3pct.format((double)succeeded / total));
 			row.addChild("td", thousandPoint.format(total));
 		}
+		
+		long[] bulkSuccess = BulkTransmitter.transferSuccess();
+		row = list.addChild("tr");
+		row.addChild("td", l10n("bulkSends"));
+		row.addChild("td", fix3p3pct.format(((double)bulkSuccess[1])/((double)bulkSuccess[0])));
+		row.addChild("td", Long.toString(bulkSuccess[0]));
 	}
 
 	/* Total bytes sent by requests and inserts, excluding payload */
@@ -2858,14 +2865,20 @@ public class NodeStats implements Persistable {
 		synchronized(this) {
 			int transfersPerAnnouncement = getTransfersPerAnnounce();
 			int running = runningAnnouncements.size();
-			if(running >= MAX_ANNOUNCEMENTS) return false;
+			if(running >= MAX_ANNOUNCEMENTS) {
+				if(logMINOR) Logger.minor(this, "Too many announcements running: "+running);
+				return false;
+			}
 			// Liability-style limiting as well.
 			int perTransfer = OpennetManager.PADDED_NODEREF_SIZE;
 			// Must all complete in 30 seconds. That is the timeout for one block.
 			int bandwidthIn30Secs = limit * 30;
-			if(perTransfer * transfersPerAnnouncement * running > bandwidthIn30Secs) 
+			if(perTransfer * transfersPerAnnouncement * running > bandwidthIn30Secs) {
+				if(logMINOR) Logger.minor(this, "Can't complete "+running+" announcements in 30 secs");
 				return false;
+			}
 			runningAnnouncements.add(uid);
+			if(logMINOR) Logger.minor(this, "Accepting announcement "+uid);
 			return true;
 		}
 	}
