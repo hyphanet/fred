@@ -483,7 +483,9 @@ public class PeerManager {
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(int i = 0; i < peerList.length; i++) {
-			if(addr.equals(peerList[i].getPeer().getFreenetAddress()))
+			Peer p = peerList[i].getPeer();
+			if(p == null) continue;
+			if(addr.equals(p.getFreenetAddress()))
 				return peerList[i];
 		}
 		return null;
