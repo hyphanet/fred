@@ -321,23 +321,25 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				}
 			}
 		}
-		for(int i=0;i<anonPeers.length;i++) {
-			pn = anonPeers[i];
-			if(pn == opn) continue;
-			if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
-				pn.changedIP(peer);
-				if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-				return;
-			}
-			if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
-				pn.changedIP(peer);
-				if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-				return;
-			}
-			if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
-				pn.changedIP(peer);
-				if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-				return;
+		if(length > HEADERS_LENGTH_MINIMUM) {
+			for(int i=0;i<anonPeers.length;i++) {
+				pn = anonPeers[i];
+				if(pn == opn) continue;
+				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
+					pn.changedIP(peer);
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
+				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
+					pn.changedIP(peer);
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
+				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
+					pn.changedIP(peer);
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
 			}
 		}
 
