@@ -913,10 +913,14 @@ public class NodeStats implements Persistable {
 			
 			if(input)
 				return this.expectedTransfersInCHK * 32768 +
-					this.expectedTransfersInSSK * 2048;
+					this.expectedTransfersInSSK * 2048 +
+					this.expectedTransfersOutCHK * TRANSFER_OUT_IN_OVERHEAD +
+					this.expectedTransfersOutSSK * TRANSFER_OUT_IN_OVERHEAD;
 			else
 				return this.expectedTransfersOutCHK * 32768 +
-					this.expectedTransfersOutSSK * 2048;
+					this.expectedTransfersOutSSK * 2048 +
+					expectedTransfersInCHK * TRANSFER_IN_OUT_OVERHEAD +
+					expectedTransfersInSSK * TRANSFER_IN_OUT_OVERHEAD;
 		}
 
 		/**
@@ -927,6 +931,14 @@ public class NodeStats implements Persistable {
 		}
 
 	}
+	
+	// Look plausible from my node-throttle.dat stats as of 01/11/2010.
+	/** Output bytes required for an inbound transfer. Includes e.g. sending the request
+	 * in the first place. */
+	static final int TRANSFER_IN_OUT_OVERHEAD = 256;
+	/** Input bytes required for an outbound transfer. Includes e.g. sending the insert
+	 * etc. */
+	static final int TRANSFER_OUT_IN_OVERHEAD = 256;
 	
 	static class RejectReason {
 		public final String name;
