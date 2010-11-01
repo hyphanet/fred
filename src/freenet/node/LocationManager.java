@@ -147,11 +147,11 @@ public class LocationManager implements ByteCounter {
 				return;
 			}
 
-			int numPeers=node.getMaxOpennetPeers();
+			int numPeers=opennet.getNumberOfConnectedPeersToAimIncludingDarknet();
 			if (numPeers<1)
 				return;
 			if (numPeers>12) {
-				//@bug: getMaxOpennetPeers() is not the correct function, it returns 40 when target should be 12.
+				//@bug: until better tested, cap at twelve slots
 				numPeers=12;
 			}
 			SmallWorldLinkModel model=new SmallWorldLinkModel(numPeers);
