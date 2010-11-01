@@ -912,13 +912,13 @@ public class NodeStats implements Persistable {
 				ByteCountersSnapshot byteCountersSent, boolean input) {
 			
 			if(input)
-				return this.expectedTransfersInCHK * 32768 +
-					this.expectedTransfersInSSK * 2048 +
+				return this.expectedTransfersInCHK * (32768+256) +
+					this.expectedTransfersInSSK * (2048+256) +
 					this.expectedTransfersOutCHK * TRANSFER_OUT_IN_OVERHEAD +
 					this.expectedTransfersOutSSK * TRANSFER_OUT_IN_OVERHEAD;
 			else
-				return this.expectedTransfersOutCHK * 32768 +
-					this.expectedTransfersOutSSK * 2048 +
+				return this.expectedTransfersOutCHK * (32768+256) +
+					this.expectedTransfersOutSSK * (2048+256) +
 					expectedTransfersInCHK * TRANSFER_IN_OUT_OVERHEAD +
 					expectedTransfersInSSK * TRANSFER_IN_OUT_OVERHEAD;
 		}
