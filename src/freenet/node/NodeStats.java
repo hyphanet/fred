@@ -72,7 +72,7 @@ public class NodeStats implements Persistable {
 	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
 	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY*2;
 	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
-	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD = DEFAULT_MAX_PING_TIME*2;
+	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD = DEFAULT_MAX_PING_TIME;
 	/** How long we're over the bwlimitDelayTime threshold before we alert (in milliseconds)*/
 	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
 	/** How long we're over the nodeAveragePingTime threshold before we alert (in milliseconds)*/
