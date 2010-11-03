@@ -34,7 +34,7 @@ public interface BlockSet {
 	 * @return A set of the keys of the blocks in the BlockSet. Not guaranteed to be
 	 * kept up to date. Read only.
 	 */
-	public Set keys();
+	public Set<Key> keys();
 
 	/** Get a high level block, given a high level key */
 	public ClientKeyBlock get(ClientKey key);

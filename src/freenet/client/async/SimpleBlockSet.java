@@ -29,7 +29,7 @@ public class SimpleBlockSet implements BlockSet {
 		return blocksByKey.get(key);
 	}
 
-	public synchronized Set keys() {
+	public synchronized Set<Key> keys() {
 		return blocksByKey.keySet();
 	}
 
