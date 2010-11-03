@@ -117,6 +117,11 @@ public class StatisticsToadlet extends Toadlet {
 
 		node.clientCore.bandwidthStatsPutter.updateData();
 
+		HTMLNode pageNode;
+		
+		// Synchronize to avoid problems with DecimalFormat.
+		synchronized(this) {
+		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
 		Arrays.sort(peerNodeStatuses, new Comparator<PeerNodeStatus>() {
@@ -148,7 +153,7 @@ public class StatisticsToadlet extends Toadlet {
 
 		final int mode = ctx.getPageMaker().parseMode(request, container);
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
-		HTMLNode pageNode = page.outer;
+		pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
 		// FIXME! We need some nice images
@@ -362,6 +367,8 @@ public class StatisticsToadlet extends Toadlet {
 				HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
 				addCombinedSpecialisation(nodeSpecialisationTable, myLocation, outgoingLocalRequestsCount, outgoingLocalRequestLocation, outgoingRequestsCount, outgoingRequestLocation);
 			}
+		}
+		
 		}
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
