@@ -224,24 +224,16 @@ public class ContainerInserter implements ClientPutState {
 
 		while(true) {
 			try {
-				byte[] buf;
-				try {
-					buf = md.writeToByteArray();
-				} catch (MetadataUnresolvedException e) {
-					try {
-						x = resolve(e, x, bucket, null, null, container, context);
-						continue;
-					} catch (IOException e1) {
-						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
-						return;
-					}
-				} 
-				bucket = context.tempBucketFactory.makeBucket(-1);
-				OutputStream os = bucket.getOutputStream();
-				os.write(buf);
-				os.close();
+				bucket = BucketTools.makeImmutableBucket(context.tempBucketFactory, md.writeToByteArray());
 				containerItems.add(new ContainerElement(bucket, ".metadata"));
 				return;
+			} catch (MetadataUnresolvedException e) {
+				try {
+					x = resolve(e, x, bucket, null, null, container, context);
+				} catch (IOException e1) {
+					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
+					return;
+				}
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
 				return;
