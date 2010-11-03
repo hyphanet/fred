@@ -1012,12 +1012,12 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 					return; // Calling addToQueue now will NPE.
 				}
 			}
-		codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(persistent), this, false, parent.getPriorityClass(), persistent),
-				context.fecQueue, container);
-		if(persistent) {
-			container.deactivate(parent, 1);
-			container.deactivate(context, 1);
-		}
+			codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(persistent), this, false, parent.getPriorityClass(), persistent),
+					context.fecQueue, container);
+			if(persistent) {
+				container.deactivate(parent, 1);
+				container.deactivate(context, 1);
+			}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			onFailed(t, container, context);
