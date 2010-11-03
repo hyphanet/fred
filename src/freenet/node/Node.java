@@ -737,7 +737,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Should inserts ignore low backoff times by default? */
 	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
-	public static int LOW_BACKOFF = 30*1000;
+	public static final int LOW_BACKOFF = 30*1000;
 	/** Should inserts be fairly blatently prioritised on accept by default? */
 	public static boolean PREFER_INSERT_DEFAULT = false;
 	/** Should inserts fork when the HTL reaches cacheability? */

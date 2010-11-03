@@ -217,7 +217,7 @@ public class USKManager implements RequestClient {
 				schedulePrefetchChecker();
 			}
 			temporaryBackgroundFetchersLRU.push(clear, f);
-			while(temporaryBackgroundFetchersLRU.size() > NodeClientCore.maxBackgroundUSKFetchers) {
+			while(temporaryBackgroundFetchersLRU.size() > NodeClientCore.getMaxBackgroundUSKFetchers()) {
 				USKFetcher fetcher = temporaryBackgroundFetchersLRU.popValue();
 				temporaryBackgroundFetchersPrefetch.remove(fetcher.getOriginalUSK().clearCopy());
 				if(!fetcher.hasSubscribers()) {

@@ -568,6 +568,6 @@ public class PproxyToadlet extends Toadlet {
 		return PATH;
 	}
 	
-	public static String PATH = "/plugins/";
+	public static final String PATH = "/plugins/";
 
 }

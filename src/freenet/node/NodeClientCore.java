@@ -151,7 +151,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public transient final ClientContext clientContext;
 
-	public static int maxBackgroundUSKFetchers;	// Client stuff that needs to be configged - FIXME
+	private static int maxBackgroundUSKFetchers;	// Client stuff that needs to be configged - FIXME
 	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
 	static final long MAX_CACHED_ARCHIVE_DATA = 32 * 1024 * 1024; // make a fixed fraction of the store by default? FIXME
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024 * 1024; // arbitrary... FIXME
@@ -1857,6 +1857,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public synchronized void setCommitThisTransaction() {
 		commitThisTransaction = true;
+	}
+
+	public static int getMaxBackgroundUSKFetchers() {
+		return maxBackgroundUSKFetchers;
 	}
 
 }

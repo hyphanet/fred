@@ -7,7 +7,7 @@ import freenet.support.SimpleFieldSet;
 
 public class SendingToNetworkMessage extends FCPMessage {
 
-	public static String NAME = "SendingToNetwork";
+	public static final String NAME = "SendingToNetwork";
 	final String identifier;
 	final boolean global;
 	

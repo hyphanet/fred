@@ -745,8 +745,8 @@ public class TextModeClientInterface implements Runnable {
                 outsb.append(fs.toString());
             }
             outsb.append(n.getStatus());
-            if(Version.buildNumber()<Version.highestSeenBuild){
-                outsb.append("The latest version is : ").append(Version.highestSeenBuild);
+            if(Version.buildNumber()<Version.getHighestSeenBuild()){
+                outsb.append("The latest version is : ").append(Version.getHighestSeenBuild());
             }
         } else if(uline.startsWith("ADDPEER:") || uline.startsWith("CONNECT:")) {
             String key = null;

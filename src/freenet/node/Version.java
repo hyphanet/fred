@@ -119,7 +119,7 @@ public class Version {
 	}
 
 	/** The highest reported build of fred */
-	public static int highestSeenBuild = buildNumber;
+	private static int highestSeenBuild = buildNumber;
 
 	/** The current stable tree version */
 	public static final String stableNodeVersion = "0.7";
@@ -407,6 +407,10 @@ public class Version {
 				highestSeenBuild = buildNo;
 			}
 		}
+	}
+	
+	public static final int getHighestSeenBuild() {
+		return highestSeenBuild;
 	}
 
 	/**
