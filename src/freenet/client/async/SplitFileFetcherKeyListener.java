@@ -418,6 +418,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				}, NativeThread.HIGH_PRIORITY, false);
 			} catch (Throwable t) {
 				writingBloomFilter = false;
+				Logger.error(this, "Caught "+t+" writing bloom filter", t);
 			}
 		}
 	}
