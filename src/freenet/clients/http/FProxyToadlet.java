@@ -166,7 +166,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				force = true;
 		}
 
-		Bucket toFree = null;
 		Bucket tmpRange = null;
 		try {
 			if((!force) && (!forceDownload)) {
@@ -286,7 +285,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		catch (HTTPRangeException e) {
 			ctx.sendReplyHeaders(416, "Requested Range Not Satisfiable", null, null, 0);
 		} finally {
-			if(toFree != null && !dontFreeData) toFree.free();
 			if(tmpRange != null) tmpRange.free();
 		}
 	}
