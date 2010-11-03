@@ -660,6 +660,7 @@ public class FailureTable implements OOMHook {
 		}
 	}
 
+	/** @return The lowest HTL at which any peer has requested this key recently */
 	public short minOfferedHTL(Key key, short htl) {
 		FailureTableEntry entry;
 		synchronized(this) {
