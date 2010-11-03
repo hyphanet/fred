@@ -7,6 +7,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.sql.Date;
 import java.text.ParseException;
@@ -89,7 +90,12 @@ public class ImageCreatorToadlet extends Toadlet {
 
 			// Write the data, and send the modification data to let the client cache it
 			Bucket data = ctx.getBucketFactory().makeBucket(-1);
-			ImageIO.write(buffer, "png", data.getOutputStream());
+			OutputStream os = data.getOutputStream();
+			try {
+				ImageIO.write(buffer, "png", os);
+			} finally {
+				os.close();
+			}
 			MultiValueTable<String, String> headers=new MultiValueTable<String, String>();
 			ctx.sendReplyHeaders(200, "OK", headers, "image/png", data.size(), LAST_MODIFIED);
 			ctx.writeData(data);
