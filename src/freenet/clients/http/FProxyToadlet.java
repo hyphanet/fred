@@ -255,7 +255,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					InputStream is = data.getInputStream();
 					OutputStream os = tmpRange.getOutputStream();
 					if (range[0] > 0)
-						is.skip(range[0]);
+						FileUtil.skipFully(is, range[0]);
 					FileUtil.copy(is, os, range[1] - range[0] + 1);
 					os.close();
 					is.close();
