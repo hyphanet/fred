@@ -54,7 +54,7 @@ public interface ToadletContext {
 	void writeData(byte[] data) throws ToadletContextClosedException, IOException;
 
 	/**
-	 * Write data from a bucket. You must send reply headers first.
+	 * Write data from a bucket. You must send reply headers first. We will free the bucket.
 	 */
 	void writeData(Bucket data) throws ToadletContextClosedException, IOException;
 	

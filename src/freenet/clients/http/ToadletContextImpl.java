@@ -642,6 +642,7 @@ public class ToadletContextImpl implements ToadletContext {
 	public void writeData(Bucket data) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		BucketTools.copyTo(data, sockOutputStream, Long.MAX_VALUE);
+		data.free();
 	}
 	
 	public BucketFactory getBucketFactory() {

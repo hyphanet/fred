@@ -166,7 +166,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				force = true;
 		}
 
-		Bucket tmpRange = null;
 		try {
 			if((!force) && (!forceDownload)) {
 				//Horrible hack needed for GWT as it relies on document.write() which is not supported in xhtml
@@ -252,7 +251,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					}
 					InputStream is = null;
 					OutputStream os = null;
-					tmpRange = bucketFactory.makeBucket(range[1] - range[0]);
+					Bucket tmpRange = bucketFactory.makeBucket(range[1] - range[0]);
 					try {
 						is = data.getInputStream();
 						os = tmpRange.getOutputStream();
@@ -284,8 +283,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}*/
 		catch (HTTPRangeException e) {
 			ctx.sendReplyHeaders(416, "Requested Range Not Satisfiable", null, null, 0);
-		} finally {
-			if(tmpRange != null) tmpRange.free();
 		}
 	}
 	
