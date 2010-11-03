@@ -48,9 +48,11 @@ public class BinaryBlobInserter implements ClientPutState {
 
 		BlockSet blocks = new SimpleBlockSet();
 
-		BinaryBlob.readBinaryBlob(dis, blocks, tolerant);
-
-		dis.close();
+		try {
+			BinaryBlob.readBinaryBlob(dis, blocks, tolerant);
+		} finally {
+			dis.close();
+		}
 
 		ArrayList<MySendableInsert> myInserters = new ArrayList<MySendableInsert>();
 		Iterator i = blocks.keys().iterator();
