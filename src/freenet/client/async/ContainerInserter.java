@@ -31,6 +31,7 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 
 /**
  * Insert a bunch of files as single Archive with .metadata
@@ -297,23 +298,29 @@ public class ContainerInserter implements ClientPutState {
 		tarOS.setLongFileMode(TarOutputStream.LONGFILE_GNU);
 		TarEntry ze;
 
-		for(ContainerElement ph : containerItems) {
-			if(logMINOR)
-				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
-			ze = new TarEntry(ph.targetInArchive);
-			ze.setModTime(0);
-			long size = ph.data.size();
-			ze.setSize(size);
-			tarOS.putNextEntry(ze);
-			BucketTools.copyTo(ph.data, tarOS, size);
+		try {
+			
+			for(ContainerElement ph : containerItems) {
+				if(logMINOR)
+					Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
+				ze = new TarEntry(ph.targetInArchive);
+				ze.setModTime(0);
+				long size = ph.data.size();
+				ze.setSize(size);
+				tarOS.putNextEntry(ze);
+				BucketTools.copyTo(ph.data, tarOS, size);
+				tarOS.closeEntry();
+			}
+			
 			tarOS.closeEntry();
+			// Both finish() and close() are necessary.
+			tarOS.finish();
+			tarOS.flush();
+			tarOS.close();
+			tarOS = null;
+		} finally {
+			Closer.close(tarOS);
 		}
-
-		tarOS.closeEntry();
-		// Both finish() and close() are necessary.
-		tarOS.finish();
-		tarOS.flush();
-		tarOS.close();
 		
 		if(logMINOR)
 			Logger.minor(this, "Archive size is "+outputBucket.size());
@@ -328,19 +335,25 @@ public class ContainerInserter implements ClientPutState {
 		ZipOutputStream zos = new ZipOutputStream(os);
 		ZipEntry ze;
 
-		for(ContainerElement ph: containerItems) {
-			ze = new ZipEntry(ph.targetInArchive);
-			ze.setTime(0);
-			zos.putNextEntry(ze);
-			BucketTools.copyTo(ph.data, zos, ph.data.size());
+		try {
+			
+			for(ContainerElement ph: containerItems) {
+				ze = new ZipEntry(ph.targetInArchive);
+				ze.setTime(0);
+				zos.putNextEntry(ze);
+				BucketTools.copyTo(ph.data, zos, ph.data.size());
+				zos.closeEntry();
+			}
+			
 			zos.closeEntry();
+			// Both finish() and close() are necessary.
+			zos.finish();
+			zos.flush();
+			zos.close();
+			zos = null;
+		} finally {
+			Closer.close(zos);
 		}
-
-		zos.closeEntry();
-		// Both finish() and close() are necessary.
-		zos.finish();
-		zos.flush();
-		zos.close();
 		
 		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
 	}
