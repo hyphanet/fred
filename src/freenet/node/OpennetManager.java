@@ -415,7 +415,7 @@ public class OpennetManager {
 		synchronized(this) {
 			int maxPeers = getNumberOfConnectedPeersToAim();
 			int size = getSize();
-			if(size == maxPeers && nodeToAddNow == null && canAdd) {
+			if(size == maxPeers && nodeToAddNow == null) {
 				// Allow an offer to be predicated on throwing out a connected node,
 				// provided that we meet the other criteria e.g. time since last added,
 				// node isn't too new.
