@@ -230,6 +230,10 @@ class FailureTableEntry implements TimedOutNodesList {
 				requestedBootIDs[i] = requestedFrom.getBootID();
 				requestedTimes[i] = now;
 				ret = i;
+			} else if(got != null && got.getBootID() != requestedBootIDs[i] ||
+					now - requestedTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
+				requestedNodes[i] = null;
+				got = null;
 			}
 			if(got == null)
 				nulls++;
