@@ -573,15 +573,17 @@ outerZIP:		while(true) {
 	private int resolve(MetadataUnresolvedException e, int x, Bucket bucket, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws IOException, ArchiveFailureException {
 		Metadata[] m = e.mustResolve;
 		for(int i=0;i<m.length;i++) {
+			byte[] buf;
 			try {
-				byte[] buf = m[i].writeToByteArray();
-				OutputStream os = bucket.getOutputStream();
-				os.write(buf);
-				os.close();
-				addStoreElement(ctx, key, ".metadata-"+(x++), bucket, gotElement, element2, callback, container, context);
+				buf = m[i].writeToByteArray();
 			} catch (MetadataUnresolvedException e1) {
 				x = resolve(e, x, bucket, ctx, key, gotElement, element2, callback, container, context);
+				continue;
 			}
+			OutputStream os = bucket.getOutputStream();
+			os.write(buf);
+			os.close();
+			addStoreElement(ctx, key, ".metadata-"+(x++), bucket, gotElement, element2, callback, container, context);
 		}
 		return x;
 	}
