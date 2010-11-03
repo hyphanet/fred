@@ -246,11 +246,7 @@ public class ContainerInserter implements ClientPutState {
 		Metadata[] m = e.mustResolve;
 		for(int i=0;i<m.length;i++) {
 			try {
-				byte[] buf = m[i].writeToByteArray();
-				Bucket bucket = context.tempBucketFactory.makeBucket(buf.length);
-				OutputStream os = bucket.getOutputStream();
-				os.write(buf);
-				os.close();
+				Bucket bucket = BucketTools.makeImmutableBucket(context.tempBucketFactory, m[i].writeToByteArray());
 				String nameInArchive = ".metadata-"+(x++);
 				containerItems.add(new ContainerElement(bucket, nameInArchive));
 				m[i].resolve(nameInArchive);
