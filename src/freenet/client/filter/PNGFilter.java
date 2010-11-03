@@ -97,10 +97,8 @@ public class PNGFilter implements ContentDataFilter {
 				throw new DataFilterException(title, title, message);
 			}
 
-			ByteArrayOutputStream baos = null;
-			DataOutputStream dos = null;
-			baos = new ByteArrayOutputStream();
-			dos = new DataOutputStream(baos);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream dos = new DataOutputStream(baos);
 			output.write(pngHeader);
 			if (logMINOR)
 				Logger.minor(this, "Writing the PNG header to the output bucket");
