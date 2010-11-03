@@ -461,6 +461,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * Called by RequestStarter to find a request to run.
 	 */
 	public ChosenBlock grabRequest() {
+		boolean needsRefill = true;
 		while(true) {
 			PersistentChosenRequest reqGroup = null;
 			synchronized(starterQueue) {
@@ -493,11 +494,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 				return getBetterNonPersistentRequest(Short.MAX_VALUE);
 			}
 			ChosenBlock block;
-			int finalLength = 0;
 			synchronized(starterQueue) {
 				block = reqGroup.grabNotStarted(clientContext.fastWeakRandom, this);
 				if(block == null) {
 					if(logMINOR) Logger.minor(this, "No block found on "+reqGroup);
+					int finalLength = 0;
 					for(int i=0;i<starterQueue.size();i++) {
 						if(starterQueue.get(i) == reqGroup) {
 							starterQueue.remove(i);
@@ -508,6 +509,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							finalLength += starterQueue.get(i).sizeNotStarted();
 						}
 					}
+					needsRefill = finalLength < MAX_STARTER_QUEUE_SIZE;
 					continue;
 				} else {
 					// Prevent this request being selected, even though we may remove the PCR from the starter queue
@@ -516,7 +518,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						runningPersistentRequests.add(reqGroup.request);
 				}
 			}
-			if(finalLength < MAX_STARTER_QUEUE_SIZE)
+			if(needsRefill)
 				queueFillRequestStarterQueue();
 			if(logMINOR)
 				Logger.minor(this, "grabRequest() returning "+block+" for "+reqGroup);
