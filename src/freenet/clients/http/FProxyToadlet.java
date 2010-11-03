@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -350,15 +351,15 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	 * REDFLAG Expect future security issues! 
 	 * @throws IOException */
 	private static boolean horribleEvilHack(Bucket data) throws IOException {
-		InputStream is = null;
+		DataInputStream is = null;
 		try {
 			int sz = (int) Math.min(data.size(), 512);
 			if(sz == 0)
 				return false;
-			is = data.getInputStream();
+			is = new DataInputStream(data.getInputStream());
 			byte[] buf = new byte[sz];
 			// FIXME Fortunately firefox doesn't detect RSS in UTF16 etc ... yet
-			is.read(buf);
+			is.readFully(buf);
 			/**
 		 * Look for any of the following strings:
 		 * <rss
