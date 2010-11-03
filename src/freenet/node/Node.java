@@ -2769,12 +2769,15 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				fos.close();
 				readAdapter.close();
-				tempFile.renameTo(dbFile);
-				dbFileCrypt.delete();
-				database = Db4o.openFile(dbConfig, dbFile.toString());
-				System.err.println("Completed decrypting the old node.db4o.crypt.");
-				synchronized(this) {
-					databaseEncrypted = false;
+				if(FileUtil.renameTo(tempFile, dbFile)) {
+					dbFileCrypt.delete();
+					database = Db4o.openFile(dbConfig, dbFile.toString());
+					System.err.println("Completed decrypting the old node.db4o.crypt.");
+					synchronized(this) {
+						databaseEncrypted = false;
+					}
+				} else {
+					throw new IOException("Unable to decrypt the old node.db4o.crypt because cannot rename database file");
 				}
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
 				// Migrate the unencrypted file to ciphertext.
@@ -2811,12 +2814,15 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				fis.close();
 				readAdapter.close();
-				tempFile.renameTo(dbFileCrypt);
-				FileUtil.secureDelete(dbFile, random);
-				System.err.println("Completed encrypting the old node.db4o.");
-				database = openCryptDatabase(dbConfig, databaseKey);
-				synchronized(this) {
-					databaseEncrypted = true;
+				if(FileUtil.renameTo(tempFile, dbFileCrypt)) {
+					FileUtil.secureDelete(dbFile, random);
+					System.err.println("Completed encrypting the old node.db4o.");
+					database = openCryptDatabase(dbConfig, databaseKey);
+					synchronized(this) {
+						databaseEncrypted = true;
+					}
+				} else {
+					throw new IOException("Unable to encrypt the old node.db4o.crypt because cannot rename database file");
 				}
 			} else if((dbFileCrypt.exists() && !dbFile.exists()) ||
 					(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.NORMAL) ||
