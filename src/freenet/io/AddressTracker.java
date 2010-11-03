@@ -35,6 +35,7 @@ import freenet.node.FSParseException;
 import freenet.node.ProgramDirectory;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileUtil;
 
 /**
  * Track packet traffic to/from specific peers and IP addresses, in order to
@@ -289,7 +290,6 @@ public class AddressTracker {
 		if(isBroken()) return;
 		File data = runDir.file("packets-"+port+".dat");
 		File dataBak = runDir.file("packets-"+port+".bak");
-		data.delete();
 		dataBak.delete();
 		FileOutputStream fos = null;
 		try {
@@ -302,7 +302,7 @@ public class AddressTracker {
 			bw.flush();
 			bw.close();
 			fos = null;
-			dataBak.renameTo(data);
+			FileUtil.renameTo(dataBak, data);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store packet tracker to disk");
 			return;
