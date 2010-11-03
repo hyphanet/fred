@@ -955,9 +955,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Bucket outputBucket = context.getBucketFactory(persistent()).makeBucket(baseMetadata.dataLength());
 				// TODO: try both ? - maybe not worth it
 				archiveType = ARCHIVE_TYPE.getDefault();
+				OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
 				String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
-					createTarBucket(bucket, outputBucket, container) :
-					createZipBucket(bucket, outputBucket, container));
+					createTarBucket(bucket, os, container) :
+					createZipBucket(bucket, os, container));
+				os.flush();
+				os.close();
+				if(logMINOR)
+					Logger.minor(this, "Archive size is "+outputBucket.size());
 				bucket.free();
 				if(persistent()) bucket.removeFrom(container);
 
@@ -1013,10 +1018,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
-	private String createTarBucket(Bucket inputBucket, Bucket outputBucket, ObjectContainer container) throws IOException {
+	private String createTarBucket(Bucket inputBucket, OutputStream os, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 
-		OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
 		TarOutputStream tarOS = new TarOutputStream(os);
 		tarOS.setLongFileMode(TarOutputStream.LONGFILE_GNU);
 		TarEntry ze;
@@ -1050,19 +1054,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		tarOS.closeEntry();
 		// Both finish() and close() are necessary.
 		tarOS.finish();
-		tarOS.flush();
-		tarOS.close();
-
-		if(logMINOR)
-			Logger.minor(this, "Archive size is "+outputBucket.size());
 
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}
 
-	private String createZipBucket(Bucket inputBucket, Bucket outputBucket, ObjectContainer container) throws IOException {
+	private String createZipBucket(Bucket inputBucket, OutputStream os, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
 
-		OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
 		ZipOutputStream zos = new ZipOutputStream(os);
 		ZipEntry ze;
 
@@ -1088,8 +1086,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		zos.closeEntry();
 		// Both finish() and close() are necessary.
 		zos.finish();
-		zos.flush();
-		zos.close();
 
 		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
 	}
