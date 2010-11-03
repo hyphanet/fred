@@ -324,15 +324,13 @@ public class FilterUtils {
 			String[] shapeParts=value.substring(5,value.length()-1).split(",");
 			if(shapeParts.length==4)
 			{
-				boolean isValidShapeParts=true;
 				for(String s : shapeParts)
 				{
 					s = s.trim();
 					if(!(s.equalsIgnoreCase("auto") || isLength(s, false)))
 						return false;
 				}
-				if(isValidShapeParts)
-					return true;
+				return true;
 			}
 		}
 		return false;
