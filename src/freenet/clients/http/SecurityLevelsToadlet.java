@@ -86,13 +86,11 @@ public class SecurityLevelsToadlet extends Toadlet {
 					if(!request.isPartSet(confirm) && !request.isPartSet(tryConfirm)) {
 						HTMLNode warning = node.securityLevels.getConfirmWarning(newThreatLevel, confirm);
 						if(warning != null) {
-							if(pageNode == null) {
-								PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
-								pageNode = page.outer;
-								content = page.content;
-								formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
-								ul = formNode.addChild("ul", "class", "config");
-							}
+							PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+							pageNode = page.outer;
+							content = page.content;
+							formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
+							ul = formNode.addChild("ul", "class", "config");
 							HTMLNode seclevelGroup = ul.addChild("li");
 
 							seclevelGroup.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", configName, networkThreatLevel });
