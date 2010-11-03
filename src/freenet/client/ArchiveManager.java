@@ -399,19 +399,23 @@ outerTAR:		while(true) {
 					Bucket output = tempBucketFactory.makeBucket(size);
 					OutputStream out = output.getOutputStream();
 
-					int readBytes;
-					while((readBytes = tarIS.read(buf)) > 0) {
-						out.write(buf, 0, readBytes);
-						readBytes += realLen;
-						if(readBytes > maxArchivedFileSize) {
-							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize, true);
-							out.close();
-							output.free();
-							continue outerTAR;
+					try {
+						int readBytes;
+						while((readBytes = tarIS.read(buf)) > 0) {
+							out.write(buf, 0, readBytes);
+							readBytes += realLen;
+							if(readBytes > maxArchivedFileSize) {
+								addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize, true);
+								out.close();
+								out = null;
+								output.free();
+								continue outerTAR;
+							}
 						}
+						
+					} finally {
+						if(out != null) out.close();
 					}
-
-					out.close();
 					if(size <= maxArchivedFileSize) {
 						addStoreElement(ctx, key, name, output, gotElement, element, callback, container, context);
 						names.add(name);
@@ -474,20 +478,24 @@ outerZIP:		while(true) {
 					long realLen = 0;
 					Bucket output = tempBucketFactory.makeBucket(size);
 					OutputStream out = output.getOutputStream();
-
-					int readBytes;
-					while((readBytes = zis.read(buf)) > 0) {
-						out.write(buf, 0, readBytes);
-						readBytes += realLen;
-						if(readBytes > maxArchivedFileSize) {
-							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize, true);
-							out.close();
-							output.free();
-							continue outerZIP;
+					try {
+						
+						int readBytes;
+						while((readBytes = zis.read(buf)) > 0) {
+							out.write(buf, 0, readBytes);
+							readBytes += realLen;
+							if(readBytes > maxArchivedFileSize) {
+								addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize, true);
+								out.close();
+								out = null;
+								output.free();
+								continue outerZIP;
+							}
 						}
+						
+					} finally {
+						if(out != null) out.close();
 					}
-
-					out.close();
 					if(size <= maxArchivedFileSize) {
 						addStoreElement(ctx, key, name, output, gotElement, element, callback, container, context);
 						names.add(name);
