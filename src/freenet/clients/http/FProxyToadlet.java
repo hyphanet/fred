@@ -251,14 +251,24 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					if (range[1] == -1 || range[1] >= data.size()) {
 						range[1] = data.size() - 1;
 					}
+					InputStream is = null;
+					OutputStream os = null;
 					tmpRange = bucketFactory.makeBucket(range[1] - range[0]);
-					InputStream is = data.getInputStream();
-					OutputStream os = tmpRange.getOutputStream();
-					if (range[0] > 0)
-						is.skip(range[0]);
-					FileUtil.copy(is, os, range[1] - range[0] + 1);
-					os.close();
-					is.close();
+					try {
+						is = data.getInputStream();
+						os = tmpRange.getOutputStream();
+						if (range[0] > 0)
+							is.skip(range[0]);
+						FileUtil.copy(is, os, range[1] - range[0] + 1);
+						os.close();
+						os = null;
+						is.close();
+						is = null;
+						// FIXME catch IOException here and tell the user there is a problem instead of just closing the connection.
+					} finally {
+						Closer.close(is);
+						Closer.close(os);
+					}
 					MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
 					retHdr.put("Content-Range", "bytes " + range[0] + "-" + range[1] + "/" + data.size());
 					context.sendReplyHeaders(206, "Partial content", retHdr, mimeType, tmpRange.size());

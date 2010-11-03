@@ -318,8 +318,9 @@ public class ArchiveManager {
 				context.mainExecutor.execute(new Runnable() {
 
 					public void run() {
+						InputStream is = null;
 						try {
-							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(data.getInputStream(), pos, data.size(), expectedSize);
+							Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(is = data.getInputStream(), pos, data.size(), expectedSize);
 						} catch (IOException e) {
 							Logger.error(this, "Failed to decompress archive: "+e, e);
 							wrapper.set(e);
@@ -332,6 +333,7 @@ public class ArchiveManager {
 							} catch (IOException e) {
 								Logger.error(this, "Failed to close PipedOutputStream: "+e, e);
 							}
+							Closer.close(is);
 						}
 					}
 					
