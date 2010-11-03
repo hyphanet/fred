@@ -627,12 +627,8 @@ public class Metadata implements Cloneable {
 					throw new MetadataParseException("Impossibly long manifest entry: "+len+" - metadata size "+length);
 				byte[] data = new byte[len];
 				dis.readFully(data);
-				try {
-					Metadata m = Metadata.construct(data);
-					manifestEntries.put(name, m);
-				} catch (Throwable t) {
-					Logger.error(this, "Could not parse sub-manifest: "+t, t);
-				}
+				Metadata m = Metadata.construct(data);
+				manifestEntries.put(name, m);
 			}
 			if(logMINOR) Logger.minor(this, "End of manifest"); // Make it easy to search for it!
 		}
