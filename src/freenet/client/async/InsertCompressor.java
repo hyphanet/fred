@@ -25,6 +25,7 @@ import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketChainBucketFactory;
+import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
 /**
@@ -162,27 +163,31 @@ public class InsertCompressor implements CompressJob {
 						}
 					}
 
-					InputStream is = origData.getInputStream();
-					result = bucketFactory2.makeBucket(-1);
-					OutputStream os = result.getOutputStream();
+					InputStream is = null;
+					OutputStream os = null;
 					MultiHashInputStream hasher = null;
-					long maxOutputSize = bestCompressedDataSize;
-					if(first && generateHashes != 0) {
-						if(logMINOR) Logger.minor(this, "Generating hashes: "+generateHashes);
-						is = hasher = new MultiHashInputStream(is, generateHashes);
-						maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
-					}
-					first = false;
 					try {
-						comp.compress(is, os, origSize, maxOutputSize);
-					} catch (RuntimeException e) {
-						// ArithmeticException has been seen in bzip2 codec.
-						Logger.error(this, "Compression failed with codec "+comp+" : "+e, e);
-						// Try the next one
-						continue;
+						is = origData.getInputStream();
+						result = bucketFactory2.makeBucket(-1);
+						os = result.getOutputStream();
+						long maxOutputSize = bestCompressedDataSize;
+						if(first && generateHashes != 0) {
+							if(logMINOR) Logger.minor(this, "Generating hashes: "+generateHashes);
+							is = hasher = new MultiHashInputStream(is, generateHashes);
+							maxOutputSize = Long.MAX_VALUE; // Want to run it to the end anyway to get hashes. Fortunately the first hasher is always the fastest.
+						}
+						first = false;
+						try {
+							comp.compress(is, os, origSize, maxOutputSize);
+						} catch (RuntimeException e) {
+							// ArithmeticException has been seen in bzip2 codec.
+							Logger.error(this, "Compression failed with codec "+comp+" : "+e, e);
+							// Try the next one
+							continue;
+						}
 					} finally {
-						is.close();
-						os.close();
+						Closer.close(is);
+						Closer.close(os);
 					}
 					long resultSize = result.size();
 					if(hasher != null) hashes = hasher.getResults();
