@@ -1167,10 +1167,6 @@ class CSSTokenizerFilter {
 
 		// Parse but don't tokenise.
 
-		int plusIndex,gtIndex,spaceIndex;
-		plusIndex = Integer.MAX_VALUE;
-		gtIndex = Integer.MAX_VALUE;
-		spaceIndex = Integer.MAX_VALUE;
 		int index = -1;
 		char selector = 0;
 
@@ -1183,19 +1179,16 @@ class CSSTokenizerFilter {
 			c = selectorString.charAt(i);
 			if(c == '+' && quoting == 0 && !escaping) {
 				if(index == -1 || index == i-1 && selector == ' ') {
-					plusIndex = i;
 					index = i;
 					selector = c;
 				}
 			} else if(c == '>' && quoting == 0 && !escaping) {
 				if(index == -1 || index == i-1 && selector == ' ') {
-					gtIndex = i;
 					index = i;
 					selector = c;
 				}
 			} else if(c == ' ' && quoting == 0 && !escaping) {
 				if(index == -1 || index == i-1 && selector == ' ') {
-					spaceIndex = i;
 					index = i;
 					selector = c;
 				}
