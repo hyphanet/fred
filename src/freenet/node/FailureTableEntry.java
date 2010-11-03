@@ -1,6 +1,3 @@
-/**
- * 
- */
 package freenet.node;
 
 import java.lang.ref.WeakReference;
@@ -11,6 +8,21 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
+/** Tracks recent requests for a specific key. If we have recently routed to a specific 
+ * node, and failed, we should not route to it again, unless it is at a higher HTL. 
+ * Different failures cause different timeouts. Similarly we track the nodes that have
+ * requested the key, because for both sets of nodes, when we find the data we offer them
+ * it; this greatly improves latency and efficiency for polling-based tools. For nodes
+ * we have routed to, we keep up to HTL separate entries; for nodes we have received 
+ * requests from, we keep only one entry.
+ * 
+ * SECURITY: All this could be a security risk if not regularly cleared - which it is,
+ * of course: We forget about either kind of node after a fixed period, in 
+ * cleanupRequested(), which the FailureTable calls regularly. Against a near-omnipotent 
+ * attacker able to compromise nodes at will of course it is still a security risk to 
+ * track anything but we have bigger problems at that level.
+ * @author toad
+ */
 class FailureTableEntry implements TimedOutNodesList {
 	
 	/** The key */
