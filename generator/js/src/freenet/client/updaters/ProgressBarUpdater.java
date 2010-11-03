@@ -20,7 +20,7 @@ public class ProgressBarUpdater extends ReplacerUpdater {
 				super.updated(elementId, content);
 			}
 		} catch (Exception e) {
-			FreenetJs.log("Error occured while updating progressbarupdater");
+			FreenetJs.log("Error occured while updating progressbarupdater: "+e);
 		} finally {
 			FreenetJs.log("Progressbar updater done updating");
 		}
