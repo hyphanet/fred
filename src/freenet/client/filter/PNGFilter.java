@@ -82,7 +82,6 @@ public class PNGFilter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs)
 			throws DataFilterException, IOException {
-		InputStream is = null;
 		DataInputStream dis = null;
 		try {
                         long offset = 0;
