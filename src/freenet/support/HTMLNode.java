@@ -127,7 +127,7 @@ public class HTMLNode implements XMLCharacterClasses {
 		//since an efficient algorithm to check the loop presence 
 		//is not present, at least it checks if we are trying to
 		//addChild the node itself as a child
-		if (childNode.equals(this))	
+		if (childNode == this)	
 			throw new IllegalArgumentException("A HTMLNode cannot be child of himself");
 		if (children.contains(childNode))
 			throw new IllegalArgumentException("Cannot add twice the same HTMLNode as child");
