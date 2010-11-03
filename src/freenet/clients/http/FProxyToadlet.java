@@ -450,16 +450,19 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			int len;
 			InputStream strm = getClass().getResourceAsStream("staticfiles/favicon.ico");
 			
-			if (strm == null) {
-				this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathNotFound"));
-				return;
+			try {
+				if (strm == null) {
+					this.sendErrorPage(ctx, 404, l10n("pathNotFoundTitle"), l10n("pathNotFound"));
+					return;
+				}
+				ctx.sendReplyHeaders(200, "OK", null, "image/x-icon", strm.available());
+				
+				while ( (len = strm.read(buf)) > 0) {
+					ctx.writeData(buf, 0, len);
+				}
+			} finally {
+				strm.close();
 			}
-			ctx.sendReplyHeaders(200, "OK", null, "image/x-icon", strm.available());
-			
-			while ( (len = strm.read(buf)) > 0) {
-				ctx.writeData(buf, 0, len);
-			}
-			strm.close();
 			return;
 		} else if(ks.startsWith("/feed/") || ks.equals("/feed")) {
 			//TODO Better way to find the host. Find if https is used?
