@@ -348,7 +348,7 @@ public class PushDataManager {
 						isKeepaliveReceived.put(entry.getKey(), false);
 					}
 				}
-				if (isKeepaliveReceived.size() != 0 && isScheduled == false) {
+				if (isKeepaliveReceived.size() != 0) {
 					if (logMINOR) {
 						Logger.minor(this, "Cleaner is queued(2) time:" + System.currentTimeMillis());
 					}
