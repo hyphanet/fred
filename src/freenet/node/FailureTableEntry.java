@@ -197,6 +197,13 @@ class FailureTableEntry implements TimedOutNodesList {
 		return ret;
 	}
 
+	/** Add a requested from entry to the node. If there already is one reuse it but only
+	 * if the HTL matches. Return the index so we can update timeouts etc.
+	 * @param requestedFrom The node we have routed the request to.
+	 * @param htl The HTL at which the request was sent.
+	 * @param now The current time.
+	 * @return The index of the new or old entry.
+	 */
 	private synchronized int addRequestedFrom(PeerNode requestedFrom, short htl, long now) {
 		if(logMINOR) Logger.minor(this, "Adding requested from: "+requestedFrom+" at "+now);
 		sentTime = now;
