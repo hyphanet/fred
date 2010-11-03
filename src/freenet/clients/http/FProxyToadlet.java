@@ -166,123 +166,120 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				force = true;
 		}
 
-		try {
-			if((!force) && (!forceDownload)) {
-				//Horrible hack needed for GWT as it relies on document.write() which is not supported in xhtml
-				if(mimeType.compareTo("application/xhtml+xml")==0){
-					mimeType="text/html";
+		if((!force) && (!forceDownload)) {
+			//Horrible hack needed for GWT as it relies on document.write() which is not supported in xhtml
+			if(mimeType.compareTo("application/xhtml+xml")==0){
+				mimeType="text/html";
+			}
+			if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
+				PageNode page = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context);
+				HTMLNode pageNode = page.outer;
+				HTMLNode contentNode = page.content;
+				
+				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
+				infobox.addChild("div", "class", "infobox-header", l10n("dangerousRSSSubtitle"));
+				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				infoboxContent.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.dangerousRSS", new String[] { "type" }, new String[] { mimeType }));
+				infoboxContent.addChild("p", l10n("options"));
+				HTMLNode optionList = infoboxContent.addChild("ul");
+				HTMLNode option = optionList.addChild("li");
+				
+				NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openPossRSSAsPlainText", new String[] { "link", "bold" },
+						new HTMLNode[] {
+						HTMLNode.link(basePath+key.toString()+"?type=text/plain&force="+getForceValue(key,now)+extrasNoMime),
+						HTMLNode.STRONG
+				});
+				// 	FIXME: is this safe? See bug #131
+				option = optionList.addChild("li");
+				NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openPossRSSForceDisk", new String[] { "link", "bold" },
+						new HTMLNode[] {
+						HTMLNode.link(basePath+key.toString()+"?forcedownload"+extras),
+						HTMLNode.STRONG
+				});
+				boolean mimeRSS = mimeType.startsWith("application/xml+rss") || mimeType.startsWith("text/xml"); /* blergh! */
+				if(!(mimeRSS || mimeType.startsWith("text/plain"))) {
+					option = optionList.addChild("li");
+					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openRSSForce", new String[] { "link", "bold", "mime" },
+							new HTMLNode[] {
+							HTMLNode.link(basePath+key.toString()+"?force="+getForceValue(key, now)+extras), HTMLNode.STRONG, HTMLNode.text(mimeType) });
 				}
-				if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
-					PageNode page = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context);
-					HTMLNode pageNode = page.outer;
-					HTMLNode contentNode = page.content;
-					
-					HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
-					infobox.addChild("div", "class", "infobox-header", l10n("dangerousRSSSubtitle"));
-					HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-					infoboxContent.addChild("#", NodeL10n.getBase().getString("FProxyToadlet.dangerousRSS", new String[] { "type" }, new String[] { mimeType }));
-					infoboxContent.addChild("p", l10n("options"));
-					HTMLNode optionList = infoboxContent.addChild("ul");
-					HTMLNode option = optionList.addChild("li");
-					
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openPossRSSAsPlainText", new String[] { "link", "bold" },
-							new HTMLNode[] {
-								HTMLNode.link(basePath+key.toString()+"?type=text/plain&force="+getForceValue(key,now)+extrasNoMime),
-								HTMLNode.STRONG
-					});
-					// 	FIXME: is this safe? See bug #131
+				option = optionList.addChild("li");
+				NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openRSSAsRSS", new String[] { "link", "bold" },
+						new HTMLNode[] {
+						HTMLNode.link(basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extrasNoMime),
+						HTMLNode.STRONG });
+				if(referrer != null) {
 					option = optionList.addChild("li");
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openPossRSSForceDisk", new String[] { "link", "bold" },
-							new HTMLNode[] {
-								HTMLNode.link(basePath+key.toString()+"?forcedownload"+extras),
-								HTMLNode.STRONG
-					});
-					boolean mimeRSS = mimeType.startsWith("application/xml+rss") || mimeType.startsWith("text/xml"); /* blergh! */
-					if(!(mimeRSS || mimeType.startsWith("text/plain"))) {
-						option = optionList.addChild("li");
-						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openRSSForce", new String[] { "link", "bold", "mime" },
-								new HTMLNode[] {
-									HTMLNode.link(basePath+key.toString()+"?force="+getForceValue(key, now)+extras), HTMLNode.STRONG, HTMLNode.text(mimeType) });
-					}
-					option = optionList.addChild("li");
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openRSSAsRSS", new String[] { "link", "bold" },
-							new HTMLNode[] {
-								HTMLNode.link(basePath + key.toString() + "?type=application/xml+rss&force=" + getForceValue(key, now)+extrasNoMime),
-								HTMLNode.STRONG });
-					if(referrer != null) {
-						option = optionList.addChild("li");
-						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.backToReferrer", new String[] { "link" },
-								new HTMLNode[] { HTMLNode.link(referrer) });
-					}
-					option = optionList.addChild("li");
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link" },
-							new HTMLNode[] { HTMLNode.link("/") });
-					
-					byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
-					context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
-					context.writeData(pageBytes);
+					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.backToReferrer", new String[] { "link" },
+							new HTMLNode[] { HTMLNode.link(referrer) });
+				}
+				option = optionList.addChild("li");
+				NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link" },
+						new HTMLNode[] { HTMLNode.link("/") });
+				
+				byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
+				context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
+				context.writeData(pageBytes);
+				return;
+			}
+		}
+		
+		if (forceDownload) {
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + '"');
+			headers.put("Cache-Control", "private");
+			headers.put("Content-Transfer-Encoding", "binary");
+			// really the above should be enough, but ...
+			// was application/x-msdownload, but some unix browsers offer to open that in Wine as default!
+			// it is important that this type not be understandable, but application/octet-stream doesn't work.
+			// see http://onjava.com/pub/a/onjava/excerpt/jebp_3/index3.html
+			// Testing on FF3.5.1 shows that application/x-force-download wants to run it in wine, 
+			// whereas application/force-download wants to save it.
+			context.sendReplyHeaders(200, "OK", headers, "application/force-download", data.size());
+			context.writeData(data);
+		} else {
+			// Send the data, intact
+			MultiValueTable<String, String> hdr = context.getHeaders();
+			String rangeStr = hdr.get("range");
+			// was a range request
+			if (rangeStr != null) {
+				
+				long range[];
+				try {
+					range = parseRange(rangeStr);
+				} catch (HTTPRangeException e) {
+					ctx.sendReplyHeaders(416, "Requested Range Not Satisfiable", null, null, 0);
 					return;
 				}
-			}
-			
-			if (forceDownload) {
-				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + '"');
-				headers.put("Cache-Control", "private");
-				headers.put("Content-Transfer-Encoding", "binary");
-				// really the above should be enough, but ...
-				// was application/x-msdownload, but some unix browsers offer to open that in Wine as default!
-				// it is important that this type not be understandable, but application/octet-stream doesn't work.
-				// see http://onjava.com/pub/a/onjava/excerpt/jebp_3/index3.html
-				// Testing on FF3.5.1 shows that application/x-force-download wants to run it in wine, 
-				// whereas application/force-download wants to save it.
-				context.sendReplyHeaders(200, "OK", headers, "application/force-download", data.size());
-				context.writeData(data);
-			} else {
-				// Send the data, intact
-				MultiValueTable<String, String> hdr = context.getHeaders();
-				String rangeStr = hdr.get("range");
-				// was a range request
-				if (rangeStr != null) {
-					
-					long range[] = parseRange(rangeStr);
-					if (range[1] == -1 || range[1] >= data.size()) {
-						range[1] = data.size() - 1;
-					}
-					InputStream is = null;
-					OutputStream os = null;
-					Bucket tmpRange = bucketFactory.makeBucket(range[1] - range[0]);
-					try {
-						is = data.getInputStream();
-						os = tmpRange.getOutputStream();
-						if (range[0] > 0)
-							is.skip(range[0]);
-						FileUtil.copy(is, os, range[1] - range[0] + 1);
-						os.close();
-						os = null;
-						is.close();
-						is = null;
-						// FIXME catch IOException here and tell the user there is a problem instead of just closing the connection.
-					} finally {
-						Closer.close(is);
-						Closer.close(os);
-					}
-					MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
-					retHdr.put("Content-Range", "bytes " + range[0] + "-" + range[1] + "/" + data.size());
-					context.sendReplyHeaders(206, "Partial content", retHdr, mimeType, tmpRange.size());
-					context.writeData(tmpRange);
-				} else {
-					context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
-					context.writeData(data);
+				if (range[1] == -1 || range[1] >= data.size()) {
+					range[1] = data.size() - 1;
 				}
+				InputStream is = null;
+				OutputStream os = null;
+				Bucket tmpRange = bucketFactory.makeBucket(range[1] - range[0]);
+				try {
+					is = data.getInputStream();
+					os = tmpRange.getOutputStream();
+					if (range[0] > 0)
+						is.skip(range[0]);
+					FileUtil.copy(is, os, range[1] - range[0] + 1);
+					os.close();
+					os = null;
+					is.close();
+					is = null;
+					// FIXME catch IOException here and tell the user there is a problem instead of just closing the connection.
+				} finally {
+					Closer.close(is);
+					Closer.close(os);
+				}
+				MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
+				retHdr.put("Content-Range", "bytes " + range[0] + "-" + range[1] + "/" + data.size());
+				context.sendReplyHeaders(206, "Partial content", retHdr, mimeType, tmpRange.size());
+				context.writeData(tmpRange);
+			} else {
+				context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
+				context.writeData(data);
 			}
-		}/* catch (URISyntaxException use1) {*/
-			/* shouldn't happen */
-			/*use1.printStackTrace();
-			Logger.error(FProxyToadlet.class, "could not create URI", use1);
-		}*/
-		catch (HTTPRangeException e) {
-			ctx.sendReplyHeaders(416, "Requested Range Not Satisfiable", null, null, 0);
 		}
 	}
 	
