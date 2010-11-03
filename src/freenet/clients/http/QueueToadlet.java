@@ -34,12 +34,12 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.client.MetadataUnresolvedException;
-import freenet.client.TempFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
@@ -912,15 +912,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					FreenetURI key = new FreenetURI(requestPath);
 
 					/* locate request */
-					TempFetchResult result = fcp.getCompletedRequestBlocking(key);
+					FetchResult result = fcp.getCompletedRequestBlocking(key);
 					if(result != null) {
 						Bucket data = result.asBucket();
 						String mimeType = result.getMimeType();
 						String requestedMimeType = request.getParam("type", null);
 						String forceString = request.getParam("force");
 						FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/downloads/", key, "", "/downloads/", false, ctx, core, false, null);
-						if(result.freeWhenDone)
-							data.free();
 						return;
 					}
 				} catch (MalformedURLException mue1) {

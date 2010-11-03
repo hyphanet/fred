@@ -17,9 +17,9 @@ import com.db4o.ObjectContainer;
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertContext;
-import freenet.client.TempFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
@@ -896,15 +896,15 @@ public class FCPServer implements Runnable {
 
 
 
-	public TempFetchResult getCompletedRequestBlocking(final FreenetURI key) throws DatabaseDisabledException {
+	public FetchResult getCompletedRequestBlocking(final FreenetURI key) throws DatabaseDisabledException {
 		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
 		if(get != null) {
 			// FIXME race condition with free() - arrange refcounting for the data to prevent this
-			return new TempFetchResult(new ClientMetadata(get.getMIMEType(null)), get.getBucket(null), false);
+			return new FetchResult(new ClientMetadata(get.getMIMEType(null)), new NoFreeBucket(get.getBucket(null)));
 		}
 		
 		class OutputWrapper {
-			TempFetchResult result;
+			FetchResult result;
 			boolean done;
 		}
 		
@@ -917,14 +917,13 @@ public class FCPServer implements Runnable {
 			}
 
 			public boolean run(ObjectContainer container, ClientContext context) {
-				TempFetchResult result = null;
+				FetchResult result = null;
 				try {
 					ClientGet get = globalForeverClient.getCompletedRequest(key, container);
 					container.activate(get, 1);
 					if(get != null) {
 						Bucket origData = get.getBucket(container);
 						container.activate(origData, 5);
-						boolean copied = false;
 						Bucket newData;
 						try {
 							newData = origData.createShadow();
@@ -941,9 +940,8 @@ public class FCPServer implements Runnable {
 								result = null;
 								return false;
 							}
-							copied = true;
 						}
-						result = new TempFetchResult(new ClientMetadata(get.getMIMEType(container)), newData, copied);
+						result = new FetchResult(new ClientMetadata(get.getMIMEType(container)), newData);
 					}
 					container.deactivate(get, 1);
 				} finally {
