@@ -89,7 +89,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		if(logMINOR) {
 			Logger.minor(this, "Failed sending request to "+routedTo.shortToString()+" : timeout "+timeout);
 		}
-		int idx = addRequestedFrom(routedTo, now);
+		int idx = addRequestedFrom(routedTo, htl, now);
 		long curTimeoutTime = requestedTimeouts[idx];
 		long newTimeoutTime = now +  timeout;
 		// FIXME htl???
@@ -197,7 +197,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		return ret;
 	}
 
-	private synchronized int addRequestedFrom(PeerNode requestedFrom, long now) {
+	private synchronized int addRequestedFrom(PeerNode requestedFrom, short htl, long now) {
 		if(logMINOR) Logger.minor(this, "Adding requested from: "+requestedFrom+" at "+now);
 		sentTime = now;
 		boolean includedAlready = false;
@@ -205,6 +205,13 @@ class FailureTableEntry implements TimedOutNodesList {
 		int ret = -1;
 		for(int i=0;i<requestedNodes.length;i++) {
 			PeerNode got = requestedNodes[i] == null ? null : requestedNodes[i].get();
+			if(got == requestedFrom && (requestedTimeouts[i] == -1 || requestedTimeoutHTLs[i] == htl)) {
+				includedAlready = true;
+				requestedLocs[i] = requestedFrom.getLocation();
+				requestedBootIDs[i] = requestedFrom.getBootID();
+				requestedTimes[i] = now;
+				ret = i;
+			}
 			if(got == null)
 				nulls++;
 		}
