@@ -229,7 +229,7 @@ public class ContainerInserter implements ClientPutState {
 				return;
 			} catch (MetadataUnresolvedException e) {
 				try {
-					x = resolve(e, x, bucket, null, null, container, context);
+					x = resolve(e, x, null, null, container, context);
 				} catch (IOException e1) {
 					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
 					return;
@@ -242,11 +242,12 @@ public class ContainerInserter implements ClientPutState {
 		
 	}
 
-	private int resolve(MetadataUnresolvedException e, int x, Bucket bucket, FreenetURI key, String element2, ObjectContainer container, ClientContext context) throws IOException {
+	private int resolve(MetadataUnresolvedException e, int x, FreenetURI key, String element2, ObjectContainer container, ClientContext context) throws IOException {
 		Metadata[] m = e.mustResolve;
 		for(int i=0;i<m.length;i++) {
 			try {
 				byte[] buf = m[i].writeToByteArray();
+				Bucket bucket = context.tempBucketFactory.makeBucket(buf.length);
 				OutputStream os = bucket.getOutputStream();
 				os.write(buf);
 				os.close();
@@ -254,7 +255,7 @@ public class ContainerInserter implements ClientPutState {
 				containerItems.add(new ContainerElement(bucket, nameInArchive));
 				m[i].resolve(nameInArchive);
 			} catch (MetadataUnresolvedException e1) {
-				x = resolve(e, x, bucket, key, element2, container, context);
+				x = resolve(e, x, key, element2, container, context);
 			}
 		}
 		return x;
