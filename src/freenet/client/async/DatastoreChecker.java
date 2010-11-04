@@ -545,6 +545,7 @@ public class DatastoreChecker implements PrioRunnable {
 						Logger.error(this, "Multiple DatastoreCheckerItem's for request");
 					}
 				}
+				deleted++;
 				container.delete(item);
 			}
 		}
