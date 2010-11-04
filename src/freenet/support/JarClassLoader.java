@@ -182,6 +182,7 @@ public class JarClassLoader extends ClassLoader implements Closeable {
 			if (pkg == null) {
 				try {
 					Manifest man = tempJarFile.getManifest();
+					if(man == null) throw new IOException();
 					pkg = definePackage(pkgname, man);
 				} catch (IOException e) {
 					pkg = definePackage(pkgname, null, null, null, null, null, null, null);
