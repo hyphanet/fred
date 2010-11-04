@@ -269,6 +269,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					is.close();
 					is = null;
 					// FIXME catch IOException here and tell the user there is a problem instead of just closing the connection.
+					// Currently there is no way to tell the difference between an IOE caused by the connection to the client and an internal one, we just close the connection in both cases.
 				} finally {
 					Closer.close(is);
 					Closer.close(os);
