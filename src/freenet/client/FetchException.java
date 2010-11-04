@@ -133,9 +133,7 @@ public class FetchException extends Exception {
 		newURI = null;
 		initCause(e);
 		expectedSize = -1;
-		if(mode == INTERNAL_ERROR)
-			Logger.error(this, "Internal error: "+this);
-		else if(logMINOR) 
+		if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -147,9 +145,7 @@ public class FetchException extends Exception {
 		initCause(e);
 		newURI = null;
 		expectedSize = -1;
-		if(mode == INTERNAL_ERROR)
-			Logger.error(this, "Internal error: "+this);
-		else if(logMINOR)
+		if(logMINOR)
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
