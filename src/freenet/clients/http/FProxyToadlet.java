@@ -589,7 +589,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				if(fr.getFetchCount() > 1 && !fr.hasWaited() && fr.getFetchCount() > 1 && key.isUSK() && context.uskManager.lookupKnownGood(USK.create(key)) > key.getSuggestedEdition()) {
 					Logger.normal(this, "Loading later edition...");
-					fetchTracker.remove(fetch.progress);
+					fetch.progress.requestImmediateCancel();
 					fr = null;
 					fetch = null;
 					try {
