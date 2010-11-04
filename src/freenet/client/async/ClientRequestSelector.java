@@ -189,8 +189,6 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		return null;
 	}
 	
-	private int ctr;
-	
 	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context, long now) {
 		if(req == null) return null;
 		if(req.isCancelled(container)) {
