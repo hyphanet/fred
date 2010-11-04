@@ -393,8 +393,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(bufProgress == find.length()) return true;
 			} else {
 				bufProgress = 0;
-				if(bufProgress != 0)
-					continue; // check if this byte is equal to the first one
+				// check if this byte is equal to the first one
 			}
 			offset++;
 		}
