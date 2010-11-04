@@ -468,7 +468,7 @@ public class USKManager implements RequestClient {
 			USKCallback[] newCallbacks = new USKCallback[j];
 			System.arraycopy(callbacks, 0, newCallbacks, 0, j);
 			if(newCallbacks.length > 0)
-				subscribersByClearUSK.put(clear, callbacks);
+				subscribersByClearUSK.put(clear, newCallbacks);
 			else{
 				subscribersByClearUSK.remove(clear);
 			}
