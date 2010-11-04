@@ -15,6 +15,8 @@ import com.db4o.query.Query;
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.node.fcp.ListPersistentRequestsMessage.PersistentListJob;
+import freenet.node.fcp.ListPersistentRequestsMessage.TransientListJob;
 import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -133,6 +135,33 @@ public class FCPClient {
 		}
 	}
 
+	public void queuePendingMessagesOnConnectionRestartAsync(FCPConnectionOutputHandler outputHandler, ObjectContainer container, ClientContext context) {
+		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+			PersistentListJob job = new PersistentListJob(this, outputHandler, context) {
+
+				@Override
+				void complete(ObjectContainer container, ClientContext context) {
+					// Do nothing.
+				}
+				
+			};
+			job.run(container, context);
+		} else {
+			TransientListJob job = new TransientListJob(this, outputHandler, context) {
+
+				@Override
+				void complete(ObjectContainer container, ClientContext context) {
+					// Do nothing.
+				}
+				
+			};
+			job.run(container, context);
+
+		}
+	}
+	
+	
+	
 	/**
 	 * Queue any and all pending messages from already completed, unacknowledged, persistent
 	 * requests, to be immediately sent. This happens automatically on startup and hopefully
@@ -352,9 +381,9 @@ public class FCPClient {
 			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
 				if(persistenceType == ClientRequest.PERSIST_REBOOT)
-					server.globalRebootClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container, 0, Integer.MAX_VALUE);
+					server.globalRebootClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.outputHandler, container, server.core.clientContext);
 				else
-					server.globalForeverClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container, 0, Integer.MAX_VALUE);
+					server.globalForeverClient.queuePendingMessagesOnConnectionRestartAsync(connHandler.outputHandler, container, server.core.clientContext);
 			}
 			watchGlobal = true;
 		}
