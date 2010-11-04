@@ -134,8 +134,8 @@ class FailureTableEntry implements TimedOutNodesList {
 				requestorHTLs[i] = origHTL;
 				ret = i;
 				break;
-			} else if(got != null && got.getBootID() != requestorBootIDs[i] ||
-					now - requestorTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
+			} else if(got != null && 
+					(got.getBootID() != requestorBootIDs[i] || now - requestorTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER)) {
 				requestorNodes[i] = null;
 				got = null;
 			}
@@ -230,8 +230,8 @@ class FailureTableEntry implements TimedOutNodesList {
 				requestedBootIDs[i] = requestedFrom.getBootID();
 				requestedTimes[i] = now;
 				ret = i;
-			} else if(got != null && got.getBootID() != requestedBootIDs[i] ||
-					now - requestedTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
+			} else if(got != null && 
+					(got.getBootID() != requestedBootIDs[i] || now - requestedTimes[i] > MAX_TIME_BETWEEN_REQUEST_AND_OFFER)) {
 				requestedNodes[i] = null;
 				got = null;
 			}
