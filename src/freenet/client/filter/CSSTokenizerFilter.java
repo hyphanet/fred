@@ -3797,11 +3797,8 @@ outer:		for(int i=0;i<value.length;i++) {
 				if(!possiblyValidFontWords(fontWords))
 					return false;
 				boolean last = false;
-				ParsedWord w = null;
 				for(int j=i+1;j<value.length;j++) {
 					ParsedWord newWord = value[j];
-					if(w != null) newWord = w;
-					w = null;
 					if (j == value.length-1) last = true;
 					String s1;
 					if(newWord instanceof ParsedIdentifier) {
