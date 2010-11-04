@@ -334,7 +334,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			crossSegments = new SplitFileFetcherCrossSegment[segments.length];
 			int segLen = blocksPerSegment;
 			for(int i=0;i<crossSegments.length;i++) {
-				System.out.println("Allocating blocks (on fetch) for cross segment "+i);
+				Logger.normal(this, "Allocating blocks (on fetch) for cross segment "+i);
 				if(segments.length - i == deductBlocksFromSegments) {
 					segLen--;
 				}
