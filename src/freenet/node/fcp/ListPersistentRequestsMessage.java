@@ -30,7 +30,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		return NAME;
 	}
 	
-	abstract class ListJob implements DBJob {
+	public static abstract class ListJob implements DBJob {
 
 		final FCPClient client;
 		final FCPConnectionOutputHandler outputHandler;
@@ -64,6 +64,9 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 				reschedule(context);
 				return false;
 			}
+			if(noRunning()) {
+				complete(container, context);
+			}
 			while(true) {
 				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, container, progressRunning, 30);
 				if(p <= progressRunning) {
@@ -84,9 +87,13 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		
 		abstract void complete(ObjectContainer container, ClientContext context);
 		
+		protected boolean noRunning() {
+			return false;
+		}
+		
 	};
 	
-	abstract class TransientListJob extends ListJob implements Runnable {
+	public static abstract class TransientListJob extends ListJob implements Runnable {
 
 		final ClientContext context;
 		
@@ -106,7 +113,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		
 	}
 	
-	abstract class PersistentListJob extends ListJob implements DBJob, Runnable {
+	public static abstract class PersistentListJob extends ListJob implements DBJob, Runnable {
 		
 		final ClientContext context;
 		
