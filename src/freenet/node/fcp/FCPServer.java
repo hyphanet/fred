@@ -47,6 +47,7 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
+import freenet.support.io.NoFreeBucket;
 
 /**
  * FCP server process.

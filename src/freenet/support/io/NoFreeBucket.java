@@ -1,4 +1,4 @@
-package freenet.node.fcp;
+package freenet.support.io;
 
 import java.io.IOException;
 import java.io.InputStream;
