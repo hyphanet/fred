@@ -41,22 +41,37 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 			this.outputHandler = outputHandler;
 		}
 		
-		int progress = 0;
+		int progressCompleted = 0;
+		int progressRunning = 0;
 		
 		public boolean run(ObjectContainer container, ClientContext context) {
 			if(container != null) container.activate(client, 1);
-			if(!sentRestartJobs) {
-				client.queuePendingMessagesOnConnectionRestart(outputHandler, container);
-				sentRestartJobs = true;
+			while(!sentRestartJobs) {
+				int p = client.queuePendingMessagesOnConnectionRestart(outputHandler, container, progressCompleted, 30);
+				if(p <= progressCompleted) {
+					sentRestartJobs = true;
+					break;
+				}
+				progressCompleted = p;
+				if(outputHandler.isQueueHalfFull()) {
+					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
+					reschedule(context);
+					return false;
+				}
+			}
+			if(outputHandler.isQueueHalfFull()) {
+				if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
+				reschedule(context);
+				return false;
 			}
 			while(true) {
-				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, container, progress, 30);
-				if(p <= progress) {
+				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, container, progressRunning, 30);
+				if(p <= progressRunning) {
 					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
 					complete(container, context);
 					return false;
 				}
-				progress = p;
+				progressRunning = p;
 				if(outputHandler.isQueueHalfFull()) {
 					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
 					reschedule(context);
@@ -128,7 +143,6 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 				
 				if(handler.getRebootClient().watchGlobal) {
 					FCPClient globalRebootClient = handler.server.globalRebootClient;
-					globalRebootClient.queuePendingMessagesOnConnectionRestart(outputHandler, null);
 					
 					TransientListJob job = new TransientListJob(globalRebootClient, outputHandler, context) {
 

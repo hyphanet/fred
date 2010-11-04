@@ -138,7 +138,7 @@ public class FCPClient {
 	 * requests, to be immediately sent. This happens automatically on startup and hopefully
 	 * will encourage clients to acknowledge persistent requests!
 	 */
-	public void queuePendingMessagesOnConnectionRestart(FCPConnectionOutputHandler outputHandler, ObjectContainer container) {
+	public int queuePendingMessagesOnConnectionRestart(FCPConnectionOutputHandler outputHandler, ObjectContainer container, int offset, int max) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		Object[] reqs;
 		if(container != null) {
@@ -147,12 +147,14 @@ public class FCPClient {
 		synchronized(this) {
 			reqs = completedUnackedRequests.toArray();
 		}
-		for(int i=0;i<reqs.length;i++) {
+		int i = 0;
+		for(i=0;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
 				container.activate(req, 1);
 			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false, container);
 		}
+		return i;
 	}
 	
 	/**
@@ -350,9 +352,9 @@ public class FCPClient {
 			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
 				if(persistenceType == ClientRequest.PERSIST_REBOOT)
-					server.globalRebootClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container);
+					server.globalRebootClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container, 0, Integer.MAX_VALUE);
 				else
-					server.globalForeverClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container);
+					server.globalForeverClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container, 0, Integer.MAX_VALUE);
 			}
 			watchGlobal = true;
 		}
