@@ -160,11 +160,4 @@ public class FProxyFetchTracker implements Runnable {
 			context.ticker.queueTimedJob(this, FProxyFetchInProgress.LIFETIME);
 	}
 
-	public void remove(FProxyFetchInProgress progress) {
-		synchronized(fetchers) {
-			// For some reason it can show up multiple times.
-			while(fetchers.removeElement(progress.uri, progress)) { }
-		}
-	}
-
 }
