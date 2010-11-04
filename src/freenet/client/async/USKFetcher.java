@@ -615,7 +615,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		synchronized(this) {
 			valueAtSchedule = Math.max(lookedUp+1, valueAtSchedule);
 			bye = cancelled || completed;
-			if(!cancelled) {
+			if(!bye) {
 				
 				// subscribe() above may have called onFoundEdition and thus added a load of stuff. If so, we don't need to do so here.
 				if((!checkStoreOnly) && attemptsToStart.isEmpty() && runningAttempts.isEmpty() && pollingAttempts.isEmpty()) {
