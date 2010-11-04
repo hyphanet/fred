@@ -30,42 +30,168 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		return NAME;
 	}
 	
+	abstract class ListJob implements DBJob {
+
+		final FCPClient client;
+		final FCPConnectionOutputHandler outputHandler;
+		boolean sentRestartJobs;
+		
+		ListJob(FCPClient client, FCPConnectionOutputHandler outputHandler) {
+			this.client = client;
+			this.outputHandler = outputHandler;
+		}
+		
+		int progress = 0;
+		
+		public boolean run(ObjectContainer container, ClientContext context) {
+			if(container != null) container.activate(client, 1);
+			if(!sentRestartJobs) {
+				client.queuePendingMessagesOnConnectionRestart(outputHandler, container);
+				sentRestartJobs = true;
+			}
+			while(true) {
+				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, container, progress, 30);
+				if(p <= progress) {
+					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
+					complete(container, context);
+					return false;
+				}
+				progress = p;
+				if(outputHandler.isQueueHalfFull()) {
+					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
+					reschedule(context);
+					return false;
+				}
+			}
+		}
+		
+		abstract void reschedule(ClientContext context);
+		
+		abstract void complete(ObjectContainer container, ClientContext context);
+		
+	};
+	
+	abstract class TransientListJob extends ListJob implements Runnable {
+
+		final ClientContext context;
+		
+		TransientListJob(FCPClient client, FCPConnectionOutputHandler handler, ClientContext context) {
+			super(client, handler);
+			this.context = context;
+		}
+		
+		public void run() {
+			run(null, context);
+		}
+
+		@Override
+		void reschedule(ClientContext context) {
+			context.ticker.queueTimedJob(this, 100);
+		}
+		
+	}
+	
+	abstract class PersistentListJob extends ListJob implements DBJob, Runnable {
+		
+		final ClientContext context;
+		
+		PersistentListJob(FCPClient client, FCPConnectionOutputHandler handler, ClientContext context) {
+			super(client, handler);
+			this.context = context;
+		}
+		
+		@Override
+		void reschedule(ClientContext context) {
+			context.ticker.queueTimedJob(this, 100);
+		}
+		
+		public void run() {
+			try {
+				context.jobRunner.queue(this, NativeThread.HIGH_PRIORITY-1, false);
+			} catch (DatabaseDisabledException e) {
+				outputHandler.queue(new EndListPersistentRequestsMessage());
+			}
+		}
+		
+	}
+	
 	@Override
 	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		
 		FCPClient rebootClient = handler.getRebootClient();
 		
-		rebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
-		rebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
-		if(handler.getRebootClient().watchGlobal) {
-			FCPClient globalRebootClient = handler.server.globalRebootClient;
-			globalRebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
-			globalRebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
-		}
-		
-		try {
-			node.clientCore.clientContext.jobRunner.queue(new DBJob() {
+		TransientListJob job = new TransientListJob(rebootClient, handler.outputHandler, node.clientCore.clientContext) {
 
-				public boolean run(ObjectContainer container, ClientContext context) {
-					FCPClient foreverClient = handler.getForeverClient(container);
-					container.activate(foreverClient, 1);
-					foreverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
-					foreverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
-					if(handler.getRebootClient().watchGlobal) {
-						FCPClient globalForeverClient = handler.server.globalForeverClient;
-						globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
-						globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
-					}
-					handler.outputHandler.queue(new EndListPersistentRequestsMessage());
-					container.deactivate(foreverClient, 1);
-					return false;
+			@Override
+			void complete(ObjectContainer container, ClientContext context) {
+				
+				if(handler.getRebootClient().watchGlobal) {
+					FCPClient globalRebootClient = handler.server.globalRebootClient;
+					globalRebootClient.queuePendingMessagesOnConnectionRestart(outputHandler, null);
+					
+					TransientListJob job = new TransientListJob(globalRebootClient, outputHandler, context) {
+
+						@Override
+						void complete(ObjectContainer container,
+								ClientContext context) {
+							finishComplete(container, context);
+						}
+						
+					};
+					job.run();
+				} else {
+					finishComplete(container, context);
 				}
 				
-			}, NativeThread.HIGH_PRIORITY-1, false);
-		} catch (DatabaseDisabledException e) {
-			handler.outputHandler.queue(new EndListPersistentRequestsMessage());
-		}
+			}
+
+			private void finishComplete(ObjectContainer container,
+					ClientContext context) {
+				try {
+					context.jobRunner.queue(new DBJob() {
+
+						public boolean run(ObjectContainer container, ClientContext context) {
+							FCPClient foreverClient = handler.getForeverClient(container);
+							PersistentListJob job = new PersistentListJob(foreverClient, outputHandler, context) {
+
+								@Override
+								void complete(ObjectContainer container,
+										ClientContext context) {
+									if(handler.getRebootClient().watchGlobal) {
+										FCPClient globalForeverClient = handler.server.globalForeverClient;
+										PersistentListJob job = new PersistentListJob(globalForeverClient, outputHandler, context) {
+
+											@Override
+											void complete(
+													ObjectContainer container,
+													ClientContext context) {
+												finishFinal();
+											}
+											
+										};
+										job.run(container, context);
+									} else {
+										finishFinal();
+									}
+								}
+
+								private void finishFinal() {
+									outputHandler.queue(new EndListPersistentRequestsMessage());
+								}
+								
+							};
+							job.run(container, context);
+							return false;
+						}
+					}, NativeThread.HIGH_PRIORITY-1, false);
+				} catch (DatabaseDisabledException e) {
+					handler.outputHandler.queue(new EndListPersistentRequestsMessage());
+				}
+			}
+			
+		};
+		job.run();
 	}
 
 	@Override

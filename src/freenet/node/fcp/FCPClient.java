@@ -158,7 +158,7 @@ public class FCPClient {
 	/**
 	 * Queue any and all pending messages from running requests. Happens on demand.
 	 */
-	public void queuePendingMessagesFromRunningRequests(FCPConnectionOutputHandler outputHandler, ObjectContainer container) {
+	public int queuePendingMessagesFromRunningRequests(FCPConnectionOutputHandler outputHandler, ObjectContainer container, int offset, int max) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		Object[] reqs;
 		if(container != null) {
@@ -167,12 +167,14 @@ public class FCPClient {
 		synchronized(this) {
 			reqs = runningPersistentRequests.toArray();
 		}
-		for(int i=0;i<reqs.length;i++) {
+		int i = 0;
+		for(i=offset;i<Math.min(reqs.length,offset+max);i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
 				container.activate(req, 1);
 			req.sendPendingMessages(outputHandler, true, false, false, container);
 		}
+		return i;
 	}
 	
 	public void register(ClientRequest cg, ObjectContainer container) throws IdentifierCollisionException {
