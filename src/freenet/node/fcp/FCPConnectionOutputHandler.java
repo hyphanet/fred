@@ -161,5 +161,11 @@ public class FCPConnectionOutputHandler implements Runnable {
 	public boolean objectCanNew(ObjectContainer container) {
 		throw new UnsupportedOperationException("FCPConnectionOutputHandler storage in database not supported");
 	}
+
+	public boolean isQueueHalfFull() {
+		synchronized(outQueue) {
+			return outQueue.size() > MAX_QUEUE_LENGTH / 2;
+		}
+	}
 	
 }
