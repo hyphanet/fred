@@ -2783,8 +2783,10 @@ public class Node implements TimeSkewDetectorCallback {
 						notEnoughSpaceRenameFailed = true;
 						renameFailedFrom = tempFile;
 						renameFailedTo = dbFile;
+						databaseEncrypted = true;
 					}
-					throw new IOException("Unable to decrypt the old node.db4o.crypt because cannot rename database file");
+					// Still encrypted, but we can still open it.
+					database = openCryptDatabase(dbConfig, databaseKey);
 				}
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
 				// Migrate the unencrypted file to ciphertext.
