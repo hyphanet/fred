@@ -450,7 +450,6 @@ public class USKManager implements RequestClient {
 	
 	public void unsubscribe(USK origUSK, USKCallback cb) {
 		USKFetcher toCancel = null;
-		USKFetcher toCancelAlt = null;
 		synchronized(this) {
 			USK clear = origUSK.clearCopy();
 			USKCallback[] callbacks = subscribersByClearUSK.get(clear);
@@ -484,7 +483,6 @@ public class USKManager implements RequestClient {
 			// They do not care about callbacks.
 		}
 		if(toCancel != null) toCancel.cancel(null, context);
-		if(toCancelAlt != null) toCancelAlt.cancel(null, context);
 	}
 	
 	/**
