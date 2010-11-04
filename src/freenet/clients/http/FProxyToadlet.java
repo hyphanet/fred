@@ -66,6 +66,7 @@ import freenet.support.api.HTTPRequest;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NoFreeBucket;
 
 public final class FProxyToadlet extends Toadlet implements RequestClient {
 	
@@ -608,7 +609,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				
 				if(logMINOR) Logger.minor(this, "Found data");
-				data = fr.data;
+				data = new NoFreeBucket(fr.data);
 				mimeType = fr.mimeType;
 				fetch.close(); // Not waiting any more, but still locked the results until sent
 				break;
