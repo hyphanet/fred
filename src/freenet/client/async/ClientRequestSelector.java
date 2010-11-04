@@ -22,14 +22,12 @@ import freenet.node.SendableRequest;
 import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.RandomGrabArray;
 import freenet.support.RemoveRandom.RemoveRandomReturn;
 import freenet.support.SectoredRandomGrabArray;
-import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
-import freenet.support.SortedVectorByNumber;
 import freenet.support.TimeUtil;
-import freenet.support.Logger.LogLevel;
 
 /** Chooses requests from both CRSCore and CRSNP */
 class ClientRequestSelector implements KeysFetchingLocally {
