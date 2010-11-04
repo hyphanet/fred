@@ -45,11 +45,11 @@ public class NoFreeBucket implements Bucket {
 	}
 
 	public void storeTo(ObjectContainer container) {
-		proxy.storeTo(container);
+		container.store(this);
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		proxy.removeFrom(container);
+		container.delete(this);
 	}
 
 	public Bucket createShadow() throws IOException {
