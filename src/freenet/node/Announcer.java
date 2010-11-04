@@ -325,15 +325,11 @@ public class Announcer {
 		}
 	}
 
-	private boolean ignoreIPUndetected;
-	private static final int FORCE_ANNOUNCEMENT_NO_IP = 120*1000;
 	/** 1 minute after we have enough peers, remove all seednodes left (presumably disconnected ones) */
 	private static final int FINAL_DELAY = 60*1000;
 	/** But if we don't have enough peers at that point, wait another minute and if the situation has not improved, reannounce. */
 	static final int RETRY_DELAY = 60*1000;
 	private boolean started = false;
-
-	private long toldUserNoIP = -1;
 
 	private final Runnable checker = new Runnable() {
 
