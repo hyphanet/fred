@@ -1133,14 +1133,14 @@ class CSSTokenizerFilter {
 			if(isValid)
 			{
 				fBuffer.append(HTMLelement);
-				if(className!="") {
+				if(!className.equals("")) {
 					fBuffer.append('.');
                                         fBuffer.append(className);
-                                } else if(id!="") {
+                                } else if(!id.equals("")) {
 					fBuffer.append('#');
                                         fBuffer.append(id);
                                 }
-				if(pseudoClass!="") {
+				if(!pseudoClass.equals("")) {
 					fBuffer.append(':');
                                         fBuffer.append(pseudoClass);
                                 }
