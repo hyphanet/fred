@@ -92,6 +92,11 @@ public class Cookie {
 		
 		return true;
 	}
+	
+	@Override
+	public int hashCode() {
+		return domain.hashCode() + path.hashCode() + name.hashCode();
+	}
 
 	public static URI validateDomain(String domainString) throws URISyntaxException {
 		return validateDomain(new URI(domainString.toLowerCase()));	
