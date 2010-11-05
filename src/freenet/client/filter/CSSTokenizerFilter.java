@@ -1135,21 +1135,21 @@ class CSSTokenizerFilter {
 				fBuffer.append(HTMLelement);
 				if(!className.equals("")) {
 					fBuffer.append('.');
-                                        fBuffer.append(className);
-                                } else if(!id.equals("")) {
+					fBuffer.append(className);
+				} else if(!id.equals("")) {
 					fBuffer.append('#');
-                                        fBuffer.append(id);
-                                }
+					fBuffer.append(id);
+				}
 				if(!pseudoClass.equals("")) {
 					fBuffer.append(':');
-                                        fBuffer.append(pseudoClass);
-                                }
+					fBuffer.append(pseudoClass);
+				}
 				if(attSelections!=null) {
 					for(String attSelection:attSelections) {
 						fBuffer.append('[');
-                                                fBuffer.append(attSelection);
-                                                fBuffer.append(']');
-                                        }
+						fBuffer.append(attSelection);
+						fBuffer.append(']');
+					}
 				}
 				return fBuffer.toString();
 			}
