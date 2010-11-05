@@ -25,7 +25,7 @@ import freenet.support.Logger.LogLevel;
 public final class BootstrappingDecayingRunningAverage implements RunningAverage {
 	private static final long serialVersionUID = -1;
 	@Override
-	public final Object clone() {
+	public final BootstrappingDecayingRunningAverage clone() {
 		return new BootstrappingDecayingRunningAverage(this);
 	}
     

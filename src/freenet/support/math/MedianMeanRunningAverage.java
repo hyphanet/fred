@@ -33,7 +33,7 @@ public class MedianMeanRunningAverage implements RunningAverage {
 	}
 
 	@Override
-	public Object clone() {
+	public MedianMeanRunningAverage clone() {
 		synchronized (this) {
 			return new MedianMeanRunningAverage(this);
 		}

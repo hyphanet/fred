@@ -39,7 +39,7 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 	}
 
 	@Override
-	public synchronized Object clone() {
+	public synchronized DecayingKeyspaceAverage clone() {
 		return new DecayingKeyspaceAverage(avg);
 	}
 

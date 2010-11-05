@@ -11,7 +11,7 @@ public interface RunningAverage extends Serializable {
      *
      * @return
      */
-    public Object clone();
+    public RunningAverage clone();
 
         /**
          *
