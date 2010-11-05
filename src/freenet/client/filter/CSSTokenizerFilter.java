@@ -1060,7 +1060,7 @@ class CSSTokenizerFilter {
 
 		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) || 
 				("".equals(HTMLelement.trim()) && 
-						(className!="" || id!="" || attSelections!=null || pseudoClass!="")))
+						((!className.equals("")) || (!id.equals("")) || attSelections!=null || !pseudoClass.equals(""))))
 		{
 			if(!className.equals(""))
 			{
