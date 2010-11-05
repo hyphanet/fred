@@ -1060,19 +1060,19 @@ class CSSTokenizerFilter {
 
 		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) || ("".equals(HTMLelement.trim()) && (className!="" || id!="" || attSelections!=null || pseudoClass!="")))
 		{
-			if(className!="")
+			if(!className.equals(""))
 			{
 				// Note that the definition of isValidName() allows chained classes because it allows . in class names.
 				if(!ElementInfo.isValidName(className))
 					isValid=false;
 			}
-			else if(id!="")
+			else if(!id.equals(""))
 			{
 				if(!ElementInfo.isValidName(id))
 					isValid=false;
 			}
 
-			if(isValid && pseudoClass!="")
+			if(isValid && !pseudoClass.equals(""))
 			{
 				if(!ElementInfo.isValidPseudoClass(pseudoClass))
 					isValid=false;
