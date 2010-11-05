@@ -96,6 +96,7 @@ public class PluginDownLoaderURL extends PluginDownLoader<URL> {
 					redir = true;
 					c = target.openConnection();
 					redirects++;
+					in.close();
 				}
 			}
 		}
