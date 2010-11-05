@@ -88,6 +88,10 @@ public final class SessionManager {
 			return other.getID().equals(mID);
 		}
 		
+		public int hashCode() {
+			return mID.hashCode();
+		}
+		
 		public UUID getID() {
 			return mID;
 		}
