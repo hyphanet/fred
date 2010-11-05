@@ -1721,7 +1721,7 @@ class CSSTokenizerFilter {
 					}
 
 					openBraces++;
-					if(buffer.toString().trim()!="")
+					if(!buffer.toString().trim().equals(""))
 					{
 						String filtered=recursiveSelectorVerifier(buffer.toString());
 						if(filtered!=null)
