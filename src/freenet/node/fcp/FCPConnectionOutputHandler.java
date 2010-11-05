@@ -133,7 +133,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 				return;
 			}
 			if(outQueue.size() >= MAX_QUEUE_LENGTH) {
-				Logger.error(this, "Dropping FCP message to "+handler+" : "+outQueue.size()+" messages queued - maybe client died?");
+				Logger.error(this, "Dropping FCP message to "+handler+" : "+outQueue.size()+" messages queued - maybe client died?", new Exception("debug"));
 			} else {
 				outQueue.add(msg);
 				outQueue.notifyAll();
