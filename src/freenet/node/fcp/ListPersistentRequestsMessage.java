@@ -47,27 +47,27 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		public boolean run(ObjectContainer container, ClientContext context) {
 			if(container != null) container.activate(client, 1);
 			while(!sentRestartJobs) {
+				if(outputHandler.isQueueHalfFull()) {
+					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
+					reschedule(context);
+					return false;
+				}
 				int p = client.queuePendingMessagesOnConnectionRestart(outputHandler, container, progressCompleted, 30);
 				if(p <= progressCompleted) {
 					sentRestartJobs = true;
 					break;
 				}
 				progressCompleted = p;
-				if(outputHandler.isQueueHalfFull()) {
-					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
-					reschedule(context);
-					return false;
-				}
-			}
-			if(outputHandler.isQueueHalfFull()) {
-				if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
-				reschedule(context);
-				return false;
 			}
 			if(noRunning()) {
 				complete(container, context);
 			}
 			while(true) {
+				if(outputHandler.isQueueHalfFull()) {
+					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
+					reschedule(context);
+					return false;
+				}
 				int p = client.queuePendingMessagesFromRunningRequests(outputHandler, container, progressRunning, 30);
 				if(p <= progressRunning) {
 					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
@@ -75,11 +75,6 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 					return false;
 				}
 				progressRunning = p;
-				if(outputHandler.isQueueHalfFull()) {
-					if(container != null && !client.isGlobalQueue) container.deactivate(client, 1);
-					reschedule(context);
-					return false;
-				}
 			}
 		}
 		
