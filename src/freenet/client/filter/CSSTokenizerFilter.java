@@ -2256,6 +2256,14 @@ class CSSTokenizerFilter {
 							filteredTokens.setLength(0);
 						}
 						if(logDEBUG) Logger.debug(this, "STATE2 CASE { filtered elements"+filtered);
+					} else {
+						// No valid selector, wipe it out as above.
+						ignoreElementsS2=true;
+						// If there was a comma, filteredTokens may contain some tokens.
+						// These are invalid, as per the spec: we wipe the whole selector out.
+						// Also, not wiping filteredTokens here does bad things:
+						// we would write the filtered tokens, without the { or }, so we end up prepending it to the next rule, which is not what we want as it changes the next rule's meaning.
+						filteredTokens.setLength(0);
 					}
 					currentState=STATE3;
 					openBracesStartingS3 = openBraces;
