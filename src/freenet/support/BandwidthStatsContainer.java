@@ -15,6 +15,7 @@ public class BandwidthStatsContainer {
 
 	@Override
 	public boolean equals(Object o) {
+		if(o == null) return false;
 	if(o.getClass() == BandwidthStatsContainer.class) {
 		BandwidthStatsContainer oB = (BandwidthStatsContainer) o;
 		return (oB.creationTime == this.creationTime) &&

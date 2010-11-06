@@ -84,7 +84,7 @@ public final class SessionManager {
 		
 		public boolean equals(Object obj) {
 			Session other = ((Session)obj);
-			
+			if(other == null) return false;
 			return other.getID().equals(mID);
 		}
 		
