@@ -205,6 +205,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("height");
 		allelementVerifiers.add("left");
 		allelementVerifiers.add("letter-spacing");
+		allelementVerifiers.add("line-break");
 		allelementVerifiers.add("line-height");
 		allelementVerifiers.add("list-style-image");
 		allelementVerifiers.add("list-style-position");
@@ -255,6 +256,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("text-indent");
 		allelementVerifiers.add("text-shadow");
 		allelementVerifiers.add("text-transform");
+		allelementVerifiers.add("text-wrap");
 		allelementVerifiers.add("top");
 		allelementVerifiers.add("unicode-bidi");
 		allelementVerifiers.add("vertical-align");
@@ -262,8 +264,10 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("voice-family");
 		allelementVerifiers.add("volume");
 		allelementVerifiers.add("white-space");
+		allelementVerifiers.add("white-space-collapsing");
 		allelementVerifiers.add("widows");
 		allelementVerifiers.add("width");
+		allelementVerifiers.add("word-break");
 		allelementVerifiers.add("word-spacing");
                 allelementVerifiers.add("word-wrap");
 		allelementVerifiers.add("z-index");
@@ -898,6 +902,11 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe","re","in"}));
 			allelementVerifiers.remove(element);
 		}
+		else if("line-break".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","newspaper","normal","strict","keep-all"},ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
 		else if("list-style-image".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","inherit"},ElementInfo.VISUALMEDIA,new String[]{"ur"}));
@@ -1177,7 +1186,12 @@ class CSSTokenizerFilter {
 		}
 		else if("text-transform".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"capitalize","uppercase","lowercase","none","inherit"},ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"capitalize","uppercase","lowercase","none","inherit","fullwidth","large-kana"},ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-wrap".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"normal","unrestricted","none","suppress"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("top".equalsIgnoreCase(element))
@@ -1215,6 +1229,14 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","pre","nowrap","pre-wrap","pre-line","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
+		else if("white-space-collapsing".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[80]=new CSSPropertyVerifier(new String[]{"preserve","preserve-break"},null,null,true);
+			auxilaryVerifiers[81]=new CSSPropertyVerifier(new String[]{"trim-inner"},null,null,true);
+			auxilaryVerifiers[82]=new CSSPropertyVerifier(null,null,new String[]{"80a81"},true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"collapse" ,"discard"},null,ElementInfo.VISUALMEDIA,new String[]{"82"}));
+			allelementVerifiers.remove(element);
+		}
 		else if("widows".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"in"}));
@@ -1225,11 +1247,17 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
+		else if("word-break".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","break-all","hyphenate"},ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
 		else if("word-spacing".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
 			allelementVerifiers.remove(element);
-		}else if("word-wrap".equalsIgnoreCase(element))
+		}
+		else if("word-wrap".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal", "break-word"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
