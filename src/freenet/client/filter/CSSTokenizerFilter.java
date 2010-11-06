@@ -253,6 +253,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("text-align");
 		allelementVerifiers.add("text-decoration");
 		allelementVerifiers.add("text-indent");
+		allelementVerifiers.add("text-shadow");
 		allelementVerifiers.add("text-transform");
 		allelementVerifiers.add("top");
 		allelementVerifiers.add("unicode-bidi");
@@ -313,6 +314,9 @@ class CSSTokenizerFilter {
 		// <border-image-repeat>
 		auxilaryVerifiers[70]=new CSSPropertyVerifier(new String[]{"stretch","repeat","round"},null,null,true);
 		auxilaryVerifiers[78]=new CSSPropertyVerifier(null,null,new String[]{"70<1,2>"},true);
+
+		// <text-shadow>
+		auxilaryVerifiers[79]=new CSSPropertyVerifier(null, null, new String[]{"74a73"}, true);
 	}
 	/* This function loads a verifier object in elementVerifiers.
 	 * After the object has been loaded, property name is removed from allelementVerifier.
@@ -1164,6 +1168,11 @@ class CSSTokenizerFilter {
 		else if("text-indent".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-shadow".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"none"},ElementInfo.VISUALMEDIA,null,new String[]{"79<0,65535>"},true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-transform".equalsIgnoreCase(element))
