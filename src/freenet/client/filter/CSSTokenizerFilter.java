@@ -3319,12 +3319,12 @@ class CSSTokenizerFilter {
 						if(logDEBUG) Logger.debug(this, "2Making recursiveDoubleBarVerifier to consume "+j+" words");
 						ParsedWord[] partToPassToDB = new ParsedWord[j];
 						System.arraycopy(words, 0, partToPassToDB, 0, j);
-						if(logDEBUG) Logger.debug(this, "3Calling recursiveDoubleBarVerifier with "+firstPart+" "+partToPassToDB.toString());
+						if(logDEBUG) Logger.debug(this, "3Calling recursiveDoubleBarVerifier with "+firstPart+" "+CSSPropertyVerifier.toString(partToPassToDB));
 						if(recursiveDoubleBarVerifier(firstPart,partToPassToDB,cb)) //This function is written to verify || operator.
 						{
 							ParsedWord[] partToPass = new ParsedWord[words.length-j];
 							System.arraycopy(words, j, partToPass, 0, words.length-j);
-							if(logDEBUG) Logger.debug(this, "4recursiveDoubleBarVerifier true calling itself with "+secondPart+partToPass.toString());
+							if(logDEBUG) Logger.debug(this, "4recursiveDoubleBarVerifier true calling itself with "+secondPart+CSSPropertyVerifier.toString(partToPass));
 							if(recursiveParserExpressionVerifier(secondPart,partToPass,cb))
 								return true;
 						}
@@ -3344,7 +3344,7 @@ class CSSTokenizerFilter {
 						{
 							ParsedWord[] partToPass = new ParsedWord[words.length-1];
 							System.arraycopy(words, 1, partToPass, 0, words.length-1);
-							if(logDEBUG) Logger.debug(this, "8First part is true. partToPass="+partToPass.toString());
+							if(logDEBUG) Logger.debug(this, "8First part is true. partToPass="+CSSPropertyVerifier.toString(partToPass));
 							if(recursiveParserExpressionVerifier(secondPart,partToPass, cb))
 								return true;
 						}
