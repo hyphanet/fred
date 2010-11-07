@@ -1,6 +1,7 @@
 package freenet.client.filter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 
 public class FilterUtils {
@@ -285,6 +286,8 @@ public class FilterUtils {
 		CSScolorKeywords.add("teal");
 		CSScolorKeywords.add("white");
 		CSScolorKeywords.add("yellow");
+		// as of CSS3 this is valid: http://www.w3.org/TR/css3-color/#transparent-def
+		CSScolorKeywords.add("transparent");
 	}
 	private final static HashSet<String> CSSsystemColorKeywords=new HashSet<String>();
 	static {
@@ -340,8 +343,7 @@ public class FilterUtils {
 	}
 	private final static HashSet<String> cssMedia = new HashSet<String>();
 	static {
-		for(String s : new String[] {"all","aural","braille","embossed","handheld","print","projection","screen","speech","tty","tv"})
-			cssMedia.add(s);
+	    cssMedia.addAll(Arrays.asList(new String[]{"all", "aural", "braille", "embossed", "handheld", "print", "projection", "screen", "speech", "tty", "tv"}));
 	}
 	public static boolean isMedia(String media) {
 		return cssMedia.contains(media);
@@ -394,7 +396,7 @@ public class FilterUtils {
 			String[] colorParts=value.substring(4,value.length()-1).split(",");
 			if(colorParts.length!=3)
 				return false;
-			boolean isValidColorParts=true;;
+			boolean isValidColorParts=true;
 			for(int i=0; i<colorParts.length && isValidColorParts;i++)
 			{
 				if(!(isPercentage(colorParts[i].trim()) || isInteger(colorParts[i].trim())))
@@ -403,6 +405,43 @@ public class FilterUtils {
 			if(isValidColorParts)
 				return true;
 		}
+		if(value.indexOf("rgba(")==0 && value.indexOf(")")==value.length()-1)
+		{
+			String[] colorParts=value.substring(5,value.length()-1).split(",");
+			if(colorParts.length!=4)
+				return false;
+			boolean isValidColorParts=true;
+			for(int i=0; i<colorParts.length-1 && isValidColorParts;i++)
+			{
+				if(!(isPercentage(colorParts[i].trim()) || isInteger(colorParts[i].trim())))
+					isValidColorParts = false;
+			}
+			if(isValidColorParts && isNumber(colorParts[3]))
+				return true;
+		}
+
+		if(value.indexOf("hsl(")==0 && value.indexOf(")")==value.length()-1)
+		{
+			String[] colorParts = value.substring(4, value.length() - 1).split(",");
+			if (colorParts.length != 3) {
+			    return false;
+			}
+
+			if(isNumber(colorParts[0]) && isPercentage(colorParts[1]) && isPercentage(colorParts[2]))
+			    return true;
+		}
+
+		if(value.indexOf("hsla(")==0 && value.indexOf(")")==value.length()-1)
+		{
+			String[] colorParts = value.substring(5, value.length() - 1).split(",");
+			if (colorParts.length != 4) {
+			    return false;
+			}
+
+			if(isNumber(colorParts[0]) && isPercentage(colorParts[1]) && isPercentage(colorParts[2]) && isNumber(colorParts[3]))
+			    return true;
+		}
+
 		return false;
 	}
 	public static boolean isFrequency(String value)
