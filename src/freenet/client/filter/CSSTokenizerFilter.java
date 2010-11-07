@@ -202,6 +202,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("font-variant");
 		allelementVerifiers.add("font-weight");
 		allelementVerifiers.add("font");
+		allelementVerifiers.add("hanging-punctuation");
 		allelementVerifiers.add("height");
 		allelementVerifiers.add("left");
 		allelementVerifiers.add("letter-spacing");
@@ -240,6 +241,7 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("pitch-range");
 		allelementVerifiers.add("pitch");
 		allelementVerifiers.add("play-during");
+		allelementVerifiers.add("punctuation-trim");
 		allelementVerifiers.add("position");
 		allelementVerifiers.add("quotes");
 		allelementVerifiers.add("richness");
@@ -252,10 +254,24 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("stress");
 		allelementVerifiers.add("table-layout");
 		allelementVerifiers.add("text-align");
+		allelementVerifiers.add("text-align-last");
+		allelementVerifiers.add("text-autospace");
 		allelementVerifiers.add("text-decoration");
+		allelementVerifiers.add("text-decoration-color");
+		allelementVerifiers.add("text-decoration-line");
+		allelementVerifiers.add("text-decoration-skip");
+		allelementVerifiers.add("text-decoration-style");
+		allelementVerifiers.add("text-emphasis");
+		allelementVerifiers.add("text-emphasis-color");
+		allelementVerifiers.add("text-emphasis-position");
+		allelementVerifiers.add("text-emphasis-style");
 		allelementVerifiers.add("text-indent");
+		allelementVerifiers.add("text-justify");
+		allelementVerifiers.add("text-outline");
+		allelementVerifiers.add("text-overflow");
 		allelementVerifiers.add("text-shadow");
 		allelementVerifiers.add("text-transform");
+		allelementVerifiers.add("text-underline-position");
 		allelementVerifiers.add("text-wrap");
 		allelementVerifiers.add("top");
 		allelementVerifiers.add("unicode-bidi");
@@ -279,7 +295,7 @@ class CSSTokenizerFilter {
 	 * Array for storing additional Verifier objects for validating Regular expressions in CSS Property value
 	 * e.g. [ <color> | transparent]{1,4}. It is explained in detail in CSSPropertyVerifier class
 	 */
-	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[100];
+	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[110];
 	static
 	{
 		/*CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String expression,boolean onlyValueVerifier)*/
@@ -296,6 +312,7 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[14]=new CSSPropertyVerifier(new String[]{"thin","medium","thick"},new String[]{"le"},null,true);
 		//<border-top-color>
 		auxilaryVerifiers[15]=new CSSPropertyVerifier(new String[] {"transparent","inherit"},new String[]{"co"},null,true);
+
 		// <background-clip> <background-origin>
 		auxilaryVerifiers[61]=new CSSPropertyVerifier(new String[] {"border-box", "padding-box", "content-box"},null,null,true);
 		// <border-radius>
@@ -321,6 +338,23 @@ class CSSTokenizerFilter {
 
 		// <text-shadow>
 		auxilaryVerifiers[79]=new CSSPropertyVerifier(null, null, new String[]{"74a73"}, true);
+
+		// <spacing-limit>
+		auxilaryVerifiers[85]=new CSSPropertyVerifier(new String[]{"normal"}, new String[]{"le","pe"}, null,true);
+
+		// <text-decoration-line>
+		auxilaryVerifiers[100] = new CSSPropertyVerifier(new String[]{"underline"}, null, null, true);
+		auxilaryVerifiers[101] = new CSSPropertyVerifier(new String[]{"overline"}, null, null, true);
+		auxilaryVerifiers[102] = new CSSPropertyVerifier(new String[]{"line-through"}, null, null, true);
+		// <text-decoration-color>
+		auxilaryVerifiers[103] = new CSSPropertyVerifier(null, new String[]{"co"}, null, true);
+		// <text-decoration-style>
+		auxilaryVerifiers[104] = new CSSPropertyVerifier(new String[]{"solid", "double", "dotted", "dashed", "wave"}, null, null, true);
+
+		// <text-emphasis-style>
+		auxilaryVerifiers[105]=new CSSPropertyVerifier(new String[]{"filled","open"},null,null,true);
+		auxilaryVerifiers[106]=new CSSPropertyVerifier(new String[]{"dot","circle","double-circle","triangle","sesame"},null,null,true);
+		auxilaryVerifiers[107]=new CSSPropertyVerifier(new String[]{"none"},ElementInfo.VISUALMEDIA,new String[]{"st"},new String[]{"105a106"});
 	}
 	/* This function loads a verifier object in elementVerifiers.
 	 * After the object has been loaded, property name is removed from allelementVerifier.
@@ -882,6 +916,14 @@ class CSSTokenizerFilter {
 			//elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"caption","icon","menu","message-box","small-caption","status-bar","inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"31<1,1>[1,3]"}));
 			allelementVerifiers.remove(element);
 		}
+		else if("hanging-punctuation".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[97]=new CSSPropertyVerifier(new String[] {"allow-end","force-end"},null,null,true);
+			auxilaryVerifiers[98]=new CSSPropertyVerifier(new String[] {"first"},null,null,true);
+			auxilaryVerifiers[99]=new CSSPropertyVerifier(new String[] {"last"},null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none"},ElementInfo.VISUALMEDIA,null,new String[]{"97a98a99"}));
+			allelementVerifiers.remove(element);
+		}
 		else if("height".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
@@ -894,7 +936,7 @@ class CSSTokenizerFilter {
 		}
 		else if("letter-spacing".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},null,ElementInfo.VISUALMEDIA,new String[]{"85<1,3>"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("line-height".equalsIgnoreCase(element))
@@ -1100,6 +1142,16 @@ class CSSTokenizerFilter {
 
 
 		}
+		else if("punctuation-trim".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[86]=new CSSPropertyVerifier(new String[]{"start"},null,null,true);
+			auxilaryVerifiers[87]=new CSSPropertyVerifier(new String[]{"end","allow-end"},null,null,true);
+			auxilaryVerifiers[88]=new CSSPropertyVerifier(new String[]{"adjacent"},null,null,true);
+			auxilaryVerifiers[89]=new CSSPropertyVerifier(null,null,new String[]{"68a87a88"},true);
+
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none"},ElementInfo.AURALMEDIA,null,new String[]{"89"}));
+			allelementVerifiers.remove(element);
+		}
 		else if("position".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"static","relative","absolute","fixed","inherit"},ElementInfo.VISUALMEDIA));
@@ -1160,23 +1212,108 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("text-align".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"left","right", "center", "justify" ,"inherit"},ElementInfo.VISUALMEDIA));
+		{  // FIXME: We don't support "one character" as the spec says http://www.w3.org/TR/css3-text/#text-align0
+			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"start","end","left","right","center","justify","match-parent","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
+		}
+		else if("text-align-last".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"start","end","left","right","center","justify"},ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-autospace".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[90]=new CSSPropertyVerifier(new String[]{"ideograph-numeric"},null,null,true);
+			auxilaryVerifiers[91]=new CSSPropertyVerifier(new String[]{"ideograph-alpha"},null,null,true);
+			auxilaryVerifiers[92]=new CSSPropertyVerifier(new String[]{"ideograph-space"},null,null,true);
+			auxilaryVerifiers[93]=new CSSPropertyVerifier(new String[]{"ideograph-parenthesis"},null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none"},ElementInfo.VISUALMEDIA,null,new String[]{"90a91a92a93"}));
+			allelementVerifiers.remove(element);
+
 		}
 		else if("text-decoration".equalsIgnoreCase(element))
 		{
-			auxilaryVerifiers[48]=new CSSPropertyVerifier(new String[]{"underline"},null,null,true);
-			auxilaryVerifiers[49]=new CSSPropertyVerifier(new String[]{"overline"},null,null,true);
-			auxilaryVerifiers[50]=new CSSPropertyVerifier(new String[]{"line-through"},null,null,true);
-			auxilaryVerifiers[51]=new CSSPropertyVerifier(new String[]{"blink"},null,null,true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none" ,"inherit"},null,ElementInfo.VISUALMEDIA,new String[]{"48a49a50a51"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"blink"},ElementInfo.VISUALMEDIA,null,new String[]{"100a103a104"}));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("text-decoration-color".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"103"}));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("text-decoration-line".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none"},ElementInfo.VISUALMEDIA,null,new String[]{"100a101a102"}));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("text-decoration-skip".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[48]=new CSSPropertyVerifier(new String[]{"images"},null,null,true);
+			auxilaryVerifiers[49]=new CSSPropertyVerifier(new String[]{"spaces"},null,null,true);
+			auxilaryVerifiers[50]=new CSSPropertyVerifier(new String[]{"ink"},null,null,true);
+			auxilaryVerifiers[51]=new CSSPropertyVerifier(new String[]{"all"},null,null,true);
+
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none"},ElementInfo.VISUALMEDIA,null,new String[]{"48a49a50a51"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-decoration-style".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"104"}));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("text-emphasis".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"103a107"}));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("text-emphasis-color".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"103"}));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("text-emphasis-position".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"over","under"},ElementInfo.VISUALMEDIA,null,null));
+			allelementVerifiers.remove(element);
+
+		}
+		else if("text-emphasis-style".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"107"}));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("text-indent".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			auxilaryVerifiers[94]=new CSSPropertyVerifier(new String[]{"hanging", "each-line"},null,null,true);
+			auxilaryVerifiers[95]=new CSSPropertyVerifier(null,null,new String[]{"94<0,2>"},true);
+			auxilaryVerifiers[96]=new CSSPropertyVerifier(null,new String[]{"le","pe"},null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"96 95"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-justify".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[83]=new CSSPropertyVerifier(new String[]{"inter-word","inter-ideograph","inter-cluster","distribute","kashida"},null,null,true);
+			auxilaryVerifiers[84]=new CSSPropertyVerifier(new String[]{"trim"},null,null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto" ,"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"84a83"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-outline".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[108]=new CSSPropertyVerifier(null,null,new String[]{"73 72 72<0,1>"},true);
+			auxilaryVerifiers[109]=new CSSPropertyVerifier(null,null,new String[]{"72 72<0,1> 73"},true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none"},ElementInfo.VISUALMEDIA,null,new String[]{"108a109"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-overflow".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"clip","ellipsis"},ElementInfo.VISUALMEDIA,new String[]{"st"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-shadow".equalsIgnoreCase(element))
@@ -1187,6 +1324,11 @@ class CSSTokenizerFilter {
 		else if("text-transform".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"capitalize","uppercase","lowercase","none","inherit","fullwidth","large-kana"},ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+		}
+		else if("text-underline-position".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"auto","under","alphabetic","over"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-wrap".equalsIgnoreCase(element))
@@ -1254,7 +1396,7 @@ class CSSTokenizerFilter {
 		}
 		else if("word-spacing".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},null,ElementInfo.VISUALMEDIA,new String[]{"85<1,3>"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("word-wrap".equalsIgnoreCase(element))
