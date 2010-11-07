@@ -3651,7 +3651,7 @@ class CSSTokenizerFilter {
 				// This is not numeric but will still have parsed as a SimpleParsedWord, as it either starts with a # or has brackets in.
 				if(isColor)
 				{
-					if(FilterUtils.isColor(word, false))
+					if(FilterUtils.isColor(word))
 						return true;
 				}
 
@@ -3674,7 +3674,7 @@ class CSSTokenizerFilter {
 			}
 
 			if(words[0] instanceof ParsedIdentifier && isColor) {
-				if(FilterUtils.isColor(((ParsedIdentifier)words[0]).original, false))
+				if(FilterUtils.isColor(((ParsedIdentifier)words[0]).original))
 					return true;
 
 			}

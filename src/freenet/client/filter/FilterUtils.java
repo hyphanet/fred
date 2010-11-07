@@ -348,19 +348,13 @@ public class FilterUtils {
 	public static boolean isMedia(String media) {
 		return cssMedia.contains(media);
 	}
-	public static boolean isColor(String value,boolean isSVG)
+	public static boolean isColor(String value)
 	{
 		value=value.trim();
-		if(isSVG)
-		{
-		if(SVGcolorKeywords.contains(value))
+
+		if(CSScolorKeywords.contains(value) || CSSsystemColorKeywords.contains(value) || SVGcolorKeywords.contains(value))
 			return true;
-		}
-		else
-		{
-			if(CSScolorKeywords.contains(value) || CSSsystemColorKeywords.contains(value))
-				return true;
-		}
+
 		if(value.indexOf('#')==0)
 		{
 
