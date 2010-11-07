@@ -184,6 +184,8 @@ class CSSTokenizerFilter {
                 allelementVerifiers.add("column-width");
 		allelementVerifiers.add("columns");
 		allelementVerifiers.add("color");
+		allelementVerifiers.add("color-interpolation");
+		allelementVerifiers.add("color-rendering");
 		allelementVerifiers.add("content");
 		allelementVerifiers.add("counter-increment");
 		allelementVerifiers.add("counter-reset");
@@ -778,6 +780,18 @@ class CSSTokenizerFilter {
                 else if ("color".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"}));
+			allelementVerifiers.remove(element);
+
+		}
+		else if ("color-interpolation".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","sRGB","linearRGB","inherit"},ElementInfo.VISUALMEDIA));
+			allelementVerifiers.remove(element);
+
+		}
+		else if ("color-rendering".equalsIgnoreCase(element))
+		{
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","optimizeSpeed","optimizeQuality","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 
 		}
