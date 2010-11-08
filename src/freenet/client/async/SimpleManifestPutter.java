@@ -37,6 +37,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
+import freenet.support.io.NoCloseProxyOutputStream;
 
 public class SimpleManifestPutter extends BaseClientPutter implements PutCompletionCallback {
 
@@ -1021,6 +1022,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private String createTarBucket(Bucket inputBucket, OutputStream os, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 
+		// FIXME: TarOutputStream.finish() does NOT call TarBuffer.flushBlock() from TarBuffer.close().
+		// So we wrap it here and call close().
+		// Fix it in Contrib, release a new jar, require the new jar, then clean up this code.
+		os = new NoCloseProxyOutputStream(os);
 		TarOutputStream tarOS = new TarOutputStream(os);
 		tarOS.setLongFileMode(TarOutputStream.LONGFILE_GNU);
 		TarEntry ze;
@@ -1054,6 +1059,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		tarOS.closeEntry();
 		// Both finish() and close() are necessary.
 		tarOS.finish();
+		tarOS.close();
 
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}
