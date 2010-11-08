@@ -740,19 +740,20 @@ loadWaiterLoop:
     				
     				if(logMINOR) Logger.minor(this, "Is local");
     				
-    				if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
-    					if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
-    					nodesRoutedTo.remove(next);
-    					origTag.removeRoutingTo(next);
-    					return DO.WAIT;
-    				} else {
+    				// FIXME new load management introduces soft rejects and waiting.
+//    				if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
+//    					if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
+//    					nodesRoutedTo.remove(next);
+//    					origTag.removeRoutingTo(next);
+//    					return DO.WAIT;
+//    				} else {
     					next.localRejectedOverload("ForwardRejectedOverload");
     					node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
     					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
     					// Give up on this one, try another
     					next.noLongerRoutingTo(origTag, false);
     					return DO.NEXT_PEER;
-    				}
+//    				}
     			}
     			//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
     			continue;
