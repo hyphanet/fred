@@ -4,7 +4,7 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-class NoCloseProxyOutputStream extends FilterOutputStream {
+public class NoCloseProxyOutputStream extends FilterOutputStream {
 
 	public NoCloseProxyOutputStream(OutputStream arg0) {
 		super(arg0);
