@@ -277,6 +277,8 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("text-underline-position");
 		allelementVerifiers.add("text-wrap");
 		allelementVerifiers.add("top");
+		allelementVerifiers.add("transform");
+		allelementVerifiers.add("transform-origin");
 		allelementVerifiers.add("unicode-bidi");
 		allelementVerifiers.add("vertical-align");
 		allelementVerifiers.add("visibility");
@@ -298,7 +300,7 @@ class CSSTokenizerFilter {
 	 * Array for storing additional Verifier objects for validating Regular expressions in CSS Property value
 	 * e.g. [ <color> | transparent]{1,4}. It is explained in detail in CSSPropertyVerifier class
 	 */
-	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[110];
+	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[111];
 	static
 	{
 		/*CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String expression,boolean onlyValueVerifier)*/
@@ -1359,6 +1361,22 @@ class CSSTokenizerFilter {
 		else if("top".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			allelementVerifiers.remove(element);
+		}
+		else if("transform".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[110]=new CSSPropertyVerifier(null,new String[]{"tr"},null,true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"110<0,65536>"},true, true));
+			allelementVerifiers.remove(element);
+		}
+		else if("transform-origin".equalsIgnoreCase(element))
+		{
+			auxilaryVerifiers[111]=new CSSPropertyVerifier(null,null,new String[] {"2 3<0,1>"},true);
+			auxilaryVerifiers[112]=new CSSPropertyVerifier(new String[]{"left","center","right"},null,null,true);
+			auxilaryVerifiers[113]=new CSSPropertyVerifier(new String[]{"top","center","bottom"},null,null,true);
+			auxilaryVerifiers[114]=new CSSPropertyVerifier(null,null,new String[] {"112a113"},true);
+
+			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"111","114"},true, true));
 			allelementVerifiers.remove(element);
 		}
 		else if("unicode-bidi".equalsIgnoreCase(element))
@@ -3436,6 +3454,7 @@ class CSSTokenizerFilter {
 		public boolean isIdentifier=false; //id
 		public boolean isTime=false; //ti
 		public boolean isFrequency=false; //fr
+		public boolean isTransform=false; //tr
 		public boolean onlyValueVerifier=false;
 		public String[] cssPropertyList=null;
 		public String[] parserExpressions=null;
@@ -3500,7 +3519,9 @@ class CSSTokenizerFilter {
 					else if("ti".equals(possibleValue))
 						isTime=true; //ti
 					else if("fr".equals(possibleValue))
-						isFrequency=true;
+						isFrequency=true; //fr
+					else if("tr".equals(possibleValue))
+						isTransform=true; //tr
 				}
 			}
 			if(allowedValues!=null)
@@ -3683,6 +3704,11 @@ class CSSTokenizerFilter {
 
 				if(isTime) {
 					if(FilterUtils.isTime(word))
+						return true;
+				}
+
+				if(isTransform) {
+					if(FilterUtils.isCSSTransform(word))
 						return true;
 				}
 			}
