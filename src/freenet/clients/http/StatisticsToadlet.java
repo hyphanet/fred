@@ -367,6 +367,19 @@ public class StatisticsToadlet extends Toadlet {
 				HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
 				addCombinedSpecialisation(nodeSpecialisationTable, myLocation, outgoingLocalRequestsCount, outgoingLocalRequestLocation, outgoingRequestsCount, outgoingRequestLocation);
 			}
+
+			overviewTableRow = overviewTable.addChild("tr");
+			nextTableCell = overviewTableRow.addChild("td", "class", "first");
+
+			// success rate per location
+			int[] locationSuccessRatesArray = stats.chkSuccessRatesByLocation.getPercentageArray(1000);
+
+			{
+				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
+				nodeSpecialisationInfobox.addChild("div", "class", "infobox-header", "Local\u00a0CHK\u00a0Success\u00a0Rates\u00a0By\u00a0Location");
+				HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
+				addSpecialisation(nodeSpecialisationTable, myLocation, 1000, locationSuccessRatesArray);
+			}
 		}
 		
 		}
