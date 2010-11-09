@@ -27,6 +27,7 @@ import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.stats.StoreLocationStats;
 import freenet.node.stats.StatsNotAvailableException;
 import freenet.store.CHKStore;
+import freenet.support.Histogram2;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -181,6 +182,8 @@ public class NodeStats implements Persistable {
 	final TrivialRunningAverage successfulLocalCHKFetchTimeAverage;
 	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverage;
 	final TrivialRunningAverage localCHKFetchTimeAverage;
+
+	final public Histogram2 chkSuccessRatesByLocation;
 
 	private long previous_input_stat;
 	private long previous_output_stat;
@@ -479,6 +482,8 @@ public class NodeStats implements Persistable {
 		successfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
 		unsuccessfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
 		localCHKFetchTimeAverage = new TrivialRunningAverage();
+
+		chkSuccessRatesByLocation = new Histogram2(10, 1.0);
 
 		requestOutputThrottle =
 			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit)), 0);
@@ -2453,11 +2458,14 @@ public class NodeStats implements Persistable {
 		return result;
 	}
 
-	public void reportCHKTime(long rtt, boolean successful) {
-		if(successful)
+	public void reportCHKOutcome(long rtt, boolean successful, double location) {
+		if (successful) {
 			successfulLocalCHKFetchTimeAverage.report(rtt);
-		else
+			chkSuccessRatesByLocation.report(location, 1.0);
+		} else {
 			unsuccessfulLocalCHKFetchTimeAverage.report(rtt);
+			chkSuccessRatesByLocation.report(location, 0.0);
+		}
 		localCHKFetchTimeAverage.report(rtt);
 	}
 
