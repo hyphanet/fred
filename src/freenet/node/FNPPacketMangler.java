@@ -2570,7 +2570,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(packetLength < 64) {
 				// Up to 37 bytes of payload (after base overhead above of 27 bytes), padded size 96-128 bytes.
 				// Most small messages, and most ack only packets.
-				paddedLen = 64 + node.fastWeakRandom.nextInt(32);
+				paddedLen = 64 + tracker.pn.paddingGen.nextInt(32);
 			} else {
 				// Up to 69 bytes of payload, final size 128-192 bytes (CHK request, CHK insert, opennet announcement, CHK offer, swap reply)
 				// Up to 133 bytes of payload, final size 192-256 bytes (SSK request, get offered CHK, offer SSK[, SSKInsertRequestNew], get offered SSK)
@@ -2578,7 +2578,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				// Up to 1093 bytes of payload, final size 1152-1216 bytes (bulk transmit, block transmit, time deltas, SSK pubkey[, SSKData, SSKDataInsert])
 				packetLength += 32;
 				paddedLen = ((packetLength + 63) / 64) * 64;
-				paddedLen += node.fastWeakRandom.nextInt(64);
+				paddedLen += tracker.pn.paddingGen.nextInt(64);
 				// FIXME get rid of this, we shouldn't be sending packets anywhere near this size unless
 				// we've done PMTU...
 				if(packetLength <= 1280 && paddedLen > 1280)
@@ -2713,7 +2713,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		if(paddThisPacket) {
 			byte[] padding = new byte[packetLength - ptr];
-			node.fastWeakRandom.nextBytes(padding);
+			tracker.pn.paddingGen.nextBytes(padding);
 
 			System.arraycopy(padding, 0, plaintext, ptr, padding.length);
 			ptr += padding.length;
