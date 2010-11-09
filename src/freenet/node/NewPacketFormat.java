@@ -400,11 +400,11 @@ outer:
 			if(logDEBUG) Logger.debug(this, "Pre-padding length: " + packetLength);
 
 			if(packetLength < 64) {
-				paddedLen = 64 + pn.node.fastWeakRandom.nextInt(32);
+				paddedLen = 64 + pn.paddingGen.nextInt(32);
 			} else {
 				paddedLen = ((packetLength + 63) / 64) * 64;
 				if(paddedLen < maxPacketSize) {
-					paddedLen += pn.node.fastWeakRandom.nextInt(Math.min(64, maxPacketSize - paddedLen));
+					paddedLen += pn.paddingGen.nextInt(Math.min(64, maxPacketSize - paddedLen));
 				} else if((packetLength <= maxPacketSize) && (paddedLen > maxPacketSize)) {
 					paddedLen = maxPacketSize;
 				}
