@@ -28,4 +28,12 @@ public class Histogram2 {
 		bars[n].report(value);
 	}
 
+	public int[] getPercentageArray(int localMax) {
+		int[] retval=new int[bars.length];
+		for (int i=0; i<retval.length; i++) {
+			int val=(int)(bars[i].currentValue()*localMax/MAX);
+			retval[i]=val;
+		}
+		return retval;
+	}
 }
