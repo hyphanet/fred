@@ -1821,8 +1821,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int maxPacketSize = sock.getMaxPacketSize() - sock.getHeadersLength();
 		int paddingLength;
 		if(prePaddingLength < maxPacketSize) {
-			// FIXME shouldn't we use a strong RNG here since packet size is visible to attackers? Or perhaps a different one to what we use for the padding itself?
-			paddingLength = pn.paddingGen.nextInt(Math.min(100, maxPacketSize - prePaddingLength));
+			paddingLength = node.fastWeakRandom.nextInt(Math.min(100, maxPacketSize - prePaddingLength));
 		} else {
 			paddingLength = 0; // Avoid oversize packets if at all possible, the MTU is an estimate and may be wrong, and fragmented packets are often dropped by firewalls.
 			// Tell the devs, this shouldn't happen.
@@ -1840,7 +1839,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pcfb.blockEncipher(output, 0, output.length);
 		System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
 		byte[] random = new byte[paddingLength];
-		pn.paddingGen.nextBytes(random);
+		node.fastWeakRandom.nextBytes(random);
 		System.arraycopy(random, 0, data, hash.length+iv.length+2+output.length, random.length);
 		node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength());
 		try {
