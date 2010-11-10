@@ -14,6 +14,9 @@ public final class BlockMetadata {
 		oldBlock = false;
 	}
 	
+	/** If true, the block should not be cached i.e. it was either added before 1224, or
+	 * it was only cached because of writing everything to the datastore including local
+	 * and nearby requests. */
 	public final boolean isOldBlock() {
 		return oldBlock;
 	}
