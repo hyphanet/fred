@@ -44,7 +44,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 	}
 	
 	public synchronized T fetch(byte[] routingKey, byte[] fullKey,
-			boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
+			boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		Block block = blocksByRoutingKey.get(key);
 		if(block == null) {
@@ -57,7 +57,13 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 			hits++;
 			if(!dontPromote)
 				blocksByRoutingKey.push(key, block);
-			if(meta != null && block.oldBlock) meta.setOldBlock();
+			if(meta != null && block.oldBlock) {
+				if(ignoreOldBlocks) {
+					Logger.normal(this, "Ignoring old block");
+					return null;
+				}
+				meta.setOldBlock();
+			}
 			return ret;
 		} catch (KeyVerifyException e) {
 			blocksByRoutingKey.removeKey(key);
