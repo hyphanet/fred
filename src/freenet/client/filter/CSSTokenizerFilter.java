@@ -375,7 +375,7 @@ class CSSTokenizerFilter {
 		}
 		else if("background-attachment".equalsIgnoreCase(element)){
 			auxilaryVerifiers[60] = new CSSPropertyVerifier(new String[]{"local","scroll","fixed"}, null, null, true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"60<1,65535>"}, true,true));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"60<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("background-clip".equalsIgnoreCase(element))
@@ -391,7 +391,7 @@ class CSSTokenizerFilter {
 		}
 		else if("background-image".equalsIgnoreCase(element)){
 			auxilaryVerifiers[56] = new CSSPropertyVerifier(new String[] {"none"},new String[]{"ur"},null,true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"56<1,65535>"}, true,true));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"56<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("background-origin".equalsIgnoreCase(element))
@@ -410,7 +410,7 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[57] = new CSSPropertyVerifier(new String[]{"repeat","space","round","no-repeat"},null,null,true);
 			auxilaryVerifiers[58] = new CSSPropertyVerifier(new String[]{"repeat-x","repeat-y"}, null, null, true);
 			auxilaryVerifiers[59] = new CSSPropertyVerifier(null, null, new String[]{"58","57<1,2>"}, true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"59<1,65535>"}, true,true));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"59<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("background-size".equalsIgnoreCase(element))
