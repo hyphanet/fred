@@ -170,9 +170,9 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("caption-side");
 		allelementVerifiers.add("clear");
 		allelementVerifiers.add("clip");
-                allelementVerifiers.add("column-break-before");
-                allelementVerifiers.add("column-break-after");
-                allelementVerifiers.add("column-break-inside");
+                allelementVerifiers.add("break-before");
+                allelementVerifiers.add("break-after");
+                allelementVerifiers.add("break-inside");
                 allelementVerifiers.add("column-count");
                 allelementVerifiers.add("column-fill");
                 allelementVerifiers.add("column-gap");
@@ -703,17 +703,17 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"sh"}));
 			allelementVerifiers.remove(element);
 		}
-                else if("column-break-after".equalsIgnoreCase(element))
+                else if("break-after".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","always","avoid","left","right", "page", "column", "avoid-page", "avoid-column" },ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
-		else if("column-break-before".equalsIgnoreCase(element))
+		else if("break-before".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","always","avoid","left","right", "page", "column", "avoid-page", "avoid-column" },ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
-		else if("column-break-inside".equalsIgnoreCase(element))
+		else if("break-inside".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","avoid","avoid-page", "avoid-column"},ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
