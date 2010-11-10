@@ -400,12 +400,27 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				if (oldEntry != null && !oldEntry.isFree()) {
 					long oldOffset = oldEntry.curOffset;
 					try {
-						if (!collisionPossible)
+						if (!collisionPossible) {
+							if((oldEntry.flag & Entry.ENTRY_NEW_BLOCK) == 0 && !isOldBlock) {
+								// Currently flagged as an old block
+								oldEntry.flag |= Entry.ENTRY_NEW_BLOCK;
+								if(logMINOR) Logger.minor(this, "Setting old block to new block");
+								oldEntry.storeSize = storeSize;
+								writeEntry(oldEntry, oldOffset);
+							}
 							return true;
+						}
 						oldEntry.setHD(readHD(oldOffset)); // read from disk
 						T oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, false, null, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
 						if (block.equals(oldBlock)) {
 							if(logDEBUG) Logger.debug(this, "Block already stored");
+							if((oldEntry.flag & Entry.ENTRY_NEW_BLOCK) == 0 && !isOldBlock) {
+								// Currently flagged as an old block
+								oldEntry.flag |= Entry.ENTRY_NEW_BLOCK;
+								if(logMINOR) Logger.minor(this, "Setting old block to new block");
+								oldEntry.storeSize = storeSize;
+								writeEntry(oldEntry, oldOffset);
+							}
 							return false; // already in store
 						} else if (!overwrite) {
 							throw new KeyCollisionException();
