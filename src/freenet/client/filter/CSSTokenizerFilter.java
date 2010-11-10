@@ -1169,7 +1169,7 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[86]=new CSSPropertyVerifier(new String[]{"start"},null,null,true);
 			auxilaryVerifiers[87]=new CSSPropertyVerifier(new String[]{"end","allow-end"},null,null,true);
 			auxilaryVerifiers[88]=new CSSPropertyVerifier(new String[]{"adjacent"},null,null,true);
-			auxilaryVerifiers[89]=new CSSPropertyVerifier(null,null,new String[]{"68a87a88"},true);
+			auxilaryVerifiers[89]=new CSSPropertyVerifier(null,null,new String[]{"86a87a88"},true);
 
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none"},ElementInfo.AURALMEDIA,null,new String[]{"89"}));
 			allelementVerifiers.remove(element);
