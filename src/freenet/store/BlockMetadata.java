@@ -12,7 +12,7 @@ public final class BlockMetadata {
 	 * to be cached. In other words, if this is true, we cannot be sure that the block
 	 * *should* be cached, so others should only know about it if we are actually 
 	 * transmitting the data. */
-	boolean oldBlock;
+	private boolean oldBlock;
 	
 	public final void reset() {
 		oldBlock = false;
