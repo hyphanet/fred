@@ -4655,7 +4655,7 @@ public class Node implements TimeSkewDetectorCallback {
 		tag.reassignToSelf();
 	}
 	
-	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
+	private HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
 			boolean insert, boolean offer) {
 		if(offer)
 			return getOfferTracker(ssk);
