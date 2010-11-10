@@ -1166,7 +1166,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	 * {@inheritDoc}
 	 */
 	public T fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote,
-			boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
+			boolean canReadClientCache, boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
 		T retval = fetch(routingkey, fullKey, dontPromote, canReadClientCache, canReadSlashdotCache, (DSAPublicKey)null);
 		return retval;
 	}

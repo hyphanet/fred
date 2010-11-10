@@ -259,7 +259,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		return false;
 	}
 
-	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
+	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
 		if (logMINOR)
 			Logger.minor(this, "Fetch " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
@@ -288,8 +288,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					return null;
 				}
 
-				if(meta != null && ((entry.flag & Entry.ENTRY_NEW_BLOCK) == 0))
+				if(meta != null && ((entry.flag & Entry.ENTRY_NEW_BLOCK) == 0)) {
+					if(ignoreOldBlocks) {
+						Logger.normal(this, "Ignoring old block");
+						return null;
+					}
 					meta.setOldBlock();
+				}
 
 				try {
 					T block = entry.getStorableBlock(routingKey, fullKey, canReadClientCache, canReadSlashdotCache, meta, null);
