@@ -407,7 +407,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(block != null)
 			tag.setNotRoutedOnwards();
 		
-		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null && ((!meta.isOldBlock()) || node.getWriteLocalToDatastore()), false);
+		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null, false);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting "+(isSSK ? "SSK" : "CHK")+" request from "+source.getPeer()+" preemptively because "+rejectReason);
