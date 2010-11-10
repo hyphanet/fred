@@ -1,9 +1,15 @@
 package freenet.client.filter;
 
+import freenet.support.Logger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 
 public class FilterUtils {
+	private static volatile boolean logDEBUG;
+	static {
+	    Logger.registerClass(FilterUtils.class);
+	}
 
 	//Basic Data types
 	public static boolean isInteger(String strValue)
@@ -285,6 +291,8 @@ public class FilterUtils {
 		CSScolorKeywords.add("teal");
 		CSScolorKeywords.add("white");
 		CSScolorKeywords.add("yellow");
+		// as of CSS3 this is valid: http://www.w3.org/TR/css3-color/#transparent-def
+		CSScolorKeywords.add("transparent");
 	}
 	private final static HashSet<String> CSSsystemColorKeywords=new HashSet<String>();
 	static {
@@ -338,25 +346,18 @@ public class FilterUtils {
 	}
 	private final static HashSet<String> cssMedia = new HashSet<String>();
 	static {
-		for(String s : new String[] {"all","aural","braille","embossed","handheld","print","projection","screen","speech","tty","tv"})
-			cssMedia.add(s);
+	    cssMedia.addAll(Arrays.asList(new String[]{"all", "aural", "braille", "embossed", "handheld", "print", "projection", "screen", "speech", "tty", "tv"}));
 	}
 	public static boolean isMedia(String media) {
 		return cssMedia.contains(media);
 	}
-	public static boolean isColor(String value,boolean isSVG)
+	public static boolean isColor(String value)
 	{
 		value=value.trim();
-		if(isSVG)
-		{
-		if(SVGcolorKeywords.contains(value))
+
+		if(CSScolorKeywords.contains(value) || CSSsystemColorKeywords.contains(value) || SVGcolorKeywords.contains(value))
 			return true;
-		}
-		else
-		{
-			if(CSScolorKeywords.contains(value) || CSSsystemColorKeywords.contains(value))
-				return true;
-		}
+
 		if(value.indexOf('#')==0)
 		{
 
@@ -392,7 +393,7 @@ public class FilterUtils {
 			String[] colorParts=value.substring(4,value.length()-1).split(",");
 			if(colorParts.length!=3)
 				return false;
-			boolean isValidColorParts=true;;
+			boolean isValidColorParts=true;
 			for(int i=0; i<colorParts.length && isValidColorParts;i++)
 			{
 				if(!(isPercentage(colorParts[i].trim()) || isInteger(colorParts[i].trim())))
@@ -401,8 +402,171 @@ public class FilterUtils {
 			if(isValidColorParts)
 				return true;
 		}
+		if(value.indexOf("rgba(")==0 && value.indexOf(")")==value.length()-1)
+		{
+			String[] colorParts=value.substring(5,value.length()-1).split(",");
+			if(colorParts.length!=4)
+				return false;
+			boolean isValidColorParts=true;
+			for(int i=0; i<colorParts.length-1 && isValidColorParts;i++)
+			{
+				if(!(isPercentage(colorParts[i].trim()) || isInteger(colorParts[i].trim())))
+					isValidColorParts = false;
+			}
+			if(isValidColorParts && isNumber(colorParts[3]))
+				return true;
+		}
+
+		if(value.indexOf("hsl(")==0 && value.indexOf(")")==value.length()-1)
+		{
+			String[] colorParts = value.substring(4, value.length() - 1).split(",");
+			if (colorParts.length != 3) {
+			    return false;
+			}
+
+			if(isNumber(colorParts[0]) && isPercentage(colorParts[1]) && isPercentage(colorParts[2]))
+			    return true;
+		}
+
+		if(value.indexOf("hsla(")==0 && value.indexOf(")")==value.length()-1)
+		{
+			String[] colorParts = value.substring(5, value.length() - 1).split(",");
+			if (colorParts.length != 4) {
+			    return false;
+			}
+
+			if(isNumber(colorParts[0]) && isPercentage(colorParts[1]) && isPercentage(colorParts[2]) && isNumber(colorParts[3]))
+			    return true;
+		}
+
 		return false;
 	}
+	
+	public static boolean isCSSTransform(String value) {
+	    value = value.trim();
+	    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform(\""+value+"\")");
+	    
+	    if(value.indexOf("matrix(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String[] parts = value.substring(7, value.length() - 1).split(",");
+		if (parts.length != 6) {
+		    return false;
+		}
+
+		boolean isValid = true;
+		for (int i = 0; i < parts.length && isValid; i++) {
+		    if (!isNumber(parts[i].trim())) {
+			isValid = false;
+		    }
+		}
+		if (isValid) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a matrix()");
+		    return true;
+		}
+	    }
+
+	    if(value.indexOf("translateX(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String part = value.substring(11, value.length() - 1);
+		if (isPercentage(part.trim()) || isLength(part.trim(), false)) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a translateX()");
+		    return true;
+		}
+	    }
+
+	    if(value.indexOf("translateY(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String part = value.substring(11, value.length() - 1);
+		if (isPercentage(part.trim()) || isLength(part.trim(), false)) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a translateY()");
+		    return true;
+		}
+	    }
+
+	    if(value.indexOf("translate(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String[] parts = value.substring(10, value.length() - 1).split(",");
+		if (parts.length == 1 && (isPercentage(parts[0].trim()) || isLength(parts[0].trim(), false))) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a translate()");
+		    return true;
+		}else if (parts.length == 2 && (isPercentage(parts[0].trim()) || isLength(parts[0].trim(), false)) && (isPercentage(parts[1].trim()) || isLength(parts[1].trim(), false))) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a translate()");
+		    return true;
+		}
+	    }
+
+	    if(value.indexOf("scale(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String[] parts = value.substring(6, value.length() - 1).split(",");
+		if (parts.length == 1 && isNumber(parts[0].trim())) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a scale()");
+		    return true;
+		}else if (parts.length == 2 && isNumber(parts[0].trim()) && isNumber(parts[1].trim())) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a scale()");
+		    return true;
+		}
+	    }
+	    
+	    if(value.indexOf("scaleX(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String part = value.substring(7, value.length() - 1);
+		if (isNumber(part.trim())) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a scaleX()");
+		    return true;
+		}
+	    }
+
+	    if(value.indexOf("scaleY(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String part = value.substring(7, value.length() - 1);
+		if (isNumber(part.trim())) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a scaleY()");
+		    return true;
+		}
+	    }
+
+	    if(value.indexOf("rotate(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String part = value.substring(7, value.length() - 1);
+		if (isAngle(part.trim())) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a rotate()");
+		    return true;
+		}
+	    }
+
+	    if(value.indexOf("skewX(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String part = value.substring(6, value.length() - 1);
+		if (isNumber(part.trim()) || isAngle(part.trim())) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a skewX()");
+		    return true;
+		}
+	    }
+
+	    if(value.indexOf("skewY(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String part = value.substring(6, value.length() - 1);
+		if (isNumber(part.trim()) || isAngle(part.trim())) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a skewY()");
+		    return true;
+		}
+	    }
+
+	    if(value.indexOf("skew(")==0 && value.indexOf(")")==value.length()-1)
+	    {
+		String[] parts = value.substring(5, value.length() - 1).split(",");
+		if (parts.length == 1 && (isNumber(parts[0].trim()) || isAngle(parts[0].trim()))) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a skew()");
+		    return true;
+		}else if (parts.length == 2 && (isNumber(parts[0].trim()) || isAngle(parts[0].trim())) && (isNumber(parts[1].trim()) || isAngle(parts[0].trim()))) {
+		    if(logDEBUG) Logger.debug(FilterUtils.class, "isCSSTransform found a skew()");
+		    return true;
+		}
+	    }
+
+	    return false;
+	}
+
 	public static boolean isFrequency(String value)
 	{
 		String firstPart;
