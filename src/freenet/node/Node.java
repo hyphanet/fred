@@ -5981,4 +5981,8 @@ public class Node implements TimeSkewDetectorCallback {
 			infobox.addChild("p", "Would have stored but wasn't stored: "+completeInsertsNotStoredWouldHaveStored+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsNotStoredWouldHaveStored*1.0)/completeInsertsTotal)+")");
 		}
 	}
+
+	public boolean getWriteLocalToDatastore() {
+		return writeLocalToDatastore;
+	}
 }
