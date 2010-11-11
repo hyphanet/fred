@@ -170,9 +170,9 @@ class CSSTokenizerFilter {
 		allelementVerifiers.add("caption-side");
 		allelementVerifiers.add("clear");
 		allelementVerifiers.add("clip");
-                allelementVerifiers.add("column-break-before");
-                allelementVerifiers.add("column-break-after");
-                allelementVerifiers.add("column-break-inside");
+                allelementVerifiers.add("break-before");
+                allelementVerifiers.add("break-after");
+                allelementVerifiers.add("break-inside");
                 allelementVerifiers.add("column-count");
                 allelementVerifiers.add("column-fill");
                 allelementVerifiers.add("column-gap");
@@ -375,7 +375,7 @@ class CSSTokenizerFilter {
 		}
 		else if("background-attachment".equalsIgnoreCase(element)){
 			auxilaryVerifiers[60] = new CSSPropertyVerifier(new String[]{"local","scroll","fixed"}, null, null, true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"60<1,65535>"}, true,true));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"60<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("background-clip".equalsIgnoreCase(element))
@@ -391,7 +391,7 @@ class CSSTokenizerFilter {
 		}
 		else if("background-image".equalsIgnoreCase(element)){
 			auxilaryVerifiers[56] = new CSSPropertyVerifier(new String[] {"none"},new String[]{"ur"},null,true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"56<1,65535>"}, true,true));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"56<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("background-origin".equalsIgnoreCase(element))
@@ -410,7 +410,7 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[57] = new CSSPropertyVerifier(new String[]{"repeat","space","round","no-repeat"},null,null,true);
 			auxilaryVerifiers[58] = new CSSPropertyVerifier(new String[]{"repeat-x","repeat-y"}, null, null, true);
 			auxilaryVerifiers[59] = new CSSPropertyVerifier(null, null, new String[]{"58","57<1,2>"}, true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,ElementInfo.VISUALMEDIA,null,new String[]{"59<1,65535>"}, true,true));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"59<1,65535>"}, true,true));
 			allelementVerifiers.remove(element);
 		}
 		else if("background-size".equalsIgnoreCase(element))
@@ -703,17 +703,17 @@ class CSSTokenizerFilter {
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"sh"}));
 			allelementVerifiers.remove(element);
 		}
-                else if("column-break-after".equalsIgnoreCase(element))
+                else if("break-after".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","always","avoid","left","right", "page", "column", "avoid-page", "avoid-column" },ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
-		else if("column-break-before".equalsIgnoreCase(element))
+		else if("break-before".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","always","avoid","left","right", "page", "column", "avoid-page", "avoid-column" },ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
-		else if("column-break-inside".equalsIgnoreCase(element))
+		else if("break-inside".equalsIgnoreCase(element))
 		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","avoid","avoid-page", "avoid-column"},ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
@@ -1042,7 +1042,7 @@ class CSSTokenizerFilter {
 		}
 		else if("opacity".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALPAGEDMEDIA,new String[]{"in"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALPAGEDMEDIA,new String[]{"re"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("orphans".equalsIgnoreCase(element))
@@ -1169,7 +1169,7 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[86]=new CSSPropertyVerifier(new String[]{"start"},null,null,true);
 			auxilaryVerifiers[87]=new CSSPropertyVerifier(new String[]{"end","allow-end"},null,null,true);
 			auxilaryVerifiers[88]=new CSSPropertyVerifier(new String[]{"adjacent"},null,null,true);
-			auxilaryVerifiers[89]=new CSSPropertyVerifier(null,null,new String[]{"68a87a88"},true);
+			auxilaryVerifiers[89]=new CSSPropertyVerifier(null,null,new String[]{"86a87a88"},true);
 
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none"},ElementInfo.AURALMEDIA,null,new String[]{"89"}));
 			allelementVerifiers.remove(element);
@@ -2256,6 +2256,14 @@ class CSSTokenizerFilter {
 							filteredTokens.setLength(0);
 						}
 						if(logDEBUG) Logger.debug(this, "STATE2 CASE { filtered elements"+filtered);
+					} else {
+						// No valid selector, wipe it out as above.
+						ignoreElementsS2=true;
+						// If there was a comma, filteredTokens may contain some tokens.
+						// These are invalid, as per the spec: we wipe the whole selector out.
+						// Also, not wiping filteredTokens here does bad things:
+						// we would write the filtered tokens, without the { or }, so we end up prepending it to the next rule, which is not what we want as it changes the next rule's meaning.
+						filteredTokens.setLength(0);
 					}
 					currentState=STATE3;
 					openBracesStartingS3 = openBraces;

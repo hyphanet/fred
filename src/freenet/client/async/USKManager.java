@@ -253,7 +253,7 @@ public class USKManager implements RequestClient {
 			ArrayList<USK> toFetch = null;
 			long now = System.currentTimeMillis();
 			boolean empty = true;
-			synchronized(this) {
+			synchronized(USKManager.this) {
 				for(Map.Entry<USK, Long> entry : temporaryBackgroundFetchersPrefetch.entrySet()) {
 					empty = false;
 					if(entry.getValue() > 0 && now - entry.getValue() >= PREFETCH_DELAY) {

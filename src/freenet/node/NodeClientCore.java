@@ -1045,7 +1045,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						requestStarters.rejectedOverload(false, false);
 						rejectedOverload = true;
 						long rtt = System.currentTimeMillis() - startTime;
-						node.nodeStats.reportCHKTime(rtt, false);
+						double targetLocation=key.getNodeCHK().toNormalizedDouble();
+						node.nodeStats.reportCHKOutcome(rtt, false, targetLocation);
 					}
 				} else
 					if(rs.hasForwarded() &&
@@ -1056,11 +1057,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						(status == RequestSender.VERIFY_FAILURE) ||
 						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
 						long rtt = System.currentTimeMillis() - startTime;
+						double targetLocation=key.getNodeCHK().toNormalizedDouble();
 						if(!rejectedOverload)
 							requestStarters.requestCompleted(false, false, key.getNodeKey(true));
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.chkRequestThrottle.successfulCompletion(rtt);
-						node.nodeStats.reportCHKTime(rtt, status == RequestSender.SUCCESS);
+						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation);
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful CHK fetch took "+rtt);
 						}

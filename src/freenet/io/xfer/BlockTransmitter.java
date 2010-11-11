@@ -453,7 +453,10 @@ public class BlockTransmitter {
 
 		public boolean shouldTimeout() {
 			synchronized(_senderThread) {
-				if(_receivedSendCompletion || _failed || _completed) return true; 
+				// We are waiting for the send completion, which is set on timeout as well as on receiving a message.
+				// In some corner cases we might want to get the allReceived after setting _failed, so don't timeout on _failed.
+				// We do want to timeout on _completed because that means everything is finished - it is only set in maybeComplete() and maybeFail().
+				if(_receivedSendCompletion || _completed) return true; 
 			}
 			return false;
 		}
@@ -494,7 +497,10 @@ public class BlockTransmitter {
 
 		public boolean shouldTimeout() {
 			synchronized(_senderThread) {
-				if(_receivedSendCompletion || _failed || _completed) return true; 
+				// We are waiting for the send completion, which is set on timeout as well as on receiving a message.
+				// We don't want to timeout on _failed because we can set _failed, send sendAborted, and then wait for the acknowledging sendAborted.
+				// We do want to timeout on _completed because that means everything is finished - it is only set in maybeComplete() and maybeFail().
+				if(_receivedSendCompletion || _completed) return true; 
 			}
 			return false;
 		}

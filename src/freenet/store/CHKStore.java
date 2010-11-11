@@ -23,8 +23,8 @@ public class CHKStore extends StoreCallback<CHKBlock> {
 		return CHKBlock.construct(data, headers);
 	}
 
-	public CHKBlock fetch(NodeCHK chk, boolean dontPromote, BlockMetadata meta) throws IOException {
-		return store.fetch(chk.getRoutingKey(), null, dontPromote, false, false, meta);
+	public CHKBlock fetch(NodeCHK chk, boolean dontPromote, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
+		return store.fetch(chk.getRoutingKey(), null, dontPromote, false, false, ignoreOldBlocks, meta);
 	}
 	
 	public void put(CHKBlock b, boolean isOldBlock) throws IOException {

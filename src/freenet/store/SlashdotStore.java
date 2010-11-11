@@ -92,7 +92,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	/**
 	 * @param meta IGNORED!
 	 */
-	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
+	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		DiskBlock block;
 		long timeAccessed;
@@ -124,7 +124,6 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 				}
 			}
 			if(logDEBUG) Logger.debug(this, "Block was last accessed "+(System.currentTimeMillis() - timeAccessed)+"ms ago");
-			if(meta != null) meta.noMetadata = true;
 			return ret;
 		} catch (KeyVerifyException e) {
 			block.data.free();
