@@ -30,7 +30,7 @@ tasks (ant-apache-bsf) and (if using Java &lt;6) bsf and rhino.
 	</target>
 
 	<target name="get-ext">
-		<get src="http://checksums.freenetproject.org/cc/freenet-ext.jar" dest="${lib}"
+		<get src="http://checksums.freenetproject.org/cc/freenet-ext.jar" dest="${lib}/freenet-ext.jar"
 			verbose="true" usetimestamp="true"/>
 	</target>
 
