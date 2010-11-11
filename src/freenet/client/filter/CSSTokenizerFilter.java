@@ -300,7 +300,7 @@ class CSSTokenizerFilter {
 	 * Array for storing additional Verifier objects for validating Regular expressions in CSS Property value
 	 * e.g. [ <color> | transparent]{1,4}. It is explained in detail in CSSPropertyVerifier class
 	 */
-	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[111];
+	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[116];
 	static
 	{
 		/*CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String expression,boolean onlyValueVerifier)*/
