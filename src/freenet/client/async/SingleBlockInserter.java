@@ -176,7 +176,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	protected void onEncode(ClientKey key, ObjectContainer container, ClientContext context) {
+	protected void onEncode(final ClientKey key, ObjectContainer container, final ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			if(resultingURI != null) return;
@@ -186,7 +186,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.store(this);
 			container.activate(cb, 1);
 		}
-		cb.onEncode(key, this, container, context);
+		if(!persistent) {
+			context.mainExecutor.execute(new Runnable() {
+				
+				public void run() {
+					cb.onEncode(key, SingleBlockInserter.this, null, context);
+				}
+			}, "Got URI");
+		} else {
+			cb.onEncode(key, this, container, context);
+		}
 		if(persistent)
 			container.deactivate(cb, 1);
 	}
@@ -524,14 +533,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				if(block.persistent) {
 					req.setGeneratedKey(key);
 				} else if(!req.localRequestOnly) {
-					context.mainExecutor.execute(new Runnable() {
-
-						public void run() {
-							orig.onEncode(key, null, context);
-						}
-
-					}, "Got URI");
-
+					orig.onEncode(key, null, context);
 				}
 				if(req.localRequestOnly)
 					try {
