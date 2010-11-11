@@ -351,6 +351,7 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[100] = new CSSPropertyVerifier(new String[]{"underline"}, null, null, true);
 		auxilaryVerifiers[101] = new CSSPropertyVerifier(new String[]{"overline"}, null, null, true);
 		auxilaryVerifiers[102] = new CSSPropertyVerifier(new String[]{"line-through"}, null, null, true);
+		auxilaryVerifiers[115] = new CSSPropertyVerifier(new String[] {"none"},ElementInfo.VISUALMEDIA,null,new String[]{"100a101a102"});
 		// <text-decoration-color>
 		auxilaryVerifiers[103] = new CSSPropertyVerifier(null, new String[]{"co"}, null, true);
 		// <text-decoration-style>
@@ -1255,7 +1256,7 @@ class CSSTokenizerFilter {
 		}
 		else if("text-decoration".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"blink"},ElementInfo.VISUALMEDIA,null,new String[]{"100a103a104"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"blink"},ElementInfo.VISUALMEDIA,null,new String[]{"115a103a104"}));
 			allelementVerifiers.remove(element);
 
 		}
