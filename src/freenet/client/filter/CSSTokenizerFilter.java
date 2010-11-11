@@ -351,7 +351,7 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[100] = new CSSPropertyVerifier(new String[]{"underline"}, null, null, true);
 		auxilaryVerifiers[101] = new CSSPropertyVerifier(new String[]{"overline"}, null, null, true);
 		auxilaryVerifiers[102] = new CSSPropertyVerifier(new String[]{"line-through"}, null, null, true);
-		auxilaryVerifiers[115] = new CSSPropertyVerifier(new String[] {"none"},ElementInfo.VISUALMEDIA,null,new String[]{"100a101a102"});
+		auxilaryVerifiers[115] = new CSSPropertyVerifier(new String[] {"none"},null,null,new String[]{"100a101a102"});
 		// <text-decoration-color>
 		auxilaryVerifiers[103] = new CSSPropertyVerifier(null, new String[]{"co"}, null, true);
 		// <text-decoration-style>
