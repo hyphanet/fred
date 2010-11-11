@@ -152,6 +152,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected final NodeStats stats;
 	protected final PeerManager peers;
 	protected boolean isReversed = false;
+	protected boolean showTrivialFoafConnections = false;
+
 	public enum PeerAdditionReturnCodes{ OK, WRONG_ENCODING, CANT_PARSE, INTERNAL_ERROR, INVALID_SIGNATURE, TRY_TO_ADD_SELF, ALREADY_IN_REFERENCE}
 
 	protected ConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
@@ -434,7 +436,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {					
 					PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
 					drawRow(peerTable, peerNodeStatus, mode >= PageMaker.MODE_ADVANCED, fProxyJavascriptEnabled, now, path, enablePeerActions, endCols, drawMessageTypes, totalSelectionRate, fix1);
-					
 				}
 
 				if(peerForm != null) {
@@ -442,6 +443,100 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 			}
 			// END PEER TABLE
+
+			//FOAF info not generally useful anyway; should be hidden by default.
+			//if (showFoafTable)
+			{
+				//requires a location-to-list/count in-memory transform
+				List<Double> locations=new ArrayList<Double>();
+				List<List<PeerNodeStatus>> peerGroups=new ArrayList<List<PeerNodeStatus>>();
+				{
+					for (PeerNodeStatus peerNodeStatus : peerNodeStatuses) {
+						double[] peersLoc = peerNodeStatus.getPeersLocation();
+						if (peersLoc!=null) {
+							for (double location : peersLoc) {
+								int i;
+								int max=locations.size();
+								for (i=0; i<max && locations.get(i)<location; i++);
+								//i now points to the proper location (equal, insertion point, or end-of-list)
+								//maybe better called "reverseGroup"?
+								List<PeerNodeStatus> peerGroup;
+								if (i<max && locations.get(i).doubleValue()==location) {
+									peerGroup=peerGroups.get(i);
+								} else {
+									peerGroup=new ArrayList<PeerNodeStatus>();
+									locations.add(i, location);
+									peerGroups.add(i, peerGroup);
+								}
+								peerGroup.add(peerNodeStatus);
+							}
+						}
+					}
+				}
+				//transform complete.... now we have peers listed by foaf's ordered by ascending location
+				int trivialCount=0;
+				int nonTrivialCount=0;
+				int transitiveCount=0;
+				for (List<PeerNodeStatus> list : peerGroups) {
+					if (list.size()==1)
+						trivialCount++;
+					else
+						nonTrivialCount++;
+				}
+				peerTableInfoboxContent.addChild("b", locations.size()+" Second-Degree Connections");
+				peerTableInfoboxContent.addChild("br");
+				if (!showTrivialFoafConnections) {
+					peerTableInfoboxContent.addChild("i", trivialCount+" non-overlapping connections potentially hidden");
+					//@todo: add "show these" link
+				} else {
+					peerTableInfoboxContent.addChild("i", nonTrivialCount+" reachable through more than one peer");
+					//@todo: add "hide these" link
+				}
+				HTMLNode foafTable = peerTableInfoboxContent.addChild("table", "class", "darknet_connections"); //@todo: change css class?
+				HTMLNode foafRow = foafTable.addChild("tr");
+				{
+					foafRow.addChild("th", "Location");
+					foafRow.addChild("th", "Count");
+					foafRow.addChild("th", "Reachable Through");
+				}
+				int max=locations.size();
+				for (int i=0; i<max; i++) {
+					double location=locations.get(i);
+					List<PeerNodeStatus> peersWithFriend=peerGroups.get(i);
+					boolean isTransitivePeer=false;
+					{
+						for (PeerNodeStatus peerNodeStatus : peerNodeStatuses) {
+							if (location==peerNodeStatus.getLocation()) {
+								isTransitivePeer=true;
+								transitiveCount++;
+								break;
+							}
+						}
+					}
+					if (peersWithFriend.size()==1 && !showTrivialFoafConnections && !isTransitivePeer)
+						continue;
+					foafRow=foafTable.addChild("tr");
+					{
+						if (isTransitivePeer) {
+							foafRow.addChild("td").addChild("b", String.valueOf(location));
+						} else {
+							foafRow.addChild("td", String.valueOf(location));
+						}
+						foafRow.addChild("td", String.valueOf(peersWithFriend.size()));
+						HTMLNode locationCell=foafRow.addChild("td", "class", "peer-location");
+						for (PeerNodeStatus peerNodeStatus : peersWithFriend) {
+							String address=((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress")));
+							locationCell.addChild("i", address);
+							locationCell.addChild("br");
+						}
+					}
+				}
+				if (transitiveCount>0) {
+					peerTableInfoboxContent.addChild("i", transitiveCount+" locations likely also our peers (in bold)");
+				}
+			}
+			// END FOAF TABLE
+
 		} else {
 			if(!isOpennet()) {
 				try {
@@ -771,8 +866,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			locationNode.addChild("br");
 			double[] peersLoc = peerNodeStatus.getPeersLocation();
 			if(peersLoc != null) {
-				for(double loc : peersLoc)
-					locationNode.addChild("i", String.valueOf(loc)).addChild("br");
+				locationNode.addChild("i", "+"+(peersLoc.length)+" friends");
 			}
 		}
 
