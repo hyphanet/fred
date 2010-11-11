@@ -4655,7 +4655,7 @@ public class Node implements TimeSkewDetectorCallback {
 		tag.reassignToSelf();
 	}
 	
-	private synchronized HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
+	private HashMap<Long, ? extends UIDTag> getTracker(boolean local, boolean ssk,
 			boolean insert, boolean offer) {
 		if(offer)
 			return getOfferTracker(ssk);
@@ -4757,27 +4757,59 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public int getNumSSKRequests() {
-		return runningSSKGetUIDs.size() + runningLocalSSKGetUIDs.size();
+		int total = 0;
+		synchronized(runningSSKGetUIDs) {
+			total += runningSSKGetUIDs.size();
+		}
+		synchronized(runningLocalSSKGetUIDs) {
+			total += runningLocalSSKGetUIDs.size();
+		}
+		return total;
 	}
 
 	public int getNumCHKRequests() {
-		return runningCHKGetUIDs.size() + runningLocalCHKGetUIDs.size();
+		int total = 0;
+		synchronized(runningCHKGetUIDs) {
+			total += runningCHKGetUIDs.size();
+		}
+		synchronized(runningLocalCHKGetUIDs) {
+			total += runningLocalCHKGetUIDs.size();
+		}
+		return total;
 	}
 
 	public int getNumSSKInserts() {
-		return runningSSKPutUIDs.size() + runningLocalSSKPutUIDs.size();
+		int total = 0;
+		synchronized(runningSSKPutUIDs) {
+			total += runningSSKPutUIDs.size();
+		}
+		synchronized(runningLocalSSKPutUIDs) {
+			total += runningLocalSSKPutUIDs.size();
+		}
+		return total;
 	}
 
 	public int getNumCHKInserts() {
-		return runningCHKPutUIDs.size() + runningLocalCHKPutUIDs.size();
+		int total = 0;
+		synchronized(runningCHKPutUIDs) {
+			total += runningCHKPutUIDs.size();
+		}
+		synchronized(runningLocalCHKPutUIDs) {
+			total += runningLocalCHKPutUIDs.size();
+		}
+		return total;
 	}
 
 	public int getNumLocalSSKRequests() {
-		return runningLocalSSKGetUIDs.size();
+		synchronized(runningLocalSSKGetUIDs) {
+			return runningLocalSSKGetUIDs.size();
+		}
 	}
 
 	public int getNumLocalCHKRequests() {
-		return runningLocalCHKGetUIDs.size();
+		synchronized(runningLocalCHKGetUIDs) {
+			return runningLocalCHKGetUIDs.size();
+		}
 	}
 
 	public int getNumRemoteSSKRequests() {
@@ -4785,35 +4817,51 @@ public class Node implements TimeSkewDetectorCallback {
 //			for(Long l : runningSSKGetUIDs)
 //				Logger.minor(this, "Running remote SSK fetch: "+l);
 //		}
-		return runningSSKGetUIDs.size();
+		synchronized(runningSSKGetUIDs) {
+			return runningSSKGetUIDs.size();
+		}
 	}
 
 	public int getNumRemoteCHKRequests() {
-		return runningCHKGetUIDs.size();
+		synchronized(runningCHKGetUIDs) {
+			return runningCHKGetUIDs.size();
+		}
 	}
 
 	public int getNumLocalSSKInserts() {
-		return runningLocalSSKPutUIDs.size();
+		synchronized(runningLocalSSKPutUIDs) {
+			return runningLocalSSKPutUIDs.size();
+		}
 	}
 
 	public int getNumLocalCHKInserts() {
-		return runningLocalCHKPutUIDs.size();
+		synchronized(runningLocalCHKPutUIDs) {
+			return runningLocalCHKPutUIDs.size();
+		}
 	}
 
 	public int getNumRemoteSSKInserts() {
-		return runningSSKPutUIDs.size();
+		synchronized(runningSSKPutUIDs) {
+			return runningSSKPutUIDs.size();
+		}
 	}
 
 	public int getNumRemoteCHKInserts() {
-		return runningCHKPutUIDs.size();
+		synchronized(runningCHKPutUIDs) {
+			return runningCHKPutUIDs.size();
+		}
 	}
 
 	public int getNumSSKOfferReplies() {
-		return runningSSKOfferReplyUIDs.size();
+		synchronized(runningSSKOfferReplyUIDs) {
+			return runningSSKOfferReplyUIDs.size();
+		}
 	}
 
 	public int getNumCHKOfferReplies() {
-		return runningCHKOfferReplyUIDs.size();
+		synchronized(runningCHKOfferReplyUIDs) {
+			return runningCHKOfferReplyUIDs.size();
+		}
 	}
 
 	public int getNumTransferringRequestSenders() {

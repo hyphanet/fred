@@ -134,7 +134,9 @@ public class NodeCryptoConfig {
 		}, false);
 		dropProbability = config.getInt("testingDropPacketsEvery"); 
 		
-		config.register("oneConnectionPerIP", isOpennet, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",
+		config.register("oneConnectionPerIP", isOpennet, sortOrder++, true, false,
+				(isOpennet ? "OpennetManager" : "Node") + ".oneConnectionPerIP",
+				(isOpennet ? "OpennetManager" : "Node") + ".oneConnectionPerIPLong",
 				new BooleanCallback() {
 
 					@Override
