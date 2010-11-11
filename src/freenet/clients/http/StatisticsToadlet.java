@@ -1284,6 +1284,13 @@ public class StatisticsToadlet extends Toadlet {
 			peerLocation = peerNodeStatus.getLocation();
 			if(!peerNodeStatus.isSearchable()) continue;
 			if(peerLocation < 0.0 || peerLocation > 1.0) continue;
+			double[] foafLocations=peerNodeStatus.getPeersLocation();
+			if (foafLocations!=null && peerNodeStatus.isRoutable()) {
+				for (double foafLocation : foafLocations) {
+					//one grey dot for each "Friend-of-a-friend"
+					peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(foafLocation, false, 0.9), "disconnected" }, ".");
+				}
+			}
 			newPeerCount++;
 			peerDistance = Location.distance( myLocation, peerLocation );
 			histogramIndex = (int) (Math.floor(peerDistance * HISTOGRAM_LENGTH * 2));
