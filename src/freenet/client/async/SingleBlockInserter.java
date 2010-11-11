@@ -532,7 +532,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				k = key;
 				if(block.persistent) {
 					req.setGeneratedKey(key);
-				} else if(!req.localRequestOnly) {
+				} else {
 					orig.onEncode(key, null, context);
 				}
 				if(req.localRequestOnly)
@@ -572,27 +572,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				block.copyBucket.free();
 			}
 			if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request succeeded");
-			if(req.localRequestOnly) {
-				// Must run on-thread or we will have exploding threads.
-				// Plus must run before onInsertSuccess().
-				if(!block.persistent)
-					orig.onEncode(key, null, context);
-				req.onInsertSuccess(context);
-			} else if(!block.persistent) {
-				// Must run after onEncode.
-				context.mainExecutor.execute(new Runnable() {
-
-					public void run() {
-						// Make absolutely sure even if we run the two jobs out of order.
-						// Overhead for double-checking should be very low.
-						orig.onEncode(key, null, context);
-						req.onInsertSuccess(context);
-					}
-
-				}, "Succeeded");
-			} else {
-				req.onInsertSuccess(context);
-			}
+			req.onInsertSuccess(context);
 			return true;
 		}
 	}
