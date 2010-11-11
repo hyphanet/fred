@@ -89,7 +89,12 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
         decoded = true;
         
         if(dontDecompress) {
-        	return BucketTools.makeImmutableBucket(factory, dataOutput, dataLength);
+        	if(compressionAlgorithm == (short)-1)
+        		return BucketTools.makeImmutableBucket(factory, dataOutput, dataLength);
+        	else if(dataLength < 2)
+        		throw new SSKDecodeException("Data length is less than 2 yet compressed!");
+        	else
+        		return BucketTools.makeImmutableBucket(factory, dataOutput, 2, dataLength - 2);
         }
 
         Bucket b = Key.decompress(compressionAlgorithm >= 0, dataOutput, dataLength, factory, Math.min(MAX_DECOMPRESSED_DATA_LENGTH, maxLength), compressionAlgorithm, true);
