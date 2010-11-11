@@ -38,6 +38,7 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.store.KeyCollisionException;
+import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -556,6 +557,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 								orig.onEncode(k, null, context);
 							req.onInsertSuccess(context);
 							return true;
+						} else {
+							if(SingleBlockInserter.logMINOR) Logger.minor(this, "Apparently real collision: collided.isMetadata="+collided.isMetadata()+" block.isMetadata="+block.isMetadata+
+									" collided.codec="+collided.getCompressionCodec()+" block.codec="+block.compressionCodec+
+									" collided.datalength="+data.length+" block.datalength="+inserting.length+" H(collided)="+Fields.hashCode(data)+" H(inserting)="+Fields.hashCode(inserting));
 						}
 					} catch (KeyVerifyException e1) {
 						Logger.error(this, "Caught "+e1+" when checking collision!", e1);
