@@ -160,7 +160,7 @@ public class FilenameGenerator {
 				System.err.println(msg);
 			} else {
 				if(!dir.exists()) {
-					if(!dir.mkdir()) {
+					if((!dir.mkdir()) && !dir.exists()) {
 						// FIXME localise these errors somehow??
 						System.err.println("Unable to create new temporary directory: "+dir);
 						throw new IOException("Unable to create new temporary directory: "+dir);
