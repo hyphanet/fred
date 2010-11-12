@@ -1022,7 +1022,7 @@ public class PluginManager {
 		addOfficialPlugin("HelloWorld", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"));
 		addOfficialPlugin("HelloFCP", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"));
 		addOfficialPlugin("JSTUN", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
-		addOfficialPlugin("KeyUtils", false, 5003, false, new FreenetURI("CHK@dF9Lg7Q7Bbt4uZ4OANVaSlgrUmHmV0Pj03Y1SCaN1Fw,H5Wj5VCgI4JSusMGonUiPlAwSVAahN0Bzw2v1C6QvcA,AAIC--8/KeyUtils.jar"));
+		addOfficialPlugin("KeyUtils", false, 5006, false, new FreenetURI("CHK@rzCNPb07WkveOoWMcrArASXDPU9kn2rtYz3Vc1Xtjhc,T3P~8JKfwRo6IFr6ZcoPvwWl0Xuj2C~0TonXnAV7w34,AAIC--8/KeyUtils.jar"));
 		addOfficialPlugin("MDNSDiscovery", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
 		addOfficialPlugin("SNMP", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"));
 		addOfficialPlugin("TestGallery", false, 1, false, new FreenetURI("CHK@LfJVh1EkCr4ry0yDW74vwxkX-3nkr~ztW2z0SUZHfC0,-mz7l39dC6n0RTUiSokjC~pUDO7PWZ89miYesKH0-WA,AAIC--8/TestGallery.jar"));
