@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
@@ -46,7 +47,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	
 	/** ~= Ticker :) */
 	private final TreeMap<Long, Object> timedJobsByTime;
-	private final HashSet<Job> timedJobsQueued;
+	private final HashMap<Job, Long> timedJobsQueued;
 	final Node node;
 	final NativeThread myThread;
 	static final int MAX_SLEEP_TIME = 200;
@@ -54,7 +55,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	PrioritisedTicker(Node node) {
 		this.node = node;
 		timedJobsByTime = new TreeMap<Long, Object>();
-		timedJobsQueued = new HashSet<Job>();
+		timedJobsQueued = new HashMap<Job, Long>();
 		myThread = new NativeThread(this, "Ticker thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
 	}
@@ -203,7 +204,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 		Long l = Long.valueOf(offset + now);
 		synchronized(timedJobsByTime) {
 			if(noDupes) {
-				if(timedJobsQueued.contains(job)) {
+				if(timedJobsQueued.containsKey(job)) {
 					Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
 					return;
 				}
@@ -220,7 +221,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 				jobs[jobs.length - 1] = job;
 				timedJobsByTime.put(l, jobs);
 			}
-			timedJobsQueued.add(job);
+			timedJobsQueued.put(job, l);
 		}
 		if(offset < MAX_SLEEP_TIME) {
 			wakeUp();
