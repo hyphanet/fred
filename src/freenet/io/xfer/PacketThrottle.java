@@ -154,6 +154,8 @@ public class PacketThrottle {
 	 * to call it even if we throw an exception etc. The caller may want to do this too,
 	 * in which case the callback should ignore multiple calls, which is a good idea 
 	 * anyway.
+	 * 
+	 * FIXME this would be significantly simpler, as well as faster, if it was asynchronous.
 	 */
 	public MessageItem sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long start = System.currentTimeMillis();
