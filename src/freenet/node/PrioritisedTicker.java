@@ -46,7 +46,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	
 	/** ~= Ticker :) */
 	private final TreeMap<Long, Object> timedJobsByTime;
-	private final HashSet<Object> timedJobsQueued;
+	private final HashSet<Job> timedJobsQueued;
 	final Node node;
 	final NativeThread myThread;
 	static final int MAX_SLEEP_TIME = 200;
@@ -54,7 +54,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	PrioritisedTicker(Node node) {
 		this.node = node;
 		timedJobsByTime = new TreeMap<Long, Object>();
-		timedJobsQueued = new HashSet<Object>();
+		timedJobsQueued = new HashSet<Job>();
 		myThread = new NativeThread(this, "Ticker thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
 	}
