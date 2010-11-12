@@ -490,7 +490,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					// collided, overwrite data with remote data
 					try {
 						data = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
-						block = new SSKBlock(data, block.getRawHeaders(), block.getKey(), false);
+						block = new SSKBlock(data, headers, block.getKey(), false);
 						
 						synchronized(this) {
 							hasRecentlyCollided = true;
