@@ -203,7 +203,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 		Long l = Long.valueOf(offset + now);
 		synchronized(timedJobsByTime) {
 			if(noDupes) {
-				if(timedJobsQueued.contains(new Job(name, runner))) {
+				if(timedJobsQueued.contains(job)) {
 					Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
 					return;
 				}
