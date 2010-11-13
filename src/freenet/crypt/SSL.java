@@ -207,7 +207,7 @@ public class SSL {
 				try {
 					Class<?> certAndKeyGenClazz = Class.forName("sun.security.x509.CertAndKeyGen");
 					Constructor<?> certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class);
-					Object keypair = certAndKeyGenCtor.newInstance("DSA", "SHA1WithDSA");
+					Object keypair = certAndKeyGenCtor.newInstance("RSA", "SHA1WithRSA");
 
 					Class<?> x500NameClazz = Class.forName("sun.security.x509.X500Name");
 					Constructor<?> x500NameCtor = x500NameClazz.getConstructor(String.class, String.class,
