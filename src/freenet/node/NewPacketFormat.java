@@ -82,6 +82,8 @@ public class NewPacketFormat implements PacketFormat {
 			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
 		}
 
+		sequenceNumber = (int) (sequenceNumber % NUM_SEQNUMS);
+
 		nextSequenceNumber = sequenceNumber;
 		highestReceivedSequenceNumber = sequenceNumber - 1;
 		watchListOffset = sequenceNumber;
@@ -642,7 +644,9 @@ fragments:
 		}
 
 		int seqNum = nextSequenceNumber++;
-		if(nextSequenceNumber < 0) nextSequenceNumber = 0;
+		if((nextSequenceNumber == NUM_SEQNUMS) || (nextSequenceNumber < 0)) {
+			nextSequenceNumber = 0;
+		}
 		return seqNum;
 	}
 
