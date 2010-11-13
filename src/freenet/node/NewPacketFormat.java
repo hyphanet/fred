@@ -51,6 +51,8 @@ public class NewPacketFormat implements PacketFormat {
 
 	private int seqNumAtLastRekey;
 	private int nextSequenceNumber;
+	private final Object sequenceNumberLock = new Object();
+	
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private int nextMessageID;
 	/** The first message id that hasn't been acked by the receiver */
@@ -627,32 +629,36 @@ fragments:
 			}
 		}
 		
-		if(nextSequenceNumber == seqNumAtLastRekey) {
-			// We can't allocate more sequence numbers because we haven't rekeyed yet
-			pn.startRekeying();
-			Logger.error(this, "Can't send because we would block");
-			return true;
+		synchronized(sequenceNumberLock) {
+			if(nextSequenceNumber == seqNumAtLastRekey) {
+				// We can't allocate more sequence numbers because we haven't rekeyed yet
+				pn.startRekeying();
+				Logger.error(this, "Can't send because we would block");
+				return true;
+			}
 		}
 
 		return false;
 	}
 
-	private synchronized int getSequenceNumber() {
-		if(nextSequenceNumber == seqNumAtLastRekey) {
-			Logger.error(this, "Blocked because we haven't rekeyed yet");
-			pn.startRekeying();
-			return -1;
-		} else if(seqNumAtLastRekey > nextSequenceNumber) {
-			if(seqNumAtLastRekey - nextSequenceNumber < REKEY_THRESHOLD) pn.startRekeying();
-		} else {
-			if((NUM_SEQNUMS - nextSequenceNumber) + seqNumAtLastRekey < REKEY_THRESHOLD) pn.startRekeying();
-		}
+	private int getSequenceNumber() {
+		synchronized(sequenceNumberLock) {
+			if(nextSequenceNumber == seqNumAtLastRekey) {
+				Logger.error(this, "Blocked because we haven't rekeyed yet");
+				pn.startRekeying();
+				return -1;
+			} else if(seqNumAtLastRekey > nextSequenceNumber) {
+				if(seqNumAtLastRekey - nextSequenceNumber < REKEY_THRESHOLD) pn.startRekeying();
+			} else {
+				if((NUM_SEQNUMS - nextSequenceNumber) + seqNumAtLastRekey < REKEY_THRESHOLD) pn.startRekeying();
+			}
 
-		int seqNum = nextSequenceNumber++;
-		if((nextSequenceNumber == NUM_SEQNUMS) || (nextSequenceNumber < 0)) {
-			nextSequenceNumber = 0;
+			int seqNum = nextSequenceNumber++;
+			if((nextSequenceNumber == NUM_SEQNUMS) || (nextSequenceNumber < 0)) {
+				nextSequenceNumber = 0;
+			}
+			return seqNum;
 		}
-		return seqNum;
 	}
 
 	private long blockedSince = -1;
@@ -690,10 +696,12 @@ fragments:
 	}
 
 	public void onRekey() {
-		seqNumAtLastRekey = nextSequenceNumber - 1;
-		if(seqNumAtLastRekey < 0) seqNumAtLastRekey = (int) (NUM_SEQNUMS - 1);
-		
-		Logger.error(this, "Rekeyed at seq num " + seqNumAtLastRekey);
+		synchronized(sequenceNumberLock) {
+			seqNumAtLastRekey = nextSequenceNumber - 1;
+			if(seqNumAtLastRekey < 0) seqNumAtLastRekey = (int) (NUM_SEQNUMS - 1);
+
+			Logger.error(this, "Rekeyed at seq num " + seqNumAtLastRekey);
+		}
 	}
 
 	private static class SentPacket {
