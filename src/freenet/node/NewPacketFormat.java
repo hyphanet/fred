@@ -582,7 +582,7 @@ fragments:
 
 		if(packet.getLength() == 5) return null;
 
-		int seqNum = getSequenceNumber();
+		int seqNum = allocateSequenceNumber();
 		if(seqNum == -1) return null;
 		packet.setSequenceNumber(seqNum);
 
@@ -641,7 +641,7 @@ fragments:
 		return false;
 	}
 
-	private int getSequenceNumber() {
+	private int allocateSequenceNumber() {
 		synchronized(sequenceNumberLock) {
 			if(nextSequenceNumber == seqNumAtLastRekey) {
 				Logger.error(this, "Blocked because we haven't rekeyed yet");
