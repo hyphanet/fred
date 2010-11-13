@@ -37,10 +37,11 @@ import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.Closer;
+import java.util.Random;
 
 public class SSL {
 
-	private static boolean enable;
+	private static volatile boolean enable;
 	private static KeyStore keystore;
 	private static ServerSocketFactory ssf;
 	private static String keyStore;
