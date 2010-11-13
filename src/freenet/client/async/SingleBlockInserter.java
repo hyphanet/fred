@@ -38,6 +38,7 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.store.KeyCollisionException;
+import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -176,7 +177,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	protected void onEncode(ClientKey key, ObjectContainer container, ClientContext context) {
+	protected void onEncode(final ClientKey key, ObjectContainer container, final ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			if(resultingURI != null) return;
@@ -186,7 +187,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.store(this);
 			container.activate(cb, 1);
 		}
-		cb.onEncode(key, this, container, context);
+		if(!persistent) {
+			context.mainExecutor.execute(new Runnable() {
+				
+				public void run() {
+					cb.onEncode(key, SingleBlockInserter.this, null, context);
+				}
+			}, "Got URI");
+		} else {
+			cb.onEncode(key, this, container, context);
+		}
 		if(persistent)
 			container.deactivate(cb, 1);
 	}
@@ -523,15 +533,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				k = key;
 				if(block.persistent) {
 					req.setGeneratedKey(key);
-				} else if(!req.localRequestOnly) {
-					context.mainExecutor.execute(new Runnable() {
-
-						public void run() {
-							orig.onEncode(key, null, context);
-						}
-
-					}, "Got URI");
-
+				} else {
+					orig.onEncode(key, null, context);
 				}
 				if(req.localRequestOnly)
 					try {
@@ -554,6 +557,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 								orig.onEncode(k, null, context);
 							req.onInsertSuccess(context);
 							return true;
+						} else {
+							if(SingleBlockInserter.logMINOR) Logger.minor(this, "Apparently real collision: collided.isMetadata="+collided.isMetadata()+" block.isMetadata="+block.isMetadata+
+									" collided.codec="+collided.getCompressionCodec()+" block.codec="+block.compressionCodec+
+									" collided.datalength="+data.length+" block.datalength="+inserting.length+" H(collided)="+Fields.hashCode(data)+" H(inserting)="+Fields.hashCode(inserting));
 						}
 					} catch (KeyVerifyException e1) {
 						Logger.error(this, "Caught "+e1+" when checking collision!", e1);
@@ -570,27 +577,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				block.copyBucket.free();
 			}
 			if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request succeeded");
-			if(req.localRequestOnly) {
-				// Must run on-thread or we will have exploding threads.
-				// Plus must run before onInsertSuccess().
-				if(!block.persistent)
-					orig.onEncode(key, null, context);
-				req.onInsertSuccess(context);
-			} else if(!block.persistent) {
-				// Must run after onEncode.
-				context.mainExecutor.execute(new Runnable() {
-
-					public void run() {
-						// Make absolutely sure even if we run the two jobs out of order.
-						// Overhead for double-checking should be very low.
-						orig.onEncode(key, null, context);
-						req.onInsertSuccess(context);
-					}
-
-				}, "Succeeded");
-			} else {
-				req.onInsertSuccess(context);
-			}
+			req.onInsertSuccess(context);
 			return true;
 		}
 	}

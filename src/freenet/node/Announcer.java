@@ -532,7 +532,8 @@ public class Announcer {
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
 				// be more than that period in the future.
 				node.peers.disconnect(seed, true, false, false);
-				System.out.println("Announcement to "+seed.userToString()+" completed.");
+				int shallow=node.maxHTL()-(totalAdded+totalNotWanted);
+				System.out.println("Announcement to "+seed.userToString()+" completed ("+totalAdded+" added, "+totalNotWanted+" not wanted, "+shallow+" shallow)");
 				if(announceNow)
 					maybeSendAnnouncement();
 			}

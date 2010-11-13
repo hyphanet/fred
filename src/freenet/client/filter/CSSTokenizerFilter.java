@@ -300,7 +300,7 @@ class CSSTokenizerFilter {
 	 * Array for storing additional Verifier objects for validating Regular expressions in CSS Property value
 	 * e.g. [ <color> | transparent]{1,4}. It is explained in detail in CSSPropertyVerifier class
 	 */
-	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[111];
+	private final static CSSPropertyVerifier[] auxilaryVerifiers=new CSSPropertyVerifier[117];
 	static
 	{
 		/*CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String expression,boolean onlyValueVerifier)*/
@@ -351,6 +351,8 @@ class CSSTokenizerFilter {
 		auxilaryVerifiers[100] = new CSSPropertyVerifier(new String[]{"underline"}, null, null, true);
 		auxilaryVerifiers[101] = new CSSPropertyVerifier(new String[]{"overline"}, null, null, true);
 		auxilaryVerifiers[102] = new CSSPropertyVerifier(new String[]{"line-through"}, null, null, true);
+		auxilaryVerifiers[115] = new CSSPropertyVerifier(new String[] {"none"},null,null,new String[]{"100a101a102"});
+		auxilaryVerifiers[116] = new CSSPropertyVerifier(new String[]{"blink"}, null, null, true);
 		// <text-decoration-color>
 		auxilaryVerifiers[103] = new CSSPropertyVerifier(null, new String[]{"co"}, null, true);
 		// <text-decoration-style>
@@ -1255,7 +1257,7 @@ class CSSTokenizerFilter {
 		}
 		else if("text-decoration".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"blink"},ElementInfo.VISUALMEDIA,null,new String[]{"100a103a104"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"115a103a104a116"}));
 			allelementVerifiers.remove(element);
 
 		}

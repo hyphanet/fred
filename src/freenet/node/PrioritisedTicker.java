@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
@@ -46,7 +47,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	
 	/** ~= Ticker :) */
 	private final TreeMap<Long, Object> timedJobsByTime;
-	private final HashSet<Object> timedJobsQueued;
+	private final HashMap<Job, Long> timedJobsQueued;
 	final Node node;
 	final NativeThread myThread;
 	static final int MAX_SLEEP_TIME = 200;
@@ -54,7 +55,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	PrioritisedTicker(Node node) {
 		this.node = node;
 		timedJobsByTime = new TreeMap<Long, Object>();
-		timedJobsQueued = new HashSet<Object>();
+		timedJobsQueued = new HashMap<Job, Long>();
 		myThread = new NativeThread(this, "Ticker thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
 	}
@@ -203,9 +204,43 @@ public class PrioritisedTicker implements Ticker, Runnable {
 		Long l = Long.valueOf(offset + now);
 		synchronized(timedJobsByTime) {
 			if(noDupes) {
-				if(timedJobsQueued.contains(new Job(name, runner))) {
-					Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
-					return;
+				if(timedJobsQueued.containsKey(job)) {
+					Long t = timedJobsQueued.get(job);
+					if(t <= l) {
+						Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
+						return;
+					} else {
+						// Delete the existing job because the new job will run first.
+						Object o = timedJobsByTime.get(t);
+						if(o instanceof Job) {
+							timedJobsQueued.remove(job);
+							timedJobsByTime.remove(t);
+						} else {
+							Job[] jobs = (Job[]) o;
+							if(jobs.length == 1) {
+								timedJobsQueued.remove(jobs[0]);
+								timedJobsByTime.remove(t);
+							} else {
+								Job[] newJobs = new Job[jobs.length-1];
+								int x = 0;
+								for(int i=0;i<jobs.length;i++) {
+									if(jobs[i].equals(job)) {
+										timedJobsQueued.remove(jobs[i]);
+										continue;
+									}
+									newJobs[x++] = jobs[i];
+								}
+								if(x == 0) {
+									timedJobsByTime.remove(t);
+								} else if(x != newJobs.length) {
+									jobs = newJobs;
+									newJobs = new Job[x];
+									System.arraycopy(jobs, 0, newJobs, 0, x);
+									timedJobsByTime.put(t, newJobs);
+								}
+							}
+						}
+					}
 				}
 			}
 			Object o = timedJobsByTime.get(l);
@@ -220,7 +255,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 				jobs[jobs.length - 1] = job;
 				timedJobsByTime.put(l, jobs);
 			}
-			timedJobsQueued.add(job);
+			timedJobsQueued.put(job, l);
 		}
 		if(offset < MAX_SLEEP_TIME) {
 			wakeUp();

@@ -288,12 +288,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					return null;
 				}
 
-				if(meta != null && ((entry.flag & Entry.ENTRY_NEW_BLOCK) == 0)) {
+				if((entry.flag & Entry.ENTRY_NEW_BLOCK) == 0) {
 					if(ignoreOldBlocks) {
 						Logger.normal(this, "Ignoring old block");
 						return null;
 					}
-					meta.setOldBlock();
+					if(meta != null)
+						meta.setOldBlock();
 				}
 
 				try {

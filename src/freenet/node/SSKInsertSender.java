@@ -382,8 +382,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             mfRejectedOverload.clearOr();
             MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
             MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPDataInsertRejected);
+            MessageFilter mfSSKDataFoundHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
             
-            mf = mfRouteNotFound.or(mfInsertReply.or(mfRejectedOverload.or(mfDataInsertRejected)));
+            mf = mfRouteNotFound.or(mfInsertReply.or(mfRejectedOverload.or(mfDataInsertRejected.or(mfSSKDataFoundHeaders))));
             
             while (true) {
 				try {
@@ -489,7 +490,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					// collided, overwrite data with remote data
 					try {
 						data = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
-						block = new SSKBlock(data, block.getRawHeaders(), block.getKey(), false);
+						block = new SSKBlock(data, headers, block.getKey(), false);
 						
 						synchronized(this) {
 							hasRecentlyCollided = true;
@@ -497,7 +498,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 							notifyAll();
 						}
 					} catch (SSKVerifyException e) {
-    					Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" +block);
+    					Logger.error(this, "Invalid SSK from remote on collision: " + this + ":" +block);
 						finish(INTERNAL_ERROR, next);
 					}
 					continue; // The node will now propagate the new data. There is no need to move to the next node yet.
