@@ -67,6 +67,32 @@ public class RAMSaltMigrationTest extends TestCase {
 		assertEquals(test, data);
 	}
 
+	public void testRAMStoreOldBlocks() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		CHKStore store = new CHKStore();
+		RAMFreenetStore<CHKBlock> ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
+
+		// Encode a block
+		String test = "test";
+		ClientCHKBlock block = encodeBlock(test);
+		store.put(block, true);
+
+		ClientCHK key = block.getClientKey();
+
+		CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+		String data = decodeBlock(verify, key);
+		assertEquals(test, data);
+		
+		// ignoreOldBlocks works.
+		assertEquals(null, store.fetch(key.getNodeCHK(), false, true, null));
+		
+		// Put it with oldBlock = false should unset the flag.
+		store.put(block, false);
+		
+		verify = store.fetch(key.getNodeCHK(), false, false, null);
+		data = decodeBlock(verify, key);
+		assertEquals(test, data);
+	}
+
 	public void testMigrate() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
 		RAMFreenetStore<CHKBlock> ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
