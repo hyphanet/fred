@@ -30,8 +30,6 @@ import freenet.support.Logger;
  * @author ET
  */
 public class SSLNetworkInterface extends NetworkInterface {
-
-	private boolean requireClientAuthentication;
 	
 	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
 		NetworkInterface iface = new SSLNetworkInterface(port, allowedHosts, executor);
@@ -62,15 +60,7 @@ public class SSLNetworkInterface extends NetworkInterface {
 	@Override
 	protected ServerSocket createServerSocket() throws IOException {
 		ServerSocket serverSocket = SSL.createServerSocket();
-		((SSLServerSocket)serverSocket).setNeedClientAuth(requireClientAuthentication);
+		((SSLServerSocket)serverSocket).setNeedClientAuth(false);
 		return serverSocket;
-	}
-	
-	/**
-	 * Set true if client authentication is required
-	 * @param value true or false
-	 */
-	public void setRequireClientAuthentication(boolean value) {
-		requireClientAuthentication = value;
 	}
 }
