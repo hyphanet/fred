@@ -51,6 +51,8 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 			misses++;
 			return null;
 		}
+		if(ignoreOldBlocks && block.oldBlock)
+			return null;
 		try {
 			T ret =
 				callback.construct(block.data, block.header, routingKey, block.fullKey, canReadClientCache, canReadSlashdotCache, meta, null);
@@ -101,7 +103,11 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 				boolean equals = Arrays.equals(oldBlock.data, data) &&
 					Arrays.equals(oldBlock.header, header) &&
 					(storeFullKeys ? Arrays.equals(oldBlock.fullKey, fullKey) : true);
-				if(equals) return;
+				if(equals) {
+					if(!isOldBlock)
+						oldBlock.oldBlock = false;
+					return;
+				}
 				if(overwrite) {
 					oldBlock.data = data;
 					oldBlock.header = header;
