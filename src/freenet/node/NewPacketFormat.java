@@ -623,6 +623,13 @@ fragments:
 				}
 			}
 		}
+		
+		if(nextSequenceNumber == seqNumAtLastRekey) {
+			// We can't allocate more sequence numbers because we haven't rekeyed yet
+			pn.startRekeying();
+			Logger.error(this, "Can't send because we would block");
+			return true;
+		}
 
 		return false;
 	}
