@@ -31,6 +31,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int NUM_MESSAGE_IDS = 268435456;
 	private static final long NUM_SEQNUMS = 2147483648l;
 	private static final int MAX_MSGID_BLOCK_TIME = 10 * 60 * 1000;
+	private static final int REKEY_THRESHOLD = 100;
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -641,6 +642,10 @@ fragments:
 			Logger.error(this, "Blocked because we haven't rekeyed yet");
 			pn.startRekeying();
 			return -1;
+		} else if(seqNumAtLastRekey > nextSequenceNumber) {
+			if(seqNumAtLastRekey - nextSequenceNumber < REKEY_THRESHOLD) pn.startRekeying();
+		} else {
+			if((NUM_SEQNUMS - nextSequenceNumber) + seqNumAtLastRekey < REKEY_THRESHOLD) pn.startRekeying();
 		}
 
 		int seqNum = nextSequenceNumber++;
