@@ -30,4 +30,6 @@ public interface PacketFormat {
 	 * @return {@code false} if the packet format can't send packets
 	 */
 	boolean canSend();
+
+	void onRekey();
 }

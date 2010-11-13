@@ -48,6 +48,7 @@ public class NewPacketFormat implements PacketFormat {
 	private final LinkedList<Integer> acks = new LinkedList<Integer>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
 
+	private int seqNumAtLastRekey;
 	private int nextSequenceNumber;
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private int nextMessageID;
@@ -84,6 +85,9 @@ public class NewPacketFormat implements PacketFormat {
 		nextSequenceNumber = sequenceNumber;
 		highestReceivedSequenceNumber = sequenceNumber - 1;
 		watchListOffset = sequenceNumber;
+
+		seqNumAtLastRekey = sequenceNumber - 1;
+		if(seqNumAtLastRekey == -1) seqNumAtLastRekey = (int) (NUM_SEQNUMS - 1);
 
 		nextMessageID = messageID % NUM_MESSAGE_IDS;
 		messageWindowPtrAcked = nextMessageID;
@@ -574,6 +578,7 @@ fragments:
 		if(packet.getLength() == 5) return null;
 
 		int seqNum = getSequenceNumber();
+		if(seqNum == -1) return null;
 		packet.setSequenceNumber(seqNum);
 
 		sentPacket.sent();
@@ -623,6 +628,12 @@ fragments:
 	}
 
 	private synchronized int getSequenceNumber() {
+		if(nextSequenceNumber == seqNumAtLastRekey) {
+			Logger.error(this, "Blocked because we haven't rekeyed yet");
+			pn.startRekeying();
+			return -1;
+		}
+
 		int seqNum = nextSequenceNumber++;
 		if(nextSequenceNumber < 0) nextSequenceNumber = 0;
 		return seqNum;
@@ -660,6 +671,13 @@ fragments:
 			return pn.averagePingTime();
 		}
 		return 250;
+	}
+
+	public void onRekey() {
+		seqNumAtLastRekey = nextSequenceNumber - 1;
+		if(seqNumAtLastRekey < 0) seqNumAtLastRekey = (int) (NUM_SEQNUMS - 1);
+		
+		Logger.error(this, "Rekeyed at seq num " + seqNumAtLastRekey);
 	}
 
 	private static class SentPacket {

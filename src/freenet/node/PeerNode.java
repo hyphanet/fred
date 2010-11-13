@@ -1140,13 +1140,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else if (shouldReturn || hasLiveHandshake(now)) {
 			return;
 		} else if(shouldRekey) {
-			synchronized(this) {
-				isRekeying = true;
-				sendHandshakeTime = now; // Immediately
-				ctx = null;
-			}
-			Logger.normal(this, "We are asking for the key to be renewed (" + this.detectedPeer + ')');
+			startRekeying();
 		}
+	}
+
+	protected void startRekeying() {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(isRekeying) return;
+			isRekeying = true;
+			sendHandshakeTime = now; // Immediately
+			ctx = null;
+		}
+		Logger.normal(this, "We are asking for the key to be renewed (" + this.detectedPeer + ')');
 	}
 
 	/**
