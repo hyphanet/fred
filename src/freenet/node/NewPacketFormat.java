@@ -89,6 +89,8 @@ public class NewPacketFormat implements PacketFormat {
 
 		nextSequenceNumber = sequenceNumber;
 		highestReceivedSequenceNumber = sequenceNumber - 1;
+
+		// Start the list at the first sequence number since we won't get anything before.
 		watchListOffset = sequenceNumber;
 
 		seqNumAtLastRekey = sequenceNumber - 1;
@@ -262,6 +264,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
+		// Create the watchlist if the key has changed
 		if(watchListKey == null || !watchListKey.equals(sessionKey)) {
 			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + watchListOffset);
 
@@ -276,10 +279,12 @@ public class NewPacketFormat implements PacketFormat {
 			}
 		}
 
+		// Move the watchlist if needed
 		int highestReceivedSeqNum;
 		synchronized(this) {
 			highestReceivedSeqNum = highestReceivedSequenceNumber;
 		}
+		// The entry for the highest received sequence number is kept in the middle of the list
 		int oldHighestReceived = (int) ((0l + watchListOffset + (seqNumWatchList.length / 2)) % NUM_SEQNUMS);
 		if(seqNumGreaterThan(highestReceivedSeqNum, oldHighestReceived, 31)) {
 			int moveBy;
