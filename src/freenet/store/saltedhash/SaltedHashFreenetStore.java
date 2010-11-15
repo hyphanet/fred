@@ -232,9 +232,11 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		if((smallerSize * (headerBlockLength + dataBlockLength + hdPadding) > curStoreFileSize) ||
 				(smallerSize * Entry.METADATA_LENGTH > curMetaFileSize)) {
 			// Pad it up to the minimum size before proceeding.
-			if(longStart)
+			if(longStart) {
 				setStoreFileSize(storeSize, true);
-			else
+				curStoreFileSize = hdRAF.length();
+				curMetaFileSize = metaRAF.length();
+			} else
 				return true;
 		}
 
