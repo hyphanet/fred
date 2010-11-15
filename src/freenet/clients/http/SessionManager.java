@@ -115,7 +115,6 @@ public final class SessionManager {
 
 		private final UUID mID;
 		private final String mUserID;
-		@Deprecated
 		private final Map<String, Object> mAttributes = new HashMap<String, Object>();
 
 		private long mExpiresAtTime;
@@ -165,10 +164,7 @@ public final class SessionManager {
 		 *            The name of the attribute to check for
 		 * @return {@code true} if this session contains an attribute with the
 		 *         given name, {@code false} otherwise
-		 * @Deprecated The sole purpose of the session manager is to store a user ID. 
-		 * 				If your user IDs overlap with the IDs of other apps, use a different cookie path or cookie namespace.
 		 */
-		@Deprecated
 		public boolean hasAttribute(String name) {
 			return mAttributes.containsKey(name);
 		}
@@ -180,10 +176,7 @@ public final class SessionManager {
 		 * @param name
 		 *            The name of the attribute whose value to get
 		 * @return The value of the attribute, or {@code null}
-		 * @Deprecated The sole purpose of the session manager is to store a user ID. 
-		 * 				If your user IDs overlap with the IDs of other apps, use a different cookie path or cookie namespace.
 		 */
-		@Deprecated
 		public Object getAttribute(String name) {
 			return mAttributes.get(name);
 		}
@@ -195,10 +188,7 @@ public final class SessionManager {
 		 *            The name of the attribute whose value to set
 		 * @param value
 		 *            The new value of the attribute
-		 * @Deprecated The sole purpose of the session manager is to store a user ID. 
-		 * 				If your user IDs overlap with the IDs of other apps, use a different cookie path or cookie namespace.
 		 */
-		@Deprecated
 		public void setAttribute(String name, Object value) {
 			mAttributes.put(name, value);
 		}
@@ -209,10 +199,7 @@ public final class SessionManager {
 		 *
 		 * @param name
 		 *            The name of the attribute to remove
-		 * @Deprecated The sole purpose of the session manager is to store a user ID. 
-		 * 				If your user IDs overlap with the IDs of other apps, use a different cookie path or cookie namespace.
 		 */
-		@Deprecated
 		public void removeAttribute(String name) {
 			mAttributes.remove(name);
 		}
@@ -221,10 +208,7 @@ public final class SessionManager {
 		 * Returns the names of all currently existing attributes.
 		 *
 		 * @return The names of all attributes
-		 * @Deprecated The sole purpose of the session manager is to store a user ID. 
-		 * 				If your user IDs overlap with the IDs of other apps, use a different cookie path or cookie namespace.
 		 */
-		@Deprecated
 		public Set<String> getAttributeNames() {
 			return mAttributes.keySet();
 		}
