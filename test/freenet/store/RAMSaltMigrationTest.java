@@ -98,16 +98,19 @@ public class RAMSaltMigrationTest extends TestCase {
 		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", store, weakPRNG, 10, 0, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 
-		// Encode a block
-		String test = "test";
-		ClientCHKBlock block = encodeBlock(test);
-		store.put(block, false);
-
-		ClientCHK key = block.getClientKey();
-
-		CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
-		String data = decodeBlock(verify, key);
-		assertEquals(test, data);
+		for(int i=0;i<5;i++) {
+			
+			// Encode a block
+			String test = "test" + i;
+			ClientCHKBlock block = encodeBlock(test);
+			store.put(block, false);
+			
+			ClientCHK key = block.getClientKey();
+			
+			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			String data = decodeBlock(verify, key);
+			assertEquals(test, data);
+		}
 	}
 
 	public void testSaltedStoreOldBlocks() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
@@ -115,26 +118,29 @@ public class RAMSaltMigrationTest extends TestCase {
 		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", store, weakPRNG, 10, 0, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 
-		// Encode a block
-		String test = "test";
-		ClientCHKBlock block = encodeBlock(test);
-		store.put(block, true);
-
-		ClientCHK key = block.getClientKey();
-
-		CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
-		String data = decodeBlock(verify, key);
-		assertEquals(test, data);
-		
-		// ignoreOldBlocks works.
-		assertEquals(null, store.fetch(key.getNodeCHK(), false, true, null));
-		
-		// Put it with oldBlock = false should unset the flag.
-		store.put(block, false);
-		
-		verify = store.fetch(key.getNodeCHK(), false, false, null);
-		data = decodeBlock(verify, key);
-		assertEquals(test, data);
+		for(int i=0;i<5;i++) {
+			
+			// Encode a block
+			String test = "test" + i;
+			ClientCHKBlock block = encodeBlock(test);
+			store.put(block, true);
+			
+			ClientCHK key = block.getClientKey();
+			
+			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			String data = decodeBlock(verify, key);
+			assertEquals(test, data);
+			
+			// ignoreOldBlocks works.
+			assertEquals(null, store.fetch(key.getNodeCHK(), false, true, null));
+			
+			// Put it with oldBlock = false should unset the flag.
+			store.put(block, false);
+			
+			verify = store.fetch(key.getNodeCHK(), false, false, null);
+			data = decodeBlock(verify, key);
+			assertEquals(test, data);
+		}
 	}
 
 	public void testMigrate() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
