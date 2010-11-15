@@ -408,6 +408,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					try {
 						if (!collisionPossible) {
 							if((oldEntry.flag & Entry.ENTRY_NEW_BLOCK) == 0 && !isOldBlock) {
+								oldEntry = readEntry(oldEntry.curOffset, routingKey, true);
 								// Currently flagged as an old block
 								oldEntry.flag |= Entry.ENTRY_NEW_BLOCK;
 								if(logMINOR) Logger.minor(this, "Setting old block to new block");
