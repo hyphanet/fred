@@ -1905,6 +1905,18 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		for (int i = 0; i < OPTION_MAX_PROBE; i++) {
 			// h + 141 i^2 + 13 i
 			offsets[i] = ((keyValue + 141 * (i * i) + 13 * i) & Long.MAX_VALUE) % storeSize;
+			// Make sure the slots are all unique.
+			// Important for very small stores e.g. in unit tests.
+			while(true) {
+				boolean clear = true;
+				for(int j=0;j<i;j++) {
+					if(offsets[i] == offsets[j]) {
+						offsets[i] = (offsets[i] + 1) % storeSize;
+						clear = false;
+					}
+				}
+				if(clear || OPTION_MAX_PROBE > storeSize) break;
+			}
 		}
 
 		return offsets;
