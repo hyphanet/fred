@@ -2,7 +2,7 @@ package freenet.pluginmanager;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -22,7 +22,7 @@ import freenet.support.URIPreEncoder;
 import freenet.support.io.NativeThread;
 
 public class PluginRespirator {
-	private static final HashMap<URI, SessionManager> sessionManagers = new HashMap<URI, SessionManager>();
+	private static final ArrayList<SessionManager> sessionManagers = new ArrayList<SessionManager>(4);
 	
 	/** For accessing Freenet: simple fetches and inserts, and the data you
 	 * need (FetchContext etc) to start more complex ones. */
@@ -162,15 +162,43 @@ public class PluginRespirator {
 			}
 		}, NativeThread.NORM_PRIORITY, false);
 	}
-	
+
+	/**
+	 * Get a new session manager for use with the specified path.
+	 * 	See {@link SessionManager} for a detailed explanation of what cookie paths are.
+	 * 
+	 * The usage of the global "/" path is not allowed. You must use {@link getSessionManager(String cookieNamespace)}
+	 * if you want your cookie to be valid in the "/" path.
+	 * 
+	 * @Deprecated We want cookies to be valid in the "/" path for menus to work even if the user is not in the menu of the given
+	 * 				plugin. Therefore, we should use cookie namespaces instead.
+	 */
+	@Deprecated
 	public SessionManager getSessionManager(URI cookiePath) {
-		SessionManager session = sessionManagers.get(cookiePath);
-		
-		if (session == null) {
-			session = new SessionManager(cookiePath);
-			sessionManagers.put(cookiePath, session);
+		for(SessionManager m : sessionManagers) {
+			if(m.getCookiePath().equals(cookiePath))
+				return m;
 		}
 		
-		return session;
+		final SessionManager m = new SessionManager(cookiePath);
+		sessionManagers.add(m);
+		return m;
+	}
+	
+	/**
+	 * Get a new session manager for use with the global "/" cookie path and the given cookie namespace.
+	 * See {@link SessionManager} for a detailed explanation of what cookie namespaces are.
+	 * 
+	 * @param myCookieNamespace The name of the client application which uses this cookie. 
+	 */
+	public SessionManager getSessionManager(String cookieNamespace) {
+		for(SessionManager m : sessionManagers) {
+			if(m.getCookieNamespace().equals(cookieNamespace))
+				return m;
+		}
+		
+		final SessionManager m = new SessionManager(cookieNamespace);
+		sessionManagers.add(m);
+		return m;
 	}
 }
