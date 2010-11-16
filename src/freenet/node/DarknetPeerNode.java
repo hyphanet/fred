@@ -1413,6 +1413,10 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(this) {
 			fo = hisFileOffersByUID.get(id);
 		}
+		if(fo == null) {
+			Logger.error(this, "Cannot accept transfer "+id+" - does not exist");
+			return;
+		}
 		fo.accept();
 	}
 	
@@ -1420,6 +1424,10 @@ public class DarknetPeerNode extends PeerNode {
 		FileOffer fo;
 		synchronized(this) {
 			fo = hisFileOffersByUID.remove(id);
+		}
+		if(fo == null) {
+			Logger.error(this, "Cannot accept transfer "+id+" - does not exist");
+			return;
 		}
 		fo.reject();
 	}

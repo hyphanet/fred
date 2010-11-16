@@ -232,9 +232,11 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		if((smallerSize * (headerBlockLength + dataBlockLength + hdPadding) > curStoreFileSize) ||
 				(smallerSize * Entry.METADATA_LENGTH > curMetaFileSize)) {
 			// Pad it up to the minimum size before proceeding.
-			if(longStart)
+			if(longStart) {
 				setStoreFileSize(storeSize, true);
-			else
+				curStoreFileSize = hdRAF.length();
+				curMetaFileSize = metaRAF.length();
+			} else
 				return true;
 		}
 
@@ -408,6 +410,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					try {
 						if (!collisionPossible) {
 							if((oldEntry.flag & Entry.ENTRY_NEW_BLOCK) == 0 && !isOldBlock) {
+								oldEntry = readEntry(oldEntry.curOffset, routingKey, true);
 								// Currently flagged as an old block
 								oldEntry.flag |= Entry.ENTRY_NEW_BLOCK;
 								if(logMINOR) Logger.minor(this, "Setting old block to new block");
@@ -1902,6 +1905,18 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		for (int i = 0; i < OPTION_MAX_PROBE; i++) {
 			// h + 141 i^2 + 13 i
 			offsets[i] = ((keyValue + 141 * (i * i) + 13 * i) & Long.MAX_VALUE) % storeSize;
+			// Make sure the slots are all unique.
+			// Important for very small stores e.g. in unit tests.
+			while(true) {
+				boolean clear = true;
+				for(int j=0;j<i;j++) {
+					if(offsets[i] == offsets[j]) {
+						offsets[i] = (offsets[i] + 1) % storeSize;
+						clear = false;
+					}
+				}
+				if(clear || OPTION_MAX_PROBE > storeSize) break;
+			}
 		}
 
 		return offsets;
