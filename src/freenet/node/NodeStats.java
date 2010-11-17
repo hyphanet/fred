@@ -2497,6 +2497,7 @@ public class NodeStats implements Persistable {
 	private HourlyStats hourlyStats;
 
 	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location) {
+		if(logMINOR) Logger.minor(this, "Remote request: sucess="+success+" htl="+htl+" locally answered="+local+" location of key="+location);
 		hourlyStats.remoteRequest(ssk, success, local, htl, location);
 	}
 
