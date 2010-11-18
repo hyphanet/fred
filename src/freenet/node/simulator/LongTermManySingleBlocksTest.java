@@ -321,7 +321,7 @@ public class LongTermManySingleBlocksTest {
 				//System.out.println("LINE: "+line);
 				String[] split = line.split("!");
 				Date date = dateFormat.parse(split[0]);
-				GregorianCalendar calendar = new GregorianCalendar();
+				GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 				calendar.setTime(date);
 				System.out.println("Date: "+dateFormat.format(calendar.getTime()));
 				calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -354,7 +354,7 @@ public class LongTermManySingleBlocksTest {
 					System.out.println("Key insert "+i+" : "+insertedURIs[i]+" in "+insertTimes[i]);
 				}
 				for(int i=0;i<targets.length;i++) {
-					if(targets[i].getTimeInMillis() == calendar.getTimeInMillis()) {
+					if(Math.abs(targets[i].getTimeInMillis() - calendar.getTimeInMillis()) < 12*60*60*1000) {
 						System.out.println("Found row for target date "+((1<<i)-1)+" days ago.");
 						System.out.println("Version: "+split[1]);
 						csvLine.add(Integer.toString(i));
