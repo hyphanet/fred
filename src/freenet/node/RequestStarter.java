@@ -265,6 +265,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		
 	}
 
+	/** LOCKING: Caller must avoid locking while calling this function. In particular,
+	 * if the RequestStarter lock is held we will get a deadlock. */
 	public void wakeUp() {
 		synchronized(this) {
 			notifyAll();

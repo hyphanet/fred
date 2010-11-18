@@ -142,33 +142,35 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 	
-	synchronized void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context) {
+	void addToGrabArray(short priorityClass, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container, ClientContext context) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		// Client
-		SectoredRandomGrabArray clientGrabber = (SectoredRandomGrabArray) newPriorities[priorityClass];
-		if(persistent()) container.activate(clientGrabber, 1);
-		if(clientGrabber == null) {
-			clientGrabber = new SectoredRandomGrabArray(persistent(), container, null);
-			newPriorities[priorityClass] = clientGrabber;
-			if(persistent()) container.store(this);
-			if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
-		}
-		// SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
-		// To avoid a race condition it is essential to mirror that here.
-		synchronized(clientGrabber) {
-			// Request
-			SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
-			if(persistent()) container.activate(requestGrabber, 1);
-			if(requestGrabber == null) {
-				requestGrabber = new SectoredRandomGrabArrayWithObject(client, persistent(), container, clientGrabber);
-				if(logMINOR)
-					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
-				clientGrabber.addGrabber(client, requestGrabber, container, context);
-				// FIXME unnecessary as it knows its parent and addGrabber() will call it???
-				context.cooldownTracker.clearCachedWakeup(clientGrabber, persistent(), container);
+		synchronized(this) {
+			SectoredRandomGrabArray clientGrabber = (SectoredRandomGrabArray) newPriorities[priorityClass];
+			if(persistent()) container.activate(clientGrabber, 1);
+			if(clientGrabber == null) {
+				clientGrabber = new SectoredRandomGrabArray(persistent(), container, null);
+				newPriorities[priorityClass] = clientGrabber;
+				if(persistent()) container.store(this);
+				if(logMINOR) Logger.minor(this, "Registering client tracker for priority "+priorityClass+" : "+clientGrabber);
 			}
-			requestGrabber.add(cr, req, container, context);
+			// SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
+			// To avoid a race condition it is essential to mirror that here.
+			synchronized(clientGrabber) {
+				// Request
+				SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
+				if(persistent()) container.activate(requestGrabber, 1);
+				if(requestGrabber == null) {
+					requestGrabber = new SectoredRandomGrabArrayWithObject(client, persistent(), container, clientGrabber);
+					if(logMINOR)
+						Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : prio="+priorityClass);
+					clientGrabber.addGrabber(client, requestGrabber, container, context);
+					// FIXME unnecessary as it knows its parent and addGrabber() will call it???
+					context.cooldownTracker.clearCachedWakeup(clientGrabber, persistent(), container);
+				}
+				requestGrabber.add(cr, req, container, context);
+			}
 		}
 		sched.wakeStarter();
 	}
