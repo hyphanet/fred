@@ -53,6 +53,12 @@ public class LowLevelPutException extends Exception {
 		this.code = reason;
 	}
 	
+	public LowLevelPutException(KeyBlock collided) {
+		super(getMessage(COLLISION));
+		this.code = COLLISION;
+		collidedBlock = collided;
+	}
+	
 	public synchronized void setCollidedBlock(KeyBlock block) {
 		collidedBlock = block;
 	}
