@@ -377,14 +377,11 @@ loadWaiterLoop:
             // So wait...
             int gotMessages=0;
             String lastMessage=null;
-            // FIXME reinstate
-            //long deadline = now + fetchTimeout;
+            long deadline = now + fetchTimeout;
             while(true) {
             	
             	now = System.currentTimeMillis();
-            	// FIXME reinstate
-            	//int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - now));
-            	int timeout = FETCH_TIMEOUT;
+            	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - now));
             	Message msg = null;
             	
             	if(timeout > 0) {
