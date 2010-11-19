@@ -1267,7 +1267,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 
-		long newTrackerID = pn.completedHandshake(bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher, ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID);
+		long newTrackerID = pn.completedHandshake(
+				bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false,
+				false, hmacKey, ivCipher, ivNonce, ourInitialSeqNum, theirInitialSeqNum,
+				ourInitialMsgID, theirInitialMsgID);
 
 		if(newTrackerID > 0) {
 
@@ -1497,7 +1500,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		c.initialize(pn.jfkKs);
 		ivCipher.initialize(pn.ivKey);
 
-		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey, ivCipher, pn.ivNonce, pn.ourInitialSeqNum, pn.theirInitialSeqNum, pn.ourInitialMsgID, pn.theirInitialMsgID >= 0) {
+		long newTrackerID = pn.completedHandshake(
+				bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true,
+				reusedTracker, pn.hmacKey, ivCipher, pn.ivNonce, pn.ourInitialSeqNum,
+				pn.theirInitialSeqNum, pn.ourInitialMsgID, pn.theirInitialMsgID);
+		if(newTrackerID >= 0) {
 			if(dontWant) {
 				node.peers.disconnect(pn, true, true, true);
 			} else {
