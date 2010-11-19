@@ -23,11 +23,10 @@ public class SessionKey {
 	
 	/** Parent PeerNode */
 	public final PeerNode pn;
-	/** Cipher to both encrypt outgoing packets with and decrypt
-	 * incoming ones. */
-	public final BlockCipher sessionCipher;
-	/** Key for above cipher, so far for debugging */
-	public final byte[] sessionKey;
+	/** Cipher to encrypt outgoing packets with */
+	public final BlockCipher outgoingCipher;
+	/** Key for outgoingCipher, so far for debugging */
+	public final byte[] outgoingKey;
 
 	/** Cipher to decrypt incoming packets */
 	public final BlockCipher incommingCipher;
@@ -38,12 +37,12 @@ public class SessionKey {
 	public final byte[] ivNonce;
 	public final byte[] hmacKey;
 
-	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher cipher, byte[] sessionKey,
+	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher, byte[] ivNonce, byte[] hmacKey) {
 		this.pn = parent;
 		this.packets = tracker;
-		this.sessionCipher = cipher;
-		this.sessionKey = sessionKey;
+		this.outgoingCipher = outgoingCipher;
+		this.outgoingKey = outgoingKey;
 		this.incommingCipher = incommingCipher;
 		this.incommingKey = incommingKey;
 		this.ivCipher = ivCipher;

@@ -1527,6 +1527,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKa = null;
 		pn.jfkKe = null;
 		pn.jfkKs = null;
+		pn.incommingKey = null;
 		pn.hmacKey = null;
 		pn.ivKey = null;
 		pn.ivNonce = null;
@@ -1938,12 +1939,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * first one is ECB, and the second one is ECB XORed with the
 		 * ciphertext and plaintext of the first block).
 		 */
-		BlockCipher sessionCipher = tracker.sessionCipher;
+		BlockCipher sessionCipher = tracker.incommingCipher;
 		if(sessionCipher == null) {
 			if(logMINOR) Logger.minor(this, "No cipher");
 			return false;
 		}
-		if(logMINOR) Logger.minor(this, "Decrypting with "+HexUtil.bytesToHex(tracker.sessionKey));
+		if(logMINOR) Logger.minor(this, "Decrypting with "+HexUtil.bytesToHex(tracker.incommingKey));
 		int blockSize = sessionCipher.getBlockSize() >> 3;
 		if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
 			throw new IllegalStateException("Block size must be equal to key size");
@@ -2894,8 +2895,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * including acks and resend requests. Is clobbered.
 	 */
 	private int processOutgoingFullyFormatted(byte[] plaintext, SessionKey kt) {
-		BlockCipher sessionCipher = kt.sessionCipher;
-		if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
+		BlockCipher sessionCipher = kt.outgoingCipher;
+		if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.outgoingKey));
 		if(sessionCipher == null) {
 			Logger.error(this, "Dropping packet send - have not handshaked yet");
 			return 0;

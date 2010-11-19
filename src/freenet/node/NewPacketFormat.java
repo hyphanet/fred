@@ -354,7 +354,7 @@ outer:
 
 		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, text, hash)) return null;
 
-		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
+		PCFBMode payloadCipher = PCFBMode.create(sessionKey.incommingCipher, IV);
 		payloadCipher.blockDecipher(buf, offset + HMAC_LENGTH, length - HMAC_LENGTH);
 
 		byte[] payload = new byte[length - HMAC_LENGTH];
@@ -393,7 +393,7 @@ outer:
 		System.arraycopy(seqNumBytes, 0, IV, IV.length - seqNumBytes.length, seqNumBytes.length);
 		ivCipher.encipher(IV, IV);
 
-		PCFBMode cipher = PCFBMode.create(sessionKey.sessionCipher, IV);
+		PCFBMode cipher = PCFBMode.create(sessionKey.incommingCipher, IV);
 		cipher.blockEncipher(seqNumBytes, 0, seqNumBytes.length);
 
 		return seqNumBytes;
@@ -440,7 +440,7 @@ outer:
 
 		ivCipher.encipher(IV, IV);
 
-		PCFBMode payloadCipher = PCFBMode.create(sessionKey.sessionCipher, IV);
+		PCFBMode payloadCipher = PCFBMode.create(sessionKey.outgoingCipher, IV);
 		payloadCipher.blockEncipher(data, HMAC_LENGTH, paddedLen - HMAC_LENGTH);
 
 		//Add hash

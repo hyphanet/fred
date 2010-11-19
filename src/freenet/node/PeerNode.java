@@ -1927,19 +1927,22 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			// FIXME this shouldn't happen, does it?
 			if(currentTracker != null) {
-				if(Arrays.equals(encKey, currentTracker.sessionKey)) {
+				if(Arrays.equals(encKey, currentTracker.outgoingKey)
+						&& Arrays.equals(incommingKey, currentTracker.incommingKey)) {
 					Logger.error(this, "completedHandshake() with identical key to current, maybe replayed JFK(4)?");
 					return -1;
 				}
 			}
 			if(previousTracker != null) {
-				if(Arrays.equals(encKey, previousTracker.sessionKey)) {
+				if(Arrays.equals(encKey, previousTracker.outgoingKey)
+						&& Arrays.equals(incommingKey, previousTracker.incommingKey)) {
 					Logger.error(this, "completedHandshake() with identical key to previous, maybe replayed JFK(4)?");
 					return -1;
 				}
 			}
 			if(unverifiedTracker != null) {
-				if(Arrays.equals(encKey, unverifiedTracker.sessionKey)) {
+				if(Arrays.equals(encKey, unverifiedTracker.outgoingKey)
+						&& Arrays.equals(incommingKey, unverifiedTracker.incommingKey)) {
 					Logger.error(this, "completedHandshake() with identical key to unverified, maybe replayed JFK(4)?");
 					return -1;
 				}
@@ -2047,10 +2050,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			totalBytesExchangedWithCurrentTracker = 0;
 			// This has happened in the past, and caused problems, check for it.
 			if(currentTracker != null && previousTracker != null &&
-					Arrays.equals(currentTracker.sessionKey, previousTracker.sessionKey))
+					Arrays.equals(currentTracker.outgoingKey, previousTracker.outgoingKey) &&
+					Arrays.equals(currentTracker.incommingKey, previousTracker.incommingKey))
 				Logger.error(this, "currentTracker key equals previousTracker key: cur "+currentTracker+" prev "+previousTracker);
 			if(previousTracker != null && unverifiedTracker != null &&
-					Arrays.equals(previousTracker.sessionKey, unverifiedTracker.sessionKey))
+					Arrays.equals(previousTracker.outgoingKey, unverifiedTracker.outgoingKey) &&
+					Arrays.equals(previousTracker.incommingKey, unverifiedTracker.incommingKey))
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
 			timeLastSentPacket = now;
 		}
@@ -2126,13 +2131,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// However, an attacker cannot get this far without knowing the privkey, so it's unlikely to be an issue.
 
 			MessageDigest md = SHA256.getMessageDigest();
-			md.update(currentTracker.sessionKey);
+			md.update(currentTracker.outgoingKey);
+			md.update(currentTracker.incommingKey);
 			md.update(TEST_AS_BYTES);
 			md.update(Fields.longToBytes(bootID ^ node.bootID));
 			int curHash = Fields.hashCode(md.digest());
 			md.reset();
 
-			md.update(previousTracker.sessionKey);
+			md.update(previousTracker.outgoingKey);
+			md.update(previousTracker.incommingKey);
 			md.update(TEST_AS_BYTES);
 			md.update(Fields.longToBytes(bootID ^ node.bootID));
 			int prevHash = Fields.hashCode(md.digest());
