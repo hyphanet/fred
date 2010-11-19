@@ -1136,6 +1136,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
 		byte[] Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+		byte[] incommingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "7");
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
 
@@ -1237,14 +1238,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.receivedPacket(true, false);
 
 		BlockCipher cs = null;
+		BlockCipher incommingCipher = null;
 		BlockCipher ivCipher = null;
 		try {
 			cs = new Rijndael(256, 256);
+			incommingCipher = new Rijndael(256, 256);
 			ivCipher = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new RuntimeException(e);
 		}
 		cs.initialize(Ks);
+		incommingCipher.initialize(incommingKey);
 		ivCipher.initialize(ivKey);
 
 		// Promote if necessary
@@ -1268,7 +1272,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		long newTrackerID = pn.completedHandshake(
-				bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false,
+				bootID, hisRef, 0, hisRef.length, cs, Ks, incommingCipher, incommingKey, replyTo, true, negType, trackerID, false,
 				false, hmacKey, ivCipher, ivNonce, ourInitialSeqNum, theirInitialSeqNum,
 				ourInitialMsgID, theirInitialMsgID);
 
@@ -1491,17 +1495,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		// We change the key
 		BlockCipher ivCipher = null;
+		BlockCipher incommingCipher = null;
 		try {
 			ivCipher = new Rijndael(256, 256);
+			incommingCipher = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new RuntimeException(e);
 		}
 
 		c.initialize(pn.jfkKs);
+		incommingCipher.initialize(pn.incommingKey);
 		ivCipher.initialize(pn.ivKey);
 
 		long newTrackerID = pn.completedHandshake(
-				bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true,
+				bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, incommingCipher, pn.incommingKey, replyTo, false, negType, trackerID, true,
 				reusedTracker, pn.hmacKey, ivCipher, pn.ivNonce, pn.ourInitialSeqNum,
 				pn.theirInitialSeqNum, pn.ourInitialMsgID, pn.theirInitialMsgID);
 		if(newTrackerID >= 0) {
@@ -1614,6 +1621,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
 		pn.jfkKs = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+		pn.incommingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "7");
 		pn.jfkKe = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		pn.jfkKa = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
 
@@ -3155,7 +3163,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	private byte[] computeJFKSharedKey(BigInteger exponential, byte[] nI, byte[] nR, String what) {
 		assert("0".equals(what) || "1".equals(what) || "2".equals(what) || "3".equals(what)
-				|| "4".equals(what) || "5".equals(what) || "6".equals(what));
+				|| "4".equals(what) || "5".equals(what) || "6".equals(what) || "7".equals(what));
 		byte[] number = null;
 		try {
 			number = what.getBytes("UTF-8");
