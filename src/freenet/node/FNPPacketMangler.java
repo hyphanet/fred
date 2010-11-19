@@ -1280,9 +1280,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		long newTrackerID = pn.completedHandshake(
-				bootID, hisRef, 0, hisRef.length, outgoingCipher, outgoingKey, incommingCipher, incommingKey, replyTo, true, negType, trackerID, false,
-				false, hmacKey, ivCipher, ivNonce, ourInitialSeqNum, theirInitialSeqNum,
-				ourInitialMsgID, theirInitialMsgID);
+				bootID, hisRef, 0, hisRef.length, outgoingCipher, outgoingKey, incommingCipher,
+				incommingKey, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher,
+				ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID);
 
 		if(newTrackerID > 0) {
 
@@ -1518,9 +1518,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		ivCipher.initialize(pn.ivKey);
 
 		long newTrackerID = pn.completedHandshake(
-				bootID, hisRef, 0, hisRef.length, outgoingCipher, pn.outgoingKey, incommingCipher, pn.incommingKey, replyTo, false, negType, trackerID, true,
-				reusedTracker, pn.hmacKey, ivCipher, pn.ivNonce, pn.ourInitialSeqNum,
-				pn.theirInitialSeqNum, pn.ourInitialMsgID, pn.theirInitialMsgID);
+				bootID, hisRef, 0, hisRef.length, outgoingCipher, pn.outgoingKey, incommingCipher,
+				pn.incommingKey, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey,
+				ivCipher, pn.ivNonce, pn.ourInitialSeqNum, pn.theirInitialSeqNum, pn.ourInitialMsgID,
+				pn.theirInitialMsgID);
 		if(newTrackerID >= 0) {
 			if(dontWant) {
 				node.peers.disconnect(pn, true, true, true);
