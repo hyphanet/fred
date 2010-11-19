@@ -4361,7 +4361,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** Store the block if this is a sink. Call for inserts. */
 	public void storeInsert(SSKBlock block, boolean deep, boolean overwrite, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyCollisionException {
-		store(block, deep, canWriteClientCache, canWriteDatastore, false);
+		store(block, deep, overwrite, canWriteClientCache, canWriteDatastore, false);
 	}
 
 	/** Store only to the cache, and not the store. Called by requests,
