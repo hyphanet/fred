@@ -120,8 +120,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	protected byte[] hmacKey;
 	protected byte[] ivKey;
 	protected byte[] ivNonce;
-	protected int initialSeqNum;
-	protected int initialMsgID;
+	protected int ourInitialSeqNum;
+	protected int theirInitialSeqNum;
+	protected int ourInitialMsgID;
+	protected int theirInitialMsgID;
 	// The following is used only if we are the initiator
 
 	protected long jfkContextLifetime = 0;
@@ -738,7 +740,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(negTypes[negTypes.length - 1] != 5) {
 			packetFormat = new FNPWrapper(this);
 		} else {
-			packetFormat = new NewPacketFormat(this, 0, 0);
+			packetFormat = new NewPacketFormat(this, 0, 0, 0, 0);
 		}
 
 		byte buffer[] = new byte[16];
@@ -1865,7 +1867,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @return The ID of the new PacketTracker. If this is different to the passed-in trackerID, then
 	* it's a new tracker. -1 to indicate failure.
 	*/
-	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int initialSeqNum, int initialMsgID) {
+	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID) {
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
 
@@ -2091,7 +2093,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(negType != 5) {
 				packetFormat = new FNPWrapper(this);
 			} else {
-				packetFormat = new NewPacketFormat(this, initialSeqNum & 0x7FFFFFFF, initialMsgID & 0x7FFFFFFF);
+				packetFormat = new NewPacketFormat(this, ourInitialSeqNum, theirInitialSeqNum,
+						ourInitialMsgID, theirInitialMsgID);
 			}
 		} else {
 			packetFormat.onRekey();

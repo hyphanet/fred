@@ -7,7 +7,7 @@ import junit.framework.TestCase;
 
 public class NewPacketFormatTest extends TestCase {
 	public void testEmptyCreation() throws BlockedTooLongException {
-		NewPacketFormat npf = new NewPacketFormat(null, 0, 0);
+		NewPacketFormat npf = new NewPacketFormat(null, 0, 0, 0, 0);
 		PeerMessageQueue pmq = new PeerMessageQueue();
 
 		NPFPacket p = npf.createPacket(1400, pmq);
@@ -15,7 +15,7 @@ public class NewPacketFormatTest extends TestCase {
 	}
 
 	public void testAckOnlyCreation() throws BlockedTooLongException {
-		NewPacketFormat npf = new NewPacketFormat(null, 0, 0);
+		NewPacketFormat npf = new NewPacketFormat(null, 0, 0, 0, 0);
 		PeerMessageQueue pmq = new PeerMessageQueue();
 
 		NPFPacket p = null;
@@ -32,9 +32,9 @@ public class NewPacketFormatTest extends TestCase {
 	}
 
 	public void testLostLastAck() throws BlockedTooLongException {
-		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
+		NewPacketFormat sender = new NewPacketFormat(null, 0, 0, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
-		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
+		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0, 0, 0);
 		PeerMessageQueue receiverQueue = new PeerMessageQueue();
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
@@ -72,9 +72,9 @@ public class NewPacketFormatTest extends TestCase {
 	}
 
 	public void testOutOfOrderDelivery() throws BlockedTooLongException {
-		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
+		NewPacketFormat sender = new NewPacketFormat(null, 0, 0, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
-		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
+		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0, 0, 0);
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
@@ -93,9 +93,9 @@ public class NewPacketFormatTest extends TestCase {
 	}
 
 	public void testReceiveUnknownMessageLength() throws BlockedTooLongException {
-		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
+		NewPacketFormat sender = new NewPacketFormat(null, 0, 0, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
-		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
+		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0, 0, 0);
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
@@ -112,9 +112,9 @@ public class NewPacketFormatTest extends TestCase {
 	}
 
 	public void testResendAlreadyCompleted() throws BlockedTooLongException {
-		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
+		NewPacketFormat sender = new NewPacketFormat(null, 0, 0, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
-		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
+		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0, 0, 0);
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0));
 

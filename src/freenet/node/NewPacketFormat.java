@@ -77,7 +77,8 @@ public class NewPacketFormat implements PacketFormat {
 	private int usedBufferOtherSide = 0;
 	private final Object bufferUsageLock = new Object();
 
-	public NewPacketFormat(PeerNode pn, int sequenceNumber, int messageID) {
+	public NewPacketFormat(PeerNode pn, int ourInitialSeqNum, int theirInitialSeqNum,
+			int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
 
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
@@ -85,20 +86,25 @@ public class NewPacketFormat implements PacketFormat {
 			startedByPrio.add(new HashMap<Integer, MessageWrapper>());
 		}
 
-		sequenceNumber = (int) (sequenceNumber % NUM_SEQNUMS);
+		// Make sure the numbers are within the ranges we want
+		ourInitialSeqNum = (int) ((ourInitialSeqNum & 0x7FFFFFFF) % NUM_SEQNUMS);
+		theirInitialSeqNum = (int) ((theirInitialSeqNum & 0x7FFFFFFF) % NUM_SEQNUMS);
+		ourInitialMsgID = (ourInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
+		theirInitialMsgID = (theirInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
 
-		nextSequenceNumber = sequenceNumber;
-		highestReceivedSequenceNumber = sequenceNumber - 1;
+		nextSequenceNumber = ourInitialSeqNum;
+		highestReceivedSequenceNumber = theirInitialSeqNum - 1;
+		if(highestReceivedSequenceNumber == -1) highestReceivedSequenceNumber = (int) (NUM_SEQNUMS - 1);
 
 		// Start the list at the first sequence number since we won't get anything before.
-		watchListOffset = sequenceNumber;
+		watchListOffset = theirInitialSeqNum;
 
-		seqNumAtLastRekey = sequenceNumber - 1;
+		seqNumAtLastRekey = ourInitialSeqNum - 1;
 		if(seqNumAtLastRekey == -1) seqNumAtLastRekey = (int) (NUM_SEQNUMS - 1);
 
-		nextMessageID = messageID % NUM_MESSAGE_IDS;
-		messageWindowPtrAcked = nextMessageID;
-		messageWindowPtrReceived = nextMessageID;
+		nextMessageID = ourInitialMsgID;
+		messageWindowPtrAcked = ourInitialMsgID;
+		messageWindowPtrReceived = theirInitialMsgID;
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now) {

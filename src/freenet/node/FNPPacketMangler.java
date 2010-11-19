@@ -1143,15 +1143,28 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
 		byte[] ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
 
+		/* Bytes  1-4:  Initial sequence number for the initiator
+		 * Bytes  5-8:  Initial sequence number for the responder
+		 * Bytes  9-12: Initial message id for the initiator
+		 * Bytes 13-16: Initial message id for the responder
+		 * Note that we are the responder */
 		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
-		int seqNum = ((sharedData[0] & 0xFF) << 24)
-		                | ((sharedData[1] & 0xFF) << 16)
-		                | ((sharedData[2] & 0xFF) << 8)
-		                | (sharedData[3] & 0xFF);
-		int initialMsgID = ((sharedData[4] & 0xFF) << 24)
-		                | ((sharedData[5] & 0xFF) << 16)
-		                | ((sharedData[6] & 0xFF) << 8)
-		                | (sharedData[7] & 0xFF);
+		int theirInitialSeqNum = ((sharedData[0] & 0xFF) << 24)
+				| ((sharedData[1] & 0xFF) << 16)
+				| ((sharedData[2] & 0xFF) << 8)
+				| (sharedData[3] & 0xFF);
+		int ourInitialSeqNum = ((sharedData[4] & 0xFF) << 24)
+				| ((sharedData[5] & 0xFF) << 16)
+				| ((sharedData[6] & 0xFF) << 8)
+				| (sharedData[7] & 0xFF);
+		int theirInitialMsgID= ((sharedData[8] & 0xFF) << 24)
+				| ((sharedData[9] & 0xFF) << 16)
+				| ((sharedData[10] & 0xFF) << 8)
+				| (sharedData[11] & 0xFF);
+		int ourInitialMsgID= ((sharedData[12] & 0xFF) << 24)
+				| ((sharedData[13] & 0xFF) << 16)
+				| ((sharedData[14] & 0xFF) << 8)
+				| (sharedData[15] & 0xFF);
 
 		c.initialize(Ke);
 		final PCFBMode pk = PCFBMode.create(c);
@@ -1254,7 +1267,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 
-		long newTrackerID = pn.completedHandshake(bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher, ivNonce, seqNum, initialMsgID);
+		long newTrackerID = pn.completedHandshake(bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher, ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID);
 
 		if(newTrackerID > 0) {
 
@@ -1484,7 +1497,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		c.initialize(pn.jfkKs);
 		ivCipher.initialize(pn.ivKey);
 
-		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey, ivCipher, pn.ivNonce, pn.initialSeqNum, pn.initialMsgID) >= 0) {
+		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey, ivCipher, pn.ivNonce, pn.ourInitialSeqNum, pn.theirInitialSeqNum, pn.ourInitialMsgID, pn.theirInitialMsgID >= 0) {
 			if(dontWant) {
 				node.peers.disconnect(pn, true, true, true);
 			} else {
@@ -1503,8 +1516,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.hmacKey = null;
 		pn.ivKey = null;
 		pn.ivNonce = null;
-		pn.initialSeqNum = 0;
-		pn.initialMsgID = 0;
+		pn.ourInitialSeqNum = 0;
+		pn.theirInitialSeqNum = 0;
+		pn.ourInitialMsgID = 0;
+		pn.theirInitialMsgID = 0;
 		// We want to clear it here so that new handshake requests
 		// will be sent with a different DH pair
 		pn.setKeyAgreementSchemeContext(null);
@@ -1599,15 +1614,28 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
 		pn.ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
 
+		/* Bytes  1-4:  Initial sequence number for the initiator
+		 * Bytes  5-8:  Initial sequence number for the responder
+		 * Bytes  9-12: Initial message id for the initiator
+		 * Bytes 13-16: Initial message id for the responder
+		 * Note that we are the initiator */
 		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
-		pn.initialSeqNum = ((sharedData[0] & 0xFF) << 24)
-		                | ((sharedData[1] & 0xFF) << 16)
-		                | ((sharedData[2] & 0xFF) << 8)
-		                | (sharedData[3] & 0xFF);
-		pn.initialMsgID = ((sharedData[4] & 0xFF) << 24)
-		                | ((sharedData[5] & 0xFF) << 16)
-		                | ((sharedData[6] & 0xFF) << 8)
-		                | (sharedData[7] & 0xFF);
+		pn.ourInitialSeqNum = ((sharedData[0] & 0xFF) << 24)
+				| ((sharedData[1] & 0xFF) << 16)
+				| ((sharedData[2] & 0xFF) << 8)
+				| (sharedData[3] & 0xFF);
+		pn.theirInitialSeqNum = ((sharedData[4] & 0xFF) << 24)
+				| ((sharedData[5] & 0xFF) << 16)
+				| ((sharedData[6] & 0xFF) << 8)
+				| (sharedData[7] & 0xFF);
+		pn.ourInitialMsgID= ((sharedData[8] & 0xFF) << 24)
+				| ((sharedData[9] & 0xFF) << 16)
+				| ((sharedData[10] & 0xFF) << 8)
+				| (sharedData[11] & 0xFF);
+		pn.theirInitialMsgID= ((sharedData[12] & 0xFF) << 24)
+				| ((sharedData[13] & 0xFF) << 16)
+				| ((sharedData[14] & 0xFF) << 8)
+				| (sharedData[15] & 0xFF);
 
 		c.initialize(pn.jfkKe);
 		PCFBMode pcfb = PCFBMode.create(c);
