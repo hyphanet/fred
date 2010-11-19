@@ -24,11 +24,13 @@ import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.KeyEncodeException;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
+import freenet.keys.SSKVerifyException;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
@@ -542,7 +544,21 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					try {
 						core.node.store(b, false, req.canWriteClientCache, true, false);
 					} catch (KeyCollisionException e) {
-						throw new LowLevelPutException(LowLevelPutException.COLLISION);
+						LowLevelPutException failed = new LowLevelPutException(LowLevelPutException.COLLISION);
+						KeyBlock collided = core.node.fetch(k.getNodeKey(), true, req.canWriteClientCache, false, false, null);
+						if(collided == null) {
+							Logger.error(this, "Collided but no key?!");
+							// Could be a race condition.
+							try {
+								core.node.store(b, false, req.canWriteClientCache, true, false);
+							} catch (KeyCollisionException e2) {
+								Logger.error(this, "Collided but no key and still collided!");
+								throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, "Collided, can't find block, but still collides!", e);
+							}
+						}
+						
+						failed.setCollidedBlock(collided);
+						throw failed;
 					}
 				else
 					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT);
