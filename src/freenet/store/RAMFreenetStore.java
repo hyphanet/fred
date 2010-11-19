@@ -51,8 +51,10 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 			misses++;
 			return null;
 		}
-		if(ignoreOldBlocks && block.oldBlock)
+		if(ignoreOldBlocks && block.oldBlock) {
+			Logger.normal(this, "Ignoring old block");
 			return null;
+		}
 		try {
 			T ret =
 				callback.construct(block.data, block.header, routingKey, block.fullKey, canReadClientCache, canReadSlashdotCache, meta, null);
@@ -60,10 +62,6 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 			if(!dontPromote)
 				blocksByRoutingKey.push(key, block);
 			if(meta != null && block.oldBlock) {
-				if(ignoreOldBlocks) {
-					Logger.normal(this, "Ignoring old block");
-					return null;
-				}
 				meta.setOldBlock();
 			}
 			return ret;
