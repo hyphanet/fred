@@ -805,6 +805,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 
 		persister.start();
+		
+		requestStarters.start();
 
 		storeChecker.start(node.executor, "Datastore checker");
 		if(fcpServer != null)
