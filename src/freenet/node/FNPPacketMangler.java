@@ -1169,6 +1169,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				| ((sharedData[14] & 0xFF) << 8)
 				| (sharedData[15] & 0xFF);
 
+		if(negType <= 4) {
+			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
+			 * backwards compatible */
+			outgoingKey = incommingKey;
+		}
+
 		c.initialize(Ke);
 		final PCFBMode pk = PCFBMode.create(c);
 		int ivLength = pk.lengthIV();
@@ -1658,6 +1664,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				| ((sharedData[13] & 0xFF) << 16)
 				| ((sharedData[14] & 0xFF) << 8)
 				| (sharedData[15] & 0xFF);
+
+		if(negType <= 4) {
+			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
+			 * backwards compatible */
+			pn.incommingKey = pn.outgoingKey;
+		}
 
 		c.initialize(pn.jfkKe);
 		PCFBMode pcfb = PCFBMode.create(c);
