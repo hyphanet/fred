@@ -6037,4 +6037,8 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean getWriteLocalToDatastore() {
 		return writeLocalToDatastore;
 	}
+	
+	public boolean getUseSlashdotCache() {
+		return useSlashdotCache;
+	}
 }

@@ -29,6 +29,7 @@ import freenet.keys.KeyEncodeException;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKEncodeException;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -549,18 +550,35 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					// Collision
 					try {
 						ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)k, true, true, req.canWriteClientCache);
-						byte[] data = collided.memoryDecode(true);
-						byte[] inserting = BucketTools.toByteArray(block.copyBucket);
-						if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
-							if(SingleBlockInserter.logMINOR) Logger.minor(this, "Collided with identical data");
-							if(!block.persistent)
-								orig.onEncode(k, null, context);
-							req.onInsertSuccess(context);
-							return true;
-						} else {
-							if(SingleBlockInserter.logMINOR) Logger.minor(this, "Apparently real collision: collided.isMetadata="+collided.isMetadata()+" block.isMetadata="+block.isMetadata+
-									" collided.codec="+collided.getCompressionCodec()+" block.codec="+block.compressionCodec+
-									" collided.datalength="+data.length+" block.datalength="+inserting.length+" H(collided)="+Fields.hashCode(data)+" H(inserting)="+Fields.hashCode(inserting));
+						if(collided == null) {
+							// Same data could be encoded differently, so we *do* need the block.
+							if(!core.node.getUseSlashdotCache())
+								// Expected.
+								Logger.normal(this, "Can't find block after collision, could be bogus, maybe slashdot cache is disabled? Re-fetching...");
+							else
+								// Race condition??? Really small store???
+								Logger.error(this, "Can't find block after collision even though slashdot cache enabled, re-fetching...");
+							try {
+								collided = (ClientSSKBlock) core.realGetKey((ClientSSK)k, req.localRequestOnly, req.ignoreStore, req.canWriteClientCache);
+							} catch (LowLevelGetException e1) {
+								Logger.error(this, "Can't find block after collision and fetch failed: "+e1);
+								collided = null;
+							}
+						}
+						if(collided != null) {
+							byte[] data = collided.memoryDecode(true);
+							byte[] inserting = BucketTools.toByteArray(block.copyBucket);
+							if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
+								if(SingleBlockInserter.logMINOR) Logger.minor(this, "Collided with identical data");
+								if(!block.persistent)
+									orig.onEncode(k, null, context);
+								req.onInsertSuccess(context);
+								return true;
+							} else {
+								if(SingleBlockInserter.logMINOR) Logger.minor(this, "Apparently real collision: collided.isMetadata="+collided.isMetadata()+" block.isMetadata="+block.isMetadata+
+										" collided.codec="+collided.getCompressionCodec()+" block.codec="+block.compressionCodec+
+										" collided.datalength="+data.length+" block.datalength="+inserting.length+" H(collided)="+Fields.hashCode(data)+" H(inserting)="+Fields.hashCode(inserting));
+							}
 						}
 					} catch (KeyVerifyException e1) {
 						Logger.error(this, "Caught "+e1+" when checking collision!", e1);
