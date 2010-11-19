@@ -61,9 +61,8 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 			hits++;
 			if(!dontPromote)
 				blocksByRoutingKey.push(key, block);
-			if(meta != null && block.oldBlock) {
+			if(meta != null && block.oldBlock)
 				meta.setOldBlock();
-			}
 			return ret;
 		} catch (KeyVerifyException e) {
 			blocksByRoutingKey.removeKey(key);
