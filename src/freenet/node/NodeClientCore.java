@@ -1446,16 +1446,19 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());
 
 			if(is.hasCollided()) {
+				SSKBlock collided = is.getBlock();
 				// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
 				try {
 					// Has collided *on the network*, not locally.
-					node.storeInsert(is.getBlock(), deep, true, canWriteClientCache, false);
+					node.storeInsert(collided, deep, true, canWriteClientCache, false);
 				} catch(KeyCollisionException e) {
 					// collision race?
 					// should be impossible.
 					Logger.normal(this, "collision race? is="+is, e);
 				}
-				throw new LowLevelPutException(LowLevelPutException.COLLISION);
+				LowLevelPutException e = new LowLevelPutException(LowLevelPutException.COLLISION);
+				e.setCollidedBlock(collided);
+				throw e;
 			} else
 				try {
 					node.storeInsert(block, deep, false, canWriteClientCache, false);
