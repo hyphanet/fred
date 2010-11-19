@@ -15,9 +15,11 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.NullAsyncMessageFilterCallback;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.RetrievalException;
+import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
 import freenet.io.xfer.PartiallyReceivedBlock;
@@ -382,60 +384,95 @@ loadWaiterLoop:
             lastMessage = null;
             deadline = System.currentTimeMillis() + fetchTimeout;
             
-            if(!waitAfterAccepted()) return;
+            synchronized(this) {
+            	receivingAsync = true;
+            }
+            WaitForAcceptedCallback cb = new WaitForAcceptedCallback(lastNode);
+            cb.schedule();
+            return;
         }
 	}
     
-    
-    /**
-     * @return True to try the next peer, false if we've finished.
-     */
-    private boolean waitAfterAccepted() {
-        
-        while(true) {
-        	
-        	long now = System.currentTimeMillis();
-        	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - now));
-        	Message msg = null;
-        	
-        	if(timeout > 0) {
-        	
-        		MessageFilter mf = createMessageFilter(timeout);
-        		
-        		try {
-        			msg = node.usm.waitFor(mf, this);
-        		} catch (DisconnectedException e) {
-        			Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
-        			next.noLongerRoutingTo(origTag, false);
-        			return true;
-        		}
-        		
-        		if(logMINOR) Logger.minor(this, "second part got "+msg);
-        		
-        	}
-            
-        	if(msg == null) {
-				Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+")");
-        		// Fatal timeout
-        		next.localRejectedOverload("FatalTimeout");
-        		forwardRejectedOverload();
-        		finish(TIMED_OUT, next, false);
-        		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
-        		return false;
-        	}
+    private class WaitForAcceptedCallback implements SlowAsyncMessageFilterCallback {
+    	
+    	// Needs to be a separate class so it can check whether the main loop has moved on to another peer.
+    	// If it has
+    	
+    	private final PeerNode waitingFor;
+
+		public WaitForAcceptedCallback(PeerNode source) {
+			waitingFor = source;
+		}
+
+		public void onMatched(Message msg) {
 			
         	DO action = handleMessage(msg);
         	
         	if(action == DO.FINISHED)
-        		return false;
-        	else if(action == DO.NEXT_PEER)
-        		break;
-//        	else if(action == DO.WAIT)
-//           		continue;
-        }
-        return true;
-	}
+        		return;
+        	else if(action == DO.NEXT_PEER) {
+        		// Try another peer
+        		routeRequests();
+        	} else /*if(action == DO.WAIT)*/ {
+        		// Try again.
+        		schedule();
+        	}
+		}
+		
+		public void schedule() {
+        	long now = System.currentTimeMillis();
+        	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - now));
+        	if(timeout >= 0) {
+        		MessageFilter mf = createMessageFilter(timeout);
+        		try {
+        			node.usm.addAsyncFilter(mf, this, RequestSender.this);
+        		} catch (DisconnectedException e) {
+        			onDisconnect(lastNode);
+        		}
+        	} else {
+        		onTimeout();
+        	}
+		}
 
+		public boolean shouldTimeout() {
+			synchronized(RequestSender.this) {
+				if(lastNode != waitingFor) return true;
+				if(status != -1) return true;
+			}
+			return false;
+		}
+
+		public void onTimeout() {
+			synchronized(RequestSender.this) {
+				if(lastNode != waitingFor) return;
+				if(status != -1) return;
+			}
+			Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+")");
+    		// Fatal timeout
+    		next.localRejectedOverload("FatalTimeout");
+    		forwardRejectedOverload();
+    		finish(TIMED_OUT, next, false);
+    		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
+    		// Finished, can't try another node as timed out.
+		}
+
+		public void onDisconnect(PeerContext ctx) {
+			Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
+			next.noLongerRoutingTo(origTag, false);
+			// Try another peer.
+			routeRequests();
+		}
+
+		public void onRestarted(PeerContext ctx) {
+			onDisconnect(ctx);
+		}
+
+		public int getPriority() {
+			return NativeThread.NORM_PRIORITY;
+		}
+    	
+    };
+    
 	/** @return True if we successfully fetched an offered key or failed fatally. False
      * if we should proceed to a normal fetch. */
     private boolean tryOffers(final OfferList offers) {
