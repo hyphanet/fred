@@ -1135,7 +1135,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
-		byte[] Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+		byte[] outgoingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		byte[] incommingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "7");
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
@@ -1237,17 +1237,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// At this point we know it's from the peer, so we can report a packet received.
 		pn.receivedPacket(true, false);
 
-		BlockCipher cs = null;
+		BlockCipher outgoingCipher = null;
 		BlockCipher incommingCipher = null;
 		BlockCipher ivCipher = null;
 		try {
-			cs = new Rijndael(256, 256);
+			outgoingCipher = new Rijndael(256, 256);
 			incommingCipher = new Rijndael(256, 256);
 			ivCipher = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new RuntimeException(e);
 		}
-		cs.initialize(Ks);
+		outgoingCipher.initialize(outgoingKey);
 		incommingCipher.initialize(incommingKey);
 		ivCipher.initialize(ivKey);
 
@@ -1272,7 +1272,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		long newTrackerID = pn.completedHandshake(
-				bootID, hisRef, 0, hisRef.length, cs, Ks, incommingCipher, incommingKey, replyTo, true, negType, trackerID, false,
+				bootID, hisRef, 0, hisRef.length, outgoingCipher, outgoingKey, incommingCipher, incommingKey, replyTo, true, negType, trackerID, false,
 				false, hmacKey, ivCipher, ivNonce, ourInitialSeqNum, theirInitialSeqNum,
 				ourInitialMsgID, theirInitialMsgID);
 
@@ -1495,20 +1495,22 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		// We change the key
 		BlockCipher ivCipher = null;
+		BlockCipher outgoingCipher = null;
 		BlockCipher incommingCipher = null;
 		try {
 			ivCipher = new Rijndael(256, 256);
+			outgoingCipher = new Rijndael(256, 256);
 			incommingCipher = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new RuntimeException(e);
 		}
 
-		c.initialize(pn.jfkKs);
+		outgoingCipher.initialize(pn.outgoingKey);
 		incommingCipher.initialize(pn.incommingKey);
 		ivCipher.initialize(pn.ivKey);
 
 		long newTrackerID = pn.completedHandshake(
-				bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, incommingCipher, pn.incommingKey, replyTo, false, negType, trackerID, true,
+				bootID, hisRef, 0, hisRef.length, outgoingCipher, pn.outgoingKey, incommingCipher, pn.incommingKey, replyTo, false, negType, trackerID, true,
 				reusedTracker, pn.hmacKey, ivCipher, pn.ivNonce, pn.ourInitialSeqNum,
 				pn.theirInitialSeqNum, pn.ourInitialMsgID, pn.theirInitialMsgID);
 		if(newTrackerID >= 0) {
@@ -1526,7 +1528,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.setJFKBuffer(null);
 		pn.jfkKa = null;
 		pn.jfkKe = null;
-		pn.jfkKs = null;
+		pn.outgoingKey = null;
 		pn.incommingKey = null;
 		pn.hmacKey = null;
 		pn.ivKey = null;
@@ -1621,7 +1623,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
-		pn.jfkKs = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+		pn.outgoingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		pn.incommingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "7");
 		pn.jfkKe = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		pn.jfkKa = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
