@@ -268,7 +268,7 @@ public class LongTermPushPullTest {
 			//System.out.println("LINE: "+line);
 			String[] split = line.split(",");
 			Date date = dateFormat.parse(split[0]);
-			GregorianCalendar calendar = new GregorianCalendar();
+			GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 			calendar.setTime(date);
 			System.out.println("Date: "+dateFormat.format(calendar.getTime()));
 			if(prevDate != null) {
