@@ -2054,7 +2054,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			realSeqNumber = seqNumber + (decrypted[ptr++] & 0xff);
 		}
-		if(logMINOR) Logger.minor(this, "Real sequence number: "+realSeqNumber);
+		if(logMINOR) Logger.minor(this, "Highest sent sequence number: "+realSeqNumber);
 
 		//Logger.minor(this, "Reference seq number: "+HexUtil.bytesToHex(decrypted, ptr, 4));
 
