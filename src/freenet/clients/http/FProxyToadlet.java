@@ -318,6 +318,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				filterControl.addChild("div", l10n("filterDataMessage"));
 			}
 			if (threatLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
+				optionForm.addChild("br");
 				NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadToDiskSecurityWarning",
 						new String[] {"bold" }, new HTMLNode[] { HTMLNode.STRONG });
 				//optionForm.addChild("#", l10n("downloadToDiskSecurityWarning") + " ");
