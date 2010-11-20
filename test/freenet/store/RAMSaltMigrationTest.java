@@ -88,7 +88,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		// Put it with oldBlock = false should unset the flag.
 		store.put(block, false);
 		
-		verify = store.fetch(key.getNodeCHK(), false, false, null);
+		verify = store.fetch(key.getNodeCHK(), false, true, null);
 		data = decodeBlock(verify, key);
 		assertEquals(test, data);
 	}
@@ -137,7 +137,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			// Put it with oldBlock = false should unset the flag.
 			store.put(block, false);
 			
-			verify = store.fetch(key.getNodeCHK(), false, false, null);
+			verify = store.fetch(key.getNodeCHK(), false, true, null);
 			data = decodeBlock(verify, key);
 			assertEquals(test, data);
 		}
