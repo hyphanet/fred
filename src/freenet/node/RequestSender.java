@@ -255,16 +255,21 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	return;
         }
         
+        next = null;
+        fetchTimeout = FETCH_TIMEOUT;
+		routeAttempts=0;
+		starting = true;
+        // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
+		highHTLFailureCount = 0;
         routeRequests();
     }
     
+    private int routeAttempts;
+    private long fetchTimeout;
+    private boolean starting;
+    private int highHTLFailureCount;
+    
     private void routeRequests() {
-    	long fetchTimeout = FETCH_TIMEOUT;
-		int routeAttempts=0;
-        next = null;
-        // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
-        int highHTLFailureCount = 0;
-        boolean starting = true;
         
         peerLoop:
         while(true) {
