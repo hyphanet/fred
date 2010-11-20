@@ -465,7 +465,7 @@ outer:
 			return false;
 		}
 
-		if(packet.getFragments().size() != 0) {
+		if(packet.getFragments().size() > 0) {
 			SentPacket sentPacket = null;
 			synchronized(sentPackets) {
 				sentPacket = sentPackets.get(packet.getSequenceNumber());
@@ -591,9 +591,11 @@ fragments:
 		if(seqNum == -1) return null;
 		packet.setSequenceNumber(seqNum);
 
-		sentPacket.sent();
-		synchronized(sentPackets) {
-			sentPackets.put(seqNum, sentPacket);
+		if(packet.getFragments().size() > 0) {
+			sentPacket.sent();
+			synchronized(sentPackets) {
+				sentPackets.put(seqNum, sentPacket);
+			}
 		}
 
 		return packet;
