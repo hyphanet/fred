@@ -37,6 +37,8 @@ public class SessionKey {
 	public final byte[] ivNonce;
 	public final byte[] hmacKey;
 
+	public int firstSeqNumUsed = -1;
+
 	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
 			byte[] ivNonce, byte[] hmacKey) {
