@@ -805,6 +805,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 
 		persister.start();
+		
+		requestStarters.start();
 
 		storeChecker.start(node.executor, "Datastore checker");
 		if(fcpServer != null)
@@ -1378,7 +1380,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			// Be consistent: use the client cache to check for collisions as this is a local insert.
 			SSKBlock altBlock = node.fetch(block.getKey(), false, true, canWriteClientCache, false, false, null);
 			if(altBlock != null && !altBlock.equals(block))
-				throw new LowLevelPutException(LowLevelPutException.COLLISION);
+				throw new LowLevelPutException(altBlock);
 			is = node.makeInsertSender(block,
 				node.maxHTL(), uid, tag, null, false, canWriteClientCache, false, forkOnCacheable, preferInsert, ignoreLowBackoff);
 			boolean hasReceivedRejectedOverload = false;
@@ -1444,21 +1446,37 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());
 
 			if(is.hasCollided()) {
+				SSKBlock collided = is.getBlock();
 				// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
 				try {
 					// Has collided *on the network*, not locally.
-					node.storeInsert(is.getBlock(), deep, true, canWriteClientCache, false);
+					node.storeInsert(collided, deep, true, canWriteClientCache, false);
 				} catch(KeyCollisionException e) {
 					// collision race?
 					// should be impossible.
 					Logger.normal(this, "collision race? is="+is, e);
 				}
-				throw new LowLevelPutException(LowLevelPutException.COLLISION);
+				throw new LowLevelPutException(collided);
 			} else
 				try {
 					node.storeInsert(block, deep, false, canWriteClientCache, false);
 				} catch(KeyCollisionException e) {
-					throw new LowLevelPutException(LowLevelPutException.COLLISION);
+					LowLevelPutException failed = new LowLevelPutException(LowLevelPutException.COLLISION);
+					NodeSSK key = block.getKey();
+					KeyBlock collided = node.fetch(key, true, canWriteClientCache, false, false, null);
+					if(collided == null) {
+						Logger.error(this, "Collided but no key?!");
+						// Could be a race condition.
+						try {
+							node.store(block, false, canWriteClientCache, false, false);
+						} catch (KeyCollisionException e2) {
+							Logger.error(this, "Collided but no key and still collided!");
+							throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, "Collided, can't find block, but still collides!", e);
+						}
+					}
+					
+					failed.setCollidedBlock(collided);
+					throw failed;
 				}
 
 

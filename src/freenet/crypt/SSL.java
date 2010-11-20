@@ -21,7 +21,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.net.ServerSocket;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -37,16 +36,16 @@ import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.Closer;
+import java.net.ServerSocket;
 
 public class SSL {
 
-	private static boolean enable;
+	private static volatile boolean enable;
 	private static KeyStore keystore;
 	private static ServerSocketFactory ssf;
 	private static String keyStore;
 	private static String keyStorePass;
 	private static String keyPass;
-	private static String version;
 
 	/**
 	 * Call this function before ask ServerSocket
@@ -168,35 +167,10 @@ public class SSL {
 				}
 			});
 
-		sslConfig.register("sslVersion", "SSLv3", configItemOrder++, true, true, "SSL.version", "SSL.versionLong",
-			new StringCallback() {
-
-				@Override
-				public String get() {
-					return version;
-				}
-
-				@Override
-				public void set(String newVersion) throws InvalidConfigValueException {
-					if(!newVersion.equals(get())) {
-						String oldVersion = version;
-						version = newVersion;
-						try {
-							createSSLContext();
-						} catch(Exception e) {
-							version = oldVersion;
-							e.printStackTrace(System.out);
-							throw new InvalidConfigValueException("Cannot change ssl version, wrong value");
-						}
-					}
-				}
-			});
-
 		enable = sslConfig.getBoolean("sslEnable");
 		keyStore = sslConfig.getString("sslKeyStore");
 		keyStorePass = sslConfig.getString("sslKeyStorePass");
 		keyPass = sslConfig.getString("sslKeyPass");
-		version = sslConfig.getString("sslVersion");
 
 		try {
 			keystore = KeyStore.getInstance("PKCS12");
@@ -233,7 +207,7 @@ public class SSL {
 				try {
 					Class<?> certAndKeyGenClazz = Class.forName("sun.security.x509.CertAndKeyGen");
 					Constructor<?> certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class);
-					Object keypair = certAndKeyGenCtor.newInstance("DSA", "SHA1WithDSA");
+					Object keypair = certAndKeyGenCtor.newInstance("RSA", "SHA1WithRSA");
 
 					Class<?> x500NameClazz = Class.forName("sun.security.x509.X500Name");
 					Constructor<?> x500NameCtor = x500NameClazz.getConstructor(String.class, String.class,
@@ -286,8 +260,9 @@ public class SSL {
 			kmf.init(keystore, keyPass.toCharArray());
 			// An SSLContext is an environment for implementing JSSE
 			// It is used to create a ServerSocketFactory
-			SSLContext sslc = SSLContext.getInstance(version);
+			SSLContext sslc = SSLContext.getInstance("TLSv1");
 			// Initialize the SSLContext to work with our key managers
+			// FIXME: should we pass yarrow in here?
 			sslc.init(kmf.getKeyManagers(), null, null);
 			ssf = sslc.getServerSocketFactory();
 		}

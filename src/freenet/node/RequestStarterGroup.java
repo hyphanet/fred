@@ -66,7 +66,6 @@ public class RequestStarterGroup {
 		if(container != null)
 			chkFetchScheduler.startCore(core, dbHandle, container);
 		chkRequestStarter.setScheduler(chkFetchScheduler);
-		chkRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		chkInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "CHK Insert", fs == null ? null : fs.subset("CHKInsertThrottle"), 32768);
@@ -75,7 +74,6 @@ public class RequestStarterGroup {
 		if(container != null)
 			chkPutScheduler.startCore(core, dbHandle, container);
 		chkInsertStarter.setScheduler(chkPutScheduler);
-		chkInsertStarter.start();
 
 		sskRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "SSK Request", fs == null ? null : fs.subset("SSKRequestThrottle"), 1024);
 		sskRequestStarter = new RequestStarter(core, sskRequestThrottle, "SSK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true);
@@ -83,7 +81,6 @@ public class RequestStarterGroup {
 		if(container != null)
 			sskFetchScheduler.startCore(core, dbHandle, container);
 		sskRequestStarter.setScheduler(sskFetchScheduler);
-		sskRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		sskInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "SSK Insert", fs == null ? null : fs.subset("SSKInsertThrottle"), 1024);
@@ -92,10 +89,16 @@ public class RequestStarterGroup {
 		if(container != null)
 			sskPutScheduler.startCore(core, dbHandle, container);
 		sskInsertStarter.setScheduler(sskPutScheduler);
-		sskInsertStarter.start();
 		
 		schedulerConfig.finishedInitialization();
 		
+	}
+	
+	public void start() {
+		chkRequestStarter.start();
+		chkInsertStarter.start();
+		sskRequestStarter.start();
+		sskInsertStarter.start();
 	}
 	
 	void lateStart(NodeClientCore core, long dbHandle, ObjectContainer container) {
