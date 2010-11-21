@@ -711,9 +711,6 @@ fragments:
 		return 250;
 	}
 
-	public void onRekey() {
-	}
-
 	private static class SentPacket {
 		NewPacketFormat npf;
 		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();

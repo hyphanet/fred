@@ -186,8 +186,4 @@ public class FNPWrapper implements PacketFormat {
 			return false;
 		}
 	}
-	
-	public void onRekey() {
-		//Handled by PacketTracker, so there is nothing to do here
-	}
 }
