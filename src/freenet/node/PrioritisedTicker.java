@@ -63,25 +63,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	void start() {
 		Logger.normal(this, "Starting Ticker");
 		System.out.println("Starting Ticker");
-		scheduleVersionTransition();
 		myThread.start();
-	}
-
-	private void scheduleVersionTransition() {
-		long now = System.currentTimeMillis();
-		long transition = Version.transitionTime();
-		if(now < transition)
-			queueTimedJob(new Runnable() {
-
-					public void run() {
-						freenet.support.Logger.OSThread.logPID(this);
-						PeerNode[] nodes = node.peers.myPeers;
-						for(int i = 0; i < nodes.length; i++) {
-							PeerNode pn = nodes[i];
-							pn.updateVersionRoutablity();
-						}
-					}
-				}, transition - now);
 	}
 
 	public void run() {
