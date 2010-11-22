@@ -63,6 +63,11 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	void start() {
 		Logger.normal(this, "Starting Ticker");
 		System.out.println("Starting Ticker");
+		scheduleVersionTransition();
+		myThread.start();
+	}
+
+	private void scheduleVersionTransition() {
 		long now = System.currentTimeMillis();
 		long transition = Version.transitionTime();
 		if(now < transition)
@@ -77,7 +82,6 @@ public class PrioritisedTicker implements Ticker, Runnable {
 						}
 					}
 				}, transition - now);
-		myThread.start();
 	}
 
 	public void run() {
