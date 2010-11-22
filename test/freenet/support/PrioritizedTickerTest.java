@@ -2,7 +2,7 @@ package freenet.support;
 
 import junit.framework.TestCase;
 
-public class PrioritisedTickerTest extends TestCase {
+public class PrioritizedTickerTest extends TestCase {
 	
 	private Executor realExec;
 	
@@ -21,7 +21,7 @@ public class PrioritisedTickerTest extends TestCase {
 	Runnable simpleRunnable = new Runnable() {
 		
 		public void run() {
-			synchronized(PrioritisedTickerTest.this) {
+			synchronized(PrioritizedTickerTest.this) {
 				runCount++;
 			}
 		}
@@ -29,18 +29,18 @@ public class PrioritisedTickerTest extends TestCase {
 	};
 	
 	public void testSimple() throws InterruptedException {
-		synchronized(PrioritisedTickerTest.this) {
+		synchronized(PrioritizedTickerTest.this) {
 			runCount = 0;
 		}
 		assert(ticker.queuedJobs() == 0);
 		ticker.queueTimedJob(simpleRunnable, 0);
 		Thread.sleep(10);
-		synchronized(PrioritisedTickerTest.this) {
+		synchronized(PrioritizedTickerTest.this) {
 			assert(runCount == 1);
 		}
 		assert(ticker.queuedJobs() == 0);
 		Thread.sleep(100);
-		synchronized(PrioritisedTickerTest.this) {
+		synchronized(PrioritizedTickerTest.this) {
 			assert(runCount == 1);
 		}
 		ticker.queueTimedJob(simpleRunnable, 100);
@@ -49,13 +49,13 @@ public class PrioritisedTickerTest extends TestCase {
 		assert(ticker.queuedJobs() == 1);
 		Thread.sleep(200);
 		assert(ticker.queuedJobs() == 0);
-		synchronized(PrioritisedTickerTest.this) {
+		synchronized(PrioritizedTickerTest.this) {
 			assert(runCount == 2);
 		}
 	}
 
 	public void testDeduping() throws InterruptedException {
-		synchronized(PrioritisedTickerTest.this) {
+		synchronized(PrioritizedTickerTest.this) {
 			runCount = 0;
 		}
 		assert(ticker.queuedJobs() == 0);
@@ -64,12 +64,12 @@ public class PrioritisedTickerTest extends TestCase {
 		ticker.queueTimedJob(simpleRunnable, "De-dupe test", 150, false, true);
 		assert(ticker.queuedJobs() == 1);
 		Thread.sleep(110);
-		synchronized(PrioritisedTickerTest.this) {
+		synchronized(PrioritizedTickerTest.this) {
 			assert(runCount == 1);
 		}
 		assert(ticker.queuedJobs() == 0);
 		Thread.sleep(100);
-		synchronized(PrioritisedTickerTest.this) {
+		synchronized(PrioritizedTickerTest.this) {
 			assert(runCount == 1);
 		}
 		// Now backwards
@@ -78,12 +78,12 @@ public class PrioritisedTickerTest extends TestCase {
 		ticker.queueTimedJob(simpleRunnable, "De-dupe test", 100, false, true);
 		assert(ticker.queuedJobs() == 1);
 		Thread.sleep(110);
-		synchronized(PrioritisedTickerTest.this) {
+		synchronized(PrioritizedTickerTest.this) {
 			assert(runCount == 2);
 		}
 		assert(ticker.queuedJobs() == 0);
 		Thread.sleep(100);
-		synchronized(PrioritisedTickerTest.this) {
+		synchronized(PrioritizedTickerTest.this) {
 			assert(runCount == 2);
 		}
 		
