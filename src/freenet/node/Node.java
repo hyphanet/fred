@@ -2531,7 +2531,7 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this, lastVersion);
 
-		shutdownHook.addLateJob(new NativeThread("Shutdown plugins", NativeThread.HIGH_PRIORITY, true) {
+		shutdownHook.addEarlyJob(new NativeThread("Shutdown plugins", NativeThread.HIGH_PRIORITY, true) {
 			public void realRun() {
 				pluginManager.stop(30*1000); // FIXME make it configurable??
 			}

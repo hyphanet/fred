@@ -1600,7 +1600,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public boolean allowDownloadTo(File filename) {
 		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.securityLevels.getPhysicalThreatLevel();
-		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.HIGH || physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM)
+		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM)
 			return false;
 		if(downloadAllowedEverywhere)
 			return true;

@@ -613,6 +613,9 @@ public class SecurityLevelsToadlet extends Toadlet {
 				else
 					inner.addChild("b", " "+l10nSec("warningWontDecrypt"));
 			}
+			if(level == PHYSICAL_THREAT_LEVEL.LOW) {
+				NodeL10n.getBase().addL10nSubstitution(input.addChild("p").addChild("i"), "SecurityLevels.physicalThreatLevelSwapfile", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+			}
 			if(level == PHYSICAL_THREAT_LEVEL.MAXIMUM && node.hasDatabase()) {
 				inner.addChild("b", " "+l10nSec("warningMaximumWillDeleteQueue"));
 			}
