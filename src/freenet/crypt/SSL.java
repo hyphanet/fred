@@ -215,7 +215,7 @@ public class SSL {
 					Object x500Name = x500NameCtor.newInstance("Freenet", "Freenet", "Freenet", "", "", "");
 					
 					Method certAndKeyGenGenerate = certAndKeyGenClazz.getMethod("generate", int.class);
-					certAndKeyGenGenerate.invoke(keypair, 1024);
+					certAndKeyGenGenerate.invoke(keypair, 2048);
 					
 					Method certAndKeyGetPrivateKey = certAndKeyGenClazz.getMethod("getPrivateKey");
 					PrivateKey privKey = (PrivateKey) certAndKeyGetPrivateKey.invoke(keypair);
