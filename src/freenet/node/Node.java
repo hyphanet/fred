@@ -156,7 +156,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
-import freenet.support.PrioritisedTicker;
+import freenet.support.PrioritizedTicker;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
@@ -714,7 +714,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public final Executor executor;
 	public final PacketSender ps;
-	public final PrioritisedTicker ticker;
+	public final PrioritizedTicker ticker;
 	final DNSRequester dnsr;
 	final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
@@ -1553,7 +1553,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
-		ticker = new PrioritisedTicker(executor, getDarknetPortNumber());
+		ticker = new PrioritizedTicker(executor, getDarknetPortNumber());
 		if(executor instanceof PooledExecutor)
 			((PooledExecutor)executor).setTicker(ticker);
 

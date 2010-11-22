@@ -10,7 +10,7 @@ import freenet.node.FastRunnable;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
-public class PrioritisedTicker implements Ticker, Runnable {
+public class PrioritizedTicker implements Ticker, Runnable {
 	
 	private static volatile boolean logMINOR;
 
@@ -49,7 +49,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	final Executor executor;
 	static final int MAX_SLEEP_TIME = 200;
 	
-	public PrioritisedTicker(Executor executor, int portNumber) {
+	public PrioritizedTicker(Executor executor, int portNumber) {
 		this.executor = executor;
 		timedJobsByTime = new TreeMap<Long, Object>();
 		timedJobsQueued = new HashMap<Job, Long>();

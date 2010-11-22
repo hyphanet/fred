@@ -6,13 +6,13 @@ public class PrioritisedTickerTest extends TestCase {
 	
 	private Executor realExec;
 	
-	private PrioritisedTicker ticker;
+	private PrioritizedTicker ticker;
 
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		realExec = new PooledExecutor();
-		ticker = new PrioritisedTicker(realExec, 0);
+		ticker = new PrioritizedTicker(realExec, 0);
 		ticker.start();
 	}
 
