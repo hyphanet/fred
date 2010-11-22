@@ -295,6 +295,14 @@ public class Announcer {
 				(node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed())) {
 			// If we are not going to update at all, no point announcing.
 			// If we already have the update, no point announcing.
+			synchronized(this) {
+				if(killedAnnouncementTooOld) return true;
+				killedAnnouncementTooOld = true;
+			}
+			Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
+			System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
+			if(node.clientCore != null)
+				node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
 			return true;
 		}
 		
