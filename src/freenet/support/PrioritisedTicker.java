@@ -257,4 +257,10 @@ public class PrioritisedTicker implements Ticker, Runnable {
 		return executor;
 	}
 
+	public int queuedJobs() {
+		synchronized(timedJobsByTime) {
+			return timedJobsByTime.size();
+		}
+	}
+	
 }
