@@ -1551,7 +1551,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
-		ticker = new PrioritisedTicker(this);
+		ticker = new PrioritisedTicker(executor, getDarknetPortNumber());
 		if(executor instanceof PooledExecutor)
 			((PooledExecutor)executor).setTicker(ticker);
 
