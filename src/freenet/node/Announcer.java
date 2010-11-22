@@ -293,22 +293,26 @@ public class Announcer {
 		}
 		if(node.nodeUpdater == null || (!node.nodeUpdater.isEnabled()) ||
 				(node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed())) {
-			// If we also have 10 TOO_NEW peers, we should shut down the announcement,
-			// because we're obviously broken and would only be spamming the seednodes
-			if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) +
-					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
-				synchronized(this) {
-					if(killedAnnouncementTooOld) return true;
-					killedAnnouncementTooOld = true;
-				}
-				Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
-				System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
-				if(node.clientCore != null)
-					node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
-				return true;
-			}
-
+			// If we are not going to update at all, no point announcing.
+			// If we already have the update, no point announcing.
+			return true;
 		}
+		
+		// If we also have 10 TOO_NEW peers, we should shut down the announcement,
+		// because we're obviously broken and would only be spamming the seednodes
+		if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) +
+				node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
+			synchronized(this) {
+				if(killedAnnouncementTooOld) return true;
+				killedAnnouncementTooOld = true;
+			}
+			Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
+			System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
+			if(node.clientCore != null)
+				node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
+			return true;
+		}
+		
 		synchronized(timeGotEnoughPeersLock) {
 			timeGotEnoughPeers = -1;
 		}
