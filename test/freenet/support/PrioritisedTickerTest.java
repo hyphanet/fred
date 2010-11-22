@@ -32,6 +32,7 @@ public class PrioritisedTickerTest extends TestCase {
 		synchronized(PrioritisedTickerTest.this) {
 			runCount = 0;
 		}
+		assert(ticker.queuedJobs() == 0);
 		ticker.queueTimedJob(simpleRunnable, 0);
 		Thread.sleep(10);
 		synchronized(PrioritisedTickerTest.this) {
@@ -57,8 +58,11 @@ public class PrioritisedTickerTest extends TestCase {
 		synchronized(PrioritisedTickerTest.this) {
 			runCount = 0;
 		}
+		assert(ticker.queuedJobs() == 0);
 		ticker.queueTimedJob(simpleRunnable, "De-dupe test", 100, false, true);
+		assert(ticker.queuedJobs() == 1);
 		ticker.queueTimedJob(simpleRunnable, "De-dupe test", 150, false, true);
+		assert(ticker.queuedJobs() == 1);
 		Thread.sleep(110);
 		synchronized(PrioritisedTickerTest.this) {
 			assert(runCount == 1);
@@ -70,7 +74,9 @@ public class PrioritisedTickerTest extends TestCase {
 		}
 		// Now backwards
 		ticker.queueTimedJob(simpleRunnable, "De-dupe test", 150, false, true);
+		assert(ticker.queuedJobs() == 1);
 		ticker.queueTimedJob(simpleRunnable, "De-dupe test", 100, false, true);
+		assert(ticker.queuedJobs() == 1);
 		Thread.sleep(110);
 		synchronized(PrioritisedTickerTest.this) {
 			assert(runCount == 2);
