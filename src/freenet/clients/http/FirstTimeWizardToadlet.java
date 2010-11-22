@@ -3,12 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.filter.GenericReadFilterCallback;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
@@ -195,7 +197,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode form = ctx.addFormChild(infoboxContent, ".", "physicalSecurityForm");
 			HTMLNode div = form.addChild("div", "class", "opennetDiv");
 			String controlName = "security-levels.physicalThreatLevel";
-			NodeL10n.getBase().addL10nSubstitution(div.addChild("p").addChild("i"), "SecurityLevels.physicalThreatLevelSwapfile", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+			HTMLNode swapWarning = div.addChild("p").addChild("i");
+			NodeL10n.getBase().addL10nSubstitution(swapWarning, "SecurityLevels.physicalThreatLevelSwapfile", new String[] { "bold", "truecrypt" }, new HTMLNode[] { HTMLNode.STRONG, HTMLNode.linkInNewWindow(GenericReadFilterCallback.escapeURL("http://www.truecrypt.org/")) });
+			if(File.separatorChar == '\\')
+				swapWarning.addChild("#", " " + l10nSec("physicalThreatLevelSwapfileWindows"));
 			for(PHYSICAL_THREAT_LEVEL level : PHYSICAL_THREAT_LEVEL.values()) {
 				HTMLNode input;
 				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
