@@ -8,6 +8,7 @@ import java.io.IOException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Ticker;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 

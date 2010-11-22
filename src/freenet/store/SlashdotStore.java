@@ -10,12 +10,12 @@ import java.util.List;
 import com.sleepycat.je.DatabaseException;
 
 import freenet.keys.KeyVerifyException;
-import freenet.node.Ticker;
 import freenet.node.stats.StoreAccessStats;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;

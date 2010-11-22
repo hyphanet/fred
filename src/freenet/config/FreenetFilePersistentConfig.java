@@ -3,9 +3,9 @@ package freenet.config;
 import java.io.File;
 import java.io.IOException;
 
-import freenet.node.Ticker;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Ticker;
 
 public class FreenetFilePersistentConfig extends FilePersistentConfig {
 

@@ -21,9 +21,9 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
-import freenet.node.Ticker;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 

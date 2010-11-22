@@ -5,7 +5,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import freenet.node.FastRunnable;
-import freenet.node.Ticker;
 
 /**
  * Ticker implemented using Timer's.

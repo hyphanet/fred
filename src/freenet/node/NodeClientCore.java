@@ -74,6 +74,7 @@ import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SizeUtil;
 import freenet.support.api.BooleanCallback;
