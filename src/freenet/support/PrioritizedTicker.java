@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.support;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,14 +6,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
 
-import freenet.support.Executor;
-import freenet.support.LogThresholdCallback;
-import freenet.support.Logger;
+import freenet.node.FastRunnable;
 import freenet.support.Logger.LogLevel;
-import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
 
-public class PrioritisedTicker implements Ticker, Runnable {
+public class PrioritizedTicker implements Ticker, Runnable {
 	
 	private static volatile boolean logMINOR;
 
@@ -48,35 +45,21 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	/** ~= Ticker :) */
 	private final TreeMap<Long, Object> timedJobsByTime;
 	private final HashMap<Job, Long> timedJobsQueued;
-	final Node node;
 	final NativeThread myThread;
+	final Executor executor;
 	static final int MAX_SLEEP_TIME = 200;
 	
-	PrioritisedTicker(Node node) {
-		this.node = node;
+	public PrioritizedTicker(Executor executor, int portNumber) {
+		this.executor = executor;
 		timedJobsByTime = new TreeMap<Long, Object>();
 		timedJobsQueued = new HashMap<Job, Long>();
-		myThread = new NativeThread(this, "Ticker thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
+		myThread = new NativeThread(this, "Ticker thread for " + portNumber, NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
 	}
 	
-	void start() {
+	public void start() {
 		Logger.normal(this, "Starting Ticker");
 		System.out.println("Starting Ticker");
-		long now = System.currentTimeMillis();
-		long transition = Version.transitionTime();
-		if(now < transition)
-			queueTimedJob(new Runnable() {
-
-					public void run() {
-						freenet.support.Logger.OSThread.logPID(this);
-						PeerNode[] nodes = node.peers.myPeers;
-						for(int i = 0; i < nodes.length; i++) {
-							PeerNode pn = nodes[i];
-							pn.updateVersionRoutablity();
-						}
-					}
-				}, transition - now);
 		myThread.start();
 	}
 
@@ -143,7 +126,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 					}
 				else
 					try {
-						node.executor.execute(r.job, r.name, true);
+						executor.execute(r.job, r.name, true);
 					} catch(OutOfMemoryError e) {
 						OOMHandler.handleOOM(e);
 						System.err.println("Will retry above failed operation...");
@@ -195,7 +178,7 @@ public class PrioritisedTicker implements Ticker, Runnable {
 		// Run directly *if* that won't cause any priority problems.
 		if(offset <= 0 && !runOnTickerAnyway) {
 			if(logMINOR) Logger.minor(this, "Running directly: "+runner);
-			node.executor.execute(runner, name);
+			executor.execute(runner, name);
 			return;
 		}
 		Job job = new Job(name, runner);
@@ -271,7 +254,13 @@ public class PrioritisedTicker implements Ticker, Runnable {
 	}
 
 	public Executor getExecutor() {
-		return node.executor;
+		return executor;
 	}
 
+	public int queuedJobs() {
+		synchronized(timedJobsByTime) {
+			return timedJobsByTime.size();
+		}
+	}
+	
 }

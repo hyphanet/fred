@@ -26,10 +26,10 @@ import java.util.Map;
 import java.util.Vector;
 
 import freenet.node.PeerNode;
-import freenet.node.Ticker;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 

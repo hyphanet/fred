@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import freenet.node.Ticker;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 
 /** A manager class that manages all the pushing. All it's public method must be synchronized to maintain consistency. */
 public class PushDataManager {

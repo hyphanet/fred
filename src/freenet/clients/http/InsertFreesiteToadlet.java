@@ -37,7 +37,7 @@ public class InsertFreesiteToadlet extends Toadlet {
 		contentBox.addChild("p", l10n("content3"));
 		HTMLNode ul = contentBox.addChild("ul");
 		HTMLNode li = ul.addChild("li");
-		li.addChild("a", "href", "/SSK@940RYvj1-aowEHGsb5HeMTigq8gnV14pbKNsIvUO~-0,FdTbR3gIz21QNfDtnK~MiWgAf2kfwHe-cpyJXuLHdOE,AQACAAE/publish-1/", "Publish!");
+		li.addChild("a", "href", "/SSK@940RYvj1-aowEHGsb5HeMTigq8gnV14pbKNsIvUO~-0,FdTbR3gIz21QNfDtnK~MiWgAf2kfwHe-cpyJXuLHdOE,AQACAAE/publish-3/", "Publish!");
 		li.addChild("#", " - "+l10n("publishExplanation"));
 		li = ul.addChild("li");
 		li.addChild("a", "href", "/SSK@8r-uSRcJPkAr-3v3YJR16OCx~lyV2XOKsiG4MOQQBMM,P42IgNemestUdaI7T6z3Og6P-Hi7g9U~e37R3kWGVj8,AQACAAE/freesite-HOWTO-4/", "Freesite HOWTO");

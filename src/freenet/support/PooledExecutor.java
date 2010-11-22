@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import freenet.node.PrioRunnable;
-import freenet.node.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
 
