@@ -195,6 +195,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode form = ctx.addFormChild(infoboxContent, ".", "physicalSecurityForm");
 			HTMLNode div = form.addChild("div", "class", "opennetDiv");
 			String controlName = "security-levels.physicalThreatLevel";
+			NodeL10n.getBase().addL10nSubstitution(div.addChild("p").addChild("i"), "SecurityLevels.physicalThreatLevelSwapfile", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
 			for(PHYSICAL_THREAT_LEVEL level : PHYSICAL_THREAT_LEVEL.values()) {
 				HTMLNode input;
 				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
@@ -210,6 +211,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					}
 				}
 			}
+			div.addChild("#", l10nSec("physicalThreatLevelEnd"));
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "physicalSecurityF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
