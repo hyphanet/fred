@@ -319,10 +319,12 @@ public class Announcer {
 			node.executor.execute(new Runnable() {
 
 				public void run() {
-					for(OpennetPeerNode pn : node.peers.getOpennetPeers())
-						pn.forceDisconnect(true);
-					for(SeedServerPeerNode pn : node.peers.getSeedServerPeersVector())
-						pn.forceDisconnect(true);
+					for(OpennetPeerNode pn : node.peers.getOpennetPeers()) {
+						node.peers.disconnect(pn, true, true, true);
+					}
+					for(SeedServerPeerNode pn : node.peers.getSeedServerPeersVector()) {
+						node.peers.disconnect(pn, true, true, true);
+					}
 				}
 				
 			});
