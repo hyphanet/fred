@@ -321,6 +321,8 @@ public class Announcer {
 				public void run() {
 					for(OpennetPeerNode pn : node.peers.getOpennetPeers())
 						pn.forceDisconnect(true);
+					for(SeedServerPeerNode pn : node.peers.getSeedServerPeersVector())
+						pn.forceDisconnect(true);
 				}
 				
 			});
