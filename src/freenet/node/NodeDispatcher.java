@@ -138,21 +138,21 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m, source);
 			return true;
-		} else if(spec == DMT.UOMAnnounce && node.nodeUpdater != null && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMAnnounce && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
-		} else if(spec == DMT.UOMRequestRevocation && node.nodeUpdater != null && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMRequestRevocation && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
-		} else if(spec == DMT.UOMSendingRevocation && node.nodeUpdater != null && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMSendingRevocation && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
-		} else if(spec == DMT.UOMRequestMain && node.nodeUpdater != null && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMRequestMain && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			node.nodeUpdater.uom.handleRequestJar(m, source, false);
 			return true;
-		} else if(spec == DMT.UOMRequestExtra && node.nodeUpdater != null && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMRequestExtra && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			node.nodeUpdater.uom.handleRequestJar(m, source, true);
 			return true;
-		} else if(spec == DMT.UOMSendingMain && node.nodeUpdater != null && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMSendingMain && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
-		} else if(spec == DMT.UOMSendingExtra && node.nodeUpdater != null && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
+		} else if(spec == DMT.UOMSendingExtra && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingExt(m, source);
 		} else if(spec == DMT.FNPOpennetAnnounceRequest) {
 			return handleAnnounceRequest(m, source);
