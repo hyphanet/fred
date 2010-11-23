@@ -218,10 +218,6 @@ public class OpennetManager {
 		});
 		for(int i=0;i<nodes.length;i++)
 			peersLRU.push(nodes[i]);
-		dropExcessPeers();
-		writeFile(nodeFile, backupNodeFile);
-		// Read old peers
-		node.peers.tryReadPeers(node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
 		announcer = (enableAnnouncement ? new Announcer(this) : null);
 		if(logMINOR) {
 			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
@@ -293,6 +289,11 @@ public class OpennetManager {
 	}
 
 	public void start() {
+		// Do this outside the constructor, since the constructor is called by the Node constructor, and callbacks may make assumptions about data structures being ready.
+		dropExcessPeers();
+		writeFile();
+		// Read old peers
+		node.peers.tryReadPeers(node.nodeDir().file("openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
 		crypto.start();
 		if(announcer!= null)
 			announcer.start();
