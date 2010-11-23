@@ -326,6 +326,13 @@ public class Announcer {
 				
 			});
 			return true;
+		} else {
+			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
+					node.nodeUpdater.uom.fetchingFromTwo() &&
+					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
+				// No point announcing at the moment, but we might need to if a transfer falls through.
+				return true;
+			}
 		}
 		
 		synchronized(timeGotEnoughPeersLock) {

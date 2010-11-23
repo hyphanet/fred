@@ -1825,4 +1825,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 		maybeNotRevoked();
 	}
+
+	public boolean fetchingFromTwo() {
+		synchronized(this) {
+			return (this.nodesSendingMainJar.size() + this.nodesSendingExtJar.size()) >= 2;
+		}
+	}
 }
