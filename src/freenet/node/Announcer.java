@@ -295,6 +295,11 @@ public class Announcer {
 				(node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed())) {
 			// If we also have 10 TOO_NEW peers, we should shut down the announcement,
 			// because we're obviously broken and would only be spamming the seednodes
+			synchronized(this) {
+				// Once we have shut down announcement, this persists until the auto-updater
+				// is enabled.
+				if(killedAnnouncementTooOld) return true;
+			}
 			if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) +
 					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
 				synchronized(this) {
