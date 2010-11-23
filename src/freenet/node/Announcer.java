@@ -291,6 +291,7 @@ public class Announcer {
 			}
 			return true;
 		}
+		boolean killAnnouncement = false;
 		if((!node.nodeUpdater.isEnabled()) ||
 				(node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed())) {
 			// If we also have 10 TOO_NEW peers, we should shut down the announcement,
@@ -305,15 +306,28 @@ public class Announcer {
 				synchronized(this) {
 					if(killedAnnouncementTooOld) return true;
 					killedAnnouncementTooOld = true;
+					killAnnouncement = true;
 				}
 				Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				if(node.clientCore != null)
 					node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
-				return true;
 			}
 
 		}
+		
+		if(killAnnouncement) {
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					for(OpennetPeerNode pn : node.peers.getOpennetPeers())
+						pn.forceDisconnect(true);
+				}
+				
+			});
+			return true;
+		}
+		
 		synchronized(timeGotEnoughPeersLock) {
 			timeGotEnoughPeers = -1;
 		}
