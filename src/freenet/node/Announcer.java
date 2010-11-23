@@ -301,8 +301,7 @@ public class Announcer {
 				// is enabled.
 				if(killedAnnouncementTooOld) return true;
 			}
-			if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) +
-					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
+			if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
 				synchronized(this) {
 					if(killedAnnouncementTooOld) return true;
 					killedAnnouncementTooOld = true;
