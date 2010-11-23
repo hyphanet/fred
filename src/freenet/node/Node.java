@@ -1739,6 +1739,20 @@ public class Node implements TimeSkewDetectorCallback {
 
 		failureTable = new FailureTable(this);
 
+		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, lastVersion);
+
+		clientCore = new NodeClientCore(this, config, nodeConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
+
+		// Node updater support
+
+		System.out.println("Initializing Node Updater");
+		try {
+			nodeUpdater = NodeUpdateManager.maybeCreate(this, config);
+		} catch (InvalidConfigValueException e) {
+			e.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not create Updater: "+e);
+		}
+
 		// Opennet
 
 		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
@@ -2238,10 +2252,6 @@ public class Node implements TimeSkewDetectorCallback {
 			initRAMFS();
 		}
 
-		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, lastVersion);
-
-		clientCore = new NodeClientCore(this, config, nodeConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
-
 		if(databaseAwaitingPassword) createPasswordUserAlert();
 		if(notEnoughSpaceForAutoCrypt) createAutoCryptFailedUserAlert();
 
@@ -2560,16 +2570,6 @@ public class Node implements TimeSkewDetectorCallback {
 		ctx.maxTempLength = 4096;
 
 		this.arkFetcherContext = ctx;
-
-		// Node updater support
-
-		System.out.println("Initializing Node Updater");
-		try {
-			nodeUpdater = NodeUpdateManager.maybeCreate(this, config);
-		} catch (InvalidConfigValueException e) {
-			e.printStackTrace();
-			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not create Updater: "+e);
-		}
 
 		registerNodeToNodeMessageListener(N2N_MESSAGE_TYPE_FPROXY, fproxyN2NMListener);
 		registerNodeToNodeMessageListener(Node.N2N_MESSAGE_TYPE_DIFFNODEREF, diffNoderefListener);
