@@ -291,15 +291,8 @@ public class Announcer {
 			}
 			return true;
 		}
-		
-		if(node.nodeUpdater == null || (!node.nodeUpdater.isEnabled())) {
-			synchronized(this) {
-				// We do want to announce if we're not too old.
-				if(killedAnnouncementTooOld) return true;
-			}
-		}
-		if(node.nodeUpdater != null &&
-				node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed()) {
+		if(node.nodeUpdater == null || (!node.nodeUpdater.isEnabled()) ||
+				(node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed())) {
 			// If we are not going to update at all, no point announcing.
 			// If we already have the update, no point announcing.
 			synchronized(this) {
@@ -312,6 +305,7 @@ public class Announcer {
 				node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
 			return true;
 		}
+		
 		// If we also have 10 TOO_NEW peers, we should shut down the announcement,
 		// because we're obviously broken and would only be spamming the seednodes
 		if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) +
