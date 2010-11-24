@@ -1090,4 +1090,12 @@ public class OpennetManager {
 
 	}
 
+	public boolean waitingForUpdater() {
+		return announcer.isWaitingForUpdater();
+	}
+	
+	public void reannounce() {
+		announcer.reannounce();
+	}
+
 }

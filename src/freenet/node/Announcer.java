@@ -716,4 +716,14 @@ public class Announcer {
 	private String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("Announcer."+key, pattern, value);
 	}
+
+	public void reannounce() {
+		maybeSendAnnouncementOffThread();
+	}
+
+	public boolean isWaitingForUpdater() {
+		synchronized(this) {
+			return killedAnnouncementTooOld;
+		}
+	}
 }
