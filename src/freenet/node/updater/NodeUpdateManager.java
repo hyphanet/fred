@@ -1044,7 +1044,9 @@ public class NodeUpdateManager {
 		if(om != null) {
 			if(om.waitingForUpdater()) {
 				synchronized(this) {
-					gotJarTime = System.currentTimeMillis();
+					// Reannounce and count it from now.
+					if(gotJarTime > 0)
+						gotJarTime = System.currentTimeMillis();
 				}
 				om.reannounce();
 			}
