@@ -1044,7 +1044,7 @@ public class NodeUpdateManager {
 		if(om != null) {
 			if(om.waitingForUpdater()) {
 				synchronized(this) {
-					gotJarTime = -1;
+					gotJarTime = System.currentTimeMillis();
 				}
 				om.reannounce();
 			}
