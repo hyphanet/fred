@@ -30,6 +30,7 @@ import freenet.node.Announcer;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
@@ -1039,6 +1040,15 @@ public class NodeUpdateManager {
 
 	public void arm() {
 		armed = true;
+		OpennetManager om = node.getOpennet();
+		if(om != null) {
+			if(om.waitingForUpdater()) {
+				synchronized(this) {
+					gotJarTime = System.currentTimeMillis();
+				}
+				om.reannounce();
+			}
+		}
 		deployOffThread(0);
 	}
 

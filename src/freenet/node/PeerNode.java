@@ -1180,8 +1180,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		node.usm.onDisconnect(this);
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
-		if(node.nodeUpdater != null)
-			node.nodeUpdater.disconnected(this);
+		node.nodeUpdater.disconnected(this);
 		boolean ret;
 		SessionKey cur, prev, unv;
 		MessageItem[] messagesTellDisconnected = null;
@@ -2225,7 +2224,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected (" + isConnected + ':' + currentTracker + "!!!: " + e, e);
 		}
 
-		if(node.nodeUpdater != null && isRealConnection())
+		if(isRealConnection())
 			node.nodeUpdater.maybeSendUOMAnnounce(this);
 		sendConnectedDiffNoderef();
 	}

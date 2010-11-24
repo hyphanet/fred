@@ -291,40 +291,51 @@ public class Announcer {
 			}
 			return true;
 		}
+		boolean killAnnouncement = false;
+		if((!node.nodeUpdater.isEnabled()) ||
+				(node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed())) {
+			// If we also have 10 TOO_NEW peers, we should shut down the announcement,
+			// because we're obviously broken and would only be spamming the seednodes
+			synchronized(this) {
+				// Once we have shut down announcement, this persists until the auto-updater
+				// is enabled.
+				if(killedAnnouncementTooOld) return true;
+			}
+			if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
+				synchronized(this) {
+					if(killedAnnouncementTooOld) return true;
+					killedAnnouncementTooOld = true;
+					killAnnouncement = true;
+				}
+				Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
+				System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
+				if(node.clientCore != null)
+					node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
+			}
+
+		}
 		
-		if(node.nodeUpdater == null || (!node.nodeUpdater.isEnabled())) {
-			synchronized(this) {
-				// We do want to announce if we're not too old.
-				if(killedAnnouncementTooOld) return true;
-			}
-		}
-		if(node.nodeUpdater != null &&
-				node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed()) {
-			// If we are not going to update at all, no point announcing.
-			// If we already have the update, no point announcing.
-			synchronized(this) {
-				if(killedAnnouncementTooOld) return true;
-				killedAnnouncementTooOld = true;
-			}
-			Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
-			System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
-			if(node.clientCore != null)
-				node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
+		if(killAnnouncement) {
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					for(OpennetPeerNode pn : node.peers.getOpennetPeers()) {
+						node.peers.disconnect(pn, true, true, true);
+					}
+					for(SeedServerPeerNode pn : node.peers.getSeedServerPeersVector()) {
+						node.peers.disconnect(pn, true, true, true);
+					}
+				}
+				
+			});
 			return true;
-		}
-		// If we also have 10 TOO_NEW peers, we should shut down the announcement,
-		// because we're obviously broken and would only be spamming the seednodes
-		if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) +
-				node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
-			synchronized(this) {
-				if(killedAnnouncementTooOld) return true;
-				killedAnnouncementTooOld = true;
+		} else {
+			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
+					node.nodeUpdater.uom.fetchingFromTwo() &&
+					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
+				// No point announcing at the moment, but we might need to if a transfer falls through.
+				return true;
 			}
-			Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
-			System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
-			if(node.clientCore != null)
-				node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
-			return true;
 		}
 		
 		synchronized(timeGotEnoughPeersLock) {
@@ -704,5 +715,15 @@ public class Announcer {
 
 	private String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("Announcer."+key, pattern, value);
+	}
+
+	public void reannounce() {
+		maybeSendAnnouncementOffThread();
+	}
+
+	public boolean isWaitingForUpdater() {
+		synchronized(this) {
+			return killedAnnouncementTooOld;
+		}
 	}
 }
