@@ -283,4 +283,12 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
+	public boolean anyQueued() {
+		synchronized(jobs) {
+			for(int i=0;i<jobs.length;i++)
+				if(jobs[i].size() > 0) return true;
+		}
+		return false;
+	}
+
 }
