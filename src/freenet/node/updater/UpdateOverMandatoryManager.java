@@ -345,13 +345,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					}
 				}, whenToTakeOverTheNormalUpdater - now);
 			}
-		} else if(source.isConnected() && !source.isRoutingCompatible()) {
-			synchronized(this) {
-				if(nodesSayKeyRevokedTransferring.size() > 0 || nodesSayKeyRevoked.size() > 0)
-					return;
-			}
-			source.forceDisconnect(true);
 		}
+		
 	}
 
 	private void handleExtJarOffer(long now, long extJarFileLength, long extJarVersion, PeerNode source, String jarKey) {
