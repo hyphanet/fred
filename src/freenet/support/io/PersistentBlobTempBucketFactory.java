@@ -644,8 +644,6 @@ outer:			while(true) {
 		
 		if(logMINOR) Logger.minor(this, "maybeShrink()");
 		
-		final short MOVE_BLOCKS_PER_MINUTE = 10;
-		
 		long now = System.currentTimeMillis();
 		
 		long newBlocks;
@@ -686,6 +684,11 @@ outer:			while(true) {
 				ObjectSet<PersistentBlobTempBucketTag> tags = null;
 				Query query = null;
 				boolean usedFreeBlocksCache = false;
+				final short MOVE_BLOCKS_PER_MINUTE;
+				if(freeBlocksCache != null && blocks < Integer.MAX_VALUE)
+					MOVE_BLOCKS_PER_MINUTE = 20;
+				else
+					MOVE_BLOCKS_PER_MINUTE = 10;
 findloop:		while(true) {
 				if(freeBlocksCache != null && blocks < Integer.MAX_VALUE) {
 					usedFreeBlocksCache = true;
@@ -823,8 +826,6 @@ outer:				while(true) {
 							} else continue findloop;
 						} else break;
 					}
-					break;
-					}
 					if(blocksMoved > 0) {
 						try {
 							raf.getFD().sync();
@@ -839,6 +840,8 @@ outer:				while(true) {
 						jobRunner.setCommitThisTransaction();
 					}
 					query = null;
+				}
+				break;
 				}
 				long lastBlock = Math.max(lastCommitted, lastNotCommitted);
 				// Must be 10% free at end
