@@ -125,7 +125,7 @@ public class PersistentBlobTempBucketFactory {
 //		if(freeBlocksCache != null)
 //			container.activate(freeBlocksCache, 2);
 //		else {
-			createFreeBlocksCache(container);
+			freeBlocksCache = createFreeBlocksCache(container);
 //		}
 		
 		maybeShrink(container);
@@ -136,23 +136,23 @@ public class PersistentBlobTempBucketFactory {
 			initRangeDump(container);
 	}
 	
-	private void createFreeBlocksCache(ObjectContainer container) {
+	private BitArray createFreeBlocksCache(ObjectContainer container) throws IOException {
 		System.err.println("Creating free blocks cache...");
 		long size;
 		try {
 			size = channel.size();
 		} catch (IOException e1) {
 			Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
-			return;
+			throw e1;
 		}
 		size -= size % blockSize;
 		long blocks = size / blockSize;
 		WrapperManager.signalStarting((int) Math.max(blocks * 100, 24*60*60*1000));
 		if(blocks > Integer.MAX_VALUE) {
 			Logger.error(this, "Unable to create free blocks cache!");
-			return;
+			throw new IOException("Blob file already too big!");
 		}
-		freeBlocksCache = new BitArray((int)blocks);
+		BitArray freeBlocksCache = new BitArray((int)blocks);
 		//container.store(freeBlocksCache);
 		//container.store(this);
 		
@@ -190,6 +190,7 @@ public class PersistentBlobTempBucketFactory {
 			freeBlocksCache.setBit((int)tag.index, true);
 		}
 		System.out.println("Created free blocks cache: "+buckets+" used of "+counter);
+		return freeBlocksCache;
 	}
 
 	private void initRangeDump(ObjectContainer container) {
@@ -273,57 +274,55 @@ public class PersistentBlobTempBucketFactory {
 			long ptr = blocks - 1;
 			boolean changedTags = false;
 			
-			if(freeBlocksCache != null) {
-				int first = -1;
-outer:			while(true) {
-					Logger.error(this, "Maybe found free slot from bitmap "+first);
-					synchronized(this) {
-						first = freeBlocksCache.firstZero(first+1);
-						if(first == -1) break;
-						if(first > ptr) break;
-						if(freeSlots.containsKey((long)first)) continue;
-						if(almostFreeSlots.containsKey((long)first)) continue;
-						if(notCommittedBlobs.containsKey((long)first)) continue;
-					}
-					Query query = container.query();
-					query.constrain(PersistentBlobTempBucketTag.class);
-					query.descend("index").constrain((long)first);
-					ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
-					
-					while(tags.hasNext()) {
-						PersistentBlobTempBucketTag tag = tags.next();
-						if(tag.factory != PersistentBlobTempBucketFactory.this) continue;
-						if(!tag.isFree) continue outer;
-						if(tag.bucket != null) {
-							Logger.error(this, "Index "+first+" has bucket despite free?!");
-							container.activate(tag.bucket, 2);
-							if(!tag.bucket.freed()) {
-								Logger.error(this, "And the bucket is not free either!");
-							}
-							continue outer;
+			int first = -1;
+outer:		while(true) {
+				Logger.error(this, "Maybe found free slot from bitmap "+first);
+				synchronized(this) {
+					first = freeBlocksCache.firstZero(first+1);
+					if(first == -1) break;
+					if(first > ptr) break;
+					if(freeSlots.containsKey((long)first)) continue;
+					if(almostFreeSlots.containsKey((long)first)) continue;
+					if(notCommittedBlobs.containsKey((long)first)) continue;
+				}
+				Query query = container.query();
+				query.constrain(PersistentBlobTempBucketTag.class);
+				query.descend("index").constrain((long)first);
+				ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
+				
+				while(tags.hasNext()) {
+					PersistentBlobTempBucketTag tag = tags.next();
+					if(tag.factory != PersistentBlobTempBucketFactory.this) continue;
+					if(!tag.isFree) continue outer;
+					if(tag.bucket != null) {
+						Logger.error(this, "Index "+first+" has bucket despite free?!");
+						container.activate(tag.bucket, 2);
+						if(!tag.bucket.freed()) {
+							Logger.error(this, "And the bucket is not free either!");
 						}
-						synchronized(this) {
-							freeSlots.put((long)first, tag);
-						}
-						added++;
-						changedTags = true;
-						Logger.error(this, "Found free slot from bitmap "+first);
-						if(added > MAX_FREE) return true;
 						continue outer;
 					}
-
-					// Not found
-					Logger.error(PersistentBlobTempBucketFactory.this, "No tag for index "+first);
-					PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, first);
-					container.store(tag);
 					synchronized(this) {
-						freeSlots.put(ptr, tag);
+						freeSlots.put((long)first, tag);
 					}
-					Logger.error(this, "Found free slot (missing) from bitmap "+first);
 					added++;
 					changedTags = true;
+					Logger.error(this, "Found free slot from bitmap "+first);
 					if(added > MAX_FREE) return true;
+					continue outer;
 				}
+				
+				// Not found
+				Logger.error(PersistentBlobTempBucketFactory.this, "No tag for index "+first);
+				PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, first);
+				container.store(tag);
+				synchronized(this) {
+					freeSlots.put(ptr, tag);
+				}
+				Logger.error(this, "Found free slot (missing) from bitmap "+first);
+				added++;
+				changedTags = true;
+				if(added > MAX_FREE) return true;
 			}
 
 			for(long l = 0; l < blockSize + 16383; l += 16384) {
@@ -431,9 +430,14 @@ outer:			while(true) {
 			// padding will nonrandom nulls on unix.
 			long addBlocks = Math.min(8192, (blocks / 10) + 32);
 			
+			// FIXME limit size to Integer.MAX_VALUE entries so that we don't need to worry about freeBlocksCache.
+			if(blocks + addBlocks > Integer.MAX_VALUE) {
+				addBlocks = (blocks + addBlocks) - (long)Integer.MAX_VALUE;
+				if(addBlocks <= 0) return changedTags;
+			}
+			
 			synchronized(this) {
-				if(freeBlocksCache != null)
-					freeBlocksCache.setSize((int) Math.min(Integer.MAX_VALUE, (ptr + addBlocks)));
+				freeBlocksCache.setSize((int) Math.min(Integer.MAX_VALUE, (blocks + addBlocks)));
 			}
 			
 			long extendBy = addBlocks * blockSize;
@@ -571,8 +575,7 @@ outer:			while(true) {
 		if(shadow != null) {
 			shadow.freed();
 		}
-		if(freeBlocksCache != null && index < Integer.MAX_VALUE)
-			freeBlocksCache.setBit((int)index, false);
+		freeBlocksCache.setBit((int)index, false);
 	}
 
 	private long lastCheckedEnd = -1;
@@ -683,15 +686,12 @@ outer:			while(true) {
 				PersistentBlobTempBucket lastBucket = null;
 				ObjectSet<PersistentBlobTempBucketTag> tags = null;
 				Query query = null;
-				boolean usedFreeBlocksCache = false;
 				final short MOVE_BLOCKS_PER_MINUTE;
 				if(freeBlocksCache != null && blocks < Integer.MAX_VALUE)
 					MOVE_BLOCKS_PER_MINUTE = 20;
 				else
 					MOVE_BLOCKS_PER_MINUTE = 10;
 findloop:		while(true) {
-				if(freeBlocksCache != null && blocks < Integer.MAX_VALUE) {
-					usedFreeBlocksCache = true;
 					int last = (int) blocks;
 outer:				while(true) {
 						last = freeBlocksCache.lastOne(last-1);
@@ -723,36 +723,6 @@ outer:				while(true) {
 						freeBlocksCache.setBit((int)last, false);
 						continue;
 					}
-				} else {
-					
-					
-					/*
-					 * Query for the non-free tag with the highest value.
-					 * This query can return a vast number of objects! And it's all kept in RAM in IMMEDIATE mode.
-					 * FIXME LAZY query mode may help, but would likely require changes to other code.
-					 * In the meantime, lets try from the end, going backwards by a manageable number of slots at a time...
-					 */
-					for(long threshold = blocks - 4096; threshold >= -4095; threshold -= 4096) {
-						query = container.query();
-						query.constrain(PersistentBlobTempBucketTag.class);
-						query.descend("isFree").constrain(false);
-						query.descend("index").orderDescending();
-						query.descend("index").constrain(threshold).greater();
-						tags = query.execute();
-						lastTag = null;
-						while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
-							Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
-							lastTag.isFree = true;
-							container.store(lastTag);
-						}
-						if(lastTag == null) continue;
-						lastBucket = lastTag.bucket;
-						lastCommitted = lastTag.index;
-						Logger.normal(this, "Last committed block is "+lastCommitted);
-						
-						break;
-					}
-				}
 				if(lastCommitted == -1) {
 					// No used slots at all?!
 					// There may be some not committed though
@@ -813,17 +783,7 @@ outer:				while(true) {
 							container.deactivate(lastBucket, 1);
 						if(blocksMoved < MOVE_BLOCKS_PER_MINUTE) {
 							lastTag = null;
-							if(!usedFreeBlocksCache) {
-								while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
-									Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
-									lastTag.isFree = true;
-									container.store(lastTag);
-								}
-								if(lastTag == null) break;
-								lastBucket = lastTag.bucket;
-								lastCommitted = lastTag.index;
-								Logger.normal(this, "Last committed block is now "+lastCommitted);
-							} else continue findloop;
+							continue findloop;
 						} else break;
 					}
 					if(blocksMoved > 0) {
@@ -870,8 +830,7 @@ outer:				while(true) {
 			cachedSize = newBlocks;
 		}
 		synchronized(this) {
-			if(freeBlocksCache != null)
-				freeBlocksCache.setSize((int)Math.min(Integer.MAX_VALUE, newBlocks));
+			freeBlocksCache.setSize((int)Math.min(Integer.MAX_VALUE, newBlocks));
 		}
 		try {
 			channel.truncate(newBlocks * blockSize);
@@ -975,8 +934,7 @@ outer:				while(true) {
 		synchronized(this) {
 			// Ensure that even in wierd cases it won't be reused before commit and therefore won't cause problems.
 			almostFreeSlots.put(lastTag.index, lastTag);
-			if(freeBlocksCache != null && lastTag.index < Integer.MAX_VALUE)
-				freeBlocksCache.setBit((int)lastTag.index, false);
+			freeBlocksCache.setBit((int)lastTag.index, false);
 		}
 		return true;
 	}
@@ -1021,8 +979,7 @@ outer:				while(true) {
 		container.store(bucket);
 		synchronized(this) {
 			notCommittedBlobs.remove(index);
-			if(freeBlocksCache != null && index < Integer.MAX_VALUE)
-				freeBlocksCache.setBit((int)index, true);
+			freeBlocksCache.setBit((int)index, true);
 		}
 	}
 
