@@ -2102,8 +2102,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				packetFormat = new NewPacketFormat(this, ourInitialSeqNum, theirInitialSeqNum,
 						ourInitialMsgID, theirInitialMsgID);
 			}
-		} else {
-			packetFormat.onRekey();
 		}
 
 		return packets.trackerID;
