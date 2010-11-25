@@ -29,8 +29,8 @@ public class BitArray implements WritableToDataOutputStream {
 
     public static final String VERSION = "$Id: BitArray.java,v 1.2 2005/08/25 17:28:19 amphibian Exp $";
 
-	private final int _size;
-	private final byte[] _bits;
+	private int _size;
+	private byte[] _bits;
 
 	public BitArray(byte[] data) {
 		_bits = data;
@@ -138,11 +138,13 @@ public class BitArray implements WritableToDataOutputStream {
 			_bits[i] = (byte)0xFF;
 	}
 
-	public int firstOne() {
-		for(int i=0;i<_bits.length;i++) {
+	public int firstOne(int start) {
+		int startByte = start/8;
+		int startBit = start%8;
+		for(int i=startByte;i<_bits.length;i++) {
 			byte b = _bits[i];
 			if(b == 0) continue;
-			for(int j=0;j<8;j++) {
+			for(int j=startBit;j<8;j++) {
 				int mask = (1 << j);
 				if((b & mask) != 0) {
 					int x = i*8+j;
@@ -150,6 +152,59 @@ public class BitArray implements WritableToDataOutputStream {
 					return x;
 				}
 			}
+			startBit = 0;
+		}
+		return -1;
+	}
+	
+	public int firstOne() {
+		return firstOne(0);
+	}
+
+	public int firstZero(int start) {
+		int startByte = start/8;
+		int startBit = start%8;
+		for(int i=startByte;i<_bits.length;i++) {
+			byte b = _bits[i];
+			if(b == (byte)255) continue;
+			for(int j=startBit;j<8;j++) {
+				int mask = (1 << j);
+				if((b & mask) == 0) {
+					int x = i*8+j;
+					if(x >= _size) return -1;
+					return x;
+				}
+			}
+			startBit = 0;
+		}
+		return -1;
+	}
+
+	public void setSize(int size) {
+		if(_size == size) return;
+		_size = size;
+		int bytes = (size / 8) + (size % 8 == 0 ? 0 : 1);
+		if(_bits.length == bytes) return;
+		byte[] newBuff = new byte[bytes];
+		System.arraycopy(_bits, 0, newBuff, 0, Math.min(_bits.length, newBuff.length));
+		_bits = newBuff;
+	}
+
+	public int lastOne(int start) {
+		if(start >= _size) start = _size-1;
+		int startByte = start/8;
+		int startBit = start%8;
+		for(int i=startByte;i>=0;i--) {
+			byte b = _bits[i];
+			if(b == (byte)0) continue;
+			for(int j=startBit;j>=0;j--) {
+				int mask = (1 << j);
+				if((b & mask) != 0) {
+					int x = i*8+j;
+					return x;
+				}
+			}
+			startBit = 8;
 		}
 		return -1;
 	}

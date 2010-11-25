@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Iterator;
 
 import com.db4o.ObjectContainer;
 
@@ -205,8 +206,14 @@ public class BookmarkManager implements RequestClient {
 
 		bookmark.setName(newName);
 		synchronized(bookmarks) {
-			bookmarks.remove(path);
-			bookmarks.put(newPath, bookmark);
+			Iterator<String> it = bookmarks.keySet().iterator();
+			while(it.hasNext()) {
+				String s = it.next();
+				if(s.startsWith(path)) {
+					it.remove();
+				}
+			}
+			putPaths(newPath, bookmark);
 		}
 		storeBookmarks();
 	}

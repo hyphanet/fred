@@ -119,6 +119,7 @@ public class Announcer {
 		boolean announceNow = false;
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
+		System.out.println("Trying to connect to some seednodes...");
 		List<SimpleFieldSet> seeds = Announcer.readSeednodes(node.nodeDir().file(SEEDNODES_FILENAME));
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -718,6 +719,7 @@ public class Announcer {
 	}
 
 	public void reannounce() {
+		System.out.println("Re-announcing...");
 		maybeSendAnnouncementOffThread();
 	}
 

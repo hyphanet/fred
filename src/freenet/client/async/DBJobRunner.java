@@ -51,4 +51,7 @@ public interface DBJobRunner {
 	 * DBJob returns false. */
 	public void setCommitThisTransaction();
 	
+	/** Tell the job runner that this transaction needs to be committed soon. */
+	public void setCommitSoon();
+	
 }

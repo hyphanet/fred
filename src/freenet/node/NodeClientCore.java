@@ -1685,6 +1685,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private long lastCommitted = System.currentTimeMillis();
 
 	static final int MAX_COMMIT_INTERVAL = 30*1000;
+	
+	static final int SOON_COMMIT_INTERVAL = 5*1000;
 
 	class DBJobWrapper implements Runnable {
 
@@ -1713,6 +1715,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					if(!killed) {
 						long now = System.currentTimeMillis();
 						if(now - lastCommitted > MAX_COMMIT_INTERVAL) {
+							lastCommitted = now;
+							commit = true;
+						} else if(commitSoon && now - lastCommitted > SOON_COMMIT_INTERVAL) {
+							commitSoon = false;
+							lastCommitted = now;
+							commit = true;
+						} else if(commitSoon && !clientDatabaseExecutor.anyQueued()) {
+							commitSoon = false;
 							lastCommitted = now;
 							commit = true;
 						}
@@ -1878,6 +1888,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public synchronized void setCommitThisTransaction() {
 		commitThisTransaction = true;
+	}
+	
+	private boolean commitSoon;
+	
+	public synchronized void setCommitSoon() {
+		commitSoon = true;
 	}
 
 	public static int getMaxBackgroundUSKFetchers() {

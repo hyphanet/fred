@@ -924,10 +924,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
-						schedCore.tripPendingKey(key, block, container, clientContext);
+						if(schedCore.tripPendingKey(key, block, container, clientContext))
+							context.jobRunner.setCommitSoon();
 						return false;
 					}
-                                        @Override
+					
+					@Override
 					public String toString() {
 						return "tripPendingKey";
 					}
