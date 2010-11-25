@@ -973,6 +973,8 @@ outer:				while(true) {
 		container.store(lastTag);
 		container.store(lastBucket);
 		synchronized(this) {
+			// Ensure that even in wierd cases it won't be reused before commit and therefore won't cause problems.
+			almostFreeSlots.put(lastTag.index, lastTag);
 			if(freeBlocksCache != null && lastTag.index < Integer.MAX_VALUE)
 				freeBlocksCache.setBit((int)lastTag.index, false);
 		}
