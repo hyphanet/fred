@@ -180,13 +180,13 @@ public class BitArray implements WritableToDataOutputStream {
 		return -1;
 	}
 
-	public void extend(int size) {
-		if(_size >= size) return;
+	public void setSize(int size) {
+		if(_size == size) return;
 		_size = size;
 		int bytes = (size / 8) + (size % 8 == 0 ? 0 : 1);
 		if(_bits.length == bytes) return;
 		byte[] newBuff = new byte[bytes];
-		System.arraycopy(_bits, 0, newBuff, 0, _bits.length);
+		System.arraycopy(_bits, 0, newBuff, 0, Math.min(_bits.length, newBuff.length));
 		_bits = newBuff;
 	}
 

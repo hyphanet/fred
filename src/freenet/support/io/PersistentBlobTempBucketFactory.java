@@ -433,7 +433,7 @@ outer:			while(true) {
 			
 			synchronized(this) {
 				if(freeBlocksCache != null)
-					freeBlocksCache.extend((int) Math.min(Integer.MAX_VALUE, (ptr + addBlocks)));
+					freeBlocksCache.setSize((int) Math.min(Integer.MAX_VALUE, (ptr + addBlocks)));
 			}
 			
 			long extendBy = addBlocks * blockSize;
@@ -858,6 +858,10 @@ outer:				while(true) {
 				queueMaybeShrink();
 			} else return false;
 			cachedSize = newBlocks;
+		}
+		synchronized(this) {
+			if(freeBlocksCache != null)
+				freeBlocksCache.setSize((int)Math.min(Integer.MAX_VALUE, newBlocks));
 		}
 		try {
 			channel.truncate(newBlocks * blockSize);
