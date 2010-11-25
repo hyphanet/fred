@@ -694,7 +694,7 @@ outer:				while(true) {
 						}
 						query = container.query();
 						query.constrain(PersistentBlobTempBucketTag.class);
-						query.constrain((long)last);
+						query.descend("index").constrain((long)last);
 						tags = query.execute();
 						while(tags.hasNext()) {
 							lastTag = tags.next();
