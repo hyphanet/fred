@@ -430,7 +430,8 @@ outer:		while(true) {
 			// padding will nonrandom nulls on unix.
 			long addBlocks = Math.min(8192, (blocks / 10) + 32);
 			
-			// FIXME limit size to Integer.MAX_VALUE entries so that we don't need to worry about freeBlocksCache.
+			// FIXME limits size to Integer.MAX_VALUE entries so that we don't need to worry about freeBlocksCache.
+			// FIXME long term, make freeBlocksCache take a long.
 			if(blocks + addBlocks > Integer.MAX_VALUE) {
 				addBlocks = (blocks + addBlocks) - (long)Integer.MAX_VALUE;
 				if(addBlocks <= 0) return changedTags;
