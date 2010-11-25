@@ -79,6 +79,8 @@ public class PersistentBlobTempBucketFactory {
 	 * Similar to notCommittedBlobs. */
 	private transient TreeMap<Long,PersistentBlobTempBucketTag> almostFreeSlots;
 	
+	private transient long lastMovedFrom = Long.MAX_VALUE;
+	
 	private transient TreeMap<Long,PersistentBlobTempBucket> shadows;
 	
 	private transient DBJobRunner jobRunner;
@@ -779,7 +781,10 @@ outer:				while(true) {
 									if(!innerDefrag(lastBucket, shadow, lastTag, newTag, container)) return false;
 								}
 							}
-						} else break;
+						} else {
+							if(logMINOR) Logger.minor(this, "First available slot "+firstSlot+" is after slot to move "+lastCommitted);
+							break;
+						}
 						if(deactivateLastBucket)
 							container.deactivate(lastBucket, 1);
 						if(blocksMoved < MOVE_BLOCKS_PER_MINUTE) {
@@ -933,6 +938,7 @@ outer:				while(true) {
 		container.store(lastTag);
 		container.store(lastBucket);
 		synchronized(this) {
+			lastMovedFrom = Math.min(lastMovedFrom, lastTag.index);
 			// Ensure that even in wierd cases it won't be reused before commit and therefore won't cause problems.
 			almostFreeSlots.put(lastTag.index, lastTag);
 			freeBlocksCache.setBit((int)lastTag.index, false);
@@ -995,11 +1001,13 @@ outer:				while(true) {
 				Map.Entry<Long,PersistentBlobTempBucketTag> entry = it.next();
 				Long slot = entry.getKey();
 				if(slot >= blocks) continue;
+				if(slot >= lastMovedFrom) continue;
 				if(entry.getValue() != null)
 					freeSlots.put(entry.getKey(), entry.getValue());
 				freeNow++;
 			}
 		}
+		lastMovedFrom = Long.MAX_VALUE;
 		almostFreeSlots.clear();
 	}
 	
