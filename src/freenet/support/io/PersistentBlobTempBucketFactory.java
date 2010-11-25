@@ -652,6 +652,7 @@ outer:			while(true) {
 		
 		synchronized(this) {
 		
+			int blocksMoved = 0;
 			if(now - lastCheckedEnd > 60*1000) {
 				if(logMINOR) Logger.minor(this, "maybeShrink() inner");
 				// Check whether there is a big white space at the end of the file.
@@ -684,10 +685,13 @@ outer:			while(true) {
 				PersistentBlobTempBucket lastBucket = null;
 				ObjectSet<PersistentBlobTempBucketTag> tags = null;
 				Query query = null;
+				boolean usedFreeBlocksCache = false;
+findloop:		while(true) {
 				if(freeBlocksCache != null && blocks < Integer.MAX_VALUE) {
+					usedFreeBlocksCache = true;
 					int last = (int) blocks;
 outer:				while(true) {
-						last = freeBlocksCache.lastOne(last);
+						last = freeBlocksCache.lastOne(last-1);
 						if(last == -1) break;
 						synchronized(this) {
 							if(notCommittedBlobs.containsKey(last)) continue;
@@ -758,7 +762,6 @@ outer:				while(true) {
 					if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+"%");
 					lastCheckedEnd = now;
 					queueMaybeShrink();
-					int blocksMoved = 0;
 					while(true) {
 						boolean deactivateLastBucket = !container.ext().isActive(lastBucket);
 						if(deactivateLastBucket)
@@ -807,16 +810,20 @@ outer:				while(true) {
 							container.deactivate(lastBucket, 1);
 						if(blocksMoved < MOVE_BLOCKS_PER_MINUTE) {
 							lastTag = null;
-							while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
-								Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
-								lastTag.isFree = true;
-								container.store(lastTag);
-							}
-							if(lastTag == null) break;
-							lastBucket = lastTag.bucket;
-							lastCommitted = lastTag.index;
-							Logger.normal(this, "Last committed block is now "+lastCommitted);
+							if(!usedFreeBlocksCache) {
+								while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
+									Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
+									lastTag.isFree = true;
+									container.store(lastTag);
+								}
+								if(lastTag == null) break;
+								lastBucket = lastTag.bucket;
+								lastCommitted = lastTag.index;
+								Logger.normal(this, "Last committed block is now "+lastCommitted);
+							} else continue findloop;
 						} else break;
+					}
+					break;
 					}
 					if(blocksMoved > 0) {
 						try {
