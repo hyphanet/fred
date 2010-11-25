@@ -958,6 +958,10 @@ outer:				while(true) {
 		container.store(newTag);
 		container.store(lastTag);
 		container.store(lastBucket);
+		synchronized(this) {
+			if(freeBlocksCache != null && lastTag.index < Integer.MAX_VALUE)
+				freeBlocksCache.setBit((int)lastTag.index, false);
+		}
 		return true;
 	}
 
