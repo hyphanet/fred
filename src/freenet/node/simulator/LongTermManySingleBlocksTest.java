@@ -457,8 +457,7 @@ public class LongTermManySingleBlocksTest {
 				exitCode = EXIT_THREW_SOMETHING;
 			}
 			
-			if(exitCode != 0)
-				System.err.println("Exiting with error "+exitCode);
+			System.out.println("Exiting with status "+exitCode);
 			System.exit(exitCode);
 		}
 	}	
