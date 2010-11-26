@@ -84,11 +84,23 @@ public class MP3Filter implements ContentDataFilter {
 			if((frameHeader & 0xffe00000) == 0xffe00000){
 				//Populate header details
 				byte version = (byte) ((frameHeader & 0x00180000) >>> 19); //2 bits
+				if(version == 1) {
+					frameHeader = 0;
+					continue; // Not valid
+				}
 				byte layer = (byte) ((frameHeader & 0x00060000) >>> 17); //2 bits
+				if(layer == 0) {
+					frameHeader = 0;
+					continue; // Not valid
+				}
 				// WARNING: layer is encoded! 1 = layer 3, 2 = layer 2, 3 = layer 1!
 				boolean protectionBit = ((frameHeader & 0x00010000) >>> 16) == 1 ? true : false; //1 bit
 				byte bitrateIndex = (byte) ((frameHeader & 0x0000f000) >>> 12); //4 bits
+				if(bitrateIndex == 0)
+					// FIXME l10n
+					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
 				byte samplerateIndex = (byte) ((frameHeader & 0x0000c0000) >>> 10); //2 bits
+				if(samplerateIndex == 3) continue; // Not valid
 				boolean paddingBit = ((frameHeader & 0x00000300) >>> 9) == 1 ? true : false;
 				boolean privateBit = ((frameHeader & 0x00000100) >>> 8) == 1 ? true : false;
 				byte channelMode = (byte) ((frameHeader & 0x000000c0) >>> 6); //2 bits
@@ -98,6 +110,10 @@ public class MP3Filter implements ContentDataFilter {
 				boolean copyright = ((frameHeader & 0x00000008) >>> 3) == 1 ? true : false;
 				boolean original = ((frameHeader & 0x00000004) >>> 2) == 1 ? true : false;
 				byte emphasis = (byte) ((frameHeader & 0x00000002));
+				if(emphasis == 2) {
+					frameHeader = 0;
+					continue; // Not valid
+				}
 
 				//Generate other values from tables
 				int bitrate = bitRateIndices[version][layer][bitrateIndex]*1000;
