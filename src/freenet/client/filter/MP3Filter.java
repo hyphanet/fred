@@ -9,6 +9,15 @@ import java.util.HashMap;
 
 public class MP3Filter implements ContentDataFilter {
 
+	// Various sources on the Internet.
+	// The most comprehensive one appears to be:
+	// http://mpgedit.org/mpgedit/mpeg_format/mpeghdr.htm
+	// Others:
+	// http://www.mp3-tech.org/programmer/frame_header.html
+	// http://www.codeproject.com/KB/audio-video/mpegaudioinfo.aspx
+	// http://www.id3.org/mp3Frame
+	// http://www.mp3-converter.com/mp3codec/
+	
 	static final short[] [] [] bitRateIndices = {
 		//Version 2.5
 		{
