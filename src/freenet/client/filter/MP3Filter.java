@@ -69,6 +69,7 @@ public class MP3Filter implements ContentDataFilter {
 		} catch (EOFException e) {
 			// Ignore
 		}
+		output.flush();
 	}
 	
 	public void filter(InputStream input, OutputStream output) throws DataFilterException, IOException {
@@ -79,7 +80,7 @@ public class MP3Filter implements ContentDataFilter {
 		int frameHeader = in.readInt();
 		//Seek ahead until we find the Frame sync
 		// FIXME surely the sync should be 0xffe00000 ? First 11 bits set, right?
-		while( !foundStream || (frameHeader & 0xffe00000) == 0xffe00000) {
+		while(true) {
 			if((frameHeader & 0xffe00000) == 0xffe00000){
 				//Populate header details
 				byte version = (byte) ((frameHeader & 0x00180000) >>> 19); //2 bits
@@ -126,7 +127,6 @@ public class MP3Filter implements ContentDataFilter {
 			}
 
 		}
-		output.flush();
 	}
 
 	public void writeFilter(InputStream input, OutputStream output,
@@ -137,6 +137,7 @@ public class MP3Filter implements ContentDataFilter {
 		} catch (EOFException e) {
 			// Ignore
 		}
+		output.flush();
 	}
 	
 	public static void main(String[] args) throws DataFilterException, IOException {
