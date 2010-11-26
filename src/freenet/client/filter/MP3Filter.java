@@ -12,6 +12,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 
+import freenet.support.Logger;
+
 public class MP3Filter implements ContentDataFilter {
 
 	// Various sources on the Internet.
@@ -145,7 +147,7 @@ public class MP3Filter implements ContentDataFilter {
 				if(hasCRC) {
 					totalCRCs++;
 					crc = in.readShort();
-					System.out.println("Found a CRC");
+					Logger.normal(this, "Found a CRC");
 					// FIXME calculate the CRC. It applies to a large number of frames, dependant on the format.
 				}
 				//Write out the frame
@@ -160,12 +162,12 @@ public class MP3Filter implements ContentDataFilter {
 				totalFrames++;
 				foundFrames++;
 				if(countLostSyncBytes != 0)
-					System.out.println("Lost sync for "+countLostSyncBytes+" bytes");
+					Logger.normal(this, "Lost sync for "+countLostSyncBytes+" bytes");
 				countLostSyncBytes = 0;
 				frameHeader = in.readInt();
 			} else {
 				if(foundFrames != 0)
-					System.out.println("Series of frames: "+foundFrames);
+					Logger.normal(this, "Series of frames: "+foundFrames);
 				if(foundFrames > maxFoundFrames) maxFoundFrames = foundFrames;
 				foundFrames = 0;
 				frameHeader = frameHeader << 8;
@@ -180,9 +182,9 @@ public class MP3Filter implements ContentDataFilter {
 		}
 		} catch (EOFException e) {
 			if(foundFrames != 0)
-				System.out.println("Series of frames: "+foundFrames);
+				Logger.normal(this, "Series of frames: "+foundFrames);
 			if(countLostSyncBytes != 0)
-				System.out.println("Lost sync for "+countLostSyncBytes+" bytes");
+				Logger.normal(this, "Lost sync for "+countLostSyncBytes+" bytes");
 			if(totalFrames == 0 || maxFoundFrames < 10) {
 				if(countFreeBitrate > 100)
 					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
@@ -193,7 +195,7 @@ public class MP3Filter implements ContentDataFilter {
 			if(maxFoundFrames < 10)
 				
 			out.flush();
-			System.out.println(totalFrames+" frames, of which "+totalCRCs+" had a CRC");
+			Logger.normal(this, totalFrames+" frames, of which "+totalCRCs+" had a CRC");
 			return;
 		}
 	}
