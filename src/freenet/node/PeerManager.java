@@ -1168,7 +1168,7 @@ public class PeerManager {
 		}
 		for(PeerNode pn : peers) {
 			if(pn instanceof DarknetPeerNode)
-				sb.append(pn.exportDiskFieldSet());
+				sb.append(pn.exportDiskFieldSet().toOrderedString());
 		}
 		
 		return sb.toString();
@@ -1182,7 +1182,7 @@ public class PeerManager {
 		}
 		for(PeerNode pn : peers) {
 			if(pn instanceof OpennetPeerNode)
-				sb.append(pn.exportDiskFieldSet());
+				sb.append(pn.exportDiskFieldSet().toOrderedString());
 		}
 		
 		return sb.toString();
@@ -1192,7 +1192,7 @@ public class PeerManager {
 		StringBuilder sb = new StringBuilder();
 		for(PeerNode pn : om.getOldPeers()) {
 			if(pn instanceof OpennetPeerNode)
-				sb.append(pn.exportDiskFieldSet());
+				sb.append(pn.exportDiskFieldSet().toOrderedString());
 		}
 		
 		return sb.toString();
