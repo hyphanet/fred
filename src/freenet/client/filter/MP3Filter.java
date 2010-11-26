@@ -72,6 +72,8 @@ public class MP3Filter implements ContentDataFilter {
 		DataInputStream in = new DataInputStream(input);
 		DataOutputStream out = new DataOutputStream(output);
 		boolean foundStream = false;
+		int totalFrames = 0;
+		int totalCRCs = 0;
 		try {
 		int frameHeader = in.readInt();
 		//Seek ahead until we find the Frame sync
@@ -90,7 +92,7 @@ public class MP3Filter implements ContentDataFilter {
 					continue; // Not valid
 				}
 				// WARNING: layer is encoded! 1 = layer 3, 2 = layer 2, 3 = layer 1!
-				boolean protectionBit = ((frameHeader & 0x00010000) >>> 16) == 1 ? true : false; //1 bit
+				boolean hasCRC = ((frameHeader & 0x00010000) >>> 16) == 1 ? false : true; //1 bit, but inverted
 				byte bitrateIndex = (byte) ((frameHeader & 0x0000f000) >>> 12); //4 bits
 				if(bitrateIndex == 0) {
 //					// FIXME l10n
@@ -129,15 +131,18 @@ public class MP3Filter implements ContentDataFilter {
 
 				short crc = 0;
 				
-//				if(protectionBit)
-//					crc = in.readShort();
+				if(hasCRC) {
+					totalCRCs++;
+					crc = in.readShort();
+				}
 				//Write out the frame
 				byte[] frame = new byte[frameLength-4];
 				in.readFully(frame);
 				out.writeInt(frameHeader);
-//				if(protectionBit)
-//					out.writeShort(crc);
+				if(hasCRC)
+					out.writeShort(crc);
 				out.write(frame);
+				totalFrames++;
 				frameHeader = in.readInt();
 			} else {
 				frameHeader = frameHeader << 8;
@@ -151,6 +156,7 @@ public class MP3Filter implements ContentDataFilter {
 				// FIXME l10n
 				throw new DataFilterException("invalid mp3, no frames found", "invalid mp3, no frames found", "invalid mp3, no frames found");
 			out.flush();
+			System.out.println(totalFrames+" frames, of which "+totalCRCs+" had a CRC");
 			return;
 		}
 	}
