@@ -63,6 +63,10 @@ public class MP3Filter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
+		filter(input, output);
+	}
+	
+	public void filter(InputStream input, OutputStream output) throws DataFilterException, IOException {
 		//FIXME: Add support for free formatted files(highly uncommon)
 		DataInputStream in = new DataInputStream(input);
 		DataOutputStream out = new DataOutputStream(output);
@@ -123,7 +127,7 @@ public class MP3Filter implements ContentDataFilter {
 	public void writeFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
-		readFilter(input, output, charset, otherParams, cb);
+		filter(input, output);
 	}
 	
 	public static void main(String[] args) throws DataFilterException, IOException {
