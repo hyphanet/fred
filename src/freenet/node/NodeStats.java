@@ -494,12 +494,10 @@ public class NodeStats implements Persistable {
 			node.estimateFullHeadersLengthOneMessage();
 
 		double nodeLoc=node.lm.getLocation();
-		// FIXME PLEASE; (int) casts; (maxCacheKeys>MAXINT?)
-		//Note: If changing the size of avgCacheLocation or avgStoreLocation, this value is updated in Node.java on changing the store size.
-		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
-		this.avgStoreCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxStoreKeys, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKLocation"));
-		this.avgSlashdotCacheCHKLocation = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheCHKLocation"));
-		this.avgClientCacheCHKLocation = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageClientCacheCHKLocation"));
+		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
+		this.avgStoreCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKLocation"));
+		this.avgSlashdotCacheCHKLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheCHKLocation"));
+		this.avgClientCacheCHKLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageClientCacheCHKLocation"));
 
 		this.avgCacheCHKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKSuccessLocation"));
 		this.avgSlashdotCacheCHKSucess =  new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheCHKSuccessLocation"));
@@ -507,10 +505,10 @@ public class NodeStats implements Persistable {
 		this.avgStoreCHKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKSuccessLocation"));
 		this.avgRequestLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageRequestLocation"));
 
-		this.avgCacheSSKLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageCacheSSKLocation"));
-		this.avgStoreSSKLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxStoreKeys, throttleFS == null ? null : throttleFS.subset("AverageStoreSSKLocation"));
-		this.avgSlashdotCacheSSKLocation = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheSSKLocation"));
-		this.avgClientCacheSSKLocation = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageClientCacheSSKLocation"));
+		this.avgCacheSSKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheSSKLocation"));
+		this.avgStoreSSKLocation   = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreSSKLocation"));
+		this.avgSlashdotCacheSSKLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheSSKLocation"));
+		this.avgClientCacheSSKLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageClientCacheSSKLocation"));
 
 		this.avgCacheSSKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheSSKSuccessLocation"));
 		this.avgSlashdotCacheSSKSuccess =  new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheSSKSuccessLocation"));

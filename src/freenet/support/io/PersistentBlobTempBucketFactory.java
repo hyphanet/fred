@@ -700,7 +700,7 @@ outer:				while(true) {
 						last = freeBlocksCache.lastOne(last-1);
 						if(last == -1) break;
 						synchronized(this) {
-							if(notCommittedBlobs.containsKey(last)) continue;
+							if(notCommittedBlobs.containsKey((long)last)) continue;
 						}
 						query = container.query();
 						query.constrain(PersistentBlobTempBucketTag.class);

@@ -4352,9 +4352,10 @@ public class Node implements TimeSkewDetectorCallback {
 				nodeStats.avgClientCacheCHKLocation.report(loc);
 			}
 
-			if ((forULPR || useSlashdotCache) && !(canWriteDatastore || writeLocalToDatastore))
+			if ((forULPR || useSlashdotCache) && !(canWriteDatastore || writeLocalToDatastore)) {
 				chkSlashdotcache.put(block, false);
 				nodeStats.avgSlashdotCacheCHKLocation.report(loc);
+			}
 			if (canWriteDatastore || writeLocalToDatastore) {
 
 				if (deep) {
@@ -4401,9 +4402,10 @@ public class Node implements TimeSkewDetectorCallback {
 				sskClientcache.put(block, overwrite, false);
 				nodeStats.avgClientCacheSSKLocation.report(loc);
 			}
-			if((forULPR || useSlashdotCache) && !(canWriteDatastore || writeLocalToDatastore))
+			if((forULPR || useSlashdotCache) && !(canWriteDatastore || writeLocalToDatastore)) {
 				sskSlashdotcache.put(block, overwrite, false);
 				nodeStats.avgSlashdotCacheSSKLocation.report(loc);
+			}
 			if(canWriteDatastore || writeLocalToDatastore) {
 				if(deep) {
 					sskDatastore.put(block, overwrite, !canWriteDatastore);

@@ -85,6 +85,14 @@ public class ContentFilter {
 				l10n("imageBMPWriteAdvice"), false, null, null, false));	
 
 
+		/* MP3
+		 *
+		 * Reference: http://www.mp3-tech.org/programmer/frame_header.html
+		 */
+		register(new MIMEType("audio/mpeg", "mp3", new String[] {"audio/mp3", "audio/x-mp3", "audio/x-mpeg", "audio/mpeg3", "audio/x-mpeg3", "audio/mpg", "audio/x-mpg", "audio/mpegaudio"},
+				new String[0], true, false, new MP3Filter(), new MP3Filter(), true, true, false, true, false, false,
+				l10n("audioMP3ReadAdvice"), l10n("audioMP3WriteAdvice"), false, null, null, false));
+
 		// ICO needs filtering.
 		// Format is not the same as BMP iirc.
 		// DoS: http://www.kb.cert.org/vuls/id/290961

@@ -67,9 +67,13 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 		reports = 0;
 		currentValue = defaultValue;
 		this.maxReports = maxReports;
+		assert(maxReports > 0);
 		if(fs != null) {
-			currentValue = fs.getDouble("CurrentValue", currentValue);
-			reports = fs.getLong("Reports", reports);
+			double d = fs.getDouble("CurrentValue", currentValue);
+			if(!(Double.isNaN(d) || d < min || d > max)) {
+				currentValue = d;
+				reports = fs.getLong("Reports", reports);
+			}
 		}
 	}
     
