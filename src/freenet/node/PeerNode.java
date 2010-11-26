@@ -1176,7 +1176,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
 		final long now = System.currentTimeMillis();
-		Logger.normal(this, "Disconnected " + this, new Exception("debug"));
+		if(!isRealConnection())
+			Logger.normal(this, "Disconnected " + this, new Exception("debug"));
+		else if(logMINOR)
+			Logger.minor(this, "Disconnected "+this, new Exception("debug"));
 		node.usm.onDisconnect(this);
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
