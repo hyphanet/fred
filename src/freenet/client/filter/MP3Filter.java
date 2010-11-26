@@ -96,9 +96,16 @@ public class MP3Filter implements ContentDataFilter {
 				// WARNING: layer is encoded! 1 = layer 3, 2 = layer 2, 3 = layer 1!
 				boolean protectionBit = ((frameHeader & 0x00010000) >>> 16) == 1 ? true : false; //1 bit
 				byte bitrateIndex = (byte) ((frameHeader & 0x0000f000) >>> 12); //4 bits
-				if(bitrateIndex == 0)
-					// FIXME l10n
-					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
+				if(bitrateIndex == 0) {
+//					// FIXME l10n
+//					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
+					frameHeader = 0;
+					continue; // Not valid
+				}
+				if(bitrateIndex == 15) {
+					frameHeader = 0;
+					continue; // Not valid
+				}
 				byte samplerateIndex = (byte) ((frameHeader & 0x0000c0000) >>> 10); //2 bits
 				if(samplerateIndex == 3) continue; // Not valid
 				boolean paddingBit = ((frameHeader & 0x00000300) >>> 9) == 1 ? true : false;
