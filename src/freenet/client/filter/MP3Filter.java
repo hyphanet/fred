@@ -64,12 +64,7 @@ public class MP3Filter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
-		try {
-			filter(input, output);
-		} catch (EOFException e) {
-			// Ignore
-		}
-		output.flush();
+		filter(input, output);
 	}
 	
 	public void filter(InputStream input, OutputStream output) throws DataFilterException, IOException {
@@ -78,6 +73,7 @@ public class MP3Filter implements ContentDataFilter {
 		DataOutputStream out = new DataOutputStream(output);
 		boolean foundStream = false;
 		int frameHeader = in.readInt();
+		try {
 		//Seek ahead until we find the Frame sync
 		// FIXME surely the sync should be 0xffe00000 ? First 11 bits set, right?
 		while(true) {
@@ -150,17 +146,19 @@ public class MP3Filter implements ContentDataFilter {
 			}
 
 		}
+		} catch (EOFException e) {
+			if(!foundStream)
+				// FIXME l10n
+				throw new DataFilterException("invalid mp3, no frames found", "invalid mp3, no frames found", "invalid mp3, no frames found");
+			out.flush();
+			return;
+		}
 	}
 
 	public void writeFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
-		try {
-			filter(input, output);
-		} catch (EOFException e) {
-			// Ignore
-		}
-		output.flush();
+		filter(input, output);
 	}
 	
 	public static void main(String[] args) throws DataFilterException, IOException {
