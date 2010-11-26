@@ -109,14 +109,14 @@ public class MP3Filter implements ContentDataFilter {
 
 				short crc = 0;
 				
-				if(protectionBit)
-					crc = in.readShort();
+//				if(protectionBit)
+//					crc = in.readShort();
 				//Write out the frame
 				byte[] frame = new byte[frameLength-4];
 				in.readFully(frame);
 				out.writeInt(frameHeader);
-				if(protectionBit)
-					out.writeShort(crc);
+//				if(protectionBit)
+//					out.writeShort(crc);
 				out.write(frame);
 				frameHeader = in.readInt();
 			} else {
