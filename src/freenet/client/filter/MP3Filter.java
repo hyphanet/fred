@@ -72,8 +72,8 @@ public class MP3Filter implements ContentDataFilter {
 		DataInputStream in = new DataInputStream(input);
 		DataOutputStream out = new DataOutputStream(output);
 		boolean foundStream = false;
-		int frameHeader = in.readInt();
 		try {
+		int frameHeader = in.readInt();
 		//Seek ahead until we find the Frame sync
 		// FIXME surely the sync should be 0xffe00000 ? First 11 bits set, right?
 		while(true) {
