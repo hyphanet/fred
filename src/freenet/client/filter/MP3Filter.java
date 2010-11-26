@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 
+import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 
 public class MP3Filter implements ContentDataFilter {
@@ -187,9 +188,9 @@ public class MP3Filter implements ContentDataFilter {
 				Logger.normal(this, "Lost sync for "+countLostSyncBytes+" bytes");
 			if(totalFrames == 0 || maxFoundFrames < 10) {
 				if(countFreeBitrate > 100)
-					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
+					throw new DataFilterException(l10n("freeBitrateNotSupported"), l10n("freeBitrateNotSupported"), l10n("freeBitrateNotSupportedExplanation"));
 				if(totalFrames == 0)
-					throw new DataFilterException("invalid mp3, no frames found", "invalid mp3, no frames found", "invalid mp3, no frames found");
+					throw new DataFilterException(l10n("bogusMP3NoFrames"), l10n("bogusMP3NoFrames"), l10n("bogusMP3NoFramesExplanation"));
 			}
 			
 			if(maxFoundFrames < 10)
@@ -198,6 +199,10 @@ public class MP3Filter implements ContentDataFilter {
 			Logger.normal(this, totalFrames+" frames, of which "+totalCRCs+" had a CRC");
 			return;
 		}
+	}
+
+	private String l10n(String key) {
+		return NodeL10n.getBase().getString("MP3Filter."+key);
 	}
 
 	public void writeFilter(InputStream input, OutputStream output,
