@@ -2,6 +2,7 @@ package freenet.client.filter;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -63,7 +64,11 @@ public class MP3Filter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
-		filter(input, output);
+		try {
+			filter(input, output);
+		} catch (EOFException e) {
+			// Ignore
+		}
 	}
 	
 	public void filter(InputStream input, OutputStream output) throws DataFilterException, IOException {
@@ -127,7 +132,11 @@ public class MP3Filter implements ContentDataFilter {
 	public void writeFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
-		filter(input, output);
+		try {
+			filter(input, output);
+		} catch (EOFException e) {
+			// Ignore
+		}
 	}
 	
 	public static void main(String[] args) throws DataFilterException, IOException {
