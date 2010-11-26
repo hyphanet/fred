@@ -75,7 +75,9 @@ public class MP3Filter implements ContentDataFilter {
 		int totalFrames = 0;
 		int totalCRCs = 0;
 		int foundFrames = 0;
+		int maxFoundFrames = 0;
 		long countLostSyncBytes = 0;
+		int countFreeBitrate = 0;
 		try {
 		int frameHeader = in.readInt();
 		//Seek ahead until we find the Frame sync
@@ -102,6 +104,7 @@ public class MP3Filter implements ContentDataFilter {
 //					if(!foundStream) {
 						// Probably just noise.
 						frameHeader = 0;
+						countFreeBitrate++;
 						continue; // Not valid
 //					}
 //					// FIXME l10n
@@ -162,6 +165,7 @@ public class MP3Filter implements ContentDataFilter {
 			} else {
 				if(foundFrames != 0)
 					System.out.println("Series of frames: "+foundFrames);
+				if(foundFrames > maxFoundFrames) maxFoundFrames = foundFrames;
 				foundFrames = 0;
 				frameHeader = frameHeader << 8;
 				frameHeader |= (in.readUnsignedByte());
@@ -178,9 +182,15 @@ public class MP3Filter implements ContentDataFilter {
 				System.out.println("Series of frames: "+foundFrames);
 			if(countLostSyncBytes != 0)
 				System.out.println("Lost sync for "+countLostSyncBytes+" bytes");
-			if(totalFrames == 0)
-				// FIXME l10n
-				throw new DataFilterException("invalid mp3, no frames found", "invalid mp3, no frames found", "invalid mp3, no frames found");
+			if(totalFrames == 0 || maxFoundFrames < 10) {
+				if(countFreeBitrate > 100)
+					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
+				if(totalFrames == 0)
+					throw new DataFilterException("invalid mp3, no frames found", "invalid mp3, no frames found", "invalid mp3, no frames found");
+			}
+			
+			if(maxFoundFrames < 10)
+				
 			out.flush();
 			System.out.println(totalFrames+" frames, of which "+totalCRCs+" had a CRC");
 			return;
