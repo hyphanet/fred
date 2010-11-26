@@ -56,6 +56,7 @@ public class MP3Filter implements ContentDataFilter {
 		boolean foundStream = false;
 		int frameHeader = in.readInt();
 		//Seek ahead until we find the Frame sync
+		// FIXME surely the sync should be 0xffe00000 ? First 11 bits set, right?
 		while( !foundStream || (frameHeader & 0xff030000) == 0xff030000) {
 			if((frameHeader & 0xff030000) == 0xff030000){
 				//Populate header details
