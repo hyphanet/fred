@@ -99,9 +99,12 @@ public class MP3Filter implements ContentDataFilter {
 //					// FIXME l10n
 					// FIXME It looks like it would be very hard to support free bitrate.
 					// Unfortunately, this is used occasionally e.g. on the chaosradio mp3's.
+					if(!foundStream) {
+						// Probably just noise.
+						frameHeader = 0;
+						continue; // Not valid
+					}
 					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
-//					frameHeader = 0;
-//					continue; // Not valid
 				}
 				if(bitrateIndex == 15) {
 					frameHeader = 0;
