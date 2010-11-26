@@ -2,6 +2,10 @@ package freenet.client.filter;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -66,8 +70,8 @@ public class MP3Filter implements ContentDataFilter {
 		int frameHeader = in.readInt();
 		//Seek ahead until we find the Frame sync
 		// FIXME surely the sync should be 0xffe00000 ? First 11 bits set, right?
-		while( !foundStream || (frameHeader & 0xff030000) == 0xff030000) {
-			if((frameHeader & 0xff030000) == 0xff030000){
+		while( !foundStream || (frameHeader & 0xffe00000) == 0xffe00000) {
+			if((frameHeader & 0xffe00000) == 0xffe00000){
 				//Populate header details
 				byte version = (byte) ((frameHeader & 0x00180000) >>> 19); //2 bits
 				byte layer = (byte) ((frameHeader & 0x00060000) >>> 17); //2 bits
@@ -109,7 +113,7 @@ public class MP3Filter implements ContentDataFilter {
 			} else {
 				frameHeader = frameHeader << 8;
 				frameHeader |= (in.readUnsignedByte());
-				if((frameHeader & 0xff030000) == 0xff030000) foundStream = true;
+				if((frameHeader & 0xffe00000) == 0xffe00000) foundStream = true;
 			}
 
 		}
