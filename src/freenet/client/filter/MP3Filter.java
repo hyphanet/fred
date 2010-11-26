@@ -39,10 +39,10 @@ public class MP3Filter implements ContentDataFilter {
 	static final int[] [] sampleRateIndices = {
 		//Version 2.5
 		{11025, 12000, 8000},
-		//Version 2.0
-		{22050, 24000, 16000},
 		//Reserved
 		{},
+		//Version 2.0
+		{22050, 24000, 16000},
 		//Version 1
 		{44100, 48000, 32000}
 	};
