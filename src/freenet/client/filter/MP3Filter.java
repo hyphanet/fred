@@ -76,6 +76,7 @@ public class MP3Filter implements ContentDataFilter {
 		int totalCRCs = 0;
 		try {
 		int frameHeader = in.readInt();
+		long countLostSyncBytes = 0;
 		//Seek ahead until we find the Frame sync
 		// FIXME surely the sync should be 0xffe00000 ? First 11 bits set, right?
 		while(true) {
@@ -96,9 +97,11 @@ public class MP3Filter implements ContentDataFilter {
 				byte bitrateIndex = (byte) ((frameHeader & 0x0000f000) >>> 12); //4 bits
 				if(bitrateIndex == 0) {
 //					// FIXME l10n
-//					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
-					frameHeader = 0;
-					continue; // Not valid
+					// FIXME It looks like it would be very hard to support free bitrate.
+					// Unfortunately, this is used occasionally e.g. on the chaosradio mp3's.
+					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
+//					frameHeader = 0;
+//					continue; // Not valid
 				}
 				if(bitrateIndex == 15) {
 					frameHeader = 0;
@@ -134,20 +137,34 @@ public class MP3Filter implements ContentDataFilter {
 				if(hasCRC) {
 					totalCRCs++;
 					crc = in.readShort();
+					System.out.println("Found a CRC");
+					// FIXME calculate the CRC. It applies to a large number of frames, dependant on the format.
 				}
 				//Write out the frame
-				byte[] frame = new byte[frameLength-4];
-				in.readFully(frame);
-				out.writeInt(frameHeader);
-				if(hasCRC)
-					out.writeShort(crc);
+				byte[] frame = null;
+//				if(hasCRC) {
+//					out.writeInt(frameHeader);
+//					out.writeShort(crc);
+//					frameHeader = 0;
+//					continue;
+//				} else {
+					frame = new byte[frameLength-4];
+					in.readFully(frame);
+					out.writeInt(frameHeader);
+//				}
 				out.write(frame);
 				totalFrames++;
 				frameHeader = in.readInt();
 			} else {
 				frameHeader = frameHeader << 8;
 				frameHeader |= (in.readUnsignedByte());
-				if((frameHeader & 0xffe00000) == 0xffe00000) foundStream = true;
+				if((frameHeader & 0xffe00000) == 0xffe00000) {
+					System.out.println("Lost sync for "+countLostSyncBytes+" bytes");
+					countLostSyncBytes = 0;
+					foundStream = true;
+				} else {
+					countLostSyncBytes++;
+				}
 			}
 
 		}
@@ -173,12 +190,12 @@ public class MP3Filter implements ContentDataFilter {
 		File out = new File(args[0]+".filtered.mp3");
 		FileOutputStream fos = new FileOutputStream(out);
 		MP3Filter filter = new MP3Filter();
-		// Skip some bytes for testing resyncing.
-		byte[] buf = new byte[4096];
-		fis.read(buf);
-		fis.read(buf);
-		fis.read(buf);
-		fis.read(buf);
+//		// Skip some bytes for testing resyncing.
+//		byte[] buf = new byte[4096];
+//		fis.read(buf);
+//		fis.read(buf);
+//		fis.read(buf);
+//		fis.read(buf);
 		filter.readFilter(fis, fos, null, null, null);
 		fis.close();
 		fos.close();
