@@ -159,6 +159,9 @@ public class MP3Filter implements ContentDataFilter {
 				out.write(frame);
 				totalFrames++;
 				foundFrames++;
+				if(countLostSyncBytes != 0)
+					System.out.println("Lost sync for "+countLostSyncBytes+" bytes");
+				countLostSyncBytes = 0;
 				frameHeader = in.readInt();
 			} else {
 				if(foundFrames != 0)
@@ -167,8 +170,6 @@ public class MP3Filter implements ContentDataFilter {
 				frameHeader = frameHeader << 8;
 				frameHeader |= (in.readUnsignedByte());
 				if((frameHeader & 0xffe00000) == 0xffe00000) {
-					System.out.println("Lost sync for "+countLostSyncBytes+" bytes");
-					countLostSyncBytes = 0;
 					foundStream = true;
 				} else {
 					countLostSyncBytes++;
@@ -181,7 +182,7 @@ public class MP3Filter implements ContentDataFilter {
 				System.out.println("Series of frames: "+foundFrames);
 			if(countLostSyncBytes != 0)
 				System.out.println("Lost sync for "+countLostSyncBytes+" bytes");
-			if(!foundStream)
+			if(totalFrames == 0)
 				// FIXME l10n
 				throw new DataFilterException("invalid mp3, no frames found", "invalid mp3, no frames found", "invalid mp3, no frames found");
 			out.flush();
