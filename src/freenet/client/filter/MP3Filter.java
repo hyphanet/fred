@@ -145,6 +145,12 @@ public class MP3Filter implements ContentDataFilter {
 		File out = new File(args[0]+".filtered.mp3");
 		FileOutputStream fos = new FileOutputStream(out);
 		MP3Filter filter = new MP3Filter();
+		// Skip some bytes for testing resyncing.
+		byte[] buf = new byte[4096];
+		fis.read(buf);
+		fis.read(buf);
+		fis.read(buf);
+		fis.read(buf);
 		filter.readFilter(fis, fos, null, null, null);
 		fis.close();
 		fos.close();
