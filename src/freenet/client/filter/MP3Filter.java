@@ -71,7 +71,7 @@ public class MP3Filter implements ContentDataFilter {
 		//FIXME: Add support for free formatted files(highly uncommon)
 		DataInputStream in = new DataInputStream(input);
 		DataOutputStream out = new DataOutputStream(output);
-		boolean foundStream = false;
+		boolean foundStream = true;
 		int totalFrames = 0;
 		int totalCRCs = 0;
 		int foundFrames = 0;
@@ -80,19 +80,20 @@ public class MP3Filter implements ContentDataFilter {
 		int countFreeBitrate = 0;
 		try {
 		int frameHeader = in.readInt();
+		foundStream = (frameHeader & 0xffe00000) == 0xffe00000;
 		//Seek ahead until we find the Frame sync
 		// FIXME surely the sync should be 0xffe00000 ? First 11 bits set, right?
 		while(true) {
-			if((frameHeader & 0xffe00000) == 0xffe00000){
+			if(foundStream && (frameHeader & 0xffe00000) == 0xffe00000){
 				//Populate header details
 				byte version = (byte) ((frameHeader & 0x00180000) >>> 19); //2 bits
 				if(version == 1) {
-					frameHeader = 0;
+					foundStream = false;
 					continue; // Not valid
 				}
 				byte layer = (byte) ((frameHeader & 0x00060000) >>> 17); //2 bits
 				if(layer == 0) {
-					frameHeader = 0;
+					foundStream = false;
 					continue; // Not valid
 				}
 				// WARNING: layer is encoded! 1 = layer 3, 2 = layer 2, 3 = layer 1!
@@ -103,7 +104,7 @@ public class MP3Filter implements ContentDataFilter {
 					// Unfortunately, this is used occasionally e.g. on the chaosradio mp3's.
 //					if(!foundStream) {
 						// Probably just noise.
-						frameHeader = 0;
+						foundStream = false;
 						countFreeBitrate++;
 						continue; // Not valid
 //					}
@@ -111,7 +112,7 @@ public class MP3Filter implements ContentDataFilter {
 //					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
 				}
 				if(bitrateIndex == 15) {
-					frameHeader = 0;
+					foundStream = false;
 					continue; // Not valid
 				}
 				byte samplerateIndex = (byte) ((frameHeader & 0x0000c0000) >>> 10); //2 bits
@@ -126,7 +127,7 @@ public class MP3Filter implements ContentDataFilter {
 				boolean original = ((frameHeader & 0x00000004) >>> 2) == 1 ? true : false;
 				byte emphasis = (byte) ((frameHeader & 0x00000002));
 				if(emphasis == 2) {
-					frameHeader = 0;
+					foundStream = false;
 					continue; // Not valid
 				}
 
