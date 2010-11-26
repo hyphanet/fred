@@ -96,7 +96,6 @@ public class MP3Filter implements ContentDataFilter {
 				boolean hasCRC = ((frameHeader & 0x00010000) >>> 16) == 1 ? false : true; //1 bit, but inverted
 				byte bitrateIndex = (byte) ((frameHeader & 0x0000f000) >>> 12); //4 bits
 				if(bitrateIndex == 0) {
-//					// FIXME l10n
 					// FIXME It looks like it would be very hard to support free bitrate.
 					// Unfortunately, this is used occasionally e.g. on the chaosradio mp3's.
 					if(!foundStream) {
@@ -104,6 +103,7 @@ public class MP3Filter implements ContentDataFilter {
 						frameHeader = 0;
 						continue; // Not valid
 					}
+					// FIXME l10n
 					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
 				}
 				if(bitrateIndex == 15) {
