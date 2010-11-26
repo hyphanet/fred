@@ -99,13 +99,13 @@ public class MP3Filter implements ContentDataFilter {
 				if(bitrateIndex == 0) {
 					// FIXME It looks like it would be very hard to support free bitrate.
 					// Unfortunately, this is used occasionally e.g. on the chaosradio mp3's.
-					if(!foundStream) {
+//					if(!foundStream) {
 						// Probably just noise.
 						frameHeader = 0;
 						continue; // Not valid
-					}
-					// FIXME l10n
-					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
+//					}
+//					// FIXME l10n
+//					throw new DataFilterException("free bitrate MP3 files not supported", "free bitrate MP3 files not supported", "free bitrate MP3 files not supported");
 				}
 				if(bitrateIndex == 15) {
 					frameHeader = 0;
@@ -146,16 +146,12 @@ public class MP3Filter implements ContentDataFilter {
 				}
 				//Write out the frame
 				byte[] frame = null;
-//				if(hasCRC) {
-//					out.writeInt(frameHeader);
-//					out.writeShort(crc);
-//					frameHeader = 0;
-//					continue;
-//				} else {
-					frame = new byte[frameLength-4];
-					in.readFully(frame);
-					out.writeInt(frameHeader);
-//				}
+				frame = new byte[frameLength-4];
+				in.readFully(frame);
+				out.writeInt(frameHeader);
+				// FIXME CRCs may or may not work. I have not been able to find an mp3 file with CRCs but without free bitrate.
+				if(hasCRC)
+					out.writeShort(crc);
 				out.write(frame);
 				totalFrames++;
 				foundFrames++;
