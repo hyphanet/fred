@@ -107,16 +107,16 @@ public class MP3Filter implements ContentDataFilter {
 				}
 				else if(layer == 3) frameLength = (12*bitrate/samplerate+(paddingBit ? 1 : 0))*4;
 
-//				if(protectionBit) {
-//					short crc = in.readShort();
-//					// FIXME check the crc
-//					out.writeShort(crc);
-//				}
+				short crc = 0;
 				
+				if(protectionBit)
+					crc = in.readShort();
 				//Write out the frame
 				byte[] frame = new byte[frameLength-4];
 				in.readFully(frame);
 				out.writeInt(frameHeader);
+				if(protectionBit)
+					out.writeShort(crc);
 				out.write(frame);
 				frameHeader = in.readInt();
 			} else {
