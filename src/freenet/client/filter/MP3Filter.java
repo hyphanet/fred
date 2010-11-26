@@ -74,9 +74,10 @@ public class MP3Filter implements ContentDataFilter {
 		boolean foundStream = false;
 		int totalFrames = 0;
 		int totalCRCs = 0;
+		int foundFrames = 0;
+		long countLostSyncBytes = 0;
 		try {
 		int frameHeader = in.readInt();
-		long countLostSyncBytes = 0;
 		//Seek ahead until we find the Frame sync
 		// FIXME surely the sync should be 0xffe00000 ? First 11 bits set, right?
 		while(true) {
@@ -157,8 +158,12 @@ public class MP3Filter implements ContentDataFilter {
 //				}
 				out.write(frame);
 				totalFrames++;
+				foundFrames++;
 				frameHeader = in.readInt();
 			} else {
+				if(foundFrames != 0)
+					System.out.println("Series of frames: "+foundFrames);
+				foundFrames = 0;
 				frameHeader = frameHeader << 8;
 				frameHeader |= (in.readUnsignedByte());
 				if((frameHeader & 0xffe00000) == 0xffe00000) {
@@ -172,6 +177,10 @@ public class MP3Filter implements ContentDataFilter {
 
 		}
 		} catch (EOFException e) {
+			if(foundFrames != 0)
+				System.out.println("Series of frames: "+foundFrames);
+			if(countLostSyncBytes != 0)
+				System.out.println("Lost sync for "+countLostSyncBytes+" bytes");
 			if(!foundStream)
 				// FIXME l10n
 				throw new DataFilterException("invalid mp3, no frames found", "invalid mp3, no frames found", "invalid mp3, no frames found");
