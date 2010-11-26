@@ -90,7 +90,7 @@ public class ContentFilter {
 		 * Reference: http://www.mp3-tech.org/programmer/frame_header.html
 		 */
 		register(new MIMEType("audio/mpeg", "mp3", new String[] {"audio/mp3", "audio/x-mp3", "audio/x-mpeg", "audio/mpeg3", "audio/x-mpeg3", "audio/mpg", "audio/x-mpg", "audio/mpegaudio"},
-				new String[0], true, false, new MP3Filter(), null, true, true, false, true, false, false,
+				new String[0], true, false, new MP3Filter(), new MP3Filter(), true, true, false, true, false, false,
 				l10n("audioMP3ReadAdvice"), l10n("audioMP3WriteAdvice"), false, null, null, false));
 
 		// ICO needs filtering.

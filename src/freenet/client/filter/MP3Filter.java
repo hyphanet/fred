@@ -119,8 +119,7 @@ public class MP3Filter implements ContentDataFilter {
 	public void writeFilter(InputStream input, OutputStream output,
 			String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
-		// TODO Auto-generated method stub
-
+		readFilter(input, output, charset, otherParams, cb);
 	}
 
 }
