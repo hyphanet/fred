@@ -125,5 +125,16 @@ public class MP3Filter implements ContentDataFilter {
 			FilterCallback cb) throws DataFilterException, IOException {
 		readFilter(input, output, charset, otherParams, cb);
 	}
+	
+	public static void main(String[] args) throws DataFilterException, IOException {
+		File f = new File(args[0]);
+		FileInputStream fis = new FileInputStream(f);
+		File out = new File(args[0]+".filtered.mp3");
+		FileOutputStream fos = new FileOutputStream(out);
+		MP3Filter filter = new MP3Filter();
+		filter.readFilter(fis, fos, null, null, null);
+		fis.close();
+		fos.close();
+	}
 
 }
