@@ -11,13 +11,22 @@ import freenet.client.async.CacheFetchResult;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.NoFreeBucket;
 
 /** Per-FCPClient cache of status of requests */
 public class RequestStatusCache {
 	
+    private static volatile boolean logMINOR;
+    
+	static {
+		Logger.registerClass(RequestStatusCache.class);
+	}
+
 	private final ArrayList<RequestStatus> downloads;
 	private final ArrayList<RequestStatus> uploads;
 	private final HashMap<String, RequestStatus> requestsByIdentifier;
@@ -35,6 +44,7 @@ public class RequestStatusCache {
 	synchronized void addDownload(DownloadRequestStatus status) {
 		RequestStatus old = 
 			requestsByIdentifier.put(status.getIdentifier(), status);
+		if(logMINOR) Logger.minor(this, "Starting download "+status.getIdentifier());
 		if(old == status) return;
 		assert(old == null);
 		downloads.add(status);
@@ -45,6 +55,7 @@ public class RequestStatusCache {
 		RequestStatus old = 
 			requestsByIdentifier.put(status.getIdentifier(), status);
 		if(old == status) return;
+		if(logMINOR) Logger.minor(this, "Starting upload "+status.getIdentifier());
 		assert(old == null);
 		uploads.add(status);
 		FreenetURI uri = status.getURI();
