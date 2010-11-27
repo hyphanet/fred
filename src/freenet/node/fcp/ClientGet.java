@@ -22,7 +22,9 @@ import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
+import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedHashesEvent;
+import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
@@ -64,6 +66,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private static final int VERBOSITY_SENT_TO_NETWORK = 2;
 	private static final int VERBOSITY_COMPATIBILITY_MODE = 4;
 	private static final int VERBOSITY_EXPECTED_HASHES = 8;
+	private static final int VERBOSITY_EXPECTED_TYPE = 32;
+	private static final int VERBOSITY_EXPECTED_SIZE = 64;
 
 	// Stuff waiting for reconnection
 	/** Did the request succeed? Valid if finished. */
@@ -493,6 +497,30 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					}
 				}
 				verbosityMask = ClientGet.VERBOSITY_EXPECTED_HASHES;
+			} else if(msg instanceof ExpectedMIME) {
+				foundDataMimeType = ((ExpectedMIME) msg).expectedMIME;
+				if(persistenceType == PERSIST_FOREVER) {
+					container.store(this);
+				}
+				if(client != null) {
+					RequestStatusCache cache = client.getRequestStatusCache();
+					if(cache != null) {
+						cache.updateExpectedMIME(identifier, foundDataMimeType);
+					}
+				}
+				verbosityMask = VERBOSITY_EXPECTED_TYPE;
+			} else if(msg instanceof ExpectedDataLength) {
+				foundDataLength = ((ExpectedDataLength) msg).dataLength;
+				if(persistenceType == PERSIST_FOREVER) {
+					container.store(this);
+				}
+				if(client != null) {
+					RequestStatusCache cache = client.getRequestStatusCache();
+					if(cache != null) {
+						cache.updateExpectedDataLength(identifier, foundDataLength);
+					}
+				}
+				verbosityMask = VERBOSITY_EXPECTED_SIZE;
 			} else
 				verbosityMask = -1;
 			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
@@ -689,6 +717,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		} else if(ce instanceof ExpectedHashesEvent) {
 			ExpectedHashesEvent event = (ExpectedHashesEvent)ce;
 			progress = new ExpectedHashes(event, identifier, global);
+		} else if(ce instanceof ExpectedMIMEEvent) {
+			ExpectedMIMEEvent event = (ExpectedMIMEEvent)ce;
+			progress = new ExpectedMIME(identifier, global, event.expectedMIMEType);
+		} else if(ce instanceof ExpectedFileSizeEvent) {
+			ExpectedFileSizeEvent event = (ExpectedFileSizeEvent)ce;
+			progress = new ExpectedDataLength(identifier, global, event.expectedSize);
 		}
 		else return; // Don't know what to do with event
 		// container may be null...

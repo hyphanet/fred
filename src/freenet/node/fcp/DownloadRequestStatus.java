@@ -99,4 +99,12 @@ public class DownloadRequestStatus extends RequestStatus {
 		this.detectedSplitfileKey = splitfileKey;
 	}
 
+	public synchronized void updateExpectedMIME(String foundDataMimeType) {
+		this.mimeType = foundDataMimeType;
+	}
+
+	public synchronized void updateExpectedDataLength(long dataLength) {
+		this.dataSize = dataLength;
+	}
+
 }

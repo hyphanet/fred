@@ -113,4 +113,14 @@ public class RequestStatusCache {
 		status.addAll(requestsByIdentifier.values());
 	}
 
+	public synchronized void updateExpectedMIME(String identifier, String foundDataMimeType) {
+		DownloadRequestStatus status = (DownloadRequestStatus) requestsByIdentifier.get(identifier);
+		status.updateExpectedMIME(foundDataMimeType);
+	}
+
+	public synchronized void updateExpectedDataLength(String identifier, long expectedDataLength) {
+		DownloadRequestStatus status = (DownloadRequestStatus) requestsByIdentifier.get(identifier);
+		status.updateExpectedDataLength(expectedDataLength);
+	}
+
 }
