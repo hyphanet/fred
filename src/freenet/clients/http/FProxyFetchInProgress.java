@@ -169,7 +169,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				if(mimeType == null || mimeType.equals("")) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
 				mimeType = ContentFilter.stripMIMEType(mimeType);
 				MIMEType type = ContentFilter.getMIMEType(mimeType);
-				if(mimeType == null || ((!type.safeToRead) && type.readFilter == null)) {
+				if(type == null || ((!type.safeToRead) && type.readFilter == null)) {
 					UnknownContentTypeException e = new UnknownContentTypeException(mimeType);
 					data.free();
 					onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null, null);
