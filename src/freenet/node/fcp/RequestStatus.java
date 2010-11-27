@@ -121,7 +121,7 @@ public abstract class RequestStatus {
 		this.fatallyFailedBlocks = event.fatallyFailedBlocks;
 		this.fetchedBlocks = event.succeedBlocks;
 		this.isTotalFinalized = event.finalizedTotal;
-		this.minBlocks = event.minSuccessFetchBlocks;
+		this.minBlocks = event.minSuccessfulBlocks;
 		this.totalBlocks = event.totalBlocks;
 	}
 
