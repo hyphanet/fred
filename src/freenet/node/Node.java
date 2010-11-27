@@ -2629,9 +2629,12 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private boolean databaseEncrypted;
-
-	private void setupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
-		/* FIXME: Backup the database! */
+	
+	/** 
+	 * @param databaseKey The encryption key to the database. Null if the database is not encrypted
+	 * @return A new Db4o Configuration object which is fully configured to Fred's desired database settings.
+	 */
+	private Configuration getNewDatabaseConfiguration(byte[] databaseKey) {
 		Configuration dbConfig = Db4o.newConfiguration();
 		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
 		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
@@ -2699,6 +2702,29 @@ public class Node implements TimeSkewDetectorCallback {
 
 		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
 		System.err.println("Query activation depth: "+dbConfig.activationDepth());
+		
+		// The database is encrypted.
+		if(databaseKey != null) {
+			IoAdapter baseAdapter = dbConfig.io();
+			if(logDEBUG)
+				Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
+			try {
+				dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+			} catch (GlobalOnlyConfigException e) {
+				// Fouled up after encrypting/decrypting.
+				System.err.println("Caught "+e+" opening encrypted database.");
+				e.printStackTrace();
+				WrapperManager.restart();
+				throw e;
+			}
+		}
+		
+		return dbConfig;
+	}
+
+	private void setupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
+		/* FIXME: Backup the database! */
+
 		ObjectContainer database;
 
 		File dbFileBackup = new File(dbFile.getPath()+".tmp");
@@ -2721,14 +2747,14 @@ public class Node implements TimeSkewDetectorCallback {
 				random.nextBytes(databaseKey);
 				FileUtil.secureDelete(dbFileCrypt, random);
 				FileUtil.secureDelete(dbFile, random);
-				database = openCryptDatabase(dbConfig, databaseKey);
+				database = openCryptDatabase(databaseKey);
 				synchronized(this) {
 					databaseEncrypted = true;
 				}
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
-				maybeDefragmentDatabase(dbConfig, dbFile);
+				maybeDefragmentDatabase(dbFile, null);
 				// Just open it.
-				database = Db4o.openFile(dbConfig, dbFile.toString());
+				database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
 				synchronized(this) {
 					databaseEncrypted = false;
 				}
@@ -2773,7 +2799,7 @@ public class Node implements TimeSkewDetectorCallback {
 				readAdapter.close();
 				if(FileUtil.renameTo(tempFile, dbFile)) {
 					dbFileCrypt.delete();
-					database = Db4o.openFile(dbConfig, dbFile.toString());
+					database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
 					System.err.println("Completed decrypting the old node.db4o.crypt.");
 					synchronized(this) {
 						databaseEncrypted = false;
@@ -2788,12 +2814,12 @@ public class Node implements TimeSkewDetectorCallback {
 						databaseEncrypted = true;
 					}
 					// Still encrypted, but we can still open it.
-					database = openCryptDatabase(dbConfig, databaseKey);
+					database = openCryptDatabase(databaseKey);
 				}
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
 				// Migrate the unencrypted file to ciphertext.
 				// This will always succeed short of I/O errors.
-				maybeDefragmentDatabase(dbConfig, dbFile);
+				maybeDefragmentDatabase(dbFile, null);
 				if(databaseKey == null) {
 					// Try with no password
 					MasterKeys keys;
@@ -2828,7 +2854,7 @@ public class Node implements TimeSkewDetectorCallback {
 				if(FileUtil.renameTo(tempFile, dbFileCrypt)) {
 					FileUtil.secureDelete(dbFile, random);
 					System.err.println("Completed encrypting the old node.db4o.");
-					database = openCryptDatabase(dbConfig, databaseKey);
+					database = openCryptDatabase(databaseKey);
 					synchronized(this) {
 						databaseEncrypted = true;
 					}
@@ -2853,14 +2879,14 @@ public class Node implements TimeSkewDetectorCallback {
 					databaseKey = keys.databaseKey;
 					keys.clearAllNotDatabaseKey();
 				}
-				database = openCryptDatabase(dbConfig, databaseKey);
+				database = openCryptDatabase(databaseKey);
 				synchronized(this) {
 					databaseEncrypted = true;
 				}
 			} else {
-				maybeDefragmentDatabase(dbConfig, dbFile);
+				maybeDefragmentDatabase(dbFile, null);
 				// Open unencrypted.
-				database = Db4o.openFile(dbConfig, dbFile.toString());
+				database = Db4o.openFile(getNewDatabaseConfiguration(null), dbFile.toString());
 				synchronized(this) {
 					databaseEncrypted = false;
 				}
@@ -2993,23 +3019,10 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) throws IOException {
-		IoAdapter baseAdapter = dbConfig.io();
-		if(logDEBUG)
-			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
-		try {
-			dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
-		} catch (GlobalOnlyConfigException e) {
-			// Fouled up after encrypting/decrypting.
-			System.err.println("Caught "+e+" opening encrypted database.");
-			e.printStackTrace();
-			WrapperManager.restart();
-			throw e;
-		}
+	private ObjectContainer openCryptDatabase(byte[] databaseKey) throws IOException {
+		maybeDefragmentDatabase(dbFileCrypt, databaseKey);
 
-		maybeDefragmentDatabase(dbConfig, dbFileCrypt);
-
-		ObjectContainer database = Db4o.openFile(dbConfig, dbFileCrypt.toString());
+		ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(databaseKey), dbFileCrypt.toString());
 		synchronized(this) {
 			databaseAwaitingPassword = false;
 		}
@@ -3017,7 +3030,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	private void maybeDefragmentDatabase(Configuration dbConfig, File databaseFile) throws IOException {
+	private void maybeDefragmentDatabase(File databaseFile, byte[] databaseKey) throws IOException {
 
 		synchronized(this) {
 			if(!defragDatabaseOnStartup) return;
@@ -3025,7 +3038,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Open it first, because defrag will throw if it needs to upgrade the file.
 
-		ObjectContainer database = Db4o.openFile(dbConfig, databaseFile.toString());
+		ObjectContainer database = Db4o.openFile(getNewDatabaseConfiguration(databaseKey), databaseFile.toString());
 		while(!database.close());
 
 		if(!databaseFile.exists()) return;
@@ -3044,7 +3057,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
 		config.storedClassFilter(new AvailableClassFilter());
-		config.db4oConfig(dbConfig);
+		config.db4oConfig(getNewDatabaseConfiguration(databaseKey));
 		try {
 			Defragment.defrag(config);
 		} catch (IOException e) {
