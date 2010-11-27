@@ -335,6 +335,12 @@ public abstract class ClientRequest {
 			r.setPriorityClass(priorityClass, server.core.clientContext, container);
 			if(persistenceType == PERSIST_FOREVER) container.deactivate(r, 1);
 			priorityClassChanged = true;
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.setPriority(identifier, newPriorityClass);
+				}
+			}
 		}
 
 		if(! ( clientTokenChanged || priorityClassChanged ) ) {

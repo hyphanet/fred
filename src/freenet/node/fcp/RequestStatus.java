@@ -125,4 +125,8 @@ public abstract class RequestStatus {
 		this.totalBlocks = event.totalBlocks;
 	}
 
+	public synchronized void setPriority(short newPriority) {
+		this.priority = newPriority;
+	}
+
 }

@@ -123,4 +123,9 @@ public class RequestStatusCache {
 		status.updateExpectedDataLength(expectedDataLength);
 	}
 
+	public void setPriority(String identifier, short newPriorityClass) {
+		RequestStatus status = requestsByIdentifier.get(identifier);
+		status.setPriority(newPriorityClass);
+	}
+
 }
