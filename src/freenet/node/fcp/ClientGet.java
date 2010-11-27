@@ -1018,7 +1018,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		int total = 0, min = 0, fetched = 0, fatal = 0, failed = 0;
 		if(progressPending != null) {
 			if(persistenceType == PERSIST_FOREVER)
-				container.activate(progressPending, 1);
+				container.activate(progressPending, Integer.MAX_VALUE);
 			totalFinalized = progressPending.isTotalFinalized();
 			// FIXME why are these doubles???
 			total = (int) progressPending.getTotalBlocks();
