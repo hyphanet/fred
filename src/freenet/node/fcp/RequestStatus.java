@@ -39,7 +39,7 @@ public abstract class RequestStatus {
 			boolean totalFinalized,
 			long last, short prio) {
 		this.identifier = identifier;
-		this.hasStarted = success;
+		this.hasStarted = started;
 		this.hasFinished = finished;
 		this.hasSucceeded = success;
 		this.priority = prio;
