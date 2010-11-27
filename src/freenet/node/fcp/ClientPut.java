@@ -462,6 +462,60 @@ public class ClientPut extends ClientPutBase {
 	protected synchronized void onStopCompressing() {
 		compressing = false;
 	}
+
+	@Override
+	RequestStatus getStatus(ObjectContainer container) {
+		FreenetURI finalURI = getFinalURI(container);
+		if(finalURI != null) finalURI = getFinalURI(container).clone();
+		short failureCode = (short)-1;
+		String failureReasonShort = null;
+		String failureReasonLong = null;
+		if(putFailedMessage != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(putFailedMessage, 5);
+			failureReasonShort = putFailedMessage.shortCodeDescription;
+			if(putFailedMessage.extraDescription != null)
+				failureReasonLong = failureReasonShort + ": "+putFailedMessage.extraDescription;
+			if(persistenceType == PERSIST_FOREVER)
+				container.deactivate(putFailedMessage, 5);
+		}
+		String mimeType = null;
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(clientMetadata, 1);
+			mimeType = clientMetadata.getMIMEType();
+		}
+		File fnam = getOrigFilename(container);
+		if(fnam != null) fnam = new File(fnam.getPath());
+		
+		int total=0, min=0, fetched=0, fatal=0, failed=0;
+		boolean totalFinalized = false;
+		
+		if(progressMessage != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(progressMessage, 2);
+			if(progressMessage instanceof SimpleProgressMessage) {
+				SimpleProgressMessage msg = (SimpleProgressMessage)progressMessage;
+				total = (int) msg.getTotalBlocks();
+				min = (int) msg.getMinBlocks();
+				fetched = (int) msg.getFetchedBlocks();
+				fatal = (int) msg.getFatalyFailedBlocks();
+				failed = (int) msg.getFailedBlocks();
+				totalFinalized = msg.isTotalFinalized();
+			}
+		}
+		
+		FreenetURI origURI = uri;
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(origURI, Integer.MAX_VALUE);
+			origURI = origURI.clone();
+		}
+		
+		return new UploadFileRequestStatus(identifier, persistenceType, started, finished, 
+				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
+				lastActivity, priorityClass, finalURI, origURI, failureCode,
+				failureReasonShort, failureReasonLong, getDataSize(container), mimeType,
+				fnam, isCompressing(container));
+	}
 	
 
 }

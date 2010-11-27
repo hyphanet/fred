@@ -48,7 +48,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	/** If the request failed, how did it fail? PutFailedMessage is the most
 	 * convenient way to store this (InsertException has a stack trace!).
 	 */
-	private PutFailedMessage putFailedMessage;
+	protected PutFailedMessage putFailedMessage;
 	/** URI generated for the insert. */
 	protected FreenetURI generatedURI;
 	// This could be a SimpleProgress, or it could be started/finished compression.

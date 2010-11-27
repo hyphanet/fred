@@ -991,4 +991,55 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			container.activate(fctx, 1);
 		return fctx.filterData;
 	}
+
+	@Override
+	RequestStatus getStatus(ObjectContainer container) {
+		boolean totalFinalized = false;
+		int total = 0, min = 0, fetched = 0, fatal = 0, failed = 0;
+		if(progressPending != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(progressPending, 1);
+			totalFinalized = progressPending.isTotalFinalized();
+			// FIXME why are these doubles???
+			total = (int) progressPending.getTotalBlocks();
+			min = (int) progressPending.getMinBlocks();
+			fetched = (int) progressPending.getFetchedBlocks();
+			fatal = (int) progressPending.getFatalyFailedBlocks();
+			failed = (int) progressPending.getFailedBlocks();
+		}
+		if(persistenceType == PERSIST_FOREVER)
+			container.deactivate(progressPending, 1);
+		int failureCode = -1;
+		String failureReasonShort = null;
+		String failureReasonLong = null;
+		if(getFailedMessage != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(getFailedMessage, 5);
+			failureCode = getFailedMessage.code;
+			failureReasonShort = getFailedMessage.shortCodeDescription;
+			if(getFailedMessage.extraDescription != null)
+				failureReasonLong = failureReasonShort + ": "+getFailedMessage.extraDescription;
+			if(persistenceType == PERSIST_FOREVER)
+				container.deactivate(getFailedMessage, 1);
+		}
+		String mimeType = null;
+		long dataSize = -1;
+		if(getter != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(getter, 1);
+			mimeType = getter.expectedMIME();
+			dataSize = getter.expectedSize();
+			if(persistenceType == PERSIST_FOREVER)
+				container.deactivate(getter, 1);
+		}
+		File target = getDestFilename(container);
+		if(target != null)
+			target = new File(target.getPath());
+		
+		return new DownloadRequestStatus(identifier, persistenceType, started, finished, 
+				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
+				lastActivity, priorityClass, failureCode, mimeType, dataSize, target, 
+				getCompatibilityMode(container), getOverriddenSplitfileCryptoKey(container), 
+				getURI(container).clone(), failureReasonShort, failureReasonLong);
+	}
 }

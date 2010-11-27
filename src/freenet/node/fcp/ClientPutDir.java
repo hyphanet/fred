@@ -337,4 +337,52 @@ public class ClientPutDir extends ClientPutBase {
 	protected void onStopCompressing() {
 		// Ignore
 	}
+	
+	@Override
+	RequestStatus getStatus(ObjectContainer container) {
+		FreenetURI finalURI = getFinalURI(container);
+		if(finalURI != null) finalURI = getFinalURI(container).clone();
+		short failureCode = (short)-1;
+		String failureReasonShort = null;
+		String failureReasonLong = null;
+		if(putFailedMessage != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(putFailedMessage, 5);
+			failureReasonShort = putFailedMessage.shortCodeDescription;
+			if(putFailedMessage.extraDescription != null)
+				failureReasonLong = failureReasonShort + ": "+putFailedMessage.extraDescription;
+			if(persistenceType == PERSIST_FOREVER)
+				container.deactivate(putFailedMessage, 5);
+		}
+		
+		int total=0, min=0, fetched=0, fatal=0, failed=0;
+		boolean totalFinalized = false;
+		
+		if(progressMessage != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(progressMessage, 2);
+			if(progressMessage instanceof SimpleProgressMessage) {
+				SimpleProgressMessage msg = (SimpleProgressMessage)progressMessage;
+				total = (int) msg.getTotalBlocks();
+				min = (int) msg.getMinBlocks();
+				fetched = (int) msg.getFetchedBlocks();
+				fatal = (int) msg.getFatalyFailedBlocks();
+				failed = (int) msg.getFailedBlocks();
+				totalFinalized = msg.isTotalFinalized();
+			}
+		}
+		
+		FreenetURI targetURI = uri;
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(targetURI, Integer.MAX_VALUE);
+			targetURI = targetURI.clone();
+		}
+		
+		return new UploadDirRequestStatus(identifier, persistenceType, started, finished, 
+				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
+				lastActivity, priorityClass, finalURI, targetURI, failureCode,
+				failureReasonShort, failureReasonLong, totalSize, numberOfFiles);
+	}
+	
+
 }

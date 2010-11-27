@@ -445,16 +445,16 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	public ClientRequest[] getGlobalRequests(ObjectContainer container) throws DatabaseDisabledException {
+	public RequestStatus[] getGlobalRequests(ObjectContainer container) throws DatabaseDisabledException {
 		if(core.killedDatabase()) throw new DatabaseDisabledException();
-		List<ClientRequest> v = new ArrayList<ClientRequest>();
-		globalRebootClient.addPersistentRequests(v, false, null);
+		List<RequestStatus> v = new ArrayList<RequestStatus>();
+		globalRebootClient.addPersistentRequestStatus(v, false, null);
 		if(!container.ext().isActive(globalForeverClient)) {
 			Logger.error(this, "Somebody deactivated the global queue!");
 			container.activate(globalForeverClient, 2);
 		}
-		globalForeverClient.addPersistentRequests(v, false, container);
-		return v.toArray(new ClientRequest[v.size()]);
+		globalForeverClient.addPersistentRequestStatus(v, false, container);
+		return v.toArray(new RequestStatus[v.size()]);
 	}
 
 	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException, DatabaseDisabledException {

@@ -357,6 +357,17 @@ public class FCPClient {
 			v.addAll(completedUnackedRequests);
 		}
 	}
+	
+	public void addPersistentRequestStatus(List<RequestStatus> status, boolean onlyForever,
+			ObjectContainer container) {
+		// FIXME OPT merge with addPersistentRequests? Locking looks tricky.
+		List<ClientRequest> reqs = new ArrayList<ClientRequest>();
+		addPersistentRequests(reqs, onlyForever, container);
+		for(ClientRequest req : reqs) {
+			status.add(req.getStatus(container));
+			// FIXME deactivate? Unconditional deactivate depends on callers. Keep-as-is would need merge with addPersistentRequests.
+		}
+	}
 
 	/**
 	 * Enable or disable watch-the-global-queue.

@@ -447,5 +447,7 @@ public abstract class ClientRequest {
 	public FCPClient getClient(){
 		return client;
 	}
+
+	abstract RequestStatus getStatus(ObjectContainer container);
 	
 }
