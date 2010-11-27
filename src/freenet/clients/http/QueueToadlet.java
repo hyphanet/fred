@@ -1694,7 +1694,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		if(uri == null)
 			Logger.error(this, "NO URI FOR "+clientRequest, new Exception("error"));
 		else
-			downloadCell.addChild("a", "href", uri.toString(), NodeL10n.getBase().getString("QueueToadlet.download"));
+			downloadCell.addChild("a", "href", path()+uri.toString(), NodeL10n.getBase().getString("QueueToadlet.download"));
 		return downloadCell;
 	}
 
