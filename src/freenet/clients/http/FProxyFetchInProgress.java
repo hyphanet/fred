@@ -3,6 +3,8 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -158,15 +160,26 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			
 			// Fproxy uses lookupInstant() with mustCopy = false. I.e. it can reuse stuff unsafely. If the user frees it it's their fault.
 			CacheFetchResult result = context.downloadCache == null ? null : context.downloadCache.lookupInstant(uri, !fctx.filterData, false, null);
+			Bucket data = null;
+			String mimeType = null;
 			if(result != null) {
 				if(fctx.filterData == result.alreadyFiltered) {
 					onSuccess(result, null, null);
 					return;
 				}
-				Bucket data = result.asBucket();
-				String mimeType = result.getMimeType();
-				String fullMimeType = mimeType;
+				data = result.asBucket();
+				mimeType = result.getMimeType();
 				if(mimeType == null || mimeType.equals("")) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
+				if(fctx.overrideMIME != null && !result.alreadyFiltered)
+					mimeType = fctx.overrideMIME;
+				else if(result.alreadyFiltered && ((!fctx.filterData) || (!mimeType.equals(fctx.overrideMIME)))) {
+					// Doesn't work.
+					data = null;
+					mimeType = null;
+				}
+			}
+			if(data != null) {
+				String fullMimeType = mimeType;
 				mimeType = ContentFilter.stripMIMEType(mimeType);
 				MIMEType type = ContentFilter.getMIMEType(mimeType);
 				if(type == null || ((!type.safeToRead) && type.readFilter == null)) {
@@ -175,7 +188,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 					onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null, null);
 					return;
 				} else if(type.safeToRead) {
-					onSuccess(result, null, null);
+					onSuccess(new FetchResult(new ClientMetadata(mimeType), data), null, null);
 					return;
 				} else {
 					// Try to filter it.
@@ -186,7 +199,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 						output = context.tempBucketFactory.makeBucket(-1);
 						is = data.getInputStream();
 						os = output.getOutputStream();
-						ContentFilter.filter(is, os, fullMimeType, fctx.charset, null);
+						ContentFilter.filter(is, os, fullMimeType, uri.toURI("/"), null, null, fctx.charset);
 						is.close();
 						is = null;
 						os.close();
@@ -198,6 +211,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 						Logger.normal(this, "Failed filtering coalesced data in fproxy");
 						// Failed. :|
 						// Let it run normally.
+					} catch (URISyntaxException e) {
+						Logger.error(this, "Impossible: "+e, e);
 					} finally {
 						Closer.close(is);
 						Closer.close(os);
