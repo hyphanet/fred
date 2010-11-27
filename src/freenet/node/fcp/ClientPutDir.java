@@ -175,6 +175,8 @@ public class ClientPutDir extends ClientPutBase {
 		if(finished) return;
 		if(started) return;
 		try {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(putter, 1);
 			if(putter != null)
 				putter.start(container, context);
 			started = true;

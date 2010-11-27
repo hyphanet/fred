@@ -280,6 +280,8 @@ public class ClientPut extends ClientPutBase {
 			if(finished) return;
 		}
 		try {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(putter, 1);
 			putter.start(earlyEncode, false, container, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage(container);
@@ -396,6 +398,8 @@ public class ClientPut extends ClientPutBase {
 		if(!canRestart()) return false;
 		setVarsRestart(container);
 		try {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(putter, 1);
 			if(putter.restart(earlyEncode, container, context)) {
 				synchronized(this) {
 					generatedURI = null;

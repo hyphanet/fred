@@ -246,6 +246,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			synchronized(this) {
 				if(finished) return;
 			}
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(getter, 1);
 			getter.start(container, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage(container);
@@ -1013,6 +1015,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
 		try {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(getter, 1);
 			if(getter.restart(redirect, fctx.filterData, container, context)) {
 				synchronized(this) {
 					if(redirect != null) {
