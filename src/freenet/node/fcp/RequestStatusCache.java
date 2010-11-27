@@ -4,11 +4,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import freenet.client.ClientMetadata;
+import freenet.client.FetchResult;
 import freenet.client.InsertContext;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.support.MultiValueTable;
+import freenet.support.api.Bucket;
+import freenet.support.io.NoFreeBucket;
 
 /** Per-FCPClient cache of status of requests */
 public class RequestStatusCache {
@@ -48,10 +52,10 @@ public class RequestStatusCache {
 	}
 	
 	synchronized void finishedDownload(String identifier, boolean success, long dataSize, 
-			String mimeType, int failureCode, String failureReasonLong, String failureReasonShort) {
+			String mimeType, int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow) {
 		DownloadRequestStatus status = (DownloadRequestStatus) requestsByIdentifier.get(identifier);
 		status.setFinished(success, dataSize, mimeType, failureCode, failureReasonLong,
-				failureReasonShort);
+				failureReasonShort, dataShadow);
 	}
 	
 	synchronized void gotFinalURI(String identifier, FreenetURI finalURI) {
@@ -131,6 +135,19 @@ public class RequestStatusCache {
 	public void updateStarted(String identifier, boolean started) {
 		RequestStatus status = requestsByIdentifier.get(identifier);
 		status.setStarted(started);
+	}
+
+	public synchronized FetchResult getShadowBucket(FreenetURI key) {
+		Object[] downloads = downloadsByURI.getArray(key);
+		if(downloads == null) return null;
+		for(Object o : downloads) {
+			DownloadRequestStatus download = (DownloadRequestStatus) o;
+			Bucket data = download.getDataShadow();
+			if(data != null) {
+				return new FetchResult(new ClientMetadata(download.getMIMEType()), new NoFreeBucket(data));
+			}
+		}
+		return null;
 	}
 
 }

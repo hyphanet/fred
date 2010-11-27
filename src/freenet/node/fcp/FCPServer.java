@@ -901,6 +901,11 @@ public class FCPServer implements Runnable {
 			return new FetchResult(new ClientMetadata(get.getMIMEType(null)), new NoFreeBucket(get.getBucket(null)));
 		}
 		
+		FetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key);
+		if(result != null) {
+			return result;
+		}
+		
 		class OutputWrapper {
 			FetchResult result;
 			boolean done;

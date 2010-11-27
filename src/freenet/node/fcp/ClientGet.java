@@ -939,6 +939,16 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 	}
 
+	public Bucket getFinalBucket(ObjectContainer container) {
+		synchronized(this) {
+			if(!finished) return null;
+			if(!succeeded) return null;
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(returnBucket, 1);
+			return returnBucket;
+		}
+	}
+	
 	/**
 	 * Returns the {@link Bucket} that contains the downloaded data.
 	 *
@@ -1111,10 +1121,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(target != null)
 			target = new File(target.getPath());
 		
+		Bucket shadow = getFinalBucket(container);
+		if(shadow != null) shadow = shadow.createShadow();
+		
 		return new DownloadRequestStatus(identifier, persistenceType, started, finished, 
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, failureCode, mimeType, dataSize, target, 
 				getCompatibilityMode(container), getOverriddenSplitfileCryptoKey(container), 
-				getURI(container).clone(), failureReasonShort, failureReasonLong);
+				getURI(container).clone(), failureReasonShort, failureReasonLong, shadow);
 	}
 }

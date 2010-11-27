@@ -1,10 +1,12 @@
 package freenet.node.fcp;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.FreenetURI;
+import freenet.support.api.Bucket;
 
 /** Cached status of a download of a file i.e. a ClientGet */
 public class DownloadRequestStatus extends RequestStatus {
@@ -20,22 +22,24 @@ public class DownloadRequestStatus extends RequestStatus {
 	private CompatibilityMode[] detectedCompatModes;
 	private byte[] detectedSplitfileKey;
 	private final FreenetURI uri;
+	Bucket dataShadow;
 	
 	synchronized void setFinished(boolean success, long dataSize, String mimeType, 
-			int failureCode, String failureReasonLong, String failureReasonShort) {
+			int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow) {
 		setFinished(success);
 		this.dataSize = dataSize;
 		this.mimeType = mimeType;
 		this.failureCode = failureCode;
 		this.failureReasonLong = failureReasonLong;
 		this.failureReasonShort = failureReasonShort;
+		this.dataShadow = dataShadow;
 	}
 	
 	DownloadRequestStatus(String identifier, short persistence, boolean started, boolean finished, 
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
 			int failureCode, String mime, long size, File dest, CompatibilityMode[] compat,
-			byte[] splitfileKey, FreenetURI uri, String failureReasonShort, String failureReasonLong) {
+			byte[] splitfileKey, FreenetURI uri, String failureReasonShort, String failureReasonLong, Bucket dataShadow) {
 		super(identifier, persistence, started, finished, success, total, min, fetched, 
 				fatal, failed, totalFinalized, last, prio);
 		this.failureCode = failureCode;
@@ -47,6 +51,7 @@ public class DownloadRequestStatus extends RequestStatus {
 		this.uri = uri;
 		this.failureReasonShort = failureReasonShort;
 		this.failureReasonLong = failureReasonLong;
+		this.dataShadow = dataShadow;
 	}
 	
 	public final boolean toTempSpace() {
@@ -105,6 +110,10 @@ public class DownloadRequestStatus extends RequestStatus {
 
 	public synchronized void updateExpectedDataLength(long dataLength) {
 		this.dataSize = dataLength;
+	}
+
+	public synchronized Bucket getDataShadow() {
+		return dataShadow;
 	}
 
 }

@@ -22,6 +22,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.NullObject;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.Bucket;
 
 /**
  * An FCP client.
@@ -149,7 +150,9 @@ public class FCPClient {
 				}
 				if(persistenceType == ClientRequest.PERSIST_FOREVER)
 					container.deactivate(msg, 1);
-				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(container), ((ClientGet) get).getMIMEType(container), failureCode, longFailMessage, shortFailMessage);
+				Bucket shadow = ((ClientGet) get).getFinalBucket(container);
+				if(shadow != null) shadow = shadow.createShadow();
+				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(container), ((ClientGet) get).getMIMEType(container), failureCode, longFailMessage, shortFailMessage, shadow);
 			} else if(get instanceof ClientPut) {
 				ClientPutBase upload = (ClientPutBase)get;
 				PutFailedMessage msg = upload.getFailureMessage(container);
