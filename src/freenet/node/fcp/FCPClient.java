@@ -81,6 +81,8 @@ public class FCPClient {
 	private transient List<RequestCompletionCallback> completionCallbacks;
 	/** The whiteboard where ClientRequests report their progress*/
 	private transient Whiteboard whiteboard;
+	/** The cache where ClientRequests report their progress */
+	private transient RequestStatusCache statusCache;
 	/** Connection mode */
 	final short persistenceType;
 	        
@@ -132,6 +134,37 @@ public class FCPClient {
 					container.ext().store(completedUnackedRequests, 2);
 				}
 			}	
+		}
+		if(statusCache != null) {
+			if(get instanceof ClientGet) {
+				ClientGet download = (ClientGet)get;
+				GetFailedMessage msg = download.getFailureMessage(container);
+				int failureCode = -1;
+				String shortFailMessage = null;
+				String longFailMessage = null;
+				if(msg != null) {
+					failureCode = msg.code;
+					shortFailMessage = msg.getShortFailedMessage();
+					longFailMessage = msg.getLongFailedMessage();
+				}
+				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					container.deactivate(msg, 1);
+				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(container), ((ClientGet) get).getMIMEType(container), failureCode, longFailMessage, shortFailMessage);
+			} else if(get instanceof ClientPut) {
+				ClientPutBase upload = (ClientPutBase)get;
+				PutFailedMessage msg = upload.getFailureMessage(container);
+				int failureCode = -1;
+				String shortFailMessage = null;
+				String longFailMessage = null;
+				if(msg != null) {
+					failureCode = msg.code;
+					shortFailMessage = msg.getShortFailedMessage();
+					longFailMessage = msg.getLongFailedMessage();
+				}
+				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					container.deactivate(msg, 1);
+				statusCache.finishedUpload(upload.getIdentifier(), upload.hasSucceeded(), upload.getGeneratedURI(container), failureCode, shortFailMessage, longFailMessage);
+			} else assert(false);
 		}
 	}
 
@@ -239,6 +272,13 @@ public class FCPClient {
 			clientRequestsByIdentifier.put(ident, cg);
 			if(container != null) container.ext().store(clientRequestsByIdentifier, 2);
 		}
+		if(statusCache != null) {
+			if(cg instanceof ClientGet) {
+				statusCache.addDownload((DownloadRequestStatus)(cg.getStatus(container)));
+			} else if(cg instanceof ClientPutBase) {
+				statusCache.addUpload((UploadRequestStatus)(cg.getStatus(container)));
+			}
+		}
 	}
 
 	public boolean removeByIdentifier(String identifier, boolean kill, FCPServer server, ObjectContainer container, ClientContext context) {
@@ -250,6 +290,8 @@ public class FCPClient {
 			container.activate(runningPersistentRequests, 2);
 			container.activate(clientRequestsByIdentifier, 2);
 		}
+		if(statusCache != null)
+			statusCache.removeByIdentifier(identifier);
 		synchronized(this) {
 			req = clientRequestsByIdentifier.get(identifier);
 //			if(container != null && req != null)
@@ -529,6 +571,8 @@ public class FCPClient {
 			container.activate(runningPersistentRequests, 2);
 			container.activate(clientRequestsByIdentifier, 2);
 		}
+		if(statusCache != null)
+			statusCache.clear();
 		synchronized(this) {
 			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
 			while(i.hasNext()) {
@@ -627,6 +671,25 @@ public class FCPClient {
 	
 	public void setWhiteboard(Whiteboard whiteboard){
 		this.whiteboard=whiteboard;
+	}
+	
+	public RequestStatusCache getRequestStatusCache() {
+		return statusCache;
+	}
+	
+	public void setRequestStatusCache(RequestStatusCache cache, ObjectContainer container) {
+		statusCache = cache;
+		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+			System.out.println("Loading cache of request statuses...");
+			ArrayList<RequestStatus> statuses = new ArrayList<RequestStatus>();
+			addPersistentRequestStatus(statuses, true, container);
+			for(RequestStatus status : statuses) {
+				if(status instanceof DownloadRequestStatus)
+					cache.addDownload((DownloadRequestStatus)status);
+				else
+					cache.addUpload((UploadRequestStatus)status);
+			}
+		}
 	}
 
 }

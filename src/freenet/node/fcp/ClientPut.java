@@ -411,6 +411,16 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 	
+	public void setVarsRestart(ObjectContainer container) {
+		super.setVarsRestart(container);
+		if(client != null) {
+			RequestStatusCache cache = client.getRequestStatusCache();
+			if(cache != null) {
+				cache.updateCompressionStatus(identifier, isCompressing(container));
+			}
+		}
+	}
+	
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
 	}
@@ -454,13 +464,29 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	@Override
-	protected synchronized void onStartCompressing() {
-		compressing = true;
+	protected void onStartCompressing() {
+		synchronized(this) {
+			compressing = true;
+		}
+		if(client != null) {
+			RequestStatusCache cache = client.getRequestStatusCache();
+			if(cache != null) {
+				cache.updateCompressionStatus(identifier, COMPRESS_STATE.COMPRESSING);
+			}
+		}
 	}
 
 	@Override
-	protected synchronized void onStopCompressing() {
-		compressing = false;
+	protected void onStopCompressing() {
+		synchronized(this) {
+			compressing = false;
+		}
+		if(client != null) {
+			RequestStatusCache cache = client.getRequestStatusCache();
+			if(cache != null) {
+				cache.updateCompressionStatus(identifier, COMPRESS_STATE.COMPRESSING);
+			}
+		}
 	}
 
 	@Override

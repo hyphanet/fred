@@ -96,13 +96,14 @@ public class FCPServer implements Runnable {
 		defaultInsertContext = client.getInsertContext(false);
 		
 		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null, whiteboard, null);
+		globalRebootClient.setRequestStatusCache(new RequestStatusCache(), null);
 		
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		
 	}
 	
 	public void load(ObjectContainer container) {
-		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, whiteboard, container);
+		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, whiteboard, new RequestStatusCache(), container);
 		globalForeverClient = persistentRoot.globalForeverClient;
 	}
 	

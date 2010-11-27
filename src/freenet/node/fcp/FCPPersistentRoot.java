@@ -40,7 +40,7 @@ public class FCPPersistentRoot {
 		globalForeverClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this, whiteboard, container);
 	}
 
-	public static FCPPersistentRoot create(final long nodeDBHandle, Whiteboard whiteboard, ObjectContainer container) {
+	public static FCPPersistentRoot create(final long nodeDBHandle, Whiteboard whiteboard, RequestStatusCache cache, ObjectContainer container) {
 		ObjectSet<FCPPersistentRoot> set = container.query(new Predicate<FCPPersistentRoot>() {
 			final private static long serialVersionUID = -8615907687034212486L;
 			@Override
@@ -60,6 +60,7 @@ public class FCPPersistentRoot {
 			} else {
 				root.globalForeverClient.init(container);
 				root.globalForeverClient.setWhiteboard(whiteboard);
+				root.globalForeverClient.setRequestStatusCache(cache, container);
 				return root;
 			}
 		}

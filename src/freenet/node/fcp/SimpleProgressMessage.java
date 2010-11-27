@@ -82,4 +82,8 @@ public class SimpleProgressMessage extends FCPMessage {
 		container.delete(this);
 	}
 
+	SplitfileProgressEvent getEvent() {
+		return event;
+	}
+
 }

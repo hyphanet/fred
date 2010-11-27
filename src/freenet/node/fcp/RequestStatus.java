@@ -2,6 +2,7 @@ package freenet.node.fcp;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 
 /** The status of a request. Cached copy i.e. can be accessed outside the database thread
@@ -23,6 +24,13 @@ public abstract class RequestStatus {
 	private boolean isTotalFinalized;
 	private long lastActivity;
 	private final short persistenceType;
+	
+	synchronized void setFinished(boolean success) {
+		this.lastActivity = System.currentTimeMillis();
+		this.hasFinished = true;
+		this.hasStarted = success;
+		this.isTotalFinalized = true;
+	}
 	
 	/** Constructor for creating a status from a request that has already started, e.g. on
 	 * startup. We will also create status when a request is created. */
@@ -107,5 +115,14 @@ public abstract class RequestStatus {
 	}
 
 	public abstract String getFailureReason(boolean longDescription);
+
+	public synchronized void updateStatus(SplitfileProgressEvent event) {
+		this.failedBlocks = event.failedBlocks;
+		this.fatallyFailedBlocks = event.fatallyFailedBlocks;
+		this.fetchedBlocks = event.succeedBlocks;
+		this.isTotalFinalized = event.finalizedTotal;
+		this.minBlocks = event.minSuccessFetchBlocks;
+		this.totalBlocks = event.totalBlocks;
+	}
 
 }
