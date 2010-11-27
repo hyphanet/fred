@@ -143,10 +143,9 @@ public class RequestStatusCache {
 		for(Object o : downloads) {
 			DownloadRequestStatus download = (DownloadRequestStatus) o;
 			Bucket data = download.getDataShadow();
+			if(data == null) continue;
 			if(data.size() == 0) continue;
-			if(data != null) {
-				return new FetchResult(new ClientMetadata(download.getMIMEType()), new NoFreeBucket(data));
-			}
+			return new FetchResult(new ClientMetadata(download.getMIMEType()), new NoFreeBucket(data));
 		}
 		return null;
 	}
