@@ -123,6 +123,11 @@ public abstract class RequestStatus {
 		this.isTotalFinalized = event.finalizedTotal;
 		this.minBlocks = event.minSuccessfulBlocks;
 		this.totalBlocks = event.totalBlocks;
+		updateLastActivity();
+	}
+	
+	protected synchronized void updateLastActivity() {
+		lastActivity = System.currentTimeMillis();
 	}
 
 	public synchronized void setPriority(short newPriority) {
