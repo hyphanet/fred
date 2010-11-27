@@ -400,10 +400,22 @@ public class ClientPut extends ClientPutBase {
 		try {
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(putter, 1);
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateStarted(identifier, false);
+				}
+			}
 			if(putter.restart(earlyEncode, container, context)) {
 				synchronized(this) {
 					generatedURI = null;
 					started = true;
+				}
+			}
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateStarted(identifier, true);
 				}
 			}
 			if(persistenceType == PERSIST_FOREVER)

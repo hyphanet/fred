@@ -129,4 +129,8 @@ public abstract class RequestStatus {
 		this.priority = newPriority;
 	}
 
+	public synchronized void setStarted(boolean started) {
+		this.hasStarted = started;
+	}
+
 }

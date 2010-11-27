@@ -256,6 +256,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			synchronized(this) {
 				started = true;
 			}
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateStarted(identifier, true);
+				}
+			}
 		} catch (FetchException e) {
 			synchronized(this) {
 				started = true;
@@ -1014,6 +1020,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
+		if(client != null) {
+			RequestStatusCache cache = client.getRequestStatusCache();
+			if(cache != null) {
+				cache.updateStarted(identifier, false);
+			}
+		}
 		try {
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(getter, 1);
@@ -1028,6 +1040,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				}
 				if(persistenceType == PERSIST_FOREVER)
 					container.store(this);
+			}
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateStarted(identifier, true);
+				}
 			}
 			return true;
 		} catch (FetchException e) {

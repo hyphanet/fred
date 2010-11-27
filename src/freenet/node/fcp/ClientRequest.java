@@ -377,6 +377,12 @@ public abstract class ClientRequest {
 		synchronized(this) {
 			this.started = false;
 		}
+		if(client != null) {
+			RequestStatusCache cache = client.getRequestStatusCache();
+			if(cache != null) {
+				cache.updateStarted(identifier, false);
+			}
+		}
 		if(persistenceType == PERSIST_FOREVER) {
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 

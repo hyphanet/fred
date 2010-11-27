@@ -180,6 +180,12 @@ public class ClientPutDir extends ClientPutBase {
 			if(putter != null)
 				putter.start(container, context);
 			started = true;
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateStarted(identifier, true);
+				}
+			}
 			if(logMINOR) Logger.minor(this, "Started "+putter+" for "+this+" persistence="+persistenceType);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage(container);
@@ -297,6 +303,12 @@ public class ClientPutDir extends ClientPutBase {
 	public boolean restart(ObjectContainer container, ClientContext context, final boolean disableFilterData) {
 		if(!canRestart()) return false;
 		setVarsRestart(container);
+		if(client != null) {
+			RequestStatusCache cache = client.getRequestStatusCache();
+			if(cache != null) {
+				cache.updateStarted(identifier, false);
+			}
+		}
 		makePutter(container, context);
 		start(container, context);
 		return true;

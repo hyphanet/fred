@@ -128,4 +128,9 @@ public class RequestStatusCache {
 		status.setPriority(newPriorityClass);
 	}
 
+	public void updateStarted(String identifier, boolean started) {
+		RequestStatus status = requestsByIdentifier.get(identifier);
+		status.setStarted(started);
+	}
+
 }
