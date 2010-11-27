@@ -65,6 +65,7 @@ public class FCPPersistentRoot {
 			}
 		}
 		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle, whiteboard, container);
+		root.globalForeverClient.setRequestStatusCache(cache, container);
 		container.store(root);
 		System.err.println("Created FCP persistent root.");
 		return root;
