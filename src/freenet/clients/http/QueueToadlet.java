@@ -94,7 +94,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private static final int LIST_IDENTIFIER = 1;
 	private static final int LIST_SIZE = 2;
 	private static final int LIST_MIME_TYPE = 3;
-	private static final int LIST_DOWNLOAD = 4;
 	private static final int LIST_PERSISTENCE = 5;
 	private static final int LIST_KEY = 6;
 	private static final int LIST_FILENAME = 7;
@@ -911,26 +910,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				countRequests = true;
 			} else if(requestPath.equals("listFetchKeys.txt")) {
 				listFetchKeys = true;
-			} else {
-				/* okay, there is something in the path, check it. */
-				try {
-					FreenetURI key = new FreenetURI(requestPath);
-
-					/* locate request */
-					FetchResult result = fcp.getCompletedRequestBlocking(key);
-					if(result != null) {
-						Bucket data = result.asBucket();
-						String mimeType = result.getMimeType();
-						String requestedMimeType = request.getParam("type", null);
-						String forceString = request.getParam("force");
-						FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/downloads/", key, "", "/downloads/", false, ctx, core, false, null);
-						return;
-					}
-				} catch (MalformedURLException mue1) {
-				} catch (DatabaseDisabledException e) {
-					sendPersistenceDisabledError(ctx);
-					return;
-				}
 			}
 		}
 
@@ -1368,9 +1347,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "completedDownloadToTemp");
 			HTMLNode completedDownloadsToTempContent = pageMaker.getInfobox("completed_requests", NodeL10n.getBase().getString("QueueToadlet.completedDinTempDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToTemp.size()) }), contentNode, "request-completed", false);
 			if (advancedModeEnabled) {
-				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_IDENTIFIER, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY, LIST_COMPAT_MODE }, priorityClasses, advancedModeEnabled, false, "completed-temp", true, false, false, true));
+				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_IDENTIFIER, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY, LIST_COMPAT_MODE }, priorityClasses, advancedModeEnabled, false, "completed-temp", true, false, false, true));
 			} else {
-				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_SIZE, LIST_DOWNLOAD, LIST_KEY }, priorityClasses, advancedModeEnabled, false, "completed-temp", true, false, false, true));
+				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_SIZE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, "completed-temp", true, false, false, true));
 			}
 		}
 
@@ -1378,9 +1357,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "completedDownloadToDisk");
 			HTMLNode completedToDiskInfoboxContent = pageMaker.getInfobox("completed_requests", NodeL10n.getBase().getString("QueueToadlet.completedDinDownloadDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToDisk.size()) }), contentNode, "request-completed", false);
 			if (advancedModeEnabled) {
-				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY, LIST_COMPAT_MODE }, priorityClasses, advancedModeEnabled, false, "completed-disk", false, false, false, true));
+				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY, LIST_COMPAT_MODE }, priorityClasses, advancedModeEnabled, false, "completed-disk", false, false, false, true));
 			} else {
-				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_FILENAME, LIST_SIZE, LIST_DOWNLOAD, LIST_KEY }, priorityClasses, advancedModeEnabled, false, "completed-disk", false, false, false, true));
+				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_FILENAME, LIST_SIZE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, "completed-disk", false, false, false, true));
 			}
 		}
 
@@ -1688,16 +1667,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return persistenceCell;
 	}
 
-	private HTMLNode createDownloadCell(PageMaker pageMaker, DownloadRequestStatus clientRequest) {
-		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
-		FreenetURI uri = clientRequest.getURI();
-		if(uri == null)
-			Logger.error(this, "NO URI FOR "+clientRequest, new Exception("error"));
-		else
-			downloadCell.addChild("a", "href", path()+uri.toString(), NodeL10n.getBase().getString("QueueToadlet.download"));
-		return downloadCell;
-	}
-
 	private HTMLNode createTypeCell(String type) {
 		HTMLNode typeCell = new HTMLNode("td", "class", "request-type");
 		if (type != null) {
@@ -1800,8 +1769,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=id" : "?sortBy=id&reversed")).addChild("#", NodeL10n.getBase().getString("QueueToadlet.identifier"));
 			} else if (column == LIST_SIZE) {
 				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=size" : "?sortBy=size&reversed")).addChild("#", NodeL10n.getBase().getString("QueueToadlet.size"));
-			} else if (column == LIST_DOWNLOAD) {
-				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.download"));
 			} else if (column == LIST_MIME_TYPE) {
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.mimeType"));
 			} else if (column == LIST_PERSISTENCE) {
@@ -1840,8 +1807,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					if(clientRequest instanceof DownloadRequestStatus)
 						isFinal = ((DownloadRequestStatus)clientRequest).isTotalFinalized();
 					requestRow.addChild(createSizeCell(clientRequest.getDataSize(), isFinal, advancedModeEnabled));
-				} else if (column == LIST_DOWNLOAD) {
-					requestRow.addChild(createDownloadCell(pageMaker, (DownloadRequestStatus) clientRequest));
 				} else if (column == LIST_MIME_TYPE) {
 					if (clientRequest instanceof DownloadRequestStatus) {
 						requestRow.addChild(createTypeCell(((DownloadRequestStatus) clientRequest).getMIMEType()));
