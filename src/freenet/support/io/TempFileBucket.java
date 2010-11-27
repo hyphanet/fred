@@ -127,7 +127,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		container.delete(this);
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());

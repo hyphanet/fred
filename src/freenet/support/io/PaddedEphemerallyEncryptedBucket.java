@@ -425,7 +425,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		container.activate(bucket, 1);
 	}
 	
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		Bucket newUnderlying = bucket.createShadow();
 		if(newUnderlying == null) return null;
 		return new PaddedEphemerallyEncryptedBucket(this, newUnderlying);

@@ -922,13 +922,7 @@ public class FCPServer implements Runnable {
 					if(get != null) {
 						Bucket origData = get.getBucket(container);
 						container.activate(origData, 5);
-						Bucket newData;
-						try {
-							newData = origData.createShadow();
-						} catch (IOException e) {
-							Logger.error(this, "Caught error "+e+" trying to create shallow copy, copying data...", e);
-							newData = null;
-						}
+						Bucket newData = origData.createShadow();
 						if(newData == null) {
 							try {
 								newData = core.tempBucketFactory.makeBucket(origData.size());

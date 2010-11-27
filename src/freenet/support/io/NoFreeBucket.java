@@ -52,7 +52,7 @@ public class NoFreeBucket implements Bucket {
 		container.delete(this);
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		return proxy.createShadow();
 	}
 

@@ -75,7 +75,7 @@ public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 		container.delete(this);
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		return new NullBucket();
 	}
 }

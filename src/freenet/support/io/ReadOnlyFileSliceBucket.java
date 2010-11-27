@@ -165,7 +165,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		container.activate(file, 5);
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		String fnam = new String(file.getPath());
 		File newFile = new File(fnam);
 		return new ReadOnlyFileSliceBucket(newFile, startAt, length);

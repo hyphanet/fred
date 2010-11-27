@@ -153,7 +153,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		container.activate(bucket, 1);
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		return bucket.createShadow();
 	}
 
