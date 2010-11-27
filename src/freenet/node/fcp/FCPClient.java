@@ -400,7 +400,8 @@ public class FCPClient {
 		}
 	}
 	
-	public void addPersistentRequestStatus(List<RequestStatus> status, boolean onlyForever,
+	/** From database */
+	private void addPersistentRequestStatus(List<RequestStatus> status, boolean onlyForever,
 			ObjectContainer container) {
 		// FIXME OPT merge with addPersistentRequests? Locking looks tricky.
 		List<ClientRequest> reqs = new ArrayList<ClientRequest>();
@@ -409,6 +410,11 @@ public class FCPClient {
 			status.add(req.getStatus(container));
 			// FIXME deactivate? Unconditional deactivate depends on callers. Keep-as-is would need merge with addPersistentRequests.
 		}
+	}
+	
+	/** From cache */
+	public void addPersistentRequestStatus(List<RequestStatus> status) {
+		statusCache.addTo(status);
 	}
 
 	/**

@@ -2,6 +2,7 @@ package freenet.node.fcp;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import freenet.client.InsertContext;
 import freenet.client.events.SplitfileProgressEvent;
@@ -106,6 +107,10 @@ public class RequestStatusCache {
 			COMPRESS_STATE compressing) {
 		UploadFileRequestStatus status = (UploadFileRequestStatus) requestsByIdentifier.get(identifier);
 		status.updateCompressionStatus(compressing);
+	}
+
+	public synchronized void addTo(List<RequestStatus> status) {
+		status.addAll(requestsByIdentifier.values());
 	}
 
 }
