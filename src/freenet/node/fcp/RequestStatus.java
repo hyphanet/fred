@@ -28,7 +28,8 @@ public abstract class RequestStatus {
 	synchronized void setFinished(boolean success) {
 		this.lastActivity = System.currentTimeMillis();
 		this.hasFinished = true;
-		this.hasStarted = success;
+		this.hasSucceeded = success;
+		this.hasStarted = true;
 		this.isTotalFinalized = true;
 	}
 	
