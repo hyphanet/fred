@@ -975,9 +975,11 @@ public class FCPServer implements Runnable, DownloadCache {
 		
 		if(origData == null) {
 			CacheFetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key, noFilter);
-			mime = result.getMimeType();
-			origData = result.asBucket();
-			filtered = result.alreadyFiltered;
+			if(result != null) {
+				mime = result.getMimeType();
+				origData = result.asBucket();
+				filtered = result.alreadyFiltered;
+			}
 		}
 		
 		if(origData == null) return null;
