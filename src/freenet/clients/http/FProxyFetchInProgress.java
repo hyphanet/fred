@@ -14,6 +14,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.async.CacheFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
@@ -156,9 +157,9 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		try {
 			
 			// Fproxy uses lookupInstant() with mustCopy = false. I.e. it can reuse stuff unsafely. If the user frees it it's their fault.
-			FetchResult result = context.downloadCache == null ? null : context.downloadCache.lookupInstant(uri, false, null);
+			CacheFetchResult result = context.downloadCache == null ? null : context.downloadCache.lookupInstant(uri, !fctx.filterData, false, null);
 			if(result != null) {
-				if(!fctx.filterData) {
+				if(fctx.filterData == result.alreadyFiltered) {
 					onSuccess(result, null, null);
 					return;
 				}

@@ -20,6 +20,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertContext;
+import freenet.client.async.CacheFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
@@ -902,7 +903,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			return new FetchResult(new ClientMetadata(get.getMIMEType(null)), new NoFreeBucket(get.getBucket(null)));
 		}
 		
-		FetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key);
+		FetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key, false);
 		if(result != null) {
 			return result;
 		}
@@ -923,7 +924,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			public boolean run(ObjectContainer container, ClientContext context) {
 				FetchResult result = null;
 				try {
-					result = lookup(key, context, container, false, null);
+					result = lookup(key, false, context, container, false, null);
 				} finally {
 					synchronized(ow) {
 						ow.result = result;
@@ -960,27 +961,29 @@ public class FCPServer implements Runnable, DownloadCache {
 		return whiteboard;
 	}
 
-	public FetchResult lookupInstant(FreenetURI key, boolean mustCopy, Bucket preferred) {
+	public CacheFetchResult lookupInstant(FreenetURI key, boolean noFilter, boolean mustCopy, Bucket preferred) {
 		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
 		
 		Bucket origData = null;
 		String mime = null;
+		boolean filtered = false;
 		
-		if(get != null) {
+		if(get != null && ((!noFilter) || (!(filtered = get.filterData(null))))) {
 			origData = new NoFreeBucket(get.getBucket(null));
 			mime = get.getMIMEType(null);
 		}
 		
 		if(origData == null) {
-			FetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key);
+			CacheFetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key, noFilter);
 			mime = result.getMimeType();
 			origData = result.asBucket();
+			filtered = result.alreadyFiltered;
 		}
 		
 		if(origData == null) return null;
 		
 		if(!mustCopy)
-			return new FetchResult(new ClientMetadata(mime), origData);
+			return new CacheFetchResult(new ClientMetadata(mime), origData, filtered);
 		
 		Bucket newData = null;
 		try {
@@ -993,7 +996,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				newData = null;
 				return null;
 			}
-			return new FetchResult(new ClientMetadata(mime), newData);
+			return new CacheFetchResult(new ClientMetadata(mime), newData, filtered);
 		} catch (IOException e) {
 			// Maybe it was freed?
 			Logger.normal(this, "Unable to copy data: "+e, e);
@@ -1002,11 +1005,12 @@ public class FCPServer implements Runnable, DownloadCache {
 		
 	}
 
-	public FetchResult lookup(FreenetURI key, ClientContext context,
+	public CacheFetchResult lookup(FreenetURI key, boolean noFilter, ClientContext context,
 			ObjectContainer container, boolean mustCopy, Bucket preferred) {
 		ClientGet get = globalForeverClient.getCompletedRequest(key, container);
 		container.activate(get, 1);
 		if(get != null) {
+			boolean filtered = get.filterData(container);
 			Bucket origData = get.getBucket(container);
 			container.activate(origData, 5);
 			Bucket newData = null;
@@ -1025,7 +1029,7 @@ public class FCPServer implements Runnable, DownloadCache {
 				}
 			}
 			container.deactivate(get, 1);
-			return new FetchResult(new ClientMetadata(get.getMIMEType(container)), newData);
+			return new CacheFetchResult(new ClientMetadata(get.getMIMEType(container)), newData, filtered);
 		}
 		return null;
 	}

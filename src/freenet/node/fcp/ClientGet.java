@@ -1124,10 +1124,17 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		Bucket shadow = getFinalBucket(container);
 		if(shadow != null) shadow = shadow.createShadow();
 		
+		boolean filterData;
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(fctx, 1);
+		filterData = fctx.filterData;
+		if(persistenceType == PERSIST_FOREVER)
+			container.deactivate(fctx, 1);
+		
 		return new DownloadRequestStatus(identifier, persistenceType, started, finished, 
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, failureCode, mimeType, dataSize, target, 
 				getCompatibilityMode(container), getOverriddenSplitfileCryptoKey(container), 
-				getURI(container).clone(), failureReasonShort, failureReasonLong, shadow);
+				getURI(container).clone(), failureReasonShort, failureReasonLong, shadow, filterData);
 	}
 }

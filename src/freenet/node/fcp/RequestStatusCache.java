@@ -7,6 +7,7 @@ import java.util.List;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext;
+import freenet.client.async.CacheFetchResult;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
@@ -137,7 +138,7 @@ public class RequestStatusCache {
 		status.setStarted(started);
 	}
 
-	public synchronized FetchResult getShadowBucket(FreenetURI key) {
+	public synchronized CacheFetchResult getShadowBucket(FreenetURI key, boolean noFilter) {
 		Object[] downloads = downloadsByURI.getArray(key);
 		if(downloads == null) return null;
 		for(Object o : downloads) {
@@ -145,7 +146,8 @@ public class RequestStatusCache {
 			Bucket data = download.getDataShadow();
 			if(data == null) continue;
 			if(data.size() == 0) continue;
-			return new FetchResult(new ClientMetadata(download.getMIMEType()), new NoFreeBucket(data));
+			if(noFilter && download.filterData) continue;
+			return new CacheFetchResult(new ClientMetadata(download.getMIMEType()), new NoFreeBucket(data), download.filterData);
 		}
 		return null;
 	}
