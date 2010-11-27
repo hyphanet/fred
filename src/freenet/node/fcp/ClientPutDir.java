@@ -344,15 +344,15 @@ public class ClientPutDir extends ClientPutBase {
 	RequestStatus getStatus(ObjectContainer container) {
 		FreenetURI finalURI = getFinalURI(container);
 		if(finalURI != null) finalURI = getFinalURI(container).clone();
-		short failureCode = (short)-1;
+		int failureCode = (short)-1;
 		String failureReasonShort = null;
 		String failureReasonLong = null;
 		if(putFailedMessage != null) {
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(putFailedMessage, 5);
-			failureReasonShort = putFailedMessage.shortCodeDescription;
-			if(putFailedMessage.extraDescription != null)
-				failureReasonLong = failureReasonShort + ": "+putFailedMessage.extraDescription;
+			failureCode = putFailedMessage.code;
+			failureReasonShort = putFailedMessage.getShortFailedMessage();
+			failureReasonShort = putFailedMessage.getLongFailedMessage();
 			if(persistenceType == PERSIST_FOREVER)
 				container.deactivate(putFailedMessage, 5);
 		}

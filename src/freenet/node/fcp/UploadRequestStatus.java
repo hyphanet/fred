@@ -16,7 +16,7 @@ public abstract class UploadRequestStatus extends RequestStatus {
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
 			FreenetURI finalURI, FreenetURI targetURI, 
-			short failureCode, String failureReasonShort, String failureReasonLong) {
+			int failureCode, String failureReasonShort, String failureReasonLong) {
 		super(identifier, persistence, started, finished, success, total, min, fetched, 
 				fatal, failed, totalFinalized, last, prio);
 		this.finalURI = finalURI;

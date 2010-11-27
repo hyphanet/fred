@@ -1074,9 +1074,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(getFailedMessage, 5);
 			failureCode = getFailedMessage.code;
-			failureReasonShort = getFailedMessage.shortCodeDescription;
-			if(getFailedMessage.extraDescription != null)
-				failureReasonLong = failureReasonShort + ": "+getFailedMessage.extraDescription;
+			failureReasonShort = getFailedMessage.getShortFailedMessage();
+			failureReasonShort = getFailedMessage.getLongFailedMessage();
 			if(persistenceType == PERSIST_FOREVER)
 				container.deactivate(getFailedMessage, 1);
 		}
