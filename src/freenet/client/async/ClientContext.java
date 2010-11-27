@@ -16,6 +16,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
+import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.Executor;
@@ -61,6 +62,7 @@ public class ClientContext {
 	public transient final DatastoreChecker checker;
 	public transient final CooldownTracker cooldownTracker;
 	public transient KeysFetchingLocally fetching;
+	public transient DownloadCache downloadCache;
 
 	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
@@ -289,6 +291,10 @@ public class ClientContext {
 		} else {
 			alerts.register(alert);
 		}
+	}
+
+	public void setDownloadCache(DownloadCache cache) {
+		this.downloadCache = cache;
 	}
 	
 }

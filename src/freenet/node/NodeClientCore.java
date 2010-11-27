@@ -508,6 +508,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		// FCP (including persistent requests so needs to start before FProxy)
 		try {
 			fcpServer = FCPServer.maybeCreate(node, this, node.config, container);
+			clientContext.setDownloadCache(fcpServer);
 			if(!killedDatabase)
 				fcpServer.load(container);
 		} catch(IOException e) {

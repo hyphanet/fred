@@ -1,11 +1,16 @@
 package freenet.clients.http;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.ClientMetadata;
+import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -19,12 +24,16 @@ import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.client.filter.ContentFilter;
+import freenet.client.filter.MIMEType;
+import freenet.client.filter.UnknownContentTypeException;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.Closer;
 
 /** 
  * Fetching a page for a browser.
@@ -145,6 +154,59 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 
 	public void start(ClientContext context) throws FetchException {
 		try {
+			
+			// Fproxy uses lookupInstant() with mustCopy = false. I.e. it can reuse stuff unsafely. If the user frees it it's their fault.
+			FetchResult result = context.downloadCache == null ? null : context.downloadCache.lookupInstant(uri, false, null);
+			if(result != null) {
+				if(!fctx.filterData) {
+					onSuccess(result, null, null);
+					return;
+				}
+				Bucket data = result.asBucket();
+				String mimeType = result.getMimeType();
+				String fullMimeType = mimeType;
+				if(mimeType == null || mimeType.equals("")) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
+				mimeType = ContentFilter.stripMIMEType(mimeType);
+				MIMEType type = ContentFilter.getMIMEType(mimeType);
+				if(mimeType == null || ((!type.safeToRead) && type.readFilter == null)) {
+					UnknownContentTypeException e = new UnknownContentTypeException(mimeType);
+					data.free();
+					onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null, null);
+					return;
+				} else if(type.safeToRead) {
+					onSuccess(result, null, null);
+					return;
+				} else {
+					// Try to filter it.
+					Bucket output = null;
+					InputStream is = null;
+					OutputStream os = null;
+					try {
+						output = context.tempBucketFactory.makeBucket(-1);
+						is = data.getInputStream();
+						os = output.getOutputStream();
+						ContentFilter.filter(is, os, fullMimeType, fctx.charset, null);
+						is.close();
+						is = null;
+						os.close();
+						os = null;
+						this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null, null);
+						output = null;
+						return;
+					} catch (IOException e) {
+						Logger.normal(this, "Failed filtering coalesced data in fproxy");
+						// Failed. :|
+						// Let it run normally.
+					} finally {
+						Closer.close(is);
+						Closer.close(os);
+						Closer.close(output);
+						Closer.close(data);
+					}
+					
+				}
+			}
+			
 			context.start(getter);
 		} catch (FetchException e) {
 			synchronized(this) {

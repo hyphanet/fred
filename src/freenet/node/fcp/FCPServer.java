@@ -23,6 +23,7 @@ import freenet.client.InsertContext;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.DownloadCache;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -52,7 +53,7 @@ import freenet.support.io.NoFreeBucket;
 /**
  * FCP server process.
  */
-public class FCPServer implements Runnable {
+public class FCPServer implements Runnable, DownloadCache {
 
 	FCPPersistentRoot persistentRoot;
 	private static boolean logMINOR;
@@ -922,25 +923,7 @@ public class FCPServer implements Runnable {
 			public boolean run(ObjectContainer container, ClientContext context) {
 				FetchResult result = null;
 				try {
-					ClientGet get = globalForeverClient.getCompletedRequest(key, container);
-					container.activate(get, 1);
-					if(get != null) {
-						Bucket origData = get.getBucket(container);
-						container.activate(origData, 5);
-						Bucket newData = origData.createShadow();
-						if(newData == null) {
-							try {
-								newData = core.tempBucketFactory.makeBucket(origData.size());
-								BucketTools.copy(origData, newData);
-							} catch (IOException e) {
-								Logger.error(this, "Unable to copy data: "+e, e);
-								result = null;
-								return false;
-							}
-						}
-						result = new FetchResult(new ClientMetadata(get.getMIMEType(container)), newData);
-					}
-					container.deactivate(get, 1);
+					result = lookup(key, context, container, false, null);
 				} finally {
 					synchronized(ow) {
 						ow.result = result;
@@ -975,6 +958,76 @@ public class FCPServer implements Runnable {
 	
 	public Whiteboard getWhiteboard(){
 		return whiteboard;
+	}
+
+	public FetchResult lookupInstant(FreenetURI key, boolean mustCopy, Bucket preferred) {
+		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
+		
+		Bucket origData = null;
+		String mime = null;
+		
+		if(get != null) {
+			origData = new NoFreeBucket(get.getBucket(null));
+			mime = get.getMIMEType(null);
+		}
+		
+		if(origData == null) {
+			FetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key);
+			mime = result.getMimeType();
+			origData = result.asBucket();
+		}
+		
+		if(origData == null) return null;
+		
+		if(!mustCopy)
+			return new FetchResult(new ClientMetadata(mime), origData);
+		
+		Bucket newData = null;
+		try {
+			if(preferred != null) newData = preferred;
+			else newData = core.tempBucketFactory.makeBucket(origData.size());
+			BucketTools.copy(origData, newData);
+			if(origData.size() != newData.size()) {
+				Logger.normal(this, "Maybe it disappeared under us?");
+				newData.free();
+				newData = null;
+				return null;
+			}
+			return new FetchResult(new ClientMetadata(mime), newData);
+		} catch (IOException e) {
+			// Maybe it was freed?
+			Logger.normal(this, "Unable to copy data: "+e, e);
+			return null;
+		}
+		
+	}
+
+	public FetchResult lookup(FreenetURI key, ClientContext context,
+			ObjectContainer container, boolean mustCopy, Bucket preferred) {
+		ClientGet get = globalForeverClient.getCompletedRequest(key, container);
+		container.activate(get, 1);
+		if(get != null) {
+			Bucket origData = get.getBucket(container);
+			container.activate(origData, 5);
+			Bucket newData = null;
+			if(!mustCopy)
+				newData = origData.createShadow();
+			if(newData == null) {
+				try {
+					if(preferred != null)
+						newData = preferred;
+					else
+						newData = core.tempBucketFactory.makeBucket(origData.size());
+					BucketTools.copy(origData, newData);
+				} catch (IOException e) {
+					Logger.error(this, "Unable to copy data: "+e, e);
+					return null;
+				}
+			}
+			container.deactivate(get, 1);
+			return new FetchResult(new ClientMetadata(get.getMIMEType(container)), newData);
+		}
+		return null;
 	}
 	
 }
