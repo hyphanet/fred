@@ -2,6 +2,7 @@ package freenet.node.fcp;
 
 import java.io.File;
 
+import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
 import freenet.keys.FreenetURI;
 
@@ -19,6 +20,16 @@ public class DownloadRequestStatus extends RequestStatus {
 	private CompatibilityMode[] detectedCompatModes;
 	private byte[] detectedSplitfileKey;
 	private final FreenetURI uri;
+	
+	synchronized void setFinished(boolean success, long dataSize, String mimeType, 
+			int failureCode, String failureReasonLong, String failureReasonShort) {
+		setFinished(success);
+		this.dataSize = dataSize;
+		this.mimeType = mimeType;
+		this.failureCode = failureCode;
+		this.failureReasonLong = failureReasonLong;
+		this.failureReasonShort = failureReasonShort;
+	}
 	
 	DownloadRequestStatus(String identifier, short persistence, boolean started, boolean finished, 
 			boolean success, int total, int min, int fetched, int fatal, int failed,
@@ -77,6 +88,15 @@ public class DownloadRequestStatus extends RequestStatus {
 			return failureReasonLong;
 		else
 			return failureReasonShort;
+	}
+
+	public synchronized void updateDetectedCompatModes(
+			InsertContext.CompatibilityMode[] compatModes) {
+		this.detectedCompatModes = compatModes;
+	}
+
+	public synchronized void updateDetectedSplitfileKey(byte[] splitfileKey) {
+		this.detectedSplitfileKey = splitfileKey;
 	}
 
 }

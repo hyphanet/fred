@@ -27,6 +27,7 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
+import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -453,6 +454,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				oldProgress = progressPending;
 				progressPending = (SimpleProgressMessage)msg;
 				verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
+				if(client != null) {
+					RequestStatusCache cache = client.getRequestStatusCache();
+					if(cache != null) {
+						cache.updateStatus(identifier, ((SimpleProgressMessage)progressPending).getEvent());
+					}
+				}
 			} else if(msg instanceof SendingToNetworkMessage) {
 				sentToNetwork = true;
 				verbosityMask = ClientGet.VERBOSITY_SENT_TO_NETWORK;
@@ -470,6 +477,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					}
 				}
 				verbosityMask = ClientGet.VERBOSITY_COMPATIBILITY_MODE;
+				if(client != null) {
+					RequestStatusCache cache = client.getRequestStatusCache();
+					if(cache != null) {
+						cache.updateDetectedCompatModes(identifier, compat.getModes(), compat.cryptoKey);
+					}
+				}
 			} else if(msg instanceof ExpectedHashes) {
 				if(expectedHashes != null) {
 					Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
@@ -857,6 +870,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		return s;
 	}
 	
+	GetFailedMessage getFailureMessage(ObjectContainer container) {
+		if(getFailedMessage == null) return null;
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(getFailedMessage, 5);
+		return getFailedMessage;
+	}
+	
 	public int getFailureReasonCode(ObjectContainer container) {
 		if(getFailedMessage == null)
 			return -1;
@@ -998,7 +1018,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		int total = 0, min = 0, fetched = 0, fatal = 0, failed = 0;
 		if(progressPending != null) {
 			if(persistenceType == PERSIST_FOREVER)
-				container.activate(progressPending, 1);
+				container.activate(progressPending, Integer.MAX_VALUE);
 			totalFinalized = progressPending.isTotalFinalized();
 			// FIXME why are these doubles???
 			total = (int) progressPending.getTotalBlocks();

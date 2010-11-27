@@ -163,5 +163,16 @@ public class GetFailedMessage extends FCPMessage {
 		}
 		container.delete(this);
 	}
+	
+	public String getShortFailedMessage() {
+		return shortCodeDescription;
+	}
+	
+	public String getLongFailedMessage() {
+		if(extraDescription != null)
+			return shortCodeDescription + ": " + extraDescription;
+		else
+			return shortCodeDescription;
+	}
 
 }

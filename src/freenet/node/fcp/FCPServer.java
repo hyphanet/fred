@@ -96,13 +96,14 @@ public class FCPServer implements Runnable {
 		defaultInsertContext = client.getInsertContext(false);
 		
 		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null, whiteboard, null);
+		globalRebootClient.setRequestStatusCache(new RequestStatusCache(), null);
 		
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		
 	}
 	
 	public void load(ObjectContainer container) {
-		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, whiteboard, container);
+		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, whiteboard, new RequestStatusCache(), container);
 		globalForeverClient = persistentRoot.globalForeverClient;
 	}
 	
@@ -445,15 +446,11 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	public RequestStatus[] getGlobalRequests(ObjectContainer container) throws DatabaseDisabledException {
+	public RequestStatus[] getGlobalRequests() throws DatabaseDisabledException {
 		if(core.killedDatabase()) throw new DatabaseDisabledException();
 		List<RequestStatus> v = new ArrayList<RequestStatus>();
-		globalRebootClient.addPersistentRequestStatus(v, false, null);
-		if(!container.ext().isActive(globalForeverClient)) {
-			Logger.error(this, "Somebody deactivated the global queue!");
-			container.activate(globalForeverClient, 2);
-		}
-		globalForeverClient.addPersistentRequestStatus(v, false, container);
+		globalRebootClient.addPersistentRequestStatus(v);
+		globalForeverClient.addPersistentRequestStatus(v);
 		return v.toArray(new RequestStatus[v.size()]);
 	}
 

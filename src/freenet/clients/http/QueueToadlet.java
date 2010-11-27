@@ -946,6 +946,19 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		final boolean count = countRequests;
 		final boolean keys = listFetchKeys;
+		
+		if(!(count || keys)) {
+			try {
+				RequestStatus[] reqs = fcp.getGlobalRequests();
+				MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
+				HTMLNode pageNode = handleGetInner(pageMaker, reqs, core.clientContext, request, ctx);
+				writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
+				return;
+			} catch (DatabaseDisabledException e) {
+				sendPersistenceDisabledError(ctx);
+				return;
+			}
+		}
 
 		try {
 			core.clientContext.jobRunner.queue(new DBJob() {
@@ -975,14 +988,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							return false;
 						} else if(keys) {
 							try {
-								plainText = makeFetchKeysList(container, context);
+								plainText = makeFetchKeysList(context);
 							} catch (DatabaseDisabledException e) {
 								plainText = null;
 							}
 							return false;
 						} else {
 							try {
-								RequestStatus[] reqs = fcp.getGlobalRequests(container);
+								RequestStatus[] reqs = fcp.getGlobalRequests();
 								pageNode = handleGetInner(pageMaker, reqs, context, request, ctx);
 							} catch (DatabaseDisabledException e) {
 								pageNode = null;
@@ -1036,9 +1049,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	}
 
-	protected String makeFetchKeysList(ObjectContainer container,
-			ClientContext context) throws DatabaseDisabledException {
-		RequestStatus[] reqs = fcp.getGlobalRequests(container);
+	protected String makeFetchKeysList(ClientContext context) throws DatabaseDisabledException {
+		RequestStatus[] reqs = fcp.getGlobalRequests();
 
 		StringBuffer sb = new StringBuffer();
 
