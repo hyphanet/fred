@@ -356,7 +356,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					return;
 				}
 				LinkedList<String> success = new LinkedList<String>(), failure = new LinkedList<String>();
-				boolean filterData = request.isParameterSet("filterData");
+				boolean filterData = request.isPartSet("filterData");
 				String target = request.getPartAsString("target", 128);
 				if(target == null) target = "direct";
 
