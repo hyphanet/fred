@@ -152,7 +152,7 @@ public class FCPClient {
 					container.deactivate(msg, 1);
 				Bucket shadow = ((ClientGet) get).getFinalBucket(container);
 				if(shadow != null) shadow = shadow.createShadow();
-				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(container), ((ClientGet) get).getMIMEType(container), failureCode, longFailMessage, shortFailMessage, shadow);
+				statusCache.finishedDownload(get.identifier, get.hasSucceeded(), ((ClientGet) get).getDataSize(container), ((ClientGet) get).getMIMEType(container), failureCode, longFailMessage, shortFailMessage, shadow, download.filterData(container));
 			} else if(get instanceof ClientPut) {
 				ClientPutBase upload = (ClientPutBase)get;
 				PutFailedMessage msg = upload.getFailureMessage(container);

@@ -22,11 +22,11 @@ public class DownloadRequestStatus extends RequestStatus {
 	private CompatibilityMode[] detectedCompatModes;
 	private byte[] detectedSplitfileKey;
 	private final FreenetURI uri;
-	final boolean filterData;
+	boolean filterData;
 	Bucket dataShadow;
 	
 	synchronized void setFinished(boolean success, long dataSize, String mimeType, 
-			int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow) {
+			int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow, boolean filtered) {
 		setFinished(success);
 		this.dataSize = dataSize;
 		this.mimeType = mimeType;
@@ -34,6 +34,7 @@ public class DownloadRequestStatus extends RequestStatus {
 		this.failureReasonLong = failureReasonLong;
 		this.failureReasonShort = failureReasonShort;
 		this.dataShadow = dataShadow;
+		this.filterData = filtered;
 	}
 	
 	DownloadRequestStatus(String identifier, short persistence, boolean started, boolean finished, 

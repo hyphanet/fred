@@ -64,10 +64,10 @@ public class RequestStatusCache {
 	}
 	
 	synchronized void finishedDownload(String identifier, boolean success, long dataSize, 
-			String mimeType, int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow) {
+			String mimeType, int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow, boolean filtered) {
 		DownloadRequestStatus status = (DownloadRequestStatus) requestsByIdentifier.get(identifier);
 		status.setFinished(success, dataSize, mimeType, failureCode, failureReasonLong,
-				failureReasonShort, dataShadow);
+				failureReasonShort, dataShadow, filtered);
 	}
 	
 	synchronized void gotFinalURI(String identifier, FreenetURI finalURI) {
