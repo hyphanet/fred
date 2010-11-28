@@ -41,7 +41,7 @@ public class DownloadRequestStatus extends RequestStatus {
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
 			int failureCode, String mime, long size, File dest, CompatibilityMode[] compat,
-			byte[] splitfileKey, FreenetURI uri, String failureReasonShort, String failureReasonLong, Bucket dataShadow, boolean filterData) {
+			byte[] splitfileKey, FreenetURI uri, String failureReasonShort, String failureReasonLong, Bucket dataShadow) {
 		super(identifier, persistence, started, finished, success, total, min, fetched, 
 				fatal, failed, totalFinalized, last, prio);
 		this.failureCode = failureCode;
@@ -54,7 +54,6 @@ public class DownloadRequestStatus extends RequestStatus {
 		this.failureReasonShort = failureReasonShort;
 		this.failureReasonLong = failureReasonLong;
 		this.dataShadow = dataShadow;
-		this.filterData = filterData;
 	}
 	
 	public final boolean toTempSpace() {

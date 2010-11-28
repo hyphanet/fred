@@ -1135,6 +1135,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
 				lastActivity, priorityClass, failureCode, mimeType, dataSize, target, 
 				getCompatibilityMode(container), getOverriddenSplitfileCryptoKey(container), 
-				getURI(container).clone(), failureReasonShort, failureReasonLong, shadow, filterData);
+				getURI(container).clone(), failureReasonShort, failureReasonLong, shadow);
 	}
 }
