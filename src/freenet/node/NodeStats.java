@@ -1,8 +1,8 @@
 package freenet.node;
 
-import java.io.File;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -16,27 +16,23 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
-import freenet.io.comm.MessageType;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node.CountedRequests;
-import freenet.node.NodeStats.ByteCountersSnapshot;
-import freenet.node.NodeStats.PeerLoadStats;
-import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
-import freenet.node.stats.StoreLocationStats;
 import freenet.node.stats.StatsNotAvailableException;
+import freenet.node.stats.StoreLocationStats;
 import freenet.store.CHKStore;
-import freenet.support.Histogram2;
 import freenet.support.HTMLNode;
+import freenet.support.Histogram2;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
-import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -1498,6 +1494,47 @@ public class NodeStats implements Persistable {
 
 	public int getThreadLimit() {
 		return threadLimit;
+	}
+
+	/**
+	 * Gets a copy of the thread list. The result might contain null values:
+	 * The end of the list is marked by a null entry in the array.
+	 */
+	public Thread[] getThreads() {
+		int count = 0;
+		Thread[] threads;
+		while(true) {
+			count = Math.max(rootThreadGroup.activeCount(), count);
+			threads = new Thread[count*2+50];
+			rootThreadGroup.enumerate(threads);
+			if(threads[threads.length-1] == null) break;
+		}
+		
+		return threads;
+	}
+
+	/**
+	 * Get a list of threads with the given normalized name.
+	 */
+	public ArrayList<NativeThread> getNativeThreadsByNormalizedName(String normalizedThreadName) {
+		Thread[] threads = getThreads();
+		
+		ArrayList<NativeThread> result = new ArrayList<NativeThread>(threads.length);
+		
+		for(Thread thread : threads) {
+			if(thread == null)
+				break;
+		
+			if(!(thread instanceof NativeThread))
+				continue;
+			
+			final NativeThread nt = (NativeThread)thread;
+		
+			if(nt.getNormalizedName().equals(normalizedThreadName))
+				result.add(nt);
+		}
+
+		return result;
 	}
 
 	public SimpleFieldSet exportVolatileFieldSet() {

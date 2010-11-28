@@ -36,6 +36,7 @@ import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.NativeThread;
 
 public class StatisticsToadlet extends Toadlet {
 
@@ -1090,25 +1091,13 @@ public class StatisticsToadlet extends Toadlet {
 
 	// FIXME this should probably be moved to nodestats so it can be used by FCP??? would have to make ThreadBunch public :<
 	private void getThreadNames(HTMLNode threadUsageList) {
-		int count = 0;
-		Thread[] threads;
-		while(true) {
-			count = Math.max(stats.rootThreadGroup.activeCount(), count);
-			threads = new Thread[count*2+50];
-			stats.rootThreadGroup.enumerate(threads);
-			if(threads[threads.length-1] == null) break;
-		}
+		Thread[] threads = stats.getThreads();
+
 		LinkedHashMap<String, ThreadBunch> map = new LinkedHashMap<String, ThreadBunch>();
 		int totalCount = 0;
 		for(int i=0;i<threads.length;i++) {
 			if(threads[i] == null) break;
-			String name = threads[i].getName();
-			if(name.indexOf(" for ") != -1)
-				name = name.substring(0, name.indexOf(" for "));
-			if(name.indexOf("@") != -1)
-				name = name.substring(0, name.indexOf("@"));
-			if (name.indexOf("(") != -1)
-				name = name.substring(0, name.indexOf("("));
+			String name = NativeThread.normalizeName(threads[i].getName());
 			ThreadBunch bunch = map.get(name);
 			if(bunch != null) {
 				bunch.count++;

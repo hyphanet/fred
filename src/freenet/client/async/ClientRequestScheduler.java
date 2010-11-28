@@ -880,7 +880,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return choosenPriorityScheduler;
 	}
 
-	static final short TRIP_PENDING_PRIORITY = NativeThread.HIGH_PRIORITY-1;
+	static final int TRIP_PENDING_PRIORITY = NativeThread.HIGH_PRIORITY-1;
 	
 	public synchronized void succeeded(final BaseSendableGet succeeded, boolean persistent) {
 		if(persistent) {

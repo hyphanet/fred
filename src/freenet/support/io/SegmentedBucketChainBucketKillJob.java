@@ -11,7 +11,7 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 	
 	final SegmentedBucketChainBucket bcb;
 
-	private final short RESTART_PRIO = NativeThread.HIGH_PRIORITY;
+	private final int RESTART_PRIO = NativeThread.HIGH_PRIORITY;
 	
 	public SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket bucket) {
 		bcb = bucket;
