@@ -23,7 +23,7 @@ public class NewLzmaCompressorTest extends TestCase {
 
 	private static final String UNCOMPRESSED_DATA_1 = GzipCompressorTest.UNCOMPRESSED_DATA_1;
 
-	private static final byte[] COMPRESSED_DATA_1 = { 
+	private static final byte[] COMPRESSED_DATA_1 = {
 		104,57,49,65,89,38,83,89,-18,-87,-99,-74,0,0,33,-39,-128,0,8,16,
 		0,58,64,52,-7,-86,0,48,0,-69,65,76,38,-102,3,76,65,-92,-12,-43,
 		61,71,-88,-51,35,76,37,52,32,19,-44,67,74,-46,-9,17,14,-35,55,
@@ -39,7 +39,7 @@ public class NewLzmaCompressorTest extends TestCase {
 	/**
 	 * test BZIP2 compressor's identity and functionality
 	 */
-	public void testNewLzmaCompressor() {
+	public void testNewLzmaCompressor() throws IOException {
 		Compressor.COMPRESSOR_TYPE lzcompressor = Compressor.COMPRESSOR_TYPE.LZMA_NEW;
 		Compressor compressorZero = Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)3);
 
@@ -48,8 +48,8 @@ public class NewLzmaCompressorTest extends TestCase {
 	}
 
 	// FIXME add exact decompression check.
-	
-//	public void testCompress() {
+
+//	public void testCompress() throws IOException {
 //
 //		// do bzip2 compression
 //		byte[] compressedData = doCompress(UNCOMPRESSED_DATA_1.getBytes());
@@ -63,72 +63,64 @@ public class NewLzmaCompressorTest extends TestCase {
 //		}
 //	}
 //
-//	public void testBucketDecompress() {
-//		
+//	public void testBucketDecompress() throws IOException {
+//
 //		byte[] compressedData = COMPRESSED_DATA_1;
-//		
+//
 //		// do bzip2 decompression with buckets
 //		byte[] uncompressedData = doBucketDecompress(compressedData);
-//		
+//
 //		// is the (round-tripped) uncompressed string the same as the original?
 //		String uncompressedString = new String(uncompressedData);
 //		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
 //	}
 //
-	public void testByteArrayDecompress() {
-		
-        // build 5k array 
+	public void testByteArrayDecompress() throws IOException {
+
+        // build 5k array
 		byte[] originalUncompressedData = new byte[5 * 1024];
 		for(int i = 0; i < originalUncompressedData.length; i++) {
 			originalUncompressedData[i] = 1;
 		}
-		
+
 		byte[] compressedData = doCompress(originalUncompressedData);
 		byte[] outUncompressedData = new byte[5 * 1024];
-		
+
 		int writtenBytes = 0;
-		
-		try {
-			writtenBytes = Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(compressedData, 0, compressedData.length, outUncompressedData);
-		} catch (CompressionOutputSizeException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		}
-		
+
+		writtenBytes = Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(compressedData, 0, compressedData.length, outUncompressedData);
+
 		assertEquals(writtenBytes, originalUncompressedData.length);
 		assertEquals(originalUncompressedData.length, outUncompressedData.length);
-		
+
         // check each byte is exactly as expected
 		for (int i = 0; i < outUncompressedData.length; i++) {
 			assertEquals(originalUncompressedData[i], outUncompressedData[i]);
 		}
 	}
 
-	public void testRandomByteArrayDecompress() {
-		
+	public void testRandomByteArrayDecompress() throws IOException {
+
 		Random random = new Random(1234);
-		
+
 		for(int rounds=0;rounds<100;rounds++) {
 			int scale = random.nextInt(19) + 1;
 			int size = random.nextInt(1 << scale);
-		
-			// build 5k array 
+
+			// build 5k array
 			byte[] originalUncompressedData = new byte[size];
 			random.nextBytes(originalUncompressedData);
-			
+
 			byte[] compressedData = doCompress(originalUncompressedData);
 			byte[] outUncompressedData = new byte[size];
-			
+
 			int writtenBytes = 0;
-			
-			try {
-				writtenBytes = Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(compressedData, 0, compressedData.length, outUncompressedData);
-			} catch (CompressionOutputSizeException e) {
-				fail("unexpected exception thrown : " + e.getMessage());
-			}
-			
+
+			writtenBytes = Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(compressedData, 0, compressedData.length, outUncompressedData);
+
 			assertEquals(writtenBytes, originalUncompressedData.length);
 			assertEquals(originalUncompressedData.length, outUncompressedData.length);
-			
+
 			// check each byte is exactly as expected
 			for (int i = 0; i < outUncompressedData.length; i++) {
 				assertEquals(originalUncompressedData[i], outUncompressedData[i]);
@@ -136,31 +128,32 @@ public class NewLzmaCompressorTest extends TestCase {
 		}
 	}
 
-	public void testCompressException() {
-		
+	public void testCompressException() throws IOException {
+
 		byte[] uncompressedData = UNCOMPRESSED_DATA_1.getBytes();
 		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
 			Compressor.COMPRESSOR_TYPE.LZMA_NEW.compress(inBucket, factory, 32, 32);
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
 			// expect this
-		}		
+			return;
+		}
+		// TODO LOW codec doesn't actually enforce size limit
+		//fail("did not throw expected CompressionOutputSizeException");
 	}
 
-	public void testDecompressException() {
-		
+	public void testDecompressException() throws IOException {
+
 		// build 5k array
 		byte[] uncompressedData = new byte[5 * 1024];
 		for(int i = 0; i < uncompressedData.length; i++) {
 			uncompressedData[i] = 1;
 		}
-		
+
 		byte[] compressedData = doCompress(uncompressedData);
-		
+
 		Bucket inBucket = new ArrayBucket(compressedData);
 		NullBucket outBucket = new NullBucket();
 		InputStream decompressorInput = null;
@@ -172,19 +165,20 @@ public class NewLzmaCompressorTest extends TestCase {
 			Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
 			decompressorInput.close();
 			decompressorOutput.close();
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
 			// expect this
+			return;
 		} finally {
 			Closer.close(decompressorInput);
 			Closer.close(decompressorOutput);
 			inBucket.free();
 			outBucket.free();
 		}
+		// TODO LOW codec doesn't actually enforce size limit
+		//fail("did not throw expected CompressionOutputSizeException");
 	}
-	
-	private byte[] doBucketDecompress(byte[] compressedData) {
+
+	private byte[] doBucketDecompress(byte[] compressedData) throws IOException {
 
 		Bucket inBucket = new ArrayBucket(compressedData);
 		Bucket outBucket = new ArrayBucket();
@@ -197,10 +191,6 @@ public class NewLzmaCompressorTest extends TestCase {
 			Compressor.COMPRESSOR_TYPE.LZMA_NEW.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
 			decompressorInput.close();
 			decompressorOutput.close();
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		} catch (CompressionOutputSizeException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
 		} finally {
 			Closer.close(decompressorInput);
 			Closer.close(decompressorOutput);
@@ -209,50 +199,28 @@ public class NewLzmaCompressorTest extends TestCase {
 
 		InputStream in = null;
 
-		try {
-			in = outBucket.getInputStream();
-		} catch (IOException e1) {
-			fail("unexpected exception thrown : " + e1.getMessage());
-		}
+		in = outBucket.getInputStream();
 		long size = outBucket.size();
 		byte[] outBuf = new byte[(int) size];
 
-		try {
-			in.read(outBuf);
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		}
+		in.read(outBuf);
 
-		return outBuf;		
+		return outBuf;
 	}
 
-	private byte[] doCompress(byte[] uncompressedData) {
+	private byte[] doCompress(byte[] uncompressedData) throws IOException {
 		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 		Bucket outBucket = null;
 
-		try {
-			outBucket = Compressor.COMPRESSOR_TYPE.LZMA_NEW.compress(inBucket, factory, 32768, 32768);
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		} catch (CompressionOutputSizeException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		}
+		outBucket = Compressor.COMPRESSOR_TYPE.LZMA_NEW.compress(inBucket, factory, 32768, 32768);
 
 		InputStream in = null;
-		try {
-			in = outBucket.getInputStream();
-		} catch (IOException e1) {
-			fail("unexpected exception thrown : " + e1.getMessage());
-		}
+		in = outBucket.getInputStream();
 		long size = outBucket.size();
 		byte[] outBuf = new byte[(int) size];
 
-		try {
-			in.read(outBuf);
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		}
+		in.read(outBuf);
 
 		return outBuf;
 	}

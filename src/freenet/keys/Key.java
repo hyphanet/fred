@@ -33,7 +33,7 @@ import freenet.support.io.BucketTools;
 
 /**
  * @author amphibian
- * 
+ *
  * Base class for node keys.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
@@ -43,7 +43,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
     double cachedNormalizedDouble;
     /** Whatever its type, it will need a routingKey ! */
     final byte[] routingKey;
-    
+
     /** Code for 256-bit AES with PCFB and SHA-256 */
     public static final byte ALGO_AES_PCFB_256_SHA256 = 2;
 
@@ -63,16 +63,16 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
     	hash = Fields.hashCode(routingKey);
         cachedNormalizedDouble = -1;
     }
-    
+
     protected Key(Key key) {
     	this.hash = key.hash;
     	this.cachedNormalizedDouble = key.cachedNormalizedDouble;
     	this.routingKey = new byte[key.routingKey.length];
     	System.arraycopy(key.routingKey, 0, routingKey, 0, routingKey.length);
     }
-    
+
     public abstract Key cloneKey();
-    
+
     /**
      * Write to disk.
      * Take up exactly 22 bytes.
@@ -92,10 +92,10 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
             return NodeCHK.readCHK(raf, subtype);
         } else if(type == NodeSSK.BASE_TYPE)
         	return NodeSSK.readSSK(raf, subtype);
-        
+
         throw new IOException("Unrecognized format: "+type);
     }
-    
+
 	public static KeyBlock createBlock(short keyType, byte[] keyBytes, byte[] headersBytes, byte[] dataBytes, byte[] pubkeyBytes) throws KeyVerifyException {
 		byte type = (byte)(keyType >> 8);
 		byte subtype = (byte)(keyType & 0xFF);
@@ -151,18 +151,18 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 	 * </ul>
 	 */
 	public abstract short getType();
-    
+
 	@Override
     public int hashCode() {
         return hash;
     }
-    
+
 	@Override
     public boolean equals(Object o){
     	if(o == null || !(o instanceof Key)) return false;
     	return Arrays.equals(routingKey, ((Key)o).routingKey);
     }
-    
+
     static Bucket decompress(boolean isCompressed, byte[] output, int outputLength, BucketFactory bf, long maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
 	    if(maxLength < 0)
 		    throw new IllegalArgumentException("maxlength="+maxLength);
@@ -175,7 +175,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
             int len;
             if(shortLength)
             	len = ((output[0] & 0xff) << 8) + (output[1] & 0xff);
-            else 
+            else
             	len = ((((((output[0] & 0xff) << 8) + (output[1] & 0xff)) << 8) + (output[2] & 0xff)) << 8) +
             		(output[3] & 0xff);
             if(len > maxLength)
@@ -256,8 +256,6 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 						try {
 							compressedData = (ArrayBucket) comp.compress(
 									sourceData, new ArrayBucketFactory(), Long.MAX_VALUE, maxCompressedDataLength);
-						} catch (IOException e) {
-							throw new Error(e);
 						} catch (CompressionOutputSizeException e) {
 							continue;
 						}
@@ -274,7 +272,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 						}
 					}
 				}
-        		
+
         	}
         	if(cbuf != null) {
     			// Use it
@@ -302,7 +300,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 
         return new Compressed(finalData, compressionAlgorithm);
     }
-    
+
     public byte[] getRoutingKey() {
     	return routingKey;
     }
@@ -327,7 +325,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 	}
 
 	/** Get a copy of the key with any unnecessary information stripped, for long-term
-	 * in-memory storage. E.g. for SSKs, strips the DSAPublicKey. Copies it whether or 
+	 * in-memory storage. E.g. for SSKs, strips the DSAPublicKey. Copies it whether or
 	 * not we need to copy it because the original might pick up a pubkey after this
 	 * call. And the returned key will not accidentally pick up extra data. */
 	public abstract Key archivalCopy();
