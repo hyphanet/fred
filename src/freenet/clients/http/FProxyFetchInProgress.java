@@ -164,9 +164,34 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			String mimeType = null;
 			if(result != null) {
 				if(fctx.filterData == result.alreadyFiltered) {
-					onSuccess(result, null, null);
-					return;
+					// FIXME move this to a separate function.
+					boolean okay = true;
+					if(fctx.charset != null) {
+						okay = false;
+						// FIXME allow it if the passed in charset matches the detected one.
+					}
+					// FIXME allow the charset if it's the same
+					if(okay && result.alreadyFiltered) {
+						okay = false;
+						if(fctx.overrideMIME == null) {
+							okay = true;
+						} else {
+							String finalMIME = result.getMimeType();
+							if(fctx.overrideMIME.equals(finalMIME))
+								okay = true;
+							else if(ContentFilter.stripMIMEType(finalMIME).equals(fctx.overrideMIME) && fctx.charset == null)
+								okay = true;
+							// FIXME we could make this work in a few more cases... it doesn't matter much though as usually people don't override the MIME type!
+						}
+					}
+					if(okay) {
+						onSuccess(result, null, null);
+						return;
+					} else
+						result = null;
 				}
+			}
+			if(result != null) {
 				data = result.asBucket();
 				mimeType = result.getMimeType();
 				if(mimeType == null || mimeType.equals("")) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
