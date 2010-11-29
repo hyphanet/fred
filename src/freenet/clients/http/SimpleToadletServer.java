@@ -10,11 +10,13 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.updateableelements.PushDataManager;
@@ -32,6 +34,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PrioRunnable;
 import freenet.node.SecurityLevelListener;
+import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.Executor;
@@ -341,6 +344,33 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	private boolean haveCalledFProxy = false;
 	
+	// FIXME factor this out to a global helper class somehow?
+	
+	private class ReFilterCallback extends StringCallback implements EnumerableOptionCallback {
+
+		public String[] getPossibleValues() {
+			REFILTER_POLICY[] possible = REFILTER_POLICY.values();
+			String[] ret = new String[possible.length];
+			for(int i=0;i<possible.length;i++)
+				ret[i] = possible[i].name();
+			return ret;
+		}
+
+		@Override
+		public String get() {
+			return refilterPolicy.name();
+		}
+
+		@Override
+		public void set(String val) throws InvalidConfigValueException,
+				NodeNeedRestartException {
+			refilterPolicy = REFILTER_POLICY.valueOf(val);
+		}
+		
+	};
+	
+	private final ReFilterCallback refilterPolicyCallback = new ReFilterCallback();
+	
 	public void createFproxy() {
 		synchronized(this) {
 			if(haveCalledFProxy) return;
@@ -583,6 +613,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 					}
 		});
 		doRobots = fproxyConfig.getBoolean("doRobots");
+		
+		fproxyConfig.register("refilterPolicy", "RE_FILTER", configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", refilterPolicyCallback);
+		
+		this.refilterPolicy = REFILTER_POLICY.valueOf(fproxyConfig.getString("refilterPolicy"));
 		
 		SimpleToadletServer.isPanicButtonToBeShown = fproxyConfig.getBoolean("showPanicButton");
 		SimpleToadletServer.noConfirmPanic = fproxyConfig.getBoolean("noConfirmPanic");
@@ -949,6 +983,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	public NodeClientCore getCore(){
 		return core;
+	}
+	
+	private REFILTER_POLICY refilterPolicy;
+
+	public REFILTER_POLICY getReFilterPolicy() {
+		return refilterPolicy;
 	}
 
 }

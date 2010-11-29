@@ -586,7 +586,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		if(isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload")) {
 			FProxyFetchWaiter fetch = null;
 			try {
-				fetch = fetchTracker.makeFetcher(key, maxSize, fctx);
+				fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
 			} catch (FetchException e) {
 				fe = fr.failed;
 			}
@@ -601,7 +601,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					fr = null;
 					fetch = null;
 					try {
-						fetch = fetchTracker.makeFetcher(key, maxSize, fctx);
+						fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
 					} catch (FetchException e) {
 						fe = fr.failed;
 					}

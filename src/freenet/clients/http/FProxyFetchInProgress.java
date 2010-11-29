@@ -45,11 +45,16 @@ import freenet.support.io.Closer;
  */
 public class FProxyFetchInProgress implements ClientEventListener, ClientGetCallback {
 	
-	/** If true, when a file has been downloaded and filtered in the process, accept the
-	 * original filter as definitive and don't re-run the filter. This is not safe in 
-	 * general as the filter might have been updated, however it avoids some disk I/O so
-	 * may improve performance for users with less worries about performance. */
-	private static final boolean USE_PREVIOUS_FILTER = false;
+	/** What to do when we find data which matches the request but it has already been 
+	 * filtered, assuming we want a filtered copy. */
+	public enum REFILTER_POLICY {
+		RE_FILTER, // Re-run the filter over data that has already been filtered. Probably requires allocating a new temp file.
+		ACCEPT_OLD, // Accept the old filtered data. Only as safe as the filter when the data was originally downloaded.
+		RE_FETCH // Fetch the data again. Unnecessary in most cases, avoids any possibility of filter artefacts.
+	}
+	
+	private final REFILTER_POLICY refilterPolicy;
+	
 	private static volatile boolean logMINOR;
 	
 	static {
@@ -117,7 +122,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	/** Stores the fetch context this class was created with*/
 	private FetchContext fctx;
 	
-	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc) {
+	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc, REFILTER_POLICY refilter) {
+		this.refilterPolicy = refilter;
 		this.tracker = tracker;
 		this.uri = key;
 		this.maxSize = maxSize2;
@@ -179,27 +185,31 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 						onSuccess(new FetchResult(new ClientMetadata(fctx.overrideMIME), result.asBucket()), null, null);
 						return;
 					} 
-				}
-				
-				if(fctx.filterData && result.alreadyFiltered && USE_PREVIOUS_FILTER && 
-						fctx.charset == null && (fctx.overrideMIME == null || fctx.overrideMIME.equals(result.getMimeType()))) {
-					// FIXME allow the charset if it's the same
-					boolean okay = false;
-					if(fctx.overrideMIME == null) {
-						okay = true;
-					} else {
-						String finalMIME = result.getMimeType();
-						if(fctx.overrideMIME.equals(finalMIME))
-							okay = true;
-						else if(ContentFilter.stripMIMEType(finalMIME).equals(fctx.overrideMIME) && fctx.charset == null)
-							okay = true;
-						// FIXME we could make this work in a few more cases... it doesn't matter much though as usually people don't override the MIME type!
-					}
-					if(okay) {
-						onSuccess(result, null, null);
-						return;
-					} else
+				} else if(result.alreadyFiltered) {
+					if(refilterPolicy == REFILTER_POLICY.RE_FETCH || !fctx.filterData) {
+						// Can't use it.
 						result = null;
+					} else if(fctx.filterData && fctx.charset == null) {
+						// FIXME allow the charset if it's the same
+						boolean okay = false;
+						if(fctx.overrideMIME == null) {
+							okay = true;
+						} else {
+							String finalMIME = result.getMimeType();
+							if(fctx.overrideMIME.equals(finalMIME))
+								okay = true;
+							else if(ContentFilter.stripMIMEType(finalMIME).equals(fctx.overrideMIME) && fctx.charset == null)
+								okay = true;
+							// FIXME we could make this work in a few more cases... it doesn't matter much though as usually people don't override the MIME type!
+						}
+						if(okay) {
+							if(refilterPolicy == REFILTER_POLICY.ACCEPT_OLD) {
+								onSuccess(result, null, null);
+								return;
+							} // else re-filter
+						} else
+							result = null;
+					}
 				}
 			}
 			if(result != null) {

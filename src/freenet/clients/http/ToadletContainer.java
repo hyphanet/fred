@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
@@ -87,5 +88,9 @@ public interface ToadletContainer {
 	public void setAdvancedMode(boolean enabled);
 	
 	public boolean fproxyHasCompletedWizard();
+
+	/** What to do when we find cached data on the global queue but it's already been 
+	 * filtered, and we want a filtered copy. */
+	public REFILTER_POLICY getReFilterPolicy();
 
 }
