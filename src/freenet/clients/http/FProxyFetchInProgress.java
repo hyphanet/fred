@@ -163,26 +163,32 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			Bucket data = null;
 			String mimeType = null;
 			if(result != null) {
-				if(fctx.filterData == result.alreadyFiltered) {
-					// FIXME move this to a separate function.
-					boolean okay = true;
-					if(fctx.charset != null) {
-						okay = false;
-						// FIXME allow it if the passed in charset matches the detected one.
-					}
+				
+				if((!fctx.filterData) && (!result.alreadyFiltered)) {
+					if(fctx.overrideMIME == null || fctx.overrideMIME.equals(result.getMimeType())) {
+						// Works as-is.
+						onSuccess(result, null, null);
+						return;
+					} else if(fctx.overrideMIME != null && !fctx.overrideMIME.equals(result.getMimeType())) {
+						// Change the MIME type.
+						onSuccess(new FetchResult(new ClientMetadata(fctx.overrideMIME), result.asBucket()), null, null);
+						return;
+					} 
+				}
+				
+				if(fctx.filterData && result.alreadyFiltered && fctx.charset == null
+						&& (fctx.overrideMIME == null || fctx.overrideMIME.equals(result.getMimeType()))) {
 					// FIXME allow the charset if it's the same
-					if(okay && result.alreadyFiltered) {
-						okay = false;
-						if(fctx.overrideMIME == null) {
+					boolean okay = false;
+					if(fctx.overrideMIME == null) {
+						okay = true;
+					} else {
+						String finalMIME = result.getMimeType();
+						if(fctx.overrideMIME.equals(finalMIME))
 							okay = true;
-						} else {
-							String finalMIME = result.getMimeType();
-							if(fctx.overrideMIME.equals(finalMIME))
-								okay = true;
-							else if(ContentFilter.stripMIMEType(finalMIME).equals(fctx.overrideMIME) && fctx.charset == null)
-								okay = true;
-							// FIXME we could make this work in a few more cases... it doesn't matter much though as usually people don't override the MIME type!
-						}
+						else if(ContentFilter.stripMIMEType(finalMIME).equals(fctx.overrideMIME) && fctx.charset == null)
+							okay = true;
+						// FIXME we could make this work in a few more cases... it doesn't matter much though as usually people don't override the MIME type!
 					}
 					if(okay) {
 						onSuccess(result, null, null);
