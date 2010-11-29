@@ -189,20 +189,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 					if(refilterPolicy == REFILTER_POLICY.RE_FETCH || !fctx.filterData) {
 						// Can't use it.
 						result = null;
-					} else if(fctx.filterData && fctx.charset == null) {
-						// FIXME allow the charset if it's the same
-						boolean okay = false;
-						if(fctx.overrideMIME == null) {
-							okay = true;
-						} else {
-							String finalMIME = result.getMimeType();
-							if(fctx.overrideMIME.equals(finalMIME))
-								okay = true;
-							else if(ContentFilter.stripMIMEType(finalMIME).equals(fctx.overrideMIME) && fctx.charset == null)
-								okay = true;
-							// FIXME we could make this work in a few more cases... it doesn't matter much though as usually people don't override the MIME type!
-						}
-						if(okay) {
+					} else if(fctx.filterData) {
+						if(shouldAcceptCachedFilteredData(fctx, result)) {
 							if(refilterPolicy == REFILTER_POLICY.ACCEPT_OLD) {
 								onSuccess(result, null, null);
 								return;
@@ -283,6 +271,24 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				this.finished = true;
 			}
 		}
+	}
+
+	private boolean shouldAcceptCachedFilteredData(FetchContext fctx,
+			CacheFetchResult result) {
+		// FIXME allow the charset if it's the same
+		if(fctx.charset != null) return false;
+		boolean okay = false;
+		if(fctx.overrideMIME == null) {
+			return true;
+		} else {
+			String finalMIME = result.getMimeType();
+			if(fctx.overrideMIME.equals(finalMIME))
+				return true;
+			else if(ContentFilter.stripMIMEType(finalMIME).equals(fctx.overrideMIME) && fctx.charset == null)
+				return true;
+			// FIXME we could make this work in a few more cases... it doesn't matter much though as usually people don't override the MIME type!
+		}
+		return false;
 	}
 
 	public void onRemoveEventProducer(ObjectContainer container) {
