@@ -45,6 +45,11 @@ import freenet.support.io.Closer;
  */
 public class FProxyFetchInProgress implements ClientEventListener, ClientGetCallback {
 	
+	/** If true, when a file has been downloaded and filtered in the process, accept the
+	 * original filter as definitive and don't re-run the filter. This is not safe in 
+	 * general as the filter might have been updated, however it avoids some disk I/O so
+	 * may improve performance for users with less worries about performance. */
+	private static final boolean USE_PREVIOUS_FILTER = false;
 	private static volatile boolean logMINOR;
 	
 	static {
@@ -176,8 +181,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 					} 
 				}
 				
-				if(fctx.filterData && result.alreadyFiltered && fctx.charset == null
-						&& (fctx.overrideMIME == null || fctx.overrideMIME.equals(result.getMimeType()))) {
+				if(fctx.filterData && result.alreadyFiltered && USE_PREVIOUS_FILTER && 
+						fctx.charset == null && (fctx.overrideMIME == null || fctx.overrideMIME.equals(result.getMimeType()))) {
 					// FIXME allow the charset if it's the same
 					boolean okay = false;
 					if(fctx.overrideMIME == null) {
