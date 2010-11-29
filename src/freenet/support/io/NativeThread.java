@@ -4,17 +4,9 @@
 
 package freenet.support.io;
 
-import java.util.ArrayList;
-
-import freenet.config.EnumerableOptionCallback;
-import freenet.config.InvalidConfigValueException;
-import freenet.config.StringOption;
-import freenet.config.SubConfig;
 import freenet.node.NodeStarter;
-import freenet.node.NodeStats;
 import freenet.support.LibraryLoader;
 import freenet.support.Logger;
-import freenet.support.api.StringCallback;
 
 /**
  * Do *NOT* forget to call super.run() if you extend it!
@@ -99,106 +91,7 @@ public class NativeThread extends Thread {
 		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
 	}
 	
-	/**
-	 * FIXME: This needs to be wired in, will be very useful to be able to configure thread priorities 
-	 * 
-	 * A config entry for the priority of all threads with a given normalized name.
-	 * When a NativeThread is created, it creates a ThreadPriorityCallback for itself and calls loadConfigAndMaybeRegister.
-	 *  
-	 * 
-	 * If another thread already registered a ThreadPriorityCallback, the new one won't be registered.
-	 * When the user changes the value of an existing ThreadPriorityCallback, it will adjust the thread priority
-	 * of all existing threads with its normalized name. Therefore, only one ThreadPriorityCallback for each
-	 * normalized name is needed to be registered, not for each thread.
-	 *
-	 * @author xor (xor@freenetproject.org)
-	 */
-	private static class ThreadPriorityCallback extends StringCallback implements EnumerableOptionCallback {
-		private final NodeStats nodeStats;
-		private final String normalizedThreadName;
-		private final PriorityLevel defaultPriority;
-		private PriorityLevel currentPriority;
-		
-		public ThreadPriorityCallback(NodeStats stats, NativeThread thread) {
-			nodeStats = stats;
-			normalizedThreadName = thread.getNormalizedName();
-			defaultPriority = currentPriority = PriorityLevel.fromValue(thread.getPriority());
-		}
-		
-		@Override
-		public String get(){
-			return currentPriority.toString();
-		}
-		
-		@Override
-		public void set(String val) throws InvalidConfigValueException{
-			try {
-				currentPriority = PriorityLevel.valueOf(val);
-				
-				for(NativeThread thread : nodeStats.getNativeThreadsByNormalizedName(normalizedThreadName)) {
-					thread.setPriority(currentPriority.value);
-				}
-			} catch(IllegalArgumentException e) {
-				throw new InvalidConfigValueException("Invalid priority level");
-			}
-		}
-		
-		public String[] getPossibleValues() {
-			ArrayList<String> values = new ArrayList<String>(PriorityLevel.values().length + 1);
-			for(PriorityLevel level : PriorityLevel.values()) {
-				values.add(level.toString());
-			}
-			return (String[])values.toArray();
-		}
-		
-		private String getThreadNameForConfig() {
-			String name = normalizedThreadName;
-			name = name.replaceAll("^[a-zA-Z]", "_");
-			return name;
-		}
-		
-		public void loadConfigAndMaybeRegister(SubConfig config, NativeThread thread) {
-			final String configThreadName = getThreadNameForConfig();
-			final String configOptionName = configThreadName + "_priority";
-			
-			final StringOption existingOption = (StringOption)config.getOption(configOptionName);
-			
-			if(existingOption != null) {
-				try {
-					currentPriority = PriorityLevel.valueOf(existingOption.getValue());
-					thread.setPriority(currentPriority.value);
-				} catch(Exception e) {
-					Logger.error(this, "Loading thread priority config failed", e);
-				}
-			}
-			
-			final ThreadPriorityCallback existingCallback = existingOption==null ? null : (ThreadPriorityCallback)existingOption.getCallback();
-			
-			if(existingCallback == null) {
-				try {
-					config.register(configOptionName, 
-							defaultPriority.toString(), // default value 
-							configThreadName.hashCode(), // sort order
-							true, // expert only
-							false, // force write
-							"NativeThread.PrioritiesShortDesc." + configThreadName, // l10n description
-							"NativeThread.PrioritiesLongDesc." + configThreadName,
-							this);
-				} catch(Exception e) {
-					Logger.error(this, "Registration failed", e);
-				}
-			} else {
-				// We interpret the initial priority which was passed in when creating a NativeThread as the default priority. 
-				// This is not obvious from the constructors of NativeThreads.
-				// While implementing this I assumed that the users of the NativeThread class are very likely to always use the same priority 
-				// for a given normalized name. If the priorities vary among thread names, we hereby alert the user that 
-				if(!defaultPriority.equals(existingCallback.defaultPriority))
-					Logger.error(this, "Default priority for this normalized thread name is ambiguous, please use different names: " + normalizedThreadName);
-			}
 
-		}
-	}
-	
 	public NativeThread(String name, int priority, boolean dontCheckRenice) {
 		super(name);
 		this.currentPriority = priority;
