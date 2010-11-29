@@ -619,6 +619,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		this.refilterPolicy = REFILTER_POLICY.valueOf(fproxyConfig.getString("refilterPolicy"));
 		
+		// Network seclevel not physical seclevel because bad filtering can cause network level anonymity breaches.
 		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
