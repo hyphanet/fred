@@ -158,6 +158,8 @@ public class RequestStatusCache {
 			if(data == null) continue;
 			if(data.size() == 0) continue;
 			if(noFilter && download.filterData) continue;
+			// FIXME it probably *is* worth the effort to allow this when it is overridden on the fetcher, since the user changed the type???
+			if(download.overriddenDataType) continue;
 			return new CacheFetchResult(new ClientMetadata(download.getMIMEType()), new NoFreeBucket(data), download.filterData);
 		}
 		return null;

@@ -24,6 +24,7 @@ public class DownloadRequestStatus extends RequestStatus {
 	private final FreenetURI uri;
 	boolean filterData;
 	Bucket dataShadow;
+	public final boolean overriddenDataType;
 	
 	synchronized void setFinished(boolean success, long dataSize, String mimeType, 
 			int failureCode, String failureReasonLong, String failureReasonShort, Bucket dataShadow, boolean filtered) {
@@ -41,9 +42,10 @@ public class DownloadRequestStatus extends RequestStatus {
 			boolean success, int total, int min, int fetched, int fatal, int failed,
 			boolean totalFinalized, long last, short prio, // all these passed to parent
 			int failureCode, String mime, long size, File dest, CompatibilityMode[] compat,
-			byte[] splitfileKey, FreenetURI uri, String failureReasonShort, String failureReasonLong, Bucket dataShadow) {
+			byte[] splitfileKey, FreenetURI uri, String failureReasonShort, String failureReasonLong, boolean overriddenDataType, Bucket dataShadow) {
 		super(identifier, persistence, started, finished, success, total, min, fetched, 
 				fatal, failed, totalFinalized, last, prio);
+		this.overriddenDataType = overriddenDataType;
 		this.failureCode = failureCode;
 		this.mimeType = mime;
 		this.dataSize = size;
