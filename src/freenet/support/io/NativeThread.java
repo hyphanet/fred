@@ -101,6 +101,40 @@ public class NativeThread extends Thread {
 	
 	/**
 	 * FIXME: This needs to be wired in, will be very useful to be able to configure thread priorities 
+	 * FIXME: It still has the following issues:
+	 * 
+	 * [15:36] <nextgens> where you end up with a +import freenet.node.NodeStats;
+	 * [15:36] <nextgens> in  Txt  src/freenet/support/io/NativeThread.java
+	 * [15:36] <nextgens> that's utterly wrong.
+	 * [15:39] <p0s> nextgens: i didnt find the proper place to get a list of all running threads from, i only found nodestats... what is the proper place?
+	 * [15:39] <nextgens> we didn't track those threads
+	 * [15:39] <nextgens> because native threads are not all threads
+	 * [15:39] <nextgens> pulling them from the stats we make is a bad idea in any case
+	 * [15:40] <nextgens> and the way you do it (without any care for synchronization or consistency) is wrong
+	 * [15:40] <nextgens> your overriden set() will miss some threads
+	 * [15:40] <nextgens> that'd be my first argument against it
+	 * [15:40] <nextgens> keep a list in the class itself
+	 * [15:41] <p0s> nextgens: ok
+	 * [15:41] <nextgens> don't mix up what we aggregate for stats and that
+	 * [15:41] <nextgens> and ensure you don't ruin performances altogether because of locking
+	 * [15:41] <nextgens> and also ensure that you guarentee consistency
+	 * [15:41] <nextgens> and don't forget to set some thread priorities, like your current patch does
+	 * [15:42] <nextgens> let me tell you that none of the above is simple on a "hot codepath" like that one
+	 * [15:42] <p0s> nextgens: some = which ones? the ones lost due to the lack of locking?
+	 * [15:42] <nextgens> and that's partially why we didn't do it
+	 * [15:42] <nextgens> yes, the ones due to the lack of locking
+	 * [15:43] <nextgens> the original point was: this is a pard of fred with a huge breakage potential
+	 * [15:43] <nextgens> don't mess with it unless you have to
+	 * [15:43] <nextgens> so please, work on a branch
+	 * [15:43] <nextgens> and test it thoroughly
+	 * [15:43] <nextgens> on all architectures
+	 * [15:43] <nextgens> it does involve JNI
+	 * [15:44] <nextgens> and you'll find that you can't change priorities on all threads
+	 * [15:44] <nextgens> and in all directions
+	 * [15:44] <nextgens> a thread with a high level of nice can't revert back to a higher one iirc
+	 * [15:44] <nextgens> on *nix
+	 * [15:44] <nextgens> and you'll have other related but different problems on windows
+	 * [15:44] <nextgens> but you'll discover that soon enough
 	 * 
 	 * A config entry for the priority of all threads with a given normalized name.
 	 * When a NativeThread is created, it creates a ThreadPriorityCallback for itself and calls loadConfigAndMaybeRegister.
