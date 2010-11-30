@@ -193,8 +193,6 @@ public class MP3Filter implements ContentDataFilter {
 					throw new DataFilterException(l10n("bogusMP3NoFrames"), l10n("bogusMP3NoFrames"), l10n("bogusMP3NoFramesExplanation"));
 			}
 			
-			if(maxFoundFrames < 10)
-				
 			out.flush();
 			Logger.normal(this, totalFrames+" frames, of which "+totalCRCs+" had a CRC");
 			return;
