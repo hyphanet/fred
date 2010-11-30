@@ -985,15 +985,19 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	@Override
 	public boolean restart(ObjectContainer container, ClientContext context, final boolean disableFilterData) {
 		if(!canRestart()) return false;
-		FreenetURI redirect;
+		FreenetURI redirect = null;
 		synchronized(this) {
 			finished = false;
-			redirect =
-				getFailedMessage == null ? null : getFailedMessage.redirectURI;
 			if(persistenceType == PERSIST_FOREVER && getFailedMessage != null) {
 				container.activate(getFailedMessage, 1);
+				if(getFailedMessage.redirectURI != null) {
+					container.activate(getFailedMessage.redirectURI, Integer.MAX_VALUE);
+					redirect =
+						getFailedMessage.redirectURI.clone();
+				}
 				getFailedMessage.removeFrom(container);
-			}
+			} else if(getFailedMessage != null)
+				redirect = getFailedMessage.redirectURI;
 			this.getFailedMessage = null;
 			if(persistenceType == PERSIST_FOREVER && allDataPending != null) {
 				container.activate(allDataPending, 1);
