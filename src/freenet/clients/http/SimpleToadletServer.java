@@ -614,7 +614,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		doRobots = fproxyConfig.getBoolean("doRobots");
 		
-		fproxyConfig.register("refilterPolicy", node.securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW ? "ACCEPT_OLD" : "RE_FILTER", 
+		fproxyConfig.register("refilterPolicy", "RE_FILTER", 
 				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", refilterPolicyCallback);
 		
 		this.refilterPolicy = REFILTER_POLICY.valueOf(fproxyConfig.getString("refilterPolicy"));
