@@ -1133,7 +1133,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		boolean overriddenDataType;
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(fctx, 1);
-		overriddenDataType = fctx.overrideMIME != null;
+		overriddenDataType = fctx.overrideMIME != null || fctx.charset != null;
 		if(persistenceType == PERSIST_FOREVER)
 			container.deactivate(fctx, 1);
 		
