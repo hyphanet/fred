@@ -15,9 +15,12 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
@@ -65,6 +68,7 @@ import freenet.keys.Key;
 import freenet.keys.USK;
 import freenet.node.NodeStats.ByteCountersSnapshot;
 import freenet.node.NodeStats.PeerLoadStats;
+import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerManager.PeerStatusChangeListener;
@@ -4497,7 +4501,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		
 		Message makeLoadStats(long now, int transfersPerInsert) {
-			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, transfersPerInsert);
+			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, transfersPerInsert, realTimeFlag);
 			synchronized(this) {
 				lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
 				lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
@@ -4515,8 +4519,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		this.messageQueue.removeUIDsFromMessageQueues(list);
 	}
 	
-	public void onSetPeerAllocation(boolean input, int thisAllocation, boolean realTime) {
-		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation);
+	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, boolean realTime) {
+		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation, transfersPerInsert);
 	}
 
 	public class IncomingLoadSummaryStats {
@@ -4679,34 +4683,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput, true));
 		}
 		
-		public RequestLikelyAcceptedState tryRouteTo(RequestTag tag,
-				RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
-			ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
-			ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
-			PeerLoadStats loadStats;
-			synchronized(this) {
-				loadStats = lastIncomingLoadStats;
-			}
-			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
-			synchronized(routedToLock) {
-				if(loadStats == null) {
-					Logger.error(this, "Accepting because no load stats from "+this);
-					tag.addRoutedTo(PeerNode.this, offeredKey);
-					// FIXME maybe wait a bit, check the other side's version first???
-					return RequestLikelyAcceptedState.UNKNOWN;
-				}
-				// Requests already running to this node
-				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
-				// Requests running from its other peers
-				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
-				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
-				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState);
-				if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
-				tag.addRoutedTo(PeerNode.this, offeredKey);
-				return acceptState;
-			}
-		}
-		
 		// FIXME on capacity changing so that we should add another node???
 		// FIXME on backoff so that we should add another node???
 		
@@ -4761,73 +4737,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Will be used later by new load management
 		}
 		
-		private void maybeNotifySlotWaiter() {
-			ByteCountersSnapshot byteCountersOutput = null;
-			ByteCountersSnapshot byteCountersInput = null;
-			boolean ignoreLocalVsRemote = false;
-			while(true) {
-				if(slotWaiters.isEmpty()) return;
-				boolean foundNone = true;
-				for(int i=0;i<RequestType.values().length;i++) {
-					slotWaiterTypeCounter++;
-					if(slotWaiterTypeCounter == RequestType.values().length)
-						slotWaiterTypeCounter = 0;
-					RequestType type = RequestType.values()[i];
-					LinkedHashSet<SlotWaiter> list = slotWaiters.get(type);
-					if(list == null) continue;
-					if(list.isEmpty()) continue;
-					Iterator<SlotWaiter> it = list.iterator();
-					foundNone = false;
-					// Should be safe to collect these here, just a little expensive.
-					if(byteCountersOutput == null) {
-						ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
-						byteCountersOutput = node.nodeStats.getByteCounters(false);
-						byteCountersInput = node.nodeStats.getByteCounters(true);
-					}
-					PeerLoadStats loadStats = lastIncomingLoadStats;
-					// Requests already running to this node
-					RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, realTime);
-					// Requests running from its other peers
-					RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
-					RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(byteCountersOutput, byteCountersInput, runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
-					if(acceptState == null) return;
-					SlotWaiter slot = it.next();
-					it.remove();
-					slot.onWaited(PeerNode.this, acceptState);
-				}
-				if(foundNone) return;
-			}
-		}
-		
-		/** LOCKING: Call inside routedToLock 
-		 * @param otherRunningRequests 
-		 * @param runningRequests 
-		 * @param byteCountersInput 
-		 * @param byteCountersOutput */
-		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(ByteCountersSnapshot byteCountersOutput, ByteCountersSnapshot byteCountersInput, RunningRequestsSnapshot runningRequests, RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, PeerLoadStats stats) {
-			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedState(byteCountersOutput, false, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
-			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedState(byteCountersInput, true, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
-			if(inputState.ordinal() > outputState.ordinal())
-				return inputState;
-			else
-				return outputState;
-		}
-		
-		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(
-				ByteCountersSnapshot byteCounters, boolean input,
-				RunningRequestsSnapshot runningRequests,
-				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
-				PeerLoadStats stats) {
-			double ourUsage = runningRequests.calculate(ignoreLocalVsRemote, byteCounters);
-			if(ourUsage < stats.peerLimit(input))
-				return RequestLikelyAcceptedState.GUARANTEED;
-			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, byteCounters);
-			if(ourUsage + theirUsage < stats.lowerLimit(input))
-				return RequestLikelyAcceptedState.LIKELY;
-			else
-				return RequestLikelyAcceptedState.UNLIKELY;
-		}
-	
 	}
 	
 	public void noLongerRoutingTo(UIDTag tag, boolean offeredKey) {
