@@ -1092,6 +1092,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(progressPending, Integer.MAX_VALUE);
 			totalFinalized = progressPending.isTotalFinalized();
+			if(finished && succeeded) totalFinalized = true;
 			// FIXME why are these doubles???
 			total = (int) progressPending.getTotalBlocks();
 			min = (int) progressPending.getMinBlocks();
@@ -1128,7 +1129,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			target = new File(target.getPath());
 		
 		Bucket shadow = getFinalBucket(container);
-		if(shadow != null) shadow = shadow.createShadow();
+		if(shadow != null) {
+			dataSize = shadow.size();
+			shadow = shadow.createShadow();
+		}
 		
 		boolean overriddenDataType;
 		if(persistenceType == PERSIST_FOREVER)
