@@ -694,6 +694,17 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public void start() {
+		if(myThread != null) try {
+			maybeGetNetworkInterface();
+			myThread.start();
+			Logger.normal(this, "Starting FProxy on "+bindTo+ ':' +port);
+			System.out.println("Starting FProxy on "+bindTo+ ':' +port);
+		} catch (IOException e) {
+			Logger.error(this, "Could not bind network port for FProxy?", e);
+		}
+	}
+	
+	public void finishStart() {
 		core.node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
@@ -709,17 +720,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 			
 		});
-		if(myThread != null) try {
-			maybeGetNetworkInterface();
-			myThread.start();
-			Logger.normal(this, "Starting FProxy on "+bindTo+ ':' +port);
-			System.out.println("Starting FProxy on "+bindTo+ ':' +port);
-		} catch (IOException e) {
-			Logger.error(this, "Could not bind network port for FProxy?", e);
-		}
-	}
-	
-	public void finishStart() {
 		core.node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
 
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
