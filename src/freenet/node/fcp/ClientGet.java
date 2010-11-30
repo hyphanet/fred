@@ -1114,13 +1114,15 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER)
 				container.deactivate(getFailedMessage, 1);
 		}
-		String mimeType = null;
-		long dataSize = -1;
+		String mimeType = foundDataMimeType;
+		long dataSize = foundDataLength;
 		if(getter != null) {
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(getter, 1);
-			mimeType = getter.expectedMIME();
-			dataSize = getter.expectedSize();
+			if(mimeType == null)
+				mimeType = getter.expectedMIME();
+			if(dataSize <= 0)
+				dataSize = getter.expectedSize();
 			if(persistenceType == PERSIST_FOREVER)
 				container.deactivate(getter, 1);
 		}
