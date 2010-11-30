@@ -201,6 +201,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 							} // else re-filter
 						} else
 							result = null;
+					} else {
+						result = null;
 					}
 				}
 			}
@@ -210,7 +212,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				if(mimeType == null || mimeType.equals("")) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
 				if(fctx.overrideMIME != null && !result.alreadyFiltered)
 					mimeType = fctx.overrideMIME;
-				else if(result.alreadyFiltered && ((!fctx.filterData) || (!mimeType.equals(fctx.overrideMIME)))) {
+				else if((!mimeType.equals(fctx.overrideMIME))) {
 					// Doesn't work.
 					data = null;
 					mimeType = null;
