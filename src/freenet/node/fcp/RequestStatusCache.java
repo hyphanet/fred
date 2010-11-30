@@ -144,16 +144,26 @@ public class RequestStatusCache {
 		status.setPriority(newPriorityClass);
 	}
 	
+	/** Restart a request. Caller should call ,false first, at which point we setStarted,
+	 * and ,true when it has actually started (a race condition means we don't setStarted
+	 * at that point since it's possible the success/failure callback might happen first). */
 	public synchronized void updateStarted(String identifier, boolean started) {
 		RequestStatus status = (RequestStatus) requestsByIdentifier.get(identifier);
 		status.setStarted(started);
+		// Caller should call with false first, so we only need to unset finished when setting started=false.
+		if(!started)
+			status.setFinished(false);
 	}
 
-	/** A request was restarted.
+	/** Restart a download. Caller should call ,false first, at which point we setStarted,
+	 * and ,true when it has actually started (a race condition means we don't setStarted
+	 * at that point since it's possible the success/failure callback might happen first).
 	 * @param redirect If non-null, the request followed a redirect. */
 	public synchronized void updateStarted(String identifier, boolean started, FreenetURI redirect) {
 		DownloadRequestStatus status = (DownloadRequestStatus) requestsByIdentifier.get(identifier);
-		status.setStarted(started);
+		status.setFinished(false);
+		if(!started)
+			status.setStarted(started);
 		if(redirect != null) {
 			downloadsByURI.remove(status.getURI());
 			status.redirect(redirect);
