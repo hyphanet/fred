@@ -627,8 +627,12 @@ public class NodeStats implements Persistable {
 		public final double inputBandwidthLowerLimit;
 		public final double inputBandwidthUpperLimit;
 		public final double inputBandwidthPeerLimit;
+<<<<<<< HEAD:src/freenet/node/NodeStats.java
 		public final int totalRequests;
 		public final int averageTransfersOutPerInsert;
+=======
+		public final boolean realTime;
+>>>>>>> 36d9494... Factor out some load tracking code into classes and split it up by having one instance for realtime and one for bulk. Almost compiles now.:src/freenet/node/NodeStats.java
 		
 		public boolean equals(Object o) {
 			if(!(o instanceof PeerLoadStats)) return false;
@@ -657,6 +661,7 @@ public class NodeStats implements Persistable {
 		
 		public PeerLoadStats(PeerNode peer, int transfersPerInsert, boolean realTimeFlag) {
 			this.peer = peer;
+			this.realTime = realTimeFlag;
 			long[] total = node.collector.getTotalIO();
 			long totalSent = total[0];
 			long totalOverhead = getSentOverhead();
@@ -674,8 +679,8 @@ public class NodeStats implements Persistable {
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(limit);
 			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, true, transfersPerInsert);
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, true, transfersPerInsert);
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, true, transfersPerInsert, realTimeFlag);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, true, transfersPerInsert, realTimeFlag);
 			
 			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
 			
@@ -721,6 +726,7 @@ public class NodeStats implements Persistable {
 			inputBandwidthUpperLimit = m.getInt(DMT.INPUT_BANDWIDTH_UPPER_LIMIT);
 			inputBandwidthPeerLimit = m.getInt(DMT.INPUT_BANDWIDTH_PEER_LIMIT);
 			totalRequests = -1;
+			realTime = m.getBoolean(DMT.REAL_TIME_FLAG);
 		}
 
 		public RunningRequestsSnapshot getOtherRunningRequests() {
@@ -1185,7 +1191,7 @@ public class NodeStats implements Persistable {
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
 		
-		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert);
+		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert, realTimeFlag);
 		
 		// If over the upper limit, reject.
 		
@@ -1215,7 +1221,7 @@ public class NodeStats implements Persistable {
 
 	static final boolean SEND_LOAD_STATS_NOTICES = false;
 	
-	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer, int transfersPerInsert) {
+	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer, int transfersPerInsert, boolean realTimeFlag) {
 		
 		int peers = node.peers.countConnectedPeers();
 		
@@ -1238,7 +1244,7 @@ public class NodeStats implements Persistable {
 		
 		if(SEND_LOAD_STATS_NOTICES && source != null && !dontTellPeer) {
 			// FIXME tell local as well somehow?
-			source.onSetPeerAllocation(input, (int)thisAllocation, transfersPerInsert);
+			source.onSetPeerAllocation(input, (int)thisAllocation, transfersPerInsert, realTimeFlag);
 		}
 		
 		return thisAllocation;
