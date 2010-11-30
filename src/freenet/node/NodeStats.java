@@ -627,12 +627,9 @@ public class NodeStats implements Persistable {
 		public final double inputBandwidthLowerLimit;
 		public final double inputBandwidthUpperLimit;
 		public final double inputBandwidthPeerLimit;
-<<<<<<< HEAD:src/freenet/node/NodeStats.java
 		public final int totalRequests;
 		public final int averageTransfersOutPerInsert;
-=======
 		public final boolean realTime;
->>>>>>> 36d9494... Factor out some load tracking code into classes and split it up by having one instance for realtime and one for bulk. Almost compiles now.:src/freenet/node/NodeStats.java
 		
 		public boolean equals(Object o) {
 			if(!(o instanceof PeerLoadStats)) return false;
