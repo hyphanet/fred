@@ -620,22 +620,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.refilterPolicy = REFILTER_POLICY.valueOf(fproxyConfig.getString("refilterPolicy"));
 		
 		// Network seclevel not physical seclevel because bad filtering can cause network level anonymity breaches.
-		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
-
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
-					NETWORK_THREAT_LEVEL newLevel) {
-				// At LOW, we do ACCEPT_OLD.
-				// Otherwise we do RE_FILTER.
-				// But we don't change it unless it changes from LOW to not LOW.
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW && newLevel != oldLevel) {
-					refilterPolicy = REFILTER_POLICY.ACCEPT_OLD;
-				} else if(oldLevel == NETWORK_THREAT_LEVEL.LOW && newLevel != oldLevel) {
-					refilterPolicy = REFILTER_POLICY.RE_FILTER;
-				}
-			}
-			
-		});
-		
 		SimpleToadletServer.isPanicButtonToBeShown = fproxyConfig.getBoolean("showPanicButton");
 		SimpleToadletServer.noConfirmPanic = fproxyConfig.getBoolean("noConfirmPanic");
 		
@@ -710,6 +694,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public void start() {
+		core.node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
+					NETWORK_THREAT_LEVEL newLevel) {
+				// At LOW, we do ACCEPT_OLD.
+				// Otherwise we do RE_FILTER.
+				// But we don't change it unless it changes from LOW to not LOW.
+				if(newLevel == NETWORK_THREAT_LEVEL.LOW && newLevel != oldLevel) {
+					refilterPolicy = REFILTER_POLICY.ACCEPT_OLD;
+				} else if(oldLevel == NETWORK_THREAT_LEVEL.LOW && newLevel != oldLevel) {
+					refilterPolicy = REFILTER_POLICY.RE_FILTER;
+				}
+			}
+			
+		});
 		if(myThread != null) try {
 			maybeGetNetworkInterface();
 			myThread.start();
