@@ -506,7 +506,7 @@ public class ClientPut extends ClientPutBase {
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
-				cache.updateCompressionStatus(identifier, COMPRESS_STATE.COMPRESSING);
+				cache.updateCompressionStatus(identifier, COMPRESS_STATE.WORKING);
 			}
 		}
 	}
