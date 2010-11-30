@@ -3,6 +3,7 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -190,6 +191,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	 * @return True if it was found and we don't need to start the request. */
 	private boolean checkCache(ClientContext context) {
 		// Fproxy uses lookupInstant() with mustCopy = false. I.e. it can reuse stuff unsafely. If the user frees it it's their fault.
+		if(bogusUSK(context)) return false;
 		CacheFetchResult result = context.downloadCache == null ? null : context.downloadCache.lookupInstant(uri, !fctx.filterData, false, null);
 		if(result == null) return false;
 		Bucket data = null;
@@ -278,6 +280,25 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				Closer.close(data);
 			}
 		}
+	}
+
+	/** If the key is a USK and a) we are requested to do an exhaustive search, or b) 
+	 * there is a later version, then we can't use the download queue as a cache.
+	 * @return True if we can't use the download queue, false if we can. */
+	private boolean bogusUSK(ClientContext context) {
+		if(!uri.isUSK()) return false;
+		long edition = uri.getSuggestedEdition();
+		if(edition < 0) 
+			return true; // Need to do the fetch.
+		USK usk;
+		try {
+			usk = USK.create(uri);
+		} catch (MalformedURLException e) {
+			return false; // Will fail later.
+		}
+		long ret = context.uskManager.lookupKnownGood(usk);
+		if(ret == -1) return false;
+		return ret > edition;
 	}
 
 	private boolean shouldAcceptCachedFilteredData(FetchContext fctx,
