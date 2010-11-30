@@ -615,7 +615,6 @@ public class NodeStats implements Persistable {
 	public class PeerLoadStats {
 		
 		public final PeerNode peer;
-		public final boolean realTimeFlag;
 		/** These do not include those from the peer */
 		public final int expectedTransfersOutCHK;
 		public final int expectedTransfersInCHK;
@@ -680,8 +679,6 @@ public class NodeStats implements Persistable {
 			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, true, transfersPerInsert, realTimeFlag);
 			
 			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
-			
-			this.realTimeFlag = realTimeFlag;
 			
 			this.averageTransfersOutPerInsert = transfersPerInsert;
 			
@@ -875,7 +872,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public RunningRequestsSnapshot(PeerLoadStats stats) {
-			this.realTimeFlag = stats.realTimeFlag;
+			this.realTimeFlag = stats.realTime;
 			// Assume they are all remote.
 			this.expectedTransfersInCHK = stats.expectedTransfersInCHK;
 			this.expectedTransfersInSSK = stats.expectedTransfersInSSK;
