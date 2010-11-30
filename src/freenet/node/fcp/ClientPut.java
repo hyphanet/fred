@@ -290,6 +290,12 @@ public class ClientPut extends ClientPutBase {
 			synchronized(this) {
 				started = true;
 			}
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateStarted(identifier, true);
+				}
+			}
 			if(persistenceType == PERSIST_FOREVER)
 				container.store(this); // Update
 		} catch (InsertException e) {
