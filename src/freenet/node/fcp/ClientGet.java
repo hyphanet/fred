@@ -636,6 +636,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		// We do not want the data to be removed on failure, because the request
 		// may be restarted, and the bucket persists on the getter, even if we get rid of it here.
 		//freeData(container);
+		if(persistenceType == PERSIST_FOREVER)
+			container.store(getFailedMessage);
 		finish(container);
 		if(client != null)
 			client.notifyFailure(this, container);
