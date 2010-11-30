@@ -191,100 +191,93 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	private boolean checkCache(ClientContext context) {
 		// Fproxy uses lookupInstant() with mustCopy = false. I.e. it can reuse stuff unsafely. If the user frees it it's their fault.
 		CacheFetchResult result = context.downloadCache == null ? null : context.downloadCache.lookupInstant(uri, !fctx.filterData, false, null);
+		if(result == null) return false;
 		Bucket data = null;
 		String mimeType = null;
-		if(result != null) {
-			
-			if((!fctx.filterData) && (!result.alreadyFiltered)) {
-				if(fctx.overrideMIME == null || fctx.overrideMIME.equals(result.getMimeType())) {
-					// Works as-is.
-					// Any time we re-use old content we need to remove the tracker because it may not remain available.
-					tracker.removeFetcher(this);
-					onSuccess(result, null, null);
-					return true;
-				} else if(fctx.overrideMIME != null && !fctx.overrideMIME.equals(result.getMimeType())) {
-					// Change the MIME type.
-					tracker.removeFetcher(this);
-					onSuccess(new FetchResult(new ClientMetadata(fctx.overrideMIME), result.asBucket()), null, null);
-					return true;
-				} 
-			} else if(result.alreadyFiltered) {
-				if(refilterPolicy == REFILTER_POLICY.RE_FETCH || !fctx.filterData) {
-					// Can't use it.
-					result = null;
-				} else if(fctx.filterData) {
-					if(shouldAcceptCachedFilteredData(fctx, result)) {
-						if(refilterPolicy == REFILTER_POLICY.ACCEPT_OLD) {
-							tracker.removeFetcher(this);
-							onSuccess(result, null, null);
-							return true;
-						} // else re-filter
-					} else
-						return false;
-				} else {
-					return false;
-				}
-			}
-		}
-		if(result != null) {
-			data = result.asBucket();
-			mimeType = result.getMimeType();
-			if(mimeType == null || mimeType.equals("")) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
-			if(fctx.overrideMIME != null && !result.alreadyFiltered)
-				mimeType = fctx.overrideMIME;
-			else if(fctx.overrideMIME != null && !mimeType.equals(fctx.overrideMIME)) {
-				// Doesn't work.
-				data = null;
-				mimeType = null;
-			}
-		}
-		if(data != null) {
-			String fullMimeType = mimeType;
-			mimeType = ContentFilter.stripMIMEType(mimeType);
-			MIMEType type = ContentFilter.getMIMEType(mimeType);
-			if(type == null || ((!type.safeToRead) && type.readFilter == null)) {
-				UnknownContentTypeException e = new UnknownContentTypeException(mimeType);
-				data.free();
-				onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null, null);
-				return true;
-			} else if(type.safeToRead) {
+		if((!fctx.filterData) && (!result.alreadyFiltered)) {
+			if(fctx.overrideMIME == null || fctx.overrideMIME.equals(result.getMimeType())) {
+				// Works as-is.
+				// Any time we re-use old content we need to remove the tracker because it may not remain available.
 				tracker.removeFetcher(this);
-				onSuccess(new FetchResult(new ClientMetadata(mimeType), data), null, null);
+				onSuccess(result, null, null);
 				return true;
+			} else if(fctx.overrideMIME != null && !fctx.overrideMIME.equals(result.getMimeType())) {
+				// Change the MIME type.
+				tracker.removeFetcher(this);
+				onSuccess(new FetchResult(new ClientMetadata(fctx.overrideMIME), result.asBucket()), null, null);
+				return true;
+			} 
+		} else if(result.alreadyFiltered) {
+			if(refilterPolicy == REFILTER_POLICY.RE_FETCH || !fctx.filterData) {
+				// Can't use it.
+				result = null;
+			} else if(fctx.filterData) {
+				if(shouldAcceptCachedFilteredData(fctx, result)) {
+					if(refilterPolicy == REFILTER_POLICY.ACCEPT_OLD) {
+						tracker.removeFetcher(this);
+						onSuccess(result, null, null);
+						return true;
+					} // else re-filter
+				} else
+					return false;
 			} else {
-				// Try to filter it.
-				Bucket output = null;
-				InputStream is = null;
-				OutputStream os = null;
-				try {
-					output = context.tempBucketFactory.makeBucket(-1);
-					is = data.getInputStream();
-					os = output.getOutputStream();
-					ContentFilter.filter(is, os, fullMimeType, uri.toURI("/"), null, null, fctx.charset);
-					is.close();
-					is = null;
-					os.close();
-					os = null;
-					// Since we are not re-using the data bucket, we can happily stay in the FProxyFetchTracker.
-					this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null, null);
-					output = null;
-					return true;
-				} catch (IOException e) {
-					Logger.normal(this, "Failed filtering coalesced data in fproxy");
-					// Failed. :|
-					// Let it run normally.
-				} catch (URISyntaxException e) {
-					Logger.error(this, "Impossible: "+e, e);
-				} finally {
-					Closer.close(is);
-					Closer.close(os);
-					Closer.close(output);
-					Closer.close(data);
-				}
-				
+				return false;
 			}
 		}
-		return false;
+		data = result.asBucket();
+		mimeType = result.getMimeType();
+		if(mimeType == null || mimeType.equals("")) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
+		if(fctx.overrideMIME != null && !result.alreadyFiltered)
+			mimeType = fctx.overrideMIME;
+		else if(fctx.overrideMIME != null && !mimeType.equals(fctx.overrideMIME)) {
+			// Doesn't work.
+			return false;
+		}
+		String fullMimeType = mimeType;
+		mimeType = ContentFilter.stripMIMEType(mimeType);
+		MIMEType type = ContentFilter.getMIMEType(mimeType);
+		if(type == null || ((!type.safeToRead) && type.readFilter == null)) {
+			UnknownContentTypeException e = new UnknownContentTypeException(mimeType);
+			data.free();
+			onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null, null);
+			return true;
+		} else if(type.safeToRead) {
+			tracker.removeFetcher(this);
+			onSuccess(new FetchResult(new ClientMetadata(mimeType), data), null, null);
+			return true;
+		} else {
+			// Try to filter it.
+			Bucket output = null;
+			InputStream is = null;
+			OutputStream os = null;
+			try {
+				output = context.tempBucketFactory.makeBucket(-1);
+				is = data.getInputStream();
+				os = output.getOutputStream();
+				ContentFilter.filter(is, os, fullMimeType, uri.toURI("/"), null, null, fctx.charset);
+				is.close();
+				is = null;
+				os.close();
+				os = null;
+				// Since we are not re-using the data bucket, we can happily stay in the FProxyFetchTracker.
+				this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null, null);
+				output = null;
+				return true;
+			} catch (IOException e) {
+				Logger.normal(this, "Failed filtering coalesced data in fproxy");
+				// Failed. :|
+				// Let it run normally.
+				return false;
+			} catch (URISyntaxException e) {
+				Logger.error(this, "Impossible: "+e, e);
+				return false;
+			} finally {
+				Closer.close(is);
+				Closer.close(os);
+				Closer.close(output);
+				Closer.close(data);
+			}
+		}
 	}
 
 	private boolean shouldAcceptCachedFilteredData(FetchContext fctx,
