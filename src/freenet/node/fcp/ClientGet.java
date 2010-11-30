@@ -1092,7 +1092,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(progressPending, Integer.MAX_VALUE);
 			totalFinalized = progressPending.isTotalFinalized();
-			if(finished && succeeded) totalFinalized = true;
 			// FIXME why are these doubles???
 			total = (int) progressPending.getTotalBlocks();
 			min = (int) progressPending.getMinBlocks();
@@ -1100,6 +1099,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			fatal = (int) progressPending.getFatalyFailedBlocks();
 			failed = (int) progressPending.getFailedBlocks();
 		}
+		if(finished && succeeded) totalFinalized = true;
 		if(persistenceType == PERSIST_FOREVER)
 			container.deactivate(progressPending, 1);
 		int failureCode = -1;
