@@ -178,10 +178,13 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				if((!fctx.filterData) && (!result.alreadyFiltered)) {
 					if(fctx.overrideMIME == null || fctx.overrideMIME.equals(result.getMimeType())) {
 						// Works as-is.
+						// Any time we re-use old content we need to remove the tracker because it may not remain available.
+						tracker.removeFetcher(this);
 						onSuccess(result, null, null);
 						return;
 					} else if(fctx.overrideMIME != null && !fctx.overrideMIME.equals(result.getMimeType())) {
 						// Change the MIME type.
+						tracker.removeFetcher(this);
 						onSuccess(new FetchResult(new ClientMetadata(fctx.overrideMIME), result.asBucket()), null, null);
 						return;
 					} 
@@ -192,6 +195,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 					} else if(fctx.filterData) {
 						if(shouldAcceptCachedFilteredData(fctx, result)) {
 							if(refilterPolicy == REFILTER_POLICY.ACCEPT_OLD) {
+								tracker.removeFetcher(this);
 								onSuccess(result, null, null);
 								return;
 							} // else re-filter
@@ -222,6 +226,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 					onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null, null);
 					return;
 				} else if(type.safeToRead) {
+					tracker.removeFetcher(this);
 					onSuccess(new FetchResult(new ClientMetadata(mimeType), data), null, null);
 					return;
 				} else {
@@ -238,6 +243,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 						is = null;
 						os.close();
 						os = null;
+						// Since we are not re-using the data bucket, we can happily stay in the FProxyFetchTracker.
 						this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null, null);
 						output = null;
 						return;

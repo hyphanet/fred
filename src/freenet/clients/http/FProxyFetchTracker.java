@@ -72,6 +72,12 @@ public class FProxyFetchTracker implements Runnable {
 		// FIXME get rid of fetchers over some age
 	}
 	
+	void removeFetcher(FProxyFetchInProgress progress) {
+		synchronized(fetchers) {
+			fetchers.removeElement(progress.uri, progress);
+		}
+	}
+	
 	public FProxyFetchWaiter makeWaiterForFetchInProgress(FreenetURI key,long maxSize, FetchContext fctx){
 		FProxyFetchInProgress progress=getFetchInProgress(key, maxSize, fctx);
 		if(progress!=null){
