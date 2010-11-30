@@ -60,7 +60,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
     static final int GET_OFFER_TIMEOUT = 10000;
-    static final int FETCH_TIMEOUT = 120000;
+    static final int FETCH_TIMEOUT_BULK = 600*1000;
+    static final int FETCH_TIMEOUT_REALTIME = 60*1000;
+    final int fetchTimeout;
     /** Wait up to this long to get a path folding reply */
     static final int OPENNET_TIMEOUT = 120000;
     /** One in this many successful requests is randomly reinserted.
@@ -127,6 +129,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private PeerNode successFrom;
     private PeerNode lastNode;
     private final long startTime;
+    final boolean realTimeFlag;
     
     static String getStatusString(int status) {
     	switch(status) {
@@ -182,11 +185,17 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      * RequestSender constructor.
      * @param key The key to request. Its public key should have been looked up
      * already; RequestSender will not look it up.
+     * @param realTimeFlag If enabled,  
      */
     public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, RequestTag tag, Node n,
-            PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore) {
+            PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore, boolean realTimeFlag) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
     	startTime = System.currentTimeMillis();
+    	this.realTimeFlag = realTimeFlag;
+    	if(realTimeFlag)
+    		fetchTimeout = FETCH_TIMEOUT_REALTIME;
+    	else
+    		fetchTimeout = FETCH_TIMEOUT_BULK;
         this.key = key;
         this.pubKey = pubKey;
         this.htl = htl;
@@ -223,7 +232,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		mustUnlock = this.mustUnlock;
             	}
             	if(mustUnlock)
-            		node.unlockUID(uid, isSSK, false, false, false, false, origTag);
+            		node.unlockUID(uid, isSSK, false, false, false, false, realTimeFlag, origTag);
         	}
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
         }
@@ -256,7 +265,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         }
         
         next = null;
-        fetchTimeout = FETCH_TIMEOUT;
 		routeAttempts=0;
 		starting = true;
         // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
@@ -265,7 +273,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     }
     
     private int routeAttempts;
-    private long fetchTimeout;
     private boolean starting;
     private int highHTLFailureCount;
     
@@ -1416,7 +1423,7 @@ loadWaiterLoop:
     	if(sentAbortDownstreamTransfers) {
     		// We took on responsibility for unlocking.
     		if(logMINOR) Logger.minor(this, "Unlocking after turtle");
-    		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, source == null, origTag);
+    		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, source == null, realTimeFlag, origTag);
     	}
         
     }
@@ -1755,6 +1762,10 @@ loadWaiterLoop:
 
 	public synchronized boolean mustUnlock() {
 		return mustUnlock;
+	}
+	
+	public long fetchTimeout() {
+		return fetchTimeout;
 	}
 
 }
