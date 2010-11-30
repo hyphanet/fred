@@ -157,7 +157,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				}
 				RejectReason reason;
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
-					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT)) != null) {
+					boolean realTimeFlag = false;
+					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT, realTimeFlag)) != null) {
 						if(logMINOR)
 							Logger.minor(this, "Not sending local request: "+reason);
 						// Wait one throttle-delay before trying again

@@ -91,7 +91,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             Logger.error(this, "Caught "+t, t);
         } finally {
             if(logMINOR) Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
-            node.unlockUID(uid, true, true, false, false, false, tag);
+            node.unlockUID(uid, true, true, false, false, false, tag.realTimeFlag, tag);
         }
     }
 

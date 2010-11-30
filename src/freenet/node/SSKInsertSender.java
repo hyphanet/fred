@@ -131,7 +131,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         	if(forkedRequestTag != null)
-            	node.unlockUID(uid, true, true, false, false, false, forkedRequestTag);
+            	node.unlockUID(uid, true, true, false, false, false, origTag.realTimeFlag, forkedRequestTag);
         }
 	}
 
@@ -185,11 +185,11 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	
-            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source);
+            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source, origTag.realTimeFlag);
             	uid = node.clientCore.makeUID();
             	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
-            	node.lockUID(uid, true, true, false, false, forkedRequestTag);
+            	node.lockUID(uid, true, true, false, false, origTag.realTimeFlag, forkedRequestTag);
             }
             
             // Route it

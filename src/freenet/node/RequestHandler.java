@@ -114,7 +114,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				dontUnlock = this.dontUnlock;
 			}
 			if(!dontUnlock)
-				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag.realTimeFlag, tag);
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			node.removeTransferringRequestHandler(uid);
@@ -124,7 +124,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				dontUnlock = this.dontUnlock;
 			}
 			if(!dontUnlock)
-				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag.realTimeFlag, tag);
 		}
 	}
 	private Exception previousApplyByteCountCall;
@@ -189,7 +189,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			passedInKeyBlock = null; // For GC
 			return;
 		} else
-			o = node.makeRequestSender(key, htl, uid, tag, source, false, true, false, false, false);
+			o = node.makeRequestSender(key, htl, uid, tag, source, false, true, false, false, false, tag.realTimeFlag);
 
 		if(o == null) { // ran out of htl?
 			Message dnf = DMT.createFNPDataNotFound(uid);
@@ -555,7 +555,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 								Logger.normal(this, "requestor gone, could not start request handler wait");
 								node.removeTransferringRequestHandler(uid);
 								tag.handlerThrew(e);
-								node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+								node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag.realTimeFlag, tag);
 							}
 						} else {
 							//also for byte logging, since the block is the 'terminal' message.
@@ -578,7 +578,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		synchronized(this) {
 			if(uid == dontUnlockUID) return;
 		}
-		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag.realTimeFlag, tag);
 	}
 
 	/**
