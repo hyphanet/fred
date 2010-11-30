@@ -21,7 +21,7 @@ public class DownloadRequestStatus extends RequestStatus {
 	private final File destFilename;
 	private CompatibilityMode[] detectedCompatModes;
 	private byte[] detectedSplitfileKey;
-	private final FreenetURI uri;
+	private FreenetURI uri;
 	boolean filterData;
 	Bucket dataShadow;
 	public final boolean overriddenDataType;
@@ -118,6 +118,10 @@ public class DownloadRequestStatus extends RequestStatus {
 
 	public synchronized Bucket getDataShadow() {
 		return dataShadow;
+	}
+
+	public synchronized void redirect(FreenetURI redirect) {
+		this.uri = redirect;
 	}
 
 }

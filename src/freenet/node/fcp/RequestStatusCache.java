@@ -143,10 +143,22 @@ public class RequestStatusCache {
 		RequestStatus status = requestsByIdentifier.get(identifier);
 		status.setPriority(newPriorityClass);
 	}
-
-	public void updateStarted(String identifier, boolean started) {
-		RequestStatus status = requestsByIdentifier.get(identifier);
+	
+	public synchronized void updateStarted(String identifier, boolean started) {
+		RequestStatus status = (RequestStatus) requestsByIdentifier.get(identifier);
 		status.setStarted(started);
+	}
+
+	/** A request was restarted.
+	 * @param redirect If non-null, the request followed a redirect. */
+	public synchronized void updateStarted(String identifier, boolean started, FreenetURI redirect) {
+		DownloadRequestStatus status = (DownloadRequestStatus) requestsByIdentifier.get(identifier);
+		status.setStarted(started);
+		if(redirect != null) {
+			downloadsByURI.remove(status.getURI());
+			status.redirect(redirect);
+			downloadsByURI.put(redirect, status);
+		}
 	}
 
 	public synchronized CacheFetchResult getShadowBucket(FreenetURI key, boolean noFilter) {
