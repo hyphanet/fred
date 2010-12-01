@@ -1244,10 +1244,13 @@ loadWaiterLoop:
 	}
 
 	private Message createDataRequest() {
+		Message req;
     	if(!isSSK)
-    		return DMT.createFNPCHKDataRequest(uid, htl, (NodeCHK)key);
+    		req = DMT.createFNPCHKDataRequest(uid, htl, (NodeCHK)key);
     	else// if(key instanceof NodeSSK)
-    		return DMT.createFNPSSKDataRequest(uid, htl, (NodeSSK)key, pubKey == null);
+    		req = DMT.createFNPSSKDataRequest(uid, htl, (NodeSSK)key, pubKey == null);
+    	req.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
+    	return req;
 	}
 
 	private void verifyAndCommit(byte[] data) throws KeyVerifyException {
