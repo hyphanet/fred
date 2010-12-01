@@ -338,7 +338,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             // Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.
             // So take it from when we first started to try to send the request.
             // See comments below when handling FNPRecentlyFailed for why we need this.
-            timeSentRequest = System.currentTimeMillis();
+            synchronized(this) {
+            	timeSentRequest = System.currentTimeMillis();
+            }
 			
             origTag.addRoutedTo(next, false);
             
@@ -397,6 +399,10 @@ loadWaiterLoop:
             return;
         }
 	}
+    
+    private synchronized int timeSinceSent() {
+    	return (int) (System.currentTimeMillis() - timeSentRequest);
+    }
     
     private class WaitForAcceptedCallback implements SlowAsyncMessageFilterCallback {
     	
@@ -768,7 +774,7 @@ loadWaiterLoop:
     			// Timeout waiting for Accepted
     			next.localRejectedOverload("AcceptedTimeout");
     			forwardRejectedOverload();
-    			node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+    			node.failureTable.onFailed(key, next, htl, timeSinceSent());
     			// Try next node
     			// It could still be running. So the timeout is fatal to the node.
     			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
@@ -779,7 +785,7 @@ loadWaiterLoop:
     		if(msg.getSpec() == DMT.FNPRejectedLoop) {
     			if(logMINOR) Logger.minor(this, "Rejected loop");
     			next.successNotOverload();
-    			node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+    			node.failureTable.onFailed(key, next, htl, timeSinceSent());
     			// Find another node to route to
     			next.noLongerRoutingTo(origTag, false);
     			return DO.NEXT_PEER;
@@ -801,7 +807,7 @@ loadWaiterLoop:
 //    					return DO.WAIT;
 //    				} else {
     					next.localRejectedOverload("ForwardRejectedOverload");
-    					node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+    					node.failureTable.onFailed(key, next, htl, timeSinceSent());
     					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
     					// Give up on this one, try another
     					next.noLongerRoutingTo(origTag, false);
@@ -910,7 +916,7 @@ loadWaiterLoop:
     	}
     	
    		Logger.error(this, "Unexpected message: "+msg);
-   		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+   		node.failureTable.onFailed(key, next, htl, timeSinceSent());
    		return DO.NEXT_PEER;
     	
 	}
@@ -941,11 +947,11 @@ loadWaiterLoop:
 		} catch (SSKVerifyException e) {
 			pubKey = null;
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
-    		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
 			return false; // try next node
 		} catch (CryptFormatException e) {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
-    		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
 			return false; // try next node
 		}
 	}
@@ -1098,7 +1104,7 @@ loadWaiterLoop:
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
 			//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 			//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
-    		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
 			next.localRejectedOverload("ForwardRejectedOverload2");
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
@@ -1115,7 +1121,7 @@ loadWaiterLoop:
 		short newHtl = msg.getShort(DMT.HTL);
 		if(newHtl < htl) htl = newHtl;
 		next.successNotOverload();
-		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+		node.failureTable.onFailed(key, next, htl, timeSinceSent());
 		origTag.removeRoutingTo(next);
 	}
 
@@ -1173,7 +1179,7 @@ loadWaiterLoop:
 		// This is in theory relative to when the request was received by the node. Lets make it relative
 		// to a known event before that: the time when we sent the request.
 		
-		long timeSinceSent = Math.max(0, (System.currentTimeMillis() - timeSentRequest));
+		long timeSinceSent = Math.max(0, timeSinceSent());
 		timeLeft -= timeSinceSent;
 		
 		// Subtract 1% for good measure / to compensate for dodgy clocks
