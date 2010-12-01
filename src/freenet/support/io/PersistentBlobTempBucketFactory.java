@@ -278,7 +278,7 @@ public class PersistentBlobTempBucketFactory {
 			
 			int first = -1;
 outer:		while(true) {
-				Logger.error(this, "Maybe found free slot from bitmap "+first);
+				if(logMINOR) Logger.minor(this, "Maybe found free slot from bitmap "+first);
 				synchronized(this) {
 					first = freeBlocksCache.firstZero(first+1);
 					if(first == -1) break;
@@ -309,7 +309,7 @@ outer:		while(true) {
 					}
 					added++;
 					changedTags = true;
-					Logger.error(this, "Found free slot from bitmap "+first);
+					if(logMINOR) Logger.minor(this, "Found free slot from bitmap "+first);
 					if(added > MAX_FREE) return true;
 					continue outer;
 				}
@@ -321,7 +321,7 @@ outer:		while(true) {
 				synchronized(this) {
 					freeSlots.put(ptr, tag);
 				}
-				Logger.error(this, "Found free slot (missing) from bitmap "+first);
+				Logger.normal(this, "Found free slot (missing) from bitmap "+first);
 				added++;
 				changedTags = true;
 				if(added > MAX_FREE) return true;
