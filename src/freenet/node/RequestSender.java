@@ -997,7 +997,6 @@ loadWaiterLoop:
     		}
     		
     	}, 60*1000);
-    	byte[] data;
     	final PeerNode sentTo = next;
 			receivingAsync = true;
     	br.receive(new BlockReceiverCompletion() {
