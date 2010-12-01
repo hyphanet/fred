@@ -604,7 +604,7 @@ public class NodeStats implements Persistable {
 	
 	/** All requests must be able to complete in this many seconds given the bandwidth
 	 * available, even if they all succeed. Bulk requests. */
-	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK = 180;
+	static final int BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK = 120;
 	/** All requests must be able to complete in this many seconds given the bandwidth
 	 * available, even if they all succeed. Realtime requests - separate from bulk 
 	 * requests, given higher priority but expected to be bursty and lower capacity. */
