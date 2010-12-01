@@ -513,6 +513,7 @@ loadWaiterLoop:
         	}
         	origTag.addRoutedTo(pn, true);
         	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
+        	msg.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
         	try {
 				pn.sendAsync(msg, null, this);
 			} catch (NotConnectedException e2) {
