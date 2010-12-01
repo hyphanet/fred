@@ -4939,6 +4939,28 @@ public class Node implements TimeSkewDetectorCallback {
 		return total;
 	}
 
+	public int getNumRemoteCHKRequests() {
+		int total = 0;
+		synchronized(runningCHKGetUIDsBulk) {
+			total += runningCHKGetUIDsBulk.size();
+		}
+		synchronized(runningCHKGetUIDsRT) {
+			total += runningCHKGetUIDsRT.size();
+		}
+		return total;
+	}
+
+	public int getNumRemoteSSKRequests() {
+		int total = 0;
+		synchronized(runningSSKGetUIDsBulk) {
+			total += runningSSKGetUIDsBulk.size();
+		}
+		synchronized(runningSSKGetUIDsRT) {
+			total += runningSSKGetUIDsRT.size();
+		}
+		return total;
+	}
+
 	public int getNumRemoteSSKRequests(boolean realTimeFlag) {
 		if(realTimeFlag) {
 			synchronized(runningSSKGetUIDsRT) {
@@ -4949,6 +4971,50 @@ public class Node implements TimeSkewDetectorCallback {
 				return runningSSKGetUIDsBulk.size();
 			}
 		}
+	}
+
+	public int getNumLocalCHKInserts() {
+		int total = 0;
+		synchronized(runningLocalCHKPutUIDsBulk) {
+			total += runningLocalCHKPutUIDsBulk.size();
+		}
+		synchronized(runningLocalCHKPutUIDsRT) {
+			total += runningLocalCHKPutUIDsRT.size();
+		}
+		return total;
+	}
+
+	public int getNumLocalSSKInserts() {
+		int total = 0;
+		synchronized(runningLocalSSKPutUIDsBulk) {
+			total += runningLocalSSKPutUIDsBulk.size();
+		}
+		synchronized(runningLocalSSKPutUIDsRT) {
+			total += runningLocalSSKPutUIDsRT.size();
+		}
+		return total;
+	}
+
+	public int getNumRemoteCHKInserts() {
+		int total = 0;
+		synchronized(runningCHKPutUIDsBulk) {
+			total += runningCHKPutUIDsBulk.size();
+		}
+		synchronized(runningCHKPutUIDsRT) {
+			total += runningCHKPutUIDsRT.size();
+		}
+		return total;
+	}
+
+	public int getNumRemoteSSKInserts() {
+		int total = 0;
+		synchronized(runningSSKPutUIDsRT) {
+			total += runningSSKPutUIDsRT.size();
+		}
+		synchronized(runningSSKPutUIDsBulk) {
+			total += runningSSKPutUIDsBulk.size();
+		}
+		return total;
 	}
 
 	public int getNumRemoteCHKRequests(boolean realTimeFlag) {
@@ -4979,6 +5045,28 @@ public class Node implements TimeSkewDetectorCallback {
 		return realTimeFlag ? runningCHKPutUIDsRT.size() : runningCHKPutUIDsBulk.size();
 	}
 
+	public int getNumSSKOfferReplies() {
+		int total = 0;
+		synchronized(runningSSKOfferReplyUIDsRT) {
+			total += runningSSKOfferReplyUIDsRT.size();
+		}
+		synchronized(runningSSKOfferReplyUIDsBulk) {
+			total += runningSSKOfferReplyUIDsBulk.size();
+		}
+		return total;
+	}
+	
+	public int getNumCHKOfferReplies() {
+		int total = 0;
+		synchronized(runningCHKOfferReplyUIDsRT) {
+			total += runningCHKOfferReplyUIDsRT.size();
+		}
+		synchronized(runningCHKOfferReplyUIDsBulk) {
+			total += runningCHKOfferReplyUIDsBulk.size();
+		}
+		return total;
+	}
+	
 	public int getNumSSKOfferReplies(boolean realTimeFlag) {
 		return realTimeFlag ? runningSSKOfferReplyUIDsRT.size() : runningSSKOfferReplyUIDsBulk.size();
 	}
