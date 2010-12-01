@@ -105,6 +105,10 @@ public class FailureTable implements OOMHook {
 	 * @param timeout
 	 */
 	public void onFailed(Key key, PeerNode routedTo, short htl, int timeout) {
+		if(timeout < 0 || timeout > REJECT_TIME) {
+			Logger.error(this, "Bogus timeout "+timeout, new Exception("error"));
+			timeout = Math.max(Math.min(REJECT_TIME, timeout), 0);
+		}
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
@@ -119,6 +123,10 @@ public class FailureTable implements OOMHook {
 	}
 	
 	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int timeout, PeerNode requestor) {
+		if(timeout < 0 || timeout > REJECT_TIME) {
+			Logger.error(this, "Bogus timeout "+timeout, new Exception("error"));
+			timeout = Math.max(Math.min(REJECT_TIME, timeout), 0);
+		}
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
