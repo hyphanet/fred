@@ -66,7 +66,6 @@ import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
-import freenet.node.NodeStats.ByteCountersSnapshot;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.NodeStats.RequestType;
 import freenet.node.NodeStats.RunningRequestsSnapshot;
@@ -4669,18 +4668,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(lastIncomingLoadStats == null) return null;
 				loadStats = lastIncomingLoadStats;
 			}
-			ByteCountersSnapshot byteCountersOutput = node.nodeStats.getByteCounters(false);
-			ByteCountersSnapshot byteCountersInput = node.nodeStats.getByteCounters(true);
 			RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
 			RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
 			boolean ignoreLocalVsRemoteBandwidthLiability = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			return new IncomingLoadSummaryStats(runningRequests.totalRequests(), 
 					loadStats.outputBandwidthPeerLimit, loadStats.inputBandwidthPeerLimit,
 					loadStats.outputBandwidthUpperLimit, loadStats.inputBandwidthUpperLimit,
-					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput, false),
-					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput, true),
-					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersOutput, false),
-					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, byteCountersInput, true));
+					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, false),
+					runningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, true),
+					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, false),
+					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, true));
 		}
 		
 		// FIXME on capacity changing so that we should add another node???
