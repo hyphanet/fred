@@ -338,7 +338,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             // Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.
             // So take it from when we first started to try to send the request.
             // See comments below when handling FNPRecentlyFailed for why we need this.
-            long timeSentRequest = System.currentTimeMillis();
+            timeSentRequest = System.currentTimeMillis();
 			
             origTag.addRoutedTo(next, false);
             
