@@ -25,6 +25,8 @@ public abstract class RequestStatus {
 	private long lastActivity;
 	private final short persistenceType;
 	
+	/** The download or upload has finished.
+	 * @param success Did it succeed? */
 	synchronized void setFinished(boolean success) {
 		this.lastActivity = System.currentTimeMillis();
 		this.hasFinished = true;
