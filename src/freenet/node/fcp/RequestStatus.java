@@ -35,6 +35,14 @@ public abstract class RequestStatus {
 		this.isTotalFinalized = true;
 	}
 	
+	synchronized void restart(boolean started) {
+		this.lastActivity = System.currentTimeMillis();
+		this.hasFinished = false;
+		this.hasSucceeded = false;
+		this.hasStarted = started;
+		this.isTotalFinalized = false;
+	}
+	
 	/** Constructor for creating a status from a request that has already started, e.g. on
 	 * startup. We will also create status when a request is created. */
 	RequestStatus(String identifier, short persistence, boolean started, boolean finished, 

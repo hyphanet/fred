@@ -1039,7 +1039,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(client != null) {
 			RequestStatusCache cache = client.getRequestStatusCache();
 			if(cache != null) {
-				cache.updateStarted(identifier, false, redirect);
+				cache.updateStarted(identifier, redirect);
 			}
 		}
 		try {
