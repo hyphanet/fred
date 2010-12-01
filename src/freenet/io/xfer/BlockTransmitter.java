@@ -72,6 +72,7 @@ public class BlockTransmitter {
 	final PeerContext _destination;
 	private boolean _sentSendAborted;
 	final long _uid;
+	private final boolean realTime;
 	final PartiallyReceivedBlock _prb;
 	private LinkedList<Integer> _unsent;
 	private BlockSenderJob _senderThread = new BlockSenderJob();
@@ -137,7 +138,7 @@ public class BlockTransmitter {
 		/** @return True . */
 		private boolean innerRun(int packetNo) {
 			try {
-				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo), realTime), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
 				synchronized(itemsPending) {
 					itemsPending.add(item);
 				}
@@ -200,7 +201,8 @@ public class BlockTransmitter {
 		
 	}
 	
-	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, BlockTransmitterCompletion callback) {
+	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, BlockTransmitterCompletion callback, boolean realTime) {
+		this.realTime = realTime;
 		_ticker = ticker;
 		_executor = _ticker.getExecutor();
 		_callback = callback;

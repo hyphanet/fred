@@ -483,7 +483,7 @@ public class FailureTable implements OOMHook {
 						node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
 					}
 					
-				});
+				}, realTimeFlag);
         	node.executor.execute(new PrioRunnable() {
 
 				public int getPriority() {

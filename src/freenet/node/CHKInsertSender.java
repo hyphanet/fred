@@ -74,7 +74,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					}
 				}
 				
-			});
+			}, realTimeFlag);
 		}
 		
 		void start() {

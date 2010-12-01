@@ -163,12 +163,14 @@ public class DMT {
 		addField(DATA, Buffer.class);
 	}};
 	
-	public static final Message createPacketTransmit(long uid, int packetNo, BitArray sent, Buffer data) {
+	public static final Message createPacketTransmit(long uid, int packetNo, BitArray sent, Buffer data, boolean realTime) {
 		Message msg = new Message(packetTransmit);
 		msg.set(UID, uid);
 		msg.set(PACKET_NO, packetNo);
 		msg.set(SENT, sent);
 		msg.set(DATA, data);
+		if(realTime)
+			msg.boostPriority();
 		return msg;
 	}
 	

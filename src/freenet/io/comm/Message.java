@@ -65,6 +65,7 @@ public class Message {
 	private List<Message> _subMessages;
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
+	short priority;
 
 	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
@@ -350,6 +351,14 @@ public class Message {
 
 	public long age() {
 		return System.currentTimeMillis() - localInstantiationTime;
+	}
+
+	public short getPriority() {
+		return priority;
+	}
+	
+	public void boostPriority() {
+		priority--;
 	}
 
 }
