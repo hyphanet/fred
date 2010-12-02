@@ -31,12 +31,31 @@ public class PCFBMode {
      * register. */
     protected int registerPointer;
     
+    /** Create the PCFB with no IV. The caller must either:
+     * a) Call reset() with a proper IV, or 
+     * b) Accept the initial IV of all zero's. (We will still encrypt this before using it).
+     * If the key is random and never reused, for instance if it is a one time key or 
+     * derived from a hash, b) may be acceptable. It is used in some parts of Freenet. 
+     * However, it is very bad practice cryptographically, and we should get rid of it.
+     * NOTE THAT IV:KEY PAIRS *MUST* BE UNIQUE! If two instances use the same key with the
+     * same empty IV, the bad guys will be able to XOR the two ciphertexts to get the XOR
+     * of the plaintext. If they can deduce the register's value they may even be able to
+     * decrypt the next 32 bytes, however after that they should hopefully be stumped -
+     * but it will certainly make more sophisticated attacks easier.
+     * FIXME CRYPTO !!!
+     * @param c The underlying block cipher
+     * @deprecated
+     */
     public static PCFBMode create(BlockCipher c) {
     	if(c instanceof Rijndael)
     		return new RijndaelPCFBMode((Rijndael)c);
     	return new PCFBMode(c);
     }
     
+    /** Create the PCFB with an IV. The register pointer will be set to the end of the IV,
+     * so refillBuffer() will be called prior to any encryption. IV's *must* be unique for
+     * a given key. IT IS STRONGLY RECOMMENDED TO USE THIS CONSTRUCTOR, THE OTHER ONE WILL 
+     * BE REMOVED EVENTUALLY. */
     public static PCFBMode create(BlockCipher c, byte[] iv) {
     	if(c instanceof Rijndael)
     		return new RijndaelPCFBMode((Rijndael)c, iv);
