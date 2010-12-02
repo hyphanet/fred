@@ -60,9 +60,8 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 			throw new Error(e);
 		}
 		aes.initialize(key.cryptoKey);
-		PCFBMode pcfb = PCFBMode.create(aes);
 		// ECB-encrypted E(H(docname)) serves as IV.
-		pcfb.reset(key.ehDocname);
+		PCFBMode pcfb = PCFBMode.create(aes, key.ehDocname);
 		pcfb.blockDecipher(decryptedHeaders, 0, decryptedHeaders.length);
 		// First 32 bytes are the key
 		byte[] dataDecryptKey = new byte[DATA_DECRYPT_KEY_LENGTH];
