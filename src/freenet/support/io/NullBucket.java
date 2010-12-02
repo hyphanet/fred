@@ -11,7 +11,7 @@ import com.db4o.ObjectContainer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
-public class NullBucket implements Bucket, SerializableToFieldSetBucket {
+public class NullBucket implements Bucket {
 
     public final OutputStream nullOut = new NullOutputStream();
     public final InputStream  nullIn  = new NullInputStream();
@@ -59,12 +59,6 @@ public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 
 	public void free() {
 		// Do nothing
-	}
-
-	public SimpleFieldSet toFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(false);
-		fs.putSingle("Type", "NullBucket");
-		return fs;
 	}
 
 	public void storeTo(ObjectContainer container) {

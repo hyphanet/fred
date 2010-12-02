@@ -4,7 +4,6 @@
 package freenet.support.io;
 
 import java.io.File;
-import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 
@@ -16,7 +15,7 @@ import freenet.support.api.Bucket;
  * 
  * @author oskar
  */
-public class FileBucket extends BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
+public class FileBucket extends BaseFileBucket implements Bucket {
 
 	protected final File file;
 	protected boolean readOnly;

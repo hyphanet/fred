@@ -29,20 +29,15 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileCompatibilityModeEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
-import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NullBucket;
-import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 /**
  * A simple client fetch. This can of course fetch arbitrarily large
