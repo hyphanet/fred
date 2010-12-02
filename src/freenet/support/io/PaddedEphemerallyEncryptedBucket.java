@@ -36,6 +36,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private final int minPaddedSize;
 	/** The decryption key. */
 	private final byte[] key;
+	private final byte[] iv;
 	private final byte[] randomSeed;
 	private long dataLength;
 	private boolean readOnly;
@@ -70,6 +71,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		weakPRNG.nextBytes(randomSeed);
 		strongPRNG.nextBytes(tempKey);
 		this.key = tempKey;
+		this.iv = new byte[32];
+		strongPRNG.nextBytes(iv);
 		this.minPaddedSize = minSize;
 		readOnly = false;
 		lastOutputStream = 0;
@@ -99,6 +102,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		this.minPaddedSize = minSize;
 		readOnly = false;
 		lastOutputStream = 0;
+		iv = null;
 	}
 
 	public PaddedEphemerallyEncryptedBucket(SimpleFieldSet fs, RandomSource origRandom, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
@@ -132,6 +136,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		if(dataLength > bucket.size())
 			throw new CannotCreateFromFieldSetException("Underlying bucket "+bucket+" is too small: should be "+dataLength+" actually "+bucket.size());
 		randomSeed = new byte[32];
+		iv = null;
 		origRandom.nextBytes(randomSeed);
 	}
 
@@ -143,6 +148,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		setReadOnly();
 		this.bucket = newBucket;
 		this.minPaddedSize = orig.minPaddedSize;
+		if(orig.iv != null) {
+			iv = new byte[32];
+			System.arraycopy(orig.iv, 0, iv, 0, 32);
+		} else {
+			iv = null;
+		}
 	}
 
 	public OutputStream getOutputStream() throws IOException {
@@ -346,7 +357,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	public PCFBMode getPCFB() {
 		Rijndael aes = getRijndael();
-		return PCFBMode.create(aes);
+		if(iv != null)
+			return PCFBMode.create(aes, iv);
+		else
+			// FIXME CRYPTO We should probably migrate all old buckets automatically so we can get rid of this?
+			// Since the key is unique it is actually almost safe to use all zeros IV, but it's better to use a real IV.
+			return PCFBMode.create(aes);
 	}
 
 	public String getName() {
