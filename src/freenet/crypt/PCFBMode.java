@@ -23,8 +23,12 @@ import freenet.crypt.ciphers.Rijndael;
  */
 public class PCFBMode {
     
+	/** The underlying block cipher. */
     protected BlockCipher c;
+    /** The register, with which data is XOR'ed */
     protected byte[] feedback_register;
+    /** When this reaches the end of the register, we refillBuffer() i.e. re-encrypt the
+     * register. */
     protected int registerPointer;
     
     public static PCFBMode create(BlockCipher c) {
