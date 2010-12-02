@@ -122,6 +122,13 @@ public class PCFBMode {
     }
 
     /**
+     * returns the length of the IV for a PCFB created with a specific cipher.
+     */
+	public static int lengthIV(BlockCipher c) {
+		return c.getBlockSize() >> 3;
+	}
+
+    /**
      * Deciphers one byte of data, by XOR'ing the ciphertext byte with
      * one byte from the encrypted buffer.  Then places the received
      * byte in the feedback register.  If no bytes are available in 
@@ -193,4 +200,5 @@ public class PCFBMode {
 
         registerPointer=0;
     }
+
 }
