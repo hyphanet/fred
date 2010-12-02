@@ -79,32 +79,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		dataLength = 0;
 	}
 
-	/**
-	 * Load an existing PaddedEphemerallyEncryptedBucket, with a key.
-	 * The bucket can and should already exist.
-	 * @param bucket
-	 * @param minSize
-	 * @param knownSize The size of the data. This cannot be deduced from the bucket
-	 * alone and must be specified. If the bucket is smaller than this, we throw.
-	 * @param key
-	 * @param origRandom
-	 * @throws IOException 
-	 */
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom) throws IOException {
-		if(bucket.size() < knownSize)
-			throw new IOException("Bucket "+bucket+" is too small on disk - knownSize="+knownSize+" but bucket.size="+bucket.size()+" for "+bucket);
-		this.dataLength = knownSize;
-		this.bucket = bucket;
-		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
-		randomSeed = new byte[32];
-		origRandom.nextBytes(randomSeed);
-		this.key = key;
-		this.minPaddedSize = minSize;
-		readOnly = false;
-		lastOutputStream = 0;
-		iv = null;
-	}
-
 	public PaddedEphemerallyEncryptedBucket(SimpleFieldSet fs, RandomSource origRandom, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		String tmp = fs.get("DataLength");
 		if(tmp == null)
