@@ -395,8 +395,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		BlockCipher authKey = pn.incomingSetupCipher;
 		if(logDEBUG) Logger.debug(this, "Decrypt key: "+HexUtil.bytesToHex(pn.incomingSetupKey)+" for "+peer+" : "+pn+" in tryProcessAuth");
 		// Does the packet match IV E( H(data) data ) ?
-		PCFBMode pcfb = PCFBMode.create(authKey);
-		int ivLength = pcfb.lengthIV();
+		int ivLength = PCFBMode.lengthIV(authKey);
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 4) {
 			if(logMINOR) {
@@ -409,7 +408,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return false;
 		}
 		// IV at the beginning
-		pcfb.reset(buf, offset);
+		PCFBMode pcfb = PCFBMode.create(authKey, buf, offset);
 		// Then the hash, then the data
 		// => Data starts at ivLength + digestLength
 		// Decrypt the hash
@@ -464,8 +463,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer) {
 		BlockCipher authKey = crypto.getAnonSetupCipher();
 		// Does the packet match IV E( H(data) data ) ?
-		PCFBMode pcfb = PCFBMode.create(authKey);
-		int ivLength = pcfb.lengthIV();
+		int ivLength = PCFBMode.lengthIV(authKey);
 		MessageDigest md = SHA256.getMessageDigest();
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 5) {
@@ -474,7 +472,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return false;
 		}
 		// IV at the beginning
-		pcfb.reset(buf, offset);
+		PCFBMode pcfb = PCFBMode.create(authKey, buf, offset);
 		// Then the hash, then the data
 		// => Data starts at ivLength + digestLength
 		// Decrypt the hash
@@ -529,15 +527,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private boolean tryProcessAuthAnonReply(byte[] buf, int offset, int length, PeerNode pn, Peer peer, long now) {
 		BlockCipher authKey = pn.anonymousInitiatorSetupCipher;
 		// Does the packet match IV E( H(data) data ) ?
-		PCFBMode pcfb = PCFBMode.create(authKey);
-		int ivLength = pcfb.lengthIV();
+		int ivLength = PCFBMode.lengthIV(authKey);
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 5) {
 			if(logDEBUG) Logger.debug(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 5));
 			return false;
 		}
 		// IV at the beginning
-		pcfb.reset(buf, offset);
+		PCFBMode pcfb = PCFBMode.create(authKey, buf, offset);
 		// Then the hash, then the data
 		// => Data starts at ivLength + digestLength
 		// Decrypt the hash
@@ -1188,7 +1185,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
 		c.initialize(Ke);
-		final PCFBMode pk = PCFBMode.create(c);
 		int ivLength = PCFBMode.lengthIV(c);
 		int decypheredPayloadOffset = 0;
 		// We compute the HMAC of ("I"+cyphertext) : the cyphertext includes the IV!
@@ -1201,8 +1197,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 
+		final PCFBMode pk = PCFBMode.create(c, decypheredPayload, decypheredPayloadOffset);
 		// Get the IV
-		pk.reset(decypheredPayload, decypheredPayloadOffset);
 		decypheredPayloadOffset += ivLength;
 		// Decrypt the payload
 		pk.blockDecipher(decypheredPayload, decypheredPayloadOffset, decypheredPayload.length-decypheredPayloadOffset);
@@ -1394,7 +1390,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		inputOffset += HASH_LENGTH;
 
 		c.initialize(pn.jfkKe);
-		final PCFBMode pk = PCFBMode.create(c);
 		int ivLength = PCFBMode.lengthIV(c);
 		int decypheredPayloadOffset = 0;
 		// We compute the HMAC of ("R"+cyphertext) : the cyphertext includes the IV!
@@ -1424,7 +1419,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		// Get the IV
-		pk.reset(decypheredPayload, decypheredPayloadOffset);
+		final PCFBMode pk = PCFBMode.create(c, decypheredPayload, decypheredPayloadOffset);
 		decypheredPayloadOffset += ivLength;
 		// Decrypt the payload
 		pk.blockDecipher(decypheredPayload, decypheredPayloadOffset, decypheredPayload.length - decypheredPayloadOffset);
@@ -1608,11 +1603,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKe = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		pn.jfkKa = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
 		c.initialize(pn.jfkKe);
-		PCFBMode pcfb = PCFBMode.create(c);
-		int ivLength = pcfb.lengthIV();
+		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv = new byte[ivLength];
 		node.random.nextBytes(iv);
-		pcfb.reset(iv);
+		PCFBMode pcfb = PCFBMode.create(c, iv);
 		int cleartextOffset = 0;
 		byte[] cleartext = new byte[JFK_PREFIX_INITIATOR.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2 + data.length];
 		System.arraycopy(JFK_PREFIX_INITIATOR, 0, cleartext, cleartextOffset, JFK_PREFIX_INITIATOR.length);
@@ -1710,11 +1704,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
-		PCFBMode pk=PCFBMode.create(c);
-		int ivLength = pk.lengthIV();
+		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv=new byte[ivLength];
 		node.random.nextBytes(iv);
-		pk.reset(iv);
+		PCFBMode pk=PCFBMode.create(c, iv);
 		// Don't include the last bit
 		int dataLength = data.length - hisRef.length;
 		byte[] cyphertext = new byte[JFK_PREFIX_RESPONDER.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2 +
@@ -1812,8 +1805,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(length > sock.getMaxPacketSize()) {
 			throw new IllegalStateException("Cannot send auth packet: too long: "+length);
 		}
-		PCFBMode pcfb = PCFBMode.create(cipher);
-		byte[] iv = new byte[pcfb.lengthIV()];
+		byte[] iv = new byte[PCFBMode.lengthIV(cipher)];
 		node.random.nextBytes(iv);
 		byte[] hash = SHA256.digest(output);
 		if(logMINOR) Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
@@ -1829,7 +1821,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		if(paddingLength < 0) paddingLength = 0;
 		byte[] data = new byte[prePaddingLength + paddingLength];
-		pcfb.reset(iv);
+		PCFBMode pcfb = PCFBMode.create(cipher, iv);
 		System.arraycopy(iv, 0, data, 0, iv.length);
 		pcfb.blockEncipher(hash, 0, hash.length);
 		System.arraycopy(hash, 0, data, iv.length, hash.length);
@@ -1913,9 +1905,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// Verify the hash later
 
 		PCFBMode pcfb;
-		pcfb = PCFBMode.create(sessionCipher);
 		// Set IV to the hash, after it is encrypted
-		pcfb.reset(packetHash);
+		pcfb = PCFBMode.create(sessionCipher, packetHash);
 		//Logger.minor(this,"IV:\n"+HexUtil.bytesToHex(packetHash));
 
 		byte[] seqBuf = new byte[4];

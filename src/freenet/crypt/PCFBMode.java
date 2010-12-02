@@ -52,14 +52,19 @@ public class PCFBMode {
     	return new PCFBMode(c);
     }
     
+    public static PCFBMode create(BlockCipher c, byte[] iv) {
+    	return create(c, iv, 0);
+    }
+    
     /** Create the PCFB with an IV. The register pointer will be set to the end of the IV,
      * so refillBuffer() will be called prior to any encryption. IV's *must* be unique for
      * a given key. IT IS STRONGLY RECOMMENDED TO USE THIS CONSTRUCTOR, THE OTHER ONE WILL 
-     * BE REMOVED EVENTUALLY. */
-    public static PCFBMode create(BlockCipher c, byte[] iv) {
+     * BE REMOVED EVENTUALLY. 
+     * @param offset */
+    public static PCFBMode create(BlockCipher c, byte[] iv, int offset) {
     	if(c instanceof Rijndael)
-    		return new RijndaelPCFBMode((Rijndael)c, iv);
-    	return new PCFBMode(c, iv);
+    		return new RijndaelPCFBMode((Rijndael)c, iv, offset);
+    	return new PCFBMode(c, iv, offset);
     }
     
     protected PCFBMode(BlockCipher c) {
@@ -68,9 +73,9 @@ public class PCFBMode {
         registerPointer = feedback_register.length;
     }
 
-    protected PCFBMode(BlockCipher c, byte[] iv) {
+    protected PCFBMode(BlockCipher c, byte[] iv, int offset) {
         this(c);
-        System.arraycopy(iv, 0, feedback_register, 0, feedback_register.length);
+        System.arraycopy(iv, offset, feedback_register, 0, feedback_register.length);
         // registerPointer is already set to the end by this(c), so we will refillBuffer() immediately.
     }
 
