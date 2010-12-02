@@ -71,6 +71,7 @@ public class PCFBMode {
     protected PCFBMode(BlockCipher c, byte[] iv) {
         this(c);
         System.arraycopy(iv, 0, feedback_register, 0, feedback_register.length);
+        // registerPointer is already set to the end by this(c), so we will refillBuffer() immediately.
     }
 
     /**
