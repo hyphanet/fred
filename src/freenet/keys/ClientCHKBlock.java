@@ -235,7 +235,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         try {
             cipher = new Rijndael(256, 256);
         } catch (UnsupportedCipherException e) {
-            // FIXME - log this properly
+        	Logger.error(ClientCHKBlock.class, "Impossible: "+e, e);
             throw new Error(e);
         }
         cipher.initialize(encKey);
