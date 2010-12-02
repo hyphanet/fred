@@ -165,8 +165,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			this.out = out;
 			dataLength = 0;
 			this.streamNumber = streamNumber;
-			Rijndael aes = getRijndael();
-			pcfb = PCFBMode.create(aes);
+			pcfb = getPCFB();
 		}
 		
 		@Override
@@ -253,8 +252,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		
 		public PaddedEphemerallyEncryptedInputStream(InputStream in) {
 			this.in = in;
-			Rijndael aes = getRijndael();
-			pcfb = PCFBMode.create(aes);
+			pcfb = getPCFB();
 			ptr = 0;
 		}
 		
@@ -344,6 +342,11 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		}
 		aes.initialize(key);
 		return aes;
+	}
+
+	public PCFBMode getPCFB() {
+		Rijndael aes = getRijndael();
+		return PCFBMode.create(aes);
 	}
 
 	public String getName() {
