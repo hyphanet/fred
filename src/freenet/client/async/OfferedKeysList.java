@@ -168,7 +168,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 						// Ignore
 					}
 					
-				}, true, false);
+				}, true, false, false); // FIXME bulk flag
 				// FIXME reconsider canWriteClientCache=false parameter.
 				return true;
 			}

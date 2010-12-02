@@ -14,6 +14,7 @@ public abstract class UIDTag {
 	final long createdTime;
 	final boolean wasLocal;
 	private final WeakReference<PeerNode> sourceRef;
+	final boolean realTimeFlag;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -24,10 +25,11 @@ public abstract class UIDTag {
 	private HashSet<PeerNode> fetchingOfferedKeyFrom = null;
 	protected boolean notRoutedOnwards;
 	
-	UIDTag(PeerNode source) {
+	UIDTag(PeerNode source, boolean realTimeFlag) {
 		createdTime = System.currentTimeMillis();
 		this.sourceRef = source == null ? null : source.myRef;
 		wasLocal = source == null;
+		this.realTimeFlag = realTimeFlag;
 	}
 
 	public abstract void logStillPresent(Long uid);

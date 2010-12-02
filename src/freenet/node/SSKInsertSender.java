@@ -65,6 +65,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private final boolean forkOnCacheable;
     private final boolean preferInsert;
     private final boolean ignoreLowBackoff;
+    private final boolean realTimeFlag;
     private InsertTag forkedRequestTag;
     
     private int status = -1;
@@ -83,7 +84,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     /** Could not get off the node at all! */
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
-    SSKInsertSender(SSKBlock block, long uid, InsertTag tag, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
+    SSKInsertSender(SSKBlock block, long uid, InsertTag tag, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
     	logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     	this.fromStore = fromStore;
     	this.node = node;
@@ -107,6 +108,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	this.forkOnCacheable = forkOnCacheable;
     	this.preferInsert = preferInsert;
     	this.ignoreLowBackoff = ignoreLowBackoff;
+    	this.realTimeFlag = realTimeFlag;
     }
 
     void start() {
@@ -131,7 +133,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         	if(forkedRequestTag != null)
-            	node.unlockUID(uid, true, true, false, false, false, forkedRequestTag);
+            	node.unlockUID(uid, true, true, false, false, false, realTimeFlag, forkedRequestTag);
         }
 	}
 
@@ -185,11 +187,11 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	
-            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source);
+            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source, realTimeFlag);
             	uid = node.clientCore.makeUID();
             	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
-            	node.lockUID(uid, true, true, false, false, forkedRequestTag);
+            	node.lockUID(uid, true, true, false, false, realTimeFlag, forkedRequestTag);
             }
             
             // Route it
@@ -216,6 +218,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(preferInsert != Node.PREFER_INSERT_DEFAULT) {
             	request.addSubMessage(DMT.createFNPSubInsertPreferInsert(preferInsert));
             }
+        	request.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
             
             // Wait for ack or reject... will come before even a locally generated DataReply
             
@@ -474,7 +477,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					
         			headers = ((ShortBuffer) msg.getObject(DMT.BLOCK_HEADERS)).getData();
         			// Wait for the data
-        			MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(RequestSender.FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
+        			MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(RequestSender.FETCH_TIMEOUT_REALTIME).setType(DMT.FNPSSKDataFoundData);
         			Message dataMessage;
         			try {
 						dataMessage = node.usm.waitFor(mfData, this);

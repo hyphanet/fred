@@ -144,14 +144,18 @@ public class DMT {
 	public static final short PRIORITY_UNSPECIFIED=2;
 	/** Long timeout (e.g. DataFound), or moderately urgent. */
 	public static final short PRIORITY_LOW=3; // long timeout, or moderately urgent
+	/** Bulk data transfer for realtime requests. Not strictly inferior to 
+	 * PRIORITY_BULK_DATA: we will not allow PRIORITY_REALTIME_DATA to starve 
+	 * PRIORITY_BULK_DATA. */
+	public static final short PRIORITY_REALTIME_DATA=4;
 	/**
 	 * Bulk data transfer, bottom of the heap, high level limiting must ensure there is time to send it by 
 	 * not accepting an infeasible number of requests; starvation will cause bwlimitDelayTime to go high and 
 	 * requests to be rejected. That's the ultimate limiter if even output bandwidth liability fails.
 	 */
-	public static final short PRIORITY_BULK_DATA=4;
+	public static final short PRIORITY_BULK_DATA=5;
 	
-	public static final short NUM_PRIORITIES = 5;
+	public static final short NUM_PRIORITIES = 6;
 	
 	// Assimilation
 
@@ -163,12 +167,14 @@ public class DMT {
 		addField(DATA, Buffer.class);
 	}};
 	
-	public static final Message createPacketTransmit(long uid, int packetNo, BitArray sent, Buffer data) {
+	public static final Message createPacketTransmit(long uid, int packetNo, BitArray sent, Buffer data, boolean realTime) {
 		Message msg = new Message(packetTransmit);
 		msg.set(UID, uid);
 		msg.set(PACKET_NO, packetNo);
 		msg.set(SENT, sent);
 		msg.set(DATA, data);
+		if(realTime)
+			msg.boostPriority();
 		return msg;
 	}
 	
@@ -1590,6 +1596,7 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
 	public static final MessageType FNPPeerLoadStatusShort = new MessageType("FNPPeerLoadStatusShort", PRIORITY_HIGH) {{
@@ -1604,6 +1611,7 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
 	public static final MessageType FNPPeerLoadStatusInt = new MessageType("FNPPeerLoadStatusInt", PRIORITY_HIGH) {{
@@ -1618,6 +1626,7 @@ public class DMT {
 		addField(INPUT_BANDWIDTH_LOWER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_UPPER_LIMIT, Integer.class);
 		addField(INPUT_BANDWIDTH_PEER_LIMIT, Integer.class);
+		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
 	public static final Message createFNPPeerLoadStatus(PeerLoadStats stats) {
@@ -1654,6 +1663,7 @@ public class DMT {
 		msg.set(INPUT_BANDWIDTH_LOWER_LIMIT, (int)stats.inputBandwidthLowerLimit);
 		msg.set(INPUT_BANDWIDTH_UPPER_LIMIT, (int)stats.inputBandwidthUpperLimit);
 		msg.set(INPUT_BANDWIDTH_PEER_LIMIT, (int)stats.inputBandwidthPeerLimit);
+		msg.set(REAL_TIME_FLAG, stats.realTime);
 		return msg;
 	}
 	
@@ -1670,4 +1680,23 @@ public class DMT {
 	public static final String INPUT_BANDWIDTH_LOWER_LIMIT = "inputBandwidthLowerLimit";
 	public static final String INPUT_BANDWIDTH_UPPER_LIMIT = "inputBandwidthUpperLimit";
 	public static final String INPUT_BANDWIDTH_PEER_LIMIT = "inputBandwidthPeerLimit";
+	
+	public static final String REAL_TIME_FLAG = "realTimeFlag";
+	
+	public static final MessageType FNPRealTimeFlag = new MessageType("FNPRealTimeFlag", PRIORITY_HIGH) {{
+		addField(REAL_TIME_FLAG, Boolean.class);
+	}};
+	
+	public static final Message createFNPRealTimeFlag(boolean isBulk) {
+		Message msg = new Message(FNPRealTimeFlag);
+		msg.set(REAL_TIME_FLAG, isBulk);
+		return msg;
+	}
+
+	public static boolean getRealTimeFlag(Message m) {
+		Message bulk = m.getSubMessage(FNPRealTimeFlag);
+		if(bulk == null) return false;
+		return bulk.getBoolean(REAL_TIME_FLAG);
+	}
+	
 }

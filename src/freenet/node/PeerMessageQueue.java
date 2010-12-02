@@ -702,12 +702,49 @@ public class PeerMessageQueue {
 		MutableBoolean incomplete = new MutableBoolean();
 
 		// Do not allow realtime data to starve bulk data
-		for(int i=0;i<DMT.NUM_PRIORITIES;i++) {
+		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, incomplete);
 			if(incomplete.value) return -size;
 		}
-
-		if(incomplete.value) size = -size;
+		
+		// FIXME token bucket?
+		if(sendBalance >= 0) {
+			// Try realtime first
+			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, incomplete);
+			if(s != size) {
+				size = s;
+				sendBalance--;
+				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
+			}
+			if(incomplete.value) return -size;
+			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, incomplete);
+			if(s != size) {
+				size = s;
+				sendBalance++;
+				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
+			}
+			if(incomplete.value) return -size;
+		} else {
+			// Try bulk first
+			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, incomplete);
+			if(s != size) {
+				size = s;
+				sendBalance++;
+				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
+			}
+			if(incomplete.value) return -size;
+			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, incomplete);
+			if(s != size) {
+				size = s;
+				sendBalance--;
+				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
+			}
+			if(incomplete.value) return -size;
+		}
+		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
+			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, incomplete);
+			if(incomplete.value) return -size;
+		}
 		return size;
 	}
 	
@@ -726,5 +763,18 @@ public class PeerMessageQueue {
 		}
 	}
 
+	
+	/** This is incremented when a bulk packet is sent, and decremented when a realtime 
+	 * packet is sent. If it is positive we prefer realtime packets, and if it is negative 
+	 * we prefer bulk packets. Limits specified below ensure we don't burst either way for
+	 * too long. */
+	private int sendBalance;
+	
+	// FIXME compute these from time and bandwidth?
+	// We can't just record the time we sent the last bulk packet though, because we'd end up sending so few bulk packets that many would timeout.
+	
+	static final int MAX_BALANCE = 32; // Allow a burst of 32 realtime packets after a long period of bulk packets.
+	static final int MIN_BALANCE = -32; // Allow a burst of 32 bulk packets after a long period of realtime packets.
+	
 }
 
