@@ -717,15 +717,23 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				return;
 			progress = new SendingToNetworkMessage(identifier, global);
 		} else if(ce instanceof SplitfileCompatibilityModeEvent) {
+			if((verbosity & VERBOSITY_COMPATIBILITY_MODE) == 0)
+				return;
 			SplitfileCompatibilityModeEvent event = (SplitfileCompatibilityModeEvent)ce;
 			progress = new CompatibilityMode(identifier, global, event.minCompatibilityMode, event.maxCompatibilityMode, event.splitfileCryptoKey, event.dontCompress, event.bottomLayer);
 		} else if(ce instanceof ExpectedHashesEvent) {
+			if((verbosity & VERBOSITY_EXPECTED_HASHES) == 0)
+				return;
 			ExpectedHashesEvent event = (ExpectedHashesEvent)ce;
 			progress = new ExpectedHashes(event, identifier, global);
 		} else if(ce instanceof ExpectedMIMEEvent) {
+			if((verbosity & VERBOSITY_EXPECTED_TYPE) == 0)
+				return;
 			ExpectedMIMEEvent event = (ExpectedMIMEEvent)ce;
 			progress = new ExpectedMIME(identifier, global, event.expectedMIMEType);
 		} else if(ce instanceof ExpectedFileSizeEvent) {
+			if((verbosity & VERBOSITY_EXPECTED_SIZE) == 0)
+				return;
 			ExpectedFileSizeEvent event = (ExpectedFileSizeEvent)ce;
 			progress = new ExpectedDataLength(identifier, global, event.expectedSize);
 		}
