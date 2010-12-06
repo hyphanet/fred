@@ -583,7 +583,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		String accept = headers.get("accept");
 		FProxyFetchResult fr = null;
 		if(logMINOR) Logger.minor(this, "UA = "+ua+" accept = "+accept);
-		if(isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload")) {
+		
+		boolean canSendProgress = 
+			isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload");
+		
 			FProxyFetchWaiter fetch = null;
 			try {
 				fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
@@ -619,7 +622,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				fe = fr.failed;
 				fetch.close(); // Not waiting any more, but still locked the results until sent
 				break;
-			} else {
+			} else if(canSendProgress) {
 				if(logMINOR) Logger.minor(this, "Still in progress");
 				// Still in progress
 				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled() && ua != null && !ua.contains("AppleWebKit/");
@@ -678,7 +681,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				return;
 			}
 			}
-		}
 		
 		try {
 			if(logMINOR)
