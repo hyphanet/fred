@@ -14,6 +14,18 @@ public final class IfNotEquals {
 	 * @throws NullPointerException If value or expectedValue is null.
 	 * @throws IllegalStateException If value.equals(expectedValue) == false.
 	 */
+	public static final void thenThrow(final Object value, final Object expectedValue, String valueName) {
+		if(value == null || expectedValue == null)
+			throw new NullPointerException("Got " + valueName + " == " + value + " but should be " + expectedValue);
+		
+		if(!value.equals(expectedValue))
+			throw new NullPointerException("Got " + valueName + " == " + value + " but should be " + expectedValue);
+	}
+	
+	/**
+	 * @throws NullPointerException If value or expectedValue is null.
+	 * @throws IllegalStateException If value.equals(expectedValue) == false.
+	 */
 	public static final void thenThrow(final Object value, final Object expectedValue) {
 		if(value == null || expectedValue == null)
 			throw new NullPointerException("Got " + value + " but should be " + expectedValue);
