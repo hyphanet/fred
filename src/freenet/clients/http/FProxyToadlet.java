@@ -595,7 +595,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 			if(fetch != null)
 			while(true) {
-			fr = fetch.getResult();
+			fr = fetch.getResult(!canSendProgress);
 			if(fr.hasData()) {
 				
 				if(fr.getFetchCount() > 1 && !fr.hasWaited() && fr.getFetchCount() > 1 && key.isUSK() && context.uskManager.lookupKnownGood(USK.create(key)) > key.getSuggestedEdition()) {
@@ -679,7 +679,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				fr.close();
 				fetch.close();
 				return;
-			}
+			} else if(fr != null)
+				fr.close();
 			}
 		
 		try {
@@ -695,7 +696,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					FProxyFetchResult result=null;
 					try{
 						waiter=progress.getWaiter();
-						result=waiter.getResult();
+						result=waiter.getResult(false);
 						if(result.failed==null && result.data!=null){
 							mimeType=result.mimeType;
 							data=result.data;

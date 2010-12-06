@@ -16,16 +16,31 @@ public class FProxyFetchWaiter {
 	private boolean awoken;
 	
 	public FProxyFetchResult getResult() {
+		return getResult(false);
+	}
+	
+	public FProxyFetchResult getResult(boolean waitForever) {
 		boolean waited;
 		synchronized(this) {
-			if(!(finished || hasWaited || awoken)) {
-				awoken = false;
-				try {
-					wait(5000);
-				} catch (InterruptedException e) { 
-					// Not likely
-				};
-				hasWaited = true;
+			if(waitForever) {
+				while(!finished) {
+					try {
+						wait();
+						hasWaited = true;
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+			} else {
+				if(!(finished || hasWaited || awoken)) {
+					awoken = false;
+					try {
+						wait(5000);
+					} catch (InterruptedException e) { 
+						// Not likely
+					};
+					hasWaited = true;
+				}
 			}
 			waited = hasWaited;
 		}
