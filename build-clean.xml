@@ -326,7 +326,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<!-- Documentation                                                       -->
 	<!-- =================================================================== -->
 
-	<target name="init-doc">
+	<target name="init-doc" unless="${doc.skip}">
 		<mkdir dir="${doc.api}"/>
 	</target>
 
