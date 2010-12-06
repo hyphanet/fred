@@ -13,10 +13,8 @@ import freenet.client.FetchException;
 import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
 import freenet.node.KeysFetchingLocally;
-import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
-import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.Executor;
@@ -64,17 +62,17 @@ public class ClientContext {
 	public transient KeysFetchingLocally fetching;
 	public transient DownloadCache downloadCache;
 
-	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
+	public ClientContext(long bootID, long nodeDBHandle, DBJobRunner jobRunner, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker, HealingQueue hq,
 			USKManager uskManager, RandomSource strongRandom, 
 			Random fastWeakRandom, Ticker ticker, 
 			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc, DatastoreChecker checker) {
-		this.bootID = core.node.bootID;
+		this.bootID = bootID;
 		this.fecQueue = fecQueue;
-		jobRunner = core;
+		this.jobRunner = jobRunner;
 		this.mainExecutor = mainExecutor;
-		this.nodeDBHandle = core.node.nodeDBHandle;
+		this.nodeDBHandle = nodeDBHandle;
 		this.backgroundBlockEncoder = blockEncoder;
 		this.random = strongRandom;
 		this.archiveManager = archiveManager;
