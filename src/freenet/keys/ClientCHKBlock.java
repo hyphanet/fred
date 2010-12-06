@@ -239,6 +239,16 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new Error(e);
         }
         cipher.initialize(encKey);
+        
+        // FIXME CRYPTO plainIV, the hash of the crypto key, is encrypted with a null IV.
+        // In other words, it is XORed with E(0).
+        // For splitfiles we reuse the same decryption key for multiple blocks; it is derived from the overall hash,
+        // or it is set randomly.
+        // So the plaintext *and* ciphertext IV is always the same.
+        // And the following 32 bytes are always XORed with the same value.
+        // Ouch!
+        // Those bytes being 2 bytes for the length, followed by the first 30 bytes of the data.
+        
         PCFBMode pcfb = PCFBMode.create(cipher);
         pcfb.blockEncipher(header, 2, header.length-2);
         pcfb.blockEncipher(data, 0, data.length);
