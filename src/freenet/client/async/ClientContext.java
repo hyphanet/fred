@@ -78,7 +78,6 @@ public class ClientContext {
 		this.archiveManager = archiveManager;
 		this.persistentBucketFactory = ptbf;
 		this.tempBucketFactory = tbf;
-		if(tempBucketFactory == null) throw new NullPointerException();
 		this.healingQueue = hq;
 		this.uskManager = uskManager;
 		this.fastWeakRandom = fastWeakRandom;
