@@ -973,7 +973,7 @@ public class FCPServer implements Runnable, DownloadCache {
 			mime = get.getMIMEType(null);
 		}
 		
-		if(origData == null) {
+		if(origData == null && globalForeverClient != null) {
 			CacheFetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key, noFilter);
 			if(result != null) {
 				mime = result.getMimeType();
@@ -1009,6 +1009,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	public CacheFetchResult lookup(FreenetURI key, boolean noFilter, ClientContext context,
 			ObjectContainer container, boolean mustCopy, Bucket preferred) {
+		if(globalForeverClient == null) return null;
 		ClientGet get = globalForeverClient.getCompletedRequest(key, container);
 		container.activate(get, 1);
 		if(get != null) {
