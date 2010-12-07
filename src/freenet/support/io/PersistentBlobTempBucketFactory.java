@@ -823,6 +823,8 @@ outer:				while(true) {
 				if(!DISABLE_SANITY_CHECKS_DEFRAG) {
 					newBlocks = (long) ((newBlocks + 32) * 1.1);
 					newBlocks = Math.max(newBlocks, 32);
+				} else {
+					newBlocks++;
 				}
 				if(newBlocks >= blocks) {
 					if(logMINOR) Logger.minor(this, "Not shrinking, would shrink from "+blocks+" to "+newBlocks);
