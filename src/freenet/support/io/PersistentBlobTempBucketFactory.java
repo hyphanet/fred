@@ -1006,17 +1006,15 @@ outer:				while(true) {
 		int sz = freeNow + almostFreeSlots.size();
 		if(sz == 0) return;
 		long blocks = getSize();
-		if(sz > MAX_FREE) {
-			Iterator<Map.Entry<Long,PersistentBlobTempBucketTag>> it = almostFreeSlots.entrySet().iterator();
-			while(freeNow < MAX_FREE && it.hasNext()) {
-				Map.Entry<Long,PersistentBlobTempBucketTag> entry = it.next();
-				Long slot = entry.getKey();
-				if(slot >= blocks) continue;
-				if(slot >= lastMovedFrom) continue;
-				if(entry.getValue() != null)
-					freeSlots.put(entry.getKey(), entry.getValue());
-				freeNow++;
-			}
+		Iterator<Map.Entry<Long,PersistentBlobTempBucketTag>> it = almostFreeSlots.entrySet().iterator();
+		while(freeNow < MAX_FREE && it.hasNext()) {
+			Map.Entry<Long,PersistentBlobTempBucketTag> entry = it.next();
+			Long slot = entry.getKey();
+			if(slot >= blocks) continue;
+			if(slot >= lastMovedFrom) continue;
+			if(entry.getValue() != null)
+				freeSlots.put(entry.getKey(), entry.getValue());
+			freeNow++;
 		}
 		lastMovedFrom = Long.MAX_VALUE;
 		almostFreeSlots.clear();
