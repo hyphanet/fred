@@ -650,6 +650,8 @@ outer:		while(true) {
 		maybeShrink(container);
 	}
 	
+	static boolean DISABLE_SANITY_CHECKS_DEFRAG = false;
+	
 	boolean maybeShrink(ObjectContainer container) {
 		
 		if(logMINOR) Logger.minor(this, "maybeShrink()");
@@ -669,7 +671,7 @@ outer:		while(true) {
 					Logger.error(this, "Not shrinking, unable to determine size");
 					return false;
 				}
-				if(blocks <= 32) {
+				if(blocks <= 32 && !DISABLE_SANITY_CHECKS_DEFRAG) {
 					if(logMINOR) Logger.minor(this, "Not shrinking, blob file not larger than a megabyte");
 					lastCheckedEnd = now;
 					queueMaybeShrink();
@@ -682,7 +684,7 @@ outer:		while(true) {
 					lastNotCommitted = lastAlmostFreed;
 				}
 				double full = (double)lastNotCommitted / (double)blocks;
-				if(full > 0.8) {
+				if((full > 0.8 && !DISABLE_SANITY_CHECKS_DEFRAG) || lastNotCommitted == blocks) {
 					if(logMINOR) Logger.minor(this, "Not shrinking, last not committed block is at "+full*100+"% ("+lastNotCommitted+" of "+blocks+")");
 					lastCheckedEnd = now;
 					queueMaybeShrink();
@@ -1082,6 +1084,11 @@ outer:				while(true) {
 			int w = channel.write(buf, blockSize * index + written);
 			written += w;
 		}
+	}
+
+	/** @return The index of the last block in the file. */
+	synchronized int lastOccupiedBlock() {
+		return freeBlocksCache.lastOne(Integer.MAX_VALUE);
 	}
 
 
