@@ -88,6 +88,7 @@ public class SerialExecutor implements Executor {
 	}
 
 	public void start(Executor realExecutor, String name) {
+		assert(realExecutor != this);
 		this.realExecutor=realExecutor;
 		this.name=name;
 		synchronized (syncLock) {
