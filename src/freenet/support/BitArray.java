@@ -194,7 +194,7 @@ public class BitArray implements WritableToDataOutputStream {
 		if(start >= _size) start = _size-1;
 		int startByte = start/8;
 		int startBit = start%8;
-		for(int i=startByte;i>=0;i--) {
+		for(int i=startByte;i>=0;i--,startBit=7) {
 			byte b = _bits[i];
 			if(b == (byte)0) continue;
 			for(int j=startBit;j>=0;j--) {
@@ -204,7 +204,6 @@ public class BitArray implements WritableToDataOutputStream {
 					return x;
 				}
 			}
-			startBit = 8;
 		}
 		return -1;
 	}
