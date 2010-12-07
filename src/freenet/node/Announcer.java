@@ -281,7 +281,7 @@ public class Announcer {
 	/** @return True if we have enough peers that we don't need to announce. */
 	boolean enoughPeers() {
 		// Do we want to send an announcement to the node?
-		int opennetCount = node.peers.countConnectedOpennetPeers();
+		int opennetCount = node.peers.countConnectedPeers();
 		int target = getAnnouncementThreshold();
 		if(opennetCount >= target) {
 			if(logMINOR)

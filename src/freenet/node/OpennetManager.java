@@ -734,9 +734,9 @@ public class OpennetManager {
 		return max;
 	}
 
+	/** Get the target number of peers, including darknet */
 	public int getNumberOfConnectedPeersToAim() {
-		int max = getNumberOfConnectedPeersToAimIncludingDarknet();
-		return max - node.peers.countConnectedDarknetPeers();
+		return getNumberOfConnectedPeersToAimIncludingDarknet();
 	}
 
 	/**
