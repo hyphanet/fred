@@ -182,7 +182,7 @@ public class PersistentBlobTempBucketTest extends TestCase {
 		}
 		
 		int lastSlot = blocks - 1;
-		assertEquals(factory.lastOccupiedBlock(), lastSlot--);
+		assertEquals(factory.lastOccupiedBlock(), lastSlot);
 		
 		for(int i=0;i<blocks;i++) {
 			DataInputStream dis = new DataInputStream(buckets[i].getInputStream());
@@ -190,12 +190,13 @@ public class PersistentBlobTempBucketTest extends TestCase {
 			dis.readFully(check);
 			dis.close();
 			assert(Arrays.equals(bufs[i], check));
+			assertEquals(factory.lastOccupiedBlock(), lastSlot);
 			buckets[i].free();
 			buckets[i].removeFrom(container);
 			container.commit();
 			factory.postCommit();
 			factory.maybeShrink(container);
-			assertEquals("Map: "+factory.occupiedBlocksString(), factory.lastOccupiedBlock(), lastSlot--);
+			assertEquals(factory.lastOccupiedBlock(), --lastSlot);
 		}
 		
 		container.close();
