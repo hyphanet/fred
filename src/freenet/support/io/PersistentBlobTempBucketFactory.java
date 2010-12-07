@@ -954,6 +954,7 @@ outer:				while(true) {
 			lastMovedFrom = Math.min(lastMovedFrom, lastTag.index);
 			// Ensure that even in wierd cases it won't be reused before commit and therefore won't cause problems.
 			almostFreeSlots.put(lastTag.index, lastTag);
+			freeBlocksCache.setBit((int)newTag.index, true);
 			freeBlocksCache.setBit((int)lastTag.index, false);
 		}
 		return true;
