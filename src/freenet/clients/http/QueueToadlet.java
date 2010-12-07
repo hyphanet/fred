@@ -1109,10 +1109,21 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					} else if(failureCode == FetchException.CONTENT_VALIDATION_BAD_MIME) {
 						String mimeType = download.getMIMEType();
 						mimeType = ContentFilter.stripMIMEType(mimeType);
-						LinkedList<DownloadRequestStatus> list = failedBadMIMEType.get(mimeType);
-						if(list == null) {
-							list = new LinkedList<DownloadRequestStatus>();
-							failedBadMIMEType.put(mimeType, list);
+						MIMEType type = ContentFilter.getMIMEType(mimeType);
+						LinkedList<DownloadRequestStatus> list;
+						if(type == null) {
+							Logger.error(this, "Bad MIME failure code yet MIME is "+mimeType+" which does not have a handler!");
+							list = failedUnknownMIMEType.get(mimeType);
+							if(list == null) {
+								list = new LinkedList<DownloadRequestStatus>();
+								failedUnknownMIMEType.put(mimeType, list);
+							}
+						} else {
+							list = failedBadMIMEType.get(mimeType);
+							if(list == null) {
+								list = new LinkedList<DownloadRequestStatus>();
+								failedBadMIMEType.put(mimeType, list);
+							}
 						}
 						list.add(download);
 					} else {
