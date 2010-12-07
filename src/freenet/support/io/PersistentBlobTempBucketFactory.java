@@ -663,7 +663,7 @@ outer:		while(true) {
 		synchronized(this) {
 		
 			int blocksMoved = 0;
-			if(now - lastCheckedEnd > 60*1000) {
+			if(now - lastCheckedEnd > 60*1000 || DISABLE_SANITY_CHECKS_DEFRAG) {
 				if(logMINOR) Logger.minor(this, "maybeShrink() inner");
 				// Check whether there is a big white space at the end of the file.
 				long blocks = getSize();
@@ -740,10 +740,12 @@ outer:				while(true) {
 					query = null;
 				}
 				full = (double) lastCommitted / (double) blocks;
-				if(full > 0.8) {
-					if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+"%");
-					lastCheckedEnd = now;
-					queueMaybeShrink();
+				if(full > 0.8 || DISABLE_SANITY_CHECKS_DEFRAG) {
+					if(full > 0.8) {
+						if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+"%");
+						lastCheckedEnd = now;
+						queueMaybeShrink();
+					}
 					while(true) {
 						boolean deactivateLastBucket = !container.ext().isActive(lastBucket);
 						if(deactivateLastBucket)
@@ -817,8 +819,11 @@ outer:				while(true) {
 				}
 				long lastBlock = Math.max(lastCommitted, lastNotCommitted);
 				// Must be 10% free at end
-				newBlocks = (long) ((lastBlock + 32) * 1.1);
-				newBlocks = Math.max(newBlocks, 32);
+				newBlocks = lastBlock;
+				if(!DISABLE_SANITY_CHECKS_DEFRAG) {
+					newBlocks = (long) ((newBlocks + 32) * 1.1);
+					newBlocks = Math.max(newBlocks, 32);
+				}
 				if(newBlocks >= blocks) {
 					if(logMINOR) Logger.minor(this, "Not shrinking, would shrink from "+blocks+" to "+newBlocks);
 					lastCheckedEnd = now;
@@ -1089,6 +1094,10 @@ outer:				while(true) {
 	/** @return The index of the last block in the file. */
 	synchronized int lastOccupiedBlock() {
 		return freeBlocksCache.lastOne(Integer.MAX_VALUE);
+	}
+
+	synchronized String occupiedBlocksString() {
+		return freeBlocksCache.toString();
 	}
 
 
