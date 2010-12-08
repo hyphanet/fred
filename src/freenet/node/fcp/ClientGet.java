@@ -560,6 +560,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	@Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container) {
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
+			// FIXME: why WTF? Global=true/Persistence=connection possible!
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
 			return;
 		}
@@ -599,6 +600,17 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(expectedHashes, Integer.MAX_VALUE);
 			handler.queue(expectedHashes);
+		}
+
+		if (foundDataMimeType != null) {
+			// FIXME: have no idea, do we need activate here?
+			// FIXME: maybe better store ExpectedMIME message?
+			handler.queue(new ExpectedMIME(identifier, global, foundDataMimeType));
+		}
+		if (foundDataLength > 0) {
+			// FIXME: have no idea, do we need activate here?
+			// FIXME: maybe better store ExpectedDataLength message?
+			handler.queue(new ExpectedDataLength(identifier, global, foundDataLength));
 		}
 	}
 
