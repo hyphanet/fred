@@ -153,7 +153,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 		
 		private MessageFilter getNotificationMessageFilter() {
-			return MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(pn).setTimeout(TRANSFER_COMPLETION_ACK_TIMEOUT);
+			return MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(pn).setTimeout(transferCompletionTimeout);
 		}
 
 		public void onTimeout() {
@@ -201,6 +201,13 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.preferInsert = preferInsert;
         this.ignoreLowBackoff = ignoreLowBackoff;
         this.realTimeFlag = realTimeFlag;
+        if(realTimeFlag) {
+        	searchTimeout = SEARCH_TIMEOUT_REALTIME;
+        	transferCompletionTimeout = TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME;
+        } else {
+        	searchTimeout = SEARCH_TIMEOUT_BULK;
+        	transferCompletionTimeout = TRANSFER_COMPLETION_ACK_TIMEOUT_BULK;
+        }
         logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
     }
 
@@ -212,9 +219,14 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
-    static final int SEARCH_TIMEOUT = 120000;
-    static final int TRANSFER_COMPLETION_ACK_TIMEOUT = 120000;
+    static final int SEARCH_TIMEOUT_REALTIME = 60*1000;
+    static final int SEARCH_TIMEOUT_BULK = 300*1000;
+    static final int TRANSFER_COMPLETION_ACK_TIMEOUT_REALTIME = 60*1000;
+    static final int TRANSFER_COMPLETION_ACK_TIMEOUT_BULK = 300*1000;
 
+    final int searchTimeout;
+    final int transferCompletionTimeout;
+    
     // Basics
     final NodeCHK myKey;
     final double target;
@@ -516,12 +528,12 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
              * - FNPDataInsertRejected - the insert was invalid
              */
             
-            MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPInsertReply);
-            mfRejectedOverload.setTimeout(SEARCH_TIMEOUT);
+            MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPInsertReply);
+            mfRejectedOverload.setTimeout(searchTimeout);
             mfRejectedOverload.clearOr();
-            MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
-            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPDataInsertRejected);
-            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRejectedTimeout);
+            MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRouteNotFound);
+            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
+            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
             
             mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
 
@@ -835,7 +847,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		private boolean waitForBackgroundTransfers(BackgroundTransfer[] transfers) {
 			long start = System.currentTimeMillis();
 			// Generous deadline so we catch bugs more obviously
-			long deadline = start + TRANSFER_COMPLETION_ACK_TIMEOUT * 3;
+			long deadline = start + transferCompletionTimeout * 3;
 			// MAYBE all done
 			while(true) {
 				if(System.currentTimeMillis() > deadline) {
