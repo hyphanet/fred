@@ -66,6 +66,7 @@ public class BitArray implements WritableToDataOutputStream {
 	}
 	
 	public void setBit(int pos, boolean f) {
+		if(pos > _size) throw new ArrayIndexOutOfBoundsException();
 		int b = unsignedByteToInt(_bits[pos / 8]);
 		int mask = (1 << (pos % 8));
 		if (f) {
@@ -76,6 +77,7 @@ public class BitArray implements WritableToDataOutputStream {
 	}
 
 	public boolean bitAt(int pos) {
+		if(pos > _size) throw new ArrayIndexOutOfBoundsException();
 		int b = unsignedByteToInt(_bits[pos / 8]);
 		int mask = (1 << (pos % 8));
 		return (b & mask) != 0;
