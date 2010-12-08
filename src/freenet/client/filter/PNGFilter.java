@@ -300,8 +300,8 @@ public class PNGFilter implements ContentDataFilter {
 			if (!(hasSeenIEND && hasSeenIHDR))
 				throwError("Missing IEND or IHDR!", "Missing IEND or IHDR!");
                         
-			if (hasSeenIEND && dis.available() > 0)
-				throwError("IEND not last chunk", "IEND not last chunk");
+			if (hasSeenIEND)
+				return; // Strip everything after IEND.
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throwError("ArrayIndexOutOfBoundsException while filtering", "ArrayIndexOutOfBoundsException while filtering");
 		} catch (NegativeArraySizeException e) {
