@@ -559,11 +559,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	@Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container) {
-		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
-			// FIXME: why WTF? Global=true/Persistence=connection possible!
-			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
-			return;
-		}
 		if(!onlyData) {
 			if(includePersistentRequest) {
 				FCPMessage msg = persistentTagMessage(container);
