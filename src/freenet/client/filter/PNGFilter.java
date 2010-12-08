@@ -110,7 +110,7 @@ public class PNGFilter implements ContentDataFilter {
 			// @see http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.Summary-of-standard-chunks
 			String lastChunkType = "";
 
-			while (dis.available() > 0) {
+			while (dis.available() > 0 && !hasSeenIEND) {
 				boolean skip = false;
 				baos.reset();
 				String chunkTypeString = null;
