@@ -454,77 +454,75 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler, ObjectContainer container) {
-		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-			FCPMessage oldProgress = null;
-			if(msg instanceof SimpleProgressMessage) {
-				oldProgress = progressPending;
-				progressPending = (SimpleProgressMessage)msg;
-				if(client != null) {
-					RequestStatusCache cache = client.getRequestStatusCache();
-					if(cache != null) {
-						cache.updateStatus(identifier, ((SimpleProgressMessage)progressPending).getEvent());
-					}
+		FCPMessage oldProgress = null;
+		if(msg instanceof SimpleProgressMessage) {
+			oldProgress = progressPending;
+			progressPending = (SimpleProgressMessage)msg;
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateStatus(identifier, ((SimpleProgressMessage)progressPending).getEvent());
 				}
-			} else if(msg instanceof SendingToNetworkMessage) {
-				sentToNetwork = true;
-			} else if(msg instanceof CompatibilityMode) {
-				CompatibilityMode compat = (CompatibilityMode)msg;
-				if(compatMessage != null) {
-					if(persistenceType == PERSIST_FOREVER) container.activate(compatMessage, 1);
-					compatMessage.merge(compat.min, compat.max, compat.cryptoKey, compat.dontCompress, compat.definitive);
-					if(persistenceType == PERSIST_FOREVER) container.store(compatMessage);
-				} else {
-					compatMessage = compat;
-					if(persistenceType == PERSIST_FOREVER) {
-						container.store(compatMessage);
-						container.store(this);
-					}
+			}
+		} else if(msg instanceof SendingToNetworkMessage) {
+			sentToNetwork = true;
+		} else if(msg instanceof CompatibilityMode) {
+			CompatibilityMode compat = (CompatibilityMode)msg;
+			if(compatMessage != null) {
+				if(persistenceType == PERSIST_FOREVER) container.activate(compatMessage, 1);
+				compatMessage.merge(compat.min, compat.max, compat.cryptoKey, compat.dontCompress, compat.definitive);
+				if(persistenceType == PERSIST_FOREVER) container.store(compatMessage);
+			} else {
+				compatMessage = compat;
+				if(persistenceType == PERSIST_FOREVER) {
+					container.store(compatMessage);
+					container.store(this);
 				}
-				if(client != null) {
-					RequestStatusCache cache = client.getRequestStatusCache();
-					if(cache != null) {
-						cache.updateDetectedCompatModes(identifier, compat.getModes(), compat.cryptoKey);
-					}
+			}
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateDetectedCompatModes(identifier, compat.getModes(), compat.cryptoKey);
 				}
-			} else if(msg instanceof ExpectedHashes) {
-				if(expectedHashes != null) {
-					Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
-				} else {
-					this.expectedHashes = (ExpectedHashes)msg;
-					if(persistenceType == PERSIST_FOREVER) {
-						container.store(this);
-					}
-				}
-			} else if(msg instanceof ExpectedMIME) {
-				foundDataMimeType = ((ExpectedMIME) msg).expectedMIME;
+			}
+		} else if(msg instanceof ExpectedHashes) {
+			if(expectedHashes != null) {
+				Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
+			} else {
+				this.expectedHashes = (ExpectedHashes)msg;
 				if(persistenceType == PERSIST_FOREVER) {
 					container.store(this);
 				}
-				if(client != null) {
-					RequestStatusCache cache = client.getRequestStatusCache();
-					if(cache != null) {
-						cache.updateExpectedMIME(identifier, foundDataMimeType);
-					}
-				}
-			} else if(msg instanceof ExpectedDataLength) {
-				foundDataLength = ((ExpectedDataLength) msg).dataLength;
-				if(persistenceType == PERSIST_FOREVER) {
-					container.store(this);
-				}
-				if(client != null) {
-					RequestStatusCache cache = client.getRequestStatusCache();
-					if(cache != null) {
-						cache.updateExpectedDataLength(identifier, foundDataLength);
-					}
-				}
-			} else
-				assert(false);
-			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+			}
+		} else if(msg instanceof ExpectedMIME) {
+			foundDataMimeType = ((ExpectedMIME) msg).expectedMIME;
+			if(persistenceType == PERSIST_FOREVER) {
 				container.store(this);
-				if(oldProgress != null) {
-					container.activate(oldProgress, 1);
-					oldProgress.removeFrom(container);
+			}
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateExpectedMIME(identifier, foundDataMimeType);
 				}
+			}
+		} else if(msg instanceof ExpectedDataLength) {
+			foundDataLength = ((ExpectedDataLength) msg).dataLength;
+			if(persistenceType == PERSIST_FOREVER) {
+				container.store(this);
+			}
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateExpectedDataLength(identifier, foundDataLength);
+				}
+			}
+		} else
+			assert(false);
+		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+			container.store(this);
+			if(oldProgress != null) {
+				container.activate(oldProgress, 1);
+				oldProgress.removeFrom(container);
 			}
 		}
 		if(persistenceType == PERSIST_FOREVER)
