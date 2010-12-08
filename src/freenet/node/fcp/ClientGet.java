@@ -453,7 +453,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		handler.queue(msg);
 	}
 
-	private void trySendProgress(FCPMessage msg, int verbosityMask, FCPConnectionOutputHandler handler, ObjectContainer container) {
+	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler, ObjectContainer container) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			FCPMessage oldProgress = null;
 			if(msg instanceof SimpleProgressMessage) {
@@ -526,17 +526,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					oldProgress.removeFrom(container);
 				}
 			}
-		} else {
-			if(msg instanceof SimpleProgressMessage)
-				verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
-			else if(msg instanceof SendingToNetworkMessage)
-				verbosityMask = ClientGet.VERBOSITY_SENT_TO_NETWORK;
-			else if(msg instanceof CompatibilityMode)
-				verbosityMask = ClientGet.VERBOSITY_COMPATIBILITY_MODE;
-			else if(msg instanceof ExpectedHashes)
-				verbosityMask = ClientGet.VERBOSITY_EXPECTED_HASHES;
-			else
-				verbosityMask = -1;
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(client, 1);
