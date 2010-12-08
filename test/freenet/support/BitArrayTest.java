@@ -193,5 +193,16 @@ public class BitArrayTest extends TestCase {
 		assert(array.lastOne(Integer.MAX_VALUE) == -1);
 		assert(array.lastOne(0) == -1);
 	}
+	
+	public void testShrinkGrow() {
+		BitArray array = new BitArray(16);
+		array.setAllOnes();
+		array.setSize(9);
+		array.setSize(16);
+		for(int i=9;i<16;i++)
+			assert(!array.bitAt(i));
+		for(int i=0;i<9;i++)
+			assert(array.bitAt(i));
+	}
 
 }
