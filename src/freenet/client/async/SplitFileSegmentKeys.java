@@ -1,6 +1,7 @@
 package freenet.client.async;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -229,6 +230,29 @@ outer:	for(int i=0;i<(dataBlocks + checkBlocks);i++) {
 				byte[] e = key.getExtra();
 				System.arraycopy(e, 0, extraBytesForKeys, extraOffset, EXTRA_BYTES_LENGTH);
 				extraOffset += EXTRA_BYTES_LENGTH;
+			}
+		}
+	}
+
+	public void writeKeys(DataOutputStream dos, boolean check) throws IOException {
+		int count = check ? checkBlocks : dataBlocks;
+		int offset = check ? dataBlocks : 0;
+		if(commonDecryptKey != null) {
+			int rkOffset = offset * NodeCHK.KEY_LENGTH;
+			for(int i=0;i<count;i++) {
+				dos.write(routingKeys, rkOffset, NodeCHK.KEY_LENGTH);
+				rkOffset += NodeCHK.KEY_LENGTH;
+			}
+		} else {
+			int rkOffset = offset * NodeCHK.KEY_LENGTH;
+			int extraOffset = offset * EXTRA_BYTES_LENGTH;
+			assert(NodeCHK.KEY_LENGTH == ClientCHK.CRYPTO_KEY_LENGTH);
+			for(int i=0;i<count;i++) {
+				dos.write(extraBytesForKeys, extraOffset, EXTRA_BYTES_LENGTH);
+				extraOffset += EXTRA_BYTES_LENGTH;
+				dos.write(routingKeys, rkOffset, NodeCHK.KEY_LENGTH);
+				dos.write(decryptKeys, rkOffset, NodeCHK.KEY_LENGTH);
+				rkOffset += NodeCHK.KEY_LENGTH;
 			}
 		}
 	}

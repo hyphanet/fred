@@ -1427,16 +1427,25 @@ public class Metadata implements Cloneable {
 
 			dos.writeInt(splitfileBlocks);
 			dos.writeInt(splitfileCheckBlocks);
-			if(splitfileSingleCryptoKey == null) {
-				for(int i=0;i<splitfileBlocks;i++)
-					writeCHK(dos, splitfileDataKeys[i]);
-				for(int i=0;i<splitfileCheckBlocks;i++)
-					writeCHK(dos, splitfileCheckKeys[i]);
+			if(segments != null) {
+				for(int i=0;i<segmentCount;i++) {
+					segments[i].writeKeys(dos, false);
+				}
+				for(int i=0;i<segmentCount;i++) {
+					segments[i].writeKeys(dos, true);
+				}
 			} else {
-				for(int i=0;i<splitfileBlocks;i++)
-					dos.write(splitfileDataKeys[i].getRoutingKey());
-				for(int i=0;i<splitfileCheckBlocks;i++)
-					dos.write(splitfileCheckKeys[i].getRoutingKey());
+				if(splitfileSingleCryptoKey == null) {
+					for(int i=0;i<splitfileBlocks;i++)
+						writeCHK(dos, splitfileDataKeys[i]);
+					for(int i=0;i<splitfileCheckBlocks;i++)
+						writeCHK(dos, splitfileCheckKeys[i]);
+				} else {
+					for(int i=0;i<splitfileBlocks;i++)
+						dos.write(splitfileDataKeys[i].getRoutingKey());
+					for(int i=0;i<splitfileCheckBlocks;i++)
+						dos.write(splitfileCheckKeys[i].getRoutingKey());
+				}
 			}
 		}
 
