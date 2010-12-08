@@ -35,7 +35,10 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
-    static final int SEARCH_TIMEOUT = 60000;
+    static final int SEARCH_TIMEOUT_REALTIME = 30*1000;
+    static final int SEARCH_TIMEOUT_BULK = 120*1000;
+    
+    final int searchTimeout;
 
     // Basics
     final NodeSSK myKey;
@@ -109,6 +112,10 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	this.preferInsert = preferInsert;
     	this.ignoreLowBackoff = ignoreLowBackoff;
     	this.realTimeFlag = realTimeFlag;
+    	if(realTimeFlag)
+    		searchTimeout = SEARCH_TIMEOUT_REALTIME;
+    	else
+    		searchTimeout = SEARCH_TIMEOUT_BULK;
     }
 
     void start() {
@@ -380,12 +387,12 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
              * - FNPDataInsertRejected - the insert was invalid
              */
             
-            MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPInsertReply);
-            mfRejectedOverload.setTimeout(SEARCH_TIMEOUT);
+            MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPInsertReply);
+            mfRejectedOverload.setTimeout(searchTimeout);
             mfRejectedOverload.clearOr();
-            MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
-            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPDataInsertRejected);
-            MessageFilter mfSSKDataFoundHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
+            MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRouteNotFound);
+            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
+            MessageFilter mfSSKDataFoundHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPSSKDataFoundHeaders);
             
             mf = mfRouteNotFound.or(mfInsertReply.or(mfRejectedOverload.or(mfDataInsertRejected.or(mfSSKDataFoundHeaders))));
             
