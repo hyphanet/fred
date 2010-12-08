@@ -83,6 +83,9 @@ public class PNGFilter implements ContentDataFilter {
 			FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs)
 			throws DataFilterException, IOException {
 		DataInputStream dis = null;
+		boolean hasSeenIHDR = false;
+		boolean hasSeenIEND = false;
+		boolean hasSeenIDAT = false;
 		try {
                         long offset = 0;
 			dis = new DataInputStream(input);
@@ -105,9 +108,6 @@ public class PNGFilter implements ContentDataFilter {
 
 			// Check the chunks :
 			// @see http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.Summary-of-standard-chunks
-			boolean hasSeenIHDR = false;
-			boolean hasSeenIEND = false;
-			boolean hasSeenIDAT = false;
 			String lastChunkType = "";
 
 			while (dis.available() > 0) {
@@ -307,6 +307,7 @@ public class PNGFilter implements ContentDataFilter {
 		} catch (NegativeArraySizeException e) {
 			throwError("NegativeArraySizeException while filtering", "NegativeArraySizeException while filtering");
 		} catch (EOFException e) {
+			if(hasSeenIEND && hasSeenIHDR) return;
 			throwError("EOF Exception while filtering", "EOF Exception while filtering");
 		}
 	}
