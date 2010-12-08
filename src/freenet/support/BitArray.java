@@ -184,12 +184,19 @@ public class BitArray implements WritableToDataOutputStream {
 
 	public void setSize(int size) {
 		if(_size == size) return;
+		int oldSize = _size;
 		_size = size;
 		int bytes = (size / 8) + (size % 8 == 0 ? 0 : 1);
-		if(_bits.length == bytes) return;
-		byte[] newBuff = new byte[bytes];
-		System.arraycopy(_bits, 0, newBuff, 0, Math.min(_bits.length, newBuff.length));
-		_bits = newBuff;
+		if(_bits.length != bytes) {
+			byte[] newBuff = new byte[bytes];
+			System.arraycopy(_bits, 0, newBuff, 0, Math.min(_bits.length, newBuff.length));
+			_bits = newBuff;
+		}
+		if(oldSize < _size && oldSize % 8 != 0) {
+			for(int i=oldSize;i<Math.min(_size, oldSize - oldSize % 8 + 8);i++) {
+				setBit(i, false);
+			}
+		}
 	}
 
 	public int lastOne(int start) {
