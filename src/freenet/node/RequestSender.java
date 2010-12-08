@@ -468,7 +468,7 @@ loadWaiterLoop:
 				if(lastNode != waitingFor) return;
 				if(status != -1) return;
 			}
-			Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+")");
+			Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+") for "+uid);
     		// Fatal timeout
     		next.localRejectedOverload("FatalTimeout");
     		forwardRejectedOverload();
@@ -1369,7 +1369,7 @@ loadWaiterLoop:
 	private long transferTime;
 	
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
-    	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
+    	if(logMINOR) Logger.minor(this, "finish("+code+") on "+uid);
         
     	boolean turtle;
     	
