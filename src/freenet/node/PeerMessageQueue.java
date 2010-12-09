@@ -8,6 +8,7 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
+import freenet.support.DoublyLinkedList;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -323,23 +324,36 @@ public class PeerMessageQueue {
 					Items tracker = itemsByID.get(id);
 					if(tracker != null) {
 						tracker.timeLastSent = now;
+						DoublyLinkedList<? super Items> parent = tracker.getParent();
 						// Demote the corresponding tracker to maintain round-robin.
 						if(tracker.items.isEmpty()) {
-							// FIXME remove paranoia
-							if(emptyItemsWithID == null) {
-								Logger.error(this, "Tracker empty yet non empty items list does not exist?!?");
-							} else {
+							if(emptyItemsWithID == null)
+								emptyItemsWithID = new DoublyLinkedListImpl<Items>();
+							if(parent == null) {
+								Logger.error(this, "Tracker is in itemsByID but not in either list! (empty)");
+							} else if(parent == emptyItemsWithID) {
+								// Normal. Remove it so we can re-add it in the right place.
 								emptyItemsWithID.remove(tracker);
-								addToEmptyBackward(tracker);
-							}
-						} else {
-							// FIXME remove paranoia
-							if(nonEmptyItemsWithID == null) { 
-								Logger.error(this, "Tracker not empty yet non empty items with ID does not exist?!?");
-							} else {
+							} else if(parent == nonEmptyItemsWithID) {
+								Logger.error(this, "Tracker is in non empty items list when is empty");
 								nonEmptyItemsWithID.remove(tracker);
-								addToNonEmptyBackward(tracker);
-							}
+							} else
+								assert(false);
+							addToEmptyBackward(tracker);
+						} else {
+							if(nonEmptyItemsWithID == null)
+								nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
+							if(parent == null) {
+								Logger.error(this, "Tracker is in itemsByID but not in either list! (non-empty)");
+							} else if(parent == nonEmptyItemsWithID) {
+								// Normal. Remove it so we can re-add it in the right place.
+								nonEmptyItemsWithID.remove(tracker);
+							} else if(parent == emptyItemsWithID) {
+								Logger.error(this, "Tracker is in empty items list when is non-empty");
+								emptyItemsWithID.remove(tracker);
+							} else
+								assert(false);
+							addToNonEmptyBackward(tracker);
 						}
 					}
 				}
