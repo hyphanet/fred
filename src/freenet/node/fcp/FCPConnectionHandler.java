@@ -352,6 +352,7 @@ public class FCPConnectionHandler implements Closeable {
 				if(!persistent) {
 					try {
 						cp = new ClientPut(this, message, server, null);
+						requestsByIdentifier.put(id, cp);
 					} catch (IdentifierCollisionException e) {
 						success = false;
 					} catch (MessageInvalidException e) {
@@ -360,7 +361,6 @@ public class FCPConnectionHandler implements Closeable {
 					} catch (MalformedURLException e) {
 						failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
 					}
-					requestsByIdentifier.put(id, cp);
 				} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 					try {
 						server.core.clientContext.jobRunner.queue(new DBJob() {
