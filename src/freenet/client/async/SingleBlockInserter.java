@@ -564,6 +564,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					// FIXME bulk flag
 					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, false);
 			} catch (LowLevelPutException e) {
+				if(logMINOR) Logger.minor(this, "Caught "+e, e);
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
 					try {
