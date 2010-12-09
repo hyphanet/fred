@@ -2267,7 +2267,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		x=0;
 		short priority = DMT.PRIORITY_BULK_DATA;
 		for(int i=0;i<messages.length;i++) {
-			if(messages[i].formatted) continue;
+			assert(!messages[i].formatted);
 			if(messages[i].cb != null) {
 				System.arraycopy(messages[i].cb, 0, callbacks, x, messages[i].cb.length);
 				x += messages[i].cb.length;
