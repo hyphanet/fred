@@ -407,7 +407,7 @@ public class PeerMessageQueue {
 						// Should not happen, but check for it anyway since it keeps happening. :(
 						Logger.error(this, "List is in nonEmptyItemsWithID yet it is empty?!: "+list);
 						nonEmptyItemsWithID.remove(list);
-						addToNonEmptyBackward(list);
+						addToEmptyBackward(list);
 						if(nonEmptyItemsWithID.isEmpty()) return size;
 						list = nonEmptyItemsWithID.head();
 						continue;
