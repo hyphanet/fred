@@ -222,10 +222,12 @@ public class PeerMessageQueue {
 					itemsByID.put(id, list);
 				} else {
 					if(list.items.isEmpty()) {
+						assert(list.getParent() == emptyItemsWithID);
 						// It already exists, so it has a valid time.
 						// Which is probably in the past, so use Forward.
 						moveFromEmptyToNonEmptyForward(list);
-					}
+					} else
+						assert(list.getParent() == nonEmptyItemsWithID);
 				}
 			}
 			list.addFirst(item);
