@@ -508,7 +508,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 							notifyAll();
 						}
 					} catch (SSKVerifyException e) {
-    					Logger.error(this, "Invalid SSK from remote on collision: " + this + ":" +block);
+    					Logger.error(this, "Invalid SSK from remote on collision: " + this + ":" +block, e);
 						finish(INTERNAL_ERROR, next);
 					}
 					continue; // The node will now propagate the new data. There is no need to move to the next node yet.
@@ -543,7 +543,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	}
     
     private void finish(int code, PeerNode next) {
-    	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
+    	if(logMINOR) Logger.minor(this, "Finished: "+getStatusString(code)+" on "+this, new Exception("debug"));
     	synchronized(this) {
     		if(status != NOT_FINISHED)
     			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
@@ -571,10 +571,14 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         return htl;
     }
 
+    public synchronized String getStatusString() {
+    	return getStatusString(status);
+    }
+    
     /**
      * @return The current status as a string
      */
-    public synchronized String getStatusString() {
+    public static String getStatusString(int status) {
         if(status == SUCCESS)
             return "SUCCESS";
         if(status == ROUTE_NOT_FOUND)
@@ -668,7 +672,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 	@Override
 	public String toString() {
-		return "SSKInsertSender:" + myKey;
+		return "SSKInsertSender:" + myKey+":"+uid;
 	}
 
 	public PeerNode[] getRoutedTo() {
