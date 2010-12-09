@@ -442,6 +442,7 @@ public class PeerMessageQueue {
 					else
 						list = prev.getNext();
 					messages.add(item);
+					added++;
 					addedNone = false;
 					if(oversize) {
 						if(logDEBUG) Logger.debug(this, "Returning with oversize urgent message");
