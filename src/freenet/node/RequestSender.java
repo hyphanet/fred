@@ -465,10 +465,16 @@ loadWaiterLoop:
 
 		public void onTimeout() {
 			synchronized(RequestSender.this) {
-				if(lastNode != waitingFor) return;
-				if(status != -1) return;
+				if(lastNode != waitingFor) {
+					if(logMINOR) Logger.minor(this, "Timeout but has moved on: waiting for "+waitingFor+" but moved on to "+lastNode+" on "+uid);
+					return;
+				}
+				if(status != -1) {
+					if(logMINOR) Logger.minor(this, "Timed out but already set status to "+status);
+					return;
+				}
 			}
-			Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+") for "+uid);
+			Logger.error(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid);
     		// Fatal timeout
     		next.localRejectedOverload("FatalTimeout");
     		forwardRejectedOverload();
