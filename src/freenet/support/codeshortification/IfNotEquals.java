@@ -19,7 +19,7 @@ public final class IfNotEquals {
 			throw new NullPointerException("Got " + valueName + " == " + value + " but should be " + expectedValue);
 		
 		if(!value.equals(expectedValue))
-			throw new NullPointerException("Got " + valueName + " == " + value + " but should be " + expectedValue);
+			throw new IllegalStateException("Got " + valueName + " == " + value + " but should be " + expectedValue);
 	}
 	
 	/**
