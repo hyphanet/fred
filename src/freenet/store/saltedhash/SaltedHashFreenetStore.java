@@ -792,6 +792,20 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				value |= 1<<28;
 			return value;
 		}
+
+	}
+
+	public boolean slotCacheLikelyMatch(int value, byte[] digestedRoutingKey) {
+		if((value & (1 << 31)) == 0) return false;
+		if((value & (1 << 30)) == 0) return false;
+		int wanted = (digestedRoutingKey[2] & 0xFF) + ((digestedRoutingKey[1] & 0xFF) << 8) +
+			((digestedRoutingKey[0] & 0xFF) << 16);
+		int got = value & 0xFFFFFF;
+		return wanted == got;
+	}
+	
+	private boolean slotCacheIsFree(int value) {
+		return (value & (1 << 30)) != 0;
 	}
 
 	private volatile long storeFileOffsetReady = -1;
@@ -830,6 +844,14 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private Entry readEntry(long offset, byte[] routingKey, boolean withData) throws IOException {
 		if(offset >= Integer.MAX_VALUE) throw new IllegalArgumentException();
 		int cache = slotFilter.get((int)offset);
+		boolean validCache = (cache & (1 << 31)) != 0;
+		boolean likelyMatch = slotCacheLikelyMatch(cache, routingKey);
+		if(validCache && logMINOR) {
+			if(likelyMatch)
+				Logger.minor(this, "Likely match");
+			else
+				Logger.minor(this, "Unlikely match");
+		}
 		ByteBuffer mbf = ByteBuffer.allocate(Entry.METADATA_LENGTH);
 
 		do {
@@ -847,23 +869,36 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		byte[] slotDigestedRoutingKey = entry.digestedRoutingKey;
 		int trueCache = entry.getSlotFilterEntry();
 		if(trueCache != cache) {
-			if((cache & (1 << 31)) != 0)
+			if(validCache)
 				Logger.error(this, "Slot cache has changed for slot "+offset+" from "+cache+" to "+trueCache);
 			slotFilter.put((int)offset, trueCache);
 		}
 		
 		if (routingKey != null) {
-			if (entry.isFree())
+			if (entry.isFree()) {
+				if(validCache && !slotCacheIsFree(cache))
+					Logger.error(this, "Slot falsely identified as free on slot "+offset+" cache was "+cache);
 				return null;
-			if (!Arrays.equals(cipherManager.getDigestedKey(routingKey), slotDigestedRoutingKey))
+			}
+			if (!Arrays.equals(cipherManager.getDigestedKey(routingKey), slotDigestedRoutingKey)) {
+				if(validCache && likelyMatch)
+					Logger.error(this, "False positive from slot cache on slot "+offset+" cache was "+cache);
 				return null;
+			}
+			
+			if(validCache && !likelyMatch) {
+				Logger.error(this, "False NEGATIVE from slot cache on slot "+offset+" cache was "+cache);
+			}
 
 			if (withData) {
 				ByteBuffer hdBuf = readHD(offset);
 				entry.setHD(hdBuf);
 				boolean decrypted = cipherManager.decrypt(entry, routingKey);
-				if (!decrypted)
+				if (!decrypted) {
+					if(validCache && likelyMatch)
+						Logger.error(this, "True positive but decrypt failed on slot "+offset+" cache was "+cache);
 					return null;
+				}
 			}
 		}
 
