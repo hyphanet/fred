@@ -843,9 +843,15 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 */
 	private Entry readEntry(long offset, byte[] routingKey, boolean withData) throws IOException {
 		if(offset >= Integer.MAX_VALUE) throw new IllegalArgumentException();
-		int cache = slotFilter.get((int)offset);
-		boolean validCache = (cache & (1 << 31)) != 0;
-		boolean likelyMatch = slotCacheLikelyMatch(cache, routingKey);
+		int cache = 0;
+		boolean validCache = false;
+		boolean likelyMatch = false;
+		if(routingKey != null) {
+			cache = slotFilter.get((int)offset);
+			validCache = (cache & (1 << 31)) != 0;
+			// FIXME refactor to pass in the digestedKey if known.
+			likelyMatch = slotCacheLikelyMatch(cache, cipherManager.getDigestedKey(routingKey));
+		}
 		if(validCache && logMINOR) {
 			if(likelyMatch)
 				Logger.minor(this, "Likely match");
@@ -898,6 +904,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					if(validCache && likelyMatch)
 						Logger.error(this, "True positive but decrypt failed on slot "+offset+" cache was "+cache);
 					return null;
+				} else {
+					if(validCache && likelyMatch)
+						Logger.error(this, "True positive! IT WORKED!");
 				}
 			}
 		}
