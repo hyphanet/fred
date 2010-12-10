@@ -341,7 +341,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					return null;
 				}
 			} finally {
-				unlockPlainKey(routingKey, true, lockMap);
+				unlockDigestedKey(digestedKey, true, lockMap);
 			}
 		} finally {
 			configLock.readLock().unlock();
@@ -545,7 +545,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					keyCount.incrementAndGet();
 				return true;
 			} finally {
-				unlockPlainKey(routingKey, false, lockMap);
+				unlockDigestedKey(digestedKey, false, lockMap);
 			}
 		} finally {
 			configLock.readLock().unlock();
@@ -1888,10 +1888,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	volatile boolean shutdown = false;
 	private LockManager lockManager;
 	private ReadWriteLock configLock = new ReentrantReadWriteLock();
-
-	private void unlockPlainKey(byte[] plainKey, boolean usePrevStoreSize, Map<Long, Condition> lockMap) {
-		unlockDigestedKey(cipherManager.getDigestedKey(plainKey), usePrevStoreSize, lockMap);
-	}
 
 	/**
 	 * Lock all possible offsets of a key. This method would release the locks if any locking
