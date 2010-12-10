@@ -49,7 +49,6 @@ public class NewPacketFormat implements PacketFormat {
 	private final LinkedList<Integer> acks = new LinkedList<Integer>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
 
-	private int nextSequenceNumber;
 	private final Object sequenceNumberLock = new Object();
 	
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
@@ -91,7 +90,6 @@ public class NewPacketFormat implements PacketFormat {
 		ourInitialMsgID = (ourInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
 		theirInitialMsgID = (theirInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
 
-		nextSequenceNumber = ourInitialSeqNum;
 		highestReceivedSequenceNumber = theirInitialSeqNum - 1;
 		if(highestReceivedSequenceNumber == -1) highestReceivedSequenceNumber = (int) (NUM_SEQNUMS - 1);
 
@@ -638,7 +636,7 @@ fragments:
 		
 		SessionKey tracker = pn.getCurrentKeyTracker();
 		synchronized(sequenceNumberLock) {
-			if(nextSequenceNumber == tracker.firstSeqNumUsed) {
+			if(tracker.nextSeqNum == tracker.firstSeqNumUsed) {
 				// We can't allocate more sequence numbers because we haven't rekeyed yet
 				pn.startRekeying();
 				Logger.error(this, "Can't send because we would block");
@@ -654,24 +652,24 @@ fragments:
 		synchronized(sequenceNumberLock) {
 			if(tracker != null) {
 				if(tracker.firstSeqNumUsed == -1) {
-					tracker.firstSeqNumUsed = nextSequenceNumber;
+					tracker.firstSeqNumUsed = tracker.nextSeqNum;
 					Logger.error(this, "First seqnum used for " + tracker + " is " + tracker.firstSeqNumUsed);
 				} else {
-					if(nextSequenceNumber == tracker.firstSeqNumUsed) {
+					if(tracker.nextSeqNum == tracker.firstSeqNumUsed) {
 						Logger.error(this, "Blocked because we haven't rekeyed yet");
 						pn.startRekeying();
 						return -1;
-					} else if(tracker.firstSeqNumUsed > nextSequenceNumber) {
-						if(tracker.firstSeqNumUsed - nextSequenceNumber < REKEY_THRESHOLD) pn.startRekeying();
+					} else if(tracker.firstSeqNumUsed > tracker.nextSeqNum) {
+						if(tracker.firstSeqNumUsed - tracker.nextSeqNum < REKEY_THRESHOLD) pn.startRekeying();
 					} else {
-						if((NUM_SEQNUMS - nextSequenceNumber) + tracker.firstSeqNumUsed < REKEY_THRESHOLD) pn.startRekeying();
+						if((NUM_SEQNUMS - tracker.nextSeqNum) + tracker.firstSeqNumUsed < REKEY_THRESHOLD) pn.startRekeying();
 					}
 				}
 			}
 
-			int seqNum = nextSequenceNumber++;
-			if((nextSequenceNumber == NUM_SEQNUMS) || (nextSequenceNumber < 0)) {
-				nextSequenceNumber = 0;
+			int seqNum = tracker.nextSeqNum++;
+			if((tracker.nextSeqNum == NUM_SEQNUMS) || (tracker.nextSeqNum < 0)) {
+				tracker.nextSeqNum = 0;
 			}
 			return seqNum;
 		}
