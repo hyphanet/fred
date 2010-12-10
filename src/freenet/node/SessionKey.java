@@ -38,10 +38,12 @@ public class SessionKey {
 	public final byte[] hmacKey;
 
 	public int firstSeqNumUsed = -1;
+	public int nextSeqNum;
+	public final int theirFirstSeqNum;
 
 	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
-			byte[] ivNonce, byte[] hmacKey) {
+			byte[] ivNonce, byte[] hmacKey, int ourFirstSeqNum, int theirFirstSeqNum) {
 		this.pn = parent;
 		this.packets = tracker;
 		this.outgoingCipher = outgoingCipher;
@@ -51,6 +53,8 @@ public class SessionKey {
 		this.ivCipher = ivCipher;
 		this.ivNonce = ivNonce;
 		this.hmacKey = hmacKey;
+		this.nextSeqNum = ourFirstSeqNum;
+		this.theirFirstSeqNum = theirFirstSeqNum;
 	}
 	
 	@Override
