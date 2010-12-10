@@ -855,7 +855,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		if(digestedRoutingKey != null) {
 			cache = slotFilter.get((int)offset);
 			validCache = (cache & (1 << 31)) != 0;
-			// FIXME refactor to pass in the digestedKey if known.
 			likelyMatch = slotCacheLikelyMatch(cache, digestedRoutingKey);
 		}
 		if(validCache && logMINOR) {
