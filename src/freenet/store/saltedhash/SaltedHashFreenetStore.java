@@ -312,7 +312,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				return null;
 			}
 			try {
-				Entry entry = probeEntry(routingKey, true);
+				Entry entry = probeEntry(digestedKey, routingKey, true);
 				if (entry == null) {
 					misses.incrementAndGet();
 					return null;
@@ -357,13 +357,11 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * @return <code>Entry</code> object
 	 * @throws IOException
 	 */
-	private Entry probeEntry(byte[] routingKey, boolean withData) throws IOException {
+	private Entry probeEntry(byte[] digestedKey, byte[] routingKey, boolean withData) throws IOException {
 		if (checkBloom)
-			if (!bloomFilter.checkFilter(cipherManager.getDigestedKey(routingKey)))
+			if (!bloomFilter.checkFilter(digestedKey))
 				return null;
 		
-		byte[] digestedKey = cipherManager.getDigestedKey(routingKey);
-
 		Entry entry = probeEntry0(digestedKey, routingKey, storeSize, withData);
 
 		if (entry == null && prevStoreSize != 0)
@@ -435,7 +433,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				 * collisionPossible is false. Should be very rare as digestedRoutingKey is a
 				 * SHA-256 hash.
 				 */
-				Entry oldEntry = probeEntry(routingKey, false);
+				Entry oldEntry = probeEntry(digestedKey, routingKey, false);
 				if (oldEntry != null && !oldEntry.isFree()) {
 					long oldOffset = oldEntry.curOffset;
 					try {
