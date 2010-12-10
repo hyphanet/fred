@@ -849,7 +849,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		if(trueCache != cache) {
 			if((cache & (1 << 31)) != 0)
 				Logger.error(this, "Slot cache has changed for slot "+offset+" from "+cache+" to "+trueCache);
-			this.slotFilter.put((int)offset, trueCache);
+			slotFilter.put((int)offset, trueCache);
 		}
 		
 		if (routingKey != null) {
@@ -915,6 +915,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * </ul>
 	 */
 	private void writeEntry(Entry entry, long offset) throws IOException {
+		if(offset >= Integer.MAX_VALUE) throw new IllegalArgumentException();
+		
+		slotFilter.put((int)offset, entry.getSlotFilterEntry());
+		
 		cipherManager.encrypt(entry, random);
 
 		ByteBuffer bf = entry.toMetaDataBuffer();
