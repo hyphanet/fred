@@ -360,20 +360,22 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		if (checkBloom)
 			if (!bloomFilter.checkFilter(cipherManager.getDigestedKey(routingKey)))
 				return null;
+		
+		byte[] digestedKey = cipherManager.getDigestedKey(routingKey);
 
-		Entry entry = probeEntry0(routingKey, storeSize, withData);
+		Entry entry = probeEntry0(digestedKey, routingKey, storeSize, withData);
 
 		if (entry == null && prevStoreSize != 0)
-			entry = probeEntry0(routingKey, prevStoreSize, withData);
+			entry = probeEntry0(digestedKey, routingKey, prevStoreSize, withData);
 		if (checkBloom && entry == null)
 			bloomFalsePos.incrementAndGet();
 
 		return entry;
 	}
 
-	private Entry probeEntry0(byte[] routingKey, long probeStoreSize, boolean withData) throws IOException {
+	private Entry probeEntry0(byte[] digestedKey, byte[] routingKey, long probeStoreSize, boolean withData) throws IOException {
 		Entry entry = null;
-		long[] offset = getOffsetFromPlainKey(routingKey, probeStoreSize);
+		long[] offset = getOffsetFromDigestedKey(routingKey, probeStoreSize);
 
 		for (int i = 0; i < offset.length; i++) {
 			if (logDEBUG)
@@ -381,7 +383,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 			try {
 				if(storeFileOffsetReady == -1 || offset[i] < this.storeFileOffsetReady) {
-					entry = readEntry(offset[i], routingKey, withData);
+					entry = readEntry(offset[i], digestedKey, routingKey, withData);
 					if (entry != null)
 						return entry;
 				}
@@ -418,8 +420,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		} catch(InterruptedException e) {
 			throw new IOException("interrupted: " +e);
 		}
+		byte[] digestedKey = cipherManager.getDigestedKey(routingKey);
 		try {
-			Map<Long, Condition> lockMap = lockPlainKey(routingKey, false);
+			Map<Long, Condition> lockMap = lockDigestedKey(digestedKey, false);
 			if (lockMap == null) {
 				if (logDEBUG)
 					Logger.debug(this, "cannot lock key: " + HexUtil.bytesToHex(routingKey) + ", shutting down?");
@@ -437,7 +440,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					try {
 						if (!collisionPossible) {
 							if((oldEntry.flag & Entry.ENTRY_NEW_BLOCK) == 0 && !isOldBlock) {
-								oldEntry = readEntry(oldEntry.curOffset, routingKey, true);
+								oldEntry = readEntry(oldEntry.curOffset, digestedKey, routingKey, true);
 								// Currently flagged as an old block
 								oldEntry.flag |= Entry.ENTRY_NEW_BLOCK;
 								if(logMINOR) Logger.minor(this, "Setting old block to new block");
@@ -532,7 +535,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				if (logDEBUG)
 					Logger.debug(this, "collision, write to i=" + indexToOverwrite + ", offset=" + offset[indexToOverwrite]);
 				bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
-				oldEntry = readEntry(offset[indexToOverwrite], null, false);
+				oldEntry = readEntry(offset[indexToOverwrite], digestedKey, null, false);
 				writeEntry(entry, offset[indexToOverwrite]);
 				rebuildBloom = onWrite();
 				if (oldEntry.generation == generation)
@@ -841,16 +844,16 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * @return <code>null</code> if and only if <code>routingKey</code> is not <code>null</code> and
 	 *         the key does not match the entry.
 	 */
-	private Entry readEntry(long offset, byte[] routingKey, boolean withData) throws IOException {
+	private Entry readEntry(long offset, byte[] digestedRoutingKey, byte[] routingKey, boolean withData) throws IOException {
 		if(offset >= Integer.MAX_VALUE) throw new IllegalArgumentException();
 		int cache = 0;
 		boolean validCache = false;
 		boolean likelyMatch = false;
-		if(routingKey != null) {
+		if(digestedRoutingKey != null) {
 			cache = slotFilter.get((int)offset);
 			validCache = (cache & (1 << 31)) != 0;
 			// FIXME refactor to pass in the digestedKey if known.
-			likelyMatch = slotCacheLikelyMatch(cache, cipherManager.getDigestedKey(routingKey));
+			likelyMatch = slotCacheLikelyMatch(cache, digestedRoutingKey);
 		}
 		if(validCache && logMINOR) {
 			if(likelyMatch)
@@ -886,7 +889,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					Logger.error(this, "Slot falsely identified as free on slot "+offset+" cache was "+cache);
 				return null;
 			}
-			if (!Arrays.equals(cipherManager.getDigestedKey(routingKey), slotDigestedRoutingKey)) {
+			if (!Arrays.equals(digestedRoutingKey, slotDigestedRoutingKey)) {
 				if(validCache && likelyMatch)
 					Logger.error(this, "False positive from slot cache on slot "+offset+" cache was "+cache);
 				return null;
@@ -935,17 +938,19 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	private long getFlag(long offset) throws IOException {
-		Entry entry = readEntry(offset, null, false);
+		// FIXME read the slotFilter???
+		Entry entry = readEntry(offset, null, null, false);
 		return entry.flag;
 	}
 
 	private boolean isFree(long offset) throws IOException {
-		Entry entry = readEntry(offset, null, false);
+		// FIXME read the slotFilter
+		Entry entry = readEntry(offset, null, null, false);
 		return entry.isFree();
 	}
 
 	private byte[] getDigestedKeyFromOffset(long offset) throws IOException {
-		Entry entry = readEntry(offset, null, false);
+		Entry entry = readEntry(offset, null, null, false);
 		return entry.getDigestedRoutingKey();
 	}
 
