@@ -535,7 +535,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				// Do the overwriting.
 				if (logDEBUG)
 					Logger.debug(this, "collision, write to i=" + indexToOverwrite + ", offset=" + offset[indexToOverwrite]);
-				bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
+				bloomFilter.addKey(digestedKey);
 				oldEntry = readEntry(offset[indexToOverwrite], digestedKey, null, false);
 				writeEntry(entry, digestedKey, offset[indexToOverwrite]);
 				rebuildBloom = onWrite();
