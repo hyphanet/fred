@@ -889,15 +889,15 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			if (entry.isFree()) {
 				if(validCache && !likelyMatch && !slotCacheIsFree(cache))
 					Logger.error(this, "Slot falsely identified as free on slot "+offset+" cache was "+cache);
-				else if(validCache && !likelyMatch && slotCacheIsFree(cache))
-					Logger.error(this, "True negative!");
+				else if(logMINOR && validCache && !likelyMatch && slotCacheIsFree(cache))
+					Logger.minor(this, "True negative!");
 				return null;
 			}
 			if (!Arrays.equals(digestedRoutingKey, slotDigestedRoutingKey)) {
 				if(validCache && likelyMatch)
 					Logger.error(this, "False positive from slot cache on slot "+offset+" cache was "+cache);
-				else if(validCache && !likelyMatch)
-					Logger.error(this, "True negative!");
+				else if(logMINOR && validCache && !likelyMatch)
+					Logger.minor(this, "True negative!");
 				return null;
 			}
 			
@@ -910,12 +910,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				entry.setHD(hdBuf);
 				boolean decrypted = cipherManager.decrypt(entry, routingKey);
 				if (!decrypted) {
-					if(validCache && likelyMatch)
-						Logger.error(this, "True positive but decrypt failed on slot "+offset+" cache was "+cache);
+					if(logMINOR && validCache && likelyMatch)
+						Logger.minor(this, "True positive but decrypt failed on slot "+offset+" cache was "+cache);
 					return null;
 				} else {
-					if(validCache && likelyMatch)
-						Logger.error(this, "True positive! IT WORKED!");
+					if(logMINOR && validCache && likelyMatch)
+						Logger.minor(this, "True positive!");
 				}
 			}
 		}
