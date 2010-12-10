@@ -779,6 +779,19 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					digestedRoutingKey = cipherManager.getDigestedKey(plainRoutingKey);
 			return digestedRoutingKey;
 		}
+
+		public int getSlotFilterEntry() {
+			int value = (digestedRoutingKey[2] & 0xFF) + ((digestedRoutingKey[1] & 0xFF) << 8) +
+				((digestedRoutingKey[0] & 0xFF) << 16);
+			value |= 1<<31;
+			if((flags & ENTRY_FLAG_OCCUPIED) != 0)
+				value |= 1<<30;
+			if((flags & ENTRY_NEW_BLOCK) != 0)
+				value |= 1<<29;
+			if((flags & ENTRY_WRONG_STORE) != 0)
+				value |= 1<<28;
+			return value;
+		}
 	}
 
 	private volatile long storeFileOffsetReady = -1;
@@ -832,7 +845,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		if (routingKey != null) {
 			if (entry.isFree())
 				return null;
-			if (!Arrays.equals(cipherManager.getDigestedKey(routingKey), entry.digestedRoutingKey))
+			byte[] slotDigestedRoutingKey = entry.digestedRoutingKey;
+			assert(offset < Integer.MAX_VALUE);
+			this.slotFilter.put((int)offset, entry.getSlotFilterEntry());
+			if (!Arrays.equals(cipherManager.getDigestedKey(routingKey), slotDigestedRoutingKey))
 				return null;
 
 			if (withData) {
