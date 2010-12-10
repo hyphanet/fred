@@ -816,7 +816,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 	
 	private boolean slotCacheIsFree(int value) {
-		return (value & SLOT_OCCUPIED) != 0;
+		return (value & SLOT_OCCUPIED) == 0;
 	}
 
 	private volatile long storeFileOffsetReady = -1;
