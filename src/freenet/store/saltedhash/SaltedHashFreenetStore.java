@@ -374,7 +374,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 	private Entry probeEntry0(byte[] digestedKey, byte[] routingKey, long probeStoreSize, boolean withData) throws IOException {
 		Entry entry = null;
-		long[] offset = getOffsetFromDigestedKey(routingKey, probeStoreSize);
+		long[] offset = getOffsetFromDigestedKey(digestedKey, probeStoreSize);
 
 		for (int i = 0; i < offset.length; i++) {
 			if (logDEBUG)
