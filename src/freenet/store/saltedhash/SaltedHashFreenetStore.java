@@ -303,8 +303,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		} catch(InterruptedException e) {
 			throw new IOException("interrupted: " +e);
 		}
+		byte[] digestedKey = cipherManager.getDigestedKey(routingKey);
 		try {
-			Map<Long, Condition> lockMap = lockPlainKey(routingKey, true);
+			Map<Long, Condition> lockMap = lockDigestedKey(digestedKey, true);
 			if (lockMap == null) {
 				if (logDEBUG)
 					Logger.debug(this, "cannot lock key: " + HexUtil.bytesToHex(routingKey) + ", shutting down?");
@@ -1887,17 +1888,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	volatile boolean shutdown = false;
 	private LockManager lockManager;
 	private ReadWriteLock configLock = new ReentrantReadWriteLock();
-
-	/**
-	 * Lock all possible offsets of a key. This method would release the locks if any locking
-	 * operation failed.
-	 *
-	 * @param plainKey
-	 * @return <code>true</code> if all the offsets are locked.
-	 */
-	private Map<Long, Condition> lockPlainKey(byte[] plainKey, boolean usePrevStoreSize) {
-		return lockDigestedKey(cipherManager.getDigestedKey(plainKey), usePrevStoreSize);
-	}
 
 	private void unlockPlainKey(byte[] plainKey, boolean usePrevStoreSize, Map<Long, Condition> lockMap) {
 		unlockDigestedKey(cipherManager.getDigestedKey(plainKey), usePrevStoreSize, lockMap);
