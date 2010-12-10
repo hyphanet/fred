@@ -490,7 +490,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 							// write to free block
 							if (logDEBUG)
 								Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
-							bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
+							bloomFilter.addKey(digestedKey);
 							writeEntry(entry, offset[i]);
 							rebuildBloom = onWrite();
 							keyCount.incrementAndGet();
