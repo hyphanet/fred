@@ -283,7 +283,7 @@ public class PersistentBlobTempBucketFactory {
 			int first = -1;
 outer:		while(true) {
 				if(logMINOR) Logger.minor(this, "Maybe found free slot from bitmap "+first);
-				synchronized(this) {
+				synchronized(PersistentBlobTempBucketFactory.this) {
 					first = freeBlocksCache.firstZero(first+1);
 					if(first == -1) break;
 					if(first > ptr) break;
@@ -308,7 +308,7 @@ outer:		while(true) {
 						}
 						continue outer;
 					}
-					synchronized(this) {
+					synchronized(PersistentBlobTempBucketFactory.this) {
 						freeSlots.put((long)first, tag);
 					}
 					added++;
@@ -322,7 +322,7 @@ outer:		while(true) {
 				Logger.error(PersistentBlobTempBucketFactory.this, "No tag for index "+first);
 				PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, first);
 				container.store(tag);
-				synchronized(this) {
+				synchronized(PersistentBlobTempBucketFactory.this) {
 					freeSlots.put(ptr, tag);
 				}
 				Logger.normal(this, "Found free slot (missing) from bitmap "+first);
@@ -393,7 +393,7 @@ outer:		while(true) {
 				Logger.error(this, "Tags in database: "+inDB+" but size of file allows: "+ptr);
 				// Recover: exhaustive index search. This can cause very long pauses, but should only happen if there is a bug.
 				for(long l = ptr-1; l >= 0; l--) {
-					synchronized(this) {
+					synchronized(PersistentBlobTempBucketFactory.this) {
 						if(freeSlots.containsKey(l)) continue;
 						if(notCommittedBlobs.containsKey(l)) continue;
 						if(almostFreeSlots.containsKey(l)) continue;
@@ -406,7 +406,7 @@ outer:		while(true) {
 					Logger.error(this, "FOUND EMPTY SLOT: "+l+" when scanning the blob file because tags in database < length of file");
 					PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, l);
 					container.store(tag);
-					synchronized(this) {
+					synchronized(PersistentBlobTempBucketFactory.this) {
 						freeSlots.put(ptr, tag);
 					}
 					added++;
@@ -417,7 +417,7 @@ outer:		while(true) {
 			}
 			
 			DBJob freeJob = null;
-			synchronized(this) {
+			synchronized(PersistentBlobTempBucketFactory.this) {
 				if(!freeJobs.isEmpty()) {
 					freeJob = freeJobs.iterator().next();
 					freeJobs.remove(freeJob);
@@ -443,7 +443,7 @@ outer:		while(true) {
 				if(addBlocks <= 0) return changedTags;
 			}
 			
-			synchronized(this) {
+			synchronized(PersistentBlobTempBucketFactory.this) {
 				freeBlocksCache.setSize((int) Math.min(Integer.MAX_VALUE, (blocks + addBlocks)));
 			}
 			
@@ -463,7 +463,7 @@ outer:		while(true) {
 					break;
 				}
 			}
-			synchronized(this) {
+			synchronized(PersistentBlobTempBucketFactory.this) {
 				cachedSize = blocks + addBlocks;
 			}
 			query = container.query();
