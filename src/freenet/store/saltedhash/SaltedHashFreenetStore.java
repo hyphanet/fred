@@ -829,6 +829,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 */
 	private Entry readEntry(long offset, byte[] routingKey, boolean withData) throws IOException {
 		if(offset >= Integer.MAX_VALUE) throw new IllegalArgumentException();
+		int cache = slotFilter.get((int)offset);
 		ByteBuffer mbf = ByteBuffer.allocate(Entry.METADATA_LENGTH);
 
 		do {
@@ -844,7 +845,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		entry.curOffset = offset;
 
 		byte[] slotDigestedRoutingKey = entry.digestedRoutingKey;
-		this.slotFilter.put((int)offset, entry.getSlotFilterEntry());
+		int trueCache = entry.getSlotFilterEntry();
+		if(trueCache != cache) {
+			if((cache & (1 << 31)) != 0)
+				Logger.error(this, "Slot cache has changed for slot "+offset+" from "+cache+" to "+trueCache);
+			this.slotFilter.put((int)offset, trueCache);
+		}
 		
 		if (routingKey != null) {
 			if (entry.isFree())
