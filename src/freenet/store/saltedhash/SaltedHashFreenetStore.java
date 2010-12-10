@@ -783,7 +783,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			return digestedRoutingKey;
 		}
 
-		public int getSlotFilterEntry() {
+		public int getSlotFilterEntry(byte[] digestedRoutingKey, int flags) {
 			int value = (digestedRoutingKey[2] & 0xFF) + ((digestedRoutingKey[1] & 0xFF) << 8) +
 				((digestedRoutingKey[0] & 0xFF) << 16);
 			value |= 1<<31;
@@ -794,6 +794,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			if((flags & ENTRY_WRONG_STORE) != 0)
 				value |= 1<<28;
 			return value;
+		}
+		
+		public int getSlotFilterEntry() {
+			return getSlotFilterEntry(getDigestedRoutingKey(), flags);
 		}
 
 	}
