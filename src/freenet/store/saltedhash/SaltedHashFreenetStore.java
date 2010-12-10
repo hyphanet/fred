@@ -8,7 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -80,6 +82,21 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private int bloomFilterSize;
 	private int bloomFilterK;
 	private final BloomFilter bloomFilter;
+	
+	/** Alternative to a Bloom filter which allows us to know exactly which slots to check,
+	 * so radically reduces disk I/O even when there is a hit.
+	 * 
+	 * Each slot in a 4 byte integer.
+	 * bit 31 - Must be 1. 0 indicates we have not checked this slot so must read the entry.
+	 * bit 30 - ENTRY_FLAG_OCCUPIED: 0 = Slot is free, 1 = slot is occupied.
+	 * bit 29 - ENTRY_NEW_BLOCK: 0 = Old (pre-1224) or should not be in store, 1 = New and should be in store.
+	 * bit 28 - ENTRY_WRONG_STORE: 0 = Stored in correct store, 1 = stored in wrong store.
+	 * bit 0...23 - The first 3 bytes of the salted key.
+	 */
+	private final IntBuffer slotFilter;
+	private final ByteBuffer slotFilterMapped;
+	private final File slotFilterFile;
+	private final RandomAccessFile slotFilterRAF;
 
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
@@ -163,6 +180,16 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		bloomFilter = BloomFilter.createFilter(bloomFile, bloomFilterSize, bloomFilterK, bloomCounting);
 
 		System.err.println("Bloomfilter (" + bloomFilter + ") for " + name + " is loaded.");
+		
+		long slotFilterSize = storeSize * 4;
+		
+		slotFilterFile = new File(this.baseDir, name + ".slotfilter");
+		slotFilterRAF = new RandomAccessFile(slotFilterFile, "rw");
+		slotFilterRAF.setLength(slotFilterSize);
+		slotFilterMapped = slotFilterRAF.getChannel().map(MapMode.READ_WRITE, 0, slotFilterSize);
+		slotFilter = slotFilterMapped.asIntBuffer();
+		
+		System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded.");
 
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
