@@ -445,7 +445,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 								oldEntry.flag |= Entry.ENTRY_NEW_BLOCK;
 								if(logMINOR) Logger.minor(this, "Setting old block to new block");
 								oldEntry.storeSize = storeSize;
-								writeEntry(oldEntry, oldOffset);
+								writeEntry(oldEntry, digestedKey, oldOffset);
 							}
 							return true;
 						}
@@ -458,7 +458,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 								oldEntry.flag |= Entry.ENTRY_NEW_BLOCK;
 								if(logMINOR) Logger.minor(this, "Setting old block to new block");
 								oldEntry.storeSize = storeSize;
-								writeEntry(oldEntry, oldOffset);
+								writeEntry(oldEntry, digestedKey, oldOffset);
 							}
 							return false; // already in store
 						} else if (!overwrite) {
@@ -470,7 +470,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 					// Overwrite old offset with same key
 					Entry entry = new Entry(routingKey, header, data, !isOldBlock, wrongStore);
-					writeEntry(entry, oldOffset);
+					writeEntry(entry, digestedKey, oldOffset);
 					rebuildBloom = onWrite();
 					if (oldEntry.generation != generation)
 						keyCount.incrementAndGet();
@@ -491,7 +491,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 							if (logDEBUG)
 								Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 							bloomFilter.addKey(digestedKey);
-							writeEntry(entry, offset[i]);
+							writeEntry(entry, digestedKey, offset[i]);
 							rebuildBloom = onWrite();
 							keyCount.incrementAndGet();
 							return true;
@@ -536,7 +536,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					Logger.debug(this, "collision, write to i=" + indexToOverwrite + ", offset=" + offset[indexToOverwrite]);
 				bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
 				oldEntry = readEntry(offset[indexToOverwrite], digestedKey, null, false);
-				writeEntry(entry, offset[indexToOverwrite]);
+				writeEntry(entry, digestedKey, offset[indexToOverwrite]);
 				rebuildBloom = onWrite();
 				if (oldEntry.generation == generation)
 					bloomFilter.removeKey(oldEntry.getDigestedRoutingKey());
@@ -783,7 +783,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			return digestedRoutingKey;
 		}
 
-		public int getSlotFilterEntry(byte[] digestedRoutingKey, int flags) {
+		public int getSlotFilterEntry(byte[] digestedRoutingKey, long flags) {
 			int value = (digestedRoutingKey[2] & 0xFF) + ((digestedRoutingKey[1] & 0xFF) << 8) +
 				((digestedRoutingKey[0] & 0xFF) << 16);
 			value |= 1<<31;
@@ -971,10 +971,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * <li>update the entry with latest store size</li>
 	 * </ul>
 	 */
-	private void writeEntry(Entry entry, long offset) throws IOException {
+	private void writeEntry(Entry entry, byte[] digestedRoutingKey, long offset) throws IOException {
 		if(offset >= Integer.MAX_VALUE) throw new IllegalArgumentException();
 		
-		slotFilter.put((int)offset, entry.getSlotFilterEntry());
+		slotFilter.put((int)offset, entry.getSlotFilterEntry(digestedRoutingKey, entry.flag));
 		
 		cipherManager.encrypt(entry, random);
 
@@ -1751,8 +1751,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				for (long offset : offsets) {
 					try {
 						if (isFree(offset)) {
-							writeEntry(entry, offset);
-							bloomFilter.addKeyForked(entry.getDigestedRoutingKey());
+							byte[] digestedKey = entry.getDigestedRoutingKey();
+							writeEntry(entry, digestedKey, offset);
+							bloomFilter.addKeyForked(digestedKey);
 							keyCount.incrementAndGet();
 							return true;
 						}
