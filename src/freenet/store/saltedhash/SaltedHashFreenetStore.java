@@ -807,8 +807,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	public boolean slotCacheLikelyMatch(int value, byte[] digestedRoutingKey) {
-		if((value & (1 << SLOT_CHECKED)) == 0) return false;
-		if((value & (1 << SLOT_OCCUPIED)) == 0) return false;
+		if((value & (SLOT_CHECKED)) == 0) return false;
+		if((value & (SLOT_OCCUPIED)) == 0) return false;
 		int wanted = (digestedRoutingKey[2] & 0xFF) + ((digestedRoutingKey[1] & 0xFF) << 8) +
 			((digestedRoutingKey[0] & 0xFF) << 16);
 		int got = value & 0xFFFFFF;
