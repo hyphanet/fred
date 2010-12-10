@@ -828,6 +828,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 *         the key does not match the entry.
 	 */
 	private Entry readEntry(long offset, byte[] routingKey, boolean withData) throws IOException {
+		if(offset >= Integer.MAX_VALUE) throw new IllegalArgumentException();
 		ByteBuffer mbf = ByteBuffer.allocate(Entry.METADATA_LENGTH);
 
 		do {
@@ -842,12 +843,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		Entry entry = new Entry(mbf, null);
 		entry.curOffset = offset;
 
+		byte[] slotDigestedRoutingKey = entry.digestedRoutingKey;
+		this.slotFilter.put((int)offset, entry.getSlotFilterEntry());
+		
 		if (routingKey != null) {
 			if (entry.isFree())
 				return null;
-			byte[] slotDigestedRoutingKey = entry.digestedRoutingKey;
-			assert(offset < Integer.MAX_VALUE);
-			this.slotFilter.put((int)offset, entry.getSlotFilterEntry());
 			if (!Arrays.equals(cipherManager.getDigestedKey(routingKey), slotDigestedRoutingKey))
 				return null;
 
