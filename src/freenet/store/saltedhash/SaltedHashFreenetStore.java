@@ -97,6 +97,11 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private final ByteBuffer slotFilterMapped;
 	private final File slotFilterFile;
 	private final RandomAccessFile slotFilterRAF;
+	
+	private static final int SLOT_CHECKED = 1 << 31;
+	private static final int SLOT_OCCUPIED = 1 << 30;
+	private static final int SLOT_NEW_BLOCK = 1 << 29;
+	private static final int SLOT_WRONG_STORE = 1 << 28;
 
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
@@ -785,13 +790,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		public int getSlotFilterEntry(byte[] digestedRoutingKey, long flags) {
 			int value = (digestedRoutingKey[2] & 0xFF) + ((digestedRoutingKey[1] & 0xFF) << 8) +
 				((digestedRoutingKey[0] & 0xFF) << 16);
-			value |= 1<<31;
+			value |= SLOT_CHECKED;
 			if((flags & ENTRY_FLAG_OCCUPIED) != 0)
-				value |= 1<<30;
+				value |= SLOT_OCCUPIED;
 			if((flags & ENTRY_NEW_BLOCK) != 0)
-				value |= 1<<29;
+				value |= SLOT_NEW_BLOCK;
 			if((flags & ENTRY_WRONG_STORE) != 0)
-				value |= 1<<28;
+				value |= SLOT_WRONG_STORE;
 			return value;
 		}
 		
@@ -802,8 +807,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	public boolean slotCacheLikelyMatch(int value, byte[] digestedRoutingKey) {
-		if((value & (1 << 31)) == 0) return false;
-		if((value & (1 << 30)) == 0) return false;
+		if((value & (1 << SLOT_CHECKED)) == 0) return false;
+		if((value & (1 << SLOT_OCCUPIED)) == 0) return false;
 		int wanted = (digestedRoutingKey[2] & 0xFF) + ((digestedRoutingKey[1] & 0xFF) << 8) +
 			((digestedRoutingKey[0] & 0xFF) << 16);
 		int got = value & 0xFFFFFF;
@@ -811,7 +816,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 	
 	private boolean slotCacheIsFree(int value) {
-		return (value & (1 << 30)) != 0;
+		return (value & SLOT_OCCUPIED) != 0;
 	}
 
 	private volatile long storeFileOffsetReady = -1;
@@ -854,7 +859,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		boolean likelyMatch = false;
 		if(digestedRoutingKey != null) {
 			cache = slotFilter.get((int)offset);
-			validCache = (cache & (1 << 31)) != 0;
+			validCache = (cache & SLOT_CHECKED) != 0;
 			likelyMatch = slotCacheLikelyMatch(cache, digestedRoutingKey);
 		}
 		if(validCache && logMINOR) {
