@@ -93,10 +93,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * bit 28 - ENTRY_WRONG_STORE: 0 = Stored in correct store, 1 = stored in wrong store.
 	 * bit 0...23 - The first 3 bytes of the salted key.
 	 */
-	private final IntBuffer slotFilter;
-	private final ByteBuffer slotFilterMapped;
+	private final ResizablePersistentIntBuffer slotFilter;
 	private final File slotFilterFile;
-	private final RandomAccessFile slotFilterRAF;
 	
 	private static final int SLOT_CHECKED = 1 << 31;
 	private static final int SLOT_OCCUPIED = 1 << 30;
@@ -189,10 +187,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		long slotFilterSize = Math.max(storeSize, prevStoreSize) * 4;
 		
 		slotFilterFile = new File(this.baseDir, name + ".slotfilter");
-		slotFilterRAF = new RandomAccessFile(slotFilterFile, "rw");
-		slotFilterRAF.setLength(slotFilterSize);
-		slotFilterMapped = slotFilterRAF.getChannel().map(MapMode.READ_WRITE, 0, slotFilterSize);
-		slotFilter = slotFilterMapped.asIntBuffer();
+		int size = (int)Math.max(storeSize, prevStoreSize);
+		slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size, -1);
 		
 		System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded.");
 
