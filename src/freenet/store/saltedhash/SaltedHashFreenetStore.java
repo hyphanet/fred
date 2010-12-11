@@ -1726,6 +1726,12 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 							buf.position(j * Entry.METADATA_LENGTH);
 							buf.put(ByteBuffer.allocate(Entry.METADATA_LENGTH));
 							keyCount.decrementAndGet();
+							if(!slotFilterDisabled)
+								try {
+									slotFilter.put((int)(offset + j), SLOT_CHECKED);
+								} catch (IOException e) {
+									Logger.error(this, "Unable to update slot filter: "+e, e);
+								}
 
 							dirty = true;
 						} else if (newEntry == NOT_MODIFIED) {
@@ -1737,6 +1743,17 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 							assert newEntry.header == null; // not supported
 							assert newEntry.data == null; // not supported
 
+							dirty = true;
+							if(!slotFilterDisabled) {
+								int newVal = newEntry.getSlotFilterEntry();
+								if(slotFilter.get((int)(offset + j)) != newVal) {
+									try {
+										slotFilter.put((int)(offset + j), newVal);
+									} catch (IOException e) {
+										Logger.error(this, "Unable to update slot filter: "+e, e);
+									}
+								}
+							}
 							dirty = true;
 						}
 					}
