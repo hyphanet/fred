@@ -95,6 +95,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 */
 	private final ResizablePersistentIntBuffer slotFilter;
 	private final File slotFilterFile;
+	private boolean slotFilterDisabled;
 	
 	private static final int SLOT_CHECKED = 1 << 31;
 	private static final int SLOT_OCCUPIED = 1 << 30;
@@ -191,7 +192,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		
 		slotFilterFile = new File(this.baseDir, name + ".slotfilter");
 		int size = (int)Math.max(storeSize, prevStoreSize);
-		slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size, -1);
+		if(!slotFilterDisabled)
+			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size, -1);
+		else
+			slotFilter = null;
 		
 		System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded.");
 
@@ -856,7 +860,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		int cache = 0;
 		boolean validCache = false;
 		boolean likelyMatch = false;
-		if(digestedRoutingKey != null) {
+		if(digestedRoutingKey != null && !slotFilterDisabled) {
 			cache = slotFilter.get((int)offset);
 			validCache = (cache & SLOT_CHECKED) != 0;
 			likelyMatch = slotCacheLikelyMatch(cache, digestedRoutingKey);
@@ -883,7 +887,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 		byte[] slotDigestedRoutingKey = entry.digestedRoutingKey;
 		int trueCache = entry.getSlotFilterEntry();
-		if(trueCache != cache) {
+		if(trueCache != cache && !slotFilterDisabled) {
 			if(validCache)
 				Logger.error(this, "Slot cache has changed for slot "+offset+" from "+cache+" to "+trueCache);
 			slotFilter.put((int)offset, trueCache);
@@ -976,7 +980,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private void writeEntry(Entry entry, byte[] digestedRoutingKey, long offset) throws IOException {
 		if(offset >= Integer.MAX_VALUE) throw new IllegalArgumentException();
 		
-		slotFilter.put((int)offset, entry.getSlotFilterEntry(digestedRoutingKey, entry.flag));
+		if(!slotFilterDisabled)
+			slotFilter.put((int)offset, entry.getSlotFilterEntry(digestedRoutingKey, entry.flag));
 		
 		cipherManager.encrypt(entry, random);
 
@@ -1014,7 +1019,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		} catch (Exception e) {
 			Logger.error(this, "error flusing store", e);
 		}
-		slotFilter.shutdown();
+		if(!slotFilterDisabled)
+			slotFilter.shutdown();
 		bloomFilter.force();
 	}
 
@@ -1489,7 +1495,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 							return;
 						bloomFilter.merge();
 						prevStoreSize = 0;
-						slotFilter.resize((int)storeSize);
+						if(!slotFilterDisabled)
+							slotFilter.resize((int)storeSize);
 
 						flags &= ~FLAG_REBUILD_BLOOM;
 						checkBloom = true;
@@ -1878,7 +1885,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 			prevStoreSize = storeSize;
 			storeSize = newStoreSize;
-			slotFilter.resize((int)Math.max(storeSize, prevStoreSize));
+			if(!slotFilterDisabled)
+				slotFilter.resize((int)Math.max(storeSize, prevStoreSize));
 			writeConfigFile();
 		} finally {
 			configLock.writeLock().unlock();
