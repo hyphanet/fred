@@ -167,6 +167,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 		// Create a directory it not exist
 		this.baseDir.mkdirs();
+		
+		if(storeSize > Integer.MAX_VALUE) // FIXME 64-bit.
+			throw new IllegalArgumentException("Store size over MAXINT not supported due to ResizablePersistentIntBuffer limitations.");
 
 		configFile = new File(this.baseDir, name + ".config");
 		boolean newStore = loadConfigFile(masterKey);
@@ -1859,6 +1862,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 	public void setMaxKeys(long newStoreSize, boolean shrinkNow) throws IOException {
 		Logger.normal(this, "[" + name + "] Resize newStoreSize=" + newStoreSize + ", shinkNow=" + shrinkNow);
+
+		if(newStoreSize > Integer.MAX_VALUE) // FIXME 64-bit.
+			throw new IllegalArgumentException("Store size over MAXINT not supported due to ResizablePersistentIntBuffer limitations.");
 
 		configLock.writeLock().lock();
 		try {
