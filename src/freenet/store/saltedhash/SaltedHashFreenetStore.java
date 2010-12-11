@@ -1486,6 +1486,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 							return;
 						bloomFilter.merge();
 						prevStoreSize = 0;
+						slotFilter.resize((int)storeSize);
 
 						flags &= ~FLAG_REBUILD_BLOOM;
 						checkBloom = true;
@@ -1871,6 +1872,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 			prevStoreSize = storeSize;
 			storeSize = newStoreSize;
+			slotFilter.resize((int)Math.max(storeSize, prevStoreSize));
 			writeConfigFile();
 		} finally {
 			configLock.writeLock().unlock();
