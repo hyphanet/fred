@@ -65,7 +65,8 @@ public class ResizablePersistentIntBuffer {
 		byte[] buf = new byte[32768];
 		int read = 0;
 		while(read < size) {
-			int toRead = (int) Math.min(buf.length, size * 4 - read);
+			System.out.println("Read "+read);
+			int toRead = (int) Math.min(buf.length, (size - read) * 4);
 			raf.readFully(buf, 0, toRead);
 			int[] data = Fields.bytesToInts(buf, 0, toRead);
 			for(int i=0;i<data.length;i++)
