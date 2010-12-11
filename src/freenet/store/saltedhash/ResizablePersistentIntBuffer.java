@@ -3,6 +3,8 @@ package freenet.store.saltedhash;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -23,6 +25,7 @@ public class ResizablePersistentIntBuffer {
 	
 	private final File filename;
 	private final RandomAccessFile raf;
+	private final FileChannel channel;
 	private int size;
 	/** The buffer. When we resize we write-lock and replace this. */
 	private int[] buffer;
@@ -58,6 +61,7 @@ public class ResizablePersistentIntBuffer {
 		if(realLength < expectedLength)
 			raf.setLength(expectedLength);
 		this.persistenceTime = persistenceTime;
+		channel = raf.getChannel();
 	}
 
 	private void readBuffer(int size) throws IOException {
@@ -91,10 +95,7 @@ public class ResizablePersistentIntBuffer {
 		try {
 			buffer[offset] = value;
 			if(persistenceTime == -1) {
-				synchronized(raf) {
-					raf.seek(((long)offset)*4);
-					raf.write(Fields.intToBytes(value));
-				}
+				channel.write(ByteBuffer.wrap(Fields.intToBytes(value)), ((long)offset)*4);
 			} else if(persistenceTime > 0) {
 				synchronized(this) {
 					dirty = true;
