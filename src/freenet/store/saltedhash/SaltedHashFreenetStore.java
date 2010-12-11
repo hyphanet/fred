@@ -251,6 +251,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	public boolean start(Ticker ticker, boolean longStart) throws IOException {
 
 		if(started) return true;
+		
+		if(!slotFilterDisabled)
+			slotFilter.start(ticker);
 
 		long curStoreFileSize = hdRAF.length();
 
