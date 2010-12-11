@@ -496,7 +496,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 				for (int i = 0; i < offset.length; i++) {
 					if(offset[i] < storeFileOffsetReady) {
-						long flag = getFlag(offset[i]);
+						long flag = getFlag(offset[i], false);
 						if((flag & Entry.ENTRY_FLAG_OCCUPIED) == 0) {
 							// write to free block
 							if (logDEBUG)
@@ -822,6 +822,17 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		return wanted == got;
 	}
 	
+	private long translateSlotFlagsToEntryFlags(int cache) {
+		long ret = 0;
+		if((cache & SLOT_OCCUPIED) != 0)
+			ret |= Entry.ENTRY_FLAG_OCCUPIED;
+		if((cache & SLOT_NEW_BLOCK) != 0)
+			ret |= Entry.ENTRY_NEW_BLOCK;
+		if((cache & SLOT_WRONG_STORE) != 0)
+			ret |= Entry.ENTRY_WRONG_STORE;
+		return ret;
+	}
+
 	private boolean slotCacheIsFree(int value) {
 		return (value & SLOT_OCCUPIED) == 0;
 	}
@@ -956,14 +967,32 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		return buf;
 	}
 
-	private long getFlag(long offset) throws IOException {
-		// FIXME read the slotFilter???
+	/** Get the flags for a slot. Tries to use the slot filter if possible. However, the
+	 * ENTRY_FLAG_PLAINKEY flag is not included in the slot filter, so it won't contain
+	 * that one.
+	 * @param offset
+	 * @param forceReadEntry
+	 * @return
+	 * @throws IOException
+	 */
+	private long getFlag(long offset, boolean forceReadEntry) throws IOException {
+		if((!forceReadEntry) && (!slotFilterDisabled) && useSlotFilter) {
+			int cache = slotFilter.get((int)offset);
+			if((cache & SLOT_CHECKED) != 0) {
+				return translateSlotFlagsToEntryFlags(cache);
+			}
+		}
 		Entry entry = readEntry(offset, null, null, false);
 		return entry.flag;
 	}
 
 	private boolean isFree(long offset) throws IOException {
-		// FIXME read the slotFilter
+		if((!slotFilterDisabled) && useSlotFilter) {
+			int cache = slotFilter.get((int)offset);
+			if((cache & SLOT_CHECKED) != 0) {
+				return slotCacheIsFree(cache);
+			}
+		}
 		Entry entry = readEntry(offset, null, null, false);
 		return entry.isFree();
 	}
