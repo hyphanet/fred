@@ -96,6 +96,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private final ResizablePersistentIntBuffer slotFilter;
 	private final File slotFilterFile;
 	private boolean slotFilterDisabled;
+	private boolean useSlotFilter;
 	
 	private static final int SLOT_CHECKED = 1 << 31;
 	private static final int SLOT_OCCUPIED = 1 << 30;
@@ -867,6 +868,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			cache = slotFilter.get((int)offset);
 			validCache = (cache & SLOT_CHECKED) != 0;
 			likelyMatch = slotCacheLikelyMatch(cache, digestedRoutingKey);
+			if(useSlotFilter && validCache && !likelyMatch) return null;
 		}
 		if(validCache && logMINOR) {
 			if(likelyMatch)
