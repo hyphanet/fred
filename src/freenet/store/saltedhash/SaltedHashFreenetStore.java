@@ -1580,6 +1580,14 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						entry.generation = generation;
 						return entry;
 					}
+					if(!slotFilterDisabled) {
+						int cache = entry.getSlotFilterEntry();
+						try {
+							slotFilter.put((int)entry.curOffset, cache);
+						} catch (IOException e) {
+							Logger.error(this, "Unable to update slot filter in bloom rebuild: "+e, e);
+						}
+					}
 					return NOT_MODIFIED;
 				}
 
