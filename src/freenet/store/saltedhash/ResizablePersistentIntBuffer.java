@@ -192,6 +192,7 @@ public class ResizablePersistentIntBuffer {
 		lock.writeLock().lock();
 		try {
 			if(this.size == size) return;
+			this.size = size;
 			int[] newBuf = new int[size];
 			System.arraycopy(buffer, 0, newBuf, 0, Math.min(buffer.length, newBuf.length));
 			try {
