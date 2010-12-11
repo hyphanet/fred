@@ -65,7 +65,6 @@ public class ResizablePersistentIntBuffer {
 		byte[] buf = new byte[32768];
 		int read = 0;
 		while(read < size) {
-			System.out.println("Read "+read);
 			int toRead = (int) Math.min(buf.length, (size - read) * 4);
 			raf.readFully(buf, 0, toRead);
 			int[] data = Fields.bytesToInts(buf, 0, toRead);
@@ -92,8 +91,10 @@ public class ResizablePersistentIntBuffer {
 		try {
 			buffer[offset] = value;
 			if(persistenceTime == -1) {
-				raf.seek(((long)offset)*4);
-				raf.write(Fields.intToBytes(value));
+				synchronized(raf) {
+					raf.seek(((long)offset)*4);
+					raf.write(Fields.intToBytes(value));
+				}
 			} else if(persistenceTime > 0) {
 				synchronized(this) {
 					dirty = true;
