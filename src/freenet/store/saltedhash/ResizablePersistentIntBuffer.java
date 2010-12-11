@@ -181,7 +181,7 @@ public class ResizablePersistentIntBuffer {
 		raf.seek(0);
 		int written = 0;
 		while(written < size) {
-			int toWrite = (int) Math.min(32768, size * 4 - written);
+			int toWrite = (int) Math.min(32768, (size - written) * 4);
 			byte[] buf = Fields.intsToBytes(buffer, written, toWrite);
 			raf.write(buf);
 			written += toWrite;
