@@ -1014,7 +1014,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		} catch (Exception e) {
 			Logger.error(this, "error flusing store", e);
 		}
-
+		slotFilter.shutdown();
 		bloomFilter.force();
 	}
 
