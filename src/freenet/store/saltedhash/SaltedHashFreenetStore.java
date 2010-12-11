@@ -800,7 +800,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		}
 		
 		public int getSlotFilterEntry() {
-			return getSlotFilterEntry(getDigestedRoutingKey(), flags);
+			return getSlotFilterEntry(getDigestedRoutingKey(), flag);
 		}
 
 	}
