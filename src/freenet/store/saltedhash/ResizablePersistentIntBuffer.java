@@ -40,6 +40,7 @@ public class ResizablePersistentIntBuffer {
 	/** Is the writer job running? So we can wait for it to complete on shutdown e.g. 
 	 * Protected by (this). */
 	private boolean writing;
+	private boolean closed;
 	
 	/** Create the buffer. Open the file, creating if necessary, read in the data, and set
 	 * its size.
@@ -83,6 +84,7 @@ public class ResizablePersistentIntBuffer {
 
 	public int get(int offset) {
 		lock.readLock().lock();
+		if(closed) throw new IllegalStateException("Already shut down");
 		try {
 			return buffer[offset];
 		} finally {
@@ -92,6 +94,7 @@ public class ResizablePersistentIntBuffer {
 
 	public void put(int offset, int value) throws IOException {
 		lock.readLock().lock(); // Only resize needs write lock because it creates a new buffer.
+		if(closed) throw new IllegalStateException("Already shut down");
 		try {
 			buffer[offset] = value;
 			if(persistenceTime == -1) {
@@ -120,7 +123,7 @@ public class ResizablePersistentIntBuffer {
 			lock.readLock().lock(); // Protect buffer.
 			try {
 				synchronized(ResizablePersistentIntBuffer.this) {
-					if(writing || !dirty) {
+					if(writing || !dirty || closed) {
 						scheduled = false;
 						return;
 					}
@@ -148,6 +151,8 @@ public class ResizablePersistentIntBuffer {
 		lock.writeLock().lock();
 		try {
 			synchronized(this) {
+				if(closed) return;
+				closed = true;
 				if(writing) {
 					// Wait for write to finish.
 					while(writing) {
