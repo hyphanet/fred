@@ -166,6 +166,9 @@ public class ResizablePersistentIntBuffer {
 			} catch (IOException e) {
 				Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
 			}
+			synchronized(this) {
+				writing = false;
+			}
 			try {
 				raf.close();
 			} catch (IOException e) {
