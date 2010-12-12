@@ -113,13 +113,14 @@ public class RAMSaltMigrationTest extends TestCase {
 		}
 	}
 
-	public void testSaltedStoreOldBlocks() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
-		int keycount = 5;
-		
-		int size = 10;
-		
+	public void testSaltedStoreOldBlock() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
+		checkSaltedStoreOldBlocks(5, 10, 0);
+		checkSaltedStoreOldBlocks(5, 10, 50);
+	}
+	
+	public void checkSaltedStoreOldBlocks(int keycount, int size, int bloomSize) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", store, weakPRNG, size, 0, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+bloomSize), "teststore", store, weakPRNG, size, bloomSize, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		ClientCHK[] keys = new ClientCHK[keycount];
