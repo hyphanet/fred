@@ -26,6 +26,7 @@ public class ResizablePersistentIntBuffer {
 	private final File filename;
 	private final RandomAccessFile raf;
 	private final FileChannel channel;
+	private final boolean isNew;
 	private int size;
 	/** The buffer. When we resize we write-lock and replace this. */
 	private int[] buffer;
@@ -50,6 +51,7 @@ public class ResizablePersistentIntBuffer {
 	 */
 	public ResizablePersistentIntBuffer(File f, int size, int persistenceTime) throws IOException {
 		this.filename = f;
+		isNew = !f.exists();
 		this.raf = new RandomAccessFile(f, "rw");
 		this.lock = new ReentrantReadWriteLock();
 		this.size = size;
@@ -249,6 +251,10 @@ public class ResizablePersistentIntBuffer {
 			}
 			lock.readLock().lock();
 		}
+	}
+
+	public boolean isNew() {
+		return isNew;
 	}
 	
 }

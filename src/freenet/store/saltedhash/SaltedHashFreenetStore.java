@@ -222,7 +222,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 			writeConfigFile();
 		}
-		if (bloomFilter.needRebuild() && !newStore) {
+		if ((bloomFilter.needRebuild() || ((!slotFilterDisabled) && slotFilter.isNew())) && !newStore) {
 			// Bloom filter resized?
 			flags |= FLAG_REBUILD_BLOOM;
 			checkBloom = false;
