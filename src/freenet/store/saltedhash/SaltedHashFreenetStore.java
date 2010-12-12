@@ -1603,8 +1603,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				public boolean batch(long entriesLeft) {
 					WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 5 * 1000 + 1000);
 
-					if (i++ % 16 == 0) {
+					if (i++ % 16 == 0)
 						writeConfigFile();
+					if (i++ % 1024 == 0) {
 						if(!slotFilterDisabled)
 							slotFilter.forceWrite();
 					}
