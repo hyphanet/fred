@@ -1590,7 +1590,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					if(!slotFilterDisabled) {
 						int cache = entry.getSlotFilterEntry();
 						try {
-							slotFilter.put((int)entry.curOffset, cache);
+							slotFilter.put((int)entry.curOffset, cache, true);
 						} catch (IOException e) {
 							Logger.error(this, "Unable to update slot filter in bloom rebuild: "+e, e);
 						}
@@ -1614,6 +1614,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 				public void finish() {
 					bloomFilter.merge();
+					if(!slotFilterDisabled)
+						slotFilter.forceWrite();
 					configLock.writeLock().lock();
 					try {
 						flags &= ~FLAG_REBUILD_BLOOM;

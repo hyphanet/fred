@@ -91,13 +91,17 @@ public class ResizablePersistentIntBuffer {
 			lock.readLock().unlock();
 		}
 	}
-
+	
 	public void put(int offset, int value) throws IOException {
+		put(offset, value, false);
+	}
+
+	public void put(int offset, int value, boolean noWrite) throws IOException {
 		lock.readLock().lock(); // Only resize needs write lock because it creates a new buffer.
 		if(closed) throw new IllegalStateException("Already shut down");
 		try {
 			buffer[offset] = value;
-			if(persistenceTime == -1) {
+			if(persistenceTime == -1 && !noWrite) {
 				channel.write(ByteBuffer.wrap(Fields.intToBytes(value)), ((long)offset)*4);
 			} else if(persistenceTime > 0) {
 				synchronized(this) {
@@ -212,6 +216,38 @@ public class ResizablePersistentIntBuffer {
 			}
 		} finally {
 			lock.writeLock().unlock();
+		}
+	}
+
+	public void forceWrite() {
+		lock.readLock().lock();
+		try {
+			synchronized(this) {
+				if(closed) return;
+				dirty = false;
+				if(writing) {
+					// Wait for write to finish.
+					while(writing) {
+						try {
+							wait();
+						} catch (InterruptedException e) {
+							// Ignore.
+						}
+					}
+					if(!dirty) return;
+				}
+				writing = true;
+			}
+			try {
+				writeBuffer();
+			} catch (IOException e) {
+				Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
+			}
+			synchronized(this) {
+				writing = false;
+			}
+		} finally {
+			lock.readLock().lock();
 		}
 	}
 	
