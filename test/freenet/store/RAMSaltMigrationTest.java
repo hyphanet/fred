@@ -114,32 +114,45 @@ public class RAMSaltMigrationTest extends TestCase {
 	}
 
 	public void testSaltedStoreOldBlocks() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		int keycount = 5;
+		
+		int size = 10;
+		
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", store, weakPRNG, 10, 0, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", store, weakPRNG, size, 0, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
+		
+		ClientCHK[] keys = new ClientCHK[keycount];
+		String[] test = new String[keycount];
+		ClientCHKBlock[] block = new ClientCHKBlock[keycount];
 
-		for(int i=0;i<5;i++) {
+		for(int i=0;i<keycount;i++) {
 			
 			// Encode a block
-			String test = "test" + i;
-			ClientCHKBlock block = encodeBlock(test);
-			store.put(block, true);
+			test[i] = "test" + i;
+			block[i] = encodeBlock(test[i]);
+			store.put(block[i], true);
 			
-			ClientCHK key = block.getClientKey();
+			keys[i] = block[i].getClientKey();
+		}
+		
+		for(int i=0;i<keycount;i++) {
+			
+			ClientCHK key = keys[i];
 			
 			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 			String data = decodeBlock(verify, key);
-			assertEquals(test, data);
+			assertEquals(test[i], data);
 			
 			// ignoreOldBlocks works.
 			assertEquals(null, store.fetch(key.getNodeCHK(), false, true, null));
 			
 			// Put it with oldBlock = false should unset the flag.
-			store.put(block, false);
+			store.put(block[i], false);
 			
 			verify = store.fetch(key.getNodeCHK(), false, true, null);
 			data = decodeBlock(verify, key);
-			assertEquals(test, data);
+			assertEquals(test[i], data);
 		}
 	}
 
