@@ -1343,6 +1343,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		// return <code>null</code> to free the entry
 		// return NOT_MODIFIED to keep the old entry
 		SaltedHashFreenetStore<T>.Entry process(SaltedHashFreenetStore<T>.Entry entry);
+
+		/** Does this batch processor want to see free entries? */
+		boolean wantFreeEntries();
 	}
 
 	private class Cleaner extends NativeThread {
@@ -1541,6 +1544,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 					Logger.normal(this, "Finish resizing (" + name + ")");
 				}
+
+				public boolean wantFreeEntries() {
+					return false;
+				}
 			};
 
 			batchProcessEntries(resizeProcesser, _prevStoreSize, true, sleep);
@@ -1573,7 +1580,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 
 				public Entry process(Entry entry) {
-					if (entry.generation != generation) {
+					if (!entry.isFree() && entry.generation != generation) {
 						bloomFilter.addKeyForked(entry.getDigestedRoutingKey());
 						keyCount.incrementAndGet();
 
@@ -1618,6 +1625,10 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 					Logger.normal(this, "Finish rebuilding bloom filter (" + name + ")");
 				}
+
+				public boolean wantFreeEntries() {
+					return true;
+				}
 			};
 
 			batchProcessEntries(rebuildBloomProcessor, storeSize, false, sleep);
@@ -1627,6 +1638,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		private volatile long entriesTotal;
 
 		private void batchProcessEntries(BatchProcessor<T> processor, long storeSize, boolean reverse, boolean sleep) {
+			
 			entriesLeft = entriesTotal = storeSize;
 
 			long startOffset, step;
@@ -1686,6 +1698,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		 *         otherwise (e.g. can't acquire locks, node shutting down)
 		 */
 		private boolean batchProcessEntries(long offset, int length, BatchProcessor<T> processor) {
+			boolean wantFreeEntries = processor.wantFreeEntries();
 			Condition[] locked = new Condition[length];
 			try {
 				// acquire all locks in the region, will unlock in the finally block
@@ -1726,7 +1739,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						Entry entry = new Entry(enBuf, null);
 						entry.curOffset = offset + j;
 
-						if (entry.isFree())
+						if (entry.isFree() && !wantFreeEntries)
 							continue; // not occupied
 
 						Entry newEntry = processor.process(entry);
