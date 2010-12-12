@@ -8,9 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.MapMode;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,7 +26,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import freenet.support.math.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.crypt.BlockCipher;
@@ -54,11 +51,12 @@ import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.Ticker;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
+import freenet.support.math.MersenneTwister;
 
 /**
  * Index-less data store based on salted hash.
