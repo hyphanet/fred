@@ -243,10 +243,10 @@ public class ResizablePersistentIntBuffer {
 			} catch (IOException e) {
 				Logger.error(this, "Write failed during shutdown: "+e+" on "+filename, e);
 			}
+		} finally {
 			synchronized(this) {
 				writing = false;
 			}
-		} finally {
 			lock.readLock().lock();
 		}
 	}
