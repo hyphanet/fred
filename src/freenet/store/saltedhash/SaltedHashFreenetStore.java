@@ -137,14 +137,14 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	public static <T extends StorableBlock> SaltedHashFreenetStore<T> construct(File baseDir, String name, StoreCallback<T> callback, Random random,
-	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, Ticker exec, byte[] masterKey)
+	        long maxKeys, int bloomFilterSize, boolean bloomCounting, boolean useSlotFilter, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, Ticker exec, byte[] masterKey)
 	        throws IOException {
-		return new SaltedHashFreenetStore<T>(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
+		return new SaltedHashFreenetStore<T>(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting, useSlotFilter,
 		        shutdownHook, preallocate, resizeOnStart, masterKey);
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback<T> callback, Random random, long maxKeys,
-	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, byte[] masterKey) throws IOException {
+	        int bloomFilterSize, boolean bloomCounting, boolean useSlotFilter, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, byte[] masterKey) throws IOException {
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 
@@ -193,6 +193,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		
 		slotFilterFile = new File(this.baseDir, name + ".slotfilter");
 		int size = (int)Math.max(storeSize, prevStoreSize);
+		if(useSlotFilter) {
+			slotFilterDisabled = false;
+			useSlotFilter = true;
+		} else {
+			slotFilterDisabled = true;
+			useSlotFilter = false;
+		}
 		if(!slotFilterDisabled)
 			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size, -1);
 		else
