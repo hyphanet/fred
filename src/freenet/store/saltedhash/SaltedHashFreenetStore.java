@@ -189,8 +189,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 		System.err.println("Bloomfilter (" + bloomFilter + ") for " + name + " is loaded.");
 		
-		long slotFilterSize = Math.max(storeSize, prevStoreSize) * 4;
-		
 		slotFilterFile = new File(this.baseDir, name + ".slotfilter");
 		int size = (int)Math.max(storeSize, prevStoreSize);
 		if(useSlotFilter) {
