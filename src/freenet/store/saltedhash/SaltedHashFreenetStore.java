@@ -1580,13 +1580,6 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 
 				public Entry process(Entry entry) {
-					if (!entry.isFree() && entry.generation != generation) {
-						bloomFilter.addKeyForked(entry.getDigestedRoutingKey());
-						keyCount.incrementAndGet();
-
-						entry.generation = generation;
-						return entry;
-					}
 					if(!slotFilterDisabled) {
 						int cache = entry.getSlotFilterEntry();
 						try {
@@ -1594,6 +1587,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						} catch (IOException e) {
 							Logger.error(this, "Unable to update slot filter in bloom rebuild: "+e, e);
 						}
+					}
+					if (!entry.isFree() && entry.generation != generation) {
+						bloomFilter.addKeyForked(entry.getDigestedRoutingKey());
+						keyCount.incrementAndGet();
+
+						entry.generation = generation;
+						return entry;
 					}
 					return NOT_MODIFIED;
 				}
