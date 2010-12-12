@@ -376,6 +376,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
+	
+	/**
+	 * @return The data {@link Bucket} which is used by this ClientPutter.
+	 */
+	public Bucket getData() {
+		return data;
+	}
 
 	/** Get the final URI to the inserted data */
 	@Override
