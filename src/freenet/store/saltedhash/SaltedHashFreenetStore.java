@@ -226,6 +226,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			// Bloom filter resized?
 			flags |= FLAG_REBUILD_BLOOM;
 			checkBloom = false;
+			System.out.println("Bloom filter for datastore (" + name + ") missing/mismatch, rebuilding.");
 
 			/*-
 			if (cleanerGlobalLock.tryLock()) {
