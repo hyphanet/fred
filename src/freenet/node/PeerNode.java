@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
@@ -376,7 +377,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 *  The initiator has to ensure that nonces send back by the
 	 *  responder in message2 match what was chosen in message 1
 	 */
-	protected final HashMap<Peer,byte[]> jfkNoncesSent = new HashMap<Peer,byte[]>();
+	protected final LinkedList<byte[]> jfkNoncesSent = new LinkedList<byte[]>();
 	private static volatile boolean logMINOR;
 
 	static {
@@ -1731,14 +1732,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				this.lastAttemptedHandshakeIPUpdateTime = 0;
 				if(!isConnected)
 					return;
-				// Prevent leak by clearing, *but keep the current handshake*
-				newPeer = newPeer.dropHostName();
-				oldPeer = oldPeer.dropHostName();
-				byte[] newPeerHandshake = jfkNoncesSent.get(newPeer);
-				byte[] oldPeerHandshake = jfkNoncesSent.get(oldPeer);
-				jfkNoncesSent.clear();
-				jfkNoncesSent.put(newPeer, newPeerHandshake);
-				jfkNoncesSent.put(newPeer, oldPeerHandshake);
 			} else
 				return;
 		}
