@@ -850,6 +850,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 	}
 
+	private final int MAX_NONCES_PER_PEER = 10;
+	
 	/*
 	 * format:
 	 * Ni,g^i
@@ -872,7 +874,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		node.random.nextBytes(nonce);
 
 		synchronized (pn) {
-			pn.jfkNoncesSent.put(replyTo.dropHostName(), nonce);
+			pn.jfkNoncesSent.add(nonce);
+			if(pn.jfkNoncesSent.size() > MAX_NONCES_PER_PEER)
+				pn.jfkNoncesSent.removeFirst();
 		}
 
 		int modulusLength = DiffieHellman.modulusLengthInBytes();
@@ -1027,9 +1031,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		// sanity check
-		byte[] myNi;
+		byte[] myNi = null;
 		synchronized (pn) {
-			myNi = pn.jfkNoncesSent.get(replyTo.dropHostName());
+			for(byte[] buf : pn.jfkNoncesSent) {
+				if(Arrays.equals(nonceInitiator, buf))
+					myNi = buf;
+			}
 		}
 		// We don't except such a message;
 		if(myNi == null) {
