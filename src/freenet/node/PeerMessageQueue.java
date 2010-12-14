@@ -703,6 +703,7 @@ public class PeerMessageQueue {
 
 		// Do not allow realtime data to starve bulk data
 		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
+			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, incomplete);
 			if(incomplete.value) return -size;
 		}
@@ -710,6 +711,7 @@ public class PeerMessageQueue {
 		// FIXME token bucket?
 		if(sendBalance >= 0) {
 			// Try realtime first
+			if(logMINOR) Logger.minor(this, "Trying realtime first");
 			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, incomplete);
 			if(s != size) {
 				size = s;
@@ -717,6 +719,7 @@ public class PeerMessageQueue {
 				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
 			}
 			if(incomplete.value) return -size;
+			if(logMINOR) Logger.minor(this, "Trying bulk");
 			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, incomplete);
 			if(s != size) {
 				size = s;
@@ -726,6 +729,7 @@ public class PeerMessageQueue {
 			if(incomplete.value) return -size;
 		} else {
 			// Try bulk first
+			if(logMINOR) Logger.minor(this, "Trying bulk first");
 			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, incomplete);
 			if(s != size) {
 				size = s;
@@ -733,6 +737,7 @@ public class PeerMessageQueue {
 				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
 			}
 			if(incomplete.value) return -size;
+			if(logMINOR) Logger.minor(this, "Trying realtime");
 			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, incomplete);
 			if(s != size) {
 				size = s;
@@ -742,6 +747,7 @@ public class PeerMessageQueue {
 			if(incomplete.value) return -size;
 		}
 		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
+			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, incomplete);
 			if(incomplete.value) return -size;
 		}
