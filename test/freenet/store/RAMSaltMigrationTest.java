@@ -158,6 +158,38 @@ public class RAMSaltMigrationTest extends TestCase {
 		}
 	}
 
+	public void checkSaltedStoreResize(int keycount, int size, int bloomSize, boolean useSlotFilter) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
+		CHKStore store = new CHKStore();
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+bloomSize+"-"+useSlotFilter), "teststore", store, weakPRNG, size, bloomSize, false, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		saltStore.start(null, true);
+		
+		ClientCHK[] keys = new ClientCHK[keycount];
+		String[] test = new String[keycount];
+		ClientCHKBlock[] block = new ClientCHKBlock[keycount];
+
+		for(int i=0;i<keycount;i++) {
+			
+			// Encode a block
+			test[i] = "test" + i;
+			block[i] = encodeBlock(test[i]);
+			store.put(block[i], true);
+			
+			keys[i] = block[i].getClientKey();
+		}
+		
+		saltStore.setMaxKeys(keycount*2, true);
+		// FIXME shrinkNow doesn't do anything - how to force cleaner to run immediately and wait for it???
+		
+		for(int i=0;i<keycount;i++) {
+			
+			ClientCHK key = keys[i];
+			
+			CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
+			String data = decodeBlock(verify, key);
+			assertEquals(test[i], data);
+		}
+	}
+
 	public void testMigrate() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
 		RAMFreenetStore<CHKBlock> ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
