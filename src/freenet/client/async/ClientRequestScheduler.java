@@ -77,7 +77,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public static final String PRIORITY_HARD = "HARD";
 	private String choosenPriorityScheduler; 
 	
-	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name, ClientContext context) {
+	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, String name, ClientContext context) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
 		this.isRTScheduler = forRT;
@@ -91,12 +91,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		selector = new ClientRequestSelector(forInserts, this);
 		
 		this.name = name;
-		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
-				"RequestStarterGroup.scheduler"+(forSSKs?"SSK" : "CHK")+(forInserts?"Inserts":"Requests"),
-				"RequestStarterGroup.schedulerLong",
-				new RequestStarterGroup.PrioritySchedulerCallback(this));
 		
-		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
+		this.choosenPriorityScheduler = PRIORITY_HARD; // Will be reset later.
 		if(!forInserts) {
 			offeredKeys = new OfferedKeysList(core, random, (short)0, forSSKs, forRT);
 		} else {

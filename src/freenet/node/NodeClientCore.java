@@ -364,7 +364,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 
-		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
+		try {
+			requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
+		} catch (InvalidConfigValueException e1) {
+			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
+		}
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
 
