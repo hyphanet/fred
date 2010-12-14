@@ -8,6 +8,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.config.Config;
+import freenet.config.EnumerableOptionCallback;
+import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
@@ -16,6 +18,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.StringCallback;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 public class RequestStarterGroup {
@@ -216,6 +219,41 @@ public class RequestStarterGroup {
 
 		public long getRate() {
 			return (long) ((1000.0 / getDelay()) * size);
+		}
+	}
+
+	public static class PrioritySchedulerCallback extends StringCallback implements EnumerableOptionCallback {
+		final ClientRequestScheduler cs;
+		private final String[] possibleValues = new String[]{ ClientRequestScheduler.PRIORITY_HARD, ClientRequestScheduler.PRIORITY_SOFT };
+		
+		public PrioritySchedulerCallback(ClientRequestScheduler cs){
+			this.cs = cs;
+		}
+		
+		@Override
+		public String get(){
+			if(cs != null)
+				return cs.getChoosenPriorityScheduler();
+			else
+				return ClientRequestScheduler.PRIORITY_HARD;
+		}
+		
+		@Override
+		public void set(String val) throws InvalidConfigValueException{
+			String value;
+			if(val == null || val.equalsIgnoreCase(get())) return;
+			if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_HARD)){
+				value = ClientRequestScheduler.PRIORITY_HARD;
+			}else if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_SOFT)){
+				value = ClientRequestScheduler.PRIORITY_SOFT;
+			}else{
+				throw new InvalidConfigValueException("Invalid priority scheme");
+			}
+			cs.setPriorityScheduler(value);
+		}
+		
+		public String[] getPossibleValues() {
+			return possibleValues;
 		}
 	}
 

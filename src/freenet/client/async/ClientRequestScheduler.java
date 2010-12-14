@@ -12,8 +12,6 @@ import com.db4o.ObjectSet;
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.client.async.ClientRequestSelector.SelectorReturn;
-import freenet.config.EnumerableOptionCallback;
-import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
@@ -28,13 +26,13 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
+import freenet.node.RequestStarterGroup;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.TimeUtil;
-import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
 
 /**
@@ -53,41 +51,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	static {
 		Logger.registerClass(ClientRequestScheduler.class);
-	}
-	
-	public static class PrioritySchedulerCallback extends StringCallback implements EnumerableOptionCallback {
-		final ClientRequestScheduler cs;
-		private final String[] possibleValues = new String[]{ ClientRequestScheduler.PRIORITY_HARD, ClientRequestScheduler.PRIORITY_SOFT };
-		
-		PrioritySchedulerCallback(ClientRequestScheduler cs){
-			this.cs = cs;
-		}
-		
-		@Override
-		public String get(){
-			if(cs != null)
-				return cs.getChoosenPriorityScheduler();
-			else
-				return ClientRequestScheduler.PRIORITY_HARD;
-		}
-		
-		@Override
-		public void set(String val) throws InvalidConfigValueException{
-			String value;
-			if(val == null || val.equalsIgnoreCase(get())) return;
-			if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_HARD)){
-				value = ClientRequestScheduler.PRIORITY_HARD;
-			}else if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_SOFT)){
-				value = ClientRequestScheduler.PRIORITY_SOFT;
-			}else{
-				throw new InvalidConfigValueException("Invalid priority scheme");
-			}
-			cs.setPriorityScheduler(value);
-		}
-		
-		public String[] getPossibleValues() {
-			return possibleValues;
-		}
 	}
 	
 	/** Offered keys list. Only one, not split by priority, to prevent various attacks relating
@@ -131,7 +94,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
 				"RequestStarterGroup.scheduler"+(forSSKs?"SSK" : "CHK")+(forInserts?"Inserts":"Requests"),
 				"RequestStarterGroup.schedulerLong",
-				new PrioritySchedulerCallback(this));
+				new RequestStarterGroup.PrioritySchedulerCallback(this));
 		
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 		if(!forInserts) {
@@ -190,7 +153,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * 
 	 * @param val
 	 */
-	protected synchronized void setPriorityScheduler(String val){
+	public synchronized void setPriorityScheduler(String val){
 		choosenPriorityScheduler = val;
 	}
 	
