@@ -14,6 +14,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
+import freenet.client.FetchContext;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -960,6 +961,10 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		@Override
 		protected void innerToNetwork(ObjectContainer container, ClientContext context) {
 			// Ignore
+		}
+		
+		public boolean realTimeFlag(ObjectContainer container) {
+			return BaseManifestPutter.this.realTimeFlag(container);
 		}
 
 	}
@@ -1976,4 +1981,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			}
 		}
 	}
+	
+	public boolean realTimeFlag(ObjectContainer container) {
+		if(container != null)
+			container.activate(ctx, 1);
+		return ctx.realTimeFlag;
+	}
+
 }

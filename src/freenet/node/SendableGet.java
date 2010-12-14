@@ -62,11 +62,11 @@ public abstract class SendableGet extends BaseSendableGet {
 	}
 	
 	@Override
-	public ClientRequestScheduler getScheduler(ClientContext context) {
+	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
 		if(isSSK())
-			return context.getSskFetchScheduler();
+			return context.getSskFetchScheduler(realTimeFlag(container));
 		else
-			return context.getChkFetchScheduler();
+			return context.getChkFetchScheduler(realTimeFlag(container));
 	}
 
 	/**
@@ -120,4 +120,12 @@ public abstract class SendableGet extends BaseSendableGet {
 		context.cooldownTracker.removeCachedWakeup(this, persistent, container);
 		context.checker.removeRequest(this, persistent, container, context, oldPrio == -1 ? getPriorityClass(container) : oldPrio);
 	}
+	
+	public boolean realTimeFlag(ObjectContainer container) {
+		FetchContext ctx = getContext(container);
+		if(container != null)
+			container.activate(ctx, 1);
+		return ctx.realTimeFlag;
+	}
+
 }

@@ -8,6 +8,7 @@ import java.io.IOException;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
+import freenet.client.FetchContext;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -532,6 +533,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		container.activate(data, 5);
 		System.out.println("Data: "+data);
 	}
-
+	
+	public boolean realTimeFlag(ObjectContainer container) {
+		if(container != null)
+			container.activate(ctx, 1);
+		return ctx.realTimeFlag;
+	}
 
 }

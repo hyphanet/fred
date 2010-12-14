@@ -254,5 +254,11 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
+	
+	public boolean realTimeFlag(ObjectContainer container) {
+		if(container != null)
+			container.activate(ctx, 1);
+		return ctx.realTimeFlag;
+	}
 
 }

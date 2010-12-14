@@ -1330,7 +1330,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			container.activate(blockFetchContext, 1);
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
-		RequestScheduler sched = context.getFetchScheduler(false);
+		RequestScheduler sched = context.getFetchScheduler(false, blockFetchContext.realTimeFlag);
 		if(onNonFatalFailure(e, blockNo, container, context, sched, maxTries, callStore)) {
 			// At least one request was rescheduled, so we have requests to send.
 			// Clear our cooldown cache entry and those of our parents.
@@ -1360,7 +1360,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			container.activate(blockFetchContext, 1);
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
-		RequestScheduler sched = context.getFetchScheduler(false);
+		RequestScheduler sched = context.getFetchScheduler(false, blockFetchContext.realTimeFlag);
 		boolean reschedule = false;
 		for(int i=0;i<failures.length;i++) {
 			if(onNonFatalFailure(failures[i], blockNos[i], container, context, sched, maxTries, false))
@@ -1586,7 +1586,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(persistent)
 				container.activate(deadSegs[i], 1);
 			deadSegs[i].kill(container, context, true, false);
-			context.getChkFetchScheduler().removeFromStarterQueue(deadSegs[i], container, true);
+			context.getChkFetchScheduler(realTimeFlag(container)).removeFromStarterQueue(deadSegs[i], container, true);
 			if(persistent)
 				container.deactivate(deadSegs[i], 1);
 		}
@@ -2310,6 +2310,12 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(!contextActive) container.deactivate(blockFetchContext, 1);
 		}
 		return maxRetries;
+	}
+
+	public boolean realTimeFlag(ObjectContainer container) {
+		if(container != null)
+			container.activate(blockFetchContext, 1);
+		return blockFetchContext.realTimeFlag;
 	}
 
 }

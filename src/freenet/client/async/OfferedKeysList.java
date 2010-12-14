@@ -213,11 +213,11 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public ClientRequestScheduler getScheduler(ClientContext context) {
+	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
 		if(isSSK)
-			return context.getSskFetchScheduler();
+			return context.getSskFetchScheduler(realTimeFlag);
 		else
-			return context.getChkFetchScheduler();
+			return context.getChkFetchScheduler(realTimeFlag);
 	}
 
 	public void removeFrom(ObjectContainer container) {
@@ -236,6 +236,11 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
 		if(isEmpty(container)) return Long.MAX_VALUE;
 		return 0;
+	}
+
+	@Override
+	public boolean realTimeFlag(ObjectContainer container) {
+		return realTimeFlag;
 	}
 
 }

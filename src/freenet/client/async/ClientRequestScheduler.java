@@ -93,11 +93,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	/** Offered keys list. Only one, not split by priority, to prevent various attacks relating
 	 * to offering specific keys and timing how long it takes for the node to request the key. 
 	 * Non-persistent. */
-	private final OfferedKeysList offeredKeysRealTime;
-	private final OfferedKeysList offeredKeysBulk;
+	private final OfferedKeysList offeredKeys;
 	// we have one for inserts and one for requests
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
+	final boolean isRTScheduler;
 	final RandomSource random;
 	private final RequestStarter starter;
 	private final Node node;
@@ -114,10 +114,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public static final String PRIORITY_HARD = "HARD";
 	private String choosenPriorityScheduler; 
 	
-	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name, ClientContext context) {
+	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name, ClientContext context) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
-		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs, random);
+		this.isRTScheduler = forRT;
+		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs, forRT, random);
 		this.databaseExecutor = core.clientDatabaseExecutor;
 		this.datastoreChecker = core.storeChecker;
 		this.starter = starter;
@@ -134,11 +135,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 		if(!forInserts) {
-			offeredKeysRealTime = new OfferedKeysList(core, random, (short)0, forSSKs, true);
-			offeredKeysBulk = new OfferedKeysList(core, random, (short)0, forSSKs, false);
+			offeredKeys = new OfferedKeysList(core, random, (short)0, forSSKs, forRT);
 		} else {
-			offeredKeysRealTime = null;
-			offeredKeysBulk = null;
+			offeredKeys = null;
 		}
 		if(!forInserts)
 			transientCooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
@@ -148,7 +147,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void startCore(NodeClientCore core, long nodeDBHandle, ObjectContainer container) {
-		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, nodeDBHandle, container, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, clientContext);
+		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, isRTScheduler, nodeDBHandle, container, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, clientContext);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 	}
 	
@@ -162,9 +161,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 				KeyListener listener = l.makeKeyListener(container, context, true);
 				if(listener != null) {
 					if(listener.isSSK())
-						context.getSskFetchScheduler().addPersistentPendingKeys(listener);
+						context.getSskFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
 					else
-						context.getChkFetchScheduler().addPersistentPendingKeys(listener);
+						context.getChkFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
 					System.err.println("Loaded request key listener: "+listener+" for "+l);
 				}
 			} catch (KeyListenerConstructionException e) {
@@ -401,7 +400,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
-		return selector.removeFirstTransient(fuzz, random, offeredKeysRealTime, offeredKeysBulk, starter, schedTransient, prio, clientContext, null);
+		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, isRTScheduler, clientContext, null);
 	}
 	
 	/**
@@ -703,7 +702,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		boolean addedMore = false;
 		while(true) {
-			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeysRealTime, offeredKeysBulk, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, context, container, now);
+			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
 			SendableRequest request = null;
 			if(r != null && r.req != null) request = r.req;
 			else {
@@ -915,11 +914,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void tripPendingKey(final KeyBlock block) {
 		if(logMINOR) Logger.minor(this, "tripPendingKey("+block.getKey()+")");
 		
-		if(offeredKeysRealTime != null) {
-			offeredKeysRealTime.remove(block.getKey());
-		}
-		if(offeredKeysBulk != null) {
-			offeredKeysBulk.remove(block.getKey());
+		if(offeredKeys != null) {
+			offeredKeys.remove(block.getKey());
 		}
 		final Key key = block.getKey();
 		schedTransient.tripPendingKey(key, block, null, clientContext);
@@ -950,16 +946,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void queueOfferedKey(final Key key, boolean realTime) {
 		if(logMINOR)
 			Logger.minor(this, "queueOfferedKey("+key);
-		if(realTime)
-			offeredKeysRealTime.queueKey(key);
-		else
-			offeredKeysBulk.queueKey(key);
+		offeredKeys.queueKey(key);
 		starter.wakeUp();
 	}
 
 	public void dequeueOfferedKey(Key key) {
-		offeredKeysRealTime.remove(key);
-		offeredKeysBulk.remove(key);
+		offeredKeys.remove(key);
 	}
 
 	/**
@@ -1003,7 +995,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		final int MAX_KEYS = 20;
 		Object ret;
 		ClientRequestScheduler otherScheduler = 
-			((!isSSKScheduler) ? this.clientContext.getSskFetchScheduler() : this.clientContext.getChkFetchScheduler());
+			((!isSSKScheduler) ? this.clientContext.getSskFetchScheduler(isRTScheduler) : this.clientContext.getChkFetchScheduler(isRTScheduler));
 		if(queue instanceof PersistentCooldownQueue) {
 			ret = ((PersistentCooldownQueue)queue).removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS, (PersistentCooldownQueue)otherScheduler.persistentCooldownQueue);
 		} else

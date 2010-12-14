@@ -153,7 +153,7 @@ public class DatastoreChecker implements PrioRunnable {
 						container.delete(item);
 						continue;
 					}
-					ClientRequestScheduler sched = getter.getScheduler(context);
+					ClientRequestScheduler sched = getter.getScheduler(container, context);
 					synchronized(this) {
 						if(persistentGetters[prio].contains(getter)) continue;
 					}
@@ -292,7 +292,7 @@ public class DatastoreChecker implements PrioRunnable {
 		}
 		Key[] checkKeys = getter.listKeys(container);
 		short prio = getter.getPriorityClass(container);
-		ClientRequestScheduler sched = getter.getScheduler(context);
+		ClientRequestScheduler sched = getter.getScheduler(container, context);
 		DatastoreCheckerItem item = new DatastoreCheckerItem(getter, context.nodeDBHandle, prio, blocks);
 		container.store(item);
 		container.activate(blocks, 5);
@@ -402,7 +402,7 @@ public class DatastoreChecker implements PrioRunnable {
 			}
 		}
 		if(!persistent) {
-			sched = getter.getScheduler(context);
+			sched = getter.getScheduler(null, context);
 		}
 		boolean anyValid = false;
 		for(Key key : keys) {

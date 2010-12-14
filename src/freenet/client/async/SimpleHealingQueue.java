@@ -166,4 +166,9 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		return 0;
 	}
 
+	@Override
+	public boolean realTimeFlag(ObjectContainer container) {
+		return false;
+	}
+
 }

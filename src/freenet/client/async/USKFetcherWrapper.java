@@ -22,10 +22,12 @@ import freenet.support.compress.Compressor;
 public class USKFetcherWrapper extends BaseClientGetter {
 
 	final USK usk;
+	final boolean realTimeFlag;
 	
-	public USKFetcherWrapper(USK usk, short prio, RequestClient client) {
+	public USKFetcherWrapper(USK usk, short prio, boolean realTimeFlag, RequestClient client) {
 		super(prio, client);
 		this.usk = usk;
+		this.realTimeFlag = realTimeFlag;
 	}
 
 	@Override
@@ -97,5 +99,11 @@ public class USKFetcherWrapper extends BaseClientGetter {
 
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		// Ignore
+	}
+
+	@Override
+	public boolean realTimeFlag(ObjectContainer container) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

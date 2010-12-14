@@ -161,6 +161,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(newCtx == null)
 			throw new NullPointerException();
 		this.archiveContext = actx;
+		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
 		this.decompressors = persistent ? new ArrayList<Compressor>(decompressors2) : decompressors2;
 		if(decompressors.size() > 1) {
 			Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
@@ -287,7 +288,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(logMINOR)
 			Logger.minor(this, "Creating block filter for "+this+": keys="+(splitfileDataBlocks+splitfileCheckBlocks)+" main bloom size "+mainBloomFilterSizeBytes+" bytes, K="+mainBloomK+", filename="+mainBloomFile+" alt bloom filter: filename="+altBloomFile+" segments: "+segments.length+" each is "+perSegmentBloomFilterSizeBytes+" bytes k="+perSegmentK);
 		try {
-			tempListener = new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true, null, null, container, false);
+			tempListener = new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true, null, null, container, false, realTimeFlag(container));
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, "Unable to write Bloom filters for splitfile");
 		}
@@ -298,7 +299,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		boolean pre1254 = !(minCompatMode == CompatibilityMode.COMPAT_CURRENT || minCompatMode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 		boolean pre1250 = (minCompatMode == CompatibilityMode.COMPAT_UNKNOWN || minCompatMode == CompatibilityMode.COMPAT_1250_EXACT);
 		
-		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
 		int maxRetries = blockFetchContext.maxSplitfileBlockRetries;
 		for(int i=0;i<segments.length;i++) {
 			// splitfile* will be overwritten, this is bad
@@ -488,7 +488,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(persistent) {
 			container.activate(cb, 1);
 		}
-		context.getChkFetchScheduler().removePendingKeys(this, true);
+		context.getChkFetchScheduler(realTimeFlag(container)).removePendingKeys(this, true);
 		boolean cbWasActive = true;
 		SplitFileStreamGenerator data = null;
 		try {
@@ -531,7 +531,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				container.deactivate(segments[i], 1);
 		}
 		BlockSet blocks = fetchContext.blocks;
-		context.getChkFetchScheduler().register(this, getters, persistent, container, blocks, false);
+		context.getChkFetchScheduler(realTimeFlag(container)).register(this, getters, persistent, container, blocks, false);
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -559,6 +559,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				container.activate(segments[i], 1);
 			segments[i].cancel(container, context);
 		}
+	}
+	
+	public boolean realTimeFlag(ObjectContainer container) {
+		if(container != null)
+			container.activate(blockFetchContext, 1);
+		return blockFetchContext.realTimeFlag;
 	}
 
 	public long getToken() {
@@ -611,7 +617,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(logMINOR)
 					Logger.minor(this, "Attempting to read Bloom filter for "+this+" main file="+main+" alt file="+alt);
 				tempListener =
-					new SplitFileFetcherKeyListener(this, keyCount, main, alt, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false, cachedMainBloomFilter, cachedSegmentBloomFilters, container, onStartup);
+					new SplitFileFetcherKeyListener(this, keyCount, main, alt, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false, cachedMainBloomFilter, cachedSegmentBloomFilters, container, onStartup, realTimeFlag(container));
 				if(main != null) {
 					try {
 						FileUtil.secureDelete(main, context.fastWeakRandom);
@@ -646,7 +652,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 				try {
 					tempListener =
-						new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true, cachedMainBloomFilter, cachedSegmentBloomFilters, container, onStartup);
+						new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true, cachedMainBloomFilter, cachedSegmentBloomFilters, container, onStartup, realTimeFlag(container));
 				} catch (IOException e1) {
 					throw new KeyListenerConstructionException(new FetchException(FetchException.BUCKET_ERROR, "Unable to reconstruct Bloom filters: "+e1, e1));
 				}

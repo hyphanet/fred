@@ -272,7 +272,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	private void schedule(ObjectContainer container, ClientContext context) {
 		if(!getCHKOnly) {
-			this.getScheduler(context).registerInsert(this, persistent, false, container);
+			this.getScheduler(container, context).registerInsert(this, persistent, false, container);
 		} else {
 			tryEncode(container, context);
 		}

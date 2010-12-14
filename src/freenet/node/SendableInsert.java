@@ -41,11 +41,11 @@ public abstract class SendableInsert extends SendableRequest {
 	}
 	
 	@Override
-	public ClientRequestScheduler getScheduler(ClientContext context) {
+	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
 		if(isSSK())
-			return context.getSskInsertScheduler();
+			return context.getSskInsertScheduler(realTimeFlag(container));
 		else
-			return context.getChkInsertScheduler();
+			return context.getChkInsertScheduler(realTimeFlag(container));
 	}
 
 	public abstract boolean canWriteClientCache(ObjectContainer container);

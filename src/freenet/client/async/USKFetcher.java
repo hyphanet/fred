@@ -381,7 +381,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			uskManager.unsubscribe(origUSK, this);
 			uskManager.onFinished(this);
-			context.getSskFetchScheduler().schedTransient.removePendingKeys((KeyListener)this);
+			context.getSskFetchScheduler(ctx.realTimeFlag).schedTransient.removePendingKeys((KeyListener)this);
 			long ed = uskManager.lookupLatestSlot(origUSK);
 			byte[] data;
 			if(lastRequestData == null)
@@ -606,7 +606,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(cancelled) return;
 			if(completed) return;
 		}
-		context.getSskFetchScheduler().schedTransient.addPendingKeys(this);
+		context.getSskFetchScheduler(ctx.realTimeFlag).schedTransient.addPendingKeys(this);
 		updatePriorities();
 		uskManager.subscribe(origUSK, this, false, parent.getClient());
 		long lookedUp = uskManager.lookupLatestSlot(origUSK);
@@ -641,13 +641,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(!bye) return;
 		// We have been cancelled.
 		uskManager.unsubscribe(origUSK, this);
-		context.getSskFetchScheduler().schedTransient.removePendingKeys((KeyListener)this);
+		context.getSskFetchScheduler(ctx.realTimeFlag).schedTransient.removePendingKeys((KeyListener)this);
 		uskManager.onFinished(this, true);
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
 		uskManager.unsubscribe(origUSK, this);
-		context.getSskFetchScheduler().schedTransient.removePendingKeys((KeyListener)this);
+		context.getSskFetchScheduler(ctx.realTimeFlag).schedTransient.removePendingKeys((KeyListener)this);
 		assert(container == null);
 		USKAttempt[] attempts;
 		USKAttempt[] polling;
@@ -972,7 +972,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			
 		runningStoreChecker = new StoreCheckerGetter(parent, checker);
 		try {
-			context.getSskFetchScheduler().register(null, new SendableGet[] { runningStoreChecker } , false, null, null, false);
+			context.getSskFetchScheduler(ctx.realTimeFlag).register(null, new SendableGet[] { runningStoreChecker } , false, null, null, false);
 		} catch (KeyListenerConstructionException e1) {
 			// Impossible
 			runningStoreChecker = null;
@@ -1219,6 +1219,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 	}
 
+	public boolean isRealTime() {
+		return ctx.realTimeFlag;
+	}
+	
 	/**
 	 * Tracks the list of editions that we want to fetch, from various sources - subscribers, origUSK,
 	 * last known slot from USKManager, etc.
@@ -1666,5 +1670,5 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		
 	}
-	
+
 }

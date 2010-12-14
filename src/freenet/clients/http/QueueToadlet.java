@@ -951,9 +951,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					String plainText = null;
 					try {
 						if(count) {
-							long queued = core.requestStarters.chkFetchScheduler.countPersistentWaitingKeys(container);
+							long queued = core.requestStarters.chkFetchSchedulerBulk.countPersistentWaitingKeys(container) + core.requestStarters.chkFetchSchedulerRT.countPersistentWaitingKeys(container);
 							Logger.minor(this, "Total waiting CHKs: "+queued);
-							long reallyQueued = core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container);
+							long reallyQueued = core.requestStarters.chkFetchSchedulerBulk.countPersistentQueuedRequests(container) + core.requestStarters.chkFetchSchedulerRT.countPersistentQueuedRequests(container);
 							Logger.minor(this, "Total queued CHK requests: "+reallyQueued);
 							PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 							pageNode = page.outer;

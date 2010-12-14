@@ -8,6 +8,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 
+import freenet.client.FetchContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
@@ -323,12 +324,15 @@ public abstract class ClientRequester {
 			this.priorityClass = newPriorityClass;
 		}
 		if(logMINOR) Logger.minor(this, "Changing priority class of "+this+" from "+oldPrio+" to "+newPriorityClass);
-		ctx.getChkFetchScheduler().reregisterAll(this, container, oldPrio);
-		ctx.getChkInsertScheduler().reregisterAll(this, container, oldPrio);
-		ctx.getSskFetchScheduler().reregisterAll(this, container, oldPrio);
-		ctx.getSskInsertScheduler().reregisterAll(this, container, oldPrio);
+		boolean realTime = realTimeFlag(container);
+		ctx.getChkFetchScheduler(realTime).reregisterAll(this, container, oldPrio);
+		ctx.getChkInsertScheduler(realTime).reregisterAll(this, container, oldPrio);
+		ctx.getSskFetchScheduler(realTime).reregisterAll(this, container, oldPrio);
+		ctx.getSskInsertScheduler(realTime).reregisterAll(this, container, oldPrio);
 		if(persistent()) container.store(this);
 	}
+
+	public abstract boolean realTimeFlag(ObjectContainer container);
 
 	/** Is this request persistent? */
 	public boolean persistent() {

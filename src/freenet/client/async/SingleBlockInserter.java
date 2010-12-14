@@ -383,7 +383,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					container.deactivate(cb, 1);
 			}
 		} else {
-			getScheduler(context).registerInsert(this, persistent, true, container);
+			getScheduler(container, context).registerInsert(this, persistent, true, container);
 		}
 	}
 

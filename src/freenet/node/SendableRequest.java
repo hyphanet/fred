@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.FetchContext;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
@@ -124,12 +125,12 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		ClientRequester cr = getClientRequest();
 		if(persistent)
 			container.activate(cr, 1);
-		getScheduler(context).removeFromAllRequestsByClientRequest(cr, this, true, container);
+		getScheduler(container, context).removeFromAllRequestsByClientRequest(cr, this, true, container);
 		// FIXME should we deactivate??
 		//if(persistent) container.deactivate(cr, 1);
 	}
 	
-	public abstract ClientRequestScheduler getScheduler(ClientContext context);
+	public abstract ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context);
 
 	/** Is this an SSK? For purposes of determining which scheduler to use. */
 	public abstract boolean isSSK();
@@ -170,7 +171,8 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		if(rga != null)
 			context.cooldownTracker.clearCachedWakeup(rga, persistent, container);
 		// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
-		getScheduler(context).wakeStarter();
+		getScheduler(container, context).wakeStarter();
 	}
 
+	public abstract boolean realTimeFlag(ObjectContainer container);
 }

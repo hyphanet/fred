@@ -240,8 +240,8 @@ public class PersistentChosenRequest {
 			if(!container.ext().isActive(request))
 				container.activate(request, 1);
 			if((!((SendableInsert)request).isEmpty(container)) && (!request.isCancelled(container))) {
-				request.getScheduler(context).maybeAddToStarterQueue(request, container, null);
-				request.getScheduler(context).wakeStarter();
+				request.getScheduler(container, context).maybeAddToStarterQueue(request, container, null);
+				request.getScheduler(container, context).wakeStarter();
 			}
 		}
 		if(!alreadyActive)

@@ -4048,10 +4048,13 @@ public class Node implements TimeSkewDetectorCallback {
 		if (kb != null) {
 			// Probably somebody waiting for it. Trip it.
 			if (clientCore != null && clientCore.requestStarters != null) {
-				if (kb instanceof CHKBlock)
-					clientCore.requestStarters.chkFetchScheduler.tripPendingKey(kb);
-				else
-					clientCore.requestStarters.sskFetchScheduler.tripPendingKey(kb);
+				if (kb instanceof CHKBlock) {
+					clientCore.requestStarters.chkFetchSchedulerBulk.tripPendingKey(kb);
+					clientCore.requestStarters.chkFetchSchedulerRT.tripPendingKey(kb);
+				} else {
+					clientCore.requestStarters.sskFetchSchedulerBulk.tripPendingKey(kb);
+					clientCore.requestStarters.sskFetchSchedulerRT.tripPendingKey(kb);
+				}
 			}
 			failureTable.onFound(kb);
 			return kb;
@@ -4413,8 +4416,10 @@ public class Node implements TimeSkewDetectorCallback {
 			t.printStackTrace();
 			Logger.error(this, "Caught "+t+" storing data", t);
 		}
-		if(clientCore != null && clientCore.requestStarters != null)
-			clientCore.requestStarters.chkFetchScheduler.tripPendingKey(block);
+		if(clientCore != null && clientCore.requestStarters != null) {
+			clientCore.requestStarters.chkFetchSchedulerBulk.tripPendingKey(block);
+			clientCore.requestStarters.chkFetchSchedulerRT.tripPendingKey(block);
+		}
 	}
 
 	/** Store the block if this is a sink. Call for inserts. */
@@ -4463,8 +4468,10 @@ public class Node implements TimeSkewDetectorCallback {
 			t.printStackTrace();
 			Logger.error(this, "Caught "+t+" storing data", t);
 		}
-		if(clientCore != null && clientCore.requestStarters != null)
-			clientCore.requestStarters.sskFetchScheduler.tripPendingKey(block);
+		if(clientCore != null && clientCore.requestStarters != null) {
+			clientCore.requestStarters.sskFetchSchedulerBulk.tripPendingKey(block);
+			clientCore.requestStarters.sskFetchSchedulerRT.tripPendingKey(block);
+		}
 	}
 
 	/**

@@ -62,7 +62,7 @@ public class BinaryBlobInserter implements ClientPutState {
 			Key key = (Key) i.next();
 			KeyBlock block = blocks.get(key);
 			MySendableInsert inserter =
-				new MySendableInsert(x++, block, prioClass, getScheduler(block, context), clientContext);
+				new MySendableInsert(x++, block, prioClass, getScheduler(block, container, context), clientContext);
 			myInserters.add(inserter);
 		}
 
@@ -71,12 +71,17 @@ public class BinaryBlobInserter implements ClientPutState {
 		parent.notifyClients(container, context);
 	}
 
-	private ClientRequestScheduler getScheduler(KeyBlock block, ClientContext context) {
+	private ClientRequestScheduler getScheduler(KeyBlock block, ObjectContainer container, ClientContext context) {
 		if(block instanceof CHKBlock)
-			return context.getChkInsertScheduler();
+			return context.getChkInsertScheduler(realTimeFlag(container));
 		else if(block instanceof SSKBlock)
-			return context.getSskInsertScheduler();
+			return context.getSskInsertScheduler(realTimeFlag(container));
 		else throw new IllegalArgumentException("Unknown block type "+block.getClass()+" : "+block);
+	}
+
+	private boolean realTimeFlag(ObjectContainer container) {
+		// FIXME if(persistent) activate - at the moment we don't have persistent because we are always transient.
+		return ctx.realTimeFlag;
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
