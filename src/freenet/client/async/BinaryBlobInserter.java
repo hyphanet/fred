@@ -34,6 +34,7 @@ public class BinaryBlobInserter implements ClientPutState {
 	private int succeededBlocks;
 	private boolean fatal;
 	final InsertContext ctx;
+	final boolean realTimeFlag;
 
 	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context, ObjectContainer container)
 	throws IOException, BinaryBlobFormatException {
@@ -44,6 +45,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		this.parent = parent;
 		this.clientContext = clientContext;
 		this.errors = new FailureCodeTracker(true);
+		this.realTimeFlag = clientContext.realTimeFlag();
 		DataInputStream dis = new DataInputStream(blob.getInputStream());
 
 		BlockSet blocks = new SimpleBlockSet();
@@ -73,15 +75,10 @@ public class BinaryBlobInserter implements ClientPutState {
 
 	private ClientRequestScheduler getScheduler(KeyBlock block, ObjectContainer container, ClientContext context) {
 		if(block instanceof CHKBlock)
-			return context.getChkInsertScheduler(realTimeFlag(container));
+			return context.getChkInsertScheduler(realTimeFlag);
 		else if(block instanceof SSKBlock)
-			return context.getSskInsertScheduler(realTimeFlag(container));
+			return context.getSskInsertScheduler(realTimeFlag);
 		else throw new IllegalArgumentException("Unknown block type "+block.getClass()+" : "+block);
-	}
-
-	private boolean realTimeFlag(ObjectContainer container) {
-		// FIXME if(persistent) activate - at the moment we don't have persistent because we are always transient.
-		return ctx.realTimeFlag;
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {

@@ -1978,10 +1978,4 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		}
 	}
 	
-	public boolean realTimeFlag(ObjectContainer container) {
-		if(container != null)
-			container.activate(ctx, 1);
-		return ctx.realTimeFlag;
-	}
-
 }

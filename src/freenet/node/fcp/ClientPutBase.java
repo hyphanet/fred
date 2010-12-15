@@ -92,7 +92,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeader;
 		ctx.setCompatibilityMode(compatibilityMode);
 		ctx.localRequestOnly = localRequestOnly;
-		ctx.realTimeFlag = realTimeFlag;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(this.uri);
 	}
@@ -124,7 +123,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeader;
 		ctx.localRequestOnly = localRequestOnly;
 		ctx.setCompatibilityMode(compatMode);
-		ctx.realTimeFlag = realTimeFlag;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(this.uri);
 	}

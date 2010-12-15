@@ -534,10 +534,4 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		System.out.println("Data: "+data);
 	}
 	
-	public boolean realTimeFlag(ObjectContainer container) {
-		if(container != null)
-			container.activate(ctx, 1);
-		return ctx.realTimeFlag;
-	}
-
 }

@@ -549,10 +549,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			// Ignore
 		}
 
-		public boolean realTimeFlag(ObjectContainer container) {
-			return SimpleManifestPutter.this.realTimeFlag(container);
-		}
-		
 	}
 
 	// FIXME: DB4O ISSUE: HASHMAP ACTIVATION:
@@ -1984,12 +1980,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	@Override
 	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
 		// Ignore
-	}
-
-	public boolean realTimeFlag(ObjectContainer container) {
-		if(container != null)
-			container.activate(ctx, 1);
-		return ctx.realTimeFlag;
 	}
 
 }
