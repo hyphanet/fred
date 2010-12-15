@@ -518,6 +518,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" (prio "+
 						req.getPriorityClass(container)+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
+				assert(req.realTimeFlag() == realTime);
 				return new SelectorReturn(req);
 				
 			}
