@@ -127,10 +127,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	/** When this reaches crossCheckBlocks, we can encode the check blocks. */
 	private int encodedCrossCheckBlocks;
 
-	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, BaseClientPutter putter,
+	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, boolean realTimeFlag, BaseClientPutter putter,
 			short splitfileAlgo, int crossCheckBlocks, int checkBlockCount, Bucket[] origDataBlocks,
 			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, byte cryptoAlgorithm, byte[] cryptoKey, ObjectContainer container) {
-		super(persistent);
+		super(persistent, realTimeFlag);
 		this.crossCheckBlocks = crossCheckBlocks;
 		this.crossSegmentsByBlock = new SplitFileInserterCrossSegment[origDataBlocks.length + crossCheckBlocks];
 		this.parent = parent;
@@ -1405,20 +1405,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				container.activate(blockInsertContext, 1);
 		}
 		boolean retval = blockInsertContext.forkOnCacheable;
-		if(deactivate)
-			container.deactivate(blockInsertContext, 1);
-		return retval;
-	}
-
-	@Override
-	public boolean realTimeFlag(ObjectContainer container) {
-		boolean deactivate = false;
-		if(persistent) {
-			deactivate = !container.ext().isActive(blockInsertContext);
-			if(deactivate)
-				container.activate(blockInsertContext, 1);
-		}
-		boolean retval = blockInsertContext.realTimeFlag;
 		if(deactivate)
 			container.deactivate(blockInsertContext, 1);
 		return retval;

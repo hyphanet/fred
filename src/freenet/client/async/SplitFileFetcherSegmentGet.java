@@ -33,8 +33,8 @@ import freenet.support.RandomGrabArrayItemExclusionList;
  */
 public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsBulkCallFailure {
 	
-	public SplitFileFetcherSegmentGet(ClientRequester parent, SplitFileFetcherSegment segment) {
-		super(parent);
+	public SplitFileFetcherSegmentGet(ClientRequester parent, SplitFileFetcherSegment segment, boolean realTimeFlag) {
+		super(parent, realTimeFlag);
 		this.segment = segment;
 	}
 

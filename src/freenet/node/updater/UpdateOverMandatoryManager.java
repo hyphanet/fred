@@ -22,6 +22,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
@@ -1121,7 +1122,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			updateManager.revocationURI, tempContext, (short) 0, this, null, cleanedBlob);
+			updateManager.revocationURI, tempContext, (short) 0, this, tempContext.realTimeFlag, null, cleanedBlob);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
@@ -1161,9 +1162,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 		FileBucket bucket = new FileBucket(blob, true, false, false, false, false);
 		// We are inserting a binary blob so we don't need to worry about CompatibilityMode etc.
+		InsertContext ctx = updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS).getInsertContext(true);
 		ClientPutter putter = new ClientPutter(callback, bucket,
-			FreenetURI.EMPTY_CHK_URI, null, updateManager.node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS).getInsertContext(true),
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, true, updateManager.node.clientCore.clientContext, null);
+			FreenetURI.EMPTY_CHK_URI, null, ctx,
+			RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, ctx.realTimeFlag, null, true, updateManager.node.clientCore.clientContext, null);
 		try {
 			updateManager.node.clientCore.clientContext.start(putter, false);
 		} catch(InsertException e1) {
@@ -1607,7 +1609,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			uri, tempContext, (short) 0, this, null, cleanedBlob);
+			uri, tempContext, (short) 0, this, tempContext.realTimeFlag, null, cleanedBlob);
 
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
@@ -1714,7 +1716,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-				uri, tempContext, (short) 0, this, null, cleanedBlob);
+				uri, tempContext, (short) 0, this, tempContext.realTimeFlag, null, cleanedBlob);
 
 			try {
 				updateManager.node.clientCore.clientContext.start(cg);

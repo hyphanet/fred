@@ -28,6 +28,8 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	
 	// Since we put these into Set's etc, hashCode must be persistent.
 	private final int hashCode;
+	
+	protected final boolean realTimeFlag;
 
         private static volatile boolean logMINOR;
 	static {
@@ -39,8 +41,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		});
 	}
 	
-	SendableRequest(boolean persistent) {
+	SendableRequest(boolean persistent, boolean realTimeFlag) {
 		this.persistent = persistent;
+		this.realTimeFlag = realTimeFlag;
 		this.hashCode = super.hashCode();
 	}
 	
@@ -173,6 +176,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
 		getScheduler(container, context).wakeStarter();
 	}
+	
+	public boolean realTimeFlag() {
+		return realTimeFlag;
+	}
 
-	public abstract boolean realTimeFlag(ObjectContainer container);
 }

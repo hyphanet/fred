@@ -116,7 +116,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 					cg = revocationGetter = new ClientGetter(this, 
 							manager.revocationURI, ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-							this, null, tmpBlobFile == null ? null : new FileBucket(tmpBlobFile, false, false, false, false, false));
+							this, ctxRevocation.realTimeFlag, null, tmpBlobFile == null ? null : new FileBucket(tmpBlobFile, false, false, false, false, false));
 					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher (count="+revocationDNFCounter+")");
 				}
 			}

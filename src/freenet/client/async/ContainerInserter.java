@@ -81,6 +81,7 @@ public class ContainerInserter implements ClientPutState {
 	private final boolean dontCompress;
 	final byte[] forceCryptoKey;
 	final byte cryptoAlgorithm;
+	private final boolean realTimeFlag;
 
 	/**
 	 * Insert a bunch of files as single Archive with .metadata
@@ -109,7 +110,8 @@ public class ContainerInserter implements ClientPutState {
 			boolean freeData,
 			boolean earlyEncode2,
 			byte[] forceCryptoKey,
-			byte cryptoAlgorithm) {
+			byte cryptoAlgorithm,
+			boolean realTimeFlag) {
 		parent = parent2;
 		cb = cb2;
 		hashCode = super.hashCode();
@@ -126,6 +128,7 @@ public class ContainerInserter implements ClientPutState {
 		containerItems = new ArrayList<ContainerElement>();
 		this.forceCryptoKey = forceCryptoKey;
 		this.cryptoAlgorithm = cryptoAlgorithm;
+		this.realTimeFlag = realTimeFlag;
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -203,7 +206,7 @@ public class ContainerInserter implements ClientPutState {
 		}
 		
 		// Treat it as a splitfile for purposes of determining reinsert count.
-		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, dc, getCHKOnly, reportMetadataOnly, token, archiveType, true, null, earlyEncode, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey);
+		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, dc, getCHKOnly, reportMetadataOnly, realTimeFlag, token, archiveType, true, null, earlyEncode, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey);
 		if(logMINOR)
 			Logger.minor(this, "Inserting container: "+sfi+" for "+this);
 		cb.onTransition(this, sfi, container);

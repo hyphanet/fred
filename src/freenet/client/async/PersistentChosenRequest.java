@@ -72,7 +72,7 @@ public class PersistentChosenRequest {
 			canWriteClientCache = sg.canWriteClientCache(container);
 			ignoreStore = false;
 			forkOnCacheable = sg.forkOnCacheable(container);
-			realTimeFlag = sg.realTimeFlag(container);
+			realTimeFlag = sg.realTimeFlag();
 		} else throw new IllegalStateException("Creating a PersistentChosenRequest for "+req);
 
 		this.scheduler = sched;

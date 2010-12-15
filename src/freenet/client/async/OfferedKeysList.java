@@ -57,17 +57,15 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	private final short priorityClass;
 	private final NodeClientCore core;
 	private final boolean isSSK;
-	private final boolean realTimeFlag;
 	
 	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK, boolean realTimeFlag) {
-		super(false);
+		super(false, realTimeFlag);
 		this.keys = new HashSet<Key>();
 		this.keysList = new Vector<Key>();
 		this.random = random;
 		this.priorityClass = priorityClass;
 		this.core = core;
 		this.isSSK = isSSK;
-		this.realTimeFlag = realTimeFlag;
 	}
 	
 	/** Called when a key is found, when it no longer belongs to this list etc. */
@@ -236,11 +234,6 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	public long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
 		if(isEmpty(container)) return Long.MAX_VALUE;
 		return 0;
-	}
-
-	@Override
-	public boolean realTimeFlag(ObjectContainer container) {
-		return realTimeFlag;
 	}
 
 }

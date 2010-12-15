@@ -35,6 +35,8 @@ public abstract class ClientRequester {
 	// FIXME move the priority classes from RequestStarter here
 	/** Priority class of the request or insert. */
 	protected short priorityClass;
+	/** Whether this is a real-time request */
+	protected final boolean realTimeFlag;
 	/** Has the request or insert been cancelled? */
 	protected boolean cancelled;
 	/** The RequestClient, used to determine whether this request is 
@@ -50,9 +52,10 @@ public abstract class ClientRequester {
 		return priorityClass;
 	}
 
-	protected ClientRequester(short priorityClass, RequestClient client) {
+	protected ClientRequester(short priorityClass, RequestClient client, boolean realTimeFlag) {
 		this.priorityClass = priorityClass;
 		this.client = client;
+		this.realTimeFlag = realTimeFlag;
 		if(client == null)
 			throw new NullPointerException();
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
@@ -324,15 +327,16 @@ public abstract class ClientRequester {
 			this.priorityClass = newPriorityClass;
 		}
 		if(logMINOR) Logger.minor(this, "Changing priority class of "+this+" from "+oldPrio+" to "+newPriorityClass);
-		boolean realTime = realTimeFlag(container);
-		ctx.getChkFetchScheduler(realTime).reregisterAll(this, container, oldPrio);
-		ctx.getChkInsertScheduler(realTime).reregisterAll(this, container, oldPrio);
-		ctx.getSskFetchScheduler(realTime).reregisterAll(this, container, oldPrio);
-		ctx.getSskInsertScheduler(realTime).reregisterAll(this, container, oldPrio);
+		ctx.getChkFetchScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
+		ctx.getChkInsertScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
+		ctx.getSskFetchScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
+		ctx.getSskInsertScheduler(realTimeFlag).reregisterAll(this, container, oldPrio);
 		if(persistent()) container.store(this);
 	}
 
-	public abstract boolean realTimeFlag(ObjectContainer container);
+	public boolean realTimeFlag() {
+		return realTimeFlag;
+	}
 
 	/** Is this request persistent? */
 	public boolean persistent() {

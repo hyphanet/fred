@@ -54,8 +54,8 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	public USKRetriever(FetchContext fctx, short prio,  
-			RequestClient client, USKRetrieverCallback cb, USK origUSK) {
-		super(prio, client);
+			RequestClient client, USKRetrieverCallback cb, USK origUSK, boolean realTimeFlag) {
+		super(prio, client, realTimeFlag);
 		if(client.persistent()) throw new UnsupportedOperationException("USKRetriever cannot be persistent");
 		this.ctx = fctx;
 		this.cb = cb;
@@ -79,7 +79,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		try {
 			SingleFileFetcher getter =
 				(SingleFileFetcher) SingleFileFetcher.create(this, this, uri, ctx, new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels), 
-						ctx.maxNonSplitfileRetries, 0, true, l, true, false, null, context);
+						ctx.maxNonSplitfileRetries, 0, true, l, true, false, null, context, realTimeFlag);
 			getter.schedule(null, context);
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Impossible: "+e, e);

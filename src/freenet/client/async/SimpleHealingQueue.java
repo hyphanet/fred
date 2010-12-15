@@ -44,7 +44,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			}
 			public void removeFrom(ObjectContainer container) {
 				throw new UnsupportedOperationException();
-			} });
+			} }, false);
 		this.ctx = context;
 		this.runningInserters = new HashMap<Bucket, SingleBlockInserter>();
 		this.maxRunning = maxRunning;
@@ -58,7 +58,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			if(runningInserters.size() > maxRunning) return false;
 			try {
 				sbi = new SingleBlockInserter(this, data, (short)-1,
-							FreenetURI.EMPTY_CHK_URI, ctx, this, false,
+							FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, this, false,
 							CHKBlock.DATA_LENGTH, ctr, false, false, false, data, null, context, false, true, 0, cryptoAlgorithm, cryptoKey);
 			} catch (Throwable e) {
 				Logger.error(this, "Caught trying to insert healing block: "+e, e);
@@ -164,11 +164,6 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	@Override
 	public int getMinSuccessFetchBlocks() {
 		return 0;
-	}
-
-	@Override
-	public boolean realTimeFlag(ObjectContainer container) {
-		return false;
 	}
 
 }

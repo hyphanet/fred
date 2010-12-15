@@ -49,8 +49,8 @@ public abstract class SendableGet extends BaseSendableGet {
 	
 	// Implementation
 
-	public SendableGet(ClientRequester parent) {
-		super(parent.persistent());
+	public SendableGet(ClientRequester parent, boolean realTimeFlag) {
+		super(parent.persistent(), realTimeFlag);
 		this.parent = parent;
 	}
 	
@@ -64,9 +64,9 @@ public abstract class SendableGet extends BaseSendableGet {
 	@Override
 	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
 		if(isSSK())
-			return context.getSskFetchScheduler(realTimeFlag(container));
+			return context.getSskFetchScheduler(realTimeFlag);
 		else
-			return context.getChkFetchScheduler(realTimeFlag(container));
+			return context.getChkFetchScheduler(realTimeFlag);
 	}
 
 	/**
@@ -121,11 +121,4 @@ public abstract class SendableGet extends BaseSendableGet {
 		context.checker.removeRequest(this, persistent, container, context, oldPrio == -1 ? getPriorityClass(container) : oldPrio);
 	}
 	
-	public boolean realTimeFlag(ObjectContainer container) {
-		FetchContext ctx = getContext(container);
-		if(container != null)
-			container.activate(ctx, 1);
-		return ctx.realTimeFlag;
-	}
-
 }

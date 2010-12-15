@@ -54,6 +54,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	final boolean getCHKOnly;
 	public final Object tokenObject;
 	final boolean persistent;
+	final boolean realTimeFlag;
 	
 	final InsertableUSK privUSK;
 	final USK pubUSK;
@@ -188,7 +189,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				Bucket bucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), hintData);
 				SingleBlockInserter sb = 
 					new SingleBlockInserter(parent, bucket, (short) -1, uri,
-							ctx, m, false, sourceLength, token, getCHKOnly, true, true /* we don't use it */, null, container, context, persistent, false, extraInserts, cryptoAlgorithm, forceCryptoKey);
+							ctx, realTimeFlag, m, false, sourceLength, token, getCHKOnly, true, true /* we don't use it */, null, container, context, persistent, false, extraInserts, cryptoAlgorithm, forceCryptoKey);
 				Logger.normal(this, "Inserting "+uri+" for insert of "+pubUSK);
 				m.add(sb, container);
 				sb.schedule(container, context);
@@ -227,7 +228,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(logMINOR)
 				Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+ ' ' +edition);
 			sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
-					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context, persistent, false, extraInserts, cryptoAlgorithm, forceCryptoKey);
+					ctx, realTimeFlag, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context, persistent, false, extraInserts, cryptoAlgorithm, forceCryptoKey);
 		}
 		try {
 			sbi.schedule(container, context);
@@ -330,7 +331,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	
 	public USKInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
-			boolean getCHKOnly, boolean addToParent, Object tokenObject, ObjectContainer container, ClientContext context, boolean freeData, boolean persistent, int extraInserts, byte cryptoAlgorithm, byte[] forceCryptoKey) throws MalformedURLException {
+			boolean getCHKOnly, boolean addToParent, Object tokenObject, ObjectContainer container, ClientContext context, boolean freeData, boolean persistent, boolean realTimeFlag, int extraInserts, byte cryptoAlgorithm, byte[] forceCryptoKey) throws MalformedURLException {
 		this.hashCode = super.hashCode();
 		this.tokenObject = tokenObject;
 		this.persistent = persistent;
@@ -354,6 +355,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		this.extraInserts = extraInserts;
 		this.cryptoAlgorithm = cryptoAlgorithm;
 		this.forceCryptoKey = forceCryptoKey;
+		this.realTimeFlag = realTimeFlag;
 	}
 
 	public BaseClientPutter getParent() {

@@ -45,7 +45,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	public SimpleSendableInsert(NodeClientCore core, KeyBlock block, short prioClass) {
-		super(false);
+		super(false, false);
 		this.block = block;
 		this.prioClass = prioClass;
 		this.client = core.node.nonPersistentClient;
@@ -60,7 +60,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 	
 	public SimpleSendableInsert(KeyBlock block, short prioClass, RequestClient client, ClientRequestScheduler scheduler) {
-		super(false);
+		super(false, false);
 		this.block = block;
 		this.prioClass = prioClass;
 		this.client = client;
@@ -198,8 +198,4 @@ public class SimpleSendableInsert extends SendableInsert {
 		return false;
 	}
 
-	@Override
-	public boolean realTimeFlag(ObjectContainer container) {
-		return false;
-	}
 }

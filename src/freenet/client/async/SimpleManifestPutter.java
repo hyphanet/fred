@@ -59,20 +59,20 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly, boolean persistent) {
-			super(smp.priorityClass, smp.client);
+			super(smp.priorityClass, smp.client, smp.realTimeFlag);
 			this.persistent = persistent;
 			this.cm = cm;
 			this.data = data;
 			InsertBlock block =
 				new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, realTimeFlag, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey);
 			metadata = null;
 			containerHandle = null;
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, FreenetURI target, ClientMetadata cm, boolean persistent) {
-			super(smp.getPriorityClass(), smp.client);
+			super(smp.getPriorityClass(), smp.client, smp.realTimeFlag);
 			this.persistent = persistent;
 			this.cm = cm;
 			this.data = null;
@@ -84,7 +84,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInArchive, ClientMetadata cm, Bucket data, boolean persistent) {
-			super(smp.getPriorityClass(), smp.client);
+			super(smp.getPriorityClass(), smp.client, smp.realTimeFlag);
 			this.persistent = persistent;
 			this.cm = cm;
 			this.data = data;
@@ -612,8 +612,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
-			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
-		super(prioClass, clientContext);
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean realTimeFlag, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
+		super(prioClass, clientContext, realTimeFlag);
 		this.defaultName = defaultName;
 		
 		if(defaultName != null) {
@@ -996,7 +996,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.
 			metadataInserter =
-				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, realTimeFlag, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata+" for "+this);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
@@ -1135,7 +1135,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 				// Don't random-encrypt the metadata.
 				SingleFileInserter metadataInserter =
-					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, null);
+					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, realTimeFlag, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, null);
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);

@@ -82,8 +82,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass, boolean getCHKOnly,
-			boolean isMetadata, RequestClient clientContext, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto) {
-		super(priorityClass, clientContext);
+			boolean isMetadata, RequestClient clientContext, boolean realTimeFlag, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto) {
+		super(priorityClass, clientContext, realTimeFlag);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
 		this.getCHKOnly = getCHKOnly;
@@ -172,7 +172,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						if(meta != null) meta = persistent() ? meta.clone() : meta;
 						currentState =
 							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, 
-									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, Key.ALGO_AES_PCFB_256_SHA256, cryptoKey);
+									false, getCHKOnly, false, realTimeFlag, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, Key.ALGO_AES_PCFB_256_SHA256, cryptoKey);
 					} else
 						currentState =
 							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx, context, container);

@@ -160,7 +160,7 @@ public class USKManager implements RequestClient {
 	public void hintUpdate(USK usk, long edition, ClientContext context) {
 		if(edition < lookupLatestSlot(usk)) return;
 		FreenetURI uri = usk.copy(edition).getURI();
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, false, new NullBucket(), null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
@@ -178,7 +178,7 @@ public class USKManager implements RequestClient {
 	 */
 	public void hintUpdate(FreenetURI uri, ClientContext context) throws MalformedURLException {
 		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) return;
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, false, new NullBucket(), null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
@@ -296,7 +296,7 @@ public class USKManager implements RequestClient {
 					public void onMajorProgress(ObjectContainer container) {
 						// Ignore
 					}
-				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, false, new NullBucket(), null);
 				try {
 					get.start(null, context);
 				} catch (FetchException e) {
@@ -497,7 +497,7 @@ public class USKManager implements RequestClient {
 	 * @return
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
-		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK);
+		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK, fctx.realTimeFlag);
 		subscribe(origUSK, ret, runBackgroundFetch, client);
 		return ret;
 	}

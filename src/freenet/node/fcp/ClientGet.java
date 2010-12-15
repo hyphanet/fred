@@ -145,7 +145,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		returnBucket = ret;
 			getter = new ClientGetter(this, uri, fctx, priorityClass,
 					lowLevelClient,
-					returnBucket, null);
+					realTimeFlag, returnBucket, null);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException {
@@ -211,7 +211,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			getter = new ClientGetter(this,
 					uri, fctx, priorityClass,
 					lowLevelClient,
-					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
+					fctx.realTimeFlag, binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
 	}
 
 	/**

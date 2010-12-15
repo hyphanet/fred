@@ -186,7 +186,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					uri = uri.sskForUSK();
 					cg = new ClientGetter(this,  
 						uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-						this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
+						this, ctx.realTimeFlag, null, new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
 				} else {
 					System.err.println("Already fetching "+jarName() + " fetch for " + fetchingVersion + " want "+availableVersion);

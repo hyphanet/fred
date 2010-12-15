@@ -178,7 +178,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			this.number = l.val;
 			this.succeeded = false;
 			this.dnf = false;
-			this.checker = new USKChecker(this, l.key, forever ? -1 : ctx.maxUSKRetries, l.ignoreStore ? ctxNoStore : ctx, parent);
+			this.checker = new USKChecker(this, l.key, forever ? -1 : ctx.maxUSKRetries, l.ignoreStore ? ctxNoStore : ctx, parent, realTimeFlag);
 		}
 		public void onDNF(ClientContext context) {
 			checker = null;
@@ -269,6 +269,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	
 	private boolean started;
 	
+	private final boolean realTimeFlag;
+	
 	private static short DEFAULT_NORMAL_POLL_PRIORITY = RequestStarter.PREFETCH_PRIORITY_CLASS;
 	private short normalPollPriority = DEFAULT_NORMAL_POLL_PRIORITY;
 	private static short DEFAULT_PROGRESS_POLL_PRIORITY = RequestStarter.UPDATE_PRIORITY_CLASS;
@@ -286,6 +288,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		callbacks = new LinkedList<USKFetcherCallback>();
 		subscribers = new HashSet<USKCallback>();
 		lastFetchedEdition = -1;
+		this.realTimeFlag = ctx.realTimeFlag;
 		if(ctx.followRedirects) {
 			this.ctx = ctx.clone();
 			this.ctx.followRedirects = false;
@@ -991,7 +994,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	class StoreCheckerGetter extends SendableGet {
 		
 		public StoreCheckerGetter(ClientRequester parent, USKStoreChecker c) {
-			super(parent);
+			super(parent, USKFetcher.this.realTimeFlag);
 			checker = c;
 		}
 

@@ -51,8 +51,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		Logger.registerClass(BaseSingleFileFetcher.class);
 	}
 
-	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, boolean deleteFetchContext) {
-		super(parent);
+	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, boolean deleteFetchContext, boolean realTimeFlag) {
+		super(parent, realTimeFlag);
 		this.deleteFetchContext = deleteFetchContext;
 		if(logMINOR)
 			Logger.minor(this, "Creating BaseSingleFileFetcher for "+key);
@@ -127,7 +127,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
 					if(persistent)
 						container.activate(key, 5);
-					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK, realTimeFlag(container));
+					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK, realTimeFlag);
 					tracker.cooldownWakeupTime = sched.queueCooldown(key, this, container);
 					context.cooldownTracker.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), persistent, container, true);
 					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
@@ -359,7 +359,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			return null;
 		}
 		short prio = parent.getPriorityClass();
-		KeyListener ret = new SingleKeyListener(newKey, this, prio, persistent, realTimeFlag(container));
+		KeyListener ret = new SingleKeyListener(newKey, this, prio, persistent, realTimeFlag);
 		if(persistent) {
 			container.deactivate(key, 5);
 			container.deactivate(parent, 1);

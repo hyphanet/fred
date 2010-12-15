@@ -8,8 +8,8 @@ import freenet.keys.Key;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class BaseSendableGet extends SendableRequest {
 	
-	protected BaseSendableGet(boolean persistent) {
-		super(persistent);
+	protected BaseSendableGet(boolean persistent, boolean realTimeFlag) {
+		super(persistent, realTimeFlag);
 	}
 
 	/** Get a numbered key to fetch. */

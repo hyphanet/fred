@@ -114,8 +114,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	 * @param persistent
 	 * @param freeData
 	 */
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
-		super(persistent);
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, boolean realTimeFlag, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
+		super(persistent, realTimeFlag);
 		assert(persistent == parent.persistent());
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
@@ -857,20 +857,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				container.activate(ctx, 1);
 		}
 		boolean retval = ctx.forkOnCacheable;
-		if(deactivate)
-			container.deactivate(ctx, 1);
-		return retval;
-	}
-	
-	@Override
-	public boolean realTimeFlag(ObjectContainer container) {
-		boolean deactivate = false;
-		if(persistent) {
-			deactivate = !container.ext().isActive(ctx);
-			if(deactivate)
-				container.activate(ctx, 1);
-		}
-		boolean retval = ctx.realTimeFlag;
 		if(deactivate)
 			container.deactivate(ctx, 1);
 		return retval;

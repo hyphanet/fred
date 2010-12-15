@@ -22,12 +22,10 @@ import freenet.support.compress.Compressor;
 public class USKFetcherWrapper extends BaseClientGetter {
 
 	final USK usk;
-	final boolean realTimeFlag;
 	
 	public USKFetcherWrapper(USK usk, short prio, boolean realTimeFlag, RequestClient client) {
-		super(prio, client);
+		super(prio, client, realTimeFlag);
 		this.usk = usk;
-		this.realTimeFlag = realTimeFlag;
 	}
 
 	@Override
@@ -101,9 +99,4 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Ignore
 	}
 
-	@Override
-	public boolean realTimeFlag(ObjectContainer container) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 }
