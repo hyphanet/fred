@@ -2167,7 +2167,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			if(arkFetcher == null) {
 				Logger.minor(this, "Starting ARK fetcher for " + this + " : " + myARK);
-				arkFetcher = node.clientCore.uskManager.subscribeContent(myARK, this, true, node.arkFetcherContext, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, node.nonPersistentClient);
+				arkFetcher = node.clientCore.uskManager.subscribeContent(myARK, this, true, node.arkFetcherContext, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, node.nonPersistentClientRT);
 			}
 		}
 	}

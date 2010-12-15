@@ -38,10 +38,42 @@ import freenet.support.io.NullBucket;
  * 
  * Plugin authors: Don't construct it yourself, get it from ClientContext from NodeClientCore.
  */
-public class USKManager implements RequestClient {
+public class USKManager {
 
 	private static volatile boolean logDEBUG;
 	private static volatile boolean logMINOR;
+	
+	static RequestClient rcRT = new RequestClient() {
+
+		public boolean persistent() {
+			return false;
+		}
+
+		public boolean realTimeFlag() {
+			return true;
+		}
+
+		public void removeFrom(ObjectContainer container) {
+			throw new UnsupportedOperationException();
+		}
+		
+	};
+	
+	static RequestClient rcBulk = new RequestClient() {
+
+		public boolean persistent() {
+			return false;
+		}
+
+		public boolean realTimeFlag() {
+			return false;
+		}
+
+		public void removeFrom(ObjectContainer container) {
+			throw new UnsupportedOperationException();
+		}
+		
+	};
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -134,9 +166,9 @@ public class USKManager implements RequestClient {
 		else return -1;
 	}
 
-	public USKFetcherTag getFetcher(USK usk, FetchContext ctx, boolean keepLast, boolean persistent, 
+	public USKFetcherTag getFetcher(USK usk, FetchContext ctx, boolean keepLast, boolean persistent, boolean realTime, 
 			USKFetcherCallback callback, boolean ownFetchContext, ObjectContainer container, ClientContext context, boolean checkStoreOnly) {
-		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, container, ctx, keepLast, 0, ownFetchContext, checkStoreOnly || ctx.localRequestOnly);
+		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, realTime, container, ctx, keepLast, 0, ownFetchContext, checkStoreOnly || ctx.localRequestOnly);
 	}
 
 	USKFetcher getFetcher(USK usk, FetchContext ctx,
@@ -145,7 +177,7 @@ public class USKManager implements RequestClient {
 	}
 	
 	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context, boolean persistent) {
-		return getFetcher(usk, persistent ? new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null) : backgroundFetchContext, true, client.persistent(), cb, true, container, context, false);
+		return getFetcher(usk, persistent ? new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null) : backgroundFetchContext, true, client.persistent(), client.realTimeFlag(), cb, true, container, context, false);
 	}
 	
 	/**
@@ -160,7 +192,7 @@ public class USKManager implements RequestClient {
 	public void hintUpdate(USK usk, long edition, ClientContext context) {
 		if(edition < lookupLatestSlot(usk)) return;
 		FreenetURI uri = usk.copy(edition).getURI();
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, false, new NullBucket(), null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
@@ -178,7 +210,7 @@ public class USKManager implements RequestClient {
 	 */
 	public void hintUpdate(FreenetURI uri, ClientContext context) throws MalformedURLException {
 		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) return;
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, false, new NullBucket(), null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
@@ -199,7 +231,7 @@ public class USKManager implements RequestClient {
 //			}
 			USKFetcher f = temporaryBackgroundFetchersLRU.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, false, this), 3, false, false, false);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, fctx.realTimeFlag ? rcRT : rcBulk), 3, false, false, false);
 				sched = f;
 				temporaryBackgroundFetchersLRU.push(clear, f);
 			} else {
@@ -296,7 +328,7 @@ public class USKManager implements RequestClient {
 					public void onMajorProgress(ObjectContainer container) {
 						// Ignore
 					}
-				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, false, new NullBucket(), null);
+				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
 				try {
 					get.start(null, context);
 				} catch (FetchException e) {
@@ -427,7 +459,7 @@ public class USKManager implements RequestClient {
 			if(runBackgroundFetch) {
 				USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, false, client), 5, true, false, false);
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 5, true, false, false);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}
@@ -497,7 +529,7 @@ public class USKManager implements RequestClient {
 	 * @return
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
-		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK, fctx.realTimeFlag);
+		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK);
 		subscribe(origUSK, ret, runBackgroundFetch, client);
 		return ret;
 	}

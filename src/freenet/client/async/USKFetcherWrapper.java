@@ -23,8 +23,8 @@ public class USKFetcherWrapper extends BaseClientGetter {
 
 	final USK usk;
 	
-	public USKFetcherWrapper(USK usk, short prio, boolean realTimeFlag, RequestClient client) {
-		super(prio, client, realTimeFlag);
+	public USKFetcherWrapper(USK usk, short prio, RequestClient client) {
+		super(prio, client);
 		this.usk = usk;
 	}
 

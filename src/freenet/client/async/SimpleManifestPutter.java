@@ -59,7 +59,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly, boolean persistent) {
-			super(smp.priorityClass, smp.client, smp.realTimeFlag);
+			super(smp.priorityClass, smp.client);
 			this.persistent = persistent;
 			this.cm = cm;
 			this.data = data;
@@ -72,7 +72,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, FreenetURI target, ClientMetadata cm, boolean persistent) {
-			super(smp.getPriorityClass(), smp.client, smp.realTimeFlag);
+			super(smp.getPriorityClass(), smp.client);
 			this.persistent = persistent;
 			this.cm = cm;
 			this.data = null;
@@ -84,7 +84,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInArchive, ClientMetadata cm, Bucket data, boolean persistent) {
-			super(smp.getPriorityClass(), smp.client, smp.realTimeFlag);
+			super(smp.getPriorityClass(), smp.client);
 			this.persistent = persistent;
 			this.cm = cm;
 			this.data = data;
@@ -612,8 +612,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
-			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean realTimeFlag, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
-		super(prioClass, clientContext, realTimeFlag);
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
+		super(prioClass, clientContext);
 		this.defaultName = defaultName;
 		
 		if(defaultName != null) {

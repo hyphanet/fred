@@ -17,6 +17,12 @@ public interface RequestClient {
 	 * Is this request persistent? **Must not change!**
 	 */
 	public boolean persistent();
+	
+	/**
+	 * Is this request real-time? True = low latency, false = high throughput.
+	 * **Must not change!**
+	 */
+	public boolean realTimeFlag();
 
 	public void removeFrom(ObjectContainer container);
 

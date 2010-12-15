@@ -166,7 +166,7 @@ public class ClientPutDir extends ClientPutBase {
 			p = new SimpleManifestPutter(this, 
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
 					lowLevelClient,
-					earlyEncode, persistenceType == PERSIST_FOREVER, ctx.realTimeFlag, container, context);
+					earlyEncode, persistenceType == PERSIST_FOREVER, container, context);
 		putter = p;
 	}
 

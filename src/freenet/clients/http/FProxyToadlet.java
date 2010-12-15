@@ -721,6 +721,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 						}
 						public void removeFrom(ObjectContainer container) {
 							throw new UnsupportedOperationException();
+						}
+						public boolean realTimeFlag() {
+							return true;
 						} }, fctx); 
 					
 					// Now, is it safe?
@@ -1021,6 +1024,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			public void removeFrom(ObjectContainer container) {
 				// Do nothing.
 			}
+
+			public boolean realTimeFlag() {
+				return true;
+			}
 			
 		});
 
@@ -1208,6 +1215,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	@Override
 	public String path() {
 		return "/";
+	}
+
+	public boolean realTimeFlag() {
+		return true;
 	}
 	
 }

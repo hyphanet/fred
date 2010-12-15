@@ -8,8 +8,8 @@ import freenet.node.RequestClient;
 public abstract class BaseClientGetter extends ClientRequester implements
 		GetCompletionCallback {
 	
-	protected BaseClientGetter(short priorityClass, RequestClient client, boolean realTimeFlag) {
-		super(priorityClass, client, realTimeFlag);
+	protected BaseClientGetter(short priorityClass, RequestClient client) {
+		super(priorityClass, client);
 	}
 
 }

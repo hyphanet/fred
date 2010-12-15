@@ -1094,6 +1094,10 @@ public class PluginManager {
 			// Do nothing.
 		}
 
+		public boolean realTimeFlag() {
+			return false;
+		}
+
 	};
 
 	public File getPluginFilename(String pluginName) {

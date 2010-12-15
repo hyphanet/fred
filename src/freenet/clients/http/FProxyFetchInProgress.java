@@ -137,7 +137,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		alteredFctx.eventProducer.addEventListener(this);
 		waiters = new ArrayList<FProxyFetchWaiter>();
 		results = new ArrayList<FProxyFetchResult>();
-		getter = new ClientGetter(this, uri, alteredFctx, FProxyToadlet.PRIORITY, rc, true, null, null);
+		getter = new ClientGetter(this, uri, alteredFctx, FProxyToadlet.PRIORITY, rc, null, null);
 	}
 	
 	public synchronized FProxyFetchWaiter getWaiter() {

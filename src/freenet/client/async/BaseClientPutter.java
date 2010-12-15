@@ -10,8 +10,8 @@ import freenet.node.RequestClient;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class BaseClientPutter extends ClientRequester {
 
-	protected BaseClientPutter(short priorityClass, RequestClient context, boolean realTimeFlag) {
-		super(priorityClass, context, realTimeFlag);
+	protected BaseClientPutter(short priorityClass, RequestClient context) {
+		super(priorityClass, context);
 	}
 
 	public abstract void onMajorProgress(ObjectContainer container);

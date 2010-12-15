@@ -79,7 +79,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset, 
 			FCPConnectionHandler handler, short priorityClass, short persistenceType, String clientToken, boolean global,
 			boolean getCHKOnly, boolean dontCompress, boolean localRequestOnly, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, InsertContext.CompatibilityMode compatibilityMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
-		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, clientToken, global, container);
+		super(uri, identifier, verbosity, charset, handler, priorityClass, persistenceType, realTimeFlag, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
@@ -111,7 +111,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, String charset,
 			FCPConnectionHandler handler, FCPClient client, short priorityClass, short persistenceType, String clientToken,
 			boolean global, boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, boolean localRequestOnly, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, boolean realTimeFlag, String compressorDescriptor, InsertContext.CompatibilityMode compatMode, FCPServer server, ObjectContainer container) throws MalformedURLException {
-		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistenceType, clientToken, global, container);
+		super(uri, identifier, verbosity, charset, handler, client, priorityClass, persistenceType, realTimeFlag, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;

@@ -82,8 +82,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass, boolean getCHKOnly,
-			boolean isMetadata, RequestClient clientContext, boolean realTimeFlag, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto) {
-		super(priorityClass, clientContext, realTimeFlag);
+			boolean isMetadata, RequestClient clientContext, String targetFilename, boolean binaryBlob, ClientContext context, byte[] overrideSplitfileCrypto) {
+		super(priorityClass, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
 		this.getCHKOnly = getCHKOnly;

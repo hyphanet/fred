@@ -451,7 +451,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 		// run me
 		private PutHandler(final BaseManifestPutter bmp, PutHandler parent, String name, ClientMetadata cm, HashSet<PutHandler> runningMap, ObjectContainer container) {
-			super(bmp.priorityClass, bmp.client, bmp.realTimeFlag);
+			super(bmp.priorityClass, bmp.client);
 			this.persistent = bmp.persistent();
 			this.cm = cm;
 			this.itemName = name;
@@ -496,7 +496,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 		// place holder, don't run it
 		private PutHandler(final BaseManifestPutter bmp, PutHandler parent, String name, String nameInArchive, Metadata md, ClientMetadata cm) {
-			super(bmp.priorityClass, bmp.client, bmp.realTimeFlag);
+			super(bmp.priorityClass, bmp.client);
 			this.persistent = bmp.persistent();
 			this.cm = cm;
 			this.itemName = name;
@@ -1014,8 +1014,8 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
-			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, ClientContext context, boolean realTimeFlag) {
-		super(prioClass, clientContext, realTimeFlag);
+			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode, boolean randomiseCryptoKeys, ClientContext context) {
+		super(prioClass, clientContext);
 		if(client.persistent())
 			this.targetURI = target.clone();
 		else

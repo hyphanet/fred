@@ -108,7 +108,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			short prioClass, File returnFilename, File returnTempFilename, String charset, boolean writeToClientCache, boolean realTimeFlag, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
 		super(uri, identifier, verbosity, charset, null, globalClient,
 				prioClass,
-				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER), null, true, container);
+				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER), realTimeFlag, null, true, container);
 
 		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
 		fctx.eventProducer.addEventListener(this);
@@ -145,12 +145,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		returnBucket = ret;
 			getter = new ClientGetter(this, uri, fctx, priorityClass,
 					lowLevelClient,
-					realTimeFlag, returnBucket, null);
+					returnBucket, null);
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, message.charset, handler,
-				message.priorityClass, message.persistenceType, message.clientToken, message.global, container);
+				message.priorityClass, message.persistenceType, message.realTimeFlag, message.clientToken, message.global, container);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
 		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
@@ -211,7 +211,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			getter = new ClientGetter(this,
 					uri, fctx, priorityClass,
 					lowLevelClient,
-					fctx.realTimeFlag, binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
+					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
 	}
 
 	/**

@@ -44,7 +44,10 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			}
 			public void removeFrom(ObjectContainer container) {
 				throw new UnsupportedOperationException();
-			} }, false);
+			}
+			public boolean realTimeFlag() {
+				return false;
+			} });
 		this.ctx = context;
 		this.runningInserters = new HashMap<Bucket, SingleBlockInserter>();
 		this.maxRunning = maxRunning;

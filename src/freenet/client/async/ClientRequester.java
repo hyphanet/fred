@@ -52,10 +52,10 @@ public abstract class ClientRequester {
 		return priorityClass;
 	}
 
-	protected ClientRequester(short priorityClass, RequestClient client, boolean realTimeFlag) {
+	protected ClientRequester(short priorityClass, RequestClient client) {
 		this.priorityClass = priorityClass;
 		this.client = client;
-		this.realTimeFlag = realTimeFlag;
+		this.realTimeFlag = client.realTimeFlag();
 		if(client == null)
 			throw new NullPointerException();
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
@@ -226,6 +226,10 @@ public abstract class ClientRequester {
 
 					public void removeFrom(ObjectContainer container) {
 						container.delete(this);
+					}
+
+					public boolean realTimeFlag() {
+						return realTimeFlag;
 					}
 					
 				};

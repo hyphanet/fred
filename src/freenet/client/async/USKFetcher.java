@@ -1098,7 +1098,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 		@Override
 		public RequestClient getClient(ObjectContainer container) {
-			return USKFetcher.this.uskManager;
+			return realTimeFlag ? USKManager.rcRT : USKManager.rcBulk;
 		}
 
 		@Override

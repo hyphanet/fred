@@ -5825,12 +5825,26 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private SimpleUserAlert alertMTUTooSmall;
 
-	public final RequestClient nonPersistentClient = new RequestClient() {
+	public final RequestClient nonPersistentClientBulk = new RequestClient() {
 		public boolean persistent() {
 			return false;
 		}
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
+		}
+		public boolean realTimeFlag() {
+			return false;
+		}
+	};
+	public final RequestClient nonPersistentClientRT = new RequestClient() {
+		public boolean persistent() {
+			return false;
+		}
+		public void removeFrom(ObjectContainer container) {
+			throw new UnsupportedOperationException();
+		}
+		public boolean realTimeFlag() {
+			return true;
 		}
 	};
 
