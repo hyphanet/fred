@@ -1589,7 +1589,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(persistent)
 				container.activate(deadSegs[i], 1);
 			deadSegs[i].kill(container, context, true, false);
-			context.getChkFetchScheduler(realTimeFlag(container)).removeFromStarterQueue(deadSegs[i], container, true);
+			context.getChkFetchScheduler(realTimeFlag).removeFromStarterQueue(deadSegs[i], container, true);
 			if(persistent)
 				container.deactivate(deadSegs[i], 1);
 		}
@@ -2313,10 +2313,6 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(!contextActive) container.deactivate(blockFetchContext, 1);
 		}
 		return maxRetries;
-	}
-
-	public boolean realTimeFlag(ObjectContainer container) {
-		return realTimeFlag;
 	}
 
 }
