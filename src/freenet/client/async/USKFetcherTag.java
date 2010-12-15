@@ -102,7 +102,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			usk = usk.clone();
 		if(persistent)
 			container.activate(ctx, 1);
-		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, realTimeFlag ? USKManager.rcRT : USKManager.rcBulk), realTimeFlag, keepLastData, checkStoreOnly);
+		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, realTimeFlag ? USKManager.rcRT : USKManager.rcBulk), keepLastData, checkStoreOnly);
 		fetcher.addCallback(this);
 		fetcher.schedule(null, context); // non-persistent
 		if(logMINOR) Logger.minor(this, "Starting "+fetcher+" for "+this);

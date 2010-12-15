@@ -277,7 +277,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private short progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
 
 	// FIXME use this!
-	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, boolean realTimeFlag, int minFailures, boolean pollForever, boolean keepLastData, boolean checkStoreOnly) {
+	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData, boolean checkStoreOnly) {
 		this.parent = requester;
 		this.origUSK = origUSK;
 		this.uskManager = manager;
@@ -288,7 +288,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		callbacks = new LinkedList<USKFetcherCallback>();
 		subscribers = new HashSet<USKCallback>();
 		lastFetchedEdition = -1;
-		this.realTimeFlag = realTimeFlag;
+		this.realTimeFlag = parent.realTimeFlag();
 		if(ctx.followRedirects) {
 			this.ctx = ctx.clone();
 			this.ctx.followRedirects = false;
