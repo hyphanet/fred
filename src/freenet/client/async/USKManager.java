@@ -172,8 +172,8 @@ public class USKManager {
 	}
 
 	USKFetcher getFetcher(USK usk, FetchContext ctx,
-			ClientRequester requester, boolean keepLastData, boolean checkStoreOnly) {
-		return new USKFetcher(usk, this, ctx, requester, 3, false, keepLastData, checkStoreOnly);
+			ClientRequester requester, boolean realTimeFlag, boolean keepLastData, boolean checkStoreOnly) {
+		return new USKFetcher(usk, this, ctx, requester, realTimeFlag, 3, false, keepLastData, checkStoreOnly);
 	}
 	
 	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context, boolean persistent) {
@@ -218,7 +218,7 @@ public class USKManager {
 		}
 	}
 
-	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context, final FetchContext fctx, boolean prefetchContent) {
+	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context, final FetchContext fctx, boolean prefetchContent, boolean realTimeFlag) {
 		final USK clear = usk.clearCopy();
 		USKFetcher sched = null;
 		Vector<USKFetcher> toCancel = null;
@@ -231,7 +231,7 @@ public class USKManager {
 //			}
 			USKFetcher f = temporaryBackgroundFetchersLRU.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, fctx.realTimeFlag ? rcRT : rcBulk), 3, false, false, false);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, realTimeFlag ? rcRT : rcBulk), realTimeFlag, 3, false, false, false);
 				sched = f;
 				temporaryBackgroundFetchersLRU.push(clear, f);
 			} else {
@@ -459,7 +459,7 @@ public class USKManager {
 			if(runBackgroundFetch) {
 				USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 5, true, false, false);
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), client.realTimeFlag(), 5, true, false, false);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}

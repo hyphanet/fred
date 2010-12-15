@@ -64,7 +64,7 @@ public class PersistentChosenRequest {
 			localRequestOnly = ctx.localRequestOnly;
 			ignoreStore = ctx.ignoreStore;
 			canWriteClientCache = ctx.canWriteClientCache;
-			realTimeFlag = ctx.realTimeFlag;
+			realTimeFlag = sg.realTimeFlag();
 			forkOnCacheable = false; // Doesn't exist for requests
 		} else if(req instanceof SendableInsert) {
 			SendableInsert sg = (SendableInsert) req;

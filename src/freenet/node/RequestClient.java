@@ -18,8 +18,10 @@ public interface RequestClient {
 	 */
 	public boolean persistent();
 	
-	/**
-	 * Is this request real-time? True = low latency, false = high throughput.
+	/** Send the request with the real time flag enabled? Real-time requests are given 
+	 * a higher priority in data transfers, but fewer of them are accepted. They are 
+	 * optimised for latency rather than throughput, and are expected to be bursty rather
+	 * than continual.
 	 * **Must not change!**
 	 */
 	public boolean realTimeFlag();

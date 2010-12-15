@@ -229,7 +229,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 				localRequestOnly = ctx.localRequestOnly;
 				ignoreStore = ctx.ignoreStore;
 				canWriteClientCache = ctx.canWriteClientCache;
-				realTimeFlag = ctx.realTimeFlag;
+				realTimeFlag = sg.realTimeFlag();
 				forkOnCacheable = false;
 			} else {
 				localRequestOnly = false;

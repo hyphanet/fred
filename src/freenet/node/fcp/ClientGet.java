@@ -120,7 +120,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxOutputLength = maxOutputLength;
 		fctx.maxTempLength = maxOutputLength;
 		fctx.canWriteClientCache = writeToClientCache;
-		fctx.realTimeFlag = realTimeFlag;
 		Bucket ret = null;
 		this.returnType = returnType;
 		binaryBlob = false;
@@ -166,7 +165,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxTempLength = message.maxTempSize;
 		fctx.canWriteClientCache = message.writeToClientCache;
 		fctx.filterData = message.filterData;
-		fctx.realTimeFlag = message.realTimeFlag;
 
 		if(message.allowedMIMETypes != null) {
 			fctx.allowedMIMETypes = new HashSet<String>();
