@@ -2221,7 +2221,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(persistent) container.activate(keys, 1);
 		}
 		int maxTries = getMaxRetries(container);
-		KeysFetchingLocally fetching = context.fetching;
+		KeysFetchingLocally fetching = context.getChkFetchScheduler(realTimeFlag).fetchingKeys();
 		long cooldownWakeup = Long.MAX_VALUE;
 		synchronized(this) {
 			if(startedDecode || isFinishing(container)) return -1; // Remove
