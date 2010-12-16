@@ -72,6 +72,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	private boolean killed;
 	/** If true, we were loaded on startup. If false, we were created since then. */
 	final boolean loadedOnStartup;
+	final boolean realTime;
 
 	/**
 	 * Caller must create bloomFile, but it may be empty.
@@ -79,11 +80,12 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * should be created from scratch.
 	 * @throws IOException 
 	 */
-	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter, CountingBloomFilter cachedMainFilter, BinaryBloomFilter[] cachedSegFilters, ObjectContainer container, boolean onStartup) throws IOException {
+	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter, CountingBloomFilter cachedMainFilter, BinaryBloomFilter[] cachedSegFilters, ObjectContainer container, boolean onStartup, boolean realTime) throws IOException {
 		fetcher = parent;
 		this.loadedOnStartup = onStartup;
 		this.persistent = persistent;
 		this.keyCount = keyCount;
+		this.realTime = realTime;
 		assert(localSalt.length == 32);
 		if(persistent) {
 			this.localSalt = new byte[32];
@@ -181,7 +183,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * @param keys
 	 */
 	void addKey(Key key, int segNo, ClientContext context) {
-		byte[] saltedKey = context.getChkFetchScheduler().saltKey(persistent, key);
+		byte[] saltedKey = context.getChkFetchScheduler(realTime).saltKey(persistent, key);
 		filter.addKey(saltedKey);
 		byte[] localSalted = localSaltKey(key);
 		segmentFilters[segNo].addKey(localSalted);
@@ -349,7 +351,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		for(int i=0;i<removeKeys.length;i++) {
 			if(logMINOR)
 				Logger.minor(this, "Removing key from bloom filter: "+removeKeys[i]);
-			byte[] salted = context.getChkFetchScheduler().saltKey(persistent, removeKeys[i]);
+			byte[] salted = context.getChkFetchScheduler(realTime).saltKey(persistent, removeKeys[i]);
 			if(filter.checkFilter(salted)) {
 				filter.removeKey(salted);
 			} else
@@ -365,7 +367,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			Logger.minor(this, "Removing key "+key+" from bloom filter for "+segment);
 		if(logMINOR)
 			Logger.minor(this, "Removing key from bloom filter: "+key);
-		byte[] salted = context.getChkFetchScheduler().saltKey(persistent, key);
+		byte[] salted = context.getChkFetchScheduler(realTime).saltKey(persistent, key);
 		if(filter.checkFilter(salted)) {
 			filter.removeKey(salted);
 			keyCount--;
@@ -436,6 +438,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	
 	public void objectOnDeactivate(ObjectContainer container) {
 		Logger.error(this, "Deactivating a SplitFileFetcherKeyListener: "+this, new Exception("error"));
+	}
+
+	public boolean isRealTime() {
+		return realTime;
 	}
 
 }

@@ -114,8 +114,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	 * @param persistent
 	 * @param freeData
 	 */
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
-		super(persistent);
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, boolean realTimeFlag, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
+		super(persistent, realTimeFlag);
 		assert(persistent == parent.persistent());
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
@@ -383,7 +383,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					container.deactivate(cb, 1);
 			}
 		} else {
-			getScheduler(context).registerInsert(this, persistent, true, container);
+			getScheduler(container, context).registerInsert(this, persistent, true, container);
 		}
 	}
 
@@ -561,8 +561,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						throw failed;
 					}
 				else
-					// FIXME bulk flag
-					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, false);
+					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
 			} catch (LowLevelPutException e) {
 				if(logMINOR) Logger.minor(this, "Caught "+e, e);
 				if(e.code == LowLevelPutException.COLLISION) {
@@ -890,5 +889,5 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
 		onEncode(key, container, context);
 	}
-	
+
 }

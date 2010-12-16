@@ -83,6 +83,7 @@ class SingleFileInserter implements ClientPutState {
 	/** If true, use random crypto keys for CHKs. */
 	private final byte[] forceCryptoKey;
 	private final byte cryptoAlgorithm;
+	private final boolean realTimeFlag;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -110,7 +111,7 @@ class SingleFileInserter implements ClientPutState {
 	 * @throws InsertException
 	 */
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
-			boolean metadata, InsertContext ctx, boolean dontCompress, 
+			boolean metadata, InsertContext ctx, boolean realTimeFlag, boolean dontCompress, 
 			boolean getCHKOnly, boolean reportMetadataOnly, Object token, ARCHIVE_TYPE archiveType,
 			boolean freeData, String targetFilename, boolean earlyEncode, boolean forSplitfile, boolean persistent, long origDataLength, long origCompressedDataLength, HashResult[] origHashes, byte cryptoAlgorithm, byte[] forceCryptoKey) {
 		hashCode = super.hashCode();
@@ -120,6 +121,7 @@ class SingleFileInserter implements ClientPutState {
 		this.parent = parent;
 		this.block = block;
 		this.ctx = ctx;
+		this.realTimeFlag = realTimeFlag;
 		this.metadata = metadata;
 		this.cb = cb;
 		this.getCHKOnly = getCHKOnly;
@@ -307,7 +309,7 @@ class SingleFileInserter implements ClientPutState {
 			}
 			if(reportMetadataOnly) {
 				if(persistent) container.activate(ctx, 1);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 				if(logMINOR)
 					Logger.minor(this, "Inserting with metadata: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context), hashes, container);
@@ -324,7 +326,7 @@ class SingleFileInserter implements ClientPutState {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token, persistent);
 				if(persistent) container.activate(ctx, 1);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, realTimeFlag, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent, shouldFreeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 				if(logMINOR)
 					Logger.minor(this, "Inserting data: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context), hashes, container);
@@ -372,7 +374,7 @@ class SingleFileInserter implements ClientPutState {
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
-			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, hashes, hashThisLayerOnly, origDataLength, origCompressedDataLength, cryptoAlgorithm, forceCryptoKey);
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, realTimeFlag, container, context, hashes, hashThisLayerOnly, origDataLength, origCompressedDataLength, cryptoAlgorithm, forceCryptoKey);
 			if(logMINOR)
 				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+this);
 			cb.onTransition(this, sfi, container);
@@ -396,7 +398,7 @@ class SingleFileInserter implements ClientPutState {
 			boolean allowSizes = (cmode == CompatibilityMode.COMPAT_CURRENT || cmode.ordinal() >= CompatibilityMode.COMPAT_1255.ordinal());
 			if(metadata) allowSizes = false;
 			SplitHandler sh = new SplitHandler(origSize, compressedDataSize, allowSizes);
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context, HashResult.copy(hashes), hashThisLayerOnly, origDataLength, origCompressedDataLength, cryptoAlgorithm, forceCryptoKey);
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, realTimeFlag, container, context, HashResult.copy(hashes), hashThisLayerOnly, origDataLength, origCompressedDataLength, cryptoAlgorithm, forceCryptoKey);
 			sh.sfi = sfi;
 			if(logMINOR)
 				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+sh+" for "+this);
@@ -574,13 +576,13 @@ class SingleFileInserter implements ClientPutState {
 		if(uri.getKeyType().equals("USK")) {
 			try {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-					getCHKOnly, addToParent, this.token, container, context, freeData, persistent, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
+					getCHKOnly, addToParent, this.token, container, context, freeData, persistent, realTimeFlag, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 			} catch (MalformedURLException e) {
 				throw new InsertException(InsertException.INVALID_URI, e, null);
 			}
 		} else {
 			SingleBlockInserter sbi = 
-				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
+				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, realTimeFlag, cb, isMetadata, sourceLength, token, 
 						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock, cryptoAlgorithm, forceCryptoKey);
 			// pass uri to SBI
 			block.nullURI();
@@ -829,7 +831,7 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(SingleFileInserter.this, 1);
 				synchronized(this) {
 					// Only the bottom layer in a multi-level splitfile pyramid has randomised keys. The rest are unpredictable anyway, and this ensures we only need to supply one key when reinserting.
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes, cryptoAlgorithm, forceCryptoKey);
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, realTimeFlag, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent, origDataLength, origCompressedDataLength, origHashes, cryptoAlgorithm, forceCryptoKey);
 					if(origHashes != null) {
 						// It gets passed on, and the last one deletes it.
 						SingleFileInserter.this.origHashes = null;

@@ -145,6 +145,8 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	private transient int crossDataBlocksAllocated;
 	private transient int crossCheckBlocksAllocated;
 	
+	private final boolean realTimeFlag;
+	
 	@Override
 	public int hashCode() {
 		return hashCode;
@@ -152,9 +154,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	
 	private transient FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, SplitFileSegmentKeys keys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254, int crossCheckBlocks, byte cryptoAlgorithm, byte[] forceCryptoKey, int maxRetries) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, SplitFileSegmentKeys keys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock, boolean pre1254, int crossCheckBlocks, byte cryptoAlgorithm, byte[] forceCryptoKey, int maxRetries, boolean realTimeFlag) throws MetadataParseException, FetchException {
 		this.crossCheckBlocks = crossCheckBlocks;
 		this.keys = keys;
+		this.realTimeFlag = realTimeFlag;
 		int dataBlocks = keys.getDataBlocks();
 		int checkBlocks = keys.getCheckBlocks();
 		foundKeys = new boolean[dataBlocks + checkBlocks];
@@ -193,7 +196,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			checkRetries = null;
 		}
 		subSegments = null;
-		getter = new SplitFileFetcherSegmentGet(parent, this);
+		getter = new SplitFileFetcherSegmentGet(parent, this, realTimeFlag);
 		maxBlockLength = maxTempLength;
 		this.blockFetchContext = blockFetchContext;
 		this.recursionLevel = 0;
@@ -1330,7 +1333,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			container.activate(blockFetchContext, 1);
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
-		RequestScheduler sched = context.getFetchScheduler(false);
+		RequestScheduler sched = context.getFetchScheduler(false, realTimeFlag);
 		if(onNonFatalFailure(e, blockNo, container, context, sched, maxTries, callStore)) {
 			// At least one request was rescheduled, so we have requests to send.
 			// Clear our cooldown cache entry and those of our parents.
@@ -1360,7 +1363,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			container.activate(blockFetchContext, 1);
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
-		RequestScheduler sched = context.getFetchScheduler(false);
+		RequestScheduler sched = context.getFetchScheduler(false, realTimeFlag);
 		boolean reschedule = false;
 		for(int i=0;i<failures.length;i++) {
 			if(onNonFatalFailure(failures[i], blockNos[i], container, context, sched, maxTries, false))
@@ -1586,7 +1589,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(persistent)
 				container.activate(deadSegs[i], 1);
 			deadSegs[i].kill(container, context, true, false);
-			context.getChkFetchScheduler().removeFromStarterQueue(deadSegs[i], container, true);
+			context.getChkFetchScheduler(realTimeFlag).removeFromStarterQueue(deadSegs[i], container, true);
 			if(persistent)
 				container.deactivate(deadSegs[i], 1);
 		}
@@ -2218,7 +2221,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(persistent) container.activate(keys, 1);
 		}
 		int maxTries = getMaxRetries(container);
-		KeysFetchingLocally fetching = context.fetching;
+		KeysFetchingLocally fetching = context.getChkFetchScheduler(realTimeFlag).fetchingKeys();
 		long cooldownWakeup = Long.MAX_VALUE;
 		synchronized(this) {
 			if(startedDecode || isFinishing(container)) return -1; // Remove
@@ -2281,7 +2284,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				parentActive = container.ext().isActive(parent);
 				if(!parentActive) container.activate(parent, 1);
 			}
-			getter = new SplitFileFetcherSegmentGet(parent, this);
+			getter = new SplitFileFetcherSegmentGet(parent, this, realTimeFlag);
 			if(!parentActive) container.deactivate(parent, 1);
 			System.out.println("Auto-migrated from subsegments to SegmentGet on "+this+" : "+getter);
 			getter.storeTo(container);

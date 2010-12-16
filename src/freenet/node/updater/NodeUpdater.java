@@ -511,4 +511,8 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		throw new UnsupportedOperationException();
 	}
 	
+	public boolean realTimeFlag() {
+		return false;
+	}
+
 }

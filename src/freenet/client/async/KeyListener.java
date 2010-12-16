@@ -86,4 +86,10 @@ public interface KeyListener {
 
 	public boolean isSSK();
 
+	/**
+	 * Should this be on the bulk or the real-time scheduler? The actual listener itself
+	 * of course is neither, but it is usually associated with a request...
+	 */
+	public boolean isRealTime();
+
 }

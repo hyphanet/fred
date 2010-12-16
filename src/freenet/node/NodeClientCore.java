@@ -364,7 +364,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 
-		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
+		try {
+			requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
+		} catch (InvalidConfigValueException e1) {
+			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
+		}
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
 
@@ -1019,7 +1023,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				waitStatus = rs.waitUntilStatusChange(waitStatus);
 				if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
 					// See below; inserts count both
-					requestStarters.rejectedOverload(false, false);
+					requestStarters.rejectedOverload(false, false, realTimeFlag);
 					rejectedOverload = true;
 				}
 
@@ -1046,7 +1050,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 					if(!rejectedOverload) {
 						// See below
-						requestStarters.rejectedOverload(false, false);
+						requestStarters.rejectedOverload(false, false, realTimeFlag);
 						rejectedOverload = true;
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.getNodeCHK().toNormalizedDouble();
@@ -1063,9 +1067,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						long rtt = System.currentTimeMillis() - startTime;
 						double targetLocation=key.getNodeCHK().toNormalizedDouble();
 						if(!rejectedOverload)
-							requestStarters.requestCompleted(false, false, key.getNodeKey(true));
+							requestStarters.requestCompleted(false, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
-						requestStarters.chkRequestThrottle.successfulCompletion(rtt);
+						requestStarters.getThrottle(false, false, realTimeFlag).successfulCompletion(rtt);
 						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation);
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful CHK fetch took "+rtt);
@@ -1145,7 +1149,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			while(true) {
 				waitStatus = rs.waitUntilStatusChange(waitStatus);
 				if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
-					requestStarters.rejectedOverload(true, false);
+					requestStarters.rejectedOverload(true, false, realTimeFlag);
 					rejectedOverload = true;
 				}
 
@@ -1169,7 +1173,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				if((status == RequestSender.TIMED_OUT) ||
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 					if(!rejectedOverload) {
-						requestStarters.rejectedOverload(true, false);
+						requestStarters.rejectedOverload(true, false, realTimeFlag);
 						rejectedOverload = true;
 					}
 				} else
@@ -1183,9 +1187,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						long rtt = System.currentTimeMillis() - startTime;
 
 						if(!rejectedOverload)
-							requestStarters.requestCompleted(true, false, key.getNodeKey(true));
+							requestStarters.requestCompleted(true, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
-						requestStarters.sskRequestThrottle.successfulCompletion(rtt);
+						requestStarters.getThrottle(true, false, realTimeFlag).successfulCompletion(rtt);
 					}
 
 				if(rs.getStatus() == RequestSender.SUCCESS)
@@ -1277,7 +1281,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 				if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
 					hasReceivedRejectedOverload = true;
-					requestStarters.rejectedOverload(false, true);
+					requestStarters.rejectedOverload(false, true, realTimeFlag);
 				}
 			}
 
@@ -1294,7 +1298,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 				if(is.anyTransfersFailed() && (!hasReceivedRejectedOverload)) {
 					hasReceivedRejectedOverload = true; // not strictly true but same effect
-					requestStarters.rejectedOverload(false, true);
+					requestStarters.rejectedOverload(false, true, realTimeFlag);
 				}
 			}
 
@@ -1310,8 +1314,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					long len = endTime - startTime;
 
 					// RejectedOverload requests count towards RTT (timed out ones don't).
-					requestStarters.chkInsertThrottle.successfulCompletion(len);
-					requestStarters.requestCompleted(false, true, block.getKey());
+					requestStarters.getThrottle(false, true, realTimeFlag).successfulCompletion(len);
+					requestStarters.requestCompleted(false, true, block.getKey(), realTimeFlag);
 				}
 
 			// Get status explicitly, *after* completed(), so that it will be RECEIVE_FAILED if the receive failed.
@@ -1400,7 +1404,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 				if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
 					hasReceivedRejectedOverload = true;
-					requestStarters.rejectedOverload(true, true);
+					requestStarters.rejectedOverload(true, true, realTimeFlag);
 				}
 			}
 
@@ -1427,8 +1431,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					// It worked!
 					long endTime = System.currentTimeMillis();
 					long rtt = endTime - startTime;
-					requestStarters.requestCompleted(true, true, block.getKey());
-					requestStarters.sskInsertThrottle.successfulCompletion(rtt);
+					requestStarters.requestCompleted(true, true, block.getKey(), realTimeFlag);
+					requestStarters.getThrottle(true, true, realTimeFlag).successfulCompletion(rtt);
 				}
 
 			int status = is.getStatus();
@@ -1516,12 +1520,25 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
+	/** @deprecated Only provided for compatibility with old plugins! Plugins must specify! */
 	public HighLevelSimpleClient makeClient(short prioClass) {
-		return makeClient(prioClass, false);
+		return makeClient(prioClass, false, false);
 	}
 
+	/** @deprecated Only provided for compatibility with old plugins! Plugins must specify! */
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
-		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, forceDontIgnoreTooManyPathComponents);
+		return makeClient(prioClass, forceDontIgnoreTooManyPathComponents, false);
+	}
+
+	/**
+	 * @param prioClass The priority to run requests at.
+	 * @param realTimeFlag If true, requests are latency-optimised. If false, they are 
+	 * throughput-optimised. Fewer latency-optimised ("real time") requests are accepted
+	 * but their transfers are faster. Latency-optimised requests are expected to be bursty,
+	 * whereas throughput-optimised (bulk) requests can be constant. 
+	 */
+	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
+		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, forceDontIgnoreTooManyPathComponents, realTimeFlag);
 	}
 
 	public FCPServer getFCPServer() {
@@ -1651,15 +1668,15 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	/** Queue the offered key. */
-	public void queueOfferedKey(Key key) {
-		ClientRequestScheduler sched =
-			key instanceof NodeSSK ? requestStarters.sskFetchScheduler : requestStarters.chkFetchScheduler;
-		sched.queueOfferedKey(key);
+	public void queueOfferedKey(Key key, boolean realTime) {
+		ClientRequestScheduler sched = requestStarters.getScheduler(key instanceof NodeSSK, false, realTime);
+		sched.queueOfferedKey(key, realTime);
 	}
 
 	public void dequeueOfferedKey(Key key) {
-		ClientRequestScheduler sched =
-			key instanceof NodeSSK ? requestStarters.sskFetchScheduler : requestStarters.chkFetchScheduler;
+		ClientRequestScheduler sched = requestStarters.getScheduler(key instanceof NodeSSK, false, false);
+		sched.dequeueOfferedKey(key);
+		sched = requestStarters.getScheduler(key instanceof NodeSSK, false, true);
 		sched.dequeueOfferedKey(key);
 	}
 

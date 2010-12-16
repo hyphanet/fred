@@ -78,7 +78,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 				}
 				FetchWaiter fw = new FetchWaiter();
 
-				get = new ClientGetter(fw, uri, context, PluginManager.PRIO, node.nonPersistentClient, null, null);
+				get = new ClientGetter(fw, uri, context, PluginManager.PRIO, node.nonPersistentClientBulk, null, null);
 				try {
 					node.clientCore.clientContext.start(get);
 				} catch (DatabaseDisabledException e) {

@@ -205,24 +205,15 @@ public class StatisticsToadlet extends Toadlet {
            
 			
 			if(numberOfConnected + numberOfRoutingBackedOff > 0) {
-				// Load balancing box
-				// Include overall window, and RTTs for each
-				RequestStarterGroup starters = core.requestStarters;
-				double window = starters.getWindow();
-				double realWindow = starters.getRealWindow();
-				HTMLNode loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-				loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting");
-				HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
-				HTMLNode loadStatsList = loadStatsContent.addChild("ul");
-				loadStatsList.addChild("li", l10n("globalWindow")+": "+window);
-				loadStatsList.addChild("li", l10n("realGlobalWindow")+": "+realWindow);
-				loadStatsList.addChild("li", starters.statsPageLine(false, false));
-				loadStatsList.addChild("li", starters.statsPageLine(true, false));
-				loadStatsList.addChild("li", starters.statsPageLine(false, true));
-				loadStatsList.addChild("li", starters.statsPageLine(true, true));
-				loadStatsList.addChild("li", starters.diagnosticThrottlesLine(false));
-				loadStatsList.addChild("li", starters.diagnosticThrottlesLine(true));
 				
+				HTMLNode loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				
+				drawLoadBalancingBox(loadStatsInfobox, false);
+				
+				loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				
+				drawLoadBalancingBox(loadStatsInfobox, true);
+								
 				// Psuccess box
 				HTMLNode successRateBox = nextTableCell.addChild("div", "class", "infobox");
 				successRateBox.addChild("div", "class", "infobox-header", l10n("successRate"));
@@ -386,6 +377,26 @@ public class StatisticsToadlet extends Toadlet {
 		}
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+	}
+
+	private void drawLoadBalancingBox(HTMLNode loadStatsInfobox, boolean realTime) {
+		// Load balancing box
+		// Include overall window, and RTTs for each
+		
+		loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting "+(realTime ? "RealTime" : "Bulk"));
+		HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
+		RequestStarterGroup starters = core.requestStarters;
+		double window = starters.getWindow(realTime);
+		double realWindow = starters.getRealWindow(realTime);
+		HTMLNode loadStatsList = loadStatsContent.addChild("ul");
+		loadStatsList.addChild("li", l10n("globalWindow")+": "+window);
+		loadStatsList.addChild("li", l10n("realGlobalWindow")+": "+realWindow);
+		loadStatsList.addChild("li", starters.statsPageLine(false, false, realTime));
+		loadStatsList.addChild("li", starters.statsPageLine(true, false, realTime));
+		loadStatsList.addChild("li", starters.statsPageLine(false, true, realTime));
+		loadStatsList.addChild("li", starters.statsPageLine(true, true, realTime));
+		loadStatsList.addChild("li", starters.diagnosticThrottlesLine(false));
+		loadStatsList.addChild("li", starters.diagnosticThrottlesLine(true));
 	}
 
 	private void drawRejectReasonsBox(HTMLNode nextTableCell, boolean local) {

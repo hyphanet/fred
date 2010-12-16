@@ -98,4 +98,5 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
+
 }

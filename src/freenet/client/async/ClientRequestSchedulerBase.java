@@ -60,6 +60,7 @@ abstract class ClientRequestSchedulerBase {
 
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
+	final boolean isRTScheduler;
 	
 	/**
 	 * Structure:
@@ -84,9 +85,10 @@ abstract class ClientRequestSchedulerBase {
 
 	abstract boolean persistent();
 	
-	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, RandomSource random) {
+	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
+		this.isRTScheduler = forRT;
 		keyListeners = new ArrayList<KeyListener>();
 		priorities = null;
 		newPriorities = new SectoredRandomGrabArray[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];

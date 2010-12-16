@@ -49,6 +49,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	private long curMaxTempLength;
 	private int curMaxMetadataLength;
 	private final RandomSource random;
+	private final boolean realTimeFlag;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final int MAX_ARCHIVE_LEVELS = 4;
@@ -90,7 +91,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	/*Whether or not to filter fetched content*/
 	static final boolean FILTER_DATA = false;
 
-	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
+	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
 		this.core = node;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
@@ -102,6 +103,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
 		this.persistentBucketFactory = node.persistentTempBucketFactory;
+		this.realTimeFlag = realTimeFlag;
 	}
 
 	public HighLevelSimpleClientImpl(HighLevelSimpleClientImpl hlsc) {
@@ -115,6 +117,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		this.curMaxMetadataLength = hlsc.curMaxMetadataLength;
 		this.curMaxTempLength = hlsc.curMaxTempLength;
 		this.random = hlsc.random;
+		this.realTimeFlag = hlsc.realTimeFlag;
 	}
 
 	public HighLevelSimpleClientImpl clone() {
@@ -325,6 +328,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
+	}
+
+	public boolean realTimeFlag() {
+		return realTimeFlag;
 	}
 
 }

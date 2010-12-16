@@ -73,7 +73,7 @@ public abstract class ClientRequest {
 	}
 	
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
-			FCPConnectionHandler handler, FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global, ObjectContainer container) {
+			FCPConnectionHandler handler, FCPClient client, short priorityClass2, short persistenceType2, boolean realTime, String clientToken2, boolean global, ObjectContainer container) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -91,7 +91,7 @@ public abstract class ClientRequest {
 		this.global = global;
 		if(persistenceType == PERSIST_CONNECTION) {
 			this.origHandler = handler;
-			lowLevelClient = origHandler.connectionRequestClient;
+			lowLevelClient = origHandler.connectionRequestClient(realTime);
 			this.client = null;
 		} else {
 			origHandler = null;
@@ -102,14 +102,14 @@ public abstract class ClientRequest {
 			this.client = client;
 			assert client != null;
 			assert(client.persistenceType == persistenceType);
-			lowLevelClient = client.lowLevelClient;
+			lowLevelClient = client.lowLevelClient(realTime);
 		}
 		assert lowLevelClient != null;
 		this.startupTime = System.currentTimeMillis();
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
-			FCPConnectionHandler handler, short priorityClass2, short persistenceType2, String clientToken2, boolean global, ObjectContainer container) {
+			FCPConnectionHandler handler, short priorityClass2, short persistenceType2, final boolean realTime, String clientToken2, boolean global, ObjectContainer container) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -138,6 +138,10 @@ public abstract class ClientRequest {
 				public void removeFrom(ObjectContainer container) {
 					throw new UnsupportedOperationException();
 				}
+
+				public boolean realTimeFlag() {
+					return realTime;
+				}
 				
 			};
 		} else {
@@ -151,7 +155,7 @@ public abstract class ClientRequest {
 			container.activate(client, 1);
 			client.init(container);
 		}
-		lowLevelClient = client.lowLevelClient;
+		lowLevelClient = client.lowLevelClient(realTime);
 		if(lowLevelClient == null)
 			throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
 		}

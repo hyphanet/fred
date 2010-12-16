@@ -12,8 +12,6 @@ import com.db4o.ObjectSet;
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.client.async.ClientRequestSelector.SelectorReturn;
-import freenet.config.EnumerableOptionCallback;
-import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
@@ -28,13 +26,13 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
+import freenet.node.RequestStarterGroup;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.TimeUtil;
-import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
 
 /**
@@ -55,41 +53,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		Logger.registerClass(ClientRequestScheduler.class);
 	}
 	
-	public static class PrioritySchedulerCallback extends StringCallback implements EnumerableOptionCallback {
-		final ClientRequestScheduler cs;
-		private final String[] possibleValues = new String[]{ ClientRequestScheduler.PRIORITY_HARD, ClientRequestScheduler.PRIORITY_SOFT };
-		
-		PrioritySchedulerCallback(ClientRequestScheduler cs){
-			this.cs = cs;
-		}
-		
-		@Override
-		public String get(){
-			if(cs != null)
-				return cs.getChoosenPriorityScheduler();
-			else
-				return ClientRequestScheduler.PRIORITY_HARD;
-		}
-		
-		@Override
-		public void set(String val) throws InvalidConfigValueException{
-			String value;
-			if(val == null || val.equalsIgnoreCase(get())) return;
-			if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_HARD)){
-				value = ClientRequestScheduler.PRIORITY_HARD;
-			}else if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_SOFT)){
-				value = ClientRequestScheduler.PRIORITY_SOFT;
-			}else{
-				throw new InvalidConfigValueException("Invalid priority scheme");
-			}
-			cs.setPriorityScheduler(value);
-		}
-		
-		public String[] getPossibleValues() {
-			return possibleValues;
-		}
-	}
-	
 	/** Offered keys list. Only one, not split by priority, to prevent various attacks relating
 	 * to offering specific keys and timing how long it takes for the node to request the key. 
 	 * Non-persistent. */
@@ -97,6 +60,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	// we have one for inserts and one for requests
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
+	final boolean isRTScheduler;
 	final RandomSource random;
 	private final RequestStarter starter;
 	private final Node node;
@@ -113,10 +77,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public static final String PRIORITY_HARD = "HARD";
 	private String choosenPriorityScheduler; 
 	
-	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name, ClientContext context) {
+	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, String name, ClientContext context) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
-		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs, random);
+		this.isRTScheduler = forRT;
+		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs, forRT, random);
 		this.databaseExecutor = core.clientDatabaseExecutor;
 		this.datastoreChecker = core.storeChecker;
 		this.starter = starter;
@@ -126,14 +91,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		selector = new ClientRequestSelector(forInserts, this);
 		
 		this.name = name;
-		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
-				"RequestStarterGroup.scheduler"+(forSSKs?"SSK" : "CHK")+(forInserts?"Inserts":"Requests"),
-				"RequestStarterGroup.schedulerLong",
-				new PrioritySchedulerCallback(this));
 		
-		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
+		this.choosenPriorityScheduler = PRIORITY_HARD; // Will be reset later.
 		if(!forInserts) {
-			offeredKeys = new OfferedKeysList(core, random, (short)0, forSSKs);
+			offeredKeys = new OfferedKeysList(core, random, (short)0, forSSKs, forRT);
 		} else {
 			offeredKeys = null;
 		}
@@ -145,7 +106,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void startCore(NodeClientCore core, long nodeDBHandle, ObjectContainer container) {
-		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, nodeDBHandle, container, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, clientContext);
+		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, isRTScheduler, nodeDBHandle, container, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, clientContext);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 	}
 	
@@ -159,9 +120,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 				KeyListener listener = l.makeKeyListener(container, context, true);
 				if(listener != null) {
 					if(listener.isSSK())
-						context.getSskFetchScheduler().addPersistentPendingKeys(listener);
+						context.getSskFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
 					else
-						context.getChkFetchScheduler().addPersistentPendingKeys(listener);
+						context.getChkFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
 					System.err.println("Loaded request key listener: "+listener+" for "+l);
 				}
 			} catch (KeyListenerConstructionException e) {
@@ -188,7 +149,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * 
 	 * @param val
 	 */
-	protected synchronized void setPriorityScheduler(String val){
+	public synchronized void setPriorityScheduler(String val){
 		choosenPriorityScheduler = val;
 	}
 	
@@ -398,7 +359,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
-		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, clientContext, null);
+		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, isRTScheduler, clientContext, null);
 	}
 	
 	/**
@@ -700,7 +661,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		boolean addedMore = false;
 		while(true) {
-			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, context, container, now);
+			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
 			SendableRequest request = null;
 			if(r != null && r.req != null) request = r.req;
 			else {
@@ -941,7 +902,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	/** Queue the offered key */
-	public void queueOfferedKey(final Key key) {
+	public void queueOfferedKey(final Key key, boolean realTime) {
 		if(logMINOR)
 			Logger.minor(this, "queueOfferedKey("+key);
 		offeredKeys.queueKey(key);
@@ -993,7 +954,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		final int MAX_KEYS = 20;
 		Object ret;
 		ClientRequestScheduler otherScheduler = 
-			((!isSSKScheduler) ? this.clientContext.getSskFetchScheduler() : this.clientContext.getChkFetchScheduler());
+			((!isSSKScheduler) ? this.clientContext.getSskFetchScheduler(isRTScheduler) : this.clientContext.getChkFetchScheduler(isRTScheduler));
 		if(queue instanceof PersistentCooldownQueue) {
 			ret = ((PersistentCooldownQueue)queue).removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS, (PersistentCooldownQueue)otherScheduler.persistentCooldownQueue);
 		} else

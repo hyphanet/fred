@@ -19,8 +19,8 @@ import freenet.support.io.NativeThread;
  */
 public abstract class SendableInsert extends SendableRequest {
 
-	public SendableInsert(boolean persistent) {
-		super(persistent);
+	public SendableInsert(boolean persistent, boolean realTimeFlag) {
+		super(persistent, realTimeFlag);
 	}
 	
 	/** Called when we successfully insert the data */
@@ -41,11 +41,11 @@ public abstract class SendableInsert extends SendableRequest {
 	}
 	
 	@Override
-	public ClientRequestScheduler getScheduler(ClientContext context) {
+	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
 		if(isSSK())
-			return context.getSskInsertScheduler();
+			return context.getSskInsertScheduler(realTimeFlag);
 		else
-			return context.getChkInsertScheduler();
+			return context.getChkInsertScheduler(realTimeFlag);
 	}
 
 	public abstract boolean canWriteClientCache(ObjectContainer container);
@@ -63,5 +63,5 @@ public abstract class SendableInsert extends SendableRequest {
 		if(isEmpty(container)) return -1;
 		return 0;
 	}
-	
+
 }
