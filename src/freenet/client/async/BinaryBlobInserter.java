@@ -34,6 +34,7 @@ public class BinaryBlobInserter implements ClientPutState {
 	private int succeededBlocks;
 	private boolean fatal;
 	final InsertContext ctx;
+	final boolean realTimeFlag;
 
 	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context, ObjectContainer container)
 	throws IOException, BinaryBlobFormatException {
@@ -44,6 +45,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		this.parent = parent;
 		this.clientContext = clientContext;
 		this.errors = new FailureCodeTracker(true);
+		this.realTimeFlag = clientContext.realTimeFlag();
 		DataInputStream dis = new DataInputStream(blob.getInputStream());
 
 		BlockSet blocks = new SimpleBlockSet();
@@ -62,7 +64,7 @@ public class BinaryBlobInserter implements ClientPutState {
 			Key key = (Key) i.next();
 			KeyBlock block = blocks.get(key);
 			MySendableInsert inserter =
-				new MySendableInsert(x++, block, prioClass, getScheduler(block, context), clientContext);
+				new MySendableInsert(x++, block, prioClass, getScheduler(block, container, context), clientContext);
 			myInserters.add(inserter);
 		}
 
@@ -71,11 +73,11 @@ public class BinaryBlobInserter implements ClientPutState {
 		parent.notifyClients(container, context);
 	}
 
-	private ClientRequestScheduler getScheduler(KeyBlock block, ClientContext context) {
+	private ClientRequestScheduler getScheduler(KeyBlock block, ObjectContainer container, ClientContext context) {
 		if(block instanceof CHKBlock)
-			return context.getChkInsertScheduler();
+			return context.getChkInsertScheduler(realTimeFlag);
 		else if(block instanceof SSKBlock)
-			return context.getSskInsertScheduler();
+			return context.getSskInsertScheduler(realTimeFlag);
 		else throw new IllegalArgumentException("Unknown block type "+block.getClass()+" : "+block);
 	}
 

@@ -109,10 +109,14 @@ public class RequestStatusCache {
 		if(status == null) return;
 		if(status instanceof DownloadRequestStatus) {
 			downloads.remove(status);
-			downloadsByURI.removeElement(status.getURI(), status);
+			FreenetURI uri = status.getURI();
+			assert(uri != null);
+			downloadsByURI.removeElement(uri, status);
 		} else if(status instanceof UploadRequestStatus) {
 			uploads.remove(status);
-			uploadsByFinalURI.removeElement(((UploadRequestStatus) status).getFinalURI(), status);
+			FreenetURI uri = ((UploadRequestStatus) status).getFinalURI();
+			if(uri != null)
+				uploadsByFinalURI.removeElement(uri, status);
 		}
 	}
 

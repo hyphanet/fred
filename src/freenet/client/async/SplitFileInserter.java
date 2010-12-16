@@ -77,6 +77,7 @@ public class SplitFileInserter implements ClientPutState {
 	private byte splitfileCryptoAlgorithm;
 	private byte[] splitfileCryptoKey;
 	private final boolean specifySplitfileKeyInMetadata;
+	private final boolean realTimeFlag;
 	
 	public final long topSize;
 	public final long topCompressedSize;
@@ -95,10 +96,11 @@ public class SplitFileInserter implements ClientPutState {
 		return hashCode;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context, HashResult[] hashes, byte[] hashThisLayerOnly, long origTopSize, long origTopCompressedSize, byte cryptoAlgorithm, byte[] splitfileKey) throws InsertException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, boolean realTimeFlag, ObjectContainer container, ClientContext context, HashResult[] hashes, byte[] hashThisLayerOnly, long origTopSize, long origTopCompressedSize, byte cryptoAlgorithm, byte[] splitfileKey) throws InsertException {
 		hashCode = super.hashCode();
 		if(put == null) throw new NullPointerException();
 		this.parent = put;
+		this.realTimeFlag = realTimeFlag;
 		this.archiveType = archiveType;
 		this.compressionCodec = bestCodec;
 		this.token = token;
@@ -340,7 +342,7 @@ public class SplitFileInserter implements ClientPutState {
 		// First split the data up
 		if(segCount == 1) {
 			// Single segment
-			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, crossCheckBlocks, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length + crossCheckBlocks, cmode), origDataBlocks, ctx, getCHKOnly, 0, cryptoAlgorithm, splitfileCryptoKey, container);
+			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, persistent, realTimeFlag, putter, splitfileAlgorithm, crossCheckBlocks, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length + crossCheckBlocks, cmode), origDataBlocks, ctx, getCHKOnly, 0, cryptoAlgorithm, splitfileCryptoKey, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
@@ -360,7 +362,7 @@ public class SplitFileInserter implements ClientPutState {
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, crossCheckBlocks, check, seg, ctx, getCHKOnly, segNo, cryptoAlgorithm, splitfileCryptoKey, container);
+				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, realTimeFlag, putter, splitfileAlgorithm, crossCheckBlocks, check, seg, ctx, getCHKOnly, segNo, cryptoAlgorithm, splitfileCryptoKey, container);
 				segs.add(s);
 				
 				if(deductBlocksFromSegments != 0)

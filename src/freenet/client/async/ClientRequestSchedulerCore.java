@@ -51,7 +51,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	 * @param executor
 	 * @return
 	 */
-	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, final long nodeDBHandle, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched, ClientContext context) {
+	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, final boolean forRT, final long nodeDBHandle, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched, ClientContext context) {
 		if(selectorContainer == null) {
 			return null;
 		}
@@ -62,6 +62,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 				if(core.nodeDBHandle != nodeDBHandle) return false;
 				if(core.isInsertScheduler != forInserts) return false;
 				if(core.isSSKScheduler != forSSKs) return false;
+				if(core.isRTScheduler != forRT) return false;
 				return true;
 			}
 		});
@@ -74,7 +75,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			if(core.isInsertScheduler != forInserts) throw new IllegalStateException("Wrong isInsertScheduler");
 			if(core.isSSKScheduler != forSSKs) throw new IllegalStateException("Wrong forSSKs");
 		} else {
-			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
+			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, forRT, selectorContainer, cooldownTime);
 			selectorContainer.store(core);
 			System.err.println("Created new core...");
 		}
@@ -82,8 +83,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		return core;
 	}
 
-	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime) {
-		super(forInserts, forSSKs, node.random);
+	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, boolean forRT, ObjectContainer selectorContainer, long cooldownTime) {
+		super(forInserts, forSSKs, forRT, node.random);
 		this.nodeDBHandle = node.nodeDBHandle;
 		if(!forInserts) {
 			this.persistentCooldownQueue = new PersistentCooldownQueue();

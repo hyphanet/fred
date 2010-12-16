@@ -47,7 +47,8 @@ public class FCPClient {
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
-		lowLevelClient = new FCPClientRequestClient(this, forever);
+		lowLevelClient = new FCPClientRequestClient(this, forever, false);
+		lowLevelClientRT = new FCPClientRequestClient(this, forever, true);
 		completionCallbacks = new ArrayList<RequestCompletionCallback>();
 		if(cb != null) completionCallbacks.add(cb);
 		this.whiteboard=whiteboard;
@@ -78,7 +79,8 @@ public class FCPClient {
 	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
 	private transient LinkedList<FCPClient> clientsWatching;
 	private final NullObject clientsWatchingLock = new NullObject();
-	RequestClient lowLevelClient;
+	private RequestClient lowLevelClient;
+	private RequestClient lowLevelClientRT;
 	private transient List<RequestCompletionCallback> completionCallbacks;
 	/** The whiteboard where ClientRequests report their progress*/
 	private transient Whiteboard whiteboard;
@@ -652,9 +654,13 @@ public class FCPClient {
 				break;
 			}
 			if(lowLevelClient == null)
-				lowLevelClient = new FCPClientRequestClient(this, persistenceType == ClientRequest.PERSIST_FOREVER);
+				lowLevelClient = new FCPClientRequestClient(this, persistenceType == ClientRequest.PERSIST_FOREVER, false);
 			container.store(lowLevelClient);
 			container.store(this);
+		}
+		if(lowLevelClientRT == null) {
+			// FIXME remove
+			lowLevelClientRT = new FCPClientRequestClient(this, persistenceType == ClientRequest.PERSIST_FOREVER, true);
 		}
 		//assert lowLevelClient != null;
 	}
@@ -699,6 +705,13 @@ public class FCPClient {
 					cache.addUpload((UploadRequestStatus)status);
 			}
 		}
+	}
+
+	public RequestClient lowLevelClient(boolean realTime) {
+		if(realTime)
+			return lowLevelClientRT;
+		else
+			return lowLevelClient;
 	}
 
 }

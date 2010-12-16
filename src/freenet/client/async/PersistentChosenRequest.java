@@ -44,6 +44,7 @@ public class PersistentChosenRequest {
 	public transient final boolean ignoreStore;
 	public transient final boolean canWriteClientCache;
 	public transient final boolean forkOnCacheable;
+	public transient final boolean realTimeFlag;
 	public transient final ArrayList<PersistentChosenBlock> blocksNotStarted;
 	public transient final HashSet<PersistentChosenBlock> blocksStarted;
 	public transient final HashSet<PersistentChosenBlock> blocksFinished;
@@ -63,6 +64,7 @@ public class PersistentChosenRequest {
 			localRequestOnly = ctx.localRequestOnly;
 			ignoreStore = ctx.ignoreStore;
 			canWriteClientCache = ctx.canWriteClientCache;
+			realTimeFlag = sg.realTimeFlag();
 			forkOnCacheable = false; // Doesn't exist for requests
 		} else if(req instanceof SendableInsert) {
 			SendableInsert sg = (SendableInsert) req;
@@ -70,6 +72,7 @@ public class PersistentChosenRequest {
 			canWriteClientCache = sg.canWriteClientCache(container);
 			ignoreStore = false;
 			forkOnCacheable = sg.forkOnCacheable(container);
+			realTimeFlag = sg.realTimeFlag();
 		} else throw new IllegalStateException("Creating a PersistentChosenRequest for "+req);
 
 		this.scheduler = sched;
@@ -237,8 +240,8 @@ public class PersistentChosenRequest {
 			if(!container.ext().isActive(request))
 				container.activate(request, 1);
 			if((!((SendableInsert)request).isEmpty(container)) && (!request.isCancelled(container))) {
-				request.getScheduler(context).maybeAddToStarterQueue(request, container, null);
-				request.getScheduler(context).wakeStarter();
+				request.getScheduler(container, context).maybeAddToStarterQueue(request, container, null);
+				request.getScheduler(container, context).wakeStarter();
 			}
 		}
 		if(!alreadyActive)

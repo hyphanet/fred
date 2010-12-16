@@ -288,6 +288,10 @@ public class LongTermManySingleBlocksTest {
 				public void removeFrom(ObjectContainer container) {
 					// Ignore.
 				}
+
+				public boolean realTimeFlag() {
+					return false;
+				}
 				
 			};
 			

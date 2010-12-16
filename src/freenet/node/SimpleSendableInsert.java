@@ -45,14 +45,14 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	public SimpleSendableInsert(NodeClientCore core, KeyBlock block, short prioClass) {
-		super(false);
+		super(false, false);
 		this.block = block;
 		this.prioClass = prioClass;
-		this.client = core.node.nonPersistentClient;
+		this.client = core.node.nonPersistentClientBulk;
 		if(block instanceof CHKBlock)
-			scheduler = core.requestStarters.chkPutScheduler;
+			scheduler = core.requestStarters.chkPutSchedulerBulk;
 		else if(block instanceof SSKBlock)
-			scheduler = core.requestStarters.sskPutScheduler;
+			scheduler = core.requestStarters.sskPutSchedulerBulk;
 		else
 			throw new IllegalArgumentException("Don't know what to do with "+block);
 		if(!scheduler.isInsertScheduler())
@@ -60,7 +60,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 	
 	public SimpleSendableInsert(KeyBlock block, short prioClass, RequestClient client, ClientRequestScheduler scheduler) {
-		super(false);
+		super(false, false);
 		this.block = block;
 		this.prioClass = prioClass;
 		this.client = client;
@@ -197,4 +197,5 @@ public class SimpleSendableInsert extends SendableInsert {
 	public boolean localRequestOnly(ObjectContainer container) {
 		return false;
 	}
+
 }

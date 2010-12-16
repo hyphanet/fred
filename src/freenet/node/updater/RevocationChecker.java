@@ -260,4 +260,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		throw new UnsupportedOperationException();
 	}
 
+	public boolean realTimeFlag() {
+		return false;
+	}
+
 }
