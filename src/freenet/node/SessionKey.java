@@ -39,7 +39,7 @@ public class SessionKey {
 
 	public int firstSeqNumUsed = -1;
 	public int nextSeqNum;
-	public final int theirFirstSeqNum;
+	public int watchListOffset;
 	public int highestReceivedSeqNum;
 
 	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
@@ -55,10 +55,12 @@ public class SessionKey {
 		this.ivNonce = ivNonce;
 		this.hmacKey = hmacKey;
 		this.nextSeqNum = ourFirstSeqNum;
-		this.theirFirstSeqNum = theirFirstSeqNum;
+		this.watchListOffset = theirFirstSeqNum;
 		
 		this.highestReceivedSeqNum = theirFirstSeqNum - 1;
 		if(this.highestReceivedSeqNum == -1) this.highestReceivedSeqNum = Integer.MAX_VALUE;
+		
+		Logger.error(this, "Starting new session key at " + this.nextSeqNum + "(us), " + this.watchListOffset + "(them)");
 	}
 	
 	@Override

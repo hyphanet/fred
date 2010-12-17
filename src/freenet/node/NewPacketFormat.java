@@ -67,8 +67,6 @@ public class NewPacketFormat implements PacketFormat {
 	private byte[][] seqNumWatchList;
 	/** Index of the packet with the lowest sequence number */
 	private int watchListPointer = 0;
-	/** Sequence number of the packet at seqNumWatchList[watchListPointer] */
-	private int watchListOffset;
 
 	private int usedBuffer = 0;
 	private int usedBufferOtherSide = 0;
@@ -88,9 +86,6 @@ public class NewPacketFormat implements PacketFormat {
 		theirInitialSeqNum = (int) ((theirInitialSeqNum & 0x7FFFFFFF) % NUM_SEQNUMS);
 		ourInitialMsgID = (ourInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
 		theirInitialMsgID = (theirInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
-
-		// Start the list at the first sequence number since we won't get anything before.
-		watchListOffset = theirInitialSeqNum;
 
 		nextMessageID = ourInitialMsgID;
 		messageWindowPtrAcked = ourInitialMsgID;
@@ -262,13 +257,13 @@ public class NewPacketFormat implements PacketFormat {
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
 		// Create the watchlist if the key has changed
 		if(watchListKey == null || !watchListKey.equals(sessionKey)) {
-			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + watchListOffset);
+			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + sessionKey.watchListOffset);
 
 			watchListKey = sessionKey;
 			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
 			watchListPointer = 0;
 
-			int seqNum = watchListOffset;
+			int seqNum = sessionKey.watchListOffset;
 			for(int i = 0; i < seqNumWatchList.length; i++) {
 				seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
 				if((seqNum == NUM_SEQNUMS) || (seqNum < 0)) seqNum = 0;
@@ -281,7 +276,7 @@ public class NewPacketFormat implements PacketFormat {
 			highestReceivedSeqNum = sessionKey.highestReceivedSeqNum;
 		}
 		// The entry for the highest received sequence number is kept in the middle of the list
-		int oldHighestReceived = (int) ((0l + watchListOffset + (seqNumWatchList.length / 2)) % NUM_SEQNUMS);
+		int oldHighestReceived = (int) ((0l + sessionKey.watchListOffset + (seqNumWatchList.length / 2)) % NUM_SEQNUMS);
 		if(seqNumGreaterThan(highestReceivedSeqNum, oldHighestReceived, 31)) {
 			int moveBy;
 			if(highestReceivedSeqNum > oldHighestReceived) {
@@ -299,14 +294,14 @@ public class NewPacketFormat implements PacketFormat {
 				if(logDEBUG) Logger.debug(this, "Moving watchlist pointer by " + moveBy);
 			}
 
-			int seqNum = (int) ((0l + watchListOffset + seqNumWatchList.length) % NUM_SEQNUMS);
+			int seqNum = (int) ((0l + sessionKey.watchListOffset + seqNumWatchList.length) % NUM_SEQNUMS);
 			for(int i = watchListPointer; i < (watchListPointer + moveBy); i++) {
 				seqNumWatchList[i % seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
 				if(seqNum == NUM_SEQNUMS) seqNum = 0;
 			}
 
 			watchListPointer = (watchListPointer + moveBy) % seqNumWatchList.length;
-			watchListOffset = (int) ((0l + watchListOffset + moveBy) % NUM_SEQNUMS);
+			sessionKey.watchListOffset = (int) ((0l + sessionKey.watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
 outer:
@@ -316,7 +311,7 @@ outer:
 				if(seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) continue outer;
 			}
 			
-			int sequenceNumber = (int) ((0l + watchListOffset + i) % NUM_SEQNUMS);
+			int sequenceNumber = (int) ((0l + sessionKey.watchListOffset + i) % NUM_SEQNUMS);
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 			if(p != null) return p;
