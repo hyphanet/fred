@@ -57,7 +57,6 @@ public class NewPacketFormat implements PacketFormat {
 	private int messageWindowPtrAcked;
 	private final SparseBitmap ackedMessages = new SparseBitmap();
 
-	private int highestReceivedSequenceNumber;
 	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
 	private final HashMap<Integer, SparseBitmap> receiveMaps = new HashMap<Integer, SparseBitmap>();
 	/** The first message id that hasn't been fully received */
@@ -89,9 +88,6 @@ public class NewPacketFormat implements PacketFormat {
 		theirInitialSeqNum = (int) ((theirInitialSeqNum & 0x7FFFFFFF) % NUM_SEQNUMS);
 		ourInitialMsgID = (ourInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
 		theirInitialMsgID = (theirInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
-
-		highestReceivedSequenceNumber = theirInitialSeqNum - 1;
-		if(highestReceivedSequenceNumber == -1) highestReceivedSequenceNumber = (int) (NUM_SEQNUMS - 1);
 
 		// Start the list at the first sequence number since we won't get anything before.
 		watchListOffset = theirInitialSeqNum;
@@ -282,7 +278,7 @@ public class NewPacketFormat implements PacketFormat {
 		// Move the watchlist if needed
 		int highestReceivedSeqNum;
 		synchronized(this) {
-			highestReceivedSeqNum = highestReceivedSequenceNumber;
+			highestReceivedSeqNum = sessionKey.highestReceivedSeqNum;
 		}
 		// The entry for the highest received sequence number is kept in the middle of the list
 		int oldHighestReceived = (int) ((0l + watchListOffset + (seqNumWatchList.length / 2)) % NUM_SEQNUMS);
@@ -357,8 +353,8 @@ outer:
 		NPFPacket p = NPFPacket.create(payload);
 
 		synchronized(this) {
-			if(seqNumGreaterThan(sequenceNumber, highestReceivedSequenceNumber, 31)) {
-				highestReceivedSequenceNumber = sequenceNumber;
+			if(seqNumGreaterThan(sequenceNumber, sessionKey.highestReceivedSeqNum, 31)) {
+				sessionKey.highestReceivedSeqNum = sequenceNumber;
 			}
 		}
 

@@ -40,6 +40,7 @@ public class SessionKey {
 	public int firstSeqNumUsed = -1;
 	public int nextSeqNum;
 	public final int theirFirstSeqNum;
+	public int highestReceivedSeqNum;
 
 	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
@@ -55,6 +56,9 @@ public class SessionKey {
 		this.hmacKey = hmacKey;
 		this.nextSeqNum = ourFirstSeqNum;
 		this.theirFirstSeqNum = theirFirstSeqNum;
+		
+		this.highestReceivedSeqNum = theirFirstSeqNum - 1;
+		if(this.highestReceivedSeqNum == -1) this.highestReceivedSeqNum = Integer.MAX_VALUE;
 	}
 	
 	@Override
