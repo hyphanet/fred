@@ -1805,7 +1805,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		}
 
 		public short getPriorityClass() {
-			return UserAlert.MINOR;
+			return UserAlert.ERROR; // So everyone sees it.
 		}
 
 		public String getShortText() {
