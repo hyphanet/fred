@@ -871,22 +871,25 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		
 		if (routingKey != null) {
 			if (entry.isFree()) {
-				if(validCache && !likelyMatch && !slotCacheIsFree(cache))
+				if(validCache && !likelyMatch && !slotCacheIsFree(cache)) {
 					Logger.error(this, "Slot falsely identified as non-free on slot "+offset+" cache was "+cache);
-				else if(logMINOR && validCache && !likelyMatch && slotCacheIsFree(cache))
+					bloomFalsePos.incrementAndGet();
+				} else if(logMINOR && validCache && !likelyMatch && slotCacheIsFree(cache))
 					Logger.minor(this, "True negative!");
 				return null;
 			}
 			if (!Arrays.equals(digestedRoutingKey, slotDigestedRoutingKey)) {
-				if(validCache && likelyMatch)
+				if(validCache && likelyMatch) {
 					Logger.error(this, "False positive from slot cache on slot "+offset+" cache was "+cache);
-				else if(logMINOR && validCache && !likelyMatch)
+					bloomFalsePos.incrementAndGet();
+				} else if(logMINOR && validCache && !likelyMatch)
 					Logger.minor(this, "True negative!");
 				return null;
 			}
 			
 			if(validCache && !likelyMatch) {
 				Logger.error(this, "False NEGATIVE from slot cache on slot "+offset+" cache was "+cache);
+				bloomFalsePos.incrementAndGet();
 			}
 
 			if (withData) {
