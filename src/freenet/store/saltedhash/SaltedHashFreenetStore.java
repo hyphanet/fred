@@ -119,6 +119,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	private int flags;
 
 	private boolean preallocate = true;
+	public static boolean NO_CLEANER_SLEEP = false;
 
 	/** If we have no space in this store, try writing it to the alternate store,
 	 * with the wrong store flag set. Note that we do not *read from* it, the caller
@@ -1370,9 +1371,11 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		@Override
 		public void realRun() {
 
-			try {
-				Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));
-			} catch (InterruptedException e){}
+			if(!NO_CLEANER_SLEEP) {
+				try {
+					Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));
+				} catch (InterruptedException e){}
+			}
 
 			if (shutdown)
 				return;
@@ -1542,6 +1545,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 						flags &= ~FLAG_REBUILD_BLOOM;
 						checkBloom = true;
 						bloomFilterK = optimialK;
+						resizeCompleteCondition.signalAll();
 					} finally {
 						configLock.writeLock().unlock();
 					}
@@ -1956,6 +1960,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			throw new IllegalArgumentException("Store size over MAXINT not supported due to ResizablePersistentIntBuffer limitations.");
 
 		configLock.writeLock().lock();
+		long old;
 		try {
 			if (newStoreSize == this.storeSize)
 				return;
@@ -1965,6 +1970,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 				return;
 			}
 
+			old = storeSize;
 			prevStoreSize = storeSize;
 			storeSize = newStoreSize;
 			if(!slotFilterDisabled)
@@ -1978,12 +1984,26 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			cleanerCondition.signal();
 			cleanerLock.unlock();
 		}
+		
+		if(shrinkNow) {
+			configLock.writeLock().lock();
+			try {
+				System.err.println("Waiting for resize to complete...");
+				while(prevStoreSize == old) {
+					resizeCompleteCondition.awaitUninterruptibly();
+				}
+				System.err.println("Completed shrink, old size was "+old+" new size was "+newStoreSize+" size is now "+storeSize+" (prev="+prevStoreSize+")");
+			} finally {
+				configLock.writeLock().unlock();
+			}
+		}
 	}
 
 	// ------------- Locking
 	volatile boolean shutdown = false;
 	private LockManager lockManager;
 	private ReadWriteLock configLock = new ReentrantReadWriteLock();
+	private Condition resizeCompleteCondition = configLock.writeLock().newCondition();
 
 	/**
 	 * Lock all possible offsets of a key. This method would release the locks if any locking

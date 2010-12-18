@@ -157,9 +157,17 @@ public class RAMSaltMigrationTest extends TestCase {
 			assertEquals(test[i], data);
 		}
 	}
-
+	
+	public void testSaltedStoreResize() throws CHKEncodeException, CHKVerifyException, CHKDecodeException, IOException {
+		checkSaltedStoreResize(5, 10, 0, false);
+		// Bloom filters broken on resize?!?!??!?!?!?
+		//checkSaltedStoreResize(5, 10, 50, false);
+		checkSaltedStoreResize(5, 10, 0, true);
+	}
+	
 	public void checkSaltedStoreResize(int keycount, int size, int bloomSize, boolean useSlotFilter) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
+		SaltedHashFreenetStore.NO_CLEANER_SLEEP = true;
 		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+bloomSize+"-"+useSlotFilter), "teststore", store, weakPRNG, size, bloomSize, false, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
@@ -177,7 +185,7 @@ public class RAMSaltMigrationTest extends TestCase {
 			keys[i] = block[i].getClientKey();
 		}
 		
-		saltStore.setMaxKeys(keycount*2, true);
+		saltStore.setMaxKeys(size*2, true);
 		// FIXME shrinkNow doesn't do anything - how to force cleaner to run immediately and wait for it???
 		
 		for(int i=0;i<keycount;i++) {
