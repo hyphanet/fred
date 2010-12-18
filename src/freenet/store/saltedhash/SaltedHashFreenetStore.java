@@ -179,6 +179,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 		bloomFile = new File(this.baseDir, name + ".bloom");
 		if(bloomFile.exists()) {
+			bloomFile.delete();
 			System.err.println("Deleted old bloom filter for "+name+" - obsoleted by slot filter");
 		}
 		
