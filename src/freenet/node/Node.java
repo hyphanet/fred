@@ -122,6 +122,8 @@ import freenet.node.stats.DataStoreStats;
 import freenet.node.stats.NotAvailNodeStoreStats;
 import freenet.node.stats.StoreCallbackStats;
 import freenet.node.updater.NodeUpdateManager;
+import freenet.node.updater.UpdateDeployContext;
+import freenet.node.updater.UpdateDeployContext.CHANGED;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
@@ -2268,6 +2270,27 @@ public class Node implements TimeSkewDetectorCallback {
 
 		if (storeType.equals("salt-hash")) {
 			initRAMFS();
+			// FIXME remove migration code
+			if(lastVersion > 0 && lastVersion <= 1311) {
+				// Check for a comment in wrapper.conf saying we've already upgraded, otherwise update it and restart.
+				long extraMemory = maxTotalKeys * 3 * 4;
+				int extraMemoryMB = (int)Math.min(Integer.MAX_VALUE, ((extraMemory + 1024 * 1024 - 1) / (1024 * 1024)));
+				System.out.println("Need "+extraMemoryMB+" extra space in heap for slot filters.");
+				UpdateDeployContext.CHANGED changed = 
+					UpdateDeployContext.tryIncreaseMemoryLimit(extraMemoryMB, " Increased because of slot filters in 1312");
+				if(changed == CHANGED.SUCCESS) {
+					WrapperManager.restart();
+					System.err.println("Unable to restart after increasing memory limit for the slot filters (the total memory usage is decreased relative to bloom filters but the heap size needs to grow). Probably due to not running in the wrapper.");
+					System.err.println("If the node crashes due to out of memory, be it on your own head!");
+					System.err.println("You need to increase wrapper.java.maxmemory by "+extraMemoryMB);
+				} else if(changed == CHANGED.FAIL) {
+					System.err.println("Unable to increase the memory limit for the slot filters (the total memory usage is decreased relative to bloom filters but the heap size needs to grow). Most likely due to being unable to write wrapper.conf or similar problem.");
+					System.err.println("If the node crashes due to out of memory, be it on your own head!");
+					System.err.println("You need to increase wrapper.java.maxmemory by "+extraMemoryMB);
+				} else /*if(changed == CHANGED.ALREADY)*/ {
+					System.err.println("Memory limit has already been increased for slot filters, continuing startup.");
+				}
+			}
 			initSaltHashFS(suffix, false, null);
 		} else if (storeType.equals("bdb-index")) {
 			initBDBFS(suffix);
