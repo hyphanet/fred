@@ -213,6 +213,7 @@ public class PersistentBlobTempBucketFactory {
 				tag.bucket.onFree();
 				container.delete(tag.bucket);
 				container.delete(tag);
+				continue;
 			}
 			freeBlocksCache.setBit((int)tag.index, true);
 		}
