@@ -95,7 +95,7 @@ public class RAMSaltMigrationTest extends TestCase {
 
 	public void testSaltedStore() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", store, weakPRNG, 10, 0, false, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", store, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 
 		for(int i=0;i<5;i++) {
@@ -121,7 +121,7 @@ public class RAMSaltMigrationTest extends TestCase {
 	
 	public void checkSaltedStoreOldBlocks(int keycount, int size, int bloomSize, boolean useSlotFilter) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
-		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+bloomSize+"-"+useSlotFilter), "teststore", store, weakPRNG, size, bloomSize, false, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+bloomSize+"-"+useSlotFilter), "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		ClientCHK[] keys = new ClientCHK[keycount];
@@ -168,7 +168,7 @@ public class RAMSaltMigrationTest extends TestCase {
 	public void checkSaltedStoreResize(int keycount, int size, int bloomSize, boolean useSlotFilter) throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
 		SaltedHashFreenetStore.NO_CLEANER_SLEEP = true;
-		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+bloomSize+"-"+useSlotFilter), "teststore", store, weakPRNG, size, bloomSize, false, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore-"+keycount+"-"+size+"-"+bloomSize+"-"+useSlotFilter), "teststore", store, weakPRNG, size, useSlotFilter, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 		
 		ClientCHK[] keys = new ClientCHK[keycount];
@@ -214,7 +214,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		assertEquals(test, data);
 
 		CHKStore newStore = new CHKStore();
-		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", newStore, weakPRNG, 10, 0, false, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", newStore, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, null);
 		saltStore.start(null, true);
 
 		ramStore.migrateTo(newStore, false);
@@ -244,7 +244,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		strongPRNG.nextBytes(storeKey);
 
 		CHKStore newStore = new CHKStore();
-		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", newStore, weakPRNG, 10, 0, false, false, SemiOrderedShutdownHook.get(), true, true, ticker, storeKey);
+		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", newStore, weakPRNG, 10, false, SemiOrderedShutdownHook.get(), true, true, ticker, storeKey);
 		saltStore.start(null, true);
 
 		ramStore.migrateTo(newStore, false);
