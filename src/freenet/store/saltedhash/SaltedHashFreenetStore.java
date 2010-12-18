@@ -1527,11 +1527,13 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 							Logger.error(this, "Unable to update slot filter in bloom rebuild: "+e, e);
 						}
 					}
-					if (!entry.isFree() && entry.generation != generation) {
+					if (!entry.isFree()) {
 						keyCount.incrementAndGet();
 						
-						entry.generation = generation;
-						return entry;
+						if(entry.generation != generation) {
+							entry.generation = generation;
+							return entry;
+						}
 					}
 					return NOT_MODIFIED;
 				}
