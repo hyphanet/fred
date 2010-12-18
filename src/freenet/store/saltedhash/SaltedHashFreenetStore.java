@@ -1186,6 +1186,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					cipherManager = new CipherManager(salt, diskSalt);
 
 					storeSize = raf.readLong();
+					if(storeSize <= 0) throw new IOException("Bogus datastore size");
 					prevStoreSize = raf.readLong();
 					keyCount.set(raf.readLong());
 					generation = raf.readInt();
