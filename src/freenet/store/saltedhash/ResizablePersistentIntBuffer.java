@@ -210,6 +210,7 @@ public class ResizablePersistentIntBuffer {
 			this.size = size;
 			int[] newBuf = new int[size];
 			System.arraycopy(buffer, 0, newBuf, 0, Math.min(buffer.length, newBuf.length));
+			buffer = newBuf;
 			try {
 				raf.setLength(size * 4);
 				writeBuffer();
