@@ -190,8 +190,29 @@ public class PersistentBlobTempBucketFactory {
 				continue;
 			}
 			if(tag.index > blocks) {
-				Logger.error(this, "Block is occupied yet beyond the length of the file: "+tag.index);
-				freeBlocksCache.setSize((int)tag.index);
+				if(tag.isFree) {
+					if(tag.bucket != null) {
+						Logger.error(this, "Block is marked free, is beyond the end of the file, yet has a bucket!! Freeing anyway...");
+						container.activate(tag.bucket, 1);
+						tag.bucket.onFree();
+						container.delete(tag.bucket);
+					}
+					container.delete(tag);
+					continue;
+				}
+				if(tag.bucket == null) {
+					Logger.error(this, "Block beyond the end of the file marked as in use but has no bucket!");
+					container.delete(tag);
+					continue;
+				}
+				Logger.error(this, "Block is occupied *AND IN USE* yet beyond the length of the file: "+tag.index);
+				Logger.error(this, "Freeing the block, expect internal errors and similar problems!");
+				System.err.println("Your downloads database is corrupt. A persistent temp bucket is in use yet is beyond the length of the persistent-blob.tmp file.");
+				System.err.println("We will free the bucket, but this may cause internal errors and similar problems later on. This was probably caused by a bug at some point but that bug may have already been fixed. Sorry...");
+				container.activate(tag.bucket, 1);
+				tag.bucket.onFree();
+				container.delete(tag.bucket);
+				container.delete(tag);
 			}
 			freeBlocksCache.setBit((int)tag.index, true);
 		}
