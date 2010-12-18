@@ -191,7 +191,7 @@ public class PersistentBlobTempBucketFactory {
 			}
 			if(tag.index > blocks) {
 				Logger.error(this, "Block is occupied yet beyond the length of the file: "+tag.index);
-				freeBlocksCache.setSize((int)tag.index);
+				freeBlocksCache.setSize((int)tag.index+1);
 			}
 			freeBlocksCache.setBit((int)tag.index, true);
 		}
