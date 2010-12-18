@@ -250,7 +250,7 @@ public class ResizablePersistentIntBuffer {
 			synchronized(this) {
 				writing = false;
 			}
-			lock.readLock().lock();
+			lock.readLock().unlock();
 		}
 	}
 
