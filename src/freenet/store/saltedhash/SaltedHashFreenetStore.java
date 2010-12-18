@@ -224,8 +224,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 		
 		if(((!slotFilterDisabled) && slotFilter.isNew()) && !newStore) {
 			flags |= FLAG_REBUILD_BLOOM;
-			System.out.println("Rebuilding slot filter");
-		}
+			System.out.println("Rebuilding slot filter because new");
+		} else if((flags & FLAG_REBUILD_BLOOM) != 0)
+			System.out.println("Slot filter still needs rebuilding");
 	}
 
 	private boolean started = false;
