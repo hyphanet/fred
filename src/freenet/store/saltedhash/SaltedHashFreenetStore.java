@@ -115,6 +115,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 	private boolean preallocate = true;
 	public static boolean NO_CLEANER_SLEEP = false;
+	static final int SLOT_FILTER_INTERVAL = -1; // Write immediately.
 
 	/** If we have no space in this store, try writing it to the alternate store,
 	 * with the wrong store flag set. Note that we do not *read from* it, the caller
@@ -194,7 +195,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 			useSlotFilter = false;
 		}
 		if(!slotFilterDisabled) {
-			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size, -1);
+			slotFilter = new ResizablePersistentIntBuffer(slotFilterFile, size, SLOT_FILTER_INTERVAL);
 			System.err.println("Slot filter (" + slotFilterFile + ") for " + name + " is loaded (new="+slotFilter.isNew()+".");
 		} else
 			slotFilter = null;
@@ -1187,7 +1188,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					generation = raf.readInt();
 					flags = raf.readInt();
 
-					if ((flags & FLAG_DIRTY) != 0)
+					if (((flags & FLAG_DIRTY) != 0) && SLOT_FILTER_INTERVAL != -1)
 						flags |= FLAG_REBUILD_BLOOM;
 
 					try {
@@ -1559,7 +1560,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					} finally {
 						configLock.writeLock().unlock();
 					}
-					
+					System.out.println(name + " cleaner finished successfully.");
 					Logger.normal(this, "Finish rebuilding bloom filter (" + name + ")");
 				}
 				
