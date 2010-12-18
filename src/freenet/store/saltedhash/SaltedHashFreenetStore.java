@@ -1553,6 +1553,7 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 					configLock.writeLock().lock();
 					try {
 						flags &= ~FLAG_REBUILD_BLOOM;
+						writeConfigFile();
 					} finally {
 						configLock.writeLock().unlock();
 					}
