@@ -131,7 +131,7 @@ public class PersistentChosenRequest {
 			blocksFinished.add(block);
 			if(!(blocksNotStarted.isEmpty() && blocksStarted.isEmpty())) {
 				if(logMINOR)
-					Logger.minor(this, "Not finishing yet: blocks not started: "+blocksNotStarted.size()+" started: "+blocksStarted.size()+" finished: "+blocksFinished.size());
+					Logger.minor(this, "Not finishing yet: blocks not started: "+blocksNotStarted.size()+" started: "+blocksStarted.size()+" finished: "+blocksFinished.size()+" for "+this);
 				return;
 			}
 		}
