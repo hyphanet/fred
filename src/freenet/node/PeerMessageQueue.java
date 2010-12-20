@@ -478,8 +478,6 @@ public class PeerMessageQueue {
 		 * @return
 		 */
 		int addPriorityMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk, MutableBoolean incomplete) {
-			boolean alreadyAddedPeerLoadStatsRT = addPeerLoadStatsRT.value;
-			boolean alreadyAddedPeerLoadStatsBulk = addPeerLoadStatsBulk.value; 
 			synchronized(PeerMessageQueue.this) {
 				// Urgent messages first.
 				if(logMINOR) {
@@ -504,24 +502,6 @@ public class PeerMessageQueue {
 						size = -size;
 						incomplete.value = true;
 					}
-				}
-			}
-			if(addPeerLoadStatsRT.value && !alreadyAddedPeerLoadStatsRT) {
-				Message msg = pn.loadSenderRealTime.makeLoadStats(now, pn.node.nodeStats.outwardTransfersPerInsert());
-				if(msg != null) {
-					MessageItem load = new MessageItem(msg, null, pn.node.nodeStats.allocationNoticesCounter, pn);
-					if(logMINOR && load != null)
-						Logger.minor(this, "Adding load message (realtime) to packet for "+pn);
-					messages.add(load);
-				}
-			}
-			if(addPeerLoadStatsBulk.value && !alreadyAddedPeerLoadStatsBulk) {
-				Message msg = pn.loadSenderBulk.makeLoadStats(now, pn.node.nodeStats.outwardTransfersPerInsert());
-				if(msg != null) {
-					MessageItem load = new MessageItem(msg, null, pn.node.nodeStats.allocationNoticesCounter, pn);
-					if(logMINOR && load != null)
-						Logger.minor(this, "Adding load message (realtime) to packet for "+pn);
-					messages.add(load);
 				}
 			}
 			return size;
@@ -766,7 +746,13 @@ public class PeerMessageQueue {
 		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete);
-			if(incomplete.value) return -size;
+			if(incomplete.value) {
+				if(addPeerLoadStatsRT.value)
+					addLoadStats(now, messages, true);
+				if(addPeerLoadStatsBulk.value)
+					addLoadStats(now, messages, false);
+				return -size;
+			}
 		}
 		
 		// FIXME token bucket?
@@ -779,7 +765,13 @@ public class PeerMessageQueue {
 				sendBalance--;
 				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
 			}
-			if(incomplete.value) return -size;
+			if(incomplete.value) {
+				if(addPeerLoadStatsRT.value)
+					addLoadStats(now, messages, true);
+				if(addPeerLoadStatsBulk.value)
+					addLoadStats(now, messages, false);
+				return -size;
+			}
 			if(logMINOR) Logger.minor(this, "Trying bulk");
 			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete);
 			if(s != size) {
@@ -787,7 +779,13 @@ public class PeerMessageQueue {
 				sendBalance++;
 				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
 			}
-			if(incomplete.value) return -size;
+			if(incomplete.value) {
+				if(addPeerLoadStatsRT.value)
+					addLoadStats(now, messages, true);
+				if(addPeerLoadStatsBulk.value)
+					addLoadStats(now, messages, false);
+				return -size;
+			}
 		} else {
 			// Try bulk first
 			if(logMINOR) Logger.minor(this, "Trying bulk first");
@@ -797,7 +795,13 @@ public class PeerMessageQueue {
 				sendBalance++;
 				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
 			}
-			if(incomplete.value) return -size;
+			if(incomplete.value) {
+				if(addPeerLoadStatsRT.value)
+					addLoadStats(now, messages, true);
+				if(addPeerLoadStatsBulk.value)
+					addLoadStats(now, messages, false);
+				return -size;
+			}
 			if(logMINOR) Logger.minor(this, "Trying realtime");
 			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete);
 			if(s != size) {
@@ -805,16 +809,38 @@ public class PeerMessageQueue {
 				sendBalance--;
 				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
 			}
-			if(incomplete.value) return -size;
+			if(incomplete.value) {
+				if(addPeerLoadStatsRT.value)
+					addLoadStats(now, messages, true);
+				if(addPeerLoadStatsBulk.value)
+					addLoadStats(now, messages, false);
+				return -size;
+			}
 		}
 		for(int i=DMT.PRIORITY_BULK_DATA+1;i<DMT.NUM_PRIORITIES;i++) {
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete);
-			if(incomplete.value) return -size;
+			if(incomplete.value) {
+				if(addPeerLoadStatsRT.value)
+					addLoadStats(now, messages, true);
+				if(addPeerLoadStatsBulk.value)
+					addLoadStats(now, messages, false);
+				return -size;
+			}
 		}
 		return size;
 	}
 	
+	private void addLoadStats(long now, ArrayList<MessageItem> messages, boolean realtime) {
+		Message msg = pn.loadSender(realtime).makeLoadStats(now, pn.node.nodeStats.outwardTransfersPerInsert());
+		if(msg != null) {
+			MessageItem load = new MessageItem(msg, null, pn.node.nodeStats.allocationNoticesCounter, pn);
+			if(logMINOR && load != null)
+				Logger.minor(this, "Adding load message (realtime) to packet for "+pn);
+			messages.add(load);
+		}
+	}
+
 	public boolean removeMessage(MessageItem message) {
 		synchronized(this) {
 			short prio = message.getPriority();

@@ -4761,5 +4761,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public IncomingLoadSummaryStats getIncomingLoadStats(boolean realTime) {
 		return outputLoadTracker(realTime).getIncomingLoadStats();
 	}
+
+	public LoadSender loadSender(boolean realtime) {
+		return realtime ? loadSenderRealTime : loadSenderBulk;
+	}
 	
 }
