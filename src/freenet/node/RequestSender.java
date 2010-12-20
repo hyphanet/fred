@@ -550,6 +550,7 @@ loadWaiterLoop:
         			// We gave it a chance, don't give it another.
         			offers.deleteLastOffer();
         			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+        			// FIXME bug #4613 consider two-stage timeout.
         			pn.fatalTimeout();
         			continue;
         		} else {
@@ -571,6 +572,7 @@ loadWaiterLoop:
         			// We gave it a chance, don't give it another.
             		offers.deleteLastOffer();
         			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+        			// FIXME bug #4613 consider two-stage timeout.
         			pn.fatalTimeout();
         			continue;
         		} else {
@@ -794,6 +796,7 @@ loadWaiterLoop:
     			node.failureTable.onFailed(key, next, htl, timeSinceSent());
     			// Try next node
     			// It could still be running. So the timeout is fatal to the node.
+    			// FIXME bug #4613 consider two-stage timeout.
     			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
     			next.fatalTimeout();
     			return DO.NEXT_PEER;

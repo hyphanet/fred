@@ -478,6 +478,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					forwardRejectedOverload();
 					// It could still be running. So the timeout is fatal to the node.
         			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+        			// FIXME bug #4613 consider two-stage timeout.
         			next.fatalTimeout();
 					break;
 				}
