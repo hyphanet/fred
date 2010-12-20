@@ -147,6 +147,8 @@ public class OpennetManager {
 	}
 
 	private final long creationTime;
+	
+	private boolean stopping;
 
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime, boolean enableAnnouncement) throws NodeInitException {
 		this.creationTime = System.currentTimeMillis();
@@ -289,6 +291,9 @@ public class OpennetManager {
 	}
 
 	public void start() {
+		synchronized(this) {
+			stopping = false;
+		}
 		// Do this outside the constructor, since the constructor is called by the Node constructor, and callbacks may make assumptions about data structures being ready.
 		dropExcessPeers();
 		writeFile();
@@ -303,12 +308,19 @@ public class OpennetManager {
 	 * Called when opennet is disabled
 	 */
 	public void stop(boolean purge) {
+		synchronized(this) {
+			stopping = true;
+		}
 		if(announcer != null)
 			announcer.stop();
 		crypto.stop();
 		if(purge)
 			node.peers.removeOpennetPeers();
 		crypto.socket.getAddressTracker().setPresumedInnocent();
+	}
+	
+	synchronized boolean stopping() {
+		return stopping;
 	}
 
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
