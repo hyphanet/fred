@@ -45,6 +45,9 @@ public class SessionKey {
 	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
 			byte[] ivNonce, byte[] hmacKey, int ourFirstSeqNum, int theirFirstSeqNum) {
+		ourFirstSeqNum &= 0x7FFFFFFF;
+		theirFirstSeqNum &= 0x7FFFFFFF;
+
 		this.pn = parent;
 		this.packets = tracker;
 		this.outgoingCipher = outgoingCipher;
