@@ -3645,6 +3645,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/** Called when the peer is removed from the PeerManager */
 	public void onRemove() {
+		node.getTicker().removeQueuedJob(checkStatusAfterBackoff);
 		disconnected(true, true);
 		stopARKFetcher();
 	}
