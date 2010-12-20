@@ -420,6 +420,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
+		this.checkStatusAfterBackoff = new PeerNodeBackoffStatusChecker(myRef);
 		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
@@ -3312,13 +3313,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return peerNodeStatus;
 	}
 	
-	private final Runnable checkStatusAfterBackoff = new Runnable() {
-		
-		public void run() {
-			setPeerNodeStatus(System.currentTimeMillis(), true);
-		}
-		
-	};
+	private final Runnable checkStatusAfterBackoff;
 
 	public abstract boolean recordStatus();
 
