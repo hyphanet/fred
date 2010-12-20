@@ -86,6 +86,10 @@ public class TrivialTicker implements Ticker {
 	}
 	
 	public void cancelTimedJob(final Runnable job) {
+		removeQueuedJob(job);
+	}
+	
+	public void removeQueuedJob(final Runnable job) {
 		synchronized(this) {
 			if(!running)
 				return;
@@ -104,7 +108,7 @@ public class TrivialTicker implements Ticker {
 	 */
 	public void rescheduleTimedJob(final Runnable job, final String name, long newOffset) {
 		synchronized(this) {
-			cancelTimedJob(job);
+			removeQueuedJob(job);
 			queueTimedJob(job, name, newOffset, false, false); // Don't dupe-check, we are synchronized
 		}
 	}
