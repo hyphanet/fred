@@ -304,7 +304,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 
 						public void onTimeout() {
 							Logger.error(this, "Other side did not acknowlege transfer failure on "+this);
-							_timeoutHandler.onFatalTimeout();
+							_timeoutHandler.onFatalTimeout(_sender);
 						}
 
 						public void onDisconnect(PeerContext ctx) {
