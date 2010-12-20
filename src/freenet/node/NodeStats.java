@@ -1164,7 +1164,7 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 
-	static final boolean SEND_LOAD_STATS_NOTICES = false;
+	static final boolean SEND_LOAD_STATS_NOTICES = true;
 	
 	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer, int transfersPerInsert, boolean realTimeFlag) {
 		
