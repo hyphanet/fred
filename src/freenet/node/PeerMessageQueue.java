@@ -305,7 +305,7 @@ public class PeerMessageQueue {
 			return length;
 		}
 		
-		private int addNonUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
+		private int addNonUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, MutableBoolean addPeerLoadStatsRT, MutableBoolean addPeerLoadStatsBulk) {
 			assert(size >= 0);
 			assert(minSize >= 0);
 			assert(maxSize >= minSize);
@@ -353,6 +353,23 @@ public class PeerMessageQueue {
 								addToNonEmptyBackward(tracker);
 							}
 						}
+					}
+				}
+				if(mustSendLoadRT && item.sendLoadRT && !addPeerLoadStatsRT.value) {
+					if(size + 2 + MAX_PEER_LOAD_STATS_SIZE > maxSize) {
+						if(logMINOR) Logger.minor(this, "Unable to add load message (realtime) to packet");
+					} else {
+						addPeerLoadStatsRT.value = true;
+						size += 2 + MAX_PEER_LOAD_STATS_SIZE;
+						mustSendLoadRT = false;
+					}
+				} else if(mustSendLoadBulk && item.sendLoadBulk && !addPeerLoadStatsBulk.value) {
+					if(size + 2 + MAX_PEER_LOAD_STATS_SIZE > maxSize) {
+						if(logMINOR) Logger.minor(this, "Unable to add load message (bulk) to packet");
+					} else {
+						addPeerLoadStatsBulk.value = true;
+						size += 2 + MAX_PEER_LOAD_STATS_SIZE;
+						mustSendLoadBulk = false;
 					}
 				}
 				added++;
@@ -497,7 +514,7 @@ public class PeerMessageQueue {
 					incomplete.value = true;
 				} else {
 					// If no more urgent messages, try to add some non-urgent messages too.
-					size = addNonUrgentMessages(size, minSize, maxSize, now, messages);
+					size = addNonUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk);
 					if(size < 0) {
 						size = -size;
 						incomplete.value = true;
