@@ -279,13 +279,35 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				// Therefore we need to not complete until the other side has acknowledged that the transfer has been cancelled.
 				MessageFilter mfSendAborted = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
 				try {
-					Message msg = _usm.waitFor(mfSendAborted, _ctr);
-					if(msg != null) {
-						if(logMINOR) Logger.minor(this, "Transfer cancel acknowledged");
-					} else {
-						Logger.error(this, "Other side did not acknowlege transfer failure on "+this);
-						_timeoutHandler.onFatalTimeout();
-					}
+					_usm.addAsyncFilter(mfSendAborted, new SlowAsyncMessageFilterCallback() {
+
+						public void onMatched(Message m) {
+							// Ok.
+							if(logMINOR) Logger.minor(this, "Transfer cancel acknowledged");
+						}
+
+						public boolean shouldTimeout() {
+							return false;
+						}
+
+						public void onTimeout() {
+							Logger.error(this, "Other side did not acknowlege transfer failure on "+this);
+							_timeoutHandler.onFatalTimeout();
+						}
+
+						public void onDisconnect(PeerContext ctx) {
+							// Ok.
+						}
+
+						public void onRestarted(PeerContext ctx) {
+							// Ok.
+						}
+
+						public int getPriority() {
+							return NativeThread.NORM_PRIORITY;
+						}
+						
+					}, _ctr);
 				} catch (DisconnectedException e) {
 					// Ignore
 				}
