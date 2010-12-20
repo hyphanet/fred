@@ -186,6 +186,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/** Used by maybeOnConnect */
 	private boolean wasDisconnected = true;
+	
+	/** Were we removed from the routing table? 
+	 * Used as a cache to avoid accessing PeerManager if not needed. */
+	private boolean removed;
+	
 	/**
 	* ARK fetcher.
 	*/
@@ -420,6 +425,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
+		this.checkStatusAfterBackoff = new PeerNodeBackoffStatusChecker(myRef);
 		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
@@ -3312,13 +3318,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return peerNodeStatus;
 	}
 	
-	private final Runnable checkStatusAfterBackoff = new Runnable() {
-		
-		public void run() {
-			setPeerNodeStatus(System.currentTimeMillis(), true);
-		}
-		
-	};
+	private final Runnable checkStatusAfterBackoff;
 
 	public abstract boolean recordStatus();
 
@@ -3636,6 +3636,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * disconnected. */
 	public void forceCancelDisconnecting() {
 		synchronized(this) {
+			removed = false;
 			if(!disconnecting)
 				return;
 			disconnecting = false;
@@ -3645,8 +3646,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/** Called when the peer is removed from the PeerManager */
 	public void onRemove() {
+		synchronized(this) {
+			removed = true;
+		}
+		node.getTicker().removeQueuedJob(checkStatusAfterBackoff);
 		disconnected(true, true);
 		stopARKFetcher();
+	}
+	
+	/** @return True if we have been removed from the peers list. */
+	synchronized boolean cachedRemoved() {
+		return removed;
 	}
 
 	public synchronized boolean isDisconnecting() {
