@@ -506,7 +506,6 @@ public class PeerMessageQueue {
 					}
 				}
 			}
-			boolean recall = false;
 			if(addPeerLoadStatsRT.value && !alreadyAddedPeerLoadStatsRT) {
 				Message msg = pn.loadSenderRealTime.makeLoadStats(now, pn.node.nodeStats.outwardTransfersPerInsert());
 				if(msg != null) {
@@ -514,10 +513,6 @@ public class PeerMessageQueue {
 					if(logMINOR && load != null)
 						Logger.minor(this, "Adding load message (realtime) to packet for "+pn);
 					messages.add(load);
-					int diff = MAX_PEER_LOAD_STATS_SIZE - msg.getSpec().getMaxSize(0);
-					size -= diff;
-					if(diff != 0) recall = true;
-					alreadyAddedPeerLoadStatsRT = true;
 				}
 			}
 			if(addPeerLoadStatsBulk.value && !alreadyAddedPeerLoadStatsBulk) {
@@ -527,10 +522,6 @@ public class PeerMessageQueue {
 					if(logMINOR && load != null)
 						Logger.minor(this, "Adding load message (realtime) to packet for "+pn);
 					messages.add(load);
-					int diff = MAX_PEER_LOAD_STATS_SIZE - msg.getSpec().getMaxSize(0);
-					size -= diff;
-					if(diff != 0) recall = true;
-					alreadyAddedPeerLoadStatsBulk = true;
 				}
 			}
 			return size;
