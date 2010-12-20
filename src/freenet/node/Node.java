@@ -4600,7 +4600,13 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag) {
-		completed(uid);
+		unlockUID(uid, ssk, insert, canFail, offerReply, local, realTimeFlag, tag, false);
+	}
+	
+	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag, boolean noRecord) {
+		if(!noRecord)
+			completed(uid);
+
 		if(offerReply) {
 			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk, realTimeFlag);
 			innerUnlock(map, (OfferReplyTag)tag, uid, ssk, insert, offerReply, local, canFail);
