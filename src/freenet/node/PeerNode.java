@@ -4457,13 +4457,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		private long countAllocationNotices;
 		private PeerLoadStats lastFullStats;
 		private final boolean realTimeFlag;
+		private boolean sendASAP;
 		
 		public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert) {
 			
 			boolean mustSend = false;
 			// FIXME review constants, how often are allocations actually sent?
 			long now = System.currentTimeMillis();
-			Message msg;
 			synchronized(this) {
 				int last = input ? lastSentAllocationInput : lastSentAllocationOutput;
 				if(now - timeLastSentAllocationNotice > 5000) {
@@ -4479,24 +4479,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					}
 				}
 				if(!mustSend) return;
-				msg = makeLoadStats(now, transfersPerInsert);
-			}
-			if(msg != null) {
-				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+thisAllocation+" for "+input);
-				try {
-					sendAsync(msg, null, node.nodeStats.allocationNoticesCounter);
-				} catch (NotConnectedException e) {
-					// Ignore
-				}
+				sendASAP = true;
 			}
 			if(!mustSend) return;
-			timeLastSentAllocationNotice = now;
-			if(input)
-				lastSentAllocationInput = thisAllocation;
-			else
-				lastSentAllocationOutput = thisAllocation;
-			countAllocationNotices++;
-			if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+thisAllocation+" for "+input);
 		}
 		
 		Message makeLoadStats(long now, int transfersPerInsert) {
@@ -4508,9 +4493,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				lastFullStats = stats;
 				timeLastSentAllocationNotice = now;
 				countAllocationNotices++;
+				timeLastSentAllocationNotice = now;
+				countAllocationNotices++;
+				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+lastSentAllocationInput+" input "+lastSentAllocationOutput+" output.");
 			}
 			Message msg = DMT.createFNPPeerLoadStatus(stats);
 			return msg;
+		}
+
+		public synchronized boolean grabSendASAP() {
+			boolean send = sendASAP;
+			sendASAP = false;
+			return send;
 		}
 	}
 	

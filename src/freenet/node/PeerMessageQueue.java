@@ -755,8 +755,19 @@ public class PeerMessageQueue {
 		// using up valuable, limited bandwidth and preventing us from clearing the backlog
 		// of high priority messages. Fortunately this doesn't arise in practice very much,
 		// but when we merge the new packet format it will be eliminated entirely.
+		
 		MutableBoolean addPeerLoadStatsRT = new MutableBoolean();
 		MutableBoolean addPeerLoadStatsBulk = new MutableBoolean();
+		
+		if(pn.loadSender(false).grabSendASAP()) {
+			size += 2 + MAX_PEER_LOAD_STATS_SIZE;
+			addPeerLoadStatsRT.value = true;
+		}
+		if(pn.loadSender(true).grabSendASAP()) {
+			size += 2 + MAX_PEER_LOAD_STATS_SIZE;
+			addPeerLoadStatsBulk.value = true;
+		}
+		
 		MutableBoolean incomplete = new MutableBoolean();
 
 		// Do not allow realtime data to starve bulk data
