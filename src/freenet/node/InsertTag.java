@@ -35,15 +35,15 @@ public class InsertTag extends UIDTag {
 		boolean noRecordUnlock;
 		synchronized(this) {
 			senderFinished = true;
-			if(!canUnlock()) return;
+			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
 		innerUnlock(noRecordUnlock);
 	}
 
-	protected synchronized boolean canUnlock() {
+	protected synchronized boolean mustUnlock() {
 		if(senderStarted && !senderFinished) return false;
-		return super.canUnlock();
+		return super.mustUnlock();
 	}
 	
 	public void handlerThrew(Throwable t) {

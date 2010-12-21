@@ -85,7 +85,7 @@ public abstract class UIDTag {
 		synchronized(this) {
 			if(fetchingOfferedKeyFrom == null) return;
 			fetchingOfferedKeyFrom.remove(next);
-			if(!canUnlock()) return;
+			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
 		innerUnlock(noRecordUnlock);
@@ -96,7 +96,7 @@ public abstract class UIDTag {
 		synchronized(this) {
 			if(currentlyRoutingTo == null) return;
 			currentlyRoutingTo.remove(next);
-			if(!canUnlock()) return;
+			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
 		innerUnlock(noRecordUnlock);
@@ -165,7 +165,7 @@ public abstract class UIDTag {
 	public abstract boolean isOfferReply();
 	
 	/** Caller must call innerUnlock(noRecordUnlock) immediately if this returns true. */
-	protected synchronized boolean canUnlock() {
+	protected synchronized boolean mustUnlock() {
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
 			if(!reassigned)
@@ -186,7 +186,7 @@ public abstract class UIDTag {
 			if(unlockedHandler) return;
 			noRecordUnlock = noRecord;
 			unlockedHandler = true;
-			canUnlock = canUnlock();
+			canUnlock = mustUnlock();
 		}
 		if(canUnlock)
 			innerUnlock(noRecordUnlock);
