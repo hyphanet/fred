@@ -37,6 +37,7 @@ public class RequestTag extends UIDTag {
 	}
 
 	public synchronized void setRequestSenderFinished(int status) {
+		if(status == RequestSender.NOT_FINISHED) throw new IllegalArgumentException();
 		requestSenderFinishedCode = status;
 	}
 
