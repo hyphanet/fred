@@ -173,12 +173,12 @@ public abstract class UIDTag {
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
 			if(!reassigned)
-				Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo.size()+" yet not reassigned on "+this, new Exception("debug"));
+				Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo+" yet not reassigned on "+this, new Exception("debug"));
 			return false;
 		}
 		if(fetchingOfferedKeyFrom != null && !fetchingOfferedKeyFrom.isEmpty()) {
 			if(!reassigned)
-				Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom.size()+" yet not reassigned on "+this, new Exception("debug"));
+				Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom+" yet not reassigned on "+this, new Exception("debug"));
 			return false;
 		}
 		Logger.normal(this, "Unlocking "+this, new Exception("debug"));
