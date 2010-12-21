@@ -7,13 +7,16 @@ import java.util.HashSet;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
+import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
+import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
@@ -317,24 +320,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             // We have sent them the pubkey, and the data.
             // Wait for the response.
             
-            /** What are we waiting for now??:
-             * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
-             *   data anyway please
-             * - FNPInsertReply - used up all HTL, yay
-             * - FNPRejectOverload - propagating an overload error :(
-             * - FNPDataFound - target already has the data, and the data is
-             *   an SVK/SSK/KSK, therefore could be different to what we are
-             *   inserting.
-             * - FNPDataInsertRejected - the insert was invalid
-             */
-            
-            MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPInsertReply);
-            MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedOverload);
-            MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRouteNotFound);
-            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
-            MessageFilter mfSSKDataFoundHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPSSKDataFoundHeaders);
-            
-            MessageFilter mf = mfRouteNotFound.or(mfInsertReply.or(mfRejectedOverload.or(mfDataInsertRejected.or(mfSSKDataFoundHeaders))));
+    		MessageFilter mf = makeAcceptedRejectedFilter(next, searchTimeout);
             
             while (true) {
 				try {
@@ -393,7 +379,29 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         }
     }
     
-    private DO handleMessage(Message msg, PeerNode next, InsertTag thisTag) {
+    private MessageFilter makeAcceptedRejectedFilter(PeerNode next,
+			int searchTimeout) {
+        /** What are we waiting for now??:
+         * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
+         *   data anyway please
+         * - FNPInsertReply - used up all HTL, yay
+         * - FNPRejectOverload - propagating an overload error :(
+         * - FNPDataFound - target already has the data, and the data is
+         *   an SVK/SSK/KSK, therefore could be different to what we are
+         *   inserting.
+         * - FNPDataInsertRejected - the insert was invalid
+         */
+        
+        MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPInsertReply);
+        MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedOverload);
+        MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRouteNotFound);
+        MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
+        MessageFilter mfSSKDataFoundHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPSSKDataFoundHeaders);
+        
+        return mfRouteNotFound.or(mfInsertReply.or(mfRejectedOverload.or(mfDataInsertRejected.or(mfSSKDataFoundHeaders))));
+	}
+
+	private DO handleMessage(Message msg, PeerNode next, InsertTag thisTag) {
 		if (msg.getSpec() == DMT.FNPRejectedOverload) {
 			if(handleRejectedOverload(msg, next, thisTag)) return DO.NEXT_PEER;
 			else return DO.WAIT;
@@ -434,6 +442,86 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	NEXT_PEER
     }
     
+	private final int TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT = 60*1000;
+
+	private void handleAcceptedRejectedTimeout(final PeerNode next, final InsertTag tag) {
+		// It could still be running. So the timeout is fatal to the node.
+		Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+		// The node didn't accept the request. So we don't need to send them the data.
+		// However, we do need to wait a bit longer to try to postpone the fatalTimeout().
+		// Somewhat intricate logic to try to avoid fatalTimeout() if at all possible.
+		MessageFilter mf = makeAcceptedRejectedFilter(next, TIMEOUT_AFTER_ACCEPTEDREJECTED_TIMEOUT);
+		try {
+			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+
+				public void onMatched(Message m) {
+					if(m.getSpec() == DMT.FNPRejectedLoop ||
+							m.getSpec() == DMT.FNPRejectedOverload) {
+						// Ok.
+						tag.removeRoutingTo(next);
+					} else {
+						assert(m.getSpec() == DMT.FNPAccepted);
+						// We are not going to send the DataInsert.
+						// We have moved on, and we don't want inserts to fork unnecessarily.
+			            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
+			            try {
+							node.usm.addAsyncFilter(mfTimeout, new AsyncMessageFilterCallback() {
+
+								public void onMatched(Message m) {
+									// Cool.
+								}
+
+								public boolean shouldTimeout() {
+									return false;
+								}
+
+								public void onTimeout() {
+									// Grrr!
+									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
+									next.fatalTimeout();
+								}
+
+								public void onDisconnect(PeerContext ctx) {
+									tag.removeRoutingTo(next);
+								}
+
+								public void onRestarted(PeerContext ctx) {
+									tag.removeRoutingTo(next);
+								}
+								
+							}, SSKInsertSender.this);
+						} catch (DisconnectedException e) {
+							tag.removeRoutingTo(next);
+						}
+					}
+				}
+
+				public boolean shouldTimeout() {
+					return false;
+				}
+
+				public void onTimeout() {
+					next.fatalTimeout();
+				}
+
+				public void onDisconnect(PeerContext ctx) {
+					tag.removeRoutingTo(next);
+				}
+
+				public void onRestarted(PeerContext ctx) {
+					tag.removeRoutingTo(next);
+				}
+
+				public int getPriority() {
+					return NativeThread.NORM_PRIORITY;
+				}
+				
+			}, this);
+		} catch (DisconnectedException e) {
+			tag.removeRoutingTo(next);
+		}
+	}
+
     /** @return True if fatal and we should try another node, false if just relayed so 
      * we should wait for more responses. */
     private boolean handleRejectedOverload(Message msg, PeerNode next, InsertTag thisTag) {
@@ -568,8 +656,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				next.localRejectedOverload("Timeout");
 				forwardRejectedOverload();
 				// It could still be running. So the timeout is fatal to the node.
-    			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
-    			next.fatalTimeout();
+				handleAcceptedRejectedTimeout(next, thisTag);
 				return null;
 			}
 			
