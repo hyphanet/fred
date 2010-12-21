@@ -1326,7 +1326,7 @@ loadWaiterLoop:
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
     	while(true) {
     	long now = System.currentTimeMillis();
-    	long deadline = now + (realTimeFlag ? 1260 * 1000 : 300 * 1000);
+    	long deadline = now + (realTimeFlag ? 300 * 1000 : 1260 * 1000);
         while(true) {
         	short current = mask; // If any bits are set already, we ignore those states.
         	
