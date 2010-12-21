@@ -4599,11 +4599,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 	
-	public void unlockUID(UIDTag tag, boolean canFail) {
-		unlockUID(tag, canFail, false);
-	}
-	
-	public void unlockUID(UIDTag tag, boolean canFail, boolean noRecord) {
+	void unlockUID(UIDTag tag, boolean canFail, boolean noRecord) {
 		unlockUID(tag.uid, tag.isSSK(), tag.isInsert(), canFail, tag.isOfferReply(), tag.isLocal(), tag.realTimeFlag, tag, noRecord);
 	}
 
