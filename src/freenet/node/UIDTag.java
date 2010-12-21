@@ -221,7 +221,21 @@ public abstract class UIDTag {
 	}
 
 	public String toString() {
-		return super.toString()+":"+uid;
+		StringBuffer sb = new StringBuffer();
+		sb.append(super.toString());
+		sb.append(":");
+		sb.append(uid);
+		if(unlockedHandler)
+			sb.append(" (unlocked handler)");
+		if(hasUnlocked)
+			sb.append(" (unlocked)");
+		if(noRecordUnlock)
+			sb.append(" (don't record unlock)");
+		if(currentlyRoutingTo != null)
+			sb.append(" (routing to ").append(currentlyRoutingTo.size()).append(")");
+		if(fetchingOfferedKeyFrom != null)
+			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
+		return sb.toString();
 	}
 
 }

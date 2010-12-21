@@ -101,6 +101,8 @@ public class RequestTag extends UIDTag {
 		}
 		if(handlerDisconnected)
 			sb.append(" handlerDisconnected=true");
+		sb.append(" : ");
+		sb.append(super.toString());
 		if(handlerThrew != null)
 			Logger.error(this, sb.toString(), handlerThrew);
 		else
