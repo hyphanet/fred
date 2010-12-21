@@ -750,21 +750,8 @@ loadWaiterLoop:
     	while(true) {
     		
     		Message msg;
-    		/**
-    		 * What are we waiting for?
-    		 * FNPAccepted - continue
-    		 * FNPRejectedLoop - go to another node
-    		 * FNPRejectedOverload - propagate back to source, go to another node if local
-    		 */
     		
-    		MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
-    		MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
-    		MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
-    		
-    		// mfRejectedOverload must be the last thing in the or
-    		// So its or pointer remains null
-    		// Otherwise we need to recreate it below
-    		MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+    		MessageFilter mf = makeAcceptedRejectedFilter(next, ACCEPTED_TIMEOUT);
     		
     		try {
     			msg = node.usm.waitFor(mf, this);
@@ -833,6 +820,25 @@ loadWaiterLoop:
     		return DO.FINISHED;
     		
     	}
+	}
+
+	private MessageFilter makeAcceptedRejectedFilter(PeerNode next,
+			int acceptedTimeout) {
+		/**
+		 * What are we waiting for?
+		 * FNPAccepted - continue
+		 * FNPRejectedLoop - go to another node
+		 * FNPRejectedOverload - propagate back to source, go to another node if local
+		 */
+		
+		MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPAccepted);
+		MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedLoop);
+		MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedOverload);
+		
+		// mfRejectedOverload must be the last thing in the or
+		// So its or pointer remains null
+		// Otherwise we need to recreate it below
+		return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
 	}
 
 	private MessageFilter createMessageFilter(int timeout) {
