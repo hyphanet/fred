@@ -21,8 +21,9 @@ public class RequestTag extends UIDTag {
 	final START start;
 	final boolean isSSK;
 	boolean servedFromDatastore;
-	WeakReference<RequestSender> sender;
-	int requestSenderFinishedCode = RequestSender.NOT_FINISHED;
+	private WeakReference<RequestSender> sender;
+	private boolean sent;
+	private int requestSenderFinishedCode = RequestSender.NOT_FINISHED;
 	Throwable handlerThrew;
 	boolean rejected;
 	boolean abortedDownstreamTransfer;
@@ -41,8 +42,14 @@ public class RequestTag extends UIDTag {
 		requestSenderFinishedCode = status;
 	}
 
-	public void setSender(RequestSender rs) {
+	public synchronized void setSender(RequestSender rs) {
+		sent = true;
 		sender = new WeakReference<RequestSender>(rs);
+	}
+	
+	protected synchronized boolean canUnlock() {
+		if(sent && requestSenderFinishedCode == RequestSender.NOT_FINISHED) return false;
+		return super.canUnlock();
 	}
 
 	public void handlerThrew(Throwable t) {
