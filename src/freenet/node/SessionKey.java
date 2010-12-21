@@ -62,8 +62,6 @@ public class SessionKey {
 		
 		this.highestReceivedSeqNum = theirFirstSeqNum - 1;
 		if(this.highestReceivedSeqNum == -1) this.highestReceivedSeqNum = Integer.MAX_VALUE;
-		
-		Logger.error(this, "Starting new session key at " + this.nextSeqNum + "(us), " + this.watchListOffset + "(them)");
 	}
 	
 	@Override
