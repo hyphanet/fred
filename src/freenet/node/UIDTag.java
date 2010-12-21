@@ -30,6 +30,7 @@ public abstract class UIDTag {
 	final long uid;
 	
 	private boolean unlockedHandler;
+	private boolean noRecordUnlock;
 	
 	UIDTag(PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		createdTime = System.currentTimeMillis();
@@ -79,14 +80,26 @@ public abstract class UIDTag {
 		return fetchingOfferedKeyFrom.contains(peer);
 	}
 	
-	public synchronized void removeFetchingOfferedKeyFrom(PeerNode next) {
-		if(fetchingOfferedKeyFrom == null) return;
-		fetchingOfferedKeyFrom.remove(next);
+	public void removeFetchingOfferedKeyFrom(PeerNode next) {
+		boolean noRecordUnlock;
+		synchronized(this) {
+			if(fetchingOfferedKeyFrom == null) return;
+			fetchingOfferedKeyFrom.remove(next);
+			if(!canUnlock()) return;
+			noRecordUnlock = this.noRecordUnlock;
+		}
+		node.unlockUID(this, false, noRecordUnlock);
 	}
 	
-	public synchronized void removeRoutingTo(PeerNode next) {
-		if(currentlyRoutingTo == null) return;
-		currentlyRoutingTo.remove(next);
+	public void removeRoutingTo(PeerNode next) {
+		boolean noRecordUnlock;
+		synchronized(this) {
+			if(currentlyRoutingTo == null) return;
+			currentlyRoutingTo.remove(next);
+			if(!canUnlock()) return;
+			noRecordUnlock = this.noRecordUnlock;
+		}
+		node.unlockUID(this, false, noRecordUnlock);
 	}
 
 	public void postUnlock() {
@@ -149,15 +162,16 @@ public abstract class UIDTag {
 	
 	protected synchronized boolean canUnlock() {
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty())
-			Logger.error(this, "Currently routing to "+currentlyRoutingTo.size()+" nodes yet unlocking");
+			return false;
 		if(fetchingOfferedKeyFrom != null && !fetchingOfferedKeyFrom.isEmpty())
-			Logger.error(this, "Currently routing to "+currentlyRoutingTo.size()+" nodes yet unlocking");
+			return false;
 		return unlockedHandler;
 	}
 	
 	public void unlockHandler(boolean noRecord) {
 		synchronized(this) {
 			if(unlockedHandler) return;
+			noRecordUnlock = noRecord;
 			unlockedHandler = true;
 			if(!canUnlock()) return;
 		}
