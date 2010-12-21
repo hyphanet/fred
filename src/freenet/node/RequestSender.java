@@ -1705,6 +1705,7 @@ loadWaiterLoop:
 		origTag.setRequestSenderFinished(status);
 		synchronized (listeners) {
 			sentRequestSenderFinished = true;
+			if(logMINOR) Logger.minor(this, "Notifying "+listeners.size()+" listeners of status "+status);
 			for (Listener l : listeners) {
 				try {
 					l.onRequestSenderFinished(status, -1);
