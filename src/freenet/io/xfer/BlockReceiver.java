@@ -35,6 +35,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MedianMeanRunningAverage;
 
@@ -169,6 +170,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 						truncateTimeout = true;
 					} else {
 						_prb.addPacket(packetNo, data);
+						if(logMINOR) {
+							synchronized(BlockReceiver.this) {
+								long interval = System.currentTimeMillis() - timeStartedWaiting;
+								Logger.minor(this, "Packet interval: "+interval+" = "+TimeUtil.formatTime(interval, 2, true)+" from "+_sender);
+							}
+						}
 						// Check that we have what the sender thinks we have
 						for (int x = 0; x < sent.getSize(); x++) {
 							if (sent.bitAt(x) && !_prb.isReceived(x)) {
