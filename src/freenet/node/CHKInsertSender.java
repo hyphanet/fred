@@ -169,7 +169,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				pn.localRejectedOverload("InsertTimeoutNoFinalAck");
 				// First timeout. Wait for second timeout.
 				try {
-					node.usm.addAsyncFilter(getNotificationMessageFilter(), this);
+					node.usm.addAsyncFilter(getNotificationMessageFilter(), this, CHKInsertSender.this);
 				} catch (DisconnectedException e) {
 					// Normal
 					if(logMINOR)
