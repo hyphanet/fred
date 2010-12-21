@@ -1746,6 +1746,7 @@ loadWaiterLoop:
 		synchronized(this) {
 			this.turtleMode = true;
 		}
+		origTag.reassignToSelf();
 		sendAbortDownstreamTransfers(RetrievalException.GONE_TO_TURTLE_MODE, "Turtling");
 		node.getTicker().queueTimedJob(new Runnable() {
 
