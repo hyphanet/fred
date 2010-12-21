@@ -305,15 +305,15 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(tag, false, reject.soft);
+			tag.unlockHandler(reject.soft);
 			return true;
 		}
 		
 		} catch (Error e) {
-			node.unlockUID(tag, false);
+			tag.unlockHandler();
 			throw e;
 		} catch (RuntimeException e) {
-			node.unlockUID(tag, false);
+			tag.unlockHandler();
 			throw e;
 		} // Otherwise, sendOfferedKey is responsible for unlocking. 
 		
@@ -422,7 +422,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
 			tag.setRejected();
-			node.unlockUID(tag, false, rejectReason.soft);
+			tag.unlockHandler(rejectReason.soft);
 			// Do not tell failure table.
 			// Otherwise an attacker can flood us with requests very cheaply and purge our
 			// failure table even though we didn't accept any of them.
@@ -483,7 +483,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(tag, false, rejectReason.soft);
+			tag.unlockHandler(rejectReason.soft);
 			return true;
 		}
 		long now = System.currentTimeMillis();

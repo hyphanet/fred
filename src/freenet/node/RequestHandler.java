@@ -116,7 +116,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				dontUnlock = this.dontUnlock;
 			}
 			if(!dontUnlock)
-				node.unlockUID(tag, false);
+				tag.unlockHandler();
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			node.removeTransferringRequestHandler(uid);
@@ -557,7 +557,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 								Logger.normal(this, "requestor gone, could not start request handler wait");
 								node.removeTransferringRequestHandler(uid);
 								tag.handlerThrew(e);
-								node.unlockUID(tag, false);
+								tag.unlockHandler();
 							}
 						} else {
 							//also for byte logging, since the block is the 'terminal' message.
@@ -580,7 +580,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		synchronized(this) {
 			if(uid == dontUnlockUID) return;
 		}
-		node.unlockUID(tag, false);
+		tag.unlockHandler();
 	}
 
 	/**
