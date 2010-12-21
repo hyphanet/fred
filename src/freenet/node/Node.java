@@ -4777,7 +4777,7 @@ public class Node implements TimeSkewDetectorCallback {
 			return ssk ? runningSSKOfferReplyUIDsBulk : runningCHKOfferReplyUIDsBulk;
 	}
 
-	static final int TIMEOUT = 10 * 60 * 1000;
+	static final int TIMEOUT = 11 * 60 * 1000;
 
 	private void startDeadUIDChecker() {
 		getTicker().queueTimedJob(deadUIDChecker, TIMEOUT);
