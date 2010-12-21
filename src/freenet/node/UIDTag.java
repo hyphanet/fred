@@ -27,6 +27,7 @@ public abstract class UIDTag {
 	protected boolean notRoutedOnwards;
 	final long uid;
 	
+	private boolean unlockedHandler;
 	
 	UIDTag(PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		createdTime = System.currentTimeMillis();
@@ -143,4 +144,14 @@ public abstract class UIDTag {
 	public abstract boolean isInsert();
 
 	public abstract boolean isOfferReply();
+	
+	public void unlockHandler(boolean noRecord) {
+		node.unlockUID(this, false, noRecord);
+	}
+
+	public void unlockHandler() {
+		unlockHandler(false);
+	}
+
+
 }
