@@ -42,7 +42,7 @@ public class RequestTag extends UIDTag {
 		synchronized(this) {
 			if(status == RequestSender.NOT_FINISHED) throw new IllegalArgumentException();
 			requestSenderFinishedCode = status;
-			if(!canUnlock()) return;
+			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
 		innerUnlock(noRecordUnlock);
@@ -53,9 +53,9 @@ public class RequestTag extends UIDTag {
 		sender = new WeakReference<RequestSender>(rs);
 	}
 	
-	protected synchronized boolean canUnlock() {
+	protected synchronized boolean mustUnlock() {
 		if(sent && requestSenderFinishedCode == RequestSender.NOT_FINISHED) return false;
-		return super.canUnlock();
+		return super.mustUnlock();
 	}
 
 	public void handlerThrew(Throwable t) {
