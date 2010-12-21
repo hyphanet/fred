@@ -1435,6 +1435,7 @@ loadWaiterLoop:
     	if(sentAbortDownstreamTransfers) {
     		// We took on responsibility for unlocking.
     		if(logMINOR) Logger.minor(this, "Unlocking after turtle");
+    		origTag.removeRoutingTo(next);
     		node.unlockUID(origTag, false);
     	}
         
