@@ -169,13 +169,18 @@ public abstract class UIDTag {
 	}
 	
 	public void unlockHandler(boolean noRecord) {
+		boolean canUnlock;
 		synchronized(this) {
 			if(unlockedHandler) return;
 			noRecordUnlock = noRecord;
 			unlockedHandler = true;
-			if(!canUnlock()) return;
+			canUnlock = canUnlock();
 		}
-		node.unlockUID(this, false, noRecord);
+		if(canUnlock)
+			node.unlockUID(this, false, noRecord);
+		else {
+			Logger.error(this, "Cannot unlock yet in unlockHandler, still sending requests");
+		}
 	}
 
 	public void unlockHandler() {
