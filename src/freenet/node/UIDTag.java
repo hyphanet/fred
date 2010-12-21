@@ -31,6 +31,7 @@ public abstract class UIDTag {
 	
 	private boolean unlockedHandler;
 	protected boolean noRecordUnlock;
+	private boolean hasUnlocked;
 	
 	UIDTag(PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		createdTime = System.currentTimeMillis();
@@ -168,6 +169,7 @@ public abstract class UIDTag {
 	 * Hence derived versions should call mustUnlock() only after they have checked their
 	 * own unlock blockers. */
 	protected synchronized boolean mustUnlock() {
+		if(hasUnlocked) return false;
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
 			if(!reassigned)
@@ -179,6 +181,7 @@ public abstract class UIDTag {
 				Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom.size()+" yet not reassigned on "+this);
 			return false;
 		}
+		hasUnlocked = true;
 		return true;
 	}
 	
