@@ -1360,6 +1360,8 @@ loadWaiterLoop:
         
     	boolean turtle;
     	
+		origTag.removeRoutingTo(next);
+		
         synchronized(this) {
         	if(status != NOT_FINISHED) {
         		if(logMINOR) Logger.minor(this, "Status already set to "+status+" - returning on "+this+" would be setting "+code+" from "+next);
@@ -1371,7 +1373,7 @@ loadWaiterLoop:
             if(status == SUCCESS)
             	successFrom = next;
         }
-		
+        
         if(status == SUCCESS) {
         	if((!isSSK) && transferTime > 0 && logMINOR) {
         		long timeTaken = System.currentTimeMillis() - startTime;
@@ -1418,8 +1420,6 @@ loadWaiterLoop:
 			opennetFinished = true;
 			notifyAll();
 		}
-		
-		origTag.removeRoutingTo(next);
     }
 
     /** Wait for the opennet completion message and discard it */
