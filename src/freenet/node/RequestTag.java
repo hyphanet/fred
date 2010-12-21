@@ -22,7 +22,7 @@ public class RequestTag extends UIDTag {
 	final boolean isSSK;
 	boolean servedFromDatastore;
 	WeakReference<RequestSender> sender;
-	int requestSenderFinishedCode;
+	int requestSenderFinishedCode = RequestSender.NOT_FINISHED;
 	Throwable handlerThrew;
 	boolean rejected;
 	boolean abortedDownstreamTransfer;
