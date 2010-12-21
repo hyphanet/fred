@@ -88,6 +88,8 @@ public class RequestTag extends UIDTag {
 				sb.append(s.getStatusString());
 			}
 		}
+		if(sent)
+			sb.append(" sent");
 		sb.append(" finishedCode=").append(requestSenderFinishedCode);
 		sb.append(" rejected=").append(rejected);
 		sb.append(" thrown=").append(handlerThrew);
