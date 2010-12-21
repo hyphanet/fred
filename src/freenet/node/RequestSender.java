@@ -1441,12 +1441,7 @@ loadWaiterLoop:
 			notifyAll();
 		}
 		
-    	if(sentAbortDownstreamTransfers) {
-    		// We took on responsibility for unlocking.
-    		if(logMINOR) Logger.minor(this, "Unlocking after turtle");
-    		origTag.removeRoutingTo(next);
-    	}
-        
+		origTag.removeRoutingTo(next);
     }
 
     /** Wait for the opennet completion message and discard it */
