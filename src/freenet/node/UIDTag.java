@@ -145,10 +145,15 @@ public abstract class UIDTag {
 
 	public abstract boolean isOfferReply();
 	
+	protected synchronized boolean canUnlock() {
+		return unlockedHandler;
+	}
+	
 	public void unlockHandler(boolean noRecord) {
 		synchronized(this) {
 			if(unlockedHandler) return;
 			unlockedHandler = true;
+			if(!canUnlock()) return;
 		}
 		node.unlockUID(this, false, noRecord);
 	}
