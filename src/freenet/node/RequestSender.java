@@ -1631,7 +1631,7 @@ loadWaiterLoop:
 		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onCHKTransferBegins();
 		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onRequestSenderFinished(int status, long grabbedUID);
+		void onRequestSenderFinished(int status);
 		/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
 		 * Should return quickly, allocate a thread if it needs to block etc. */
 		void onAbortDownstreamTransfers(int reason, String desc);
@@ -1648,8 +1648,10 @@ loadWaiterLoop:
 		synchronized (this) {
 			synchronized (listeners) {
 				sentTransferCancel = sentAbortDownstreamTransfers;
-				if(!sentTransferCancel)
+				if(!sentTransferCancel) {
 					listeners.add(l);
+					if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
+				}
 				reject = sentReceivedRejectOverload;
 				transfer = sentCHKTransferBegins;
 				sentFinished = sentRequestSenderFinished;
@@ -1665,7 +1667,7 @@ loadWaiterLoop:
 		if(sentTransferCancel)
 			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
 		if (status!=NOT_FINISHED && sentFinished)
-			l.onRequestSenderFinished(status, -1);
+			l.onRequestSenderFinished(status);
 	}
 	
 	private boolean sentReceivedRejectOverload;
@@ -1708,7 +1710,7 @@ loadWaiterLoop:
 			if(logMINOR) Logger.minor(this, "Notifying "+listeners.size()+" listeners of status "+status);
 			for (Listener l : listeners) {
 				try {
-					l.onRequestSenderFinished(status, -1);
+					l.onRequestSenderFinished(status);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
@@ -1730,7 +1732,7 @@ loadWaiterLoop:
 			for (Listener l : listeners) {
 				try {
 					l.onAbortDownstreamTransfers(reason, desc);
-					l.onRequestSenderFinished(TRANSFER_FAILED, uid);
+					l.onRequestSenderFinished(TRANSFER_FAILED);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
