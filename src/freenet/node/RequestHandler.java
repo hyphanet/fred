@@ -233,7 +233,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							// This may indicate downstream is having trouble communicating with us.
 							Logger.error(this, "Downstream transfer successful but upstream transfer failed. Reassigning tag to self because want the data for ourselves on "+this);
 							node.reassignTagToSelf(tag);
-							rs.setMustUnlock();
 							return false; // Want it
 						}
 						return true;
