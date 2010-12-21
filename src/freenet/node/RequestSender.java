@@ -1702,6 +1702,7 @@ loadWaiterLoop:
 	private boolean sentRequestSenderFinished;
 	
 	private void fireRequestSenderFinished(int status) {
+		origTag.setRequestSenderFinished(status);
 		synchronized (listeners) {
 			sentRequestSenderFinished = true;
 			for (Listener l : listeners) {
@@ -1720,6 +1721,7 @@ loadWaiterLoop:
 	private boolean receivingAsync;
 	
 	private void sendAbortDownstreamTransfers(int reason, String desc) {
+		origTag.setRequestSenderFinished(status);
 		synchronized (listeners) {
 			abortDownstreamTransfersReason = reason;
 			abortDownstreamTransfersDesc = desc;

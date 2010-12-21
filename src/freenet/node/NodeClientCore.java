@@ -930,7 +930,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			 * responsibility for unlocking the UID specified. We should not unlock it.
 			 */
 			public void onRequestSenderFinished(int status, long uidTransferred) {
-				tag.setRequestSenderFinished(status);
 				tag.unlockHandler();
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
