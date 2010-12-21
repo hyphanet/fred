@@ -161,11 +161,18 @@ public abstract class UIDTag {
 	public abstract boolean isOfferReply();
 	
 	protected synchronized boolean canUnlock() {
-		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty())
+		if(!unlockedHandler) return false;
+		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
+			if(!reassigned)
+				Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo.size()+" yet not reassigned on "+this);
 			return false;
-		if(fetchingOfferedKeyFrom != null && !fetchingOfferedKeyFrom.isEmpty())
+		}
+		if(fetchingOfferedKeyFrom != null && !fetchingOfferedKeyFrom.isEmpty()) {
+			if(!reassigned)
+				Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom.size()+" yet not reassigned on "+this);
 			return false;
-		return unlockedHandler;
+		}
+		return true;
 	}
 	
 	public void unlockHandler(boolean noRecord) {
