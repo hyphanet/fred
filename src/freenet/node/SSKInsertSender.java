@@ -194,8 +194,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	
-            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source, realTimeFlag);
             	uid = node.clientCore.makeUID();
+            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source, realTimeFlag, uid, node);
             	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
             	node.lockUID(uid, true, true, false, false, realTimeFlag, forkedRequestTag);

@@ -19,8 +19,8 @@ public class InsertTag extends UIDTag {
 	START start;
 	private Throwable handlerThrew;
 	
-	InsertTag(boolean ssk, START start, PeerNode source, boolean realTimeFlag) {
-		super(source, realTimeFlag);
+	InsertTag(boolean ssk, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
+		super(source, realTimeFlag, uid, node);
 		this.start = start;
 		this.ssk = ssk;
 	}
@@ -53,6 +53,21 @@ public class InsertTag extends UIDTag {
 			int outwardTransfersPerInsert) {
 		if(notRoutedOnwards) return 0;
 		else return outwardTransfersPerInsert;
+	}
+
+	@Override
+	public boolean isSSK() {
+		return ssk;
+	}
+
+	@Override
+	public boolean isInsert() {
+		return true;
+	}
+
+	@Override
+	public boolean isOfferReply() {
+		return false;
 	}
 
 }

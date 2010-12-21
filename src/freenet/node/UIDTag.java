@@ -15,6 +15,7 @@ public abstract class UIDTag {
 	final boolean wasLocal;
 	private final WeakReference<PeerNode> sourceRef;
 	final boolean realTimeFlag;
+	private final Node node;
 	
 	/** Nodes we have routed to at some point */
 	private HashSet<PeerNode> routedTo = null;
@@ -24,12 +25,16 @@ public abstract class UIDTag {
 	/** Node we are currently doing an offered-key-fetch from */
 	private HashSet<PeerNode> fetchingOfferedKeyFrom = null;
 	protected boolean notRoutedOnwards;
+	final long uid;
 	
-	UIDTag(PeerNode source, boolean realTimeFlag) {
+	
+	UIDTag(PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		createdTime = System.currentTimeMillis();
 		this.sourceRef = source == null ? null : source.myRef;
 		wasLocal = source == null;
 		this.realTimeFlag = realTimeFlag;
+		this.node = node;
+		this.uid = uid;
 	}
 
 	public abstract void logStillPresent(Long uid);
@@ -132,4 +137,10 @@ public abstract class UIDTag {
 			return reassigned;
 		}
 	}
+
+	public abstract boolean isSSK();
+
+	public abstract boolean isInsert();
+
+	public abstract boolean isOfferReply();
 }

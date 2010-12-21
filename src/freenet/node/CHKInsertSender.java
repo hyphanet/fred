@@ -387,8 +387,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	
-				forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE, source, realTimeFlag);
             	uid = node.clientCore.makeUID();
+				forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE, source, realTimeFlag, uid, node);
             	Logger.normal(this, "FORKING CHK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
             	node.lockUID(uid, false, true, false, false, realTimeFlag, forkedRequestTag);
