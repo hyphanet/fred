@@ -235,7 +235,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		mustUnlock = this.mustUnlock;
             	}
             	if(mustUnlock)
-            		node.unlockUID(uid, isSSK, false, false, false, false, realTimeFlag, origTag);
+            		node.unlockUID(origTag, false);
         	}
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
         }
@@ -1435,7 +1435,7 @@ loadWaiterLoop:
     	if(sentAbortDownstreamTransfers) {
     		// We took on responsibility for unlocking.
     		if(logMINOR) Logger.minor(this, "Unlocking after turtle");
-    		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, source == null, realTimeFlag, origTag);
+    		node.unlockUID(origTag, false);
     	}
         
     }

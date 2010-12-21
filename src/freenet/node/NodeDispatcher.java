@@ -305,15 +305,15 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag, reject.soft);
+			node.unlockUID(tag, false, reject.soft);
 			return true;
 		}
 		
 		} catch (Error e) {
-			node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+			node.unlockUID(tag, false);
 			throw e;
 		} catch (RuntimeException e) {
-			node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+			node.unlockUID(tag, false);
 			throw e;
 		} // Otherwise, sendOfferedKey is responsible for unlocking. 
 		
@@ -422,7 +422,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
 			tag.setRejected();
-			node.unlockUID(id, isSSK, false, false, false, false, realTimeFlag, tag, rejectReason.soft);
+			node.unlockUID(tag, false, rejectReason.soft);
 			// Do not tell failure table.
 			// Otherwise an attacker can flood us with requests very cheaply and purge our
 			// failure table even though we didn't accept any of them.
@@ -483,7 +483,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, true, false, false, false, realTimeFlag, tag, rejectReason.soft);
+			node.unlockUID(tag, false, rejectReason.soft);
 			return true;
 		}
 		long now = System.currentTimeMillis();

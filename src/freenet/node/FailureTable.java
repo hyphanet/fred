@@ -416,10 +416,10 @@ public class FailureTable implements OOMHook {
 				try {
 					innerSendOfferedKey(key, isSSK, needPubKey, uid, source, tag, realTimeFlag);
 				} catch (NotConnectedException e) {
-					node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+					node.unlockUID(tag, false);
 					// Too bad.
 				} catch (Throwable t) {
-					node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+					node.unlockUID(tag, false);
 					Logger.error(this, "Caught "+t+" sending offered key", t);
 				}
 			}
@@ -437,7 +437,7 @@ public class FailureTable implements OOMHook {
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
-				node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+				node.unlockUID(tag, false);
 				return;
 			}
 			
@@ -466,7 +466,7 @@ public class FailureTable implements OOMHook {
 					} catch (PeerRestartedException e) {
 						// :(
 					} finally {
-						node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+						node.unlockUID(tag, false);
 					}
 				}
 				
@@ -481,7 +481,7 @@ public class FailureTable implements OOMHook {
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
-				node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+				node.unlockUID(tag, false);
 				return;
 			}
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
@@ -493,7 +493,7 @@ public class FailureTable implements OOMHook {
         				new BlockTransmitterCompletion() {
 
 					public void blockTransferFinished(boolean success) {
-						node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+						node.unlockUID(tag, false);
 					}
 					
 				}, realTimeFlag);

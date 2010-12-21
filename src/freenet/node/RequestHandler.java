@@ -116,7 +116,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				dontUnlock = this.dontUnlock;
 			}
 			if(!dontUnlock)
-				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, tag);
+				node.unlockUID(tag, false);
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			node.removeTransferringRequestHandler(uid);
@@ -126,7 +126,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				dontUnlock = this.dontUnlock;
 			}
 			if(!dontUnlock)
-				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, tag);
+				node.unlockUID(tag, false);
 		}
 	}
 	private Exception previousApplyByteCountCall;
@@ -557,7 +557,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 								Logger.normal(this, "requestor gone, could not start request handler wait");
 								node.removeTransferringRequestHandler(uid);
 								tag.handlerThrew(e);
-								node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag.realTimeFlag, tag);
+								node.unlockUID(tag, false);
 							}
 						} else {
 							//also for byte logging, since the block is the 'terminal' message.
@@ -580,7 +580,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		synchronized(this) {
 			if(uid == dontUnlockUID) return;
 		}
-		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, tag);
+		node.unlockUID(tag, false);
 	}
 
 	/**

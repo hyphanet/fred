@@ -932,7 +932,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			public void onRequestSenderFinished(int status, long uidTransferred) {
 				// If transfer coalescing has happened, we may have already unlocked.
 				if(uidTransferred != uid)
-					node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag);
+					node.unlockUID(tag, true);
 				tag.setRequestSenderFinished(status);
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
@@ -955,23 +955,23 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Object o = node.makeRequestSender(key, htl, uid, tag, null, false, false, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
-				node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag, false);
+				node.unlockUID(tag, false, false);
 				return; // Already have it.
 			}
 			RequestSender rs = (RequestSender) o;
 			tag.setSender(rs);
 			rs.addListener(listener);
 			if(rs.uid != uid)
-				node.unlockUID(uid, isSSK, false, false, false, true, realTimeFlag, tag);
+				node.unlockUID(tag, false);
 			// Else it has started a request.
 			if(logMINOR)
 				Logger.minor(this, "Started " + o + " for " + uid + " for " + key);
 		} catch(RuntimeException e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag);
+			node.unlockUID(tag, true);
 		} catch(Error e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag);
+			node.unlockUID(tag, true);
 		}
 	}
 
@@ -1116,7 +1116,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		} finally {
 			if(rs == null || !(rs.abortedDownstreamTransfers() || rs.mustUnlock()))
-				node.unlockUID(uid, false, false, true, false, true, realTimeFlag, tag);
+				node.unlockUID(tag, true);
 		}
 	}
 
@@ -1230,7 +1230,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		} finally {
 			if(rs == null || !(rs.abortedDownstreamTransfers() || rs.mustUnlock()))
-				node.unlockUID(uid, true, false, true, false, true, realTimeFlag, tag);
+				node.unlockUID(tag, true);
 		}
 	}
 
@@ -1369,7 +1369,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			node.unlockUID(uid, false, true, true, false, true, realTimeFlag, tag);
+			node.unlockUID(tag, true);
 		}
 	}
 
@@ -1516,7 +1516,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			node.unlockUID(uid, true, true, true, false, true, realTimeFlag, tag);
+			node.unlockUID(tag, true);
 		}
 	}
 

@@ -100,7 +100,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             tag.handlerThrew(t);
         } finally {
         	if(logMINOR) Logger.minor(this, "Exiting CHKInsertHandler.run() for "+uid);
-            node.unlockUID(uid, false, true, false, false, false, realTimeFlag, tag);
+            node.unlockUID(tag, false);
         }
     }
 
