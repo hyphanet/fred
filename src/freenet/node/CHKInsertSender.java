@@ -289,7 +289,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     	synchronized (this) {
             origHTL = htl;
 		}
-
+    	origTag.startedSender();
         try {
         	realRun();
 		} catch (OutOfMemoryError e) {
@@ -304,8 +304,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
             if(myStatus == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
+            origTag.finishedSender();
         	if(forkedRequestTag != null)
-            	node.unlockUID(forkedRequestTag, false);
+        		forkedRequestTag.finishedSender();
         }
     }
     
@@ -370,6 +371,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	
             	uid = node.clientCore.makeUID();
 				forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE, source, realTimeFlag, uid, node);
+				forkedRequestTag.reassignToSelf();
+				forkedRequestTag.startedSender();
+				forkedRequestTag.unlockHandler();
             	Logger.normal(this, "FORKING CHK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
             	node.lockUID(uid, false, true, false, false, realTimeFlag, forkedRequestTag);
