@@ -736,7 +736,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
      
-        synchronized(this) {   
+    	if(origTag != null) origTag.removeRoutingTo(next);
+    	if(forkedRequestTag != null) forkedRequestTag.removeRoutingTo(next);
+    	
+        synchronized(this) {
         	if((code == ROUTE_NOT_FOUND) && !sentRequest)
         		code = ROUTE_REALLY_NOT_FOUND;
 

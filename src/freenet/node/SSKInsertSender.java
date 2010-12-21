@@ -549,6 +549,10 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
+    	
+    	if(origTag != null) origTag.removeRoutingTo(next);
+    	if(forkedRequestTag != null) forkedRequestTag.removeRoutingTo(next);
+    	
     	synchronized(this) {
     		if(status != NOT_FINISHED)
     			throw new IllegalStateException("finish() called with "+code+" when was already "+status);
