@@ -205,5 +205,8 @@ public abstract class UIDTag {
 		unlockHandler(false);
 	}
 
+	public String toString() {
+		return super.toString()+":"+uid;
+	}
 
 }
