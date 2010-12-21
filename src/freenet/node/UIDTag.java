@@ -30,7 +30,7 @@ public abstract class UIDTag {
 	final long uid;
 	
 	private boolean unlockedHandler;
-	private boolean noRecordUnlock;
+	protected boolean noRecordUnlock;
 	
 	UIDTag(PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		createdTime = System.currentTimeMillis();
@@ -88,7 +88,7 @@ public abstract class UIDTag {
 			if(!canUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
-		node.unlockUID(this, false, noRecordUnlock);
+		innerUnlock(noRecordUnlock);
 	}
 	
 	public void removeRoutingTo(PeerNode next) {
@@ -99,6 +99,10 @@ public abstract class UIDTag {
 			if(!canUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
+		innerUnlock(noRecordUnlock);
+	}
+	
+	protected final void innerUnlock(boolean noRecordUnlock) {
 		node.unlockUID(this, false, noRecordUnlock);
 	}
 
@@ -184,7 +188,7 @@ public abstract class UIDTag {
 			canUnlock = canUnlock();
 		}
 		if(canUnlock)
-			node.unlockUID(this, false, noRecord);
+			innerUnlock(noRecordUnlock);
 		else {
 			Logger.error(this, "Cannot unlock yet in unlockHandler, still sending requests");
 		}
