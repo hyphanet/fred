@@ -3,6 +3,8 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
+import freenet.support.Logger;
+
 /**
  * Base class for tags representing a running request. These store enough information
  * to detect whether they are finished; if they are still in the list, this normally
@@ -146,6 +148,10 @@ public abstract class UIDTag {
 	public abstract boolean isOfferReply();
 	
 	protected synchronized boolean canUnlock() {
+		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty())
+			Logger.error(this, "Currently routing to "+currentlyRoutingTo.size()+" nodes yet unlocking");
+		if(fetchingOfferedKeyFrom != null && !fetchingOfferedKeyFrom.isEmpty())
+			Logger.error(this, "Currently routing to "+currentlyRoutingTo.size()+" nodes yet unlocking");
 		return unlockedHandler;
 	}
 	
