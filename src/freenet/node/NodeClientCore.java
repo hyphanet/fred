@@ -962,7 +962,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			tag.setSender(rs);
 			rs.addListener(listener);
 			if(rs.uid != uid)
-				node.unlockUID(tag, false);
+				tag.unlockHandler();
 			// Else it has started a request.
 			if(logMINOR)
 				Logger.minor(this, "Started " + o + " for " + uid + " for " + key);
