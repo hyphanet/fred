@@ -930,10 +930,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			 * responsibility for unlocking the UID specified. We should not unlock it.
 			 */
 			public void onRequestSenderFinished(int status, long uidTransferred) {
-				// If transfer coalescing has happened, we may have already unlocked.
-				if(uidTransferred != uid)
-					node.unlockUID(tag, true);
 				tag.setRequestSenderFinished(status);
+				tag.unlockHandler();
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
 			}
@@ -968,10 +966,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				Logger.minor(this, "Started " + o + " for " + uid + " for " + key);
 		} catch(RuntimeException e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(tag, true);
+			tag.unlockHandler();
 		} catch(Error e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(tag, true);
+			tag.unlockHandler();
 		}
 	}
 
@@ -1115,8 +1113,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			if(rs == null || !(rs.abortedDownstreamTransfers() || rs.mustUnlock()))
-				node.unlockUID(tag, true);
+			tag.unlockHandler();
 		}
 	}
 
@@ -1229,8 +1226,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 			}
 		} finally {
-			if(rs == null || !(rs.abortedDownstreamTransfers() || rs.mustUnlock()))
-				node.unlockUID(tag, true);
+			tag.unlockHandler();
 		}
 	}
 
@@ -1369,7 +1365,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			node.unlockUID(tag, true);
+			tag.unlockHandler();
 		}
 	}
 
@@ -1516,7 +1512,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			node.unlockUID(tag, true);
+			tag.unlockHandler();
 		}
 	}
 
