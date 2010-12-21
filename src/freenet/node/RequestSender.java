@@ -769,10 +769,7 @@ loadWaiterLoop:
     			forwardRejectedOverload();
     			node.failureTable.onFailed(key, next, htl, timeSinceSent());
     			// Try next node
-    			// It could still be running. So the timeout is fatal to the node.
-    			// FIXME bug #4613 consider two-stage timeout.
-    			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
-    			next.fatalTimeout();
+    			handleAcceptedRejectedTimeout(next, origTag);
     			return DO.NEXT_PEER;
     		}
     		
@@ -820,6 +817,59 @@ loadWaiterLoop:
     		return DO.FINISHED;
     		
     	}
+	}
+
+	private void handleAcceptedRejectedTimeout(final PeerNode next,
+			final RequestTag origTag) {
+		
+		int timeout = fetchTimeout;
+		
+		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout);
+		try {
+			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+
+				public void onMatched(Message m) {
+					if(m.getSpec() == DMT.FNPRejectedLoop ||
+							m.getSpec() == DMT.FNPRejectedOverload) {
+						// Ok.
+						origTag.removeRoutingTo(next);
+					} else {
+						assert(m.getSpec() == DMT.FNPAccepted);
+						// Uh oh ...
+						// Now what?!
+						// FIXME fork it and accept the data if any
+						// FIXME or wait for it and then cancel the transfer
+						// FIXME or introduce a cancel function for requests (probable security issues!)
+						Logger.error(this, "Timed out waiting for Accepted/Rejected but then got Accepted from "+next+", treating as fatal on "+RequestSender.this);
+						next.fatalTimeout();
+					}
+				}
+				
+				public boolean shouldTimeout() {
+					return false;
+				}
+
+				public void onTimeout() {
+					Logger.error(this, "Fatal timeout waiting for Accepted/Rejected from "+next+" on "+RequestSender.this);
+					next.fatalTimeout();
+				}
+
+				public void onDisconnect(PeerContext ctx) {
+					origTag.removeRoutingTo(next);
+				}
+
+				public void onRestarted(PeerContext ctx) {
+					origTag.removeRoutingTo(next);
+				}
+
+				public int getPriority() {
+					return NativeThread.NORM_PRIORITY;
+				}
+				
+			}, this);
+		} catch (DisconnectedException e) {
+			origTag.removeRoutingTo(next);
+		}
 	}
 
 	private MessageFilter makeAcceptedRejectedFilter(PeerNode next,
