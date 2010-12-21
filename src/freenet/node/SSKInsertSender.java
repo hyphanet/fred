@@ -125,6 +125,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
         short origHTL = htl;
+        origTag.startedSender();
         try {
         	realRun();
 		} catch (OutOfMemoryError e) {
@@ -139,8 +140,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         	if(logMINOR) Logger.minor(this, "Finishing "+this);
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
+            origTag.finishedSender();
         	if(forkedRequestTag != null)
-            	node.unlockUID(forkedRequestTag, false);
+        		forkedRequestTag.finishedSender();
         }
 	}
 
@@ -196,6 +198,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	
             	uid = node.clientCore.makeUID();
             	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source, realTimeFlag, uid, node);
+            	forkedRequestTag.reassignToSelf();
+            	forkedRequestTag.startedSender();
+            	forkedRequestTag.unlockHandler();
             	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
             	node.lockUID(uid, true, true, false, false, realTimeFlag, forkedRequestTag);

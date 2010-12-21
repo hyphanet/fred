@@ -18,13 +18,34 @@ public class InsertTag extends UIDTag {
 	
 	START start;
 	private Throwable handlerThrew;
+	private boolean senderStarted;
+	private boolean senderFinished;
 	
 	InsertTag(boolean ssk, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		super(source, realTimeFlag, uid, node);
 		this.start = start;
 		this.ssk = ssk;
 	}
+	
+	public synchronized void startedSender() {
+		senderStarted = true;
+	}
+	
+	public void finishedSender() {
+		boolean noRecordUnlock;
+		synchronized(this) {
+			senderFinished = true;
+			if(!canUnlock()) return;
+			noRecordUnlock = this.noRecordUnlock;
+		}
+		innerUnlock(noRecordUnlock);
+	}
 
+	protected synchronized boolean canUnlock() {
+		if(senderStarted && !senderFinished) return false;
+		return super.canUnlock();
+	}
+	
 	public void handlerThrew(Throwable t) {
 		handlerThrew = t;
 	}
