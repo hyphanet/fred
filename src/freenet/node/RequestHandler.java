@@ -229,7 +229,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 					public boolean onAbort() {
 						if(node.hasKey(key, false, false)) return true; // Don't want it
-						if(node.failureTable.peersWantKey(key)) {
+						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
 							Logger.error(this, "Downstream transfer successful but upstream transfer failed. Reassigning tag to self because want the data for ourselves on "+this);
 							node.reassignTagToSelf(tag);
