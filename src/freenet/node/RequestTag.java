@@ -37,9 +37,15 @@ public class RequestTag extends UIDTag {
 		this.isSSK = isSSK;
 	}
 
-	public synchronized void setRequestSenderFinished(int status) {
-		if(status == RequestSender.NOT_FINISHED) throw new IllegalArgumentException();
-		requestSenderFinishedCode = status;
+	public void setRequestSenderFinished(int status) {
+		boolean noRecordUnlock;
+		synchronized(this) {
+			if(status == RequestSender.NOT_FINISHED) throw new IllegalArgumentException();
+			requestSenderFinishedCode = status;
+			if(!canUnlock()) return;
+			noRecordUnlock = this.noRecordUnlock;
+		}
+		innerUnlock(noRecordUnlock);
 	}
 
 	public synchronized void setSender(RequestSender rs) {
