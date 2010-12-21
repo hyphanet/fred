@@ -68,7 +68,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private final RequestTag tag;
 	private final boolean realTimeFlag;
 	KeyBlock passedInKeyBlock;
-	private boolean dontUnlock = false;
 
 	@Override
 	public String toString() {
@@ -111,22 +110,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			Logger.normal(this, "requestor gone, could not start request handler wait");
 			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(e);
-			boolean dontUnlock;
-			synchronized(this) {
-				dontUnlock = this.dontUnlock;
-			}
-			if(!dontUnlock)
-				tag.unlockHandler();
+			tag.unlockHandler();
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(t);
-			boolean dontUnlock;
-			synchronized(this) {
-				dontUnlock = this.dontUnlock;
-			}
-			if(!dontUnlock)
-				tag.unlockHandler();
+			tag.unlockHandler();
 		}
 	}
 	private Exception previousApplyByteCountCall;
@@ -245,10 +234,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							Logger.error(this, "Downstream transfer successful but upstream transfer failed. Reassigning tag to self because want the data for ourselves on "+this);
 							node.reassignTagToSelf(tag);
 							rs.setMustUnlock();
-							synchronized(this) {
-								dontUnlock = true;
-							}
-							// FIXME move unlocking logic into UIDTag and always wait for both the handler and the sender.
 							return false; // Want it
 						}
 						return true;
