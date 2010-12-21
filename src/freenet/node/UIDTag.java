@@ -164,6 +164,7 @@ public abstract class UIDTag {
 
 	public abstract boolean isOfferReply();
 	
+	/** Caller must call innerUnlock(noRecordUnlock) immediately if this returns true. */
 	protected synchronized boolean canUnlock() {
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
