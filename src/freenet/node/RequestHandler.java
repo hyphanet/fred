@@ -126,7 +126,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				dontUnlock = this.dontUnlock;
 			}
 			if(!dontUnlock)
-				node.unlockUID(tag, false);
+				tag.unlockHandler();
 		}
 	}
 	private Exception previousApplyByteCountCall;
