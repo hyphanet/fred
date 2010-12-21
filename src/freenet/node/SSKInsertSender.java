@@ -320,7 +320,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             // We have sent them the pubkey, and the data.
             // Wait for the response.
             
-    		MessageFilter mf = makeAcceptedRejectedFilter(next, searchTimeout);
+    		MessageFilter mf = makeSearchFilter(next, searchTimeout);
             
             while (true) {
 				try {
@@ -379,7 +379,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         }
     }
     
-    private MessageFilter makeAcceptedRejectedFilter(PeerNode next,
+    private MessageFilter makeSearchFilter(PeerNode next,
 			int searchTimeout) {
         /** What are we waiting for now??:
          * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
@@ -623,20 +623,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 	private Message waitForAccepted(PeerNode next, InsertTag thisTag) {
 		Message msg;
-        /*
-         * Because messages may be re-ordered, it is
-         * entirely possible that we get a non-local RejectedOverload,
-         * followed by an Accepted. So we must loop here.
-         */
-        
-        MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPSSKAccepted);
-        MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
-        MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
-        // mfRejectedOverload must be the last thing in the or
-        // So its or pointer remains null
-        // Otherwise we need to recreate it below
-        mfRejectedOverload.clearOr();
-        MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+		
+		MessageFilter mf = makeAcceptedRejectedFilter(next, ACCEPTED_TIMEOUT);
 
         while (true) {
         	
@@ -691,6 +679,24 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 			return msg;
         }
         
+	}
+
+	private MessageFilter makeAcceptedRejectedFilter(PeerNode next,
+			int acceptedTimeout) {
+        /*
+         * Because messages may be re-ordered, it is
+         * entirely possible that we get a non-local RejectedOverload,
+         * followed by an Accepted. So we must loop here.
+         */
+        
+        MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPSSKAccepted);
+        MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedLoop);
+        MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedOverload);
+        // mfRejectedOverload must be the last thing in the or
+        // So its or pointer remains null
+        // Otherwise we need to recreate it below
+        mfRejectedOverload.clearOr();
+        return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
 	}
 
 	private boolean hasForwardedRejectedOverload;
