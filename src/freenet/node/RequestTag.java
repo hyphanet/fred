@@ -30,8 +30,8 @@ public class RequestTag extends UIDTag {
 	String abortedDownstreamDesc;
 	boolean handlerDisconnected;
 
-	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag) {
-		super(source, realTimeFlag);
+	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
+		super(source, realTimeFlag, uid, node);
 		this.start = start;
 		this.isSSK = isSSK;
 	}
@@ -118,6 +118,21 @@ public class RequestTag extends UIDTag {
 
 	public synchronized void completedDownstreamTransfers() {
 		this.completedDownstreamTransfers = true;
+	}
+
+	@Override
+	public boolean isSSK() {
+		return isSSK;
+	}
+
+	@Override
+	public boolean isInsert() {
+		return false;
+	}
+
+	@Override
+	public boolean isOfferReply() {
+		return false;
 	}
 
 }

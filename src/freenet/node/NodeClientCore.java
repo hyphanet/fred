@@ -901,7 +901,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public void asyncGet(Key key, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
-		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag);
+		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, isSSK, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			return;
@@ -998,7 +998,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
-		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null, realTimeFlag);
+		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, false, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -1123,7 +1123,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
-		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null, realTimeFlag);
+		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, true, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -1257,7 +1257,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
 		CHKInsertSender is;
 		long uid = makeUID();
-		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null, realTimeFlag);
+		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, false, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
@@ -1376,7 +1376,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public void realPutSSK(SSKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) throws LowLevelPutException {
 		SSKInsertSender is;
 		long uid = makeUID();
-		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null, realTimeFlag);
+		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, true, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);

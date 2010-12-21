@@ -288,7 +288,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
 		boolean isSSK = key instanceof NodeSSK;
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
-		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag);
+		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag, uid, node);
 		node.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag);
 		boolean needPubKey;
 		try {
@@ -385,7 +385,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
         short htl = m.getShort(DMT.HTL);
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
-        final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag);
+        final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, id, node);
 		if(!node.lockUID(id, isSSK, false, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
@@ -448,7 +448,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
-		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag);
+		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag, id, node);
 		if(!node.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
