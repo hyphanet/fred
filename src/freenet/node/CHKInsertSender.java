@@ -474,9 +474,13 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					break;
 				}
 				
+				boolean failed;
 				synchronized(backgroundTransfers) {
-					if (receiveFailed)
-						return; // don't need to set status as killed by CHKInsertHandler
+					failed = receiveFailed;
+				}
+				if(failed) {
+					thisTag.removeRoutingTo(next);
+					return; // don't need to set status as killed by CHKInsertHandler
 				}
 				
 				if (msg == null) {
@@ -486,6 +490,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					next.localRejectedOverload("Timeout3");
 					// Try another node.
 					forwardRejectedOverload();
+					thisTag.removeRoutingTo(next);
 					break;
 				}
 				
@@ -515,6 +520,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					Logger.error(this,
 							"Unexpected message waiting for Accepted: "
 									+ msg);
+					thisTag.removeRoutingTo(next);
 					break;
 				}
 				// Otherwise is an FNPAccepted
@@ -548,13 +554,19 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
 
             if(logMINOR) Logger.minor(this, "Sending DataInsert");
-            synchronized(backgroundTransfers) {
-            	if(receiveFailed) return;
-            }
+            boolean failed;
+			synchronized(backgroundTransfers) {
+				failed = receiveFailed;
+			}
+			if(failed) {
+				thisTag.removeRoutingTo(next);
+				return; // don't need to set status as killed by CHKInsertHandler
+			}
             try {
 				next.sendSync(dataInsert, this);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
+				thisTag.removeRoutingTo(next);
 				continue;
 			}
 
@@ -563,22 +575,29 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			
             while (true) {
 
-            	synchronized(backgroundTransfers) {
-            		if (receiveFailed)
-            			return;
-            	}
+    			synchronized(backgroundTransfers) {
+    				failed = receiveFailed;
+    			}
+    			if(failed) {
+    				thisTag.removeRoutingTo(next);
+    				return; // don't need to set status as killed by CHKInsertHandler
+    			}
 				
 				try {
 					msg = node.usm.waitFor(mf, this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for InsertReply on " + this);
+    				thisTag.removeRoutingTo(next);
 					break;
 				}
-				synchronized(backgroundTransfers) {
-					if (receiveFailed)
-						return;
-				}
+    			synchronized(backgroundTransfers) {
+    				failed = receiveFailed;
+    			}
+    			if(failed) {
+    				thisTag.removeRoutingTo(next);
+    				return; // don't need to set status as killed by CHKInsertHandler
+    			}
 				
 				if ((msg == null) || (msg.getSpec() == DMT.FNPRejectedTimeout)) {
 					// Timeout :(
@@ -599,6 +618,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						if(logMINOR) Logger.minor(this,
 								"Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
+	    				thisTag.removeRoutingTo(next);
 						break;
 					} else {
 						forwardRejectedOverload();
@@ -615,6 +635,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					}
 					// Finished as far as this node is concerned
 					next.successNotOverload();
+    				thisTag.removeRoutingTo(next);
 					//RNF means that the HTL was not exhausted, but that the data will still be stored.
 					break;
 				}
@@ -650,6 +671,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 								receiveFailed();
 							}
 						}
+	    				thisTag.removeRoutingTo(next);
 						break; // What else can we do?
 					} else if (reason == DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED) {
 						boolean recvFailed;
@@ -675,6 +697,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					}
 					Logger.error(this, "DataInsert rejected! Reason="
 							+ DMT.getDataInsertRejectedReason(reason));
+    				thisTag.removeRoutingTo(next);
 					break;
 				}
 				

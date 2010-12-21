@@ -929,6 +929,7 @@ loadWaiterLoop:
     	
    		Logger.error(this, "Unexpected message: "+msg);
    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+		origTag.removeRoutingTo(next);
    		return DO.NEXT_PEER;
     	
 	}
@@ -960,10 +961,12 @@ loadWaiterLoop:
 			pubKey = null;
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
     		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+			origTag.removeRoutingTo(next);
 			return false; // try next node
 		} catch (CryptFormatException e) {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
     		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+			origTag.removeRoutingTo(next);
 			return false; // try next node
 		}
 	}
