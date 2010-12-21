@@ -3,7 +3,9 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Base class for tags representing a running request. These store enough information
@@ -13,6 +15,17 @@ import freenet.support.Logger;
  */
 public abstract class UIDTag {
 	
+    private static volatile boolean logMINOR;
+    
+    static {
+    	Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+    		@Override
+    		public void shouldUpdate(){
+    			logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+    		}
+    	});
+    }
+    
 	final long createdTime;
 	final boolean wasLocal;
 	private final WeakReference<PeerNode> sourceRef;
@@ -40,6 +53,8 @@ public abstract class UIDTag {
 		this.realTimeFlag = realTimeFlag;
 		this.node = node;
 		this.uid = uid;
+		if(logMINOR)
+			Logger.minor(this, "Created "+this);
 	}
 
 	public abstract void logStillPresent(Long uid);
