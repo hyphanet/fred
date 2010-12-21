@@ -1374,7 +1374,7 @@ loadWaiterLoop:
 	private long transferTime;
 	
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
-    	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
+    	if(logMINOR) Logger.minor(this, "finish("+code+ ") on "+this);
         
     	boolean turtle;
     	
