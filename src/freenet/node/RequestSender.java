@@ -1360,7 +1360,7 @@ loadWaiterLoop:
         
     	boolean turtle;
     	
-		origTag.removeRoutingTo(next);
+    	if(next != null) origTag.removeRoutingTo(next);
 		
         synchronized(this) {
         	if(status != NOT_FINISHED) {
