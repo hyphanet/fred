@@ -4599,15 +4599,15 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 	
+	public void unlockUID(UIDTag tag, boolean canFail) {
+		unlockUID(tag, canFail, false);
+	}
+	
 	public void unlockUID(UIDTag tag, boolean canFail, boolean noRecord) {
 		unlockUID(tag.uid, tag.isSSK(), tag.isInsert(), canFail, tag.isOfferReply(), tag.isLocal(), tag.realTimeFlag, tag, noRecord);
 	}
 
-	void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag) {
-		unlockUID(uid, ssk, insert, canFail, offerReply, local, realTimeFlag, tag, false);
-	}
-	
-	void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag, boolean noRecord) {
+	protected void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag, boolean noRecord) {
 		if(!noRecord)
 			completed(uid);
 

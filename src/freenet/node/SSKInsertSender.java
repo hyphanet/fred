@@ -140,7 +140,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         	if(forkedRequestTag != null)
-            	node.unlockUID(uid, true, true, false, false, false, realTimeFlag, forkedRequestTag);
+            	node.unlockUID(forkedRequestTag, false);
         }
 	}
 

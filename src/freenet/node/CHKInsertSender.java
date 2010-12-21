@@ -324,7 +324,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             if(myStatus == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         	if(forkedRequestTag != null)
-            	node.unlockUID(uid, false, true, false, false, false, realTimeFlag, forkedRequestTag);
+            	node.unlockUID(forkedRequestTag, false);
         }
     }
     
