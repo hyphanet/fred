@@ -173,12 +173,12 @@ public abstract class UIDTag {
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
 			if(!reassigned)
-				Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo.size()+" yet not reassigned on "+this);
+				Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo.size()+" yet not reassigned on "+this, new Exception("debug"));
 			return false;
 		}
 		if(fetchingOfferedKeyFrom != null && !fetchingOfferedKeyFrom.isEmpty()) {
 			if(!reassigned)
-				Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom.size()+" yet not reassigned on "+this);
+				Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom.size()+" yet not reassigned on "+this, new Exception("debug"));
 			return false;
 		}
 		Logger.normal(this, "Unlocking "+this, new Exception("debug"));
@@ -197,7 +197,7 @@ public abstract class UIDTag {
 		if(canUnlock)
 			innerUnlock(noRecordUnlock);
 		else {
-			Logger.error(this, "Cannot unlock yet in unlockHandler, still sending requests");
+			Logger.normal(this, "Cannot unlock yet in unlockHandler, still sending requests");
 		}
 	}
 
