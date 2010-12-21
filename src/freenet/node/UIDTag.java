@@ -181,6 +181,7 @@ public abstract class UIDTag {
 				Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom.size()+" yet not reassigned on "+this);
 			return false;
 		}
+		Logger.normal(this, "Unlocking "+this, new Exception("debug"));
 		hasUnlocked = true;
 		return true;
 	}
