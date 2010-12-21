@@ -790,6 +790,7 @@ loadWaiterLoop:
     			// It could still be running. So the timeout is fatal to the node.
     			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
     			//next.fatalTimeout();
+    			next.noLongerRoutingTo(origTag, false);
     			return DO.NEXT_PEER;
     		}
     		
