@@ -48,8 +48,10 @@ public class RequestTag extends UIDTag {
 		innerUnlock(noRecordUnlock);
 	}
 
-	public synchronized void setSender(RequestSender rs) {
-		sent = true;
+	public synchronized void setSender(RequestSender rs, boolean coalesced) {
+		// If it's because of transfer coalescing, we won't get anything from the RequestSender, so we should not wait for it.
+		if(!coalesced)
+			sent = true;
 		sender = new WeakReference<RequestSender>(rs);
 	}
 	
