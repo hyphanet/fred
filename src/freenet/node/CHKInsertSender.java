@@ -565,10 +565,13 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					
 		            while (true) {
 
-		            	synchronized(backgroundTransfers) {
-		            		if (receiveFailed)
-		            			return;
-		            	}
+		    			synchronized(backgroundTransfers) {
+		    				failed = receiveFailed;
+		    			}
+		    			if(failed) {
+		    				thisTag.removeRoutingTo(next);
+		    				return; // don't need to set status as killed by CHKInsertHandler
+		    			}
 						
 						try {
 							msg = node.usm.waitFor(mf, this);
@@ -577,10 +580,14 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 									+ " while waiting for InsertReply on " + this);
 							return;
 						}
-						synchronized(backgroundTransfers) {
-							if (receiveFailed)
-								return;
-						}
+						
+		    			synchronized(backgroundTransfers) {
+		    				failed = receiveFailed;
+		    			}
+		    			if(failed) {
+		    				thisTag.removeRoutingTo(next);
+		    				return; // don't need to set status as killed by CHKInsertHandler
+		    			}
 						
 						if(msg == null) {
 							// Second timeout.
@@ -787,10 +794,14 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				next.noLongerRoutingTo(thisTag, false);
 				break;
 			}
-			
+
+			boolean failed;
 			synchronized(backgroundTransfers) {
-				if (receiveFailed)
-					return false; // don't need to set status as killed by CHKInsertHandler
+				failed = receiveFailed;
+			}
+			if(failed) {
+				thisTag.removeRoutingTo(next);
+				return false; // don't need to set status as killed by CHKInsertHandler
 			}
 			
 			if (msg == null) {
