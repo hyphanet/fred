@@ -744,7 +744,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					Logger.normal(this,
 									"Verify failed because data was invalid");
 				} catch (AbortedException e) {
-					receiveFailed();
+					onReceiveFailed();
 				}
 			}
 		} else if (reason == DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED) {
@@ -765,7 +765,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							Logger.normal(this, "Send failed; have not yet received all data but not aborted: " + next);
 					}
 				} catch (AbortedException e) {
-					receiveFailed();
+					onReceiveFailed();
 				}
 			}
 		}
@@ -1049,7 +1049,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
      * Called by CHKInsertHandler to notify that the receive has
      * failed.
      */
-    public void receiveFailed() {
+    public void onReceiveFailed() {
     	synchronized(backgroundTransfers) {
     		receiveFailed = true;
     		backgroundTransfers.notifyAll();

@@ -458,7 +458,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			}
         			// Cancel the sender
         			if(sender != null)
-        				sender.receiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
+        				sender.onReceiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
         			runThread.interrupt();
         			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
         			try {
