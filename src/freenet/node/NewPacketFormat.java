@@ -643,7 +643,9 @@ fragments:
 						Logger.error(this, "Blocked because we haven't rekeyed yet");
 						pn.startRekeying();
 						return -1;
-					} else if(tracker.firstSeqNumUsed > tracker.nextSeqNum) {
+					}
+
+					if(tracker.firstSeqNumUsed > tracker.nextSeqNum) {
 						if(tracker.firstSeqNumUsed - tracker.nextSeqNum < REKEY_THRESHOLD) pn.startRekeying();
 					} else {
 						if((NUM_SEQNUMS - tracker.nextSeqNum) + tracker.firstSeqNumUsed < REKEY_THRESHOLD) pn.startRekeying();
