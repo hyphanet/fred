@@ -35,6 +35,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MedianMeanRunningAverage;
 
@@ -72,9 +73,11 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	 * hearing from us in 60 seconds. Without contact from the transmitter, we will try sending
 	 * at most MAX_CONSECUTIVE_MISSING_PACKET_REPORTS every RECEIPT_TIMEOUT to recover.
 	 */
-	public static final int RECEIPT_TIMEOUT = 30000;
+	public final int RECEIPT_TIMEOUT;
+	public static final int RECEIPT_TIMEOUT_REALTIME = 5000;
+	public static final int RECEIPT_TIMEOUT_BULK = 30000;
 	// TODO: This should be proportional to the calculated round-trip-time, not a constant
-	public static final int MAX_ROUND_TRIP_TIME = RECEIPT_TIMEOUT;
+	public final int MAX_ROUND_TRIP_TIME;
 	public static final int MAX_CONSECUTIVE_MISSING_PACKET_REPORTS = 4;
 	public static final int MAX_SEND_INTERVAL = 500;
 	public static final int CLEANUP_TIMEOUT = 5000;
@@ -90,15 +93,19 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	private MessageFilter discardFilter;
 	private long discardEndTime;
 	private boolean senderAborted;
+	private final boolean _realTime;
 //	private final boolean _doTooLong;
 
-	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong) {
+	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong, boolean realTime) {
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;
 		_usm = usm;
 		_ctr = ctr;
 		_ticker = ticker;
+		_realTime = realTime;
+		RECEIPT_TIMEOUT = _realTime ? RECEIPT_TIMEOUT_REALTIME : RECEIPT_TIMEOUT_BULK;
+		MAX_ROUND_TRIP_TIME = RECEIPT_TIMEOUT;
 //		_doTooLong = doTooLong;
 	}
 
@@ -163,6 +170,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 						truncateTimeout = true;
 					} else {
 						_prb.addPacket(packetNo, data);
+						if(logMINOR) {
+							synchronized(BlockReceiver.this) {
+								long interval = System.currentTimeMillis() - timeStartedWaiting;
+								Logger.minor(this, "Packet interval: "+interval+" = "+TimeUtil.formatTime(interval, 2, true)+" from "+_sender);
+							}
+						}
 						// Check that we have what the sender thinks we have
 						for (int x = 0; x < sent.getSize(); x++) {
 							if (sent.bitAt(x) && !_prb.isReceived(x)) {

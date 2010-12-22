@@ -906,7 +906,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public void asyncGet(Key key, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
-		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag);
+		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, isSSK, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			return;
@@ -934,11 +934,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			 * @param uidTransferred If this is set, the RequestSender has taken on 
 			 * responsibility for unlocking the UID specified. We should not unlock it.
 			 */
-			public void onRequestSenderFinished(int status, long uidTransferred) {
-				// If transfer coalescing has happened, we may have already unlocked.
-				if(uidTransferred != uid)
-					node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag);
-				tag.setRequestSenderFinished(status);
+			public void onRequestSenderFinished(int status) {
+				tag.unlockHandler();
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
 			}
@@ -960,23 +957,22 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Object o = node.makeRequestSender(key, htl, uid, tag, null, false, false, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
-				node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag);
+				tag.unlockHandler();
 				return; // Already have it.
 			}
 			RequestSender rs = (RequestSender) o;
-			tag.setSender(rs);
 			rs.addListener(listener);
 			if(rs.uid != uid)
-				node.unlockUID(uid, isSSK, false, false, false, true, realTimeFlag, tag);
+				tag.unlockHandler();
 			// Else it has started a request.
 			if(logMINOR)
 				Logger.minor(this, "Started " + o + " for " + uid + " for " + key);
 		} catch(RuntimeException e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag);
+			tag.unlockHandler();
 		} catch(Error e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(uid, isSSK, false, true, false, true, realTimeFlag, tag);
+			tag.unlockHandler();
 		}
 	}
 
@@ -1003,7 +999,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
-		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null, realTimeFlag);
+		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, false, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -1120,15 +1116,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			if(rs == null || !(rs.abortedDownstreamTransfers() || rs.mustUnlock()))
-				node.unlockUID(uid, false, false, true, false, true, realTimeFlag, tag);
+			tag.unlockHandler();
 		}
 	}
 
 	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
-		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null, realTimeFlag);
+		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, true, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -1234,8 +1229,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 			}
 		} finally {
-			if(rs == null || !(rs.abortedDownstreamTransfers() || rs.mustUnlock()))
-				node.unlockUID(uid, true, false, true, false, true, realTimeFlag, tag);
+			tag.unlockHandler();
 		}
 	}
 
@@ -1262,7 +1256,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
 		CHKInsertSender is;
 		long uid = makeUID();
-		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null, realTimeFlag);
+		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, false, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
@@ -1374,14 +1368,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			node.unlockUID(uid, false, true, true, false, true, realTimeFlag, tag);
+			tag.unlockHandler();
 		}
 	}
 
 	public void realPutSSK(SSKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) throws LowLevelPutException {
 		SSKInsertSender is;
 		long uid = makeUID();
-		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null, realTimeFlag);
+		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
 		if(!node.lockUID(uid, true, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
@@ -1521,7 +1515,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			node.unlockUID(uid, true, true, true, false, true, realTimeFlag, tag);
+			tag.unlockHandler();
 		}
 	}
 

@@ -416,10 +416,10 @@ public class FailureTable implements OOMHook {
 				try {
 					innerSendOfferedKey(key, isSSK, needPubKey, uid, source, tag, realTimeFlag);
 				} catch (NotConnectedException e) {
-					node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+					tag.unlockHandler();
 					// Too bad.
 				} catch (Throwable t) {
-					node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+					tag.unlockHandler();
 					Logger.error(this, "Caught "+t+" sending offered key", t);
 				}
 			}
@@ -437,7 +437,7 @@ public class FailureTable implements OOMHook {
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
-				node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+				tag.unlockHandler();
 				return;
 			}
 			
@@ -466,7 +466,7 @@ public class FailureTable implements OOMHook {
 					} catch (PeerRestartedException e) {
 						// :(
 					} finally {
-						node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+						tag.unlockHandler();
 					}
 				}
 				
@@ -481,7 +481,7 @@ public class FailureTable implements OOMHook {
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
-				node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+				tag.unlockHandler();
 				return;
 			}
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
@@ -493,7 +493,7 @@ public class FailureTable implements OOMHook {
         				new BlockTransmitterCompletion() {
 
 					public void blockTransferFinished(boolean success) {
-						node.unlockUID(uid, isSSK, false, false, true, false, realTimeFlag, tag);
+						tag.unlockHandler();
 					}
 					
 				}, realTimeFlag);
@@ -649,13 +649,13 @@ public class FailureTable implements OOMHook {
 		}
 	}
 
-	public boolean peersWantKey(Key key) {
+	public boolean peersWantKey(Key key, PeerNode apartFrom) {
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = entriesByKey.get(key);
 			if(entry == null) return false; // Nobody cares
 		}
-		return entry.othersWant(null);
+		return entry.othersWant(apartFrom);
 	}
 
 	public void handleLowMemory() throws Exception {
