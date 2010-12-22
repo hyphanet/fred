@@ -339,11 +339,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         int highHTLFailureCount = 0;
         boolean starting = true;
         while(true) {
-        	synchronized(backgroundTransfers) {
-        		if(receiveFailed) {
-        			return; // don't need to set status as killed by CHKInsertHandler
-        		}
-        	}
+        	if(hasReceiveFailed()) return; // don't need to set status as killed by CHKInsertHandler
             
             /*
              * If we haven't routed to any node yet, decrement according to the source.
@@ -460,25 +456,13 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				sentRequest = true;				
 			}
 
-			boolean failed;
-			synchronized(backgroundTransfers) {
-				failed = receiveFailed;
-			}
-			if(failed) {
-				thisTag.removeRoutingTo(next);
-				return; // don't need to set status as killed by CHKInsertHandler
-			}
+			if(failIfReceiveFailed(thisTag, next)) return;
 			
             Message msg = null;
             
             if(!waitAccepted(next, thisTag)) {
 				thisTag.removeRoutingTo(next);
-    			synchronized(backgroundTransfers) {
-    				failed = receiveFailed;
-    			}
-    			if(failed) {
-    				return; // don't need to set status as killed by CHKInsertHandler
-    			}
+				if(failIfReceiveFailed(thisTag, next)) return;
 				continue; // Try another node
             }
             	
@@ -507,13 +491,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             MessageFilter mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
 
             if(logMINOR) Logger.minor(this, "Sending DataInsert");
-			synchronized(backgroundTransfers) {
-				failed = receiveFailed;
-			}
-			if(failed) {
-				thisTag.removeRoutingTo(next);
-				return; // don't need to set status as killed by CHKInsertHandler
-			}
+			if(failIfReceiveFailed(thisTag, next)) return;
             try {
 				next.sendSync(dataInsert, this);
 			} catch (NotConnectedException e1) {
@@ -527,13 +505,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			
             while (true) {
 
-    			synchronized(backgroundTransfers) {
-    				failed = receiveFailed;
-    			}
-    			if(failed) {
-    				thisTag.removeRoutingTo(next);
-    				return; // don't need to set status as killed by CHKInsertHandler
-    			}
+    			if(failIfReceiveFailed(thisTag, next)) return;
 				
 				try {
 					msg = node.usm.waitFor(mf, this);
@@ -543,13 +515,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     				thisTag.removeRoutingTo(next);
 					break;
 				}
-    			synchronized(backgroundTransfers) {
-    				failed = receiveFailed;
-    			}
-    			if(failed) {
-    				thisTag.removeRoutingTo(next);
-    				return; // don't need to set status as killed by CHKInsertHandler
-    			}
+				if(failIfReceiveFailed(thisTag, next)) return;
 				
 				if (msg == null) {
 					
@@ -569,13 +535,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					
 		            while (true) {
 
-		    			synchronized(backgroundTransfers) {
-		    				failed = receiveFailed;
-		    			}
-		    			if(failed) {
-		    				thisTag.removeRoutingTo(next);
-		    				return; // don't need to set status as killed by CHKInsertHandler
-		    			}
+		    			if(failIfReceiveFailed(thisTag, next)) return;
 						
 						try {
 							msg = node.usm.waitFor(mf, this);
@@ -585,13 +545,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							return;
 						}
 						
-		    			synchronized(backgroundTransfers) {
-		    				failed = receiveFailed;
-		    			}
-		    			if(failed) {
-		    				thisTag.removeRoutingTo(next);
-		    				return; // don't need to set status as killed by CHKInsertHandler
-		    			}
+						if(failIfReceiveFailed(thisTag, next)) return;
 						
 						if(msg == null) {
 							// Second timeout.
@@ -799,14 +753,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				break;
 			}
 
-			boolean failed;
-			synchronized(backgroundTransfers) {
-				failed = receiveFailed;
-			}
-			if(failed) {
-				thisTag.removeRoutingTo(next);
-				return false; // don't need to set status as killed by CHKInsertHandler
-			}
+			if(failIfReceiveFailed(thisTag, next)) return false;
 			
 			if (msg == null) {
 				// Terminal overload
@@ -1043,6 +990,20 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     
     public synchronized short getHTL() {
         return htl;
+    }
+    
+    public boolean hasReceiveFailed() {
+    	synchronized(backgroundTransfers) {
+    		return receiveFailed;
+    	}
+    }
+    
+    public boolean failIfReceiveFailed(InsertTag tag, PeerNode next) {
+    	synchronized(backgroundTransfers) {
+    		if(!receiveFailed) return false;
+    	}
+    	next.noLongerRoutingTo(tag, false);
+    	return true;
     }
 
     /**
