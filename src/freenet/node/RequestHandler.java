@@ -68,7 +68,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private final RequestTag tag;
 	private final boolean realTimeFlag;
 	KeyBlock passedInKeyBlock;
-	private boolean dontUnlock = false;
 
 	@Override
 	public String toString() {
@@ -111,22 +110,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			Logger.normal(this, "requestor gone, could not start request handler wait");
 			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(e);
-			boolean dontUnlock;
-			synchronized(this) {
-				dontUnlock = this.dontUnlock;
-			}
-			if(!dontUnlock)
-				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, tag);
+			tag.unlockHandler();
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(t);
-			boolean dontUnlock;
-			synchronized(this) {
-				dontUnlock = this.dontUnlock;
-			}
-			if(!dontUnlock)
-				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, tag);
+			tag.unlockHandler();
 		}
 	}
 	private Exception previousApplyByteCountCall;
@@ -240,15 +229,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 					public boolean onAbort() {
 						if(node.hasKey(key, false, false)) return true; // Don't want it
-						if(node.failureTable.peersWantKey(key)) {
+						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
 							Logger.error(this, "Downstream transfer successful but upstream transfer failed. Reassigning tag to self because want the data for ourselves on "+this);
 							node.reassignTagToSelf(tag);
-							rs.setMustUnlock();
-							synchronized(this) {
-								dontUnlock = true;
-							}
-							// FIXME move unlocking logic into UIDTag and always wait for both the handler and the sender.
 							return false; // Want it
 						}
 						return true;
@@ -337,11 +321,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		return true;
 	}
 
-	/** If this is set, the transfer was turtled, the RequestSender took on responsibility
-	 * for unlocking the UID given, we should not unlock it. */
-	private long dontUnlockUID = -1;
-	
-	public void onRequestSenderFinished(int status, long grabbedUID) {
+	public void onRequestSenderFinished(int status) {
 		if(logMINOR) Logger.minor(this, "onRequestSenderFinished("+status+") on "+this);
 		long now = System.currentTimeMillis();
 
@@ -352,8 +332,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			else
 				return;
 			tooLate = responseDeadline > 0 && now > responseDeadline;
-			if(grabbedUID != -1)
-				dontUnlockUID = grabbedUID;
 		}
 		
 		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble());
@@ -557,7 +535,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 								Logger.normal(this, "requestor gone, could not start request handler wait");
 								node.removeTransferringRequestHandler(uid);
 								tag.handlerThrew(e);
-								node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag.realTimeFlag, tag);
+								tag.unlockHandler();
 							}
 						} else {
 							//also for byte logging, since the block is the 'terminal' message.
@@ -577,10 +555,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	private void unregisterRequestHandlerWithNode() {
 		node.removeTransferringRequestHandler(uid);
-		synchronized(this) {
-			if(uid == dontUnlockUID) return;
-		}
-		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, realTimeFlag, tag);
+		tag.unlockHandler();
 	}
 
 	/**

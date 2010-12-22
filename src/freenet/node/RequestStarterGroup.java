@@ -79,8 +79,8 @@ public class RequestStarterGroup {
 		throttleWindowSSK = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowSSK"), node);
 		throttleWindowInsert = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowInsert"), node);
 		throttleWindowRequest = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowRequest"), node);
-		chkRequestThrottleBulk = new MyRequestThrottle(throttleWindowBulk, 5000, "CHK Request", fs == null ? null : fs.subset("CHKRequestThrottle"), 32768, false);
-		chkRequestThrottleRT = new MyRequestThrottle(throttleWindowRT, 5000, "CHK Request (RT)", fs == null ? null : fs.subset("CHKRequestThrottleRT"), 32768, true);
+		chkRequestThrottleBulk = new MyRequestThrottle(5000, "CHK Request", fs == null ? null : fs.subset("CHKRequestThrottle"), 32768, false);
+		chkRequestThrottleRT = new MyRequestThrottle(5000, "CHK Request (RT)", fs == null ? null : fs.subset("CHKRequestThrottleRT"), 32768, true);
 		chkRequestStarterBulk = new RequestStarter(core, chkRequestThrottleBulk, "CHK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkFetchBytesSentAverage, stats.localChkFetchBytesReceivedAverage, false, false, false);
 		chkRequestStarterRT = new RequestStarter(core, chkRequestThrottleRT, "CHK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkFetchBytesSentAverage, stats.localChkFetchBytesReceivedAverage, false, false, true);
 		chkFetchSchedulerBulk = new ClientRequestScheduler(false, false, false, random, chkRequestStarterBulk, node, core, "CHKrequester", ctx);
@@ -96,8 +96,8 @@ public class RequestStarterGroup {
 		
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
-		chkInsertThrottleBulk = new MyRequestThrottle(throttleWindowBulk, 20000, "CHK Insert", fs == null ? null : fs.subset("CHKInsertThrottle"), 32768, false);
-		chkInsertThrottleRT = new MyRequestThrottle(throttleWindowRT, 20000, "CHK Insert (RT)", fs == null ? null : fs.subset("CHKInsertThrottleRT"), 32768, true);
+		chkInsertThrottleBulk = new MyRequestThrottle(20000, "CHK Insert", fs == null ? null : fs.subset("CHKInsertThrottle"), 32768, false);
+		chkInsertThrottleRT = new MyRequestThrottle(20000, "CHK Insert (RT)", fs == null ? null : fs.subset("CHKInsertThrottleRT"), 32768, true);
 		chkInsertStarterBulk = new RequestStarter(core, chkInsertThrottleBulk, "CHK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkInsertBytesSentAverage, stats.localChkInsertBytesReceivedAverage, true, false, false);
 		chkInsertStarterRT = new RequestStarter(core, chkInsertThrottleRT, "CHK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkInsertBytesSentAverage, stats.localChkInsertBytesReceivedAverage, true, false, true);
 		chkPutSchedulerBulk = new ClientRequestScheduler(true, false, false, random, chkInsertStarterBulk, node, core, "CHKinserter", ctx);
@@ -111,8 +111,8 @@ public class RequestStarterGroup {
 		
 		registerSchedulerConfig(schedulerConfig, "CHKinserter", chkFetchSchedulerBulk, chkFetchSchedulerRT, false, true);
 		
-		sskRequestThrottleBulk = new MyRequestThrottle(throttleWindowBulk, 5000, "SSK Request", fs == null ? null : fs.subset("SSKRequestThrottle"), 1024, false);
-		sskRequestThrottleRT = new MyRequestThrottle(throttleWindowRT, 5000, "SSK Request (RT)", fs == null ? null : fs.subset("SSKRequestThrottleRT"), 1024, true);
+		sskRequestThrottleBulk = new MyRequestThrottle(5000, "SSK Request", fs == null ? null : fs.subset("SSKRequestThrottle"), 1024, false);
+		sskRequestThrottleRT = new MyRequestThrottle(5000, "SSK Request (RT)", fs == null ? null : fs.subset("SSKRequestThrottleRT"), 1024, true);
 		sskRequestStarterBulk = new RequestStarter(core, sskRequestThrottleBulk, "SSK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true, false);
 		sskRequestStarterRT = new RequestStarter(core, sskRequestThrottleRT, "SSK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true, true);
 		sskFetchSchedulerBulk = new ClientRequestScheduler(false, true, false, random, sskRequestStarterBulk, node, core, "SSKrequester", ctx);
@@ -128,8 +128,8 @@ public class RequestStarterGroup {
 		
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
-		sskInsertThrottleBulk = new MyRequestThrottle(throttleWindowBulk, 20000, "SSK Insert", fs == null ? null : fs.subset("SSKInsertThrottle"), 1024, false);
-		sskInsertThrottleRT = new MyRequestThrottle(throttleWindowRT, 20000, "SSK Insert", fs == null ? null : fs.subset("SSKInsertThrottleRT"), 1024, true);
+		sskInsertThrottleBulk = new MyRequestThrottle(20000, "SSK Insert", fs == null ? null : fs.subset("SSKInsertThrottle"), 1024, false);
+		sskInsertThrottleRT = new MyRequestThrottle(20000, "SSK Insert", fs == null ? null : fs.subset("SSKInsertThrottleRT"), 1024, true);
 		sskInsertStarterBulk = new RequestStarter(core, sskInsertThrottleBulk, "SSK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskInsertBytesSentAverage, stats.localSskFetchBytesReceivedAverage, true, true, false);
 		sskInsertStarterRT = new RequestStarter(core, sskInsertThrottleRT, "SSK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskInsertBytesSentAverage, stats.localSskFetchBytesReceivedAverage, true, true, true);
 		sskPutSchedulerBulk = new ClientRequestScheduler(true, true, false, random, sskInsertStarterBulk, node, core, "SSKinserter", ctx);
@@ -193,7 +193,7 @@ public class RequestStarterGroup {
 		private final int size;
 		private final boolean realTime;
 
-		public MyRequestThrottle(ThrottleWindowManager throttleWindow, int rtt, String string, SimpleFieldSet fs, int size, boolean realTime) {
+		public MyRequestThrottle(int rtt, String string, SimpleFieldSet fs, int size, boolean realTime) {
 			roundTripTime = new BootstrappingDecayingRunningAverage(rtt, 10, 5*60*1000, 10, fs == null ? null : fs.subset("RoundTripTime"));
 			this.size = size;
 			this.realTime = realTime;

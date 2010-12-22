@@ -21,8 +21,9 @@ public class RequestTag extends UIDTag {
 	final START start;
 	final boolean isSSK;
 	boolean servedFromDatastore;
-	WeakReference<RequestSender> sender;
-	int requestSenderFinishedCode;
+	private WeakReference<RequestSender> sender;
+	private boolean sent;
+	private int requestSenderFinishedCode = RequestSender.NOT_FINISHED;
 	Throwable handlerThrew;
 	boolean rejected;
 	boolean abortedDownstreamTransfer;
@@ -30,18 +31,33 @@ public class RequestTag extends UIDTag {
 	String abortedDownstreamDesc;
 	boolean handlerDisconnected;
 
-	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag) {
-		super(source, realTimeFlag);
+	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
+		super(source, realTimeFlag, uid, node);
 		this.start = start;
 		this.isSSK = isSSK;
 	}
 
-	public synchronized void setRequestSenderFinished(int status) {
-		requestSenderFinishedCode = status;
+	public void setRequestSenderFinished(int status) {
+		boolean noRecordUnlock;
+		synchronized(this) {
+			if(status == RequestSender.NOT_FINISHED) throw new IllegalArgumentException();
+			requestSenderFinishedCode = status;
+			if(!mustUnlock()) return;
+			noRecordUnlock = this.noRecordUnlock;
+		}
+		innerUnlock(noRecordUnlock);
 	}
 
-	public void setSender(RequestSender rs) {
+	public synchronized void setSender(RequestSender rs, boolean coalesced) {
+		// If it's because of transfer coalescing, we won't get anything from the RequestSender, so we should not wait for it.
+		if(!coalesced)
+			sent = true;
 		sender = new WeakReference<RequestSender>(rs);
+	}
+	
+	protected synchronized boolean mustUnlock() {
+		if(sent && requestSenderFinishedCode == RequestSender.NOT_FINISHED) return false;
+		return super.mustUnlock();
 	}
 
 	public void handlerThrew(Throwable t) {
@@ -74,6 +90,8 @@ public class RequestTag extends UIDTag {
 				sb.append(s.getStatusString());
 			}
 		}
+		if(sent)
+			sb.append(" sent");
 		sb.append(" finishedCode=").append(requestSenderFinishedCode);
 		sb.append(" rejected=").append(rejected);
 		sb.append(" thrown=").append(handlerThrew);
@@ -85,6 +103,8 @@ public class RequestTag extends UIDTag {
 		}
 		if(handlerDisconnected)
 			sb.append(" handlerDisconnected=true");
+		sb.append(" : ");
+		sb.append(super.toString());
 		if(handlerThrew != null)
 			Logger.error(this, sb.toString(), handlerThrew);
 		else
@@ -118,6 +138,21 @@ public class RequestTag extends UIDTag {
 
 	public synchronized void completedDownstreamTransfers() {
 		this.completedDownstreamTransfers = true;
+	}
+
+	@Override
+	public boolean isSSK() {
+		return isSSK;
+	}
+
+	@Override
+	public boolean isInsert() {
+		return false;
+	}
+
+	@Override
+	public boolean isOfferReply() {
+		return false;
 	}
 
 }

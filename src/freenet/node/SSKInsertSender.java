@@ -125,6 +125,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
         short origHTL = htl;
+        origTag.startedSender();
         try {
         	realRun();
 		} catch (OutOfMemoryError e) {
@@ -139,8 +140,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         	if(logMINOR) Logger.minor(this, "Finishing "+this);
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
+            origTag.finishedSender();
         	if(forkedRequestTag != null)
-            	node.unlockUID(uid, true, true, false, false, false, realTimeFlag, forkedRequestTag);
+        		forkedRequestTag.finishedSender();
         }
 	}
 
@@ -194,8 +196,11 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	
-            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source, realTimeFlag);
             	uid = node.clientCore.makeUID();
+            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE, source, realTimeFlag, uid, node);
+            	forkedRequestTag.reassignToSelf();
+            	forkedRequestTag.startedSender();
+            	forkedRequestTag.unlockHandler();
             	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
             	node.lockUID(uid, true, true, false, false, realTimeFlag, forkedRequestTag);
@@ -279,6 +284,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					if(logMINOR) Logger.minor(this, "Timeout");
 					next.localRejectedOverload("Timeout");
 					forwardRejectedOverload();
+					thisTag.removeRoutingTo(next);
 					break;
 				}
 				
@@ -307,6 +313,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					Logger.error(this,
 							"Unexpected message waiting for SSKAccepted: "
 									+ msg);
+					thisTag.removeRoutingTo(next);
 					break;
 				}
 				// Otherwise is an FNPSSKAccepted
@@ -331,6 +338,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				continue;
 			} catch (WaitedTooLongException e) {
 				Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
+				thisTag.removeRoutingTo(next);
 				continue;
 			} catch (SyncSendWaitedTooLongException e) {
 				// Impossible
@@ -348,6 +356,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             		next.sendAsync(pkMsg, null, this);
             	} catch (NotConnectedException e) {
             		if(logMINOR) Logger.minor(this, "Node disconnected while sending pubkey: "+next);
+					thisTag.removeRoutingTo(next);
             		continue;
             	}
             	
@@ -360,6 +369,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					newAck = node.usm.waitFor(mf1, this);
 				} catch (DisconnectedException e) {
 					if(logMINOR) Logger.minor(this, "Disconnected from "+next);
+					thisTag.removeRoutingTo(next);
 					continue;
 				}
             	
@@ -368,6 +378,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             		if(logMINOR) Logger.minor(this, "Timeout");
 					next.localRejectedOverload("Timeout2");
 					forwardRejectedOverload();
+					thisTag.removeRoutingTo(next);
 					// Try another peer
 					continue;
             	}
@@ -402,6 +413,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for InsertReply on " + this);
+					thisTag.removeRoutingTo(next);
 					break;
 				}
 
@@ -491,10 +503,12 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					} catch (DisconnectedException e) {
 						if(logMINOR)
 							Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
+						thisTag.removeRoutingTo(next);
 						break;
 					}
 					if(dataMessage == null) {
     					Logger.error(this, "Got headers but not data for datareply for insert from "+this);
+    					thisTag.removeRoutingTo(next);
     					break;
 					}
 					// collided, overwrite data with remote data
@@ -544,6 +558,10 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+getStatusString(code)+" on "+this, new Exception("debug"));
+    	
+    	if(origTag != null) origTag.removeRoutingTo(next);
+    	if(forkedRequestTag != null) forkedRequestTag.removeRoutingTo(next);
+    	
     	synchronized(this) {
     		if(status != NOT_FINISHED)
     			throw new IllegalStateException("finish() called with "+code+" when was already "+status);

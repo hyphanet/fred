@@ -111,8 +111,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     
 	private ArrayList<Listener> listeners=new ArrayList<Listener>();
 	
-	private boolean mustUnlock;
-    
     // Terminal status
     // Always set finished AFTER setting the reason flag
 
@@ -228,24 +226,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         } finally {
         	if(status == NOT_FINISHED && !receivingAsync) {
         		Logger.error(this, "Not finished: "+this);
-        		finish(INTERNAL_ERROR, null, false);
-        	} else if(!receivingAsync) {
-            	boolean mustUnlock;
-            	synchronized(this) {
-            		mustUnlock = this.mustUnlock;
-            	}
-            	if(mustUnlock)
-            		node.unlockUID(uid, isSSK, false, false, false, false, realTimeFlag, origTag);
+        		finish(INTERNAL_ERROR, next, false);
         	}
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
         }
     }
 
 	static final int MAX_HIGH_HTL_FAILURES = 5;
-	
-	synchronized void setMustUnlock() {
-		mustUnlock = true;
-	}
 	
     private void realRun() {
 	    freenet.support.Logger.OSThread.logPID(this);
@@ -554,6 +541,7 @@ loadWaiterLoop:
         		if(reply == null) {
         			// We gave it a chance, don't give it another.
         			offers.deleteLastOffer();
+    	        	origTag.removeFetchingOfferedKeyFrom(pn);
         			continue;
         		} else {
         			if(handleCHKOfferReply(reply, pn, offer, offers)) return true;
@@ -568,10 +556,12 @@ loadWaiterLoop:
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					continue;
 				}
         		if(reply == null) {
             		offers.deleteLastOffer();
+    	        	origTag.removeFetchingOfferedKeyFrom(pn);
         			continue;
         		} else {
         			if(handleSSKOfferReply(reply, pn, offer, offers)) return true;
@@ -591,12 +581,14 @@ loadWaiterLoop:
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
 			offers.keepLastOffer();
+        	origTag.removeFetchingOfferedKeyFrom(pn);
 			return false;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
 			offers.deleteLastOffer();
+        	origTag.removeFetchingOfferedKeyFrom(pn);
 			return false;
 		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
 			headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
@@ -615,6 +607,7 @@ loadWaiterLoop:
 			if(dataMessage == null) {
 				Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key);
 				offers.deleteLastOffer();
+	        	origTag.removeFetchingOfferedKeyFrom(pn);
 				return false;
 			}
 			sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
@@ -627,11 +620,13 @@ loadWaiterLoop:
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					return false;
 				}
 				if(pk == null) {
 					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					return false;
 				}
 				try {
@@ -639,6 +634,7 @@ loadWaiterLoop:
 				} catch (CryptFormatException e) {
 					Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					return false;
 				}
 				
@@ -647,6 +643,7 @@ loadWaiterLoop:
 				} catch (SSKVerifyException e) {
 					Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					return false;
 				}
 			}
@@ -656,10 +653,13 @@ loadWaiterLoop:
 				return true;
 			} else {
         		offers.deleteLastOffer();
+	        	origTag.removeFetchingOfferedKeyFrom(pn);
         		return false;
 			}
-		} else 
+		} else {
+        	origTag.removeFetchingOfferedKeyFrom(pn);
 			return false;
+		}
 	}
 
 	/** @return True if we successfully received the offer or failed fatally. False if we
@@ -696,7 +696,7 @@ loadWaiterLoop:
         		}
         		fireCHKTransferBegins();
 				
-        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true);
+        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag);
         		
        			if(logMINOR) Logger.minor(this, "Receiving data");
        			final PeerNode p = pn;
@@ -796,6 +796,7 @@ loadWaiterLoop:
     			// It could still be running. So the timeout is fatal to the node.
     			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
     			//next.fatalTimeout();
+    			next.noLongerRoutingTo(origTag, false);
     			return DO.NEXT_PEER;
     		}
     		
@@ -934,11 +935,13 @@ loadWaiterLoop:
     	
    		Logger.error(this, "Unexpected message: "+msg);
    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+		origTag.removeRoutingTo(next);
    		return DO.NEXT_PEER;
     	
 	}
     
 	protected void makeTurtle() {
+		origTag.reassignToSelf();
 		synchronized(this) {
 			if(tryTurtle) return;
 			tryTurtle = true;
@@ -965,10 +968,12 @@ loadWaiterLoop:
 			pubKey = null;
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
     		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+			origTag.removeRoutingTo(next);
 			return false; // try next node
 		} catch (CryptFormatException e) {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
     		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+			origTag.removeRoutingTo(next);
 			return false; // try next node
 		}
 	}
@@ -992,7 +997,7 @@ loadWaiterLoop:
     	fireCHKTransferBegins();
     	
     	final long tStart = System.currentTimeMillis();
-    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true);
+    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag);
     	
     	if(logMINOR) Logger.minor(this, "Receiving data");
     	final PeerNode from = next;
@@ -1328,7 +1333,7 @@ loadWaiterLoop:
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
     	while(true) {
     	long now = System.currentTimeMillis();
-    	long deadline = now + 300 * 1000;
+    	long deadline = now + (realTimeFlag ? 300 * 1000 : 1260 * 1000);
         while(true) {
         	short current = mask; // If any bits are set already, we ignore those states.
         	
@@ -1375,10 +1380,17 @@ loadWaiterLoop:
 	private long transferTime;
 	
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
-    	if(logMINOR) Logger.minor(this, "finish("+code+") on "+uid);
+    	if(logMINOR) Logger.minor(this, "finish("+code+ ") on "+this);
         
     	boolean turtle;
     	
+    	if(next != null) {
+    		if(fromOfferedKey)
+    			origTag.removeFetchingOfferedKeyFrom(next);
+    		else
+    			origTag.removeRoutingTo(next);
+    	}
+		
         synchronized(this) {
         	if(status != NOT_FINISHED) {
         		if(logMINOR) Logger.minor(this, "Status already set to "+status+" - returning on "+this+" would be setting "+code+" from "+next);
@@ -1390,7 +1402,7 @@ loadWaiterLoop:
             if(status == SUCCESS)
             	successFrom = next;
         }
-		
+        
         if(status == SUCCESS) {
         	if((!isSSK) && transferTime > 0 && logMINOR) {
         		long timeTaken = System.currentTimeMillis() - startTime;
@@ -1437,13 +1449,6 @@ loadWaiterLoop:
 			opennetFinished = true;
 			notifyAll();
 		}
-		
-    	if(sentAbortDownstreamTransfers) {
-    		// We took on responsibility for unlocking.
-    		if(logMINOR) Logger.minor(this, "Unlocking after turtle");
-    		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, source == null, realTimeFlag, origTag);
-    	}
-        
     }
 
     /** Wait for the opennet completion message and discard it */
@@ -1632,7 +1637,7 @@ loadWaiterLoop:
 		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onCHKTransferBegins();
 		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onRequestSenderFinished(int status, long grabbedUID);
+		void onRequestSenderFinished(int status);
 		/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
 		 * Should return quickly, allocate a thread if it needs to block etc. */
 		void onAbortDownstreamTransfers(int reason, String desc);
@@ -1649,8 +1654,10 @@ loadWaiterLoop:
 		synchronized (this) {
 			synchronized (listeners) {
 				sentTransferCancel = sentAbortDownstreamTransfers;
-				if(!sentTransferCancel)
+				if(!sentTransferCancel) {
 					listeners.add(l);
+					if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
+				}
 				reject = sentReceivedRejectOverload;
 				transfer = sentCHKTransferBegins;
 				sentFinished = sentRequestSenderFinished;
@@ -1666,7 +1673,7 @@ loadWaiterLoop:
 		if(sentTransferCancel)
 			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
 		if (status!=NOT_FINISHED && sentFinished)
-			l.onRequestSenderFinished(status, -1);
+			l.onRequestSenderFinished(status);
 	}
 	
 	private boolean sentReceivedRejectOverload;
@@ -1703,11 +1710,13 @@ loadWaiterLoop:
 	private boolean sentRequestSenderFinished;
 	
 	private void fireRequestSenderFinished(int status) {
+		origTag.setRequestSenderFinished(status);
 		synchronized (listeners) {
 			sentRequestSenderFinished = true;
+			if(logMINOR) Logger.minor(this, "Notifying "+listeners.size()+" listeners of status "+status);
 			for (Listener l : listeners) {
 				try {
-					l.onRequestSenderFinished(status, -1);
+					l.onRequestSenderFinished(status);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
@@ -1721,6 +1730,7 @@ loadWaiterLoop:
 	private boolean receivingAsync;
 	
 	private void sendAbortDownstreamTransfers(int reason, String desc) {
+		origTag.setRequestSenderFinished(TRANSFER_FAILED);
 		synchronized (listeners) {
 			abortDownstreamTransfersReason = reason;
 			abortDownstreamTransfersDesc = desc;
@@ -1728,7 +1738,7 @@ loadWaiterLoop:
 			for (Listener l : listeners) {
 				try {
 					l.onAbortDownstreamTransfers(reason, desc);
-					l.onRequestSenderFinished(TRANSFER_FAILED, uid);
+					l.onRequestSenderFinished(TRANSFER_FAILED);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
@@ -1778,10 +1788,6 @@ loadWaiterLoop:
 		return sentAbortDownstreamTransfers;
 	}
 
-	public synchronized boolean mustUnlock() {
-		return mustUnlock;
-	}
-	
 	public long fetchTimeout() {
 		return fetchTimeout;
 	}
