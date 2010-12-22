@@ -424,8 +424,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 		}
 		
 		if(msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
-			if(!handleSSKDataFoundHeaders(msg, next, thisTag)) return DO.NEXT_PEER;
-			else return DO.WAIT;
+			return handleSSKDataFoundHeaders(msg, next, thisTag);
 		}
 		
 		if (msg.getSpec() != DMT.FNPInsertReply) {
@@ -571,7 +570,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 	/** @return True if we got new data and are propagating it. False if something failed
      * and we need to try the next node. */
-	private boolean handleSSKDataFoundHeaders(Message msg, PeerNode next, InsertTag thisTag) {
+	private DO handleSSKDataFoundHeaders(Message msg, PeerNode next, InsertTag thisTag) {
 		/**
 		 * Data was already on node, and was NOT equal to what we sent. COLLISION!
 		 * 
@@ -604,12 +603,12 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 			if(logMINOR)
 				Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
 			thisTag.removeRoutingTo(next);
-			return false;
+			return DO.NEXT_PEER;
 		}
 		if(dataMessage == null) {
 			Logger.error(this, "Got headers but not data for datareply for insert from "+this);
 			thisTag.removeRoutingTo(next);
-			return false;
+			return DO.NEXT_PEER;
 		}
 		// collided, overwrite data with remote data
 		try {
@@ -621,11 +620,14 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				hasCollided = true;
 				notifyAll();
 			}
+			
+			// The node will now propagate the new data. There is no need to move to the next node yet.
+			return DO.WAIT;
 		} catch (SSKVerifyException e) {
 			Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" +block);
 			finish(INTERNAL_ERROR, next);
+			return DO.FINISHED;
 		}
-		return true; // The node will now propagate the new data. There is no need to move to the next node yet.
 	}
 
 	private Message waitForAccepted(PeerNode next, InsertTag thisTag) {
