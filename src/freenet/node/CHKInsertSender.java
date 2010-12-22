@@ -459,15 +459,20 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			synchronized (this) {
 				sentRequest = true;				
 			}
-            
+
+			boolean failed;
 			synchronized(backgroundTransfers) {
-				if(receiveFailed) return; // don't need to set status as killed by CHKInsertHandler
+				failed = receiveFailed;
 			}
+			if(failed) {
+				thisTag.removeRoutingTo(next);
+				return; // don't need to set status as killed by CHKInsertHandler
+			}
+			
             Message msg = null;
             
             if(!waitAccepted(next, thisTag)) {
 				thisTag.removeRoutingTo(next);
-				boolean failed;
     			synchronized(backgroundTransfers) {
     				failed = receiveFailed;
     			}
@@ -502,7 +507,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             MessageFilter mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
 
             if(logMINOR) Logger.minor(this, "Sending DataInsert");
-            boolean failed;
 			synchronized(backgroundTransfers) {
 				failed = receiveFailed;
 			}
