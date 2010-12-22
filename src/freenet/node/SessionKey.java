@@ -39,8 +39,12 @@ public class SessionKey {
 
 	public int firstSeqNumUsed = -1;
 	public int nextSeqNum;
-	public int watchListOffset;
 	public int highestReceivedSeqNum;
+
+	public byte[][] seqNumWatchList = null;
+	/** Index of the packet with the lowest sequence number */
+	public int watchListPointer = 0;
+	public int watchListOffset = 0;
 
 	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,

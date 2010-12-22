@@ -63,11 +63,6 @@ public class NewPacketFormat implements PacketFormat {
 	private int messageWindowPtrReceived;
 	private final SparseBitmap receivedMessages= new SparseBitmap();
 
-	private SessionKey watchListKey;
-	private byte[][] seqNumWatchList;
-	/** Index of the packet with the lowest sequence number */
-	private int watchListPointer = 0;
-
 	private int usedBuffer = 0;
 	private int usedBufferOtherSide = 0;
 	private final Object bufferUsageLock = new Object();
@@ -256,16 +251,14 @@ public class NewPacketFormat implements PacketFormat {
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
 		// Create the watchlist if the key has changed
-		if(watchListKey == null || !watchListKey.equals(sessionKey)) {
+		if(sessionKey.seqNumWatchList == null) {
 			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + sessionKey.watchListOffset);
-
-			watchListKey = sessionKey;
-			seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
-			watchListPointer = 0;
+			
+			sessionKey.seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
 
 			int seqNum = sessionKey.watchListOffset;
-			for(int i = 0; i < seqNumWatchList.length; i++) {
-				seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
+			for(int i = 0; i < sessionKey.seqNumWatchList.length; i++) {
+				sessionKey.seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
 				if((seqNum == NUM_SEQNUMS) || (seqNum < 0)) seqNum = 0;
 			}
 		}
@@ -276,7 +269,7 @@ public class NewPacketFormat implements PacketFormat {
 			highestReceivedSeqNum = sessionKey.highestReceivedSeqNum;
 		}
 		// The entry for the highest received sequence number is kept in the middle of the list
-		int oldHighestReceived = (int) ((0l + sessionKey.watchListOffset + (seqNumWatchList.length / 2)) % NUM_SEQNUMS);
+		int oldHighestReceived = (int) ((0l + sessionKey.watchListOffset + (sessionKey.seqNumWatchList.length / 2)) % NUM_SEQNUMS);
 		if(seqNumGreaterThan(highestReceivedSeqNum, oldHighestReceived, 31)) {
 			int moveBy;
 			if(highestReceivedSeqNum > oldHighestReceived) {
@@ -285,7 +278,7 @@ public class NewPacketFormat implements PacketFormat {
 				moveBy = ((int) (NUM_SEQNUMS - oldHighestReceived)) + highestReceivedSeqNum;
 			}
 
-			if(moveBy > seqNumWatchList.length) {
+			if(moveBy > sessionKey.seqNumWatchList.length) {
 				Logger.warning(this, "Moving watchlist pointer by " + moveBy);
 			} else if(moveBy < 0) {
 				Logger.warning(this, "Tried moving watchlist pointer by " + moveBy);
@@ -294,21 +287,21 @@ public class NewPacketFormat implements PacketFormat {
 				if(logDEBUG) Logger.debug(this, "Moving watchlist pointer by " + moveBy);
 			}
 
-			int seqNum = (int) ((0l + sessionKey.watchListOffset + seqNumWatchList.length) % NUM_SEQNUMS);
-			for(int i = watchListPointer; i < (watchListPointer + moveBy); i++) {
-				seqNumWatchList[i % seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
+			int seqNum = (int) ((0l + sessionKey.watchListOffset + sessionKey.seqNumWatchList.length) % NUM_SEQNUMS);
+			for(int i = sessionKey.watchListPointer; i < (sessionKey.watchListPointer + moveBy); i++) {
+				sessionKey.seqNumWatchList[i % sessionKey.seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
 				if(seqNum == NUM_SEQNUMS) seqNum = 0;
 			}
 
-			watchListPointer = (watchListPointer + moveBy) % seqNumWatchList.length;
+			sessionKey.watchListPointer = (sessionKey.watchListPointer + moveBy) % sessionKey.seqNumWatchList.length;
 			sessionKey.watchListOffset = (int) ((0l + sessionKey.watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
 outer:
-		for(int i = 0; i < seqNumWatchList.length; i++) {
-			int index = (watchListPointer + i) % seqNumWatchList.length;
-			for(int j = 0; j < seqNumWatchList[index].length; j++) {
-				if(seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) continue outer;
+		for(int i = 0; i < sessionKey.seqNumWatchList.length; i++) {
+			int index = (sessionKey.watchListPointer + i) % sessionKey.seqNumWatchList.length;
+			for(int j = 0; j < sessionKey.seqNumWatchList[index].length; j++) {
+				if(sessionKey.seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) continue outer;
 			}
 			
 			int sequenceNumber = (int) ((0l + sessionKey.watchListOffset + i) % NUM_SEQNUMS);
