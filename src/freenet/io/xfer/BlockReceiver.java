@@ -136,13 +136,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 //	private final boolean _doTooLong;
 	private final BlockReceiverTimeoutHandler _timeoutHandler;
 
-<<<<<<< HEAD:src/freenet/io/xfer/BlockReceiver.java
-	
 	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong, boolean realTime, BlockReceiverTimeoutHandler timeoutHandler) {
 		_timeoutHandler = timeoutHandler == null ? nullTimeoutHandler : timeoutHandler;
-=======
-	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong, boolean realTime) {
->>>>>>> build01312:src/freenet/io/xfer/BlockReceiver.java
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;
