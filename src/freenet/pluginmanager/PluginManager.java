@@ -397,7 +397,8 @@ public class PluginManager {
 			if (plug == null)
 				return null; // Already loaded
 			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
-			pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this, plug));
+			pi = new PluginInfoWrapper(node, plug, filename);
+			PluginHandler.startPlugin(PluginManager.this, pi);
 			synchronized (pluginWrappers) {
 				pluginWrappers.add(pi);
 				pluginsFailedLoad.remove(filename);
@@ -631,9 +632,10 @@ public class PluginManager {
 
 	}
 
-	void register(FredPlugin plug, PluginInfoWrapper pi) {
-		// handles FProxy? If so, register
+	void register(PluginInfoWrapper pi) {
+		FredPlugin plug = pi.getPlugin();
 
+		// handles FProxy? If so, register
 		if(pi.isPproxyPlugin())
 			registerToadlet(plug);
 
@@ -1319,7 +1321,8 @@ public class PluginManager {
 						Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
 						try {
 							if(object instanceof FredPluginThreadless) {
-								((FredPlugin)object).runPlugin(new PluginRespirator(node, PluginManager.this, (FredPlugin)object));
+								PluginInfoWrapper pi = new PluginInfoWrapper(node, (FredPlugin)object, filename);
+								pi.getPlugin().runPlugin(pi.getPluginRespirator());
 							}
 						} catch (Throwable t) {
 							Logger.error(this, "Failed to start plugin (to prevent NPEs) while terminating it because it is too old: "+t, t);

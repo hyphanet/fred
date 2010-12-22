@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.HashSet;
 
 import freenet.l10n.NodeL10n;
+import freenet.node.Node;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
@@ -34,11 +35,11 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	private volatile boolean stopping = false;
 	private volatile boolean unregistered = false;
 	
-	public PluginInfoWrapper(PluginRespirator pr, FredPlugin plug, String filename) {
+	public PluginInfoWrapper(Node node, FredPlugin plug, String filename) {
 		this.plug = plug;
 		className = plug.getClass().toString();
 		this.filename = filename;
-		this.pr = pr;
+		this.pr = new PluginRespirator(node, this);
 		threadName = 'p' + className.replaceAll("^class ", "") + '_' + hashCode();
 		start = System.currentTimeMillis();
 		isBandwidthIndicator = (plug instanceof FredPluginBandwidthIndicator);
@@ -241,6 +242,10 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 
 	public FredPlugin getPlugin() {
 		return this.plug;
+	}
+
+	public PluginRespirator getPluginRespirator() {
+		return pr;
 	}
 
 	public int compareTo(PluginInfoWrapper pi) {

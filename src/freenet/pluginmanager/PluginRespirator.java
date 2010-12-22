@@ -30,15 +30,15 @@ public class PluginRespirator {
 	/** For accessing the node. */
 	private final Node node;
 	private final FredPlugin plugin;
-	private final PluginManager pluginManager;
+	private final PluginInfoWrapper pi;
 
 	private PluginStore store;
 	
-	public PluginRespirator(Node node, PluginManager pm, FredPlugin plug) {
+	public PluginRespirator(Node node, PluginInfoWrapper pi) {
 		this.node = node;
 		this.hlsc = node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
-		this.plugin = plug;
-		this.pluginManager = pm;
+		this.plugin = pi.getPlugin();
+		this.pi = pi;
 	}
 	
 	//public HighLevelSimpleClient getHLSimpleClient() throws PluginSecurityException {
@@ -46,7 +46,7 @@ public class PluginRespirator {
 		return hlsc;
 	}
 	
-	/** Get the node. Use this if you need access to low-level stuff, config
+	/** Get the node. Use this if you need access to low-level stuff, node config
 	 * etc. */
 	public Node getNode(){
 		return node;

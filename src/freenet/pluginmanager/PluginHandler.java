@@ -19,11 +19,10 @@ public class PluginHandler {
 	 * 
 	 * @param plug
 	 */
-	public static PluginInfoWrapper startPlugin(PluginManager pm, String filename, FredPlugin plug, PluginRespirator pr) {
-		final PluginInfoWrapper pi = new PluginInfoWrapper(pr, plug, filename);
-		final PluginStarter ps = new PluginStarter(pr, pi);
-		ps.setPlugin(pm, plug);
-		
+	public static void startPlugin(PluginManager pm, PluginInfoWrapper pi) {
+		final PluginStarter ps = new PluginStarter(pm, pi);
+
+		FredPlugin plug = pi.getPlugin();
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		ClassLoader pluginClassLoader = plug.getClass().getClassLoader();
 		Thread.currentThread().setContextClassLoader(pluginClassLoader);
@@ -42,35 +41,27 @@ public class PluginHandler {
 			pm.getTicker().queueTimedJob(job, 0);
 		} else {
 			// Avoid NPEs: let it init, then register it.
-			plug.runPlugin(pr);
-			pm.register(plug, pi);
+			plug.runPlugin(pi.getPluginRespirator());
+			pm.register(pi);
 		}
 		} finally {
 			Thread.currentThread().setContextClassLoader(oldClassLoader);
 		}
-		return pi;
 	}
 	
 	private static class PluginStarter implements Runnable {
-		private FredPlugin plugin = null;
-		private PluginRespirator pr;
 		private PluginManager pm = null;
 		final PluginInfoWrapper pi;
 		
-		public PluginStarter(PluginRespirator pr, PluginInfoWrapper pi) {
-			this.pr = pr;
-			this.pi = pi;
-		}
-		
-		public void setPlugin(PluginManager pm, FredPlugin plugin) {
-			this.plugin = plugin;
+		public PluginStarter(PluginManager pm, PluginInfoWrapper pi) {
 			this.pm = pm;
+			this.pi = pi;
 		}
 		
 		public void run() {
 				try {
-					pm.register(plugin, pi);
-					plugin.runPlugin(pr);
+					pm.register(pi);
+					pi.getPlugin().runPlugin(pi.getPluginRespirator());
 				} catch (OutOfMemoryError e) {
 					OOMHandler.handleOOM(e);
 				} catch (Throwable t) {
