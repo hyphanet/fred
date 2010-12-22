@@ -4093,7 +4093,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(sender != null) {
 			if(logMINOR) Logger.minor(this, "Data already being transferred: "+sender);
-			tag.setSender(sender);
+			tag.setSender(sender, true);
 			return sender;
 		}
 
@@ -4104,7 +4104,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		sender = new RequestSender(key, null, htl, uid, tag, this, source, offersOnly, canWriteClientCache, canWriteDatastore, realTimeFlag);
-		tag.setSender(sender);
+		tag.setSender(sender, false);
 		sender.start();
 		if(logMINOR) Logger.minor(this, "Created new sender: "+sender);
 		return sender;
