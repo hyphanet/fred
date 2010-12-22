@@ -48,8 +48,10 @@ public class RequestTag extends UIDTag {
 		innerUnlock(noRecordUnlock);
 	}
 
-	public synchronized void setSender(RequestSender rs) {
-		sent = true;
+	public synchronized void setSender(RequestSender rs, boolean coalesced) {
+		// If it's because of transfer coalescing, we won't get anything from the RequestSender, so we should not wait for it.
+		if(!coalesced)
+			sent = true;
 		sender = new WeakReference<RequestSender>(rs);
 	}
 	
@@ -88,6 +90,8 @@ public class RequestTag extends UIDTag {
 				sb.append(s.getStatusString());
 			}
 		}
+		if(sent)
+			sb.append(" sent");
 		sb.append(" finishedCode=").append(requestSenderFinishedCode);
 		sb.append(" rejected=").append(rejected);
 		sb.append(" thrown=").append(handlerThrew);
@@ -99,6 +103,8 @@ public class RequestTag extends UIDTag {
 		}
 		if(handlerDisconnected)
 			sb.append(" handlerDisconnected=true");
+		sb.append(" : ");
+		sb.append(super.toString());
 		if(handlerThrew != null)
 			Logger.error(this, sb.toString(), handlerThrew);
 		else

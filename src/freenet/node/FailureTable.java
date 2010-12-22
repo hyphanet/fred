@@ -649,13 +649,13 @@ public class FailureTable implements OOMHook {
 		}
 	}
 
-	public boolean peersWantKey(Key key) {
+	public boolean peersWantKey(Key key, PeerNode apartFrom) {
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = entriesByKey.get(key);
 			if(entry == null) return false; // Nobody cares
 		}
-		return entry.othersWant(null);
+		return entry.othersWant(apartFrom);
 	}
 
 	public void handleLowMemory() throws Exception {

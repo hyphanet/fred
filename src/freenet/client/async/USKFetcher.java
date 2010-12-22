@@ -173,11 +173,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		boolean dnf;
 		boolean cancelled;
 		final Lookup lookup;
+		final boolean forever;
 		public USKAttempt(Lookup l, boolean forever) {
 			this.lookup = l;
 			this.number = l.val;
 			this.succeeded = false;
 			this.dnf = false;
+			this.forever = forever;
 			this.checker = new USKChecker(this, l.key, forever ? -1 : ctx.maxUSKRetries, l.ignoreStore ? ctxNoStore : ctx, parent, realTimeFlag);
 		}
 		public void onDNF(ClientContext context) {
@@ -234,6 +236,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		public short getPriority() {
 			if(backgroundPoll) {
+				if(forever) {
+					// Boost the priority for the regular next-slot polling to ensure ULPRs work.
+					short prio = normalPollPriority;
+					prio--;
+					// But don't go higher than progressPollPriority.
+					if(prio > progressPollPriority) prio = progressPollPriority;
+					return prio;
+				}
 				if(progressed && !firstLoop) {
 					// Just advanced, boost the priority.
 					// Do NOT boost the priority if just started.

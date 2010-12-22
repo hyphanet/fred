@@ -4093,6 +4093,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(sender != null) {
 			if(logMINOR) Logger.minor(this, "Data already being transferred: "+sender);
+			tag.setSender(sender, true);
 			return sender;
 		}
 
@@ -4103,6 +4104,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		sender = new RequestSender(key, null, htl, uid, tag, this, source, offersOnly, canWriteClientCache, canWriteDatastore, realTimeFlag);
+		tag.setSender(sender, false);
 		sender.start();
 		if(logMINOR) Logger.minor(this, "Created new sender: "+sender);
 		return sender;
@@ -4601,7 +4603,7 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	/** Only used by UIDTag. */
 	void unlockUID(UIDTag tag, boolean canFail, boolean noRecord) {
-		unlockUID(tag.uid, tag.isSSK(), tag.isInsert(), canFail, tag.isOfferReply(), tag.isLocal(), tag.realTimeFlag, tag, noRecord);
+		unlockUID(tag.uid, tag.isSSK(), tag.isInsert(), canFail, tag.isOfferReply(), tag.wasLocal(), tag.realTimeFlag, tag, noRecord);
 	}
 
 	protected void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, boolean realTimeFlag, UIDTag tag, boolean noRecord) {
@@ -4777,7 +4779,8 @@ public class Node implements TimeSkewDetectorCallback {
 			return ssk ? runningSSKOfferReplyUIDsBulk : runningCHKOfferReplyUIDsBulk;
 	}
 
-	static final int TIMEOUT = 10 * 60 * 1000;
+	// Must include bulk inserts so fairly long.
+	static final int TIMEOUT = 16 * 60 * 1000;
 
 	private void startDeadUIDChecker() {
 		getTicker().queueTimedJob(deadUIDChecker, TIMEOUT);
@@ -5827,7 +5830,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public boolean peersWantKey(Key key) {
-		return failureTable.peersWantKey(key);
+		return failureTable.peersWantKey(key, null);
 	}
 
 	private SimpleUserAlert alertMTUTooSmall;

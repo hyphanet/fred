@@ -539,6 +539,7 @@ loadWaiterLoop:
         			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
         			// FIXME bug #4613 consider two-stage timeout.
         			pn.fatalTimeout();
+    	        	origTag.removeFetchingOfferedKeyFrom(pn);
         			continue;
         		} else {
         			if(handleCHKOfferReply(reply, pn, offer, offers)) return true;
@@ -553,6 +554,7 @@ loadWaiterLoop:
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					continue;
 				}
         		if(reply == null) {
@@ -561,6 +563,7 @@ loadWaiterLoop:
         			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
         			// FIXME bug #4613 consider two-stage timeout.
         			pn.fatalTimeout();
+    	        	origTag.removeFetchingOfferedKeyFrom(pn);
         			continue;
         		} else {
         			if(handleSSKOfferReply(reply, pn, offer, offers)) return true;
@@ -580,12 +583,14 @@ loadWaiterLoop:
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
 			offers.keepLastOffer();
+        	origTag.removeFetchingOfferedKeyFrom(pn);
 			return false;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
 			offers.deleteLastOffer();
+        	origTag.removeFetchingOfferedKeyFrom(pn);
 			return false;
 		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
 			headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
@@ -604,6 +609,7 @@ loadWaiterLoop:
 			if(dataMessage == null) {
 				Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key);
 				offers.deleteLastOffer();
+	        	origTag.removeFetchingOfferedKeyFrom(pn);
 				return false;
 			}
 			sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
@@ -616,11 +622,13 @@ loadWaiterLoop:
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					return false;
 				}
 				if(pk == null) {
 					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					return false;
 				}
 				try {
@@ -628,6 +636,7 @@ loadWaiterLoop:
 				} catch (CryptFormatException e) {
 					Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					return false;
 				}
 				
@@ -636,6 +645,7 @@ loadWaiterLoop:
 				} catch (SSKVerifyException e) {
 					Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
 					offers.deleteLastOffer();
+		        	origTag.removeFetchingOfferedKeyFrom(pn);
 					return false;
 				}
 			}
@@ -645,10 +655,13 @@ loadWaiterLoop:
 				return true;
 			} else {
         		offers.deleteLastOffer();
+	        	origTag.removeFetchingOfferedKeyFrom(pn);
         		return false;
 			}
-		} else 
+		} else {
+        	origTag.removeFetchingOfferedKeyFrom(pn);
 			return false;
+		}
 	}
 
 	/** @return True if we successfully received the offer or failed fatally. False if we
@@ -980,11 +993,13 @@ loadWaiterLoop:
     	
    		Logger.error(this, "Unexpected message: "+msg);
    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+		origTag.removeRoutingTo(next);
    		return DO.NEXT_PEER;
     	
 	}
     
 	protected void makeTurtle() {
+		origTag.reassignToSelf();
 		synchronized(this) {
 			if(tryTurtle) return;
 			tryTurtle = true;
@@ -1011,10 +1026,12 @@ loadWaiterLoop:
 			pubKey = null;
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
     		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+			origTag.removeRoutingTo(next);
 			return false; // try next node
 		} catch (CryptFormatException e) {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
     		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+			origTag.removeRoutingTo(next);
 			return false; // try next node
 		}
 	}
@@ -1374,7 +1391,7 @@ loadWaiterLoop:
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
     	while(true) {
     	long now = System.currentTimeMillis();
-    	long deadline = now + (realTimeFlag ? 1200 * 1000 : 300 * 1000);
+    	long deadline = now + (realTimeFlag ? 300 * 1000 : 1260 * 1000);
         while(true) {
         	short current = mask; // If any bits are set already, we ignore those states.
         	
@@ -1421,10 +1438,17 @@ loadWaiterLoop:
 	private long transferTime;
 	
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
-    	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
+    	if(logMINOR) Logger.minor(this, "finish("+code+ ") on "+this);
         
     	boolean turtle;
     	
+    	if(next != null) {
+    		if(fromOfferedKey)
+    			origTag.removeFetchingOfferedKeyFrom(next);
+    		else
+    			origTag.removeRoutingTo(next);
+    	}
+		
         synchronized(this) {
         	if(status != NOT_FINISHED) {
         		if(logMINOR) Logger.minor(this, "Status already set to "+status+" - returning on "+this+" would be setting "+code+" from "+next);
@@ -1436,7 +1460,7 @@ loadWaiterLoop:
             if(status == SUCCESS)
             	successFrom = next;
         }
-		
+        
         if(status == SUCCESS) {
         	if((!isSSK) && transferTime > 0 && logMINOR) {
         		long timeTaken = System.currentTimeMillis() - startTime;
@@ -1484,7 +1508,6 @@ loadWaiterLoop:
 			notifyAll();
 		}
 		
-		origTag.removeRoutingTo(next);
     }
 
     /** Wait for the opennet completion message and discard it */
@@ -1673,7 +1696,7 @@ loadWaiterLoop:
 		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onCHKTransferBegins();
 		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onRequestSenderFinished(int status, long grabbedUID);
+		void onRequestSenderFinished(int status);
 		/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
 		 * Should return quickly, allocate a thread if it needs to block etc. */
 		void onAbortDownstreamTransfers(int reason, String desc);
@@ -1690,8 +1713,10 @@ loadWaiterLoop:
 		synchronized (this) {
 			synchronized (listeners) {
 				sentTransferCancel = sentAbortDownstreamTransfers;
-				if(!sentTransferCancel)
+				if(!sentTransferCancel) {
 					listeners.add(l);
+					if(logMINOR) Logger.minor(this, "Added listener "+l+" to "+this);
+				}
 				reject = sentReceivedRejectOverload;
 				transfer = sentCHKTransferBegins;
 				sentFinished = sentRequestSenderFinished;
@@ -1707,7 +1732,7 @@ loadWaiterLoop:
 		if(sentTransferCancel)
 			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
 		if (status!=NOT_FINISHED && sentFinished)
-			l.onRequestSenderFinished(status, -1);
+			l.onRequestSenderFinished(status);
 	}
 	
 	private boolean sentReceivedRejectOverload;
@@ -1744,11 +1769,13 @@ loadWaiterLoop:
 	private boolean sentRequestSenderFinished;
 	
 	private void fireRequestSenderFinished(int status) {
+		origTag.setRequestSenderFinished(status);
 		synchronized (listeners) {
 			sentRequestSenderFinished = true;
+			if(logMINOR) Logger.minor(this, "Notifying "+listeners.size()+" listeners of status "+status);
 			for (Listener l : listeners) {
 				try {
-					l.onRequestSenderFinished(status, -1);
+					l.onRequestSenderFinished(status);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
@@ -1762,6 +1789,7 @@ loadWaiterLoop:
 	private boolean receivingAsync;
 	
 	private void sendAbortDownstreamTransfers(int reason, String desc) {
+		origTag.setRequestSenderFinished(TRANSFER_FAILED);
 		synchronized (listeners) {
 			abortDownstreamTransfersReason = reason;
 			abortDownstreamTransfersDesc = desc;
@@ -1769,7 +1797,7 @@ loadWaiterLoop:
 			for (Listener l : listeners) {
 				try {
 					l.onAbortDownstreamTransfers(reason, desc);
-					l.onRequestSenderFinished(TRANSFER_FAILED, uid);
+					l.onRequestSenderFinished(TRANSFER_FAILED);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}

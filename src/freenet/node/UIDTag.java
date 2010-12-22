@@ -4,6 +4,8 @@ import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger.LogLevel;
 
 /**
  * Base class for tags representing a running request. These store enough information
@@ -13,6 +15,17 @@ import freenet.support.Logger;
  */
 public abstract class UIDTag {
 	
+    private static volatile boolean logMINOR;
+    
+    static {
+    	Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+    		@Override
+    		public void shouldUpdate(){
+    			logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+    		}
+    	});
+    }
+    
 	final long createdTime;
 	final boolean wasLocal;
 	private final WeakReference<PeerNode> sourceRef;
@@ -40,6 +53,8 @@ public abstract class UIDTag {
 		this.realTimeFlag = realTimeFlag;
 		this.node = node;
 		this.uid = uid;
+		if(logMINOR)
+			Logger.minor(this, "Created "+this);
 	}
 
 	public abstract void logStillPresent(Long uid);
@@ -172,13 +187,13 @@ public abstract class UIDTag {
 		if(hasUnlocked) return false;
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
-			if(!reassigned)
-				Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo.size()+" yet not reassigned on "+this);
+			if(!(reassigned || wasLocal))
+				Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo+" yet not reassigned on "+this, new Exception("debug"));
 			return false;
 		}
 		if(fetchingOfferedKeyFrom != null && !fetchingOfferedKeyFrom.isEmpty()) {
-			if(!reassigned)
-				Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom.size()+" yet not reassigned on "+this);
+			if(!(reassigned || wasLocal))
+				Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom+" yet not reassigned on "+this, new Exception("debug"));
 			return false;
 		}
 		Logger.normal(this, "Unlocking "+this, new Exception("debug"));
@@ -197,7 +212,7 @@ public abstract class UIDTag {
 		if(canUnlock)
 			innerUnlock(noRecordUnlock);
 		else {
-			Logger.error(this, "Cannot unlock yet in unlockHandler, still sending requests");
+			Logger.normal(this, "Cannot unlock yet in unlockHandler, still sending requests");
 		}
 	}
 
@@ -205,5 +220,22 @@ public abstract class UIDTag {
 		unlockHandler(false);
 	}
 
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append(super.toString());
+		sb.append(":");
+		sb.append(uid);
+		if(unlockedHandler)
+			sb.append(" (unlocked handler)");
+		if(hasUnlocked)
+			sb.append(" (unlocked)");
+		if(noRecordUnlock)
+			sb.append(" (don't record unlock)");
+		if(currentlyRoutingTo != null)
+			sb.append(" (routing to ").append(currentlyRoutingTo.size()).append(")");
+		if(fetchingOfferedKeyFrom != null)
+			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
+		return sb.toString();
+	}
 
 }

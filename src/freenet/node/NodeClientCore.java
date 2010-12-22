@@ -929,8 +929,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			 * @param uidTransferred If this is set, the RequestSender has taken on 
 			 * responsibility for unlocking the UID specified. We should not unlock it.
 			 */
-			public void onRequestSenderFinished(int status, long uidTransferred) {
-				tag.setRequestSenderFinished(status);
+			public void onRequestSenderFinished(int status) {
 				tag.unlockHandler();
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
@@ -957,7 +956,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				return; // Already have it.
 			}
 			RequestSender rs = (RequestSender) o;
-			tag.setSender(rs);
 			rs.addListener(listener);
 			if(rs.uid != uid)
 				tag.unlockHandler();

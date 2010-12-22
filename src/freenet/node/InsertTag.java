@@ -57,6 +57,8 @@ public class InsertTag extends UIDTag {
 		sb.append(" : ").append(uid).append(" : start=").append(start);
 		sb.append(" ssk=").append(ssk);
 		sb.append(" thrown=").append(handlerThrew);
+		sb.append(" : ");
+		sb.append(super.toString());
 		if(handlerThrew != null)
 			Logger.error(this, sb.toString(), handlerThrew);
 		else
