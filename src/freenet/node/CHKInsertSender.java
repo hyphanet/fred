@@ -345,7 +345,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         int highHTLFailureCount = 0;
         boolean starting = true;
         while(true) {
-        	if(hasReceiveFailed()) return; // don't need to set status as killed by CHKInsertHandler
+        	if(failIfReceiveFailed(null, null)) return; // don't need to set status as killed by CHKInsertHandler
             
             /*
              * If we haven't routed to any node yet, decrement according to the source.
@@ -513,7 +513,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			
             while (true) {
 
-    			if(hasReceiveFailed()) return;
+    			if(failIfReceiveFailed(thisTag, next)) return;
 				
 				try {
 					msg = node.usm.waitFor(mf, this);
@@ -522,7 +522,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							+ " while waiting for InsertReply on " + this);
 					break;
 				}
-				if(hasReceiveFailed()) return;
+    			if(failIfReceiveFailed(thisTag, next)) return;
 				
 				if (msg == null) {
 					
@@ -542,7 +542,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					
 		            while (true) {
 
-		    			if(hasReceiveFailed()) return;
+		    			if(failIfReceiveFailed(thisTag, next)) return;
 						
 						try {
 							msg = node.usm.waitFor(mf, this);
@@ -552,7 +552,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							return;
 						}
 						
-						if(hasReceiveFailed()) return;
+		    			if(failIfReceiveFailed(thisTag, next)) return;
 						
 						if(msg == null) {
 							// Second timeout.
@@ -998,17 +998,15 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         return htl;
     }
     
-    public boolean hasReceiveFailed() {
-    	synchronized(backgroundTransfers) {
-    		return receiveFailed;
-    	}
-    }
-    
     public boolean failIfReceiveFailed(InsertTag tag, PeerNode next) {
     	synchronized(backgroundTransfers) {
     		if(!receiveFailed) return false;
     	}
-    	next.noLongerRoutingTo(tag, false);
+    	if(tag != null) {
+    		tag.finishedSender();
+    		if(next != null)
+    			next.noLongerRoutingTo(tag, false);
+    	}
     	return true;
     }
 
