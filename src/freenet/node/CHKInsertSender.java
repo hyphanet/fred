@@ -48,15 +48,17 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		/** Did it succeed? */
 		boolean transferSucceeded;
 		
-		BackgroundTransfer(final PeerNode pn, PartiallyReceivedBlock prb, final InsertTag thisTag) {
+		private final InsertTag thisTag;
+		
+		BackgroundTransfer(final PeerNode pn, PartiallyReceivedBlock prb, InsertTag thisTag) {
 			this.pn = pn;
 			this.uid = CHKInsertSender.this.uid;
+			this.thisTag = thisTag;
 			bt = new BlockTransmitter(node.usm, node.getTicker(), pn, uid, prb, CHKInsertSender.this, BlockTransmitter.NEVER_CASCADE, 
 					new BlockTransmitterCompletion() {
 
 				public void blockTransferFinished(boolean success) {
 					BackgroundTransfer.this.completedTransfer(success);
-					thisTag.removeRoutingTo(pn);
 					// Double-check that the node is still connected. Pointless to wait otherwise.
 					if (pn.isConnected() && transferSucceeded) {
 						//synch-version: this.receivedNotice(waitForReceivedNotification(this));
@@ -147,6 +149,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					CHKInsertSender.this.setTransferTimedOut();
 				}
 				receivedNotice(!anyTimedOut);
+				thisTag.removeRoutingTo(pn);
 			} else {
 				Logger.error(this, "received completion notice for wrong node: "+pn+" != "+this.pn);
 			}			
@@ -186,11 +189,13 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		public void onDisconnect(PeerContext ctx) {
 			Logger.normal(this, "Disconnected "+ctx+" for "+this);
 			receivedNotice(true); // as far as we know
+			thisTag.removeRoutingTo(pn);
 		}
 
 		public void onRestarted(PeerContext ctx) {
 			Logger.normal(this, "Restarted "+ctx+" for "+this);
 			receivedNotice(true);
+			thisTag.removeRoutingTo(pn);
 		}
 
 		public int getPriority() {
