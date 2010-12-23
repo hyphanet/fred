@@ -81,19 +81,24 @@ class NPFPacket {
 				break;
 			}
 
-			if(plaintext.length < (offset + 2)) {
-				packet.error = true;
-				return packet;
-			}
-
 			int messageID = -1;
 			if((plaintext[offset] & 0x10) != 0) {
+				if(plaintext.length < (offset + 4)) {
+					packet.error = true;
+					return packet;
+				}
+
 				messageID = ((plaintext[offset] & 0x0F) << 24)
 				                | ((plaintext[offset + 1] & 0xFF) << 16)
 				                | ((plaintext[offset + 2] & 0xFF) << 8)
 				                | (plaintext[offset + 3] & 0xFF);
 				offset += 4;
 			} else {
+				if(plaintext.length < (offset + 2)) {
+					packet.error = true;
+					return packet;
+				}
+
 				if(prevFragmentID == -1) {
 					Logger.warning(NPFPacket.class, "First fragment doesn't have full message id");
 					packet.error = true;
