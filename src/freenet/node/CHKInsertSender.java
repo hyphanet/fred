@@ -48,7 +48,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		/** Did it succeed? */
 		boolean transferSucceeded;
 		
-		BackgroundTransfer(final PeerNode pn, PartiallyReceivedBlock prb) {
+		BackgroundTransfer(final PeerNode pn, PartiallyReceivedBlock prb, final InsertTag thisTag) {
 			this.pn = pn;
 			this.uid = CHKInsertSender.this.uid;
 			bt = new BlockTransmitter(node.usm, node.getTicker(), pn, uid, prb, CHKInsertSender.this, BlockTransmitter.NEVER_CASCADE, 
@@ -56,6 +56,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 
 				public void blockTransferFinished(boolean success) {
 					BackgroundTransfer.this.completedTransfer(success);
+					thisTag.removeRoutingTo(pn);
 					// Double-check that the node is still connected. Pointless to wait otherwise.
 					if (pn.isConnected() && transferSucceeded) {
 						//synch-version: this.receivedNotice(waitForReceivedNotification(this));
@@ -501,21 +502,22 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 
 			if(logMINOR) Logger.minor(this, "Sending data");
-			startBackgroundTransfer(next, prb);
+			startBackgroundTransfer(next, prb, thisTag);
+			
+			// Once the transfer has started, we only unlock the tag after the transfer completes (successfully or not).
 			
             while (true) {
 
-    			if(failIfReceiveFailed(thisTag, next)) return;
+    			if(hasReceiveFailed()) return;
 				
 				try {
 					msg = node.usm.waitFor(mf, this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for InsertReply on " + this);
-    				thisTag.removeRoutingTo(next);
 					break;
 				}
-				if(failIfReceiveFailed(thisTag, next)) return;
+				if(hasReceiveFailed()) return;
 				
 				if (msg == null) {
 					
@@ -535,7 +537,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					
 		            while (true) {
 
-		    			if(failIfReceiveFailed(thisTag, next)) return;
+		    			if(hasReceiveFailed()) return;
 						
 						try {
 							msg = node.usm.waitFor(mf, this);
@@ -545,7 +547,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							return;
 						}
 						
-						if(failIfReceiveFailed(thisTag, next)) return;
+						if(hasReceiveFailed()) return;
 						
 						if(msg == null) {
 							// Second timeout.
@@ -651,7 +653,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			if(logMINOR) Logger.minor(this,
 					"Local RejectedOverload, moving on to next peer");
 			// Give up on this one, try another
-			thisTag.removeRoutingTo(next);
 			return true;
 		} else {
 			forwardRejectedOverload();
@@ -666,9 +667,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			if (htl > newHtl)
 				htl = newHtl;						
 		}
-		// Finished as far as this node is concerned
+		// Finished as far as this node is concerned - except for the data transfer, which will continue until it finishes.
 		next.successNotOverload();
-		thisTag.removeRoutingTo(next);
 	}
 
 	private void handleDataInsertRejected(Message msg, PeerNode next, InsertTag thisTag) {
@@ -725,11 +725,12 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 		Logger.error(this, "DataInsert rejected! Reason="
 				+ DMT.getDataInsertRejectedReason(reason));
-		thisTag.removeRoutingTo(next);
 	}
 
 	/** @return True if accepted, false if we should try another node. */
 	private boolean waitAccepted(PeerNode next, InsertTag thisTag) {
+		
+		// We have not yet started the data transfer, so if we fail here we need to tell the tag we are not routing to next any more.
 		
 		Message msg = null;
 		
@@ -895,8 +896,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 	}
 
-	private void startBackgroundTransfer(PeerNode node, PartiallyReceivedBlock prb) {
-		BackgroundTransfer ac = new BackgroundTransfer(node, prb);
+	private void startBackgroundTransfer(PeerNode node, PartiallyReceivedBlock prb, InsertTag tag) {
+		BackgroundTransfer ac = new BackgroundTransfer(node, prb, tag);
 		synchronized(backgroundTransfers) {
 			backgroundTransfers.add(ac);
 			backgroundTransfers.notifyAll();
