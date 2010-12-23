@@ -14,9 +14,9 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x00}; // 0 acks
 		NPFPacket r = NPFPacket.create(packet);
 
-		assertEquals(r.getSequenceNumber(), 0);
-		assertEquals(r.getAcks().size(), 0);
-		assertEquals(r.getFragments().size(), 0);
+		assertEquals(0, r.getSequenceNumber());
+		assertEquals(0, r.getAcks().size());
+		assertEquals(0, r.getFragments().size());
 		assertFalse(r.getError());
 	}
 
@@ -27,10 +27,10 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00}; //Ack for packet 0
 		NPFPacket r = NPFPacket.create(packet);
 
-		assertEquals(r.getSequenceNumber(), 0);
-		assertEquals(r.getAcks().size(), 1);
+		assertEquals(0, r.getSequenceNumber());
+		assertEquals(1, r.getAcks().size());
 		assertTrue(r.getAcks().contains(Integer.valueOf(0)));
-		assertEquals(r.getFragments().size(), 0);
+		assertEquals(0, r.getFragments().size());
 		assertFalse(r.getError());
 	}
 
@@ -42,12 +42,12 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x05, (byte)0x01}; //Acks for packets 10 and 11
 		NPFPacket r = NPFPacket.create(packet);
 
-		assertEquals(r.getSequenceNumber(), 0);
-		assertEquals(r.getAcks().size(), 3);
+		assertEquals(0, r.getSequenceNumber());
+		assertEquals(3, r.getAcks().size());
 		assertTrue(r.getAcks().contains(Integer.valueOf(5)));
 		assertTrue(r.getAcks().contains(Integer.valueOf(10)));
 		assertTrue(r.getAcks().contains(Integer.valueOf(11)));
-		assertEquals(r.getFragments().size(), 0);
+		assertEquals(0, r.getFragments().size());
 		assertFalse(r.getError());
 	}
 
@@ -60,18 +60,18 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF}; //Data
 		NPFPacket r = NPFPacket.create(packet);
 
-		assertEquals(r.getSequenceNumber(), 0);
-		assertEquals(r.getAcks().size(), 0);
-		assertEquals(r.getFragments().size(), 1);
+		assertEquals(0, r.getSequenceNumber());
+		assertEquals(0, r.getAcks().size());
+		assertEquals(1, r.getFragments().size());
 
 		MessageFragment frag = r.getFragments().getFirst();
 		assertTrue(frag.shortMessage);
 		assertFalse(frag.isFragmented);
 		assertTrue(frag.firstFragment);
-		assertEquals(frag.messageID, 0);
-		assertEquals(frag.fragmentLength, 8);
-		assertEquals(frag.fragmentOffset, 0);
-		assertEquals(frag.messageLength, 8);
+		assertEquals(0, frag.messageID);
+		assertEquals(8, frag.fragmentLength);
+		assertEquals(0, frag.fragmentOffset);
+		assertEquals(8, frag.messageLength);
 		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { (byte)0x01, (byte)0x23, (byte)0x45,
 		                (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF }));
 
@@ -89,19 +89,19 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF }; // Data
 		NPFPacket r = NPFPacket.create(packet);
 
-		assertEquals(r.getSequenceNumber(), 0);
-		assertEquals(r.getAcks().size(), 0);
-		assertEquals(r.getFragments().size(), 2);
+		assertEquals(0, r.getSequenceNumber());
+		assertEquals(0, r.getAcks().size());
+		assertEquals(2, r.getFragments().size());
 
 		// Check first fragment
 		MessageFragment frag = r.getFragments().get(0);
 		assertTrue(frag.shortMessage);
 		assertFalse(frag.isFragmented);
 		assertTrue(frag.firstFragment);
-		assertEquals(frag.messageID, 0);
-		assertEquals(frag.fragmentLength, 8);
-		assertEquals(frag.fragmentOffset, 0);
-		assertEquals(frag.messageLength, 8);
+		assertEquals(0, frag.messageID);
+		assertEquals(8, frag.fragmentLength);
+		assertEquals(0, frag.fragmentOffset);
+		assertEquals(8, frag.messageLength);
 		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89,
 		                (byte)0xAB, (byte)0xCD, (byte)0xEF }));
 
@@ -110,10 +110,10 @@ public class NPFPacketTest extends TestCase {
 		assertTrue(frag.shortMessage);
 		assertFalse(frag.isFragmented);
 		assertTrue(frag.firstFragment);
-		assertEquals(frag.messageID, 0);
-		assertEquals(frag.fragmentLength, 8);
-		assertEquals(frag.fragmentOffset, 0);
-		assertEquals(frag.messageLength, 8);
+		assertEquals(0, frag.messageID);
+		assertEquals(8, frag.fragmentLength);
+		assertEquals(0, frag.fragmentOffset);
+		assertEquals(8, frag.messageLength);
 		assertTrue(Arrays.equals(frag.fragmentData, new byte[] { (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89,
 		                (byte)0xAB, (byte)0xCD, (byte)0xEF }));
 
@@ -164,9 +164,9 @@ public class NPFPacketTest extends TestCase {
 		                (byte)0x00}; // 0 acks
 		NPFPacket r = NPFPacket.create(packet);
 
-		assertEquals(r.getSequenceNumber(), 16909320);
-		assertEquals(r.getAcks().size(), 0);
-		assertEquals(r.getFragments().size(), 0);
+		assertEquals(16909320, r.getSequenceNumber());
+		assertEquals(0, r.getAcks().size());
+		assertEquals(0, r.getFragments().size());
 		assertFalse(r.getError());
 	}
 
@@ -319,7 +319,7 @@ public class NPFPacketTest extends TestCase {
 		byte[] data = new byte[packet.getLength()];
 		packet.toBytes(data, 0, null);
 
-		assertEquals("Packet lengths differ:", data.length, correctData.length);
+		assertEquals("Packet lengths differ:", correctData.length, data.length);
 		for(int i = 0; i < data.length; i++) {
 			if(data[i] != correctData[i]) {
 				fail("Different values at index " + i + ": Expected 0x"
