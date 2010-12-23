@@ -549,7 +549,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						} catch (DisconnectedException e) {
 							Logger.normal(this, "Disconnected from " + next
 									+ " while waiting for InsertReply on " + this);
-							thisTag.finishedSender();
 							return;
 						}
 						
@@ -560,7 +559,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							// Definitely caused by the next node, fatal.
 							Logger.error(this, "Got second (local) timeout on "+this+" from "+next);
 							next.fatalTimeout();
-							thisTag.finishedSender();
 							return;
 						}
 						
@@ -568,26 +566,22 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							// Next node timed out awaiting our DataInsert.
 							// But we already sent it, so something is wrong. :(
 							handleRejectedTimeout(msg, next);
-							thisTag.finishedSender();
 							return;
 						}
 
 						if (msg.getSpec() == DMT.FNPRejectedOverload) {
 							if(handleRejectedOverload(msg, next, thisTag)) {
-								thisTag.finishedSender();
 								return; // Don't try another node.
 							}
 							else continue;
 						}
 
 						if (msg.getSpec() == DMT.FNPRouteNotFound) {
-							thisTag.finishedSender();
 							return; // Don't try another node.
 						}
 						
 						if (msg.getSpec() == DMT.FNPDataInsertRejected) {
 							handleDataInsertRejected(msg, next, thisTag);
-							thisTag.finishedSender();
 							return; // Don't try another node.
 						}
 						
@@ -608,7 +602,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					// Next node timed out awaiting our DataInsert.
 					// But we already sent it, so something is wrong. :(
 					handleRejectedTimeout(msg, next);
-					thisTag.finishedSender();
 					return;
 				}
 
@@ -1011,10 +1004,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     	synchronized(backgroundTransfers) {
     		if(!receiveFailed) return false;
     	}
-    	if(tag != null) {
-    		tag.finishedSender();
-    		if(next != null)
-    			next.noLongerRoutingTo(tag, false);
+    	if(tag != null && next != null) {
+   			next.noLongerRoutingTo(tag, false);
     	}
     	return true;
     }

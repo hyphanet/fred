@@ -353,7 +353,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 							Logger.normal(this, "Disconnected from " + next
 									+ " while waiting for InsertReply on " + this);
 							thisTag.removeRoutingTo(next);
-							thisTag.finishedSender();
 							return;
 						}
 						
@@ -362,7 +361,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 							Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
 							next.fatalTimeout();
 							thisTag.removeRoutingTo(next);
-							thisTag.finishedSender();
 							return;
 						}
 						
@@ -372,7 +370,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 							return;
 						else if(action == DO.NEXT_PEER) {
 							thisTag.removeRoutingTo(next);
-							thisTag.finishedSender();
 							return; // Don't try others
 						}
 						// else if(action == DO.WAIT) continue;
