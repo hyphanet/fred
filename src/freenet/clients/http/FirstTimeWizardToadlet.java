@@ -185,6 +185,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					input.addChild("b", l10nSec("networkThreatLevel.name."+level));
 					input.addChild("#", ": ");
 					NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+					HTMLNode inner = input.addChild("p").addChild("i");
+					NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold" },
+							new HTMLNode[] { HTMLNode.STRONG });
 				}
 			}
 			if(!opennet) {
@@ -195,6 +198,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					input.addChild("b", l10nSec("networkThreatLevel.name."+level));
 					input.addChild("#", ": ");
 					NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+					HTMLNode inner = input.addChild("p").addChild("i");
+					NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold" },
+							new HTMLNode[] { HTMLNode.STRONG });
 				}
 				form.addChild("p").addChild("b", l10nSec("networkThreatLevel.opennetFriendsWarning"));
 			}
