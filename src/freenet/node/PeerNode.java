@@ -741,7 +741,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(negTypes[negTypes.length - 1] != 5) {
 			packetFormat = new FNPWrapper(this);
 		} else {
-			packetFormat = new NewPacketFormat(this, 0, 0, 0, 0);
+			packetFormat = new NewPacketFormat(this, 0, 0);
 		}
 
 		byte buffer[] = new byte[16];
@@ -2099,8 +2099,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(negType != 5) {
 				packetFormat = new FNPWrapper(this);
 			} else {
-				packetFormat = new NewPacketFormat(this, ourInitialSeqNum, theirInitialSeqNum,
-						ourInitialMsgID, theirInitialMsgID);
+				packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
 			}
 		}
 

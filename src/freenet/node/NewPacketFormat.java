@@ -67,8 +67,7 @@ public class NewPacketFormat implements PacketFormat {
 	private int usedBufferOtherSide = 0;
 	private final Object bufferUsageLock = new Object();
 
-	public NewPacketFormat(PeerNode pn, int ourInitialSeqNum, int theirInitialSeqNum,
-			int ourInitialMsgID, int theirInitialMsgID) {
+	public NewPacketFormat(PeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
 
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
@@ -77,8 +76,6 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		// Make sure the numbers are within the ranges we want
-		ourInitialSeqNum = (int) ((ourInitialSeqNum & 0x7FFFFFFF) % NUM_SEQNUMS);
-		theirInitialSeqNum = (int) ((theirInitialSeqNum & 0x7FFFFFFF) % NUM_SEQNUMS);
 		ourInitialMsgID = (ourInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
 		theirInitialMsgID = (theirInitialMsgID & 0x7FFFFFFF) % NUM_MESSAGE_IDS;
 
