@@ -37,6 +37,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.PageMaker.THEME;
+import freenet.clients.http.Toadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -638,6 +639,28 @@ public class PluginManager {
 		// handles FProxy? If so, register
 		if(pi.isPproxyPlugin())
 			registerToadlet(plug);
+
+		if(pi.isConfigurablePlugin()) {
+			// Registering the toadlet with atFront=false means that
+			// the node's ConfigToadlet will clobber the plugin's
+			// ConfigToadlet and the page will not be visible. So it
+			// must be registered with atFront=true. This means that
+			// malicious plugins could try to hijack node config
+			// pages, to ill effect. Let's avoid that.
+			boolean pluginIsTryingToHijackNodeConfig = false;
+			for(SubConfig subconfig : node.config.getConfigs()) {
+				if(pi.getPluginClassName().equals(subconfig.getPrefix())) {
+					pluginIsTryingToHijackNodeConfig = true;
+					break;
+				}
+			}
+			if(pluginIsTryingToHijackNodeConfig) {
+				Logger.warning(this, "The plugin loaded from "+pi.getFilename()+" is attempting to hijack a node configuration page; refusing to register its ConfigToadlet");
+			} else {
+				Toadlet toadlet = pi.getConfigToadlet();
+				core.getToadletContainer().register(toadlet, "FProxyToadlet.categoryConfig", toadlet.path(), true, "ConfigToadlet."+pi.getPluginClassName()+".label", "ConfigToadlet."+pi.getPluginClassName()+".tooltip", true, null, (FredPluginL10n)pi.getPlugin());
+			}
+		}
 
 		if(pi.isIPDetectorPlugin())
 			node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
@@ -1675,6 +1698,9 @@ public class PluginManager {
 
 	public void unregisterPlugin(PluginInfoWrapper wrapper, FredPlugin plug, boolean reloading) {
 		unregisterPluginToadlet(wrapper);
+		if(wrapper.isConfigurablePlugin()) {
+			core.getToadletContainer().unregister(wrapper.getConfigToadlet());
+		}
 		if(wrapper.isIPDetectorPlugin())
 			node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
 		if(wrapper.isPortForwardPlugin())

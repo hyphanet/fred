@@ -21,6 +21,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.FredPluginConfigurable;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -39,6 +40,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	private final Config config;
 	private final NodeClientCore core;
 	private final Node node;
+	/** plugin is always null except when this ConfigToadlet serves a plugin */
+	private final FredPluginConfigurable plugin;
 	private boolean needRestart = false;
 	private NeedRestartUserAlert needRestartUserAlert;
 
@@ -101,12 +104,17 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		}
 	}
 
-	ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core) {
+	public ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core) {
+		this(client, conf, subConfig, node, core, null);
+	}
+
+	public ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core, FredPluginConfigurable plugin) {
 		super(client);
 		config=conf;
 		this.core = core;
 		this.node = node;
 		this.subConfig = subConfig;
+		this.plugin = plugin;
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -167,7 +175,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				}
 			}
 		}
-		core.storeConfig();
+		config.store();
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("appliedTitle"), ctx);
 		HTMLNode pageNode = page.outer;
@@ -266,10 +274,16 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					displayedConfigElements++;
 					String configName = o[j].getName();
 
+					// If ConfigToadlet is serving a plugin, ask the plugin to translate the
+					// config descriptions, otherwise use the node's BaseL10n instance like
+					// normal.
+					HTMLNode shortDesc = (plugin == null) ? NodeL10n.getBase().getHTMLNode(o[j].getShortDesc()) : new HTMLNode("#", plugin.getString(o[j].getShortDesc()));
+					HTMLNode longDesc = (plugin == null) ? NodeL10n.getBase().getHTMLNode(o[j].getLongDesc()) : new HTMLNode("#", plugin.getString(o[j].getLongDesc()));
+
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("a", new String[]{"name", "id"}, new String[]{configName, configName}).addChild("span", new String[]{ "class", "title", "style" },
 							new String[]{ "configshortdesc", NodeL10n.getBase().getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+subConfig.getPrefix() + '.' + o[j].getName() + ']' : ""),
-							"cursor: help;" }).addChild(NodeL10n.getBase().getHTMLNode(o[j].getShortDesc()));
+							"cursor: help;" }).addChild(shortDesc);
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
 						Logger.error(this, subConfig.getPrefix() + configName + "has returned null from config!);");
@@ -294,7 +308,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 						        new String[] { "text", "config", o[j].getShortDesc(),
 						                subConfig.getPrefix() + '.' + configName, o[j].getValueString() });
 
-					configItemNode.addChild("span", "class", "configlongdesc").addChild(NodeL10n.getBase().getHTMLNode(o[j].getLongDesc()));
+					configItemNode.addChild("span", "class", "configlongdesc").addChild(longDesc);
 				}
 			}
 
