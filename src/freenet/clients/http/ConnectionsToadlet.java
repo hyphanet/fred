@@ -394,7 +394,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				if(hasTrustColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "trust")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("trustMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("trustTitle"));
 				if(hasVisibilityColumn())
-					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "trust")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("visibilityMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("visibilityTitle"));
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "trust")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("visibilityMessage"+((mode >= PageMaker.MODE_ADVANCED)?"Advanced":"Simple")), "border-bottom: 1px dotted; cursor: help;" }, l10n("visibilityTitle"));
 				if (mode >= PageMaker.MODE_ADVANCED) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("ipAddress"), "border-bottom: 1px dotted; cursor: help;" }, l10n("ipAddressTitle"));
 				}
@@ -794,7 +794,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		drawTrustColumn(peerRow, peerNodeStatus);
 		
-		drawVisibilityColumn(peerRow, peerNodeStatus);
+		drawVisibilityColumn(peerRow, peerNodeStatus, advancedModeEnabled);
 		
 		// address column
 		if (advancedModeEnabled) {
@@ -914,7 +914,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		return false;
 	}
 
-	protected void drawVisibilityColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
+	protected void drawVisibilityColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled) {
 		// Do nothing
 	}
 
