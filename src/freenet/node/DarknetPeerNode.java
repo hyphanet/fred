@@ -1645,7 +1645,7 @@ public class DarknetPeerNode extends PeerNode {
 			peerAddedTime = 0;
 	}
 
-	public FRIEND_TRUST getTrustLevel() {
+	public synchronized FRIEND_TRUST getTrustLevel() {
 		return trustLevel;
 	}
 
@@ -1654,5 +1654,12 @@ public class DarknetPeerNode extends PeerNode {
 		if(!node.shallWeRouteAccordingToOurPeersLocation()) return false; // Globally disabled
 		if(trustLevel == FRIEND_TRUST.LOW) return false;
 		return true;
+	}
+
+	public void setTrustLevel(FRIEND_TRUST trust) {
+		synchronized(this) {
+			trustLevel = trust;
+		}
+		node.peers.writePeers();
 	}
 }
