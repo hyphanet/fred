@@ -89,6 +89,7 @@ public class DarknetPeerNode extends PeerNode {
 	private FRIEND_TRUST trustLevel;
 	
 	private FRIEND_VISIBILITY ourVisibility;
+	private FRIEND_VISIBILITY theirVisibility;
 
 	private static boolean logMINOR;
 	
@@ -117,6 +118,18 @@ public class DarknetPeerNode extends PeerNode {
 		
 		FRIEND_VISIBILITY(short code) {
 			this.code = code;
+		}
+
+		public boolean isStricterThan(FRIEND_VISIBILITY theirVisibility) {
+			// Higher number = more strict.
+			return theirVisibility.code < code;
+		}
+
+		public static FRIEND_VISIBILITY getByCode(short code) {
+			for(FRIEND_VISIBILITY f : values()) {
+				if(f.code == code) return f;
+			}
+			return null;
 		}
 	}
 	
@@ -159,6 +172,12 @@ public class DarknetPeerNode extends PeerNode {
 				node.createVisibilityAlert();
 				ourVisibility = FRIEND_VISIBILITY.NO;
 			}
+			s = metadata.get("theirVisibility");
+			if(s != null) {
+				theirVisibility = FRIEND_VISIBILITY.valueOf(s);
+			} else {
+				theirVisibility = FRIEND_VISIBILITY.NO;
+			} 
 		} else {
 			if(trust == null) throw new IllegalArgumentException();
 			trustLevel = trust;
@@ -249,6 +268,7 @@ public class DarknetPeerNode extends PeerNode {
 			fs.putSingle("disableRoutingHasBeenSetLocally", "true");
 		fs.putSingle("trustLevel", trustLevel.name());
 		fs.putSingle("ourVisibility", ourVisibility.name());
+		fs.putSingle("theirVisibility", theirVisibility.name());
 
 		return fs;
 	}
@@ -1693,7 +1713,8 @@ public class DarknetPeerNode extends PeerNode {
 	/** FIXME This should be the worse of our visibility for the peer and that which the peer has told us. 
 	 * I.e. visibility is reciprocal. */
 	public synchronized FRIEND_VISIBILITY getVisibility() {
-		return ourVisibility;
+		if(ourVisibility.isStricterThan(theirVisibility)) return ourVisibility;
+		return theirVisibility;
 	}
 
 	public synchronized FRIEND_VISIBILITY getOurVisibility() {
@@ -1705,6 +1726,7 @@ public class DarknetPeerNode extends PeerNode {
 			if(ourVisibility == visibility) return;
 			ourVisibility = visibility;
 		}
+		node.peers.writePeers();
 		try {
 			sendVisibility();
 		} catch (NotConnectedException e) {
@@ -1723,5 +1745,18 @@ public class DarknetPeerNode extends PeerNode {
 
 	private void sendVisibility() throws NotConnectedException {
 		sendAsync(DMT.createFNPVisibility(getOurVisibility().code), null, node.nodeStats.initialMessagesCtr);
+	}
+
+	public void handleVisibility(Message m) {
+		FRIEND_VISIBILITY v = FRIEND_VISIBILITY.getByCode(m.getShort(DMT.FRIEND_VISIBILITY));
+		if(v == null) {
+			Logger.error(this, "Bogus visibility setting from peer "+this+" : code "+m.getShort(DMT.FRIEND_VISIBILITY));
+			v = FRIEND_VISIBILITY.NO;
+		}
+		synchronized(this) {
+			if(theirVisibility == v) return;
+			theirVisibility = v;
+		}
+		node.peers.writePeers();
 	}
 }
