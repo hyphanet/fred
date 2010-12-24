@@ -83,8 +83,16 @@ public class DarknetPeerNode extends PeerNode {
 	
 	/** Queued-to-send N2NM extra peer data file numbers */
 	private LinkedHashSet<Integer> queuedToSendN2NMExtraPeerDataFileNumbers;
+	
+	private FRIEND_TRUST trustLevel;
 
 	private static boolean logMINOR;
+	
+	enum FRIEND_TRUST {
+		LOW,
+		NORMAL,
+		HIGH
+	}
 	
 	/**
 	 * Create a darknet PeerNode from a SimpleFieldSet
@@ -109,6 +117,16 @@ public class DarknetPeerNode extends PeerNode {
 			disableRouting = disableRoutingHasBeenSetLocally = Fields.stringToBool(metadata.get("disableRoutingHasBeenSetLocally"), false);
 			ignoreSourcePort = Fields.stringToBool(metadata.get("ignoreSourcePort"), false);
 			allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
+			String s = metadata.get("trustLevel");
+			if(s != null) {
+				trustLevel = FRIEND_TRUST.valueOf(s);
+			} else {
+				trustLevel = node.securityLevels.getDefaultFriendTrust();
+				System.err.println("Assuming friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
+			}
+		} else {
+			trustLevel = node.securityLevels.getDefaultFriendTrust();
+			System.err.println("Assuming new friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
 		}
 	
 		// Setup the private darknet comment note
@@ -191,8 +209,10 @@ public class DarknetPeerNode extends PeerNode {
 			fs.putSingle("ignoreSourcePort", "true");
 		if(allowLocalAddresses)
 			fs.putSingle("allowLocalAddresses", "true");
-	if(disableRoutingHasBeenSetLocally)
-		fs.putSingle("disableRoutingHasBeenSetLocally", "true");
+		if(disableRoutingHasBeenSetLocally)
+			fs.putSingle("disableRoutingHasBeenSetLocally", "true");
+		fs.putSingle("trustLevel", trustLevel.name());
+
 		return fs;
 	}
 

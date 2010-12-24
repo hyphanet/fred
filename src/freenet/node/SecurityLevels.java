@@ -11,6 +11,7 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.l10n.NodeL10n;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.StringCallback;
@@ -402,5 +403,16 @@ public class SecurityLevels {
 	
 	public static String localisedName(PHYSICAL_THREAT_LEVEL newPhysicalLevel) {
 		return NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevel.name."+newPhysicalLevel.name());
+	}
+
+	public FRIEND_TRUST getDefaultFriendTrust() {
+		synchronized(this) {
+			if(friendsThreatLevel == FRIENDS_THREAT_LEVEL.HIGH)
+				return FRIEND_TRUST.LOW;
+			if(friendsThreatLevel == FRIENDS_THREAT_LEVEL.NORMAL)
+				return FRIEND_TRUST.NORMAL;
+			else // friendsThreatLevel == FRIENDS_THREAT_LEVEL.LOW
+				return FRIEND_TRUST.HIGH;
+		}
 	}
 }
