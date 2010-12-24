@@ -46,7 +46,9 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			} else if(sortBy.equals("trust")){
 				return ((DarknetPeerNodeStatus)firstNode).getTrustLevel().compareTo(((DarknetPeerNodeStatus)secondNode).getTrustLevel());
 			} else if(sortBy.equals("visibility")){
-				return ((DarknetPeerNodeStatus)firstNode).getVisibility().compareTo(((DarknetPeerNodeStatus)secondNode).getVisibility());
+				int ret = ((DarknetPeerNodeStatus)firstNode).getOurVisibility().compareTo(((DarknetPeerNodeStatus)secondNode).getOurVisibility());
+				if(ret != 0) return ret;
+				return ((DarknetPeerNodeStatus)firstNode).getTheirVisibility().compareTo(((DarknetPeerNodeStatus)secondNode).getTheirVisibility());
 			} else
 				return super.customCompare(firstNode, secondNode, sortBy);
 		}
@@ -92,7 +94,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 
 	@Override
 	protected void drawVisibilityColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
-		peerRow.addChild("td", "class", "peer-trust").addChild("#", ((DarknetPeerNodeStatus)peerNodeStatus).getVisibility().name());
+		peerRow.addChild("td", "class", "peer-trust").addChild("#", ((DarknetPeerNodeStatus)peerNodeStatus).getOurVisibility().name()+" ("+((DarknetPeerNodeStatus)peerNodeStatus).getTheirVisibility().name()+")");
 	}
 
 	@Override

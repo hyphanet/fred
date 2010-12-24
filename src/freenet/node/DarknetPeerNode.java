@@ -1759,4 +1759,8 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		node.peers.writePeers();
 	}
+
+	public synchronized FRIEND_VISIBILITY getTheirVisibility() {
+		return theirVisibility;
+	}
 }
