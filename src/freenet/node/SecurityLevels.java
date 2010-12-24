@@ -59,7 +59,6 @@ public class SecurityLevels {
 	PHYSICAL_THREAT_LEVEL physicalThreatLevel;
 	
 	private MyCallback<NETWORK_THREAT_LEVEL> networkThreatLevelCallback;
-	private MyCallback<FRIENDS_THREAT_LEVEL> friendsThreatLevelCallback;
 	private MyCallback<PHYSICAL_THREAT_LEVEL> physicalThreatLevelCallback;
 	
 	public SecurityLevels(Node node, PersistentConfig config) {
@@ -107,46 +106,12 @@ public class SecurityLevels {
 			// Call all the callbacks so that the config is consistent with the threat level.
 			setThreatLevel(netLevel);
 		}
-		friendsThreatLevelCallback = new MyCallback<FRIENDS_THREAT_LEVEL>() {
-
-			@Override
-			public String get() {
-				synchronized(SecurityLevels.this) {
-					return friendsThreatLevel.name();
-				}
-			}
-
-			public String[] getPossibleValues() {
-				FRIENDS_THREAT_LEVEL[] values = FRIENDS_THREAT_LEVEL.values();
-				String[] names = new String[values.length];
-				for(int i=0;i<names.length;i++)
-					names[i] = values[i].name();
-				return names;
-			}
-
-			@Override
-			protected FRIENDS_THREAT_LEVEL getValue() {
-				return friendsThreatLevel;
-			}
-
-			@Override
-			protected void setValue(String val) throws InvalidConfigValueException {
-				FRIENDS_THREAT_LEVEL newValue = FRIENDS_THREAT_LEVEL.valueOf(val);
-				if(newValue != null)
-					throw new InvalidConfigValueException("Invalid value for friends threat level: "+val);
-				synchronized(SecurityLevels.this) {
-					friendsThreatLevel = newValue;
-				}
-			}
-
-		};
-		myConfig.register("friendsThreatLevel", "NORMAL", sortOrder++, false, true, "SecurityLevels.friendsThreatLevelShort", "SecurityLevels.friendsThreatLevel", friendsThreatLevelCallback);
-		FRIENDS_THREAT_LEVEL friendsLevel = FRIENDS_THREAT_LEVEL.valueOf(myConfig.getString("friendsThreatLevel"));;
-		if(myConfig.getRawOption("friendsThreatLevel") != null) {
-			friendsThreatLevel = friendsLevel;
+		// FIXME remove back compat
+		String s = myConfig.getRawOption("friendsThreatLevel");
+		if(s != null) {
+			friendsThreatLevel = parseFriendsThreatLevel(s);
 		} else {
-			// Call all the callbacks so that the config is consistent with the threat level.
-			setThreatLevel(friendsLevel);
+			friendsThreatLevel = null;
 		}
 		physicalThreatLevelCallback = new MyCallback<PHYSICAL_THREAT_LEVEL>() {
 
@@ -197,10 +162,6 @@ public class SecurityLevels {
 		networkThreatLevelCallback.addListener(listener);
 	}
 	
-	public synchronized void addFriendsThreatLevelListener(SecurityLevelListener<FRIENDS_THREAT_LEVEL> listener) {
-		friendsThreatLevelCallback.addListener(listener);
-	}
-	
 	public synchronized void addPhysicalThreatLevelListener(SecurityLevelListener<PHYSICAL_THREAT_LEVEL> listener) {
 		physicalThreatLevelCallback.addListener(listener);
 	}
@@ -245,10 +206,6 @@ public class SecurityLevels {
 		return networkThreatLevel;
 	}
 	
-	public FRIENDS_THREAT_LEVEL getFriendsThreatLevel() {
-		return friendsThreatLevel;
-	}
-
 	public PHYSICAL_THREAT_LEVEL getPhysicalThreatLevel() {
 		return physicalThreatLevel;
 	}
@@ -261,7 +218,7 @@ public class SecurityLevels {
 		}
 	}
 	
-	public static FRIENDS_THREAT_LEVEL parseFriendsThreatLevel(String arg) {
+	private static FRIENDS_THREAT_LEVEL parseFriendsThreatLevel(String arg) {
 		try {
 			return FRIENDS_THREAT_LEVEL.valueOf(arg);
 		} catch (IllegalArgumentException e) {
@@ -335,18 +292,6 @@ public class SecurityLevels {
 		return null;
 	}
 	
-	public HTMLNode getConfirmWarning(FRIENDS_THREAT_LEVEL newFriendsLevel, String checkboxName) {
-		if(newFriendsLevel == friendsThreatLevel)
-			return null; // Not going to be changed.
-		if(newFriendsLevel == FRIENDS_THREAT_LEVEL.HIGH) {
-			HTMLNode parent = new HTMLNode("div");
-			parent.addChild("p", l10n("highFriendsThreatLevelWarning"));
-			parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("highFriendsThreatLevelCheckbox"));
-			return parent;
-		}
-		return null;
-	}
-
 	private String l10n(String string) {
 		return NodeL10n.getBase().getString("SecurityLevels."+string);
 	}
@@ -369,16 +314,6 @@ public class SecurityLevels {
 		networkThreatLevelCallback.onSet(oldLevel, newThreatLevel);
 	}
 
-	public void setThreatLevel(FRIENDS_THREAT_LEVEL newThreatLevel) {
-		if(newThreatLevel == null) throw new NullPointerException();
-		FRIENDS_THREAT_LEVEL oldLevel;
-		synchronized(this) {
-			oldLevel = friendsThreatLevel;
-			friendsThreatLevel = newThreatLevel;
-		}
-		friendsThreatLevelCallback.onSet(oldLevel, newThreatLevel);
-	}
-	
 	public void setThreatLevel(PHYSICAL_THREAT_LEVEL newThreatLevel) {
 		if(newThreatLevel == null) throw new NullPointerException();
 		PHYSICAL_THREAT_LEVEL oldLevel;
@@ -397,16 +332,16 @@ public class SecurityLevels {
 		return NodeL10n.getBase().getString("SecurityLevels.networkThreatLevel.name."+newThreatLevel.name());
 	}
 	
-	public static String localisedName(FRIENDS_THREAT_LEVEL newFriendsLevel) {
-		return NodeL10n.getBase().getString("SecurityLevels.friendsThreatLevel.name."+newFriendsLevel.name());
-	}
-	
 	public static String localisedName(PHYSICAL_THREAT_LEVEL newPhysicalLevel) {
 		return NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevel.name."+newPhysicalLevel.name());
 	}
 
 	public FRIEND_TRUST getDefaultFriendTrust() {
 		synchronized(this) {
+			if(friendsThreatLevel == null) {
+				Logger.error(this, "Asking for default friend trust yet we have no friend security level!");
+				return FRIEND_TRUST.NORMAL;
+			}
 			if(friendsThreatLevel == FRIENDS_THREAT_LEVEL.HIGH)
 				return FRIEND_TRUST.LOW;
 			if(friendsThreatLevel == FRIENDS_THREAT_LEVEL.NORMAL)
