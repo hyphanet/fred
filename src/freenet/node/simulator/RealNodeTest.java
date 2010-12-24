@@ -11,6 +11,7 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStats;
 import freenet.node.PeerNode;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -29,6 +30,8 @@ public class RealNodeTest {
 	static final int EXIT_INSERT_FAILED = EXIT_BASE + 5;
 	static final int EXIT_REQUEST_FAILED = EXIT_BASE + 6;
 	static final int EXIT_BAD_DATA = EXIT_BASE + 7;
+	
+	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
 
         private static volatile boolean logMINOR;
 	static {
@@ -94,8 +97,8 @@ public class RealNodeTest {
 	
 	static void connect(Node a, Node b) {
 		try {
-			a.connect (b);
-			b.connect (a);
+			a.connect (b, trust);
+			b.connect (a, trust);
 		} catch (FSParseException e) {
 			Logger.error(RealNodeSecretPingTest.class, "cannot connect!!!!", e);
 		} catch (PeerParseException e) {

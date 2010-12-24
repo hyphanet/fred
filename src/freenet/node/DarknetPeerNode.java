@@ -92,15 +92,24 @@ public class DarknetPeerNode extends PeerNode {
 	public enum FRIEND_TRUST {
 		LOW,
 		NORMAL,
-		HIGH
+		HIGH;
+		
+		public static FRIEND_TRUST[] valuesBackwards() {
+			FRIEND_TRUST[] valuesBackwards = new FRIEND_TRUST[values().length];
+			for(int i=0;i<values().length;i++)
+				valuesBackwards[i] = values()[values().length-i-1];
+			return valuesBackwards;
+		}
+
 	}
 	
 	/**
 	 * Create a darknet PeerNode from a SimpleFieldSet
 	 * @param fs The SimpleFieldSet to parse
 	 * @param node2 The running Node we are part of.
+	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
 	 */
-	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
 		
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -126,8 +135,8 @@ public class DarknetPeerNode extends PeerNode {
 				System.err.println("Assuming friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
 			}
 		} else {
-			trustLevel = node.securityLevels.getDefaultFriendTrust();
-			System.err.println("Assuming new friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
+			if(trust == null) throw new IllegalArgumentException();
+			trustLevel = trust;
 		}
 	
 		// Setup the private darknet comment note

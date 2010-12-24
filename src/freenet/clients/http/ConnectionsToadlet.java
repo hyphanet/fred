@@ -30,6 +30,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.NodeStats;
 import freenet.node.PeerManager;
 import freenet.node.PeerNode;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
@@ -505,6 +506,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(!isOpennet())
 				privateComment = request.getPartAsString("peerPrivateNote", 250).trim();
 			
+			String trustS = request.getPartAsStringFailsafe("trust", 10);
+			FRIEND_TRUST trust = null;
+			if(trustS != null)
+				trust = FRIEND_TRUST.valueOf(trustS);
+			
 			StringBuilder ref = new StringBuilder(1024);
 			if (urltext.length() > 0) {
 				// fetch reference from a URL
@@ -554,7 +560,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
 			for(int i=0;i<nodesToAdd.length;i++){
 				//We need to trim then concat 'End' to the node's reference, this way we have a normal reference(the split() removes the 'End'-s!)
-				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment);
+				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment, trust);
 				//Store the result
 				if(results.containsKey(result)==false){
 					results.put(result, Integer.valueOf(0));
@@ -595,8 +601,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	/** Adds a new node. If any error arises, it returns the appropriate return code.
 	 * @param nodeReference - The reference to the new node
 	 * @param privateComment - The private comment when adding a Darknet node
+	 * @param trust 
+	 * @param request To pull any extra fields from
 	 * @return The result of the addition*/
-	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment){
+	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment, FRIEND_TRUST trust){
 		SimpleFieldSet fs;
 		
 		try {
@@ -616,7 +624,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(isOpennet()) {
 				pn = node.createNewOpennetNode(fs);
 			} else {
-				pn = node.createNewDarknetNode(fs);
+				pn = node.createNewDarknetNode(fs, trust);
 				((DarknetPeerNode)pn).setPrivateDarknetCommentNote(privateComment);
 			}
 		} catch (FSParseException e1) {
@@ -714,6 +722,19 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		peerAdditionForm.addChild("#", (l10n("fileReference") + ' '));
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
 		peerAdditionForm.addChild("br");
+		if(!isOpennet) {
+			peerAdditionForm.addChild("b", l10n("peerTrustTitle"));
+			peerAdditionForm.addChild("#", " ");
+			peerAdditionForm.addChild("#", l10n("peerTrustIntroduction"));
+			for(FRIEND_TRUST trust : FRIEND_TRUST.valuesBackwards()) { // FIXME reverse order
+				HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "trust", trust.name() });
+				input.addChild("b", l10n("peerTrust."+trust.name())); // FIXME l10n
+				input.addChild("#", ": ");
+				input.addChild("#", l10n("peerTrustExplain."+trust.name()));
+			}
+			peerAdditionForm.addChild("br");
+		}
+		 
 		if(!isOpennet) {
 			peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
 			peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });

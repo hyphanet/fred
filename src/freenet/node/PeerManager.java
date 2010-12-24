@@ -32,6 +32,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
@@ -220,7 +221,7 @@ public class PeerManager {
 				fs = new SimpleFieldSet(br, false, true);
 				PeerNode pn;
 				try {
-					pn = PeerNode.create(fs, node, crypto, opennet, this, true, mangler);
+					pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					continue;
@@ -494,8 +495,8 @@ public class PeerManager {
 	/**
 	 * Connect to a node provided the fieldset representing it.
 	 */
-	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		PeerNode pn = node.createNewDarknetNode(noderef);
+	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		PeerNode pn = node.createNewDarknetNode(noderef, trust);
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
 			if(Arrays.equals(peerList[i].identity, pn.identity))
