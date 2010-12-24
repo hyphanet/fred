@@ -714,6 +714,8 @@ public class Node implements TimeSkewDetectorCallback {
 	// Darknet stuff
 
 	NodeCrypto darknetCrypto;
+	// Back compat
+	private boolean showFriendsVisibilityAlert;
 
 	// Opennet stuff
 
@@ -1275,6 +1277,31 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 
 		});
+		
+		nodeConfig.register("showFriendsVisibilityAlert", false, sortOrder++, true, false, "Node.showFriendsVisibilityAlert", "Node.showFriendsVisibilityAlertLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return showFriendsVisibilityAlert;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				synchronized(this) {
+					if(val == showFriendsVisibilityAlert) return;
+					if(val) return;
+				}
+				unregisterFriendsVisibilityAlert();
+			}
+			
+			
+			
+		});
+		
+		showFriendsVisibilityAlert = nodeConfig.getBoolean("showFriendsVisibilityAlert");
 
 		defragOnce = nodeConfig.getBoolean("defragOnce");
 
@@ -1735,6 +1762,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 		clientCore = new NodeClientCore(this, config, nodeConfig, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
 
+		if(showFriendsVisibilityAlert)
+			registerFriendsVisibilityAlert();
+		
 		// Node updater support
 
 		System.out.println("Initializing Node Updater");
@@ -6251,7 +6281,48 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 	public void createVisibilityAlert() {
-		// TODO Auto-generated method stub
+		synchronized(this) {
+			if(showFriendsVisibilityAlert) return;
+			showFriendsVisibilityAlert = true;
+		}
+		// Wait until startup completed.
+		this.getTicker().queueTimedJob(new Runnable() {
+
+			public void run() {
+				config.store();
+			}
+		}, 0);
+		registerFriendsVisibilityAlert();
+	}
+	
+	private UserAlert visibilityAlert = new SimpleUserAlert(true, l10n("pleaseSetPeersVisibilityAlertTitle"), l10n("pleaseSetPeersVisibilityAlert"), l10n("pleaseSetPeersVisibilityAlert"), UserAlert.ERROR) {
 		
+		public void onDismiss() {
+			synchronized(Node.this) {
+				showFriendsVisibilityAlert = false;
+			}
+			config.store();
+			unregisterFriendsVisibilityAlert();
+		}
+		
+	};
+	
+	private void registerFriendsVisibilityAlert() {
+		if(clientCore == null || clientCore.alerts == null) {
+			// Wait until startup completed.
+			this.getTicker().queueTimedJob(new Runnable() {
+
+				public void run() {
+					registerFriendsVisibilityAlert();
+				}
+				
+			}, 0);
+			return;
+		}
+		clientCore.alerts.register(visibilityAlert);
+	}
+	
+	private void unregisterFriendsVisibilityAlert() {
+		clientCore.alerts.unregister(visibilityAlert);
 	}
 }
