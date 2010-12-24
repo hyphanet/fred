@@ -107,15 +107,15 @@ public class DarknetPeerNode extends PeerNode {
 	}
 	
 	public enum FRIEND_VISIBILITY {
-		YES(0), // Visible
-		NAME_ONLY(1), // Only the name is visible, but other friends can ask for a connection
-		NO(2); // Not visible to our other friends at all
+		YES((short)0), // Visible
+		NAME_ONLY((short)1), // Only the name is visible, but other friends can ask for a connection
+		NO((short)2); // Not visible to our other friends at all
 		
 		/** The codes are persistent and used to communicate between nodes, so they must not change. 
 		 * Which is why we are not using ordinal(). */
-		final int code;
+		final short code;
 		
-		FRIEND_VISIBILITY(int code) {
+		FRIEND_VISIBILITY(short code) {
 			this.code = code;
 		}
 	}
