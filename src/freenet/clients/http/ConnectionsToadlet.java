@@ -24,6 +24,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -392,6 +393,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("nameClickToMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("nameTitle"));
 				if(hasTrustColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "trust")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("trustMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("trustTitle"));
+				if(hasVisibilityColumn())
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "trust")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("visibilityMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("visibilityTitle"));
 				if (mode >= PageMaker.MODE_ADVANCED) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("ipAddress"), "border-bottom: 1px dotted; cursor: help;" }, l10n("ipAddressTitle"));
 				}
@@ -511,6 +514,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(trustS != null)
 				trust = FRIEND_TRUST.valueOf(trustS);
 			
+			String visibilityS = request.getPartAsStringFailsafe("visibility", 10);
+			FRIEND_VISIBILITY visibility = null;
+			if(visibilityS != null)
+				visibility = FRIEND_VISIBILITY.valueOf(visibilityS);
+			
 			StringBuilder ref = new StringBuilder(1024);
 			if (urltext.length() > 0) {
 				// fetch reference from a URL
@@ -560,7 +568,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
 			for(int i=0;i<nodesToAdd.length;i++){
 				//We need to trim then concat 'End' to the node's reference, this way we have a normal reference(the split() removes the 'End'-s!)
-				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment, trust);
+				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment, trust, visibility);
 				//Store the result
 				if(results.containsKey(result)==false){
 					results.put(result, Integer.valueOf(0));
@@ -604,7 +612,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 * @param trust 
 	 * @param request To pull any extra fields from
 	 * @return The result of the addition*/
-	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment, FRIEND_TRUST trust){
+	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility){
 		SimpleFieldSet fs;
 		
 		try {
@@ -624,7 +632,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(isOpennet()) {
 				pn = node.createNewOpennetNode(fs);
 			} else {
-				pn = node.createNewDarknetNode(fs, trust);
+				pn = node.createNewDarknetNode(fs, trust, visibility);
 				((DarknetPeerNode)pn).setPrivateDarknetCommentNote(privateComment);
 			}
 		} catch (FSParseException e1) {
@@ -733,8 +741,20 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				input.addChild("#", l10n("peerTrustExplain."+trust.name()));
 			}
 			peerAdditionForm.addChild("br");
+			
+			peerAdditionForm.addChild("b", l10n("peerVisibilityTitle"));
+			peerAdditionForm.addChild("#", " ");
+			peerAdditionForm.addChild("#", l10n("peerVisibilityIntroduction"));
+			for(FRIEND_VISIBILITY trust : FRIEND_VISIBILITY.values()) { // FIXME reverse order
+				HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "visibility", trust.name() });
+				input.addChild("b", l10n("peerVisibility."+trust.name())); // FIXME l10n
+				input.addChild("#", ": ");
+				input.addChild("#", l10n("peerVisibilityExplain."+trust.name()));
+			}
+			peerAdditionForm.addChild("br");
+			
 		}
-		 
+		
 		if(!isOpennet) {
 			peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
 			peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
@@ -773,6 +793,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		drawNameColumn(peerRow, peerNodeStatus);
 		
 		drawTrustColumn(peerRow, peerNodeStatus);
+		
+		drawVisibilityColumn(peerRow, peerNodeStatus);
 		
 		// address column
 		if (advancedModeEnabled) {
@@ -885,6 +907,14 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	}
 
 	protected void drawTrustColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
+		// Do nothing
+	}
+
+	protected boolean hasVisibilityColumn() {
+		return false;
+	}
+
+	protected void drawVisibilityColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
 		// Do nothing
 	}
 

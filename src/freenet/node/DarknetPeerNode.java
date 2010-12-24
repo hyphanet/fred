@@ -32,6 +32,7 @@ import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
@@ -86,6 +87,8 @@ public class DarknetPeerNode extends PeerNode {
 	private LinkedHashSet<Integer> queuedToSendN2NMExtraPeerDataFileNumbers;
 	
 	private FRIEND_TRUST trustLevel;
+	
+	private FRIEND_VISIBILITY ourVisibility;
 
 	private static boolean logMINOR;
 	
@@ -103,13 +106,19 @@ public class DarknetPeerNode extends PeerNode {
 
 	}
 	
+	public enum FRIEND_VISIBILITY {
+		YES, // Visible
+		NAME_ONLY, // Only the name is visible, but other friends can ask for a connection
+		NO // Not visible to our other friends at all
+	}
+	
 	/**
 	 * Create a darknet PeerNode from a SimpleFieldSet
 	 * @param fs The SimpleFieldSet to parse
 	 * @param node2 The running Node we are part of.
 	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
 	 */
-	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust, FRIEND_VISIBILITY visibility2) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
 		
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -134,9 +143,18 @@ public class DarknetPeerNode extends PeerNode {
 				trustLevel = node.securityLevels.getDefaultFriendTrust();
 				System.err.println("Assuming friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
 			}
+			s = metadata.get("ourVisibility");
+			if(s != null) {
+				ourVisibility = FRIEND_VISIBILITY.valueOf(s);
+			} else {
+				System.err.println("Assuming friend ("+name+") wants to be invisible");
+				node.createVisibilityAlert();
+				ourVisibility = FRIEND_VISIBILITY.NO;
+			}
 		} else {
 			if(trust == null) throw new IllegalArgumentException();
 			trustLevel = trust;
+			ourVisibility = visibility2;
 		}
 	
 		// Setup the private darknet comment note
@@ -222,6 +240,7 @@ public class DarknetPeerNode extends PeerNode {
 		if(disableRoutingHasBeenSetLocally)
 			fs.putSingle("disableRoutingHasBeenSetLocally", "true");
 		fs.putSingle("trustLevel", trustLevel.name());
+		fs.putSingle("ourVisibility", ourVisibility.name());
 
 		return fs;
 	}
@@ -1661,5 +1680,15 @@ public class DarknetPeerNode extends PeerNode {
 			trustLevel = trust;
 		}
 		node.peers.writePeers();
+	}
+
+	/** FIXME This should be the worse of our visibility for the peer and that which the peer has told us. 
+	 * I.e. visibility is reciprocal. */
+	public synchronized FRIEND_VISIBILITY getVisibility() {
+		return ourVisibility;
+	}
+
+	public synchronized void setVisibility(FRIEND_VISIBILITY visibility) {
+		ourVisibility = visibility;
 	}
 }

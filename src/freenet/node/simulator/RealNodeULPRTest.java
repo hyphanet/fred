@@ -27,6 +27,7 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.store.KeyCollisionException;
 import freenet.support.Executor;
@@ -77,6 +78,7 @@ public class RealNodeULPRTest extends RealNodeTest {
     static final boolean REAL_TIME_FLAG = false;
     
 	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
+	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
 
     public static final int DARKNET_PORT_BASE = RealNodeSecretPingTest.DARKNET_PORT_END;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
@@ -118,8 +120,8 @@ public class RealNodeULPRTest extends RealNodeTest {
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             int next = (i+1) % NUMBER_OF_NODES;
             int prev = (i+NUMBER_OF_NODES-1)%NUMBER_OF_NODES;
-            nodes[i].connect(nodes[next], trust);
-            nodes[i].connect(nodes[prev], trust);
+            nodes[i].connect(nodes[next], trust, visibility);
+            nodes[i].connect(nodes[prev], trust, visibility);
         }
         Logger.normal(RealNodeRoutingTest.class, "Connected nodes");
         // Now add some random links
@@ -132,8 +134,8 @@ public class RealNodeULPRTest extends RealNodeTest {
             //System.out.println(""+nodeA+" -> "+nodeB);
             Node a = nodes[nodeA];
             Node b = nodes[nodeB];
-            a.connect(b, trust);
-            b.connect(a, trust);
+            a.connect(b, trust, visibility);
+            b.connect(a, trust, visibility);
         }
         
         Logger.normal(RealNodeRoutingTest.class, "Added random links");

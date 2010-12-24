@@ -20,6 +20,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -48,6 +49,7 @@ public class RealNodeSecretPingTest {
 	static final long storeSize = 1024*1024;
 	
 	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
+	static final FRIEND_VISIBILITY visibility = FRIEND_VISIBILITY.NO;
 
 	public static int DARKNET_PORT_BASE = RealNodeRoutingTest.DARKNET_PORT_END;
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
@@ -211,8 +213,8 @@ public class RealNodeSecretPingTest {
 				for (int n = 0; n < DEGREE / 2; n++) {
 					if (Math.random() < p) {
 						try {
-							a.connect (b, trust);
-							b.connect (a, trust);
+							a.connect (b, trust, visibility);
+							b.connect (a, trust, visibility);
 						} catch (FSParseException e) {
 							Logger.error(RealNodeSecretPingTest.class, "cannot connect!!!!", e);
 						} catch (PeerParseException e) {

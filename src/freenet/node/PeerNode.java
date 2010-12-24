@@ -3608,7 +3608,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(crypto.isOpennet)
 			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, true, mangler);
 		else
-			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null);
+			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null, null);
 	}
 
 	public byte[] getIdentity() {

@@ -1,6 +1,7 @@
 package freenet.node;
 
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.DarknetPeerNode.FRIEND_VISIBILITY;
 
 public class DarknetPeerNodeStatus extends PeerNodeStatus {
 
@@ -15,6 +16,8 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 	private final String privateDarknetCommentNote;
 	
 	private FRIEND_TRUST trustLevel;
+
+	private FRIEND_VISIBILITY visibility;
 	
 	public DarknetPeerNodeStatus(DarknetPeerNode peerNode, boolean noHeavy) {
 		super(peerNode, noHeavy);
@@ -24,6 +27,7 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 		this.disabled = peerNode.isDisabled();
 		this.privateDarknetCommentNote = peerNode.getPrivateDarknetCommentNote();
 		this.trustLevel = peerNode.getTrustLevel();
+		this.visibility = peerNode.getVisibility();
 	}
 	
 	/**
@@ -71,5 +75,9 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 	@Override
 	public String toString() {
 		return name + ' ' + super.toString();
+	}
+
+	public FRIEND_VISIBILITY getVisibility() {
+		return visibility;
 	}
 }
