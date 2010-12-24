@@ -132,6 +132,7 @@ public class DMT {
 	public static final String SECRET = "secret";
 	public static final String NODE_IDENTITY = "nodeIdentity";
 	public static final String UPTIME_PERCENT_48H = "uptimePercent48H";
+	public static final String FRIEND_VISIBILITY = "friendVisibility";
 	public static final String ENABLE_INSERT_FORK_WHEN_CACHEABLE = "enableInsertForkWhenCacheable";
 	public static final String PREFER_INSERT = "preferInsert";
 	public static final String IGNORE_LOW_BACKOFF = "ignoreLowBackoff";
@@ -1323,6 +1324,16 @@ public class DMT {
 	public static final Message createFNPUptime(byte uptimePercent) {
 		Message msg = new Message(FNPUptime);
 		msg.set(UPTIME_PERCENT_48H, uptimePercent);
+		return msg;
+	}
+	
+	public static final MessageType FNPVisibility = new MessageType("FNPVisibility", PRIORITY_HIGH) {{
+		addField(FRIEND_VISIBILITY, Short.class);
+	}};
+	
+	public static final Message createFNPVisibility(short visibility) {
+		Message msg = new Message(FNPVisibility);
+		msg.set(FRIEND_VISIBILITY, visibility);
 		return msg;
 	}
 	
