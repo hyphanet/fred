@@ -634,7 +634,7 @@ fragments:
 			if(tracker != null) {
 				if(tracker.firstSeqNumUsed == -1) {
 					tracker.firstSeqNumUsed = tracker.nextSeqNum;
-					Logger.error(this, "First seqnum used for " + tracker + " is " + tracker.firstSeqNumUsed);
+					if(logMINOR) Logger.minor(this, "First seqnum used for " + tracker + " is " + tracker.firstSeqNumUsed);
 				} else {
 					if(tracker.nextSeqNum == tracker.firstSeqNumUsed) {
 						Logger.error(this, "Blocked because we haven't rekeyed yet");
