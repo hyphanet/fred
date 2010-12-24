@@ -1700,16 +1700,28 @@ public class DarknetPeerNode extends PeerNode {
 		return ourVisibility;
 	}
 
-	public synchronized void setVisibility(FRIEND_VISIBILITY visibility) {
-		ourVisibility = visibility;
+	public void setVisibility(FRIEND_VISIBILITY visibility) {
+		synchronized(this) {
+			if(ourVisibility == visibility) return;
+			ourVisibility = visibility;
+		}
+		try {
+			sendVisibility();
+		} catch (NotConnectedException e) {
+			Logger.normal(this, "Disconnected while sending visibility update");
+		}
 	}
 	
 	protected void sendInitialMessages() {
 		super.sendInitialMessages();
 		try {
-			sendAsync(DMT.createFNPVisibility(getOurVisibility().code), null, node.nodeStats.initialMessagesCtr);
+			sendVisibility();
 		} catch(NotConnectedException e) {
 			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected: "+e, e);
 		}
+	}
+
+	private void sendVisibility() throws NotConnectedException {
+		sendAsync(DMT.createFNPVisibility(getOurVisibility().code), null, node.nodeStats.initialMessagesCtr);
 	}
 }
