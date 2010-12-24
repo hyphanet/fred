@@ -41,6 +41,8 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 				return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getName());
 			}else if(sortBy.equals("privnote")){
 				return ((DarknetPeerNodeStatus)firstNode).getPrivateDarknetCommentNote().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getPrivateDarknetCommentNote());
+			} else if(sortBy.equals("trust")){
+				return ((DarknetPeerNodeStatus)firstNode).getTrustLevel().compareTo(((DarknetPeerNodeStatus)secondNode).getTrustLevel());
 			} else
 				return super.customCompare(firstNode, secondNode, sortBy);
 		}
@@ -68,6 +70,17 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		// name column
 		peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
 	}
+	
+	@Override
+	protected boolean hasTrustColumn() {
+		return true;
+	}
+
+	@Override
+	protected void drawTrustColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
+		peerRow.addChild("td", "class", "peer-trust").addChild("#", ((DarknetPeerNodeStatus)peerNodeStatus).getTrustLevel().name());
+	}
+
 
 	@Override
 	protected boolean hasPrivateNoteColumn() {

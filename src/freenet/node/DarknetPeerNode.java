@@ -31,6 +31,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
@@ -88,7 +89,7 @@ public class DarknetPeerNode extends PeerNode {
 
 	private static boolean logMINOR;
 	
-	enum FRIEND_TRUST {
+	public enum FRIEND_TRUST {
 		LOW,
 		NORMAL,
 		HIGH
@@ -1633,5 +1634,9 @@ public class DarknetPeerNode extends PeerNode {
 			peerAddedTime = 0;
 		if(!neverConnected)
 			peerAddedTime = 0;
+	}
+
+	public FRIEND_TRUST getTrustLevel() {
+		return trustLevel;
 	}
 }

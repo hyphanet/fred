@@ -389,6 +389,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "status")).addChild("#", l10n("statusTitle"));
 				if(hasNameColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("nameClickToMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("nameTitle"));
+				if(hasTrustColumn())
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "trust")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("trustMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("trustTitle"));
 				if (mode >= PageMaker.MODE_ADVANCED) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("ipAddress"), "border-bottom: 1px dotted; cursor: help;" }, l10n("ipAddressTitle"));
 				}
@@ -749,6 +751,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 		drawNameColumn(peerRow, peerNodeStatus);
 		
+		drawTrustColumn(peerRow, peerNodeStatus);
+		
 		// address column
 		if (advancedModeEnabled) {
 			String pingTime = "";
@@ -853,6 +857,14 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		if (drawMessageTypes) {
 			drawMessageTypes(peerTable, peerNodeStatus);
 		}
+	}
+
+	protected boolean hasTrustColumn() {
+		return false;
+	}
+
+	protected void drawTrustColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
+		// Do nothing
 	}
 
 	/** Is there a name column? */
