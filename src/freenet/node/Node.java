@@ -5875,7 +5875,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
-		return routeAccordingToOurPeersLocation && Version.lastGoodBuild() >= 1160;
+		return routeAccordingToOurPeersLocation;
 	}
 
 	public boolean objectCanNew(ObjectContainer container) {
