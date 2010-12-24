@@ -1648,4 +1648,11 @@ public class DarknetPeerNode extends PeerNode {
 	public FRIEND_TRUST getTrustLevel() {
 		return trustLevel;
 	}
+
+	@Override
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		if(!node.shallWeRouteAccordingToOurPeersLocation()) return false; // Globally disabled
+		if(trustLevel == FRIEND_TRUST.LOW) return false;
+		return true;
+	}
 }

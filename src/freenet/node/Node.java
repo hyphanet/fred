@@ -1497,39 +1497,6 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		routeAccordingToOurPeersLocation = nodeConfig.getBoolean("routeAccordingToOurPeersLocation");
 
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
-
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				synchronized(Node.this) {
-					boolean wantFOAF = true;
-					if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM || newLevel == NETWORK_THREAT_LEVEL.HIGH) {
-						// Opennet is disabled.
-						if(securityLevels.friendsThreatLevel == FRIENDS_THREAT_LEVEL.HIGH)
-							wantFOAF = false;
-					}
-					routeAccordingToOurPeersLocation = wantFOAF;
-				}
-			}
-
-		});
-
-		securityLevels.addFriendsThreatLevelListener(new SecurityLevelListener<FRIENDS_THREAT_LEVEL>() {
-
-			public void onChange(FRIENDS_THREAT_LEVEL oldLevel, FRIENDS_THREAT_LEVEL newLevel) {
-				synchronized(Node.this) {
-					boolean wantFOAF = true;
-					NETWORK_THREAT_LEVEL networkLevel = securityLevels.networkThreatLevel;
-					if(networkLevel == NETWORK_THREAT_LEVEL.MAXIMUM || networkLevel == NETWORK_THREAT_LEVEL.HIGH) {
-						// Opennet is disabled.
-						if(newLevel == FRIENDS_THREAT_LEVEL.HIGH)
-							wantFOAF = false;
-					}
-					routeAccordingToOurPeersLocation = wantFOAF;
-				}
-			}
-
-		});
-
 		nodeConfig.register("enableSwapQueueing", true, sortOrder++, true, false, "Node.enableSwapQueueing", "Node.enableSwapQueueingLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
