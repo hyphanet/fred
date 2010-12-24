@@ -6279,6 +6279,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return useSlashdotCache;
 	}
 
+	// FIXME remove the visibility alert after a few builds.
 
 	public void createVisibilityAlert() {
 		synchronized(this) {
