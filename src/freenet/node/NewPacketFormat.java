@@ -630,7 +630,7 @@ fragments:
 				bufferUsage = usedBufferOtherSide;
 			}
 			if((bufferUsage + 200 /* bigger than most messages */ ) > MAX_BUFFER_SIZE) {
-				if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
+				if(logDEBUG) Logger.debug(this, "Cannot send: Would exceed remote buffer size. Remote at " + bufferUsage);
 				canAllocateID = false;
 			}
 
