@@ -680,14 +680,16 @@ public class PeerMessageQueue {
 		return false;
 	}
 
-	public synchronized MessageItem grabQueuedMessageItem(int minPriority) {
+	public MessageItem grabQueuedMessageItem(int minPriority) {
 		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(1);
 		addMessages(0, System.currentTimeMillis(), 0, Integer.MAX_VALUE, messages, minPriority, 1);
 		if(messages.size() == 0) return null;
 		if(messages.size() != 1) {
 			Logger.error(this, "Asked it for one message but got "+messages.size());
-			for(int i=1;i<messages.size();i++)
-				pushfrontPrioritizedMessageItem(messages.get(i));
+			synchronized(this) {
+				for(int i=1;i<messages.size();i++)
+					pushfrontPrioritizedMessageItem(messages.get(i));
+			}
 		}
 		return messages.get(0);
 	}
