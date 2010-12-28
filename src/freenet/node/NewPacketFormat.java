@@ -129,6 +129,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		for(int ack : packet.getAcks()) {
 			synchronized(sentPackets) {
+				if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack);
 				SentPacket sent = sentPackets.remove(ack);
 				if(sent != null) {
 					long rtt = sent.acked();
@@ -433,6 +434,7 @@ outer:
 				for(MessageFragment frag : packet.getFragments()) {
 					if(fragments == null) fragments = "" + frag.messageID;
 					else fragments = fragments + ", " + frag.messageID;
+					fragments += " ("+frag.fragmentOffset+"->"+(frag.fragmentOffset+frag.fragmentLength)+")";
 				}
 
 				Logger.minor(this, "Sending packet " + packet.getSequenceNumber() + " ("
@@ -753,6 +755,7 @@ fragments:
 					}
 
 					if(removed != null) {
+						if(logDEBUG) Logger.debug(this, "Completed message "+wrapper.getMessageID());
 						completedMessagesSize += wrapper.getLength();
 
 						boolean couldSend = npf.canSend();
