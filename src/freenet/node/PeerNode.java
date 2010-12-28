@@ -2097,6 +2097,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					Arrays.equals(previousTracker.incommingKey, unverifiedTracker.incommingKey))
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
 			timeLastSentPacket = now;
+			if(packetFormat == null) {
+				if(negType != 5) {
+					packetFormat = new FNPWrapper(this);
+				} else {
+					packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
+				}
+			}
 		}
 		if(messagesTellDisconnected != null) {
 			for(int i=0;i<messagesTellDisconnected.length;i++) {
@@ -2137,14 +2144,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		else if(!wasARekey) {
 			node.peers.addConnectedPeer(this);
 			maybeOnConnect();
-		}
-
-		if(!wasARekey) {
-			if(negType != 5) {
-				packetFormat = new FNPWrapper(this);
-			} else {
-				packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
-			}
 		}
 
 		return packets.trackerID;
