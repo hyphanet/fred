@@ -3,7 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.HashMap;
+
 import freenet.crypt.BlockCipher;
+import freenet.support.Logger;
 
 /**
  * Class representing a single session key.
@@ -20,22 +23,53 @@ public class SessionKey {
 	
 	/** Parent PeerNode */
 	public final PeerNode pn;
-	/** Cipher to both encrypt outgoing packets with and decrypt
-	 * incoming ones. */
-	public final BlockCipher sessionCipher;
-	/** Key for above cipher, so far for debugging */
-	public final byte[] sessionKey;
+	/** Cipher to encrypt outgoing packets with */
+	public final BlockCipher outgoingCipher;
+	/** Key for outgoingCipher, so far for debugging */
+	public final byte[] outgoingKey;
 
-	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher cipher, byte[] sessionKey) {
+	/** Cipher to decrypt incoming packets */
+	public final BlockCipher incommingCipher;
+	/** Key for incommingCipher, so far for debugging */
+	public final byte[] incommingKey;
+
+	public final BlockCipher ivCipher;
+	public final byte[] ivNonce;
+	public final byte[] hmacKey;
+
+	public int firstSeqNumUsed = -1;
+	public int nextSeqNum;
+	public int highestReceivedSeqNum;
+
+	public byte[][] seqNumWatchList = null;
+	/** Index of the packet with the lowest sequence number */
+	public int watchListPointer = 0;
+	public int watchListOffset = 0;
+
+	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
+	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
+			byte[] ivNonce, byte[] hmacKey, int ourFirstSeqNum, int theirFirstSeqNum) {
+		ourFirstSeqNum &= 0x7FFFFFFF;
+		theirFirstSeqNum &= 0x7FFFFFFF;
+
 		this.pn = parent;
 		this.packets = tracker;
-		this.sessionCipher = cipher;
-		this.sessionKey = sessionKey;
+		this.outgoingCipher = outgoingCipher;
+		this.outgoingKey = outgoingKey;
+		this.incommingCipher = incommingCipher;
+		this.incommingKey = incommingKey;
+		this.ivCipher = ivCipher;
+		this.ivNonce = ivNonce;
+		this.hmacKey = hmacKey;
+		this.nextSeqNum = ourFirstSeqNum;
+		this.watchListOffset = theirFirstSeqNum;
+		
+		this.highestReceivedSeqNum = theirFirstSeqNum - 1;
+		if(this.highestReceivedSeqNum == -1) this.highestReceivedSeqNum = Integer.MAX_VALUE;
 	}
 	
 	@Override
 	public String toString() {
 		return super.toString()+":"+packets.toString();
 	}
-
 }

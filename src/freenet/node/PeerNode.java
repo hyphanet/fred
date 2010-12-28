@@ -123,9 +123,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	//TODO: sync ?
 
 	protected byte[] jfkKa;
+	protected byte[] incommingKey;
 	protected byte[] jfkKe;
-	protected byte[] jfkKs;
+	protected byte[] outgoingKey;
 	protected byte[] jfkMyRef;
+	protected byte[] hmacKey;
+	protected byte[] ivKey;
+	protected byte[] ivNonce;
+	protected int ourInitialSeqNum;
+	protected int theirInitialSeqNum;
+	protected int ourInitialMsgID;
+	protected int theirInitialMsgID;
 	// The following is used only if we are the initiator
 
 	protected long jfkContextLifetime = 0;
@@ -388,6 +396,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		});
 	}
 
+	private PacketFormat packetFormat;
 	MersenneTwister paddingGen;
 
 	/**
@@ -737,6 +746,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		totalInputSinceStartup = fs.getLong("totalInput", 0);
 		totalOutputSinceStartup = fs.getLong("totalOutput", 0);
+
+		if(negTypes[negTypes.length - 1] != 5) {
+			packetFormat = new FNPWrapper(this);
+		} else {
+			packetFormat = new NewPacketFormat(this, 0, 0);
+		}
 
 		byte buffer[] = new byte[16];
 		node.random.nextBytes(buffer);
@@ -1150,13 +1165,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else if (shouldReturn || hasLiveHandshake(now)) {
 			return;
 		} else if(shouldRekey) {
-			synchronized(this) {
-				isRekeying = true;
-				sendHandshakeTime = now; // Immediately
-				ctx = null;
-			}
-			Logger.normal(this, "We are asking for the key to be renewed (" + this.detectedPeer + ')');
+			startRekeying();
 		}
+	}
+
+	protected void startRekeying() {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(isRekeying) return;
+			isRekeying = true;
+			sendHandshakeTime = now; // Immediately
+			ctx = null;
+		}
+		Logger.normal(this, "We are asking for the key to be renewed (" + this.detectedPeer + ')');
 	}
 
 	/**
@@ -1216,6 +1237,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				messagesTellDisconnected = grabQueuedMessageItems();
 			}
 		}
+		if(dumpMessageQueue) {
+			packetFormat.onDisconnect();
+		}
 		if(messagesTellDisconnected != null) {
 			if(logMINOR)
 				Logger.minor(this, "Messages to dump: "+messagesTellDisconnected.length);
@@ -1241,6 +1265,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 								mi.onDisconnect();
 							}
 						}
+						packetFormat.onDisconnect();
 					}
 
 				}
@@ -1334,25 +1359,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.minor(this, "Next urgent time from prevTracker less than now");
 			if(kt.packets.hasPacketsToResend()) return now;
 		}
-		try {
-			if(cur != null && !cur.packets.wouldBlock(false))
-				t = messageQueue.getNextUrgentTime(t, now);
-			// If there isn't a current tracker, no point worrying about it as we won't be able to send it anyway...
-		} catch (BlockedTooLongException e) {
-			// Ignore for now, it will come back around
-		}
+		if(packetFormat.canSend())
+			t = messageQueue.getNextUrgentTime(t, now);
 		return t;
-	}
-
-	private synchronized boolean mustSendNotificationsNow(long now) {
-		SessionKey kt = currentTracker;
-		if(kt != null) {
-			if(kt.packets.getNextUrgentTime() < now) return true;
-		}
-		kt = previousTracker;
-		if(kt != null)
-			if(kt.packets.getNextUrgentTime() < now) return true;
-		return false;
 	}
 
 	/**
@@ -1874,7 +1883,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @return The ID of the new PacketTracker. If this is different to the passed-in trackerID, then
 	* it's a new tracker. -1 to indicate failure.
 	*/
-	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld) {
+	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher outgoingCipher, byte[] outgoingKey, BlockCipher incommingCipher, byte[] incommingKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld, byte[] hmacKey, BlockCipher ivCipher, byte[] ivNonce, int ourInitialSeqNum, int theirInitialSeqNum, int ourInitialMsgID, int theirInitialMsgID) {
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
 
@@ -1937,19 +1946,22 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			// FIXME this shouldn't happen, does it?
 			if(currentTracker != null) {
-				if(Arrays.equals(encKey, currentTracker.sessionKey)) {
+				if(Arrays.equals(outgoingKey, currentTracker.outgoingKey)
+						&& Arrays.equals(incommingKey, currentTracker.incommingKey)) {
 					Logger.error(this, "completedHandshake() with identical key to current, maybe replayed JFK(4)?");
 					return -1;
 				}
 			}
 			if(previousTracker != null) {
-				if(Arrays.equals(encKey, previousTracker.sessionKey)) {
+				if(Arrays.equals(outgoingKey, previousTracker.outgoingKey)
+						&& Arrays.equals(incommingKey, previousTracker.incommingKey)) {
 					Logger.error(this, "completedHandshake() with identical key to previous, maybe replayed JFK(4)?");
 					return -1;
 				}
 			}
 			if(unverifiedTracker != null) {
-				if(Arrays.equals(encKey, unverifiedTracker.sessionKey)) {
+				if(Arrays.equals(outgoingKey, unverifiedTracker.outgoingKey)
+						&& Arrays.equals(incommingKey, unverifiedTracker.incommingKey)) {
 					Logger.error(this, "completedHandshake() with identical key to unverified, maybe replayed JFK(4)?");
 					return -1;
 				}
@@ -1979,6 +1991,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
 			this.bootID = thisBootID;
+			int firstPacketNumber = (negType == 5 ? 0 : node.random.nextInt(100 * 1000));
 			if(currentTracker != null && currentTracker.packets.trackerID == trackerID && !currentTracker.packets.isDeprecated()) {
 				if(isJFK4 && !jfk4SameAsOld)
 					Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
@@ -1995,7 +2008,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				return -1;
 			} else if(trackerID == -1) {
 				// Create a new tracker unconditionally
-				packets = new PacketTracker(this);
+				packets = new PacketTracker(this, firstPacketNumber);
 				notReusingTracker = true;
 				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
 			} else {
@@ -2004,9 +2017,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 				notReusingTracker = true;
 				if(isJFK4/* && !jfk4SameAsOld implied */ && trackerID >= 0) {
-					packets = new PacketTracker(this, trackerID);
+					packets = new PacketTracker(this, firstPacketNumber, trackerID);
 				} else
-					packets = new PacketTracker(this);
+					packets = new PacketTracker(this, firstPacketNumber);
 				if(logMINOR) Logger.minor(this, "Creating new tracker (last resort) on "+this);
 			}
 			if(bootIDChanged || notReusingTracker) {
@@ -2027,7 +2040,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else {
 				// else it's a rekey
 			}
-			newTracker = new SessionKey(this, packets, encCipher, encKey);
+			newTracker = new SessionKey(this, packets, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, ourInitialSeqNum, theirInitialSeqNum);
 			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+shortToString()+" neg type "+negType);
 			if(unverified) {
 				if(unverifiedTracker != null) {
@@ -2056,10 +2069,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			totalBytesExchangedWithCurrentTracker = 0;
 			// This has happened in the past, and caused problems, check for it.
 			if(currentTracker != null && previousTracker != null &&
-					Arrays.equals(currentTracker.sessionKey, previousTracker.sessionKey))
+					Arrays.equals(currentTracker.outgoingKey, previousTracker.outgoingKey) &&
+					Arrays.equals(currentTracker.incommingKey, previousTracker.incommingKey))
 				Logger.error(this, "currentTracker key equals previousTracker key: cur "+currentTracker+" prev "+previousTracker);
 			if(previousTracker != null && unverifiedTracker != null &&
-					Arrays.equals(previousTracker.sessionKey, unverifiedTracker.sessionKey))
+					Arrays.equals(previousTracker.outgoingKey, unverifiedTracker.outgoingKey) &&
+					Arrays.equals(previousTracker.incommingKey, unverifiedTracker.incommingKey))
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
 			timeLastSentPacket = now;
 		}
@@ -2099,6 +2114,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			maybeOnConnect();
 		}
 
+		if(!wasARekey) {
+			if(negType != 5) {
+				packetFormat = new FNPWrapper(this);
+			} else {
+				packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
+			}
+		}
+
 		return packets.trackerID;
 	}
 
@@ -2124,13 +2147,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// However, an attacker cannot get this far without knowing the privkey, so it's unlikely to be an issue.
 
 			MessageDigest md = SHA256.getMessageDigest();
-			md.update(currentTracker.sessionKey);
+			md.update(currentTracker.outgoingKey);
+			md.update(currentTracker.incommingKey);
 			md.update(TEST_AS_BYTES);
 			md.update(Fields.longToBytes(bootID ^ node.bootID));
 			int curHash = Fields.hashCode(md.digest());
 			md.reset();
 
-			md.update(previousTracker.sessionKey);
+			md.update(previousTracker.outgoingKey);
+			md.update(previousTracker.incommingKey);
 			md.update(TEST_AS_BYTES);
 			md.update(Fields.longToBytes(bootID ^ node.bootID));
 			int prevHash = Fields.hashCode(md.digest());
@@ -4208,125 +4233,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * @throws BlockedTooLongException
 	 */
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) throws BlockedTooLongException {
-		// If there are any urgent notifications, we must send a packet.
-		if(logMINOR) Logger.minor(this, "maybeSendPacket: "+this);
-		boolean mustSend = false;
-		boolean mustSendPacket = false;
-		if(mustSendNotificationsNow(now)) {
-			if(logMINOR)
-				Logger.minor(this, "Sending notification");
-			mustSend = true;
-			mustSendPacket = true;
-		}
-		// Any packets to resend? If so, resend ONE packet and then return.
-		for(int j = 0; j < 2; j++) {
-			SessionKey kt;
-			if(j == 0)
-				kt = getCurrentKeyTracker();
-			else// if(j == 1)
-				kt = getPreviousKeyTracker();
-			if(kt == null)
-				continue;
-			int[] tmp = kt.packets.grabResendPackets(rpiTemp, rpiIntTemp);
-			if(tmp == null)
-				continue;
-			rpiIntTemp = tmp;
-			for(ResendPacketItem item : rpiTemp) {
-				if(item == null)
-					continue;
-				try {
-					if(logMINOR)
-						Logger.minor(this, "Resending " + item.packetNumber + " to " + item.kt);
-					getOutgoingMangler().resend(item, kt);
-					return true;
-				} catch(KeyChangedException e) {
-					Logger.error(this, "Caught " + e + " resending packets to " + kt);
-					requeueResendItems(rpiTemp);
-					return false;
-				} catch(NotConnectedException e) {
-					Logger.normal(this, "Caught " + e + " resending packets to " + kt);
-					requeueResendItems(rpiTemp);
-					return false;
-				} catch(PacketSequenceException e) {
-					Logger.error(this, "Caught " + e + " - disconnecting", e);
-					// PSE is fairly drastic, something is broken between us, but maybe we can resync
-					forceDisconnect(false);
-					return false;
-				} catch(WouldBlockException e) {
-					Logger.error(this, "Impossible: " + e, e);
-					return false;
-				}
-			}
-
-		}
-		int minSize = getOutgoingMangler().fullHeadersLengthOneMessage(); // includes UDP headers
-		int maxSize = ((PacketSocketHandler) getSocketHandler()).getPacketSendThreshold();
-
-		// If it's a keepalive, we must add an FNPVoid to ensure it has a packet number.
-		boolean keepalive = false;
-
-		long lastSent = lastSentPacketTime();
-		if(now - lastSent > Node.KEEPALIVE_INTERVAL) {
-			if(logMINOR)
-				Logger.minor(this, "Sending keepalive");
-			if(now - lastSent > Node.KEEPALIVE_INTERVAL * 10 && lastSent > -1)
-				Logger.error(this, "Long gap between sending packets: "+(now - lastSent)+" for "+this);
-			keepalive = true;
-			mustSend = true;
-			mustSendPacket = true;
-		}
-
-		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(10);
-
-		synchronized(messageQueue) {
-
-			// Any urgent messages to send now?
-
-			if(!mustSend) {
-				if(messageQueue.mustSendNow(now))
-					mustSend = true;
-			}
-
-			if(!mustSend) {
-				// What about total length?
-				if(messageQueue.mustSendSize(minSize, maxSize))
-					mustSend = true;
-			}
-			
-		}
-
-		if(mustSend) {
-			messageQueue.addMessages(minSize, now, minSize, maxSize, messages);
-		}
-
-		if(messages.isEmpty() && keepalive) {
-			// Force packet to have a sequence number.
-			Message m = DMT.createFNPVoid();
-			addToLocalNodeSentMessagesToStatistic(m);
-			messages.add(new MessageItem(m, null, null, this));
-		}
-
-		if(!messages.isEmpty()) {
-			// Send packets, right now, blocking, including any active notifications
-			// Note that processOutgoingOrRequeue will drop messages from the end
-			// if necessary to fit the messages into a single packet.
-			if(!getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, false, true)) {
-				if(mustSendPacket) {
-					if(!sendAnyUrgentNotifications(false))
-						sendAnyUrgentNotifications(true);
-				}
-			}
-			return true;
-		} else {
-			if(mustSend) {
-					if(sendAnyUrgentNotifications(false))
-						return true;
-				// Can happen occasionally as a race condition...
-				Logger.normal(this, "No notifications sent despite no messages and mustSend=true for "+this);
-			}
-		}
-
-		return false;
+		return packetFormat.maybeSendPacket(now, rpiTemp, rpiIntTemp);
 	}
 
 	/**
@@ -4762,4 +4669,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return outputLoadTracker(realTime).getIncomingLoadStats();
 	}
 	
+	PeerMessageQueue getMessageQueue() {
+		return messageQueue;
+	}
+
+	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
+		boolean result = packetFormat.handleReceivedPacket(buf, offset, length, now);
+
+		// Assume it is connection setup or rekeying
+		if(!result) {
+			crypto.packetMangler.process(buf, offset, length, getPeer(), now);
+		}
+	}
 }
