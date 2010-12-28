@@ -1959,6 +1959,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		SessionKey prev = null;
 		SessionKey newTracker;
 		MessageItem[] messagesTellDisconnected = null;
+		PacketFormat oldPacketFormat = null;
 		PacketTracker packets = null;
 		synchronized(this) {
 			// FIXME this shouldn't happen, does it?
@@ -2054,6 +2055,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// connection initial messages by maybeOnConnect().
 				messagesTellDisconnected = grabQueuedMessageItems();
 				this.offeredMainJarVersion = 0;
+				oldPacketFormat = packetFormat;
+				packetFormat = null;
 			} else {
 				// else it's a rekey
 			}
@@ -2111,6 +2114,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			oldCur.packets.completelyDeprecated(newTracker);
 		if(prev != null && prev.packets != newTracker.packets)
 			prev.packets.deprecated();
+		if(oldPacketFormat != null) {
+			for(MessageItem item : oldPacketFormat.onDisconnect()) {
+				item.onDisconnect();
+			}
+		}
 		PacketThrottle throttle;
 		synchronized(this) {
 			throttle = _lastThrottle;
