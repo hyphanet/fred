@@ -2122,9 +2122,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(prev != null && prev.packets != newTracker.packets)
 			prev.packets.deprecated();
 		if(oldPacketFormat != null) {
-			for(MessageItem item : oldPacketFormat.onDisconnect()) {
-				item.onDisconnect();
-			}
+			List<MessageItem> tellDisconnect = oldPacketFormat.onDisconnect();
+			if(tellDisconnect != null)
+				for(MessageItem item : tellDisconnect) {
+					item.onDisconnect();
+				}
 		}
 		PacketThrottle throttle;
 		synchronized(this) {
