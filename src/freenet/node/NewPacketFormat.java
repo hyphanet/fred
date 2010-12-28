@@ -624,6 +624,18 @@ fragments:
 			}
 		}
 		
+		if(canAllocateID) {
+			int bufferUsage;
+			synchronized(bufferUsageLock) {
+				bufferUsage = usedBufferOtherSide;
+			}
+			if((bufferUsage + 200 /* bigger than most messages */ ) > MAX_BUFFER_SIZE) {
+				if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
+				canAllocateID = false;
+			}
+
+		}
+		
 		if(!canAllocateID) {
 			// Maybe we can send a packet without allocating a new message number?
 			synchronized(startedByPrio) {
