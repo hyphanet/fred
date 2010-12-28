@@ -262,11 +262,11 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	// http://www.studenten-ins-netz.net/inhalt/service_faq.html
 	// officially GRE is 1476 and PPPoE is 1492.
 	// unofficially, PPPoE is often 1472 (seen in the wild). Also PPPoATM is sometimes 1472.
-	static final int MAX_ALLOWED_MTU = 1400;
+	static final int MAX_ALLOWED_MTU = 1280;
 	// FIXME this is different for IPv6 (check all uses of constant when fixing)
 	public static final int UDP_HEADERS_LENGTH = 28;
 
-	public static final int MIN_MTU = 1100;
+	public static final int MIN_MTU = 576;
 	private volatile boolean disableMTUDetection = false;
 
 	/**
