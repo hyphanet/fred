@@ -2292,6 +2292,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				int totalMessageSize = 0;
 				for(int i=0;i<messageData.length;i++) totalMessageSize += messageData[i].length;
 				int overhead = size - totalMessageSize;
+				if(logMINOR) Logger.minor(this, "Overhead: "+overhead+" total messages size "+totalMessageSize+" for "+messageData.length+" messages");
 				for(int i=0;i<messageData.length;i++) {
 					MessageItem mi = newMsgs[i];
 					mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
@@ -2413,6 +2414,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			System.arraycopy(data, 0, buf, loc, len);
 			loc += len;
 		}
+		if(logMINOR) Logger.minor(this, "Packed data is "+loc+" bytes long.");
 		return processOutgoingPreformatted(buf, 0, loc, pn, callbacks, priority);
 	}
 
@@ -2553,6 +2555,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		1 + // number of forgotten packets
 		forgotPackets.length +
 		length; // the payload !
+		
+		if(logMINOR)
+			Logger.minor(this, "Fully packed data is "+packetLength+" bytes long");
 
 		boolean paddThisPacket = crypto.config.paddDataPackets();
 		int paddedLen;

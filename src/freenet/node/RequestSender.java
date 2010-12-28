@@ -1587,6 +1587,7 @@ loadWaiterLoop:
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
+		if(logMINOR) Logger.minor(this, "Sent bytes: "+x+" for "+this+" isSSK="+isSSK, new Exception("debug"));
 		node.nodeStats.requestSentBytes(isSSK, x);
 	}
 	
