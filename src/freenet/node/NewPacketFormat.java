@@ -466,6 +466,8 @@ outer:
 	}
 
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey) throws BlockedTooLongException {
+		if(logDEBUG)
+			Logger.debug(this, "Creating a packet for "+pn);
 		//Mark packets as lost
 		synchronized(sentPackets) {
 			double avgRtt = Math.max(250, averageRTT());
@@ -494,7 +496,9 @@ outer:
 		synchronized(acks) {
 			Iterator<Integer> it = acks.iterator();
 			while (it.hasNext() && packet.getLength() < maxPacketSize) {
-				if(!packet.addAck(it.next())) break;
+				int ack = it.next();
+				if(logDEBUG) Logger.debug(this, "Trying to ack "+ack);
+				if(!packet.addAck(ack)) break;
 				++numAcks;
 				it.remove();
 			}
