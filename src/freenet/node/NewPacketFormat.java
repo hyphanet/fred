@@ -384,7 +384,7 @@ outer:
 			return false;
 		}
 
-		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue());
+		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue(), sessionKey);
 		if(packet == null) return false;
 
 		int paddedLen = packet.getLength() + HMAC_LENGTH;
@@ -464,7 +464,7 @@ outer:
 		return true;
 	}
 
-	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue) throws BlockedTooLongException {
+	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey) throws BlockedTooLongException {
 		//Mark packets as lost
 		synchronized(sentPackets) {
 			double avgRtt = Math.max(250, averageRTT());
@@ -566,7 +566,7 @@ fragments:
 
 		if(packet.getLength() == 5) return null;
 
-		int seqNum = allocateSequenceNumber();
+		int seqNum = allocateSequenceNumber(sessionKey);
 		if(seqNum == -1) return null;
 		packet.setSequenceNumber(seqNum);
 
@@ -628,8 +628,7 @@ fragments:
 		return false;
 	}
 
-	private int allocateSequenceNumber() {
-		SessionKey tracker = (pn == null ? null : pn.getCurrentKeyTracker());
+	private int allocateSequenceNumber(SessionKey tracker) {
 		synchronized(sequenceNumberLock) {
 			if(tracker != null) {
 				if(tracker.firstSeqNumUsed == -1) {
