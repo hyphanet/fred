@@ -114,12 +114,12 @@ public class FNPWrapper implements PacketFormat {
 				// What about total length?
 				if(messageQueue.mustSendSize(minSize, maxSize)) mustSend = true;
 			}
+		}
 
-			if(mustSend) {
-				int size = minSize;
-				size = messageQueue.addMessages(size, now, minSize, maxSize, messages, 0, 255);
-			}
-
+		// addMessages() should be called outside the lock. It will take it and drop it where needed.
+		if(mustSend) {
+			int size = minSize;
+			size = messageQueue.addMessages(size, now, minSize, maxSize, messages, 0, 255);
 		}
 
 		if(messages.isEmpty() && keepalive) {
