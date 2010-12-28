@@ -602,34 +602,43 @@ fragments:
 	}
 
 	public boolean canSend() {
+		
+		boolean canAllocateID;
+		
 		synchronized(this) {
-			if(!seqNumGreaterThan(nextMessageID, (messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS, 28)) {
-				//getMessageID would return the next message id, so we can get more from the queue
-				return true;
-			}
+			// Check whether we can allocate a message number.
+			canAllocateID = 
+				!seqNumGreaterThan(nextMessageID, (messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS, 28);
 		}
 
-		synchronized(startedByPrio) {
-			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
-				synchronized(started) {
-					//We have something to send even if we can't grab from the queue
-					//FIXME: We might not be able to send even if this isn't empty
-					if(!started.isEmpty()) return true;
+		if(canAllocateID) {
+			// Check whether we need to rekey.
+			SessionKey tracker = pn.getCurrentKeyTracker();
+			synchronized(sequenceNumberLock) {
+				if(tracker.nextSeqNum == tracker.firstSeqNumUsed) {
+					// We can't allocate more sequence numbers because we haven't rekeyed yet
+					pn.startRekeying();
+					Logger.error(this, "Can't send because we would block");
+					canAllocateID = false;
 				}
 			}
 		}
 		
-		SessionKey tracker = pn.getCurrentKeyTracker();
-		synchronized(sequenceNumberLock) {
-			if(tracker.nextSeqNum == tracker.firstSeqNumUsed) {
-				// We can't allocate more sequence numbers because we haven't rekeyed yet
-				pn.startRekeying();
-				Logger.error(this, "Can't send because we would block");
-				return true;
+		if(!canAllocateID) {
+			// Maybe we can send a packet without allocating a new message number?
+			synchronized(startedByPrio) {
+				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+					synchronized(started) {
+						//We have something to send even if we can't grab from the queue
+						//FIXME: We might not be able to send even if this isn't empty
+						if(!started.isEmpty()) return true;
+					}
+				}
 			}
+			return false;
 		}
-
-		return false;
+		
+		return true;
 	}
 
 	private int allocateSequenceNumber(SessionKey tracker) {
