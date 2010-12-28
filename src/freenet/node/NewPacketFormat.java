@@ -506,7 +506,8 @@ outer:
 			}
 		}
 
-fragments:
+		// Always finish what we have started before considering sending more packets.
+		// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
 		for(int i = 0; i < startedByPrio.size(); i++) {
 			HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
 
@@ -523,7 +524,10 @@ fragments:
 					}
 				}
 			}
-
+		}
+		
+		fragments:
+		for(int i = 0; i < startedByPrio.size(); i++) {
 			//Add messages from the message queue
 			while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
 				MessageItem item = null;
