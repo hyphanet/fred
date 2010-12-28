@@ -147,4 +147,8 @@ public class MessageWrapper {
 	public void onDisconnect() {
 		item.onDisconnect();
 	}
+	
+	MessageItem getItem() {
+		return item;
+	}
 }

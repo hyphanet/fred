@@ -1,5 +1,6 @@
 package freenet.node;
 
+import java.util.List;
 import java.util.Vector;
 
 public interface PacketFormat {
@@ -21,7 +22,7 @@ public interface PacketFormat {
 	/**
 	 * Called when the peer has been disconnected.
 	 */
-	void onDisconnect();
+	List<MessageItem> onDisconnect();
 
 	/**
 	 * Returns {@code false} if the packet format can't send packets because it must wait for some internal event.

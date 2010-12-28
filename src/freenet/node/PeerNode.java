@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
@@ -1213,6 +1214,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean ret;
 		SessionKey cur, prev, unv;
 		MessageItem[] messagesTellDisconnected = null;
+		List<MessageItem> moreMessagesTellDisconnected = null;
 		synchronized(this) {
 			ret = isConnected;
 			// Force renegotiation.
@@ -1238,12 +1240,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 		if(dumpMessageQueue) {
-			packetFormat.onDisconnect();
+			moreMessagesTellDisconnected = packetFormat.onDisconnect();
 		}
 		if(messagesTellDisconnected != null) {
 			if(logMINOR)
 				Logger.minor(this, "Messages to dump: "+messagesTellDisconnected.length);
 			for(MessageItem mi : messagesTellDisconnected) {
+				mi.onDisconnect();
+			}
+		}
+		if(moreMessagesTellDisconnected != null) {
+			if(logMINOR)
+				Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
+			for(MessageItem mi : moreMessagesTellDisconnected) {
 				mi.onDisconnect();
 			}
 		}
@@ -1265,7 +1274,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 								mi.onDisconnect();
 							}
 						}
-						packetFormat.onDisconnect();
+						List<MessageItem> moreMessagesTellDisconnected = 
+							packetFormat.onDisconnect();
+						if(moreMessagesTellDisconnected != null) {
+							if(logMINOR)
+								Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
+							for(MessageItem mi : moreMessagesTellDisconnected) {
+								mi.onDisconnect();
+							}
+						}
 					}
 
 				}

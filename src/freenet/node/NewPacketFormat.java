@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
@@ -578,13 +579,15 @@ fragments:
 		return packet;
 	}
 
-	public void onDisconnect() {
+	public List<MessageItem> onDisconnect() {
 		int messageSize = 0;
+		List<MessageItem> items = null;
 		for(HashMap<Integer, MessageWrapper> queue : startedByPrio) {
 			synchronized(queue) {
+				if(items == null)
+					items = new ArrayList<MessageItem>();
 				for(MessageWrapper wrapper : queue.values()) {
-					wrapper.onDisconnect();
-					messageSize += wrapper.getLength();
+					items.add(wrapper.getItem());
 				}
 				queue.clear();
 			}
@@ -593,6 +596,7 @@ fragments:
 			usedBufferOtherSide -= messageSize;
 			if(logDEBUG) Logger.debug(this, "Removed " + messageSize + " from remote buffer. Total is now " + usedBufferOtherSide);
 		}
+		return items;
 	}
 
 	public boolean canSend() {

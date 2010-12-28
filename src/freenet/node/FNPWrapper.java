@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import freenet.io.comm.DMT;
@@ -169,8 +170,9 @@ public class FNPWrapper implements PacketFormat {
 		return true;
 	}
 
-	public void onDisconnect() {
+	public List<MessageItem> onDisconnect() {
 		//Nothing to do, MessageItems are either sent or requeued.
+		return null;
 	}
 
 	public boolean canSend() {
