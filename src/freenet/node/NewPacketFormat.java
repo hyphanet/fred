@@ -752,6 +752,9 @@ outer:
 			while(msgIt.hasNext()) {
 				MessageWrapper wrapper = msgIt.next();
 				int[] range = rangeIt.next();
+				
+				if(logDEBUG)
+					Logger.debug(this, "Acknowledging "+range[0]+" to "+range[1]+" on "+wrapper.getMessageID());
 
 				if(wrapper.ack(range[0], range[1])) {
 					HashMap<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
