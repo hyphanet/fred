@@ -37,7 +37,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int REKEY_THRESHOLD = 100;
 	private static final int MAX_ACKS = 500;
 	/** All acks must be sent within 200ms */
-	private static final int MAX_ACK_DELAY = 200;
+	static final int MAX_ACK_DELAY = 200;
 	/** Minimum RTT for purposes of calculating whether to retransmit. 
 	 * Must be greater than MAX_ACK_DELAY */
 	private static final int MIN_RTT_FOR_RETRANSMIT = 250;

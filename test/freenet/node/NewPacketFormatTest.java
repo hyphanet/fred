@@ -14,7 +14,7 @@ public class NewPacketFormatTest extends TestCase {
 		if(p != null) fail("Created packet from nothing");
 	}
 
-	public void testAckOnlyCreation() throws BlockedTooLongException {
+	public void testAckOnlyCreation() throws BlockedTooLongException, InterruptedException {
 		NewPacketFormat npf = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue pmq = new PeerMessageQueue();
 
@@ -28,11 +28,12 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, npf.handleDecryptedPacket(p).size());
 
 		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+		Thread.sleep(NewPacketFormat.MAX_ACK_DELAY*2);
 		p = npf.createPacket(1400, pmq, s);
 		assertEquals(1, p.getAcks().size());
 	}
 
-	public void testLostLastAck() throws BlockedTooLongException {
+	public void testLostLastAck() throws BlockedTooLongException, InterruptedException {
 		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
@@ -49,6 +50,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, fragment2.getFragments().size());
 		receiver.handleDecryptedPacket(fragment2);
 
+		Thread.sleep(NewPacketFormat.MAX_ACK_DELAY*2);
 		NPFPacket ack1 = receiver.createPacket(512, receiverQueue, s);
 		assertEquals(2, ack1.getAcks().size());
 		sender.handleDecryptedPacket(ack1);
@@ -67,6 +69,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(0, receiver.handleDecryptedPacket(resend1).size());
 
 		//Make sure an ack is sent
+		Thread.sleep(NewPacketFormat.MAX_ACK_DELAY*2);
 		NPFPacket ack2 = receiver.createPacket(512, receiverQueue, s);
 		assertNotNull(ack2);
 		assertEquals(1, ack2.getAcks().size());
@@ -115,7 +118,7 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(1, receiver.handleDecryptedPacket(fragment1).size());
 	}
 
-	public void testResendAlreadyCompleted() throws BlockedTooLongException {
+	public void testResendAlreadyCompleted() throws BlockedTooLongException, InterruptedException {
 		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
@@ -123,6 +126,7 @@ public class NewPacketFormatTest extends TestCase {
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0));
 
+		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, s);
 		assertEquals(1, receiver.handleDecryptedPacket(packet1).size());
 
