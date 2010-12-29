@@ -124,7 +124,7 @@ public class MessageWrapper {
 
 	public MessageFragment getMessageFragment(int maxLength) {
 		int start = 0;
-		int end = Integer.MAX_VALUE;
+		int end = item.buf.length - 1;
 
 		synchronized(sent) {
 			for(int[] range : sent) {
@@ -148,9 +148,7 @@ public class MessageWrapper {
 			dataLength -= (isShortMessage ? 1 : 3); //Message length / fragment offset
 		}
 
-		if(end < Integer.MAX_VALUE)
-			dataLength = Math.min(end - start + 1, dataLength);
-		dataLength = Math.min(item.buf.length - start, dataLength);
+		dataLength = Math.min(end - start + 1, dataLength);
 		if(dataLength <= 0) return null;
 
 		byte[] fragmentData = new byte[dataLength];
