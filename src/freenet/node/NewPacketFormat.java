@@ -626,6 +626,7 @@ outer:
 		if(canAllocateID) {
 			// Check whether we need to rekey.
 			SessionKey tracker = pn.getCurrentKeyTracker();
+			if(tracker == null) return false;
 			synchronized(sequenceNumberLock) {
 				if(tracker.nextSeqNum == tracker.firstSeqNumUsed) {
 					// We can't allocate more sequence numbers because we haven't rekeyed yet
