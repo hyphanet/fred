@@ -61,31 +61,28 @@ public class MessageWrapper {
 		return false;
 	}
 
-	/**
-	 * Remove any mark that has already been set for the given range.
-	 */
-	public int lost() {
-		int bytesToResend = 0;
-
-		if(logDEBUG)
-			Logger.debug(this, "Lost a packet for message "+messageID+" - resetting sent to acks");
+	public int lost(int start, int end) {
 		synchronized(sent) {
+			sent.remove(start, end);
+		}
+
 		synchronized(acks) {
-			for(int [] range : sent) {
-				bytesToResend += range[1] - range[0] + 1;
-			}
-
-			sent.clear();
 			for(int[] range : acks) {
-				if(logDEBUG)
-					Logger.debug(this, "Adding acked range "+range[0]+" to "+range[1]);
-				sent.add(range[0], range[1]);
-				bytesToResend -= range[1] - range[0] + 1;
+				if(range[1] < start) continue;
+				if(range[0] > end) continue;
+
+				int toAddStart = Math.max(start, range[0]);
+				int toAddEnd = Math.min(end, range[1]);
+				Logger.warning(this, "Lost range (" + start + "->" + end + ") is overlapped by acked range ("
+						+ range[0] + "->" + range[1] + "). Adding " + toAddStart + "->"
+						+ toAddEnd + " to sent");
+				synchronized(sent) {
+					sent.add(toAddStart, toAddEnd);
+				}
 			}
 		}
-		}
 
-		return bytesToResend;
+		return end - start;
 	}
 
 	public int getMessageID() {

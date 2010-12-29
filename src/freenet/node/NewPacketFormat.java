@@ -814,10 +814,13 @@ outer:
 		public void lost() {
 			int bytesToResend = 0;
 			Iterator<MessageWrapper> msgIt = messages.iterator();
+			Iterator<int[]> rangeIt = ranges.iterator();
 
 			while(msgIt.hasNext()) {
 				MessageWrapper wrapper = msgIt.next();
-				bytesToResend += wrapper.lost();
+				int[] range = rangeIt.next();
+
+				bytesToResend += wrapper.lost(range[0], range[1]);
 			}
 
 			//Unless we disconnect these will be resent eventually
