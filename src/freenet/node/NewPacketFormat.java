@@ -659,6 +659,12 @@ outer:
 			long timeout = l + ackDelay;
 			if(ret > timeout) ret = timeout;
 		}
+		
+		// Wake up in half an RTT if there are messages sent which might need retransmitting.
+		synchronized(sentPackets) {
+			if(!sentPackets.isEmpty())
+				ret = System.currentTimeMillis() + ackDelay;
+		}
 		return ret;
 	}
 	
