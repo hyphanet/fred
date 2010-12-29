@@ -499,7 +499,7 @@ outer:
 			Logger.debug(this, "Creating a packet for "+pn);
 		//Mark packets as lost
 		synchronized(sentPackets) {
-			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, we don't need to add it on here.
+			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
 			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT());
 			long curTime = System.currentTimeMillis();
 
