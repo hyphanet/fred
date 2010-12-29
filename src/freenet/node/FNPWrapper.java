@@ -184,4 +184,8 @@ public class FNPWrapper implements PacketFormat {
 			return false;
 		}
 	}
+
+	public long timeNextUrgent() {
+		return Long.MAX_VALUE;
+	}
 }

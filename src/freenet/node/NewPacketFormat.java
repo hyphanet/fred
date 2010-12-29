@@ -619,6 +619,33 @@ outer:
 		return items;
 	}
 	
+	/** When do we need to send a packet?
+	 * @return 0 if there is anything already in flight. The time that the oldest ack was
+	 * queued at plus the lesser of half the RTT or 100ms if there are acks queued. 
+	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
+	public long timeNextUrgent() {
+		// Is there anything in flight?
+		synchronized(startedByPrio) {
+			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+				synchronized(started) {
+					for(MessageWrapper wrapper : started.values()) {
+						if(wrapper.canSend()) return 0;
+					}
+				}
+			}
+		}
+		// Check for acks.
+		// FIXME alchemy, but probably unavoidable
+		// Acks are queued for up to max(100ms, RTT/2).
+		long ackDelay = Math.max(100, (long)averageRTT()/2);
+		long ret = Long.MAX_VALUE;
+		for(Long l : acks.values()) {
+			long timeout = l + ackDelay;
+			if(ret > timeout) ret = timeout;
+		}
+		return ret;
+	}
+	
 	public boolean canSend() {
 		
 		boolean canAllocateID;
@@ -638,7 +665,7 @@ outer:
 					// We can't allocate more sequence numbers because we haven't rekeyed yet
 					pn.startRekeying();
 					Logger.error(this, "Can't send because we would block");
-					canAllocateID = false;
+					return false;
 				}
 			}
 		}
@@ -650,25 +677,9 @@ outer:
 			}
 			if((bufferUsage + 200 /* bigger than most messages */ ) > MAX_BUFFER_SIZE) {
 				if(logDEBUG) Logger.debug(this, "Cannot send: Would exceed remote buffer size. Remote at " + bufferUsage);
-				canAllocateID = false;
+				return false;
 			}
 
-		}
-		
-		if(!canAllocateID) {
-			// Maybe we can send a packet without allocating a new message number?
-			synchronized(startedByPrio) {
-				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
-					synchronized(started) {
-						//We have something to send even if we can't grab from the queue
-						//FIXME: We might not be able to send even if this isn't empty
-						for(MessageWrapper wrapper : started.values()) {
-							if(wrapper.canSend()) return true;
-						}
-					}
-				}
-			}
-			return false;
 		}
 		
 		return true;

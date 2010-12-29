@@ -1378,6 +1378,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		if(packetFormat.canSend())
 			t = messageQueue.getNextUrgentTime(t, now);
+		else
+			t = Math.min(t, packetFormat.timeNextUrgent());
 		return t;
 	}
 
