@@ -655,7 +655,9 @@ outer:
 					synchronized(started) {
 						//We have something to send even if we can't grab from the queue
 						//FIXME: We might not be able to send even if this isn't empty
-						if(!started.isEmpty()) return true;
+						for(MessageWrapper wrapper : started.values()) {
+							if(wrapper.canSend()) return true;
+						}
 					}
 				}
 			}

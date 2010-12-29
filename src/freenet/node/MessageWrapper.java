@@ -170,4 +170,8 @@ public class MessageWrapper {
 	MessageItem getItem() {
 		return item;
 	}
+
+	public boolean canSend() {
+		return !sent.contains(0, item.buf.length-1);
+	}
 }
