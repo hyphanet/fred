@@ -503,7 +503,7 @@ outer:
 		boolean mustSend = false;
 		long now = System.currentTimeMillis();
 
-		long ackDelay = Math.max(100, (long)averageRTT()/2);
+		long ackDelay = Math.min(100, (long)averageRTT()/2);
 		int numAcks = 0;
 		synchronized(acks) {
 			Iterator<Map.Entry<Integer, Long>> it = acks.entrySet().iterator();
@@ -650,8 +650,10 @@ outer:
 		}
 		// Check for acks.
 		// FIXME alchemy, but probably unavoidable
-		// Acks are queued for up to max(100ms, RTT/2).
-		long ackDelay = Math.max(100, (long)averageRTT()/2);
+		// Acks are queued for up to min(100ms, RTT/2).
+		// Half an RTT or 100ms, whichever is lower.
+		// Otherwise the RTT will be driven up indefinitely.
+		long ackDelay = Math.min(100, (long)averageRTT()/2);
 		long ret = Long.MAX_VALUE;
 		for(Long l : acks.values()) {
 			long timeout = l + ackDelay;
