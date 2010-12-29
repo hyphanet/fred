@@ -36,6 +36,8 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int MAX_MSGID_BLOCK_TIME = 10 * 60 * 1000;
 	private static final int REKEY_THRESHOLD = 100;
 	private static final int MAX_ACKS = 500;
+	/** All acks must be sent within 200ms */
+	private static final int MAX_ACK_DELAY = 200;
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -519,14 +521,14 @@ outer:
 		boolean mustSend = false;
 		long now = System.currentTimeMillis();
 
-		long ackDelay = Math.min(100, (long)averageRTT()/2);
+		// All acks must be sent within 200ms.
 		int numAcks = 0;
 		synchronized(acks) {
 			Iterator<Map.Entry<Integer, Long>> it = acks.entrySet().iterator();
 			while (it.hasNext() && packet.getLength() < maxPacketSize) {
 				Map.Entry<Integer, Long> entry = it.next();
 				int ack = entry.getKey();
-				if(entry.getValue() + ackDelay < now)
+				if(entry.getValue() + MAX_ACK_DELAY < now)
 					mustSend = true;
 				if(logDEBUG) Logger.debug(this, "Trying to ack "+ack);
 				if(!packet.addAck(ack)) break;
@@ -682,19 +684,14 @@ outer:
 			}
 		}
 		// Check for acks.
-		// FIXME alchemy, but probably unavoidable
-		// Acks are queued for up to min(100ms, RTT/2).
-		// Half an RTT or 100ms, whichever is lower.
-		// Otherwise the RTT will be driven up indefinitely.
-		long ackDelay = Math.min(100, (long)averageRTT()/2);
 		long ret = Long.MAX_VALUE;
 		for(Long l : acks.values()) {
-			long timeout = l + ackDelay;
+			long timeout = l + MAX_ACK_DELAY;
 			if(ret > timeout) ret = timeout;
 		}
 		
-		// Always wake up after half an RTT, there is probably something to ack.
-		ret = Math.min(ret, System.currentTimeMillis() + ackDelay);
+		// Always wake up after half an RTT, check whether stuff is lost or needs ack'ing.
+		ret = Math.min(ret, System.currentTimeMillis() + Math.min(100, (long)averageRTT()/2));
 		return ret;
 	}
 	
