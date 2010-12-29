@@ -243,10 +243,15 @@ public class NewPacketFormat implements PacketFormat {
 
 		if(!dontAck) {
 			int seqno = packet.getSequenceNumber();
+			boolean wakeUp = false;
 			synchronized(acks) {
-				if(!acks.containsKey(seqno))
+				if(!acks.containsKey(seqno)) {
+					wakeUp = acks.size() > MAX_ACKS;
 					acks.put(seqno, System.currentTimeMillis());
+				}
 			}
+			if(wakeUp)
+				pn.node.ps.wakeUp();
 		}
 
 
