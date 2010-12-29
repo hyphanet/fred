@@ -148,7 +148,8 @@ public class MessageWrapper {
 			dataLength -= (isShortMessage ? 1 : 3); //Message length / fragment offset
 		}
 
-		dataLength = Math.min(end - start + 1, dataLength);
+		if(end < Integer.MAX_VALUE)
+			dataLength = Math.min(end - start, dataLength);
 		dataLength = Math.min(item.buf.length - start, dataLength);
 		if(dataLength <= 0) return null;
 
