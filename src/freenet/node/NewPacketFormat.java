@@ -144,6 +144,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		boolean dontAck = false;
+		boolean wakeUp = false;
 		if(packet.getError() || (packet.getFragments().size() == 0)) {
 			if(logMINOR) Logger.minor(this, "Not acking because " + (packet.getError() ? "error" : "no fragments"));
 			dontAck = true;
@@ -243,15 +244,23 @@ public class NewPacketFormat implements PacketFormat {
 
 		if(!dontAck) {
 			int seqno = packet.getSequenceNumber();
-			boolean wakeUp = false;
+			boolean addedAck = false;
 			synchronized(acks) {
 				if(!acks.containsKey(seqno)) {
+					addedAck = true;
 					wakeUp = acks.size() > MAX_ACKS;
 					acks.put(seqno, System.currentTimeMillis());
 				}
 			}
-			if(wakeUp)
-				pn.node.ps.wakeUp();
+			if(addedAck) {
+				if(!wakeUp) {
+					synchronized(bufferUsageLock) {
+						if(usedBuffer > MAX_BUFFER_SIZE / 2)
+							wakeUp = true;
+				}
+				if(wakeUp)
+					pn.node.ps.wakeUp();
+			}
 		}
 
 
