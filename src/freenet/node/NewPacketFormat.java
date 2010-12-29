@@ -6,6 +6,7 @@ package freenet.node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private final PeerNode pn;
-	private final LinkedList<Integer> acks = new LinkedList<Integer>();
+	private final LinkedHashMap<Integer, Long> acks = new LinkedHashMap<Integer, Long>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
 
 	private final Object sequenceNumberLock = new Object();
@@ -240,8 +241,10 @@ public class NewPacketFormat implements PacketFormat {
 		}
 
 		if(!dontAck) {
+			int seqno = packet.getSequenceNumber();
 			synchronized(acks) {
-				acks.add(packet.getSequenceNumber());
+				if(!acks.containsKey(seqno))
+					acks.put(seqno, System.currentTimeMillis());
 			}
 		}
 
@@ -499,7 +502,7 @@ outer:
 
 		int numAcks = 0;
 		synchronized(acks) {
-			Iterator<Integer> it = acks.iterator();
+			Iterator<Integer> it = acks.keySet().iterator();
 			while (it.hasNext() && packet.getLength() < maxPacketSize) {
 				int ack = it.next();
 				if(logDEBUG) Logger.debug(this, "Trying to ack "+ack);
@@ -615,7 +618,7 @@ outer:
 		}
 		return items;
 	}
-
+	
 	public boolean canSend() {
 		
 		boolean canAllocateID;
