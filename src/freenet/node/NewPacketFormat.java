@@ -544,6 +544,19 @@ outer:
 				mustSend = true;
 		}
 		
+		if((!mustSend) && packet.getLength() >= (maxPacketSize * 4 / 5)) {
+			// Lots of acks to send, send a packet.
+			mustSend = true;
+		}
+		
+		if((!mustSend) && !mustSend && numAcks > 0) {
+			synchronized(bufferUsageLock) {
+				if(usedBufferOtherSide > MAX_BUFFER_SIZE / 2)
+					mustSend = true;
+			}
+
+		}
+		
 		if(!mustSend) return null;
 		
 		fragments:
