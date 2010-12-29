@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.crypt.BlockCipher;
 import junit.framework.TestCase;
 
 public class NewPacketFormatTest extends TestCase {
