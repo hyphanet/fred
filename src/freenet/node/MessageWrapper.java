@@ -135,7 +135,6 @@ public class MessageWrapper {
 				}
 			}
 		}
-		if(logDEBUG) Logger.debug(this, "Will use range "+start+" to "+end+" for max length "+maxLength+" sent = "+sent);
 		if(start >= item.buf.length) {
 			return null;
 		}
