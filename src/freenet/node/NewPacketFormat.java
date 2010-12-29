@@ -257,6 +257,7 @@ public class NewPacketFormat implements PacketFormat {
 					synchronized(bufferUsageLock) {
 						if(usedBuffer > MAX_BUFFER_SIZE / 2)
 							wakeUp = true;
+					}
 				}
 				if(wakeUp)
 					pn.node.ps.wakeUp();
