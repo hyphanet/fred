@@ -549,7 +549,7 @@ outer:
 			mustSend = true;
 		}
 		
-		if((!mustSend) && !mustSend && numAcks > 0) {
+		if((!mustSend) && numAcks > 0) {
 			synchronized(bufferUsageLock) {
 				if(usedBufferOtherSide > MAX_BUFFER_SIZE / 2)
 					mustSend = true;
