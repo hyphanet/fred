@@ -237,4 +237,12 @@ public class MessageWrapper {
 		if(completed)
 			item.onSentAll();
 	}
+
+	SparseBitmap getSent() {
+		return new SparseBitmap(sent);
+	}
+
+	SparseBitmap getAcks() {
+		return new SparseBitmap(acks);
+	}
 }
