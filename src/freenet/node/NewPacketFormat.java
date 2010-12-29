@@ -38,6 +38,9 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int MAX_ACKS = 500;
 	/** All acks must be sent within 200ms */
 	private static final int MAX_ACK_DELAY = 200;
+	/** Minimum RTT for purposes of calculating whether to retransmit. 
+	 * Must be greater than MAX_ACK_DELAY */
+	private static final int MIN_RTT_FOR_RETRANSMIT = 250;
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -496,7 +499,7 @@ outer:
 			Logger.debug(this, "Creating a packet for "+pn);
 		//Mark packets as lost
 		synchronized(sentPackets) {
-			double avgRtt = Math.max(250, averageRTT());
+			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT());
 			long curTime = System.currentTimeMillis();
 
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
