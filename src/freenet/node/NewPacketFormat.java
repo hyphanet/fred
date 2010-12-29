@@ -453,7 +453,7 @@ outer:
 			synchronized(sentPackets) {
 				sentPacket = sentPackets.get(packet.getSequenceNumber());
 			}
-			if(sentPacket != null) sentPacket.sent();
+			if(sentPacket != null) sentPacket.sent(packet.getLength());
 		}
 
 		pn.sentPacket();
@@ -583,7 +583,7 @@ outer:
 		packet.setSequenceNumber(seqNum);
 
 		if(packet.getFragments().size() > 0) {
-			sentPacket.sent();
+			sentPacket.sent(packet.getLength());
 			synchronized(sentPackets) {
 				sentPackets.put(seqNum, sentPacket);
 			}
@@ -828,13 +828,23 @@ outer:
 			if(npf.pn != null) npf.pn.resendByteCounter.sentBytes(bytesToResend);
 		}
 
-		public void sent() {
+		public void sent(int totalPacketLength) {
 			sentTime = System.currentTimeMillis();
-			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
+			int totalMessageData = 0;
+			int size = 0;
+			while(rangeIt.hasNext()) {
+				int[] range = rangeIt.next();
+				totalMessageData += range[1] - range[0] + 1;
+				size++;
+			}
+			int totalOverhead = totalPacketLength - totalMessageData;
+			if(logDEBUG) Logger.debug(this, "Total packet overhead: "+totalOverhead);
+			Iterator<MessageWrapper> msgIt = messages.iterator();
+			rangeIt = ranges.iterator();
 			while(msgIt.hasNext()) {
 				int[] range = rangeIt.next();
-				msgIt.next().onSent(range[0], range[1]);
+				msgIt.next().onSent(range[0], range[1], totalOverhead / size);
 			}
 		}
 

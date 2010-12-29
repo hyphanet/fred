@@ -168,7 +168,7 @@ public class MessageWrapper {
 		return !sent.contains(0, item.buf.length-1);
 	}
 
-	public void onSent(int start, int end) {
-		item.onSent(end - start + 1);
+	public void onSent(int start, int end, int overhead) {
+		item.onSent(end - start + 1 + overhead);
 	}
 }
