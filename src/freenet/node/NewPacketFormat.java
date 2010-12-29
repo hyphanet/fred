@@ -673,12 +673,8 @@ outer:
 			if(ret > timeout) ret = timeout;
 		}
 		
-		// Wake up in half an RTT if there are messages sent which might need retransmitting.
-		synchronized(sentPackets) {
-			if(!sentPackets.isEmpty()) {
-				ret = Math.min(ret, System.currentTimeMillis() + ackDelay);
-			}
-		}
+		// Always wake up after half an RTT, there is probably something to ack.
+		ret = Math.min(ret, System.currentTimeMillis() + ackDelay);
 		return ret;
 	}
 	
