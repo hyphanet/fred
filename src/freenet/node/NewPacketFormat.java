@@ -434,7 +434,7 @@ outer:
 				for(MessageFragment frag : packet.getFragments()) {
 					if(fragments == null) fragments = "" + frag.messageID;
 					else fragments = fragments + ", " + frag.messageID;
-					fragments += " ("+frag.fragmentOffset+"->"+(frag.fragmentOffset+frag.fragmentLength)+")";
+					fragments += " ("+frag.fragmentOffset+"->"+(frag.fragmentOffset+frag.fragmentLength-1)+")";
 				}
 
 				Logger.minor(this, "Sending packet " + packet.getSequenceNumber() + " ("
