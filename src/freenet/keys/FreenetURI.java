@@ -961,7 +961,7 @@ public class FreenetURI implements Cloneable {
 			String s = names.get(i);
 			if(logMINOR)
 				Logger.minor(this, "name " + i + " = " + s);
-			s = FileUtil.sanitize(s);
+			s = FileUtil.sanitize(s, true);
 			if(logMINOR)
 				Logger.minor(this, "Sanitized name " + i + " = " + s);
 			if(s.length() > 0) {
