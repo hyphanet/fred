@@ -833,7 +833,8 @@ outer:
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
 			while(msgIt.hasNext()) {
-				msgIt.next().onSent(rangeIt.next());
+				int[] range = rangeIt.next();
+				msgIt.next().onSent(range[0], range[1]);
 			}
 		}
 
