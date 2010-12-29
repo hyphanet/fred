@@ -47,9 +47,6 @@ public class MessageWrapper {
 		acks.add(start, end);
 		if(acks.contains(0, item.buf.length - 1)) {
 			if(!alreadyAcked) {
-				//TODO: Add overhead
-				//TODO: This should be called when the packet is *sent* not acked
-				item.onSent(item.buf.length);
 				if(item.cb != null) {
 					for(AsyncMessageCallback cb : item.cb) {
 						cb.acknowledged();
@@ -169,5 +166,9 @@ public class MessageWrapper {
 
 	public boolean canSend() {
 		return !sent.contains(0, item.buf.length-1);
+	}
+
+	public void onSent(int[] next) {
+		item.onSent(next[1] - next[0] + 1);
 	}
 }

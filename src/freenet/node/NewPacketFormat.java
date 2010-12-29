@@ -830,6 +830,11 @@ outer:
 
 		public void sent() {
 			sentTime = System.currentTimeMillis();
+			Iterator<MessageWrapper> msgIt = messages.iterator();
+			Iterator<int[]> rangeIt = ranges.iterator();
+			while(msgIt.hasNext()) {
+				msgIt.next().onSent(rangeIt.next());
+			}
 		}
 
 		public long getSentTime() {
