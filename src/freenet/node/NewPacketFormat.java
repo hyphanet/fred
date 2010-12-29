@@ -499,12 +499,19 @@ outer:
 
 		NPFPacket packet = new NPFPacket();
 		SentPacket sentPacket = new SentPacket(this);
+		
+		boolean mustSend = false;
+		long now = System.currentTimeMillis();
 
+		long ackDelay = Math.max(100, (long)averageRTT()/2);
 		int numAcks = 0;
 		synchronized(acks) {
-			Iterator<Integer> it = acks.keySet().iterator();
+			Iterator<Map.Entry<Integer, Long>> it = acks.entrySet().iterator();
 			while (it.hasNext() && packet.getLength() < maxPacketSize) {
-				int ack = it.next();
+				Map.Entry<Integer, Long> entry = it.next();
+				int ack = entry.getKey();
+				if(entry.getValue() + ackDelay < now)
+					mustSend = true;
 				if(logDEBUG) Logger.debug(this, "Trying to ack "+ack);
 				if(!packet.addAck(ack)) break;
 				++numAcks;
@@ -531,6 +538,13 @@ outer:
 				}
 			}
 		}
+		
+		if(!mustSend) {
+			if(messageQueue.mustSendNow(now) || messageQueue.mustSendSize(packet.getLength(), maxPacketSize))
+				mustSend = true;
+		}
+		
+		if(!mustSend) return null;
 		
 		fragments:
 		for(int i = 0; i < startedByPrio.size(); i++) {
