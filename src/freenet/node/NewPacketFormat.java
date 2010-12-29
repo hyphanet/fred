@@ -675,8 +675,9 @@ outer:
 		
 		// Wake up in half an RTT if there are messages sent which might need retransmitting.
 		synchronized(sentPackets) {
-			if(!sentPackets.isEmpty())
-				ret = System.currentTimeMillis() + ackDelay;
+			if(!sentPackets.isEmpty()) {
+				ret = Math.min(ret, System.currentTimeMillis() + ackDelay);
+			}
 		}
 		return ret;
 	}
