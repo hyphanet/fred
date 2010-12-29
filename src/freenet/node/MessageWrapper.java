@@ -7,6 +7,7 @@ import freenet.io.comm.AsyncMessageCallback;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SparseBitmap;
+import freenet.support.Logger.LogLevel;
 
 public class MessageWrapper {
 	private final MessageItem item;
@@ -23,8 +24,8 @@ public class MessageWrapper {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}

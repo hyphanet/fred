@@ -13,6 +13,7 @@ import java.util.TreeSet;
 
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger.LogLevel;
 
 class NPFPacket {
 	private static volatile boolean logMINOR;
@@ -20,7 +21,7 @@ class NPFPacket {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 			}
 		});
 	}
