@@ -70,6 +70,6 @@ public class SessionKey {
 	
 	@Override
 	public String toString() {
-		return super.toString()+":"+packets.toString();
+		return super.toString()+":"+packets;
 	}
 }
