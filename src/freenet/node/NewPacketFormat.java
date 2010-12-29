@@ -35,6 +35,7 @@ public class NewPacketFormat implements PacketFormat {
 	private static final long NUM_SEQNUMS = 2147483648l;
 	private static final int MAX_MSGID_BLOCK_TIME = 10 * 60 * 1000;
 	private static final int REKEY_THRESHOLD = 100;
+	private static final int MAX_ACKS = 500;
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -518,6 +519,9 @@ outer:
 				it.remove();
 			}
 		}
+		
+		if(numAcks > MAX_ACKS)
+			mustSend = true;
 
 		// Always finish what we have started before considering sending more packets.
 		// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
