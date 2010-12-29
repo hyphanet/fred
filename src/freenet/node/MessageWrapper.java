@@ -4,6 +4,8 @@
 package freenet.node;
 
 import freenet.io.comm.AsyncMessageCallback;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.SparseBitmap;
 
 public class MessageWrapper {
@@ -14,6 +16,18 @@ public class MessageWrapper {
 	//Sorted lists of non-overlapping ranges
 	private final SparseBitmap acks = new SparseBitmap();
 	private final SparseBitmap sent = new SparseBitmap();
+	
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
 
 	public MessageWrapper(MessageItem item, int messageID) {
 		this.item = item;
@@ -53,6 +67,8 @@ public class MessageWrapper {
 	public int lost() {
 		int bytesToResend = 0;
 
+		if(logDEBUG)
+			Logger.debug(this, "Lost a packet for message "+messageID+" - resetting sent to acks");
 		synchronized(sent) {
 		synchronized(acks) {
 			for(int [] range : sent) {
@@ -61,6 +77,8 @@ public class MessageWrapper {
 
 			sent.clear();
 			for(int[] range : acks) {
+				if(logDEBUG)
+					Logger.debug(this, "Adding acked range "+range[0]+" to "+range[1]);
 				sent.add(range[0], range[1]);
 				bytesToResend -= range[1] - range[0] + 1;
 			}

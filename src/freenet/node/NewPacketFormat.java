@@ -550,6 +550,8 @@ outer:
 					messageQueue.pushfrontPrioritizedMessageItem(item);
 					break fragments;
 				}
+				
+				if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item);
 
 				MessageWrapper wrapper = new MessageWrapper(item, messageID);
 				MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
@@ -568,7 +570,7 @@ outer:
 
 				synchronized(bufferUsageLock) {
 					usedBufferOtherSide += item.buf.length;
-					if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide);
+					if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide + " for "+pn.shortToString());
 				}
 			}
 		}
