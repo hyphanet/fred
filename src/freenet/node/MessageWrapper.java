@@ -182,6 +182,8 @@ public class MessageWrapper {
 	}
 
 	public void onSent(int start, int end, int overhead) {
+		// FIXME resent bytes shouldn't count ???
+		// In old FNP they didn't.
 		item.onSent(end - start + 1 + overhead);
 	}
 }
