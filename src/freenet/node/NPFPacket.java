@@ -17,11 +17,13 @@ import freenet.support.Logger.LogLevel;
 
 class NPFPacket {
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -325,5 +327,23 @@ class NPFPacket {
 			if(frag1.messageID == frag2.messageID) return 0;
 			return 1;
 		}
+	}
+
+	public void onSent(int totalPacketLength) {
+		Iterator<MessageFragment> fragIt = fragments.iterator();
+		int totalMessageData = 0;
+		int size = fragments.size();
+		while(fragIt.hasNext()) {
+			MessageFragment frag = fragIt.next();
+			totalMessageData += frag.fragmentLength;
+			size++;
+		}
+		int overhead = totalPacketLength - totalMessageData;
+		if(logDEBUG) Logger.debug(this, "Total packet overhead: "+overhead+" for "+size+" messages");
+		while(fragIt.hasNext()) {
+			MessageFragment frag = fragIt.next();
+			// frag.wrapper is always non-null on sending.
+			frag.wrapper.onSent(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1, overhead / size);
+		}			
 	}
 }

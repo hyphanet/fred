@@ -447,13 +447,15 @@ outer:
 			Logger.error(this, "Caught exception while sending packet", e);
 			return false;
 		}
+		
+		packet.onSent(data.length);
 
 		if(packet.getFragments().size() > 0) {
 			SentPacket sentPacket = null;
 			synchronized(sentPackets) {
 				sentPacket = sentPackets.get(packet.getSequenceNumber());
 			}
-			if(sentPacket != null) sentPacket.sent(packet.getLength());
+			if(sentPacket != null) sentPacket.sent();
 		}
 
 		pn.sentPacket();
@@ -583,7 +585,7 @@ outer:
 		packet.setSequenceNumber(seqNum);
 
 		if(packet.getFragments().size() > 0) {
-			sentPacket.sent(packet.getLength());
+			sentPacket.sent();
 			synchronized(sentPackets) {
 				sentPackets.put(seqNum, sentPacket);
 			}
@@ -828,24 +830,8 @@ outer:
 			if(npf.pn != null) npf.pn.resendByteCounter.sentBytes(bytesToResend);
 		}
 
-		public void sent(int totalPacketLength) {
+		public void sent() {
 			sentTime = System.currentTimeMillis();
-			Iterator<int[]> rangeIt = ranges.iterator();
-			int totalMessageData = 0;
-			int size = 0;
-			while(rangeIt.hasNext()) {
-				int[] range = rangeIt.next();
-				totalMessageData += range[1] - range[0] + 1;
-				size++;
-			}
-			int totalOverhead = totalPacketLength - totalMessageData;
-			if(logDEBUG) Logger.debug(this, "Total packet overhead: "+totalOverhead);
-			Iterator<MessageWrapper> msgIt = messages.iterator();
-			rangeIt = ranges.iterator();
-			while(msgIt.hasNext()) {
-				int[] range = rangeIt.next();
-				msgIt.next().onSent(range[0], range[1], totalOverhead / size);
-			}
 		}
 
 		public long getSentTime() {
