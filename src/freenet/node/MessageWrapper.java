@@ -14,7 +14,7 @@ public class MessageWrapper {
 	private final boolean isShortMessage;
 	private final int messageID;
 
-	//Sorted lists of non-overlapping ranges
+	//Sorted lists of non-overlapping ranges. If you need to lock both, lock sent first
 	private final SparseBitmap acks = new SparseBitmap();
 	private final SparseBitmap sent = new SparseBitmap();
 	
@@ -44,27 +44,28 @@ public class MessageWrapper {
 	 * @param end the last byte to be marked
 	 */
 	public boolean ack(int start, int end) {
-		acks.add(start, end);
-		if(acks.contains(0, item.buf.length - 1)) {
-			if(!alreadyAcked) {
-				if(item.cb != null) {
-					for(AsyncMessageCallback cb : item.cb) {
-						cb.acknowledged();
+		synchronized(acks) {
+			acks.add(start, end);
+			if(acks.contains(0, item.buf.length - 1)) {
+				if(!alreadyAcked) {
+					if(item.cb != null) {
+						for(AsyncMessageCallback cb : item.cb) {
+							cb.acknowledged();
+						}
 					}
+					alreadyAcked = true;
 				}
-				alreadyAcked = true;
+				return true;
 			}
-			return true;
 		}
 		return false;
 	}
 
 	public int lost(int start, int end) {
 		synchronized(sent) {
-			sent.remove(start, end);
-		}
-
 		synchronized(acks) {
+			sent.remove(start, end);
+
 			for(int[] range : acks) {
 				if(range[1] < start) continue;
 				if(range[0] > end) continue;
@@ -74,10 +75,9 @@ public class MessageWrapper {
 				Logger.warning(this, "Lost range (" + start + "->" + end + ") is overlapped by acked range ("
 						+ range[0] + "->" + range[1] + "). Adding " + toAddStart + "->"
 						+ toAddEnd + " to sent");
-				synchronized(sent) {
-					sent.add(toAddStart, toAddEnd);
-				}
+				sent.add(toAddStart, toAddEnd);
 			}
+		}
 		}
 
 		return end - start;
@@ -97,14 +97,18 @@ public class MessageWrapper {
 			return true;
 		}
 
-		if(sent.isEmpty() && acks.isEmpty()) {
-			//We haven't sent anything yet, so we can send it in one fragment
-			return false;
-		}
+		synchronized(sent) {
+			synchronized(acks) {
+				if(sent.isEmpty() && acks.isEmpty()) {
+					//We haven't sent anything yet, so we can send it in one fragment
+					return false;
+				}
+			}
 
-		if(sent.contains(0, item.buf.length - 1)) {
-			//It can be sent in one go, and we have already sent everything
-			return false;
+			if(sent.contains(0, item.buf.length - 1)) {
+				//It can be sent in one go, and we have already sent everything
+				return false;
+			}
 		}
 		return true;
 	}
@@ -114,13 +118,19 @@ public class MessageWrapper {
 	}
 
 	public boolean isFirstFragment() {
-		return sent.isEmpty() && acks.isEmpty();
+		synchronized(sent) {
+		synchronized(acks) {
+			return sent.isEmpty() && acks.isEmpty();
+		}
+		}
 	}
 
 	public MessageFragment getMessageFragment(int maxLength) {
 		int start = 0;
 		int end = item.buf.length - 1;
 
+		int dataLength;
+		byte[] fragmentData;
 		synchronized(sent) {
 			for(int[] range : sent) {
 				if(range[0] == start) {
@@ -129,27 +139,28 @@ public class MessageWrapper {
 					end = range[0] - 1;
 				}
 			}
+
+			if(start >= item.buf.length) {
+				return null;
+			}
+
+			dataLength = maxLength
+			- 2 //Message id + flags
+			- (isShortMessage ? 1 : 2); //Fragment length
+
+			if(isFragmented(dataLength)) {
+				dataLength -= (isShortMessage ? 1 : 3); //Message length / fragment offset
+			}
+
+			dataLength = Math.min(end - start + 1, dataLength);
+			if(dataLength <= 0) return null;
+
+			fragmentData = new byte[dataLength];
+			System.arraycopy(item.buf, start, fragmentData, 0, dataLength);
+
+			sent.add(start, start + dataLength - 1);
+			if(logDEBUG) Logger.debug(this, "Using range "+start+" to "+(start+dataLength-1)+" gives "+sent);
 		}
-		if(start >= item.buf.length) {
-			return null;
-		}
-
-		int dataLength = maxLength
-		                - 2 //Message id + flags
-		                - (isShortMessage ? 1 : 2); //Fragment length
-
-		if(isFragmented(dataLength)) {
-			dataLength -= (isShortMessage ? 1 : 3); //Message length / fragment offset
-		}
-
-		dataLength = Math.min(end - start + 1, dataLength);
-		if(dataLength <= 0) return null;
-
-		byte[] fragmentData = new byte[dataLength];
-		System.arraycopy(item.buf, start, fragmentData, 0, dataLength);
-
-		sent.add(start, start + dataLength - 1);
-		if(logDEBUG) Logger.debug(this, "Using range "+start+" to "+(start+dataLength-1)+" gives "+sent);
 
 		boolean isFragmented = !((start == 0) && (dataLength == item.buf.length));
 		return new MessageFragment(isShortMessage, isFragmented, start == 0, messageID, dataLength,
@@ -165,7 +176,9 @@ public class MessageWrapper {
 	}
 
 	public boolean canSend() {
-		return !sent.contains(0, item.buf.length-1);
+		synchronized(sent) {
+			return !sent.contains(0, item.buf.length-1);
+		}
 	}
 
 	public void onSent(int start, int end, int overhead) {
