@@ -325,7 +325,7 @@ final public class FileUtil {
      * If OperatingSystem.All is specified this function will generate a filename which fullfils the restrictions of all known OS, currently
      * this is MacOS, Unix and Windows.
      */
-	public static String sanitizeFileName(final String fileName, OperatingSystem targetOS) {
+	public static String sanitizeFileName(final String fileName, OperatingSystem targetOS, boolean killSlashes) {
 		// Filter out any characters which do not exist in the charset.
 		final CharBuffer buffer = fileNameCharset.decode(fileNameCharset.encode(fileName)); // Charset are thread-safe
 
@@ -364,6 +364,11 @@ final public class FileUtil {
 					continue;
 				}
 			}
+			
+			if(killSlashes && (c == '/' || c == '\\')) {
+				sb.append("-");
+				continue;
+			}
 
 			// Nothing did continue; so the character is okay
 			sb.append(c);
@@ -394,13 +399,13 @@ final public class FileUtil {
 		return sb.toString();
 	}
 
-	public static String sanitize(String fileName) {
-		return sanitizeFileName(fileName, detectedOS);
+	public static String sanitize(String fileName, boolean killSlashes) {
+		return sanitizeFileName(fileName, detectedOS, killSlashes);
 	}
 
 
 	public static String sanitize(String filename, String mimeType) {
-		filename = sanitize(filename);
+		filename = sanitize(filename, true);
 		if(mimeType == null) return filename;
 		if(filename.indexOf('.') >= 0) {
 			String oldExt = filename.substring(filename.lastIndexOf('.'));
