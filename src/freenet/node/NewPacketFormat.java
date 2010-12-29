@@ -757,9 +757,13 @@ outer:
 					synchronized(started) {
 						removed = started.remove(wrapper.getMessageID());
 					}
+					if(removed == null && logMINOR) {
+						// ack() can return true more than once, it just only calls the callbacks once.
+						Logger.minor(this, "Completed message "+wrapper.getMessageID()+" but it is not in the map from "+wrapper);
+					}
 
 					if(removed != null) {
-						if(logDEBUG) Logger.debug(this, "Completed message "+wrapper.getMessageID());
+						if(logDEBUG) Logger.debug(this, "Completed message "+wrapper.getMessageID()+" from "+wrapper);
 						completedMessagesSize += wrapper.getLength();
 
 						boolean couldSend = npf.canSend();
