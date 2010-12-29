@@ -135,7 +135,7 @@ public class MessageWrapper {
 				}
 			}
 		}
-
+		if(logDEBUG) Logger.debug(this, "Will use range "+start+" to "+end+" for max length "+maxLength+" sent = "+sent);
 		if(start >= item.buf.length) {
 			return null;
 		}
@@ -156,6 +156,7 @@ public class MessageWrapper {
 		System.arraycopy(item.buf, start, fragmentData, 0, dataLength);
 
 		sent.add(start, start + dataLength - 1);
+		if(logDEBUG) Logger.debug(this, "Using range "+start+" to "+(start+dataLength-1)+" gives "+sent);
 
 		boolean isFragmented = !((start == 0) && (dataLength == item.buf.length));
 		return new MessageFragment(isShortMessage, isFragmented, start == 0, messageID, dataLength,
