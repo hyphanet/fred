@@ -333,13 +333,15 @@ class NPFPacket {
 		Iterator<MessageFragment> fragIt = fragments.iterator();
 		int totalMessageData = 0;
 		int size = fragments.size();
+		int biggest = 0;
 		while(fragIt.hasNext()) {
 			MessageFragment frag = fragIt.next();
 			totalMessageData += frag.fragmentLength;
 			size++;
+			if(biggest < frag.messageLength) biggest = frag.messageLength;
 		}
 		int overhead = totalPacketLength - totalMessageData;
-		if(logDEBUG) Logger.debug(this, "Total packet overhead: "+overhead+" for "+size+" messages");
+		if(logDEBUG) Logger.debug(this, "Total packet overhead: "+overhead+" for "+size+" messages total message length "+totalMessageData+" total packet length "+totalPacketLength+" biggest message "+biggest);
 		while(fragIt.hasNext()) {
 			MessageFragment frag = fragIt.next();
 			// frag.wrapper is always non-null on sending.
