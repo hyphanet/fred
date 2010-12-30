@@ -892,7 +892,7 @@ public class DarknetPeerNode extends PeerNode {
 
 		public void accept() {
 			acceptedOrRejected = true;
-			File dest = new File(node.clientCore.downloadDir, "direct-"+FileUtil.sanitize(getName(), true)+"-"+filename);
+			File dest = new File(node.clientCore.downloadDir, "direct-"+FileUtil.sanitize(getName())+"-"+filename);
 			try {
 				data = new RandomAccessFileWrapper(dest, "rw");
 			} catch (FileNotFoundException e) {
