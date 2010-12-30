@@ -525,6 +525,8 @@ outer:
 		
 		boolean mustSend = false;
 		long now = System.currentTimeMillis();
+		
+		HashMap<Integer, Long> moved = null; // FIXME some more memory efficient representation, since this will normally be very small?
 
 		// All acks must be sent within 200ms.
 		int numAcks = 0;
@@ -536,7 +538,12 @@ outer:
 				if(entry.getValue() + MAX_ACK_DELAY < now)
 					mustSend = true;
 				if(logDEBUG) Logger.debug(this, "Trying to ack "+ack);
-				if(!packet.addAck(ack)) break;
+				if(!packet.addAck(ack)) {
+					if(logDEBUG) Logger.debug(this, "Can't add ack "+ack);
+					break;
+				}
+				if(moved == null) moved = new HashMap<Integer, Long>();
+				moved.put(ack, entry.getValue());
 				++numAcks;
 				it.remove();
 			}
@@ -588,7 +595,14 @@ outer:
 
 		}
 		
-		if(!mustSend) return null;
+		if(!mustSend) {
+			if(moved != null) {
+				synchronized(acks) {
+					acks.putAll(moved);
+				}
+			}
+			return null;
+		}
 		
 		if(ackOnly && numAcks == 0) return null;
 		
