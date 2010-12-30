@@ -19,6 +19,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.Peer.LocalAddressException;
+import freenet.io.xfer.PacketThrottle;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger.LogLevel;
@@ -135,6 +136,7 @@ public class NewPacketFormat implements PacketFormat {
 	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet) {
 		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
 
+		int bigLostCount = 0;
 		for(int ack : packet.getAcks()) {
 			synchronized(sentPackets) {
 				if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack);
@@ -144,6 +146,20 @@ public class NewPacketFormat implements PacketFormat {
 					if(pn != null) {
 						pn.reportPing((int) (Math.min(rtt, Integer.MAX_VALUE)));
 					}
+					// FIXME should we apply this to all packets?
+					// FIXME sub-packetsize MTUs may be a problem
+					// The throttle only applies to big blocks.
+					if(sent.packetLength > Node.PACKET_SIZE)
+						bigLostCount++;
+				}
+			}
+		}
+		
+		if(bigLostCount != 0 && pn != null) {
+			PacketThrottle throttle = pn.getThrottle();
+			if(throttle != null) {
+				for(int i=0;i<bigLostCount;i++) {
+					throttle.notifyOfPacketAcknowledged();
 				}
 			}
 		}
@@ -498,6 +514,7 @@ outer:
 		if(logDEBUG)
 			Logger.debug(this, "Creating a packet for "+pn);
 		//Mark packets as lost
+		int bigLostCount = 0;
 		synchronized(sentPackets) {
 			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
 			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT());
@@ -515,6 +532,19 @@ outer:
 					}
 					s.lost();
 					it.remove();
+					// FIXME should we apply this to all packets?
+					// FIXME sub-packetsize MTUs may be a problem
+					// The throttle only applies to big blocks.
+					if(s.packetLength > Node.PACKET_SIZE)
+						bigLostCount++;
+				}
+			}
+		}
+		if(bigLostCount != 0 && pn != null) {
+			PacketThrottle throttle = pn.getThrottle();
+			if(throttle != null) {
+				for(int i=0;i<bigLostCount;i++) {
+					throttle.notifyOfPacketLost();
 				}
 			}
 		}
