@@ -126,7 +126,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet);
 		for(byte[] buffer : finished) {
-			processFullyReceived(buffer);
+			pn.processDecryptedMessage(buffer, 0, buffer.length, 0, pn.crypto.socket);
 		}
 
 		return true;
@@ -893,14 +893,6 @@ outer:
 			if(nextMessageID == NUM_MESSAGE_IDS) nextMessageID = 0;
 		}
 		return messageID;
-	}
-
-	private void processFullyReceived(byte[] buf) {
-		MessageCore core = pn.node.usm;
-		Message m = core.decodeSingleMessage(buf, 0, buf.length, pn, 0);
-		if(m != null) {
-			core.checkFilters(m, pn.crypto.socket);
-		}
 	}
 
 	private double averageRTT() {

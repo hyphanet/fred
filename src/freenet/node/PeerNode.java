@@ -4737,4 +4737,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		isConnected();
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
+
+	public void processDecryptedMessage(byte[] data, int offset, int length, int overhead,
+			PacketSocketHandler sock) {
+		Message m = node.usm.decodeSingleMessage(data, offset, length, this, overhead);
+		if(m != null) {
+			node.usm.checkFilters(m, sock);
+		}
+	}
 }
