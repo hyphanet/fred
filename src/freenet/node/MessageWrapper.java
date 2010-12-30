@@ -80,7 +80,7 @@ public class MessageWrapper {
 		}
 		}
 
-		return end - start;
+		return end - start + 1;
 	}
 
 	public int getMessageID() {
