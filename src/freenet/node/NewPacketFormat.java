@@ -478,8 +478,8 @@ outer:
 			SentPacket sentPacket = null;
 			synchronized(sentPackets) {
 				sentPacket = sentPackets.get(packet.getSequenceNumber());
+				if(sentPacket != null) sentPacket.sent(packet.getLength());
 			}
-			if(sentPacket != null) sentPacket.sent(packet.getLength());
 		}
 
 		pn.sentPacket();
@@ -641,8 +641,8 @@ outer:
 		packet.setSequenceNumber(seqNum);
 
 		if(packet.getFragments().size() > 0) {
-			sentPacket.sent(packet.getLength());
 			synchronized(sentPackets) {
+				sentPacket.sent(packet.getLength());
 				sentPackets.put(seqNum, sentPacket);
 			}
 		}
