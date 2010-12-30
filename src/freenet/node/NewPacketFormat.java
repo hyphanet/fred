@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
@@ -56,7 +57,7 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private final PeerNode pn;
-	private final LinkedHashMap<Integer, Long> acks = new LinkedHashMap<Integer, Long>();
+	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
 
 	private final Object sequenceNumberLock = new Object();
