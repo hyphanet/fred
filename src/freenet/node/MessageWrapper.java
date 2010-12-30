@@ -62,6 +62,7 @@ public class MessageWrapper {
 	}
 
 	public int lost(int start, int end) {
+		int size = end - start + 1;
 		synchronized(sent) {
 		synchronized(acks) {
 			sent.remove(start, end);
@@ -72,15 +73,17 @@ public class MessageWrapper {
 
 				int toAddStart = Math.max(start, range[0]);
 				int toAddEnd = Math.min(end, range[1]);
+				if(toAddStart == toAddEnd || toAddStart > toAddEnd) continue;
 				Logger.warning(this, "Lost range (" + start + "->" + end + ") is overlapped by acked range ("
 						+ range[0] + "->" + range[1] + "). Adding " + toAddStart + "->"
 						+ toAddEnd + " to sent");
 				sent.add(toAddStart, toAddEnd);
+				size -= (toAddEnd - toAddStart + 1);
 			}
 		}
 		}
 
-		return end - start + 1;
+		return size;
 	}
 
 	public int getMessageID() {
