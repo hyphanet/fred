@@ -218,6 +218,8 @@ public class PacketSender implements Runnable {
 					if(urgentTime < Long.MAX_VALUE && logMINOR)
 						Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn.getPeer());
 					nextActionTime = Math.min(nextActionTime, urgentTime);
+				} else {
+					nextActionTime = Math.min(nextActionTime, pn.timeCheckForLostPackets());
 				}
 			} else
 				// Not connected
