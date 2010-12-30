@@ -654,7 +654,7 @@ outer:
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
 				SentPacket s = e.getValue();
-				long t = (long) (s.getSentTime() + NUM_RTTS_TO_LOOSE * avgRtt);
+				long t = (long) (s.getSentTime() + (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1));
 				if(t < timeCheck) timeCheck = t;
 			}
 		}
@@ -673,7 +673,7 @@ outer:
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
 				SentPacket s = e.getValue();
-				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * avgRtt)) {
+				if(s.getSentTime() < (curTime - (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1))) {
 					if(logMINOR) {
 						Logger.minor(this, "Assuming packet " + e.getKey() + " has been lost. "
 						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
