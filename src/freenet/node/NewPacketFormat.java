@@ -479,7 +479,7 @@ outer:
 			synchronized(sentPackets) {
 				sentPacket = sentPackets.get(packet.getSequenceNumber());
 			}
-			if(sentPacket != null) sentPacket.sent();
+			if(sentPacket != null) sentPacket.sent(packet.getLength());
 		}
 
 		pn.sentPacket();
@@ -641,7 +641,7 @@ outer:
 		packet.setSequenceNumber(seqNum);
 
 		if(packet.getFragments().size() > 0) {
-			sentPacket.sent();
+			sentPacket.sent(packet.getLength());
 			synchronized(sentPackets) {
 				sentPackets.put(seqNum, sentPacket);
 			}
@@ -806,6 +806,7 @@ outer:
 		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
 		LinkedList<int[]> ranges = new LinkedList<int[]>();
 		long sentTime;
+		int packetLength;
 
 		public SentPacket(NewPacketFormat npf) {
 			this.npf = npf;
@@ -897,8 +898,9 @@ outer:
 			if(npf.pn != null) npf.pn.resendByteCounter.sentBytes(bytesToResend);
 		}
 
-		public void sent() {
+		public void sent(int length) {
 			sentTime = System.currentTimeMillis();
+			this.packetLength = length;
 		}
 
 		public long getSentTime() {
