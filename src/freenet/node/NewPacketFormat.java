@@ -702,6 +702,17 @@ outer:
 		return packet;
 	}
 	
+	/** For unit tests */
+	int countSentPackets(SessionKey key) {
+		int count = 0;
+		for(Iterator<Map.Entry<Integer, SentPacket>> it =sentPackets.entrySet().iterator();it.hasNext();) {
+			Map.Entry<Integer, SentPacket> entry = it.next();
+			if(key == null || entry.getValue().sessionKey == key)
+				count++;
+		}
+		return count;
+	}
+	
 	public long timeCheckForLostPackets() {
 		long timeCheck = Long.MAX_VALUE;
 		synchronized(sentPackets) {
@@ -1062,5 +1073,19 @@ outer:
 
 			return true;
 		}
+	}
+
+	public int countSendableMessages() {
+		int x = 0;
+		synchronized(startedByPrio) {
+			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+				synchronized(started) {
+					for(MessageWrapper wrapper : started.values()) {
+						if(wrapper.canSend()) x++;
+					}
+				}
+			}
+		}
+		return x;
 	}
 }

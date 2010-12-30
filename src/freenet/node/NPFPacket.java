@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Collections;
 import java.util.Iterator;
@@ -347,5 +348,9 @@ class NPFPacket {
 			// frag.wrapper is always non-null on sending.
 			frag.wrapper.onSent(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1, overhead / size);
 		}			
+	}
+	
+	String fragmentsAsString() {
+		return Arrays.toString(fragments.toArray());
 	}
 }
