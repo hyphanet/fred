@@ -123,8 +123,6 @@ public class NewPacketFormat implements PacketFormat {
 		pn.maybeRekey();
 		pn.reportIncomingPacket(buf, offset, length, now);
 
-		if(packet.getAcks().size() > 0) pn.getThrottle().notifyOfPacketAcknowledged();
-
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet);
 		for(byte[] buffer : finished) {
 			processFullyReceived(buffer);
