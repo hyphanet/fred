@@ -113,7 +113,7 @@ public class MessageWrapperTest extends TestCase {
 		frag = wrapper.getMessageFragment(128);
 		assertNotNull(frag);
 		assertEquals(121, frag.fragmentLength);
-		wrapper.lost(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1);
+		assertEquals(121, wrapper.lost(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1));
 
 		// 0->120 should still be sent and acked, 121->241 should not
 		for(int[] range : wrapper.getSent()) {
