@@ -696,8 +696,6 @@ outer:
 				pn.forceDisconnect(false);
 			} else if(brokenKey != null) {
 				pn.dumpTracker(brokenKey);
-				Logger.error(this, "Disconnecting to sort it out");
-				pn.forceDisconnect(false);
 			}
 		}
 
