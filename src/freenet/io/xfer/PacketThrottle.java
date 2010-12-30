@@ -107,6 +107,8 @@ public class PacketThrottle {
     	if(slowStart) {
     		if(logMINOR) Logger.minor(this, "Still in slow start");
     		_windowSize += _windowSize / SLOW_START_DIVISOR;
+    		// Avoid craziness if there is lag in detecting packet loss.
+    		if(_windowSize > 1.0E12) slowStart = false;
     	} else {
     		_windowSize += (PACKET_TRANSMIT_INCREMENT / _windowSize);
     	}
