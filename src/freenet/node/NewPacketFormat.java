@@ -487,7 +487,7 @@ outer:
 				                + data.length + " bytes) with fragments " + fragments + " and "
 				                + packet.getAcks().size() + " acks");
 			}
-			pn.sendDecryptedPacket(data);
+			pn.sendEncryptedPacket(data);
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Caught exception while sending packet", e);
 			return false;

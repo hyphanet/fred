@@ -4747,7 +4747,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 	
-	public void sendDecryptedPacket(byte[] data) throws LocalAddressException {
+	public void sendEncryptedPacket(byte[] data) throws LocalAddressException {
 		crypto.socket.sendPacket(data, getPeer(), allowLocalAddresses());
 	}
 	

@@ -43,7 +43,7 @@ interface BasePeerNode extends PeerContext {
 
 	boolean shouldPadDataPackets();
 
-	void sendDecryptedPacket(byte[] data) throws LocalAddressException;
+	void sendEncryptedPacket(byte[] data) throws LocalAddressException;
 
 	void sentPacket();
 
