@@ -62,6 +62,7 @@ public class MessageWrapper {
 	}
 
 	public int lost(int start, int end) {
+		if(logDEBUG) Logger.debug(this, "Lost from "+start+" to "+end+" on "+this.messageID);
 		int size = end - start + 1;
 		synchronized(sent) {
 		synchronized(acks) {
