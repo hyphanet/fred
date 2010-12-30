@@ -53,11 +53,14 @@ public class NewPacketFormatTest extends TestCase {
 		Thread.sleep(NewPacketFormat.MAX_ACK_DELAY*2);
 		NPFPacket ack1 = receiver.createPacket(512, receiverQueue, s, false);
 		assertEquals(2, ack1.getAcks().size());
+		assertEquals(0, (int)ack1.getAcks().first());
+		assertEquals(1, (int)ack1.getAcks().last());
 		sender.handleDecryptedPacket(ack1);
 
 		NPFPacket fragment3 = sender.createPacket(512, senderQueue, s, false);
 		assertEquals(1, fragment3.getFragments().size());
 		receiver.handleDecryptedPacket(fragment3);
+		Thread.sleep(NewPacketFormat.MAX_ACK_DELAY*2);
 		receiver.createPacket(512, senderQueue, s, false); //Sent, but lost
 
 		try {
