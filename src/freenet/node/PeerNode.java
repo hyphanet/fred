@@ -1093,7 +1093,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		int x = messageQueue.queueAndEstimateSize(item);
 		if(x > 1024 || !node.enablePacketCoalescing) {
 			// If there is a packet's worth to send, wake up the packetsender.
-			node.ps.wakeUp();
+			wakeUpSender();
 		}
 		// Otherwise we do not need to wake up the PacketSender
 		// It will wake up before the maximum coalescing delay (100ms) because
@@ -1101,6 +1101,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return item;
 	}
 	
+	void wakeUpSender() {
+		node.ps.wakeUp();
+	}
+
 	public boolean unqueueMessage(MessageItem message) {
 		if(logMINOR) Logger.minor(this, "Unqueueing message on "+this+" : "+message);
 		return messageQueue.removeMessage(message);

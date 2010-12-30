@@ -286,7 +286,7 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				}
 				if(wakeUp)
-					pn.node.ps.wakeUp();
+					pn.wakeUpSender();
 			}
 		}
 
@@ -977,7 +977,7 @@ outer:
 						}
 						if(!couldSend && npf.canSend()) {
 							//We aren't blocked anymore, notify packet sender
-							npf.pn.node.ps.wakeUp();
+							npf.pn.wakeUpSender();
 						}
 					}
 				}
