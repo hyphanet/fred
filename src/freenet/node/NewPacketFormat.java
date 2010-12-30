@@ -505,7 +505,7 @@ outer:
 
 		pn.sentPacket();
 		pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
-		if(PeerNode.shouldThrottle(pn.getPeer(), pn.node)) {
+		if(pn.shouldThrottle()) {
 			pn.node.outputThrottle.forceGrab(data.length);
 		}
 		if(packet.getFragments().size() == 0) {
