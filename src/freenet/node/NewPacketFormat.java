@@ -34,9 +34,8 @@ public class NewPacketFormat implements PacketFormat {
 	private static final int MAX_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
-	private static final long NUM_SEQNUMS = 2147483648l;
+	static final long NUM_SEQNUMS = 2147483648l;
 	private static final int MAX_MSGID_BLOCK_TIME = 10 * 60 * 1000;
-	private static final int REKEY_THRESHOLD = 100;
 	private static final int MAX_ACKS = 500;
 	/** All acks must be sent within 200ms */
 	static final int MAX_ACK_DELAY = 200;
@@ -60,8 +59,6 @@ public class NewPacketFormat implements PacketFormat {
 	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
 
-	private final Object sequenceNumberLock = new Object();
-	
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private int nextMessageID;
 	/** The first message id that hasn't been acked by the receiver */
@@ -664,7 +661,8 @@ outer:
 
 		if(packet.getLength() == 5) return null;
 
-		int seqNum = allocateSequenceNumber(sessionKey);
+		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		int seqNum = keyContext.allocateSequenceNumber(pn);
 		if(seqNum == -1) return null;
 		packet.setSequenceNumber(seqNum);
 
@@ -834,7 +832,7 @@ outer:
 			SessionKey tracker = pn.getCurrentKeyTracker();
 			if(tracker == null) return false;
 			NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) tracker.packetContext;
-			if(!canAllocateSeqNum(keyContext)) {
+			if(!keyContext.canAllocateSeqNum()) {
 				// We can't allocate more sequence numbers because we haven't rekeyed yet
 				pn.startRekeying();
 				Logger.error(this, "Can't send because we would block");
@@ -855,39 +853,6 @@ outer:
 		}
 		
 		return true;
-	}
-
-	private boolean canAllocateSeqNum(NewPacketFormatKeyContext keyContext) {
-		synchronized(sequenceNumberLock) {
-			return keyContext.nextSeqNum == keyContext.firstSeqNumUsed;
-		}
-	}
-
-	private int allocateSequenceNumber(SessionKey tracker) {
-		synchronized(sequenceNumberLock) {
-			NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) tracker.packetContext;
-			if(keyContext.firstSeqNumUsed == -1) {
-				keyContext.firstSeqNumUsed = keyContext.nextSeqNum;
-				if(logMINOR) Logger.minor(this, "First seqnum used for " + tracker + " is " + keyContext.firstSeqNumUsed);
-			} else {
-				if(keyContext.nextSeqNum == keyContext.firstSeqNumUsed) {
-					Logger.error(this, "Blocked because we haven't rekeyed yet");
-					pn.startRekeying();
-					return -1;
-				}
-				
-				if(keyContext.firstSeqNumUsed > keyContext.nextSeqNum) {
-					if(keyContext.firstSeqNumUsed - keyContext.nextSeqNum < REKEY_THRESHOLD) pn.startRekeying();
-				} else {
-					if((NUM_SEQNUMS - keyContext.nextSeqNum) + keyContext.firstSeqNumUsed < REKEY_THRESHOLD) pn.startRekeying();
-				}
-			}
-			int seqNum = keyContext.nextSeqNum++;
-			if((keyContext.nextSeqNum == NUM_SEQNUMS) || (keyContext.nextSeqNum < 0)) {
-				keyContext.nextSeqNum = 0;
-			}
-			return seqNum;
-		}
 	}
 
 	private long blockedSince = -1;
