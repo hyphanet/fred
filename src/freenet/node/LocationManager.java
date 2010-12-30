@@ -15,6 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
@@ -659,7 +660,9 @@ public class LocationManager implements ByteCounter {
 				FileWriter fw = null;
 				try {
 					fw = new FileWriter(locationLog, true);
-					fw.write(""+DateFormat.getDateTimeInstance().format(new Date())+" : "+getLocation()+(randomReset ? " (random reset"+(fromDupLocation?" from duplicated location" : "")+")" : "")+'\n');
+					DateFormat df = DateFormat.getDateTimeInstance();
+					df.setTimeZone(TimeZone.getTimeZone("GMT"));
+					fw.write(""+df.format(new Date())+" : "+getLocation()+(randomReset ? " (random reset"+(fromDupLocation?" from duplicated location" : "")+")" : "")+'\n');
 					fw.close();
 				} catch (IOException e) {
 					Logger.error(this, "Unable to write changed location to "+locationLog+" : "+e, e);
