@@ -4709,4 +4709,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			crypto.packetMangler.process(buf, offset, length, getPeer(), now);
 		}
 	}
+
+	public void checkForLostPackets() {
+		packetFormat.checkForLostPackets();
+	}
+
+	public long timeCheckForLostPackets() {
+		return packetFormat.timeCheckForLostPackets();
+	}
 }

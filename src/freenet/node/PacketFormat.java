@@ -38,4 +38,8 @@ public interface PacketFormat {
 	 * 0 if there are already messages in flight. Long.MAX_VALUE if not supported or if 
 	 * there is nothing to ack and nothing in flight. */
 	long timeNextUrgent();
+
+	void checkForLostPackets();
+
+	long timeCheckForLostPackets();
 }

@@ -188,4 +188,12 @@ public class FNPWrapper implements PacketFormat {
 	public long timeNextUrgent() {
 		return Long.MAX_VALUE;
 	}
+
+	public void checkForLostPackets() {
+		// Do nothing.
+	}
+
+	public long timeCheckForLostPackets() {
+		return Long.MAX_VALUE;
+	}
 }

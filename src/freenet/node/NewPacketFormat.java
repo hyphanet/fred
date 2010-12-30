@@ -511,42 +511,9 @@ outer:
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey) throws BlockedTooLongException {
 		if(logDEBUG)
 			Logger.debug(this, "Creating a packet for "+pn);
-		//Mark packets as lost
-		int bigLostCount = 0;
-		synchronized(sentPackets) {
-			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
-			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT());
-			long curTime = System.currentTimeMillis();
-
-			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
-			while(it.hasNext()) {
-				Map.Entry<Integer, SentPacket> e = it.next();
-				SentPacket s = e.getValue();
-				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * avgRtt)) {
-					if(logMINOR) {
-						Logger.minor(this, "Assuming packet " + e.getKey() + " has been lost. "
-						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
-						                + "threshold " + (NUM_RTTS_TO_LOOSE * avgRtt) + "ms");
-					}
-					s.lost();
-					it.remove();
-					// FIXME should we apply this to all packets?
-					// FIXME sub-packetsize MTUs may be a problem
-					// The throttle only applies to big blocks.
-					if(s.packetLength > Node.PACKET_SIZE)
-						bigLostCount++;
-				}
-			}
-		}
-		if(bigLostCount != 0 && pn != null) {
-			PacketThrottle throttle = pn.getThrottle();
-			if(throttle != null) {
-				for(int i=0;i<bigLostCount;i++) {
-					throttle.notifyOfPacketLost();
-				}
-			}
-		}
-
+		
+		checkForLostPackets();
+		
 		NPFPacket packet = new NPFPacket();
 		SentPacket sentPacket = new SentPacket(this);
 		
@@ -676,6 +643,61 @@ outer:
 		}
 
 		return packet;
+	}
+	
+	public long timeCheckForLostPackets() {
+		long timeCheck = Long.MAX_VALUE;
+		synchronized(sentPackets) {
+			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
+			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT());
+			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
+			while(it.hasNext()) {
+				Map.Entry<Integer, SentPacket> e = it.next();
+				SentPacket s = e.getValue();
+				long t = (long) (s.getSentTime() + NUM_RTTS_TO_LOOSE * avgRtt);
+				if(t < timeCheck) timeCheck = t;
+			}
+		}
+		return timeCheck;
+	}
+
+	public void checkForLostPackets() {
+		//Mark packets as lost
+		int bigLostCount = 0;
+		synchronized(sentPackets) {
+			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
+			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT());
+			long curTime = System.currentTimeMillis();
+
+			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
+			while(it.hasNext()) {
+				Map.Entry<Integer, SentPacket> e = it.next();
+				SentPacket s = e.getValue();
+				if(s.getSentTime() < (curTime - NUM_RTTS_TO_LOOSE * avgRtt)) {
+					if(logMINOR) {
+						Logger.minor(this, "Assuming packet " + e.getKey() + " has been lost. "
+						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
+						                + "threshold " + (NUM_RTTS_TO_LOOSE * avgRtt) + "ms");
+					}
+					s.lost();
+					it.remove();
+					// FIXME should we apply this to all packets?
+					// FIXME sub-packetsize MTUs may be a problem
+					// The throttle only applies to big blocks.
+					if(s.packetLength > Node.PACKET_SIZE)
+						bigLostCount++;
+				}
+			}
+		}
+		if(bigLostCount != 0 && pn != null) {
+			PacketThrottle throttle = pn.getThrottle();
+			if(throttle != null) {
+				for(int i=0;i<bigLostCount;i++) {
+					throttle.notifyOfPacketLost();
+				}
+			}
+		}
+
 	}
 
 	public List<MessageItem> onDisconnect() {

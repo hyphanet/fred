@@ -174,8 +174,11 @@ public class PacketSender implements Runnable {
 				
 				boolean shouldThrottle = pn.shouldThrottle();
 
-				if(shouldThrottle && !canSendThrottled)
+				if(shouldThrottle && !canSendThrottled) {
+					pn.checkForLostPackets();
+					nextActionTime = Math.min(nextActionTime, pn.timeCheckForLostPackets());
 					continue;
+				}
 
 				// Is the node dead?
 				if(now - lastReceivedPacketTime > pn.maxTimeBetweenReceivedPackets()) {
