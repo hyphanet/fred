@@ -4260,8 +4260,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * @param rpiTemp
 	 * @throws BlockedTooLongException
 	 */
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) throws BlockedTooLongException {
-		return packetFormat.maybeSendPacket(now, rpiTemp, rpiIntTemp);
+	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly) throws BlockedTooLongException {
+		return packetFormat.maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly);
 	}
 
 	/**

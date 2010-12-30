@@ -31,7 +31,7 @@ public class FNPWrapper implements PacketFormat {
 		this.pn = pn;
 	}
 
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
+	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	                throws BlockedTooLongException {
 		// If there are any urgent notifications, we must send a packet.
 		if(logMINOR) Logger.minor(this, "maybeSendPacket: " + this);
@@ -103,6 +103,8 @@ public class FNPWrapper implements PacketFormat {
 
 		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(10);
 
+		if(!ackOnly) {
+		
 		PeerMessageQueue messageQueue = pn.getMessageQueue();
 		synchronized(messageQueue) {
 
@@ -122,6 +124,8 @@ public class FNPWrapper implements PacketFormat {
 		if(mustSend) {
 			int size = minSize;
 			size = messageQueue.addMessages(size, now, minSize, maxSize, messages, 0, 255);
+		}
+		
 		}
 
 		if(messages.isEmpty() && keepalive) {

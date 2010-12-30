@@ -421,7 +421,7 @@ outer:
 		return seqNumBytes;
 	}
 
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
+	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	                throws BlockedTooLongException {
 		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
 
@@ -431,7 +431,7 @@ outer:
 			return false;
 		}
 
-		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue(), sessionKey);
+		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue(), sessionKey, ackOnly);
 		if(packet == null) return false;
 
 		int paddedLen = packet.getLength() + HMAC_LENGTH;
@@ -514,7 +514,7 @@ outer:
 		return true;
 	}
 
-	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey) throws BlockedTooLongException {
+	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey, boolean ackOnly) throws BlockedTooLongException {
 		if(logDEBUG)
 			Logger.debug(this, "Creating a packet for "+pn);
 		
@@ -544,6 +544,8 @@ outer:
 		
 		if(numAcks > MAX_ACKS)
 			mustSend = true;
+		
+		if(!ackOnly) {
 
 		// Always finish what we have started before considering sending more packets.
 		// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
@@ -566,6 +568,8 @@ outer:
 			}
 		}
 		
+		}
+		
 		if((!mustSend) && packet.getLength() >= (maxPacketSize * 4 / 5)) {
 			// Lots of acks to send, send a packet.
 			mustSend = true;
@@ -585,6 +589,10 @@ outer:
 		}
 		
 		if(!mustSend) return null;
+		
+		if(ackOnly && numAcks == 0) return null;
+		
+		if(!ackOnly) {
 		
 		fragments:
 		for(int i = 0; i < startedByPrio.size(); i++) {
@@ -633,6 +641,8 @@ outer:
 					if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide + " for "+pn.shortToString());
 				}
 			}
+		}
+		
 		}
 
 		if(packet.getLength() == 5) return null;

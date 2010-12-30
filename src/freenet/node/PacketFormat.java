@@ -15,8 +15,9 @@ public interface PacketFormat {
 	 * <li>In the near future PacketSender will be responsible for output bandwidth throttling. So it makes sense to
 	 * send a single packet and round-robin.</li>
 	 * </ol>
+	 * @param ackOnly 
 	 */
-	boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
+	boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	                throws BlockedTooLongException;
 
 	/**
