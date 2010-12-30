@@ -2,7 +2,6 @@ package freenet.node;
 
 import java.util.Random;
 
-import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
 
