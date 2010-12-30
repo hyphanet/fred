@@ -565,14 +565,14 @@ outer:
 			}
 		}
 		
-		if(!mustSend) {
-			if(messageQueue.mustSendNow(now) || messageQueue.mustSendSize(packet.getLength(), maxPacketSize))
-				mustSend = true;
-		}
-		
 		if((!mustSend) && packet.getLength() >= (maxPacketSize * 4 / 5)) {
 			// Lots of acks to send, send a packet.
 			mustSend = true;
+		}
+		
+		if(!mustSend) {
+			if(messageQueue.mustSendNow(now) || messageQueue.mustSendSize(packet.getLength(), maxPacketSize))
+				mustSend = true;
 		}
 		
 		if((!mustSend) && numAcks > 0) {
