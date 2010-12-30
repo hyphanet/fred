@@ -141,86 +141,86 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(0, receiver.handleDecryptedPacket(packet1).size());
 	}
 	
-	public void testOverlappingSeqNumOnRekey() throws BlockedTooLongException, InterruptedException {
-		
-		// First SessionKey. Will be used to send some messages, which should succeed.
-		final SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
-		// Second SessionKey. Will conflict with first.
-		final SessionKey conflict = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
-
-		final MutableBoolean droppedFirstSessionKey = new MutableBoolean();
-		
-		BasePeerNode testNode = new NullBasePeerNode() {
-			
-			@Override
-			public void dumpTracker(SessionKey brokenKey) {
-				if(brokenKey != s) throw new IllegalStateException("Dropping wrong key!");
-				droppedFirstSessionKey.value = true;
-			}
-			
-			@Override
-			public void forceDisconnect(boolean dump) {
-				assertTrue("Should dump the tracker, not force disconnect", false);
-			}
-			
-		};
-		
-		NewPacketFormat sender = new NewPacketFormat(testNode, 0, 0);
-		PeerMessageQueue senderQueue = new PeerMessageQueue();
-		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
-		
-		// Send some messages with the first session key.
-		
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
-
-		NPFPacket fragment1 = sender.createPacket(512, senderQueue, s, false);
-		assertEquals(1, fragment1.getFragments().size());
-
-		NPFPacket fragment2 = sender.createPacket(512, senderQueue, s, false);
-		assertEquals(1, fragment2.getFragments().size());
-
-		NPFPacket fragment3 = sender.createPacket(512, senderQueue, s, false);
-		assertEquals(1, fragment3.getFragments().size());
-
-		assertEquals(0, receiver.handleDecryptedPacket(fragment1).size());
-		assertEquals(0, receiver.handleDecryptedPacket(fragment2).size());
-		assertEquals(1, receiver.handleDecryptedPacket(fragment3).size());
-		
-		assertEquals(sender.countSentPackets(s), 3); // 3 packets sent, none acked yet.
-		
-		// Try to send some packets with the second session key.
-		// This will conflict with the first session key.
-		
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
-		
-		NPFPacket conflictFragment1 = sender.createPacket(512, senderQueue, conflict, false);
-		System.out.println("Fragment: "+conflictFragment1+" : "+conflictFragment1.fragmentsAsString());
-		assertTrue(droppedFirstSessionKey.value);
-		assertEquals(sender.countSentPackets(s), 0); // Session key dumped, they will all have to be resent.
-		assertEquals(sender.countSentPackets(conflict), 1); // One packet has been sent.
-		// The first one will contain the first 500 bytes of the new message.
-		assertEquals(1, conflictFragment1.getFragments().size());
-		assertEquals(sender.countSentPackets(conflict), 1);
-		
-		// However, the first lot will be resent immediately, because we haven't had an ack and are not going to now because the session key is dropped.
-		assertEquals(2, sender.countSendableMessages());
-		
-		// We have sent 500 bytes. We have 2048 bytes queued. We expect therefore 4 more messages, and one successful decode.
-		
-		int successfulDecodes = 0;
-		int messageCount = 0;
-		
-		while(true) {
-			NPFPacket fragment = sender.createPacket(512, senderQueue, conflict, false);
-			if(fragment == null) break;
-			messageCount++;
-			assertFalse(messageCount > 4);
-			int decoded = receiver.handleDecryptedPacket(fragment).size();
-			if(decoded > 0) successfulDecodes += decoded;
-		}
-		assertEquals(0, sender.countSendableMessages());
-		assertEquals(4, messageCount);
-		assertEquals(1, successfulDecodes);
-		assertEquals(5, sender.countSentPackets(conflict)); // Five packets have been sent.
-	}
+//	public void testOverlappingSeqNumOnRekey() throws BlockedTooLongException, InterruptedException {
+//		
+//		// First SessionKey. Will be used to send some messages, which should succeed.
+//		final SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
+//		// Second SessionKey. Will conflict with first.
+//		final SessionKey conflict = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
+//
+//		final MutableBoolean droppedFirstSessionKey = new MutableBoolean();
+//		
+//		BasePeerNode testNode = new NullBasePeerNode() {
+//			
+//			@Override
+//			public void dumpTracker(SessionKey brokenKey) {
+//				if(brokenKey != s) throw new IllegalStateException("Dropping wrong key!");
+//				droppedFirstSessionKey.value = true;
+//			}
+//			
+//			@Override
+//			public void forceDisconnect(boolean dump) {
+//				assertTrue("Should dump the tracker, not force disconnect", false);
+//			}
+//			
+//		};
+//		
+//		NewPacketFormat sender = new NewPacketFormat(testNode, 0, 0);
+//		PeerMessageQueue senderQueue = new PeerMessageQueue();
+//		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
+//		
+//		// Send some messages with the first session key.
+//		
+//		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
+//
+//		NPFPacket fragment1 = sender.createPacket(512, senderQueue, s, false);
+//		assertEquals(1, fragment1.getFragments().size());
+//
+//		NPFPacket fragment2 = sender.createPacket(512, senderQueue, s, false);
+//		assertEquals(1, fragment2.getFragments().size());
+//
+//		NPFPacket fragment3 = sender.createPacket(512, senderQueue, s, false);
+//		assertEquals(1, fragment3.getFragments().size());
+//
+//		assertEquals(0, receiver.handleDecryptedPacket(fragment1).size());
+//		assertEquals(0, receiver.handleDecryptedPacket(fragment2).size());
+//		assertEquals(1, receiver.handleDecryptedPacket(fragment3).size());
+//		
+//		assertEquals(sender.countSentPackets(s), 3); // 3 packets sent, none acked yet.
+//		
+//		// Try to send some packets with the second session key.
+//		// This will conflict with the first session key.
+//		
+//		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
+//		
+//		NPFPacket conflictFragment1 = sender.createPacket(512, senderQueue, conflict, false);
+//		System.out.println("Fragment: "+conflictFragment1+" : "+conflictFragment1.fragmentsAsString());
+//		assertTrue(droppedFirstSessionKey.value);
+//		assertEquals(sender.countSentPackets(s), 0); // Session key dumped, they will all have to be resent.
+//		assertEquals(sender.countSentPackets(conflict), 1); // One packet has been sent.
+//		// The first one will contain the first 500 bytes of the new message.
+//		assertEquals(1, conflictFragment1.getFragments().size());
+//		assertEquals(sender.countSentPackets(conflict), 1);
+//		
+//		// However, the first lot will be resent immediately, because we haven't had an ack and are not going to now because the session key is dropped.
+//		assertEquals(2, sender.countSendableMessages());
+//		
+//		// We have sent 500 bytes. We have 2048 bytes queued. We expect therefore 4 more messages, and one successful decode.
+//		
+//		int successfulDecodes = 0;
+//		int messageCount = 0;
+//		
+//		while(true) {
+//			NPFPacket fragment = sender.createPacket(512, senderQueue, conflict, false);
+//			if(fragment == null) break;
+//			messageCount++;
+//			assertFalse(messageCount > 4);
+//			int decoded = receiver.handleDecryptedPacket(fragment).size();
+//			if(decoded > 0) successfulDecodes += decoded;
+//		}
+//		assertEquals(0, sender.countSendableMessages());
+//		assertEquals(4, messageCount);
+//		assertEquals(1, successfulDecodes);
+//		assertEquals(5, sender.countSentPackets(conflict)); // Five packets have been sent.
+//	}
 }
