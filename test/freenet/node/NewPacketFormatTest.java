@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.support.MutableBoolean;
 import junit.framework.TestCase;
 
 public class NewPacketFormatTest extends TestCase {
@@ -142,15 +143,34 @@ public class NewPacketFormatTest extends TestCase {
 	
 	public void testOverlappingSeqNumOnRekey() throws BlockedTooLongException {
 		
-		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
+		// First SessionKey. Will be used to send some messages, which should succeed.
+		final SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+		// Second SessionKey. Will conflict with first.
+		final SessionKey conflict = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+
+		final MutableBoolean droppedFirstSessionKey = new MutableBoolean();
+		
+		BasePeerNode testNode = new NullBasePeerNode() {
+			
+			@Override
+			public void dumpTracker(SessionKey brokenKey) {
+				if(brokenKey != s) throw new IllegalStateException("Dropping wrong key!");
+				droppedFirstSessionKey.value = true;
+			}
+			
+			@Override
+			public void forceDisconnect(boolean dump) {
+				assertTrue("Should dump the tracker, not force disconnect", false);
+			}
+			
+		};
+		
+		NewPacketFormat sender = new NewPacketFormat(testNode, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
 		
-		// Create a SessionKey with 0, 0.
-		// Send some messages.
+		// Send some messages with the first session key.
 		
-		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
-
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue, s, false);
@@ -166,20 +186,12 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(0, receiver.handleDecryptedPacket(fragment2).size());
 		assertEquals(1, receiver.handleDecryptedPacket(fragment3).size());
 		
-		// Create a new SessionKey with 0, 0.
+		// Try to send some packets with the second session key.
 		// This will conflict with the first session key.
-		
-		SessionKey conflict = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
 		
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 		
-		try {
-			NPFPacket conflictFragment1 = sender.createPacket(512, senderQueue, conflict, false);
-			assertFalse(true);
-		} catch (NullPointerException e) {
-			// Because PeerNode is null. FIXME use a bogus BasePeerNode.
-			// Ok.
-		}
-		
+		NPFPacket conflictFragment1 = sender.createPacket(512, senderQueue, conflict, false);
+		assertTrue(droppedFirstSessionKey.value);
 	}
 }
