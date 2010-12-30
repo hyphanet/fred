@@ -4717,4 +4717,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public long timeCheckForLostPackets() {
 		return packetFormat.timeCheckForLostPackets();
 	}
+
+	/** Only called for new format connections, for which we don't care about PacketTracker */
+	public void dumpTracker(SessionKey brokenKey) {
+		synchronized(this) {
+			if(currentTracker == brokenKey) {
+				currentTracker = null;
+				isConnected = false;
+			} else if(previousTracker == brokenKey)
+				previousTracker = null;
+			else if(unverifiedTracker == brokenKey)
+				unverifiedTracker = null;
+		}
+		// Update connected vs not connected status.
+		isConnected();
+		setPeerNodeStatus(System.currentTimeMillis());
+	}
 }

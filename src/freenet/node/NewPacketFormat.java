@@ -522,7 +522,7 @@ outer:
 		checkForLostPackets();
 		
 		NPFPacket packet = new NPFPacket();
-		SentPacket sentPacket = new SentPacket(this);
+		SentPacket sentPacket = new SentPacket(this, sessionKey);
 		
 		boolean mustSend = false;
 		long now = System.currentTimeMillis();
@@ -667,9 +667,37 @@ outer:
 		packet.setSequenceNumber(seqNum);
 
 		if(packet.getFragments().size() > 0) {
+			SessionKey brokenKey = null;
+			boolean mustDisconnect = false;
 			synchronized(sentPackets) {
+				if(sentPackets.get(seqNum) != null) {
+					// This should only happen when we are really unlucky and rekey to an overlapping packet number range.
+					brokenKey = sentPackets.get(seqNum).sessionKey;
+					if(brokenKey == sessionKey) {
+						Logger.error(this, "Duplicate packet seqnum on the same tracker! DISCONNECTING!");
+						brokenKey = null;
+						mustDisconnect = true;
+					} else {
+						Logger.error(this, "Sending packet "+seqNum+" on "+sessionKey+" but already present "+sentPackets.get(seqNum)+" for "+brokenKey+" - DUMPING ALL OLD MESSAGES WITH THIS TRACKER!");
+						for(Iterator<Map.Entry<Integer, SentPacket>> it =sentPackets.entrySet().iterator();it.hasNext();) {
+							Map.Entry<Integer, SentPacket> entry = it.next();
+							if(entry.getValue().sessionKey == brokenKey) {
+								Logger.error(this, "Assuming packet is lost as it uses the broken tracker: "+entry.getKey());
+								entry.getValue().lost();
+								it.remove();
+							}
+						}
+					}
+				}
 				sentPacket.sent(packet.getLength());
 				sentPackets.put(seqNum, sentPacket);
+			}
+			if(mustDisconnect) {
+				pn.forceDisconnect(false);
+			} else if(brokenKey != null) {
+				pn.dumpTracker(brokenKey);
+				Logger.error(this, "Disconnecting to sort it out");
+				pn.forceDisconnect(false);
 			}
 		}
 
@@ -883,14 +911,16 @@ outer:
 	}
 
 	private static class SentPacket {
+		final SessionKey sessionKey;
 		NewPacketFormat npf;
 		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
 		LinkedList<int[]> ranges = new LinkedList<int[]>();
 		long sentTime;
 		int packetLength;
 
-		public SentPacket(NewPacketFormat npf) {
+		public SentPacket(NewPacketFormat npf, SessionKey key) {
 			this.npf = npf;
+			this.sessionKey = key;
 		}
 
 		public void addFragment(MessageFragment frag) {
