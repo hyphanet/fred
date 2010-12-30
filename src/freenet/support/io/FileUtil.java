@@ -365,11 +365,13 @@ final public class FileUtil {
 				}
 			}
 			
-			if(killSlashes && (c == '/' || c == '\\')) {
-				sb.append("-");
-				continue;
+			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Unix) {
+				if(StringValidityChecker.isUnixReservedPrintableFilenameCharacter(c)) {
+					sb.append(' ');
+					continue;
+				}
 			}
-
+			
 			// Nothing did continue; so the character is okay
 			sb.append(c);
 		}

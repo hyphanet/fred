@@ -841,7 +841,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// selection stats
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", (totalSelectionRate > 0 ? (peerSelectionPercentage+"%") : "N/A"));
 			// total traffic column
-			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputBytes())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputBytes())+"/"+SizeUtil.formatSize(peerNodeStatus.getResendBytesSent()));
+			long sent = peerNodeStatus.getTotalOutputBytes();
+			long resent = peerNodeStatus.getResendBytesSent();
+			long received = peerNodeStatus.getTotalInputBytes();
+			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(received)+" / "+SizeUtil.formatSize(sent)+"/"+SizeUtil.formatSize(resent)+" ("+fix1.format(((double)resent) / ((double)sent))+")");
 			// total traffic column startup
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputSinceStartup())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputSinceStartup()));
 			// congestion control

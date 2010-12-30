@@ -610,7 +610,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4)) {
+		if(!(negType == 2 || negType == 4 || negType == 5)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -657,7 +657,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4)) {
+		if(!(negType == 2 || negType == 4 || negType == 5)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -723,9 +723,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} else if (negType == 1) {
 			Logger.error(this, "Old StationToStation (negType 1) not supported.");
 			return;
-		} else if (negType==2 || negType == 4) {
+		} else if (negType==2 || negType == 4 || negType == 5) {
 			// negType == 3 was buggy
 			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
+			// negType == 5 => same as 4, but use new packet format after negotiation
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
 			 * for the initiator and no identity protection for the responder
@@ -1188,9 +1189,46 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
-		byte[] Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+
+		/* 0 is the outgoing key for the initiator, 7 for the responder */
+		byte[] outgoingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "7");
+		byte[] incommingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
+
+		byte[] hmacKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "3");
+		byte[] ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
+		byte[] ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
+
+		/* Bytes  1-4:  Initial sequence number for the initiator
+		 * Bytes  5-8:  Initial sequence number for the responder
+		 * Bytes  9-12: Initial message id for the initiator
+		 * Bytes 13-16: Initial message id for the responder
+		 * Note that we are the responder */
+		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
+		int theirInitialSeqNum = ((sharedData[0] & 0xFF) << 24)
+				| ((sharedData[1] & 0xFF) << 16)
+				| ((sharedData[2] & 0xFF) << 8)
+				| (sharedData[3] & 0xFF);
+		int ourInitialSeqNum = ((sharedData[4] & 0xFF) << 24)
+				| ((sharedData[5] & 0xFF) << 16)
+				| ((sharedData[6] & 0xFF) << 8)
+				| (sharedData[7] & 0xFF);
+		int theirInitialMsgID= ((sharedData[8] & 0xFF) << 24)
+				| ((sharedData[9] & 0xFF) << 16)
+				| ((sharedData[10] & 0xFF) << 8)
+				| (sharedData[11] & 0xFF);
+		int ourInitialMsgID= ((sharedData[12] & 0xFF) << 24)
+				| ((sharedData[13] & 0xFF) << 16)
+				| ((sharedData[14] & 0xFF) << 8)
+				| (sharedData[15] & 0xFF);
+
+		if(negType <= 4) {
+			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
+			 * backwards compatible */
+			outgoingKey = incommingKey;
+		}
+
 		c.initialize(Ke);
 		int ivLength = PCFBMode.lengthIV(c);
 		int decypheredPayloadOffset = 0;
@@ -1260,9 +1298,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// At this point we know it's from the peer, so we can report a packet received.
 		pn.receivedPacket(true, false);
 
-		BlockCipher cs = null;
-		try { cs = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
-		cs.initialize(Ks);
+		BlockCipher outgoingCipher = null;
+		BlockCipher incommingCipher = null;
+		BlockCipher ivCipher = null;
+		try {
+			outgoingCipher = new Rijndael(256, 256);
+			incommingCipher = new Rijndael(256, 256);
+			ivCipher = new Rijndael(256, 256);
+		} catch (UnsupportedCipherException e) {
+			throw new RuntimeException(e);
+		}
+		outgoingCipher.initialize(outgoingKey);
+		incommingCipher.initialize(incommingKey);
+		ivCipher.initialize(ivKey);
 
 		// Promote if necessary
 		boolean dontWant = false;
@@ -1284,7 +1332,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 
-		long newTrackerID = pn.completedHandshake(bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false, false);
+		long newTrackerID = pn.completedHandshake(
+				bootID, hisRef, 0, hisRef.length, outgoingCipher, outgoingKey, incommingCipher,
+				incommingKey, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher,
+				ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID);
 
 		if(newTrackerID > 0) {
 
@@ -1503,8 +1554,27 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		// We change the key
-		c.initialize(pn.jfkKs);
-		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker) >= 0) {
+		BlockCipher ivCipher = null;
+		BlockCipher outgoingCipher = null;
+		BlockCipher incommingCipher = null;
+		try {
+			ivCipher = new Rijndael(256, 256);
+			outgoingCipher = new Rijndael(256, 256);
+			incommingCipher = new Rijndael(256, 256);
+		} catch (UnsupportedCipherException e) {
+			throw new RuntimeException(e);
+		}
+
+		outgoingCipher.initialize(pn.outgoingKey);
+		incommingCipher.initialize(pn.incommingKey);
+		ivCipher.initialize(pn.ivKey);
+
+		long newTrackerID = pn.completedHandshake(
+				bootID, hisRef, 0, hisRef.length, outgoingCipher, pn.outgoingKey, incommingCipher,
+				pn.incommingKey, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey,
+				ivCipher, pn.ivNonce, pn.ourInitialSeqNum, pn.theirInitialSeqNum, pn.ourInitialMsgID,
+				pn.theirInitialMsgID);
+		if(newTrackerID >= 0) {
 			if(dontWant) {
 				node.peers.disconnect(pn, true, true, true);
 			} else {
@@ -1519,7 +1589,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.setJFKBuffer(null);
 		pn.jfkKa = null;
 		pn.jfkKe = null;
-		pn.jfkKs = null;
+		pn.outgoingKey = null;
+		pn.incommingKey = null;
+		pn.hmacKey = null;
+		pn.ivKey = null;
+		pn.ivNonce = null;
+		pn.ourInitialSeqNum = 0;
+		pn.theirInitialSeqNum = 0;
+		pn.ourInitialMsgID = 0;
+		pn.theirInitialMsgID = 0;
 		// We want to clear it here so that new handshake requests
 		// will be sent with a different DH pair
 		pn.setKeyAgreementSchemeContext(null);
@@ -1606,9 +1684,46 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
-		pn.jfkKs = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+
+		/* 0 is the outgoing key for the initiator, 7 for the responder */
+		pn.outgoingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+		pn.incommingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "7");
 		pn.jfkKe = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		pn.jfkKa = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
+
+		pn.hmacKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "3");
+		pn.ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
+		pn.ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
+
+		/* Bytes  1-4:  Initial sequence number for the initiator
+		 * Bytes  5-8:  Initial sequence number for the responder
+		 * Bytes  9-12: Initial message id for the initiator
+		 * Bytes 13-16: Initial message id for the responder
+		 * Note that we are the initiator */
+		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
+		pn.ourInitialSeqNum = ((sharedData[0] & 0xFF) << 24)
+				| ((sharedData[1] & 0xFF) << 16)
+				| ((sharedData[2] & 0xFF) << 8)
+				| (sharedData[3] & 0xFF);
+		pn.theirInitialSeqNum = ((sharedData[4] & 0xFF) << 24)
+				| ((sharedData[5] & 0xFF) << 16)
+				| ((sharedData[6] & 0xFF) << 8)
+				| (sharedData[7] & 0xFF);
+		pn.ourInitialMsgID= ((sharedData[8] & 0xFF) << 24)
+				| ((sharedData[9] & 0xFF) << 16)
+				| ((sharedData[10] & 0xFF) << 8)
+				| (sharedData[11] & 0xFF);
+		pn.theirInitialMsgID= ((sharedData[12] & 0xFF) << 24)
+				| ((sharedData[13] & 0xFF) << 16)
+				| ((sharedData[14] & 0xFF) << 8)
+				| (sharedData[15] & 0xFF);
+
+		if(negType <= 4) {
+			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
+			 * backwards compatible */
+			pn.incommingKey = pn.outgoingKey;
+		}
+
 		c.initialize(pn.jfkKe);
 		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv = new byte[ivLength];
@@ -1892,12 +2007,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * first one is ECB, and the second one is ECB XORed with the
 		 * ciphertext and plaintext of the first block).
 		 */
-		BlockCipher sessionCipher = tracker.sessionCipher;
+		BlockCipher sessionCipher = tracker.incommingCipher;
 		if(sessionCipher == null) {
 			if(logMINOR) Logger.minor(this, "No cipher");
 			return false;
 		}
-		if(logDEBUG) Logger.debug(this, "Decrypting with "+HexUtil.bytesToHex(tracker.sessionKey));
+		if(logDEBUG) Logger.debug(this, "Decrypting with "+HexUtil.bytesToHex(tracker.incommingKey));
 		int blockSize = sessionCipher.getBlockSize() >> 3;
 		if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
 			throw new IllegalStateException("Block size must be equal to key size");
@@ -2852,8 +2967,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * including acks and resend requests. Is clobbered.
 	 */
 	private int processOutgoingFullyFormatted(byte[] plaintext, SessionKey kt) {
-		BlockCipher sessionCipher = kt.sessionCipher;
-		if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
+		BlockCipher sessionCipher = kt.outgoingCipher;
+		if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.outgoingKey));
 		if(sessionCipher == null) {
 			Logger.error(this, "Dropping packet send - have not handshaked yet");
 			return 0;
@@ -2970,7 +3085,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 2, 4 };
+		return new int[] { 2, 4, 5 };
 	}
 
 	public int fullHeadersLengthOneMessage() {
@@ -3120,7 +3235,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	private byte[] computeJFKSharedKey(BigInteger exponential, byte[] nI, byte[] nR, String what) {
-		assert("0".equals(what) || "1".equals(what) || "2".equals(what));
+		assert("0".equals(what) || "1".equals(what) || "2".equals(what) || "3".equals(what)
+				|| "4".equals(what) || "5".equals(what) || "6".equals(what) || "7".equals(what));
 		byte[] number = null;
 		try {
 			number = what.getBytes("UTF-8");
