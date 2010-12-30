@@ -2068,7 +2068,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			} else {
 				// else it's a rekey
 			}
-			newTracker = new SessionKey(this, packets, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, ourInitialSeqNum, theirInitialSeqNum);
+			newTracker = new SessionKey(this, packets, outgoingCipher, outgoingKey, incommingCipher, incommingKey, ivCipher, ivNonce, hmacKey, new NewPacketFormatKeyContext(ourInitialSeqNum, theirInitialSeqNum));
 			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+shortToString()+" neg type "+negType);
 			if(unverified) {
 				if(unverifiedTracker != null) {

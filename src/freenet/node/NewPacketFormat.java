@@ -295,15 +295,16 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
+		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		// Create the watchlist if the key has changed
-		if(sessionKey.seqNumWatchList == null) {
-			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + sessionKey.watchListOffset);
+		if(keyContext.seqNumWatchList == null) {
+			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + keyContext.watchListOffset);
 			
-			sessionKey.seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
+			keyContext.seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
 
-			int seqNum = sessionKey.watchListOffset;
-			for(int i = 0; i < sessionKey.seqNumWatchList.length; i++) {
-				sessionKey.seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
+			int seqNum = keyContext.watchListOffset;
+			for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
+				keyContext.seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
 				if((seqNum == NUM_SEQNUMS) || (seqNum < 0)) seqNum = 0;
 			}
 		}
@@ -311,10 +312,10 @@ public class NewPacketFormat implements PacketFormat {
 		// Move the watchlist if needed
 		int highestReceivedSeqNum;
 		synchronized(this) {
-			highestReceivedSeqNum = sessionKey.highestReceivedSeqNum;
+			highestReceivedSeqNum = keyContext.highestReceivedSeqNum;
 		}
 		// The entry for the highest received sequence number is kept in the middle of the list
-		int oldHighestReceived = (int) ((0l + sessionKey.watchListOffset + (sessionKey.seqNumWatchList.length / 2)) % NUM_SEQNUMS);
+		int oldHighestReceived = (int) ((0l + keyContext.watchListOffset + (keyContext.seqNumWatchList.length / 2)) % NUM_SEQNUMS);
 		if(seqNumGreaterThan(highestReceivedSeqNum, oldHighestReceived, 31)) {
 			int moveBy;
 			if(highestReceivedSeqNum > oldHighestReceived) {
@@ -323,7 +324,7 @@ public class NewPacketFormat implements PacketFormat {
 				moveBy = ((int) (NUM_SEQNUMS - oldHighestReceived)) + highestReceivedSeqNum;
 			}
 
-			if(moveBy > sessionKey.seqNumWatchList.length) {
+			if(moveBy > keyContext.seqNumWatchList.length) {
 				Logger.warning(this, "Moving watchlist pointer by " + moveBy);
 			} else if(moveBy < 0) {
 				Logger.warning(this, "Tried moving watchlist pointer by " + moveBy);
@@ -332,24 +333,24 @@ public class NewPacketFormat implements PacketFormat {
 				if(logDEBUG) Logger.debug(this, "Moving watchlist pointer by " + moveBy);
 			}
 
-			int seqNum = (int) ((0l + sessionKey.watchListOffset + sessionKey.seqNumWatchList.length) % NUM_SEQNUMS);
-			for(int i = sessionKey.watchListPointer; i < (sessionKey.watchListPointer + moveBy); i++) {
-				sessionKey.seqNumWatchList[i % sessionKey.seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
+			int seqNum = (int) ((0l + keyContext.watchListOffset + keyContext.seqNumWatchList.length) % NUM_SEQNUMS);
+			for(int i = keyContext.watchListPointer; i < (keyContext.watchListPointer + moveBy); i++) {
+				keyContext.seqNumWatchList[i % keyContext.seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
 				if(seqNum == NUM_SEQNUMS) seqNum = 0;
 			}
 
-			sessionKey.watchListPointer = (sessionKey.watchListPointer + moveBy) % sessionKey.seqNumWatchList.length;
-			sessionKey.watchListOffset = (int) ((0l + sessionKey.watchListOffset + moveBy) % NUM_SEQNUMS);
+			keyContext.watchListPointer = (keyContext.watchListPointer + moveBy) % keyContext.seqNumWatchList.length;
+			keyContext.watchListOffset = (int) ((0l + keyContext.watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
 outer:
-		for(int i = 0; i < sessionKey.seqNumWatchList.length; i++) {
-			int index = (sessionKey.watchListPointer + i) % sessionKey.seqNumWatchList.length;
-			for(int j = 0; j < sessionKey.seqNumWatchList[index].length; j++) {
-				if(sessionKey.seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) continue outer;
+		for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
+			int index = (keyContext.watchListPointer + i) % keyContext.seqNumWatchList.length;
+			for(int j = 0; j < keyContext.seqNumWatchList[index].length; j++) {
+				if(keyContext.seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) continue outer;
 			}
 			
-			int sequenceNumber = (int) ((0l + sessionKey.watchListOffset + i) % NUM_SEQNUMS);
+			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 			if(p != null) return p;
@@ -385,9 +386,10 @@ outer:
 
 		NPFPacket p = NPFPacket.create(payload);
 
+		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		synchronized(this) {
-			if(seqNumGreaterThan(sequenceNumber, sessionKey.highestReceivedSeqNum, 31)) {
-				sessionKey.highestReceivedSeqNum = sequenceNumber;
+			if(seqNumGreaterThan(sequenceNumber, keyContext.highestReceivedSeqNum, 31)) {
+				keyContext.highestReceivedSeqNum = sequenceNumber;
 			}
 		}
 
@@ -826,13 +828,14 @@ outer:
 			canAllocateID = 
 				!seqNumGreaterThan(nextMessageID, (messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS, 28);
 		}
-
+		
 		if(canAllocateID) {
 			// Check whether we need to rekey.
 			SessionKey tracker = pn.getCurrentKeyTracker();
 			if(tracker == null) return false;
+			NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) tracker.packetContext;
 			synchronized(sequenceNumberLock) {
-				if(tracker.nextSeqNum == tracker.firstSeqNumUsed) {
+				if(keyContext.nextSeqNum == keyContext.firstSeqNumUsed) {
 					// We can't allocate more sequence numbers because we haven't rekeyed yet
 					pn.startRekeying();
 					Logger.error(this, "Can't send because we would block");
@@ -858,28 +861,26 @@ outer:
 
 	private int allocateSequenceNumber(SessionKey tracker) {
 		synchronized(sequenceNumberLock) {
-			if(tracker != null) {
-				if(tracker.firstSeqNumUsed == -1) {
-					tracker.firstSeqNumUsed = tracker.nextSeqNum;
-					if(logMINOR) Logger.minor(this, "First seqnum used for " + tracker + " is " + tracker.firstSeqNumUsed);
+			NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) tracker.packetContext;
+			if(keyContext.firstSeqNumUsed == -1) {
+				keyContext.firstSeqNumUsed = keyContext.nextSeqNum;
+				if(logMINOR) Logger.minor(this, "First seqnum used for " + tracker + " is " + keyContext.firstSeqNumUsed);
+			} else {
+				if(keyContext.nextSeqNum == keyContext.firstSeqNumUsed) {
+					Logger.error(this, "Blocked because we haven't rekeyed yet");
+					pn.startRekeying();
+					return -1;
+				}
+				
+				if(keyContext.firstSeqNumUsed > keyContext.nextSeqNum) {
+					if(keyContext.firstSeqNumUsed - keyContext.nextSeqNum < REKEY_THRESHOLD) pn.startRekeying();
 				} else {
-					if(tracker.nextSeqNum == tracker.firstSeqNumUsed) {
-						Logger.error(this, "Blocked because we haven't rekeyed yet");
-						pn.startRekeying();
-						return -1;
-					}
-
-					if(tracker.firstSeqNumUsed > tracker.nextSeqNum) {
-						if(tracker.firstSeqNumUsed - tracker.nextSeqNum < REKEY_THRESHOLD) pn.startRekeying();
-					} else {
-						if((NUM_SEQNUMS - tracker.nextSeqNum) + tracker.firstSeqNumUsed < REKEY_THRESHOLD) pn.startRekeying();
-					}
+					if((NUM_SEQNUMS - keyContext.nextSeqNum) + keyContext.firstSeqNumUsed < REKEY_THRESHOLD) pn.startRekeying();
 				}
 			}
-
-			int seqNum = tracker.nextSeqNum++;
-			if((tracker.nextSeqNum == NUM_SEQNUMS) || (tracker.nextSeqNum < 0)) {
-				tracker.nextSeqNum = 0;
+			int seqNum = keyContext.nextSeqNum++;
+			if((keyContext.nextSeqNum == NUM_SEQNUMS) || (keyContext.nextSeqNum < 0)) {
+				keyContext.nextSeqNum = 0;
 			}
 			return seqNum;
 		}

@@ -28,7 +28,7 @@ public class NewPacketFormatTest extends TestCase {
 		                (byte) 0xEF }, null));
 		assertEquals(1, npf.handleDecryptedPacket(p).size());
 
-		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		Thread.sleep(NewPacketFormat.MAX_ACK_DELAY*2);
 		p = npf.createPacket(1400, pmq, s, false);
 		assertEquals(1, p.getAcks().size());
@@ -39,7 +39,7 @@ public class NewPacketFormatTest extends TestCase {
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue receiverQueue = new PeerMessageQueue();
-		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
@@ -84,7 +84,7 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
-		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
@@ -106,7 +106,7 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
-		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
 
@@ -126,7 +126,7 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue senderQueue = new PeerMessageQueue();
 		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
-		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
 		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0));
 
@@ -144,9 +144,9 @@ public class NewPacketFormatTest extends TestCase {
 	public void testOverlappingSeqNumOnRekey() throws BlockedTooLongException, InterruptedException {
 		
 		// First SessionKey. Will be used to send some messages, which should succeed.
-		final SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+		final SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		// Second SessionKey. Will conflict with first.
-		final SessionKey conflict = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+		final SessionKey conflict = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
 		final MutableBoolean droppedFirstSessionKey = new MutableBoolean();
 		
@@ -216,7 +216,6 @@ public class NewPacketFormatTest extends TestCase {
 			messageCount++;
 			assertFalse(messageCount > 4);
 			int decoded = receiver.handleDecryptedPacket(fragment).size();
-			System.out.println("Fragment: "+fragment+" : "+fragment.fragmentsAsString());
 			if(decoded > 0) successfulDecodes += decoded;
 		}
 		assertEquals(0, sender.countSendableMessages());
