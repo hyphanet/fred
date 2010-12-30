@@ -136,23 +136,27 @@ public class NewPacketFormat implements PacketFormat {
 
 		int bigLostCount = 0;
 		for(int ack : packet.getAcks()) {
+			long rtt;
+			int packetLength = 0;
 			synchronized(sentPackets) {
 				if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack);
 				SentPacket sent = sentPackets.remove(ack);
 				if(sent != null) {
-					long rtt = sent.acked();
-					if(pn != null) {
-						int rt = (int) Math.min(rtt, Integer.MAX_VALUE);
-						pn.reportPing(rt);
-						pn.getThrottle().setRoundTripTime(rt);
-					}
-					// FIXME should we apply this to all packets?
-					// FIXME sub-packetsize MTUs may be a problem
-					// The throttle only applies to big blocks.
-					if(sent.packetLength > Node.PACKET_SIZE)
-						bigLostCount++;
-				}
+					rtt = sent.acked();
+					packetLength = sent.packetLength;
+				} else
+					continue;
 			}
+			if(pn != null) {
+				int rt = (int) Math.min(rtt, Integer.MAX_VALUE);
+				pn.reportPing(rt);
+				pn.getThrottle().setRoundTripTime(rt);
+			}
+			// FIXME should we apply this to all packets?
+			// FIXME sub-packetsize MTUs may be a problem
+			// The throttle only applies to big blocks.
+			if(packetLength > Node.PACKET_SIZE)
+				bigLostCount++;
 		}
 		
 		if(bigLostCount != 0 && pn != null) {
