@@ -834,13 +834,11 @@ outer:
 			SessionKey tracker = pn.getCurrentKeyTracker();
 			if(tracker == null) return false;
 			NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) tracker.packetContext;
-			synchronized(sequenceNumberLock) {
-				if(keyContext.nextSeqNum == keyContext.firstSeqNumUsed) {
-					// We can't allocate more sequence numbers because we haven't rekeyed yet
-					pn.startRekeying();
-					Logger.error(this, "Can't send because we would block");
-					return false;
-				}
+			if(!canAllocateSeqNum(keyContext)) {
+				// We can't allocate more sequence numbers because we haven't rekeyed yet
+				pn.startRekeying();
+				Logger.error(this, "Can't send because we would block");
+				return false;
 			}
 		}
 		
@@ -857,6 +855,12 @@ outer:
 		}
 		
 		return true;
+	}
+
+	private boolean canAllocateSeqNum(NewPacketFormatKeyContext keyContext) {
+		synchronized(sequenceNumberLock) {
+			return keyContext.nextSeqNum == keyContext.firstSeqNumUsed;
+		}
 	}
 
 	private int allocateSequenceNumber(SessionKey tracker) {
