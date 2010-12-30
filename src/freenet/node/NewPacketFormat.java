@@ -142,7 +142,9 @@ public class NewPacketFormat implements PacketFormat {
 				if(sent != null) {
 					long rtt = sent.acked();
 					if(pn != null) {
-						pn.reportPing((int) (Math.min(rtt, Integer.MAX_VALUE)));
+						int rt = (int) Math.min(rtt, Integer.MAX_VALUE);
+						pn.reportPing(rt);
+						pn.getThrottle().setRoundTripTime(rt);
 					}
 					// FIXME should we apply this to all packets?
 					// FIXME sub-packetsize MTUs may be a problem
@@ -677,7 +679,7 @@ outer:
 					if(logMINOR) {
 						Logger.minor(this, "Assuming packet " + e.getKey() + " has been lost. "
 						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
-						                + "threshold " + (NUM_RTTS_TO_LOOSE * avgRtt) + "ms");
+						                + "threshold " + (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 					}
 					s.lost();
 					it.remove();
