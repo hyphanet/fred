@@ -2264,7 +2264,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				return;
 			}
 			if(logMINOR) Logger.minor(this, "Message "+i+" length "+length+", hash code: "+Fields.hashCode(decrypted, ptr, length));
-			tracker.pn.processDecryptedMessage(decrypted, ptr, length, 1 + (overhead / messages), sock);
+			tracker.pn.processDecryptedMessage(decrypted, ptr, length, 1 + (overhead / messages));
 			ptr+=length;
 		}
 

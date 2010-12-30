@@ -22,6 +22,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
@@ -55,6 +56,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
+import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.PeerRestartedException;
@@ -101,7 +103,7 @@ import freenet.support.transport.ip.IPUtil;
  * code into SessionKey, which handles all communications to and
  * from this peer over the duration of a single key.
  */
-public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
+public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	private String lastGoodVersion;
 	/**
@@ -1101,7 +1103,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return item;
 	}
 	
-	void wakeUpSender() {
+	public void wakeUpSender() {
 		node.ps.wakeUp();
 	}
 
@@ -1144,7 +1146,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return timeLastRoutable;
 	}
 
-	protected void maybeRekey() {
+	public void maybeRekey() {
 		long now = System.currentTimeMillis();
 		boolean shouldDisconnect = false;
 		boolean shouldReturn = false;
@@ -1174,7 +1176,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 
-	protected void startRekeying() {
+	public void startRekeying() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(isRekeying) return;
@@ -1830,7 +1832,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* can be used in handshaking when the connection hasn't been verified yet.
 	* @param dataPacket If this is a real packet, as opposed to a handshake packet.
 	*/
-	void receivedPacket(boolean dontLog, boolean dataPacket) {
+	public void receivedPacket(boolean dontLog, boolean dataPacket) {
 		synchronized(this) {
 			if((!isConnected) && (!dontLog)) {
 				// Don't log if we are disconnecting, because receiving packets during disconnecting is normal.
@@ -4701,7 +4703,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return outputLoadTracker(realTime).getIncomingLoadStats();
 	}
 	
-	PeerMessageQueue getMessageQueue() {
+	public PeerMessageQueue getMessageQueue() {
 		return messageQueue;
 	}
 
@@ -4738,11 +4740,39 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
-	public void processDecryptedMessage(byte[] data, int offset, int length, int overhead,
-			PacketSocketHandler sock) {
+	public void processDecryptedMessage(byte[] data, int offset, int length, int overhead) {
 		Message m = node.usm.decodeSingleMessage(data, offset, length, this, overhead);
 		if(m != null) {
-			node.usm.checkFilters(m, sock);
+			node.usm.checkFilters(m, crypto.socket);
 		}
+	}
+	
+	public void sendDecryptedPacket(byte[] data) throws LocalAddressException {
+		crypto.socket.sendPacket(data, getPeer(), allowLocalAddresses());
+	}
+	
+	public int getMaxPacketSize() {
+		return crypto.socket.getMaxPacketSize();
+	}
+	
+	public boolean shouldPadDataPackets() {
+		return crypto.config.paddDataPackets();
+	}
+	
+	public void sentThrottledBytes(int count) {
+		node.outputThrottle.forceGrab(count);
+	}
+	
+	public void onNotificationOnlyPacketSent(int length) {
+		node.nodeStats.reportNotificationOnlyPacketSent(length);
+	}
+	
+	public void resentBytes(int length) {
+		resendByteCounter.sentBytes(length);
+	}
+	
+	// FIXME move this to PacketFormat eventually.
+	public Random paddingGen() {
+		return paddingGen;
 	}
 }

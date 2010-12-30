@@ -56,7 +56,7 @@ public class NewPacketFormat implements PacketFormat {
 		});
 	}
 
-	private final PeerNode pn;
+	private final BasePeerNode pn;
 	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
 
@@ -78,7 +78,7 @@ public class NewPacketFormat implements PacketFormat {
 	private int usedBufferOtherSide = 0;
 	private final Object bufferUsageLock = new Object();
 
-	public NewPacketFormat(PeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
+	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
 
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
@@ -126,7 +126,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet);
 		for(byte[] buffer : finished) {
-			pn.processDecryptedMessage(buffer, 0, buffer.length, 0, pn.crypto.socket);
+			pn.processDecryptedMessage(buffer, 0, buffer.length, 0);
 		}
 
 		return true;
@@ -424,7 +424,7 @@ outer:
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	                throws BlockedTooLongException {
-		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
+		int maxPacketSize = pn.getMaxPacketSize();
 
 		SessionKey sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
@@ -436,16 +436,16 @@ outer:
 		if(packet == null) return false;
 
 		int paddedLen = packet.getLength() + HMAC_LENGTH;
-		if(pn.crypto.config.paddDataPackets()) {
+		if(pn.shouldPadDataPackets()) {
 			int packetLength = paddedLen;
 			if(logDEBUG) Logger.debug(this, "Pre-padding length: " + packetLength);
 
 			if(packetLength < 64) {
-				paddedLen = 64 + pn.paddingGen.nextInt(32);
+				paddedLen = 64 + pn.paddingGen().nextInt(32);
 			} else {
 				paddedLen = ((packetLength + 63) / 64) * 64;
 				if(paddedLen < maxPacketSize) {
-					paddedLen += pn.paddingGen.nextInt(Math.min(64, maxPacketSize - paddedLen));
+					paddedLen += pn.paddingGen().nextInt(Math.min(64, maxPacketSize - paddedLen));
 				} else if((packetLength <= maxPacketSize) && (paddedLen > maxPacketSize)) {
 					paddedLen = maxPacketSize;
 				}
@@ -453,7 +453,7 @@ outer:
 		}
 
 		byte[] data = new byte[paddedLen];
-		packet.toBytes(data, HMAC_LENGTH, pn.paddingGen);
+		packet.toBytes(data, HMAC_LENGTH, pn.paddingGen());
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
@@ -487,7 +487,7 @@ outer:
 				                + data.length + " bytes) with fragments " + fragments + " and "
 				                + packet.getAcks().size() + " acks");
 			}
-			pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
+			pn.sendDecryptedPacket(data);
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Caught exception while sending packet", e);
 			return false;
@@ -506,10 +506,10 @@ outer:
 		pn.sentPacket();
 		pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
 		if(pn.shouldThrottle()) {
-			pn.node.outputThrottle.forceGrab(data.length);
+			pn.sentThrottledBytes(data.length);
 		}
 		if(packet.getFragments().size() == 0) {
-			pn.node.nodeStats.reportNotificationOnlyPacketSent(data.length);
+			pn.onNotificationOnlyPacketSent(data.length);
 		}
 
 		return true;
@@ -998,7 +998,7 @@ outer:
 			}
 
 			//Unless we disconnect these will be resent eventually
-			if(npf.pn != null) npf.pn.resendByteCounter.sentBytes(bytesToResend);
+			if(npf.pn != null) npf.pn.resentBytes(bytesToResend);
 		}
 
 		public void sent(int length) {
