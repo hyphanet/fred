@@ -139,4 +139,47 @@ public class NewPacketFormatTest extends TestCase {
 		//Same message, new sequence number ie. resend
 		assertEquals(0, receiver.handleDecryptedPacket(packet1).size());
 	}
+	
+	public void testOverlappingSeqNumOnRekey() throws BlockedTooLongException {
+		
+		NewPacketFormat sender = new NewPacketFormat(null, 0, 0);
+		PeerMessageQueue senderQueue = new PeerMessageQueue();
+		NewPacketFormat receiver = new NewPacketFormat(null, 0, 0);
+		
+		// Create a SessionKey with 0, 0.
+		// Send some messages.
+		
+		SessionKey s = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
+
+		NPFPacket fragment1 = sender.createPacket(512, senderQueue, s, false);
+		assertEquals(1, fragment1.getFragments().size());
+
+		NPFPacket fragment2 = sender.createPacket(512, senderQueue, s, false);
+		assertEquals(1, fragment2.getFragments().size());
+
+		NPFPacket fragment3 = sender.createPacket(512, senderQueue, s, false);
+		assertEquals(1, fragment3.getFragments().size());
+
+		assertEquals(0, receiver.handleDecryptedPacket(fragment1).size());
+		assertEquals(0, receiver.handleDecryptedPacket(fragment2).size());
+		assertEquals(1, receiver.handleDecryptedPacket(fragment3).size());
+		
+		// Create a new SessionKey with 0, 0.
+		// This will conflict with the first session key.
+		
+		SessionKey conflict = new SessionKey(null, null, null, null, null, null, null, null, null, 0, 0);
+		
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0));
+		
+		try {
+			NPFPacket conflictFragment1 = sender.createPacket(512, senderQueue, conflict, false);
+			assertFalse(true);
+		} catch (NullPointerException e) {
+			// Because PeerNode is null. FIXME use a bogus BasePeerNode.
+			// Ok.
+		}
+		
+	}
 }
