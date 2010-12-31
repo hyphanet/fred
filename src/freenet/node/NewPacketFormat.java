@@ -656,6 +656,7 @@ outer:
 	}
 
 	public void checkForLostPackets() {
+		if(pn == null) return;
 		double averageRTT = averageRTT();
 		long curTime = System.currentTimeMillis();
 		SessionKey key = pn.getCurrentKeyTracker();
