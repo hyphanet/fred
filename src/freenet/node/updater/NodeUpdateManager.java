@@ -1338,6 +1338,6 @@ public class NodeUpdateManager {
 	}
 
         protected boolean isSeednode() {
-            return (node.isOpennetEnabled() && node.wantAnonAuth());
+            return (node.isOpennetEnabled() && node.wantAnonAuth(true));
         }
 }

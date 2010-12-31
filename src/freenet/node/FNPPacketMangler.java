@@ -234,7 +234,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			opn = null;
 		}
 		PeerNode pn;
-		boolean wantAnonAuth = node.wantAnonAuth();
+		boolean wantAnonAuth = crypto.wantAnonAuth();
 
 		if(opn != null) {
 			if(logMINOR) Logger.minor(this, "Trying exact match");
@@ -3253,7 +3253,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * We push to it until we reach the cap where we rekey or we reach the PFS interval
 	 */
 	private int getAuthenticatorCacheSize() {
-		if(crypto.isOpennet && node.wantAnonAuth()) // seednodes
+		if(crypto.isOpennet && node.wantAnonAuth(true)) // seednodes
 			return 5000; // 200kB
 		else
 			return 250; // 10kB

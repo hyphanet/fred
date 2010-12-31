@@ -594,5 +594,9 @@ public class NodeCrypto {
 			}
 		}
 	}
+
+	public boolean wantAnonAuth() {
+		return node.wantAnonAuth(isOpennet);
+	}
 }
 
