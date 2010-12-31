@@ -5779,6 +5779,12 @@ public class Node implements TimeSkewDetectorCallback {
 		else
 			return false;
 	}
+	
+	// FIXME make this configurable
+	// Probably should wait until we have non-opennet anon auth so we can add it to NodeCrypto.
+	public boolean wantAnonAuthChangeIP(boolean isOpennet) {
+		return !isOpennet;
+	}
 
 	public boolean opennetDefinitelyPortForwarded() {
 		OpennetManager om;

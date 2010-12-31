@@ -313,7 +313,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				}
 			}
 		}
-		if(wantAnonAuth) {
+		if(wantAnonAuth && crypto.wantAnonAuthChangeIP()) {
 			PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
 			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
 				for(int i=0;i<anonPeers.length;i++) {
