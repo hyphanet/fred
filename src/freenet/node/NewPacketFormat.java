@@ -383,14 +383,28 @@ outer:
 	}
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
-	                throws BlockedTooLongException {
-		int maxPacketSize = pn.getMaxPacketSize();
-
-		SessionKey sessionKey = pn.getCurrentKeyTracker();
+	throws BlockedTooLongException {
+		SessionKey sessionKey = pn.getPreviousKeyTracker();
+		if(sessionKey != null) {
+			// Try to sent an ack-only packet.
+			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly, sessionKey)) return true;
+		}
+		sessionKey = pn.getUnverifiedKeyTracker();
+		if(sessionKey != null) {
+			// Try to sent an ack-only packet.
+			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly, sessionKey)) return true;
+		}
+		sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
 			return false;
 		}
+		return maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly, sessionKey);
+	}
+	
+	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly, SessionKey sessionKey)
+	throws BlockedTooLongException {
+		int maxPacketSize = pn.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 
 		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue(), sessionKey, ackOnly);
