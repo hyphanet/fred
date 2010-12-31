@@ -13,6 +13,7 @@ public class MessageWrapper {
 	private final MessageItem item;
 	private final boolean isShortMessage;
 	private final int messageID;
+	private boolean reportedSent;
 
 	//Sorted lists of non-overlapping ranges. If you need to lock both, lock sent first
 	private final SparseBitmap acks = new SparseBitmap();
@@ -189,5 +190,11 @@ public class MessageWrapper {
 		// FIXME resent bytes shouldn't count ???
 		// In old FNP they didn't.
 		item.onSent(end - start + 1 + overhead);
+		synchronized(sent) {
+			if(reportedSent) return;
+			if(!sent.contains(0, item.buf.length-1)) return;
+			reportedSent = true;
+		}
+		item.onSentAll();
 	}
 }
