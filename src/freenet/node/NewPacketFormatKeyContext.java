@@ -11,6 +11,12 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
+/** NewPacketFormat's context for each SessionKey. Specifically, packet numbers are unique
+ * to a SessionKey, because the packet number is used in encrypting the packet. Hence this
+ * class has everything to do with packet numbers - which to use next, which we've sent
+ * packets on and are waiting for acks, which we've received and should ack etc.
+ * @author toad
+ */
 public class NewPacketFormatKeyContext {
 
 	public int firstSeqNumUsed = -1;
