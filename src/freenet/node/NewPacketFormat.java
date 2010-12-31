@@ -380,12 +380,12 @@ outer:
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
-			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly, sessionKey)) return true;
+			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, true, sessionKey)) return true;
 		}
 		sessionKey = pn.getUnverifiedKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
-			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly, sessionKey)) return true;
+			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, true, sessionKey)) return true;
 		}
 		sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
