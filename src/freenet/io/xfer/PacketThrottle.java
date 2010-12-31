@@ -267,6 +267,7 @@ public class PacketThrottle {
 		MessageItem sent;
 		try {
 			sent = peer.sendAsync(msg, callback, ctr);
+			if(logMINOR) Logger.minor(this, "Sending async for throttled message: "+msg);
 			ctr.sentPayload(packetSize);
 			if(blockForSend) {
 				synchronized(callback) {
