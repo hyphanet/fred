@@ -1382,10 +1382,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				Logger.minor(this, "Next urgent time from prevTracker less than now");
 			if(kt.packets.hasPacketsToResend()) return now;
 		}
-		if(packetFormat.canSend())
-			t = messageQueue.getNextUrgentTime(t, now);
-		else
-			t = Math.min(t, packetFormat.timeNextUrgent());
+		if(packetFormat.canSend()) {
+			long l = messageQueue.getNextUrgentTime(t, now);
+			if(t >= now && l < now && logMINOR)
+				Logger.minor(this, "Next urgent time from message queue less than now");
+			t = l;
+		} else {
+			long l = packetFormat.timeNextUrgent();
+			if(l < now && logMINOR)
+				Logger.minor(this, "Next urgent time from packet format less than now");
+			t = Math.min(t, l);
+		}
 		return t;
 	}
 
