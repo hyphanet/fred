@@ -16,6 +16,7 @@ import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
+import freenet.support.transport.ip.IPUtil;
 
 public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, PortForwardSensitiveSocketHandler {
 
@@ -192,8 +193,10 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private boolean getPacket(DatagramPacket packet) {
 		try {
 			_sock.receive(packet);
-			collector.addInfo(packet.getAddress() + ":" + packet.getPort(),
-					packet.getLength(), 0); // FIXME use (packet.getLength() + UDP_HEADERS_LENGTH)?
+			InetAddress address = packet.getAddress();
+			boolean isLocal = IPUtil.isValidAddress(address, false);
+			collector.addInfo(address + ":" + packet.getPort(),
+					packet.getLength(), 0, isLocal); // FIXME use (packet.getLength() + UDP_HEADERS_LENGTH)?
 		} catch (SocketTimeoutException e1) {
 			return false;
 		} catch (IOException e2) {
@@ -245,7 +248,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			_sock.send(packet);
 			tracker.sentPacketTo(destination);
-			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH);
+			boolean isLocal = IPUtil.isValidAddress(address, false);
+			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH, isLocal);
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
 		} catch (IOException e) {
 			if(packet.getAddress() instanceof Inet6Address) {

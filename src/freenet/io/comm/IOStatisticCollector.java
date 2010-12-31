@@ -31,17 +31,17 @@ public class IOStatisticCollector {
 		logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 	}
 	
-	public void addInfo(String key, int inbytes, int outbytes) {
+	public void addInfo(String key, int inbytes, int outbytes, boolean isLocal) {
 		try {
 			synchronized (this) {
-				_addInfo(key, inbytes, outbytes);
+				_addInfo(key, inbytes, outbytes, isLocal);
 			}
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}
 	}
 	
-	private void _addInfo(String key, int inbytes, int outbytes) {
+	private void _addInfo(String key, int inbytes, int outbytes, boolean isLocal) {
 		rotate();
 		if(ENABLE_PER_ADDRESS_TRACKING) {
 			StatisticEntry entry = targets.get(key);
@@ -51,11 +51,13 @@ public class IOStatisticCollector {
 			}
 			entry.addData((inbytes>0)?inbytes:0, (outbytes>0)?outbytes:0);
 		}
-		synchronized(this) {
-			totalbytesout += (outbytes>0)?outbytes:0;
-			totalbytesin += (inbytes>0)?inbytes:0;
-			if(logDEBUG)
-				Logger.debug(IOStatisticCollector.class, "Add("+key+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
+		if(!isLocal) {
+			synchronized(this) {
+				totalbytesout += (outbytes>0)?outbytes:0;
+				totalbytesin += (inbytes>0)?inbytes:0;
+				if(logDEBUG)
+					Logger.debug(IOStatisticCollector.class, "Add("+key+ ',' +inbytes+ ',' +outbytes+" -> "+totalbytesin+" : "+totalbytesout);
+			}
 		}
 	}
 	
