@@ -518,9 +518,9 @@ outer:
 					MessageWrapper wrapper = it.next();
 					while(packet.getLength() < maxPacketSize) {
 						MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+						if(frag == null) break;
 						mustSend = true;
 						addedFragments = true;
-						if(frag == null) break;
 						packet.addMessageFragment(frag);
 						sentPacket.addFragment(frag);
 					}
