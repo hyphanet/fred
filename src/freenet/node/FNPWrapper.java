@@ -41,6 +41,8 @@ public class FNPWrapper implements PacketFormat {
 			if(logMINOR) Logger.minor(this, "Sending notification");
 			mustSend = true;
 			mustSendPacket = true;
+		} else {
+			if(ackOnly) return false;
 		}
 		// Any packets to resend? If so, resend ONE packet and then return.
 		for (int j = 0; j < 2; j++) {
