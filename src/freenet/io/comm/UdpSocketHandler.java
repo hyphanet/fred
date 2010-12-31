@@ -194,7 +194,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			_sock.receive(packet);
 			InetAddress address = packet.getAddress();
-			boolean isLocal = IPUtil.isValidAddress(address, false);
+			boolean isLocal = !IPUtil.isValidAddress(address, false);
 			collector.addInfo(address + ":" + packet.getPort(),
 					packet.getLength(), 0, isLocal); // FIXME use (packet.getLength() + UDP_HEADERS_LENGTH)?
 		} catch (SocketTimeoutException e1) {
@@ -248,7 +248,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			_sock.send(packet);
 			tracker.sentPacketTo(destination);
-			boolean isLocal = IPUtil.isValidAddress(address, false);
+			boolean isLocal = !IPUtil.isValidAddress(address, false);
 			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH, isLocal);
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
 		} catch (IOException e) {
