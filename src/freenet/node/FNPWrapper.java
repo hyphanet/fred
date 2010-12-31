@@ -34,7 +34,6 @@ public class FNPWrapper implements PacketFormat {
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	                throws BlockedTooLongException {
 		// If there are any urgent notifications, we must send a packet.
-		if(logMINOR) Logger.minor(this, "maybeSendPacket: " + this);
 		boolean mustSend = false;
 		boolean mustSendPacket = false;
 		if(mustSendNotificationsNow(now)) {
@@ -44,6 +43,7 @@ public class FNPWrapper implements PacketFormat {
 		} else {
 			if(ackOnly) return false;
 		}
+		if(logMINOR) Logger.minor(this, "maybeSendPacket: " + this);
 		// Any packets to resend? If so, resend ONE packet and then return.
 		for (int j = 0; j < 2; j++) {
 			SessionKey kt;
