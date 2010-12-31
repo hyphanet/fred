@@ -82,17 +82,21 @@ public class NullBasePeerNode implements BasePeerNode {
 	public boolean unqueueMessage(MessageItem item) {
 		throw new UnsupportedOperationException();
 	}
+	
+	SessionKey currentKey;
+	SessionKey previousKey;
+	SessionKey unverifiedKey;
 
 	public SessionKey getCurrentKeyTracker() {
-		return null;
+		return currentKey;
 	}
 
 	public SessionKey getPreviousKeyTracker() {
-		return null;
+		return previousKey;
 	}
 
 	public SessionKey getUnverifiedKeyTracker() {
-		return null;
+		return unverifiedKey;
 	}
 
 	public void receivedPacket(boolean dontLog, boolean dataPacket) {
