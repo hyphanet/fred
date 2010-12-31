@@ -36,22 +36,12 @@ public class SessionKey {
 	public final BlockCipher ivCipher;
 	public final byte[] ivNonce;
 	public final byte[] hmacKey;
-
-	public int firstSeqNumUsed = -1;
-	public int nextSeqNum;
-	public int highestReceivedSeqNum;
-
-	public byte[][] seqNumWatchList = null;
-	/** Index of the packet with the lowest sequence number */
-	public int watchListPointer = 0;
-	public int watchListOffset = 0;
+	
+	public final NewPacketFormatKeyContext packetContext;
 
 	SessionKey(PeerNode parent, PacketTracker tracker, BlockCipher outgoingCipher, byte[] outgoingKey,
 	                BlockCipher incommingCipher, byte[] incommingKey, BlockCipher ivCipher,
-			byte[] ivNonce, byte[] hmacKey, int ourFirstSeqNum, int theirFirstSeqNum) {
-		ourFirstSeqNum &= 0x7FFFFFFF;
-		theirFirstSeqNum &= 0x7FFFFFFF;
-
+			byte[] ivNonce, byte[] hmacKey, NewPacketFormatKeyContext context) {
 		this.pn = parent;
 		this.packets = tracker;
 		this.outgoingCipher = outgoingCipher;
@@ -61,15 +51,17 @@ public class SessionKey {
 		this.ivCipher = ivCipher;
 		this.ivNonce = ivNonce;
 		this.hmacKey = hmacKey;
-		this.nextSeqNum = ourFirstSeqNum;
-		this.watchListOffset = theirFirstSeqNum;
-		
-		this.highestReceivedSeqNum = theirFirstSeqNum - 1;
-		if(this.highestReceivedSeqNum == -1) this.highestReceivedSeqNum = Integer.MAX_VALUE;
+		this.packetContext = context;
 	}
 	
 	@Override
 	public String toString() {
 		return super.toString()+":"+packets;
+	}
+
+	public void disconnected(boolean notPackets) {
+		if(!notPackets)
+			packets.disconnected();
+		packetContext.disconnected();
 	}
 }

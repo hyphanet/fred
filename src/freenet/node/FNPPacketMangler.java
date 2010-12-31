@@ -234,6 +234,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			opn = null;
 		}
 		PeerNode pn;
+		boolean wantAnonAuth = crypto.wantAnonAuth();
 
 		if(opn != null) {
 			if(logMINOR) Logger.minor(this, "Trying exact match");
@@ -262,10 +263,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 					return;
 				}
-				// Might be a reply to an anon auth packet
-				if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) {
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+				if(wantAnonAuth) {
+					// Might be a reply to an anon auth packet
+					if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) {
+						if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+						return;
+					}
 				}
 			}
 		}
@@ -310,35 +313,37 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				}
 			}
 		}
-		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
-		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
-			for(int i=0;i<anonPeers.length;i++) {
-				pn = anonPeers[i];
-				if(pn == opn) continue;
-				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+		if(wantAnonAuth && crypto.wantAnonAuthChangeIP()) {
+			PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
+			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
+				for(int i=0;i<anonPeers.length;i++) {
+					pn = anonPeers[i];
+					if(pn == opn) continue;
+					if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
+						if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+						return;
+					}
 				}
 			}
-		}
-		if(length > HEADERS_LENGTH_MINIMUM) {
-			for(int i=0;i<anonPeers.length;i++) {
-				pn = anonPeers[i];
-				if(pn == opn) continue;
-				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
-					pn.changedIP(peer);
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
-				}
-				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
-					pn.changedIP(peer);
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
-				}
-				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
-					pn.changedIP(peer);
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+			if(length > HEADERS_LENGTH_MINIMUM) {
+				for(int i=0;i<anonPeers.length;i++) {
+					pn = anonPeers[i];
+					if(pn == opn) continue;
+					if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
+						pn.changedIP(peer);
+						if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+						return;
+					}
+					if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
+						pn.changedIP(peer);
+						if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+						return;
+					}
+					if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
+						pn.changedIP(peer);
+						if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+						return;
+					}
 				}
 			}
 		}
@@ -359,12 +364,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				didntTryOldOpennetPeers = true;
 		} else
 			didntTryOldOpennetPeers = false;
-		if(node.wantAnonAuth()) {
+		if(wantAnonAuth) {
 			if(tryProcessAuthAnon(buf, offset, length, peer)) return;
 		}
 
                 // Don't log too much if we are a seednode
-                if(logMINOR && crypto.isOpennet && node.wantAnonAuth()) {
+                if(logMINOR && crypto.isOpennet && wantAnonAuth) {
                 	if(!didntTryOldOpennetPeers)
                 		Logger.minor(this,"Unmatchable packet from "+peer);
                 } else
@@ -2271,12 +2276,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				return;
 			}
 			if(logMINOR) Logger.minor(this, "Message "+i+" length "+length+", hash code: "+Fields.hashCode(decrypted, ptr, length));
-			Message m = usm.decodeSingleMessage(decrypted, ptr, length, tracker.pn, 1 + (overhead / messages));
+			tracker.pn.processDecryptedMessage(decrypted, ptr, length, 1 + (overhead / messages));
 			ptr+=length;
-			if(m != null) {
-				//Logger.minor(this, "Dispatching packet: "+m);
-				usm.checkFilters(m, sock);
-			}
 		}
 
 		tracker.pn.maybeRekey();
@@ -3264,7 +3265,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * We push to it until we reach the cap where we rekey or we reach the PFS interval
 	 */
 	private int getAuthenticatorCacheSize() {
-		if(crypto.isOpennet && node.wantAnonAuth()) // seednodes
+		if(crypto.isOpennet && node.wantAnonAuth(true)) // seednodes
 			return 5000; // 200kB
 		else
 			return 250; // 10kB

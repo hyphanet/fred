@@ -34,14 +34,16 @@ public class FNPWrapper implements PacketFormat {
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	                throws BlockedTooLongException {
 		// If there are any urgent notifications, we must send a packet.
-		if(logMINOR) Logger.minor(this, "maybeSendPacket: " + this);
 		boolean mustSend = false;
 		boolean mustSendPacket = false;
 		if(mustSendNotificationsNow(now)) {
 			if(logMINOR) Logger.minor(this, "Sending notification");
 			mustSend = true;
 			mustSendPacket = true;
+		} else {
+			if(ackOnly) return false;
 		}
+		if(logMINOR) Logger.minor(this, "maybeSendPacket: " + this);
 		// Any packets to resend? If so, resend ONE packet and then return.
 		for (int j = 0; j < 2; j++) {
 			SessionKey kt;
@@ -159,15 +161,19 @@ public class FNPWrapper implements PacketFormat {
 	}
 
 	private boolean mustSendNotificationsNow(long now) {
+		SessionKey cur;
+		SessionKey prev;
 		synchronized(pn) {
-			SessionKey kt = pn.getCurrentKeyTracker();
-			if(kt != null) {
-				if(kt.packets.getNextUrgentTime() < now) return true;
-			}
-			kt = pn.getPreviousKeyTracker();
-			if(kt != null) if(kt.packets.getNextUrgentTime() < now) return true;
-			return false;
+			cur = pn.getCurrentKeyTracker();
+			prev = pn.getPreviousKeyTracker();
 		}
+		if(cur != null) {
+			if(cur.packets.getNextUrgentTime() < now) return true;
+		}
+		if(prev != null) {
+			if(prev.packets.getNextUrgentTime() < now) return true;
+		}
+		return false;
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now) {

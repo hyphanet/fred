@@ -263,11 +263,11 @@ public class PacketThrottle {
 			Logger.error(this, "Congestion control wait time: "+waitTime+" for "+this);
 		else if(logMINOR)
 			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
-		MyCallback callback = new MyCallback(cbForAsyncSend);
+		MyCallback callback = new MyCallback(cbForAsyncSend, packetSize, ctr);
 		MessageItem sent;
 		try {
 			sent = peer.sendAsync(msg, callback, ctr);
-			ctr.sentPayload(packetSize);
+			if(logMINOR) Logger.minor(this, "Sending async for throttled message: "+msg);
 			if(blockForSend) {
 				synchronized(callback) {
 					long timeout = System.currentTimeMillis() + 60*1000;
@@ -304,11 +304,16 @@ public class PacketThrottle {
 	private class MyCallback implements AsyncMessageCallback {
 
 		private boolean finished = false;
+		private boolean sent = false;
+		private final int packetSize;
+		private final ByteCounter ctr;
 		
 		private AsyncMessageCallback chainCallback;
 		
-		public MyCallback(AsyncMessageCallback cbForAsyncSend) {
+		public MyCallback(AsyncMessageCallback cbForAsyncSend, int packetSize, ByteCounter ctr) {
 			this.chainCallback = cbForAsyncSend;
+			this.packetSize = packetSize;
+			this.ctr = ctr;
 		}
 
 		public void acknowledged() {
@@ -348,6 +353,11 @@ public class PacketThrottle {
 		}
 
 		public void sent() {
+			synchronized(PacketThrottle.this) {
+				if(sent) return;
+				sent = true;
+			}
+			ctr.sentPayload(packetSize);
 			// Ignore
 			if(chainCallback != null) chainCallback.sent();
 		}

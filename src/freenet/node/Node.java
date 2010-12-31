@@ -5741,8 +5741,17 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Returns true if the packet receiver should try to decode/process packets that are not from a peer (i.e. from a seed connection)
 	 * The packet receiver calls this upon receiving an unrecognized packet.
 	 */
-	public boolean wantAnonAuth() {
-		return opennet != null && acceptSeedConnections;
+	public boolean wantAnonAuth(boolean isOpennet) {
+		if(isOpennet)
+			return opennet != null && acceptSeedConnections;
+		else
+			return false;
+	}
+	
+	// FIXME make this configurable
+	// Probably should wait until we have non-opennet anon auth so we can add it to NodeCrypto.
+	public boolean wantAnonAuthChangeIP(boolean isOpennet) {
+		return !isOpennet;
 	}
 
 	public boolean opennetDefinitelyPortForwarded() {

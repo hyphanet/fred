@@ -6,43 +6,31 @@ package freenet.node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
 import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
-import freenet.io.comm.MessageCore;
 import freenet.io.comm.Peer.LocalAddressException;
-import freenet.io.xfer.PacketThrottle;
-import freenet.support.Logger;
+import freenet.node.NewPacketFormatKeyContext.AddedAcks;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SparseBitmap;
 
 public class NewPacketFormat implements PacketFormat {
 
 	private static final int HMAC_LENGTH = 4;
-	private static final int NUM_RTTS_TO_LOOSE = 2;
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
 	private static final int MAX_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
-	private static final long NUM_SEQNUMS = 2147483648l;
+	static final long NUM_SEQNUMS = 2147483648l;
 	private static final int MAX_MSGID_BLOCK_TIME = 10 * 60 * 1000;
-	private static final int REKEY_THRESHOLD = 100;
 	private static final int MAX_ACKS = 500;
-	/** All acks must be sent within 200ms */
-	static final int MAX_ACK_DELAY = 200;
-	/** Minimum RTT for purposes of calculating whether to retransmit. 
-	 * Must be greater than MAX_ACK_DELAY */
-	private static final int MIN_RTT_FOR_RETRANSMIT = 250;
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -56,12 +44,8 @@ public class NewPacketFormat implements PacketFormat {
 		});
 	}
 
-	private final PeerNode pn;
-	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
-	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
+	private final BasePeerNode pn;
 
-	private final Object sequenceNumberLock = new Object();
-	
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	private int nextMessageID;
 	/** The first message id that hasn't been acked by the receiver */
@@ -78,7 +62,7 @@ public class NewPacketFormat implements PacketFormat {
 	private int usedBufferOtherSide = 0;
 	private final Object bufferUsageLock = new Object();
 
-	public NewPacketFormat(PeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
+	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
 
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
@@ -124,51 +108,22 @@ public class NewPacketFormat implements PacketFormat {
 		pn.maybeRekey();
 		pn.reportIncomingPacket(buf, offset, length, now);
 
-		LinkedList<byte[]> finished = handleDecryptedPacket(packet);
+		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
 		for(byte[] buffer : finished) {
-			processFullyReceived(buffer);
+			pn.processDecryptedMessage(buffer, 0, buffer.length, 0);
 		}
 
 		return true;
 	}
 
-	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet) {
+	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
 		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
 
-		int bigLostCount = 0;
+		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		for(int ack : packet.getAcks()) {
-			long rtt;
-			int packetLength = 0;
-			synchronized(sentPackets) {
-				if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack);
-				SentPacket sent = sentPackets.remove(ack);
-				if(sent != null) {
-					rtt = sent.acked();
-					packetLength = sent.packetLength;
-				} else
-					continue;
-			}
-			if(pn != null) {
-				int rt = (int) Math.min(rtt, Integer.MAX_VALUE);
-				pn.reportPing(rt);
-				pn.getThrottle().setRoundTripTime(rt);
-			}
-			// FIXME should we apply this to all packets?
-			// FIXME sub-packetsize MTUs may be a problem
-			// The throttle only applies to big blocks.
-			if(packetLength > Node.PACKET_SIZE)
-				bigLostCount++;
+			keyContext.ack(ack, pn);
 		}
 		
-		if(bigLostCount != 0 && pn != null) {
-			PacketThrottle throttle = pn.getThrottle();
-			if(throttle != null) {
-				for(int i=0;i<bigLostCount;i++) {
-					throttle.notifyOfPacketAcknowledged();
-				}
-			}
-		}
-
 		boolean dontAck = false;
 		boolean wakeUp = false;
 		if(packet.getError() || (packet.getFragments().size() == 0)) {
@@ -270,14 +225,10 @@ public class NewPacketFormat implements PacketFormat {
 
 		if(!dontAck) {
 			int seqno = packet.getSequenceNumber();
-			boolean addedAck = false;
-			synchronized(acks) {
-				if(!acks.containsKey(seqno)) {
-					addedAck = true;
-					wakeUp = acks.size() > MAX_ACKS;
-					acks.put(seqno, System.currentTimeMillis());
-				}
-			}
+			int acksQueued = keyContext.queueAck(seqno);
+			boolean addedAck = acksQueued >= 0;
+			if(acksQueued > MAX_ACKS)
+				wakeUp = true;
 			if(addedAck) {
 				if(!wakeUp) {
 					synchronized(bufferUsageLock) {
@@ -286,7 +237,7 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				}
 				if(wakeUp)
-					pn.node.ps.wakeUp();
+					pn.wakeUpSender();
 			}
 		}
 
@@ -295,15 +246,16 @@ public class NewPacketFormat implements PacketFormat {
 	}
 
 	private NPFPacket tryDecipherPacket(byte[] buf, int offset, int length, SessionKey sessionKey) {
+		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		// Create the watchlist if the key has changed
-		if(sessionKey.seqNumWatchList == null) {
-			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + sessionKey.watchListOffset);
+		if(keyContext.seqNumWatchList == null) {
+			if(logMINOR) Logger.minor(this, "Creating watchlist starting at " + keyContext.watchListOffset);
 			
-			sessionKey.seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
+			keyContext.seqNumWatchList = new byte[NUM_SEQNUMS_TO_WATCH_FOR][4];
 
-			int seqNum = sessionKey.watchListOffset;
-			for(int i = 0; i < sessionKey.seqNumWatchList.length; i++) {
-				sessionKey.seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
+			int seqNum = keyContext.watchListOffset;
+			for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
+				keyContext.seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
 				if((seqNum == NUM_SEQNUMS) || (seqNum < 0)) seqNum = 0;
 			}
 		}
@@ -311,10 +263,10 @@ public class NewPacketFormat implements PacketFormat {
 		// Move the watchlist if needed
 		int highestReceivedSeqNum;
 		synchronized(this) {
-			highestReceivedSeqNum = sessionKey.highestReceivedSeqNum;
+			highestReceivedSeqNum = keyContext.highestReceivedSeqNum;
 		}
 		// The entry for the highest received sequence number is kept in the middle of the list
-		int oldHighestReceived = (int) ((0l + sessionKey.watchListOffset + (sessionKey.seqNumWatchList.length / 2)) % NUM_SEQNUMS);
+		int oldHighestReceived = (int) ((0l + keyContext.watchListOffset + (keyContext.seqNumWatchList.length / 2)) % NUM_SEQNUMS);
 		if(seqNumGreaterThan(highestReceivedSeqNum, oldHighestReceived, 31)) {
 			int moveBy;
 			if(highestReceivedSeqNum > oldHighestReceived) {
@@ -323,7 +275,7 @@ public class NewPacketFormat implements PacketFormat {
 				moveBy = ((int) (NUM_SEQNUMS - oldHighestReceived)) + highestReceivedSeqNum;
 			}
 
-			if(moveBy > sessionKey.seqNumWatchList.length) {
+			if(moveBy > keyContext.seqNumWatchList.length) {
 				Logger.warning(this, "Moving watchlist pointer by " + moveBy);
 			} else if(moveBy < 0) {
 				Logger.warning(this, "Tried moving watchlist pointer by " + moveBy);
@@ -332,24 +284,24 @@ public class NewPacketFormat implements PacketFormat {
 				if(logDEBUG) Logger.debug(this, "Moving watchlist pointer by " + moveBy);
 			}
 
-			int seqNum = (int) ((0l + sessionKey.watchListOffset + sessionKey.seqNumWatchList.length) % NUM_SEQNUMS);
-			for(int i = sessionKey.watchListPointer; i < (sessionKey.watchListPointer + moveBy); i++) {
-				sessionKey.seqNumWatchList[i % sessionKey.seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
+			int seqNum = (int) ((0l + keyContext.watchListOffset + keyContext.seqNumWatchList.length) % NUM_SEQNUMS);
+			for(int i = keyContext.watchListPointer; i < (keyContext.watchListPointer + moveBy); i++) {
+				keyContext.seqNumWatchList[i % keyContext.seqNumWatchList.length] = encryptSequenceNumber(seqNum++, sessionKey);
 				if(seqNum == NUM_SEQNUMS) seqNum = 0;
 			}
 
-			sessionKey.watchListPointer = (sessionKey.watchListPointer + moveBy) % sessionKey.seqNumWatchList.length;
-			sessionKey.watchListOffset = (int) ((0l + sessionKey.watchListOffset + moveBy) % NUM_SEQNUMS);
+			keyContext.watchListPointer = (keyContext.watchListPointer + moveBy) % keyContext.seqNumWatchList.length;
+			keyContext.watchListOffset = (int) ((0l + keyContext.watchListOffset + moveBy) % NUM_SEQNUMS);
 		}
 
 outer:
-		for(int i = 0; i < sessionKey.seqNumWatchList.length; i++) {
-			int index = (sessionKey.watchListPointer + i) % sessionKey.seqNumWatchList.length;
-			for(int j = 0; j < sessionKey.seqNumWatchList[index].length; j++) {
-				if(sessionKey.seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) continue outer;
+		for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
+			int index = (keyContext.watchListPointer + i) % keyContext.seqNumWatchList.length;
+			for(int j = 0; j < keyContext.seqNumWatchList[index].length; j++) {
+				if(keyContext.seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) continue outer;
 			}
 			
-			int sequenceNumber = (int) ((0l + sessionKey.watchListOffset + i) % NUM_SEQNUMS);
+			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
 			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
 			if(p != null) return p;
@@ -385,9 +337,10 @@ outer:
 
 		NPFPacket p = NPFPacket.create(payload);
 
+		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		synchronized(this) {
-			if(seqNumGreaterThan(sequenceNumber, sessionKey.highestReceivedSeqNum, 31)) {
-				sessionKey.highestReceivedSeqNum = sequenceNumber;
+			if(seqNumGreaterThan(sequenceNumber, keyContext.highestReceivedSeqNum, 31)) {
+				keyContext.highestReceivedSeqNum = sequenceNumber;
 			}
 		}
 
@@ -423,29 +376,44 @@ outer:
 	}
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
-	                throws BlockedTooLongException {
-		int maxPacketSize = pn.crypto.socket.getMaxPacketSize();
-
-		SessionKey sessionKey = pn.getCurrentKeyTracker();
+	throws BlockedTooLongException {
+		SessionKey sessionKey = pn.getPreviousKeyTracker();
+		if(sessionKey != null) {
+			// Try to sent an ack-only packet.
+			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, true, sessionKey)) return true;
+		}
+		sessionKey = pn.getUnverifiedKeyTracker();
+		if(sessionKey != null) {
+			// Try to sent an ack-only packet.
+			if(maybeSendPacket(now, rpiTemp, rpiIntTemp, true, sessionKey)) return true;
+		}
+		sessionKey = pn.getCurrentKeyTracker();
 		if(sessionKey == null) {
 			Logger.warning(this, "No key for encrypting hash");
 			return false;
 		}
+		return maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly, sessionKey);
+	}
+	
+	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly, SessionKey sessionKey)
+	throws BlockedTooLongException {
+		int maxPacketSize = pn.getMaxPacketSize();
+		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 
 		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue(), sessionKey, ackOnly);
 		if(packet == null) return false;
 
 		int paddedLen = packet.getLength() + HMAC_LENGTH;
-		if(pn.crypto.config.paddDataPackets()) {
+		if(pn.shouldPadDataPackets()) {
 			int packetLength = paddedLen;
 			if(logDEBUG) Logger.debug(this, "Pre-padding length: " + packetLength);
 
 			if(packetLength < 64) {
-				paddedLen = 64 + pn.paddingGen.nextInt(32);
+				paddedLen = 64 + pn.paddingGen().nextInt(32);
 			} else {
 				paddedLen = ((packetLength + 63) / 64) * 64;
 				if(paddedLen < maxPacketSize) {
-					paddedLen += pn.paddingGen.nextInt(Math.min(64, maxPacketSize - paddedLen));
+					paddedLen += pn.paddingGen().nextInt(Math.min(64, maxPacketSize - paddedLen));
 				} else if((packetLength <= maxPacketSize) && (paddedLen > maxPacketSize)) {
 					paddedLen = maxPacketSize;
 				}
@@ -453,7 +421,7 @@ outer:
 		}
 
 		byte[] data = new byte[paddedLen];
-		packet.toBytes(data, HMAC_LENGTH, pn.paddingGen);
+		packet.toBytes(data, HMAC_LENGTH, pn.paddingGen());
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
@@ -487,7 +455,7 @@ outer:
 				                + data.length + " bytes) with fragments " + fragments + " and "
 				                + packet.getAcks().size() + " acks");
 			}
-			pn.crypto.socket.sendPacket(data, pn.getPeer(), pn.allowLocalAddresses());
+			pn.sendEncryptedPacket(data);
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Caught exception while sending packet", e);
 			return false;
@@ -496,28 +464,22 @@ outer:
 		packet.onSent(data.length);
 
 		if(packet.getFragments().size() > 0) {
-			SentPacket sentPacket = null;
-			synchronized(sentPackets) {
-				sentPacket = sentPackets.get(packet.getSequenceNumber());
-				if(sentPacket != null) sentPacket.sent(packet.getLength());
-			}
+			keyContext.sent(packet.getSequenceNumber(), packet.getLength());
 		}
 
 		pn.sentPacket();
 		pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
-		if(PeerNode.shouldThrottle(pn.getPeer(), pn.node)) {
-			pn.node.outputThrottle.forceGrab(data.length);
+		if(pn.shouldThrottle()) {
+			pn.sentThrottledBytes(data.length);
 		}
 		if(packet.getFragments().size() == 0) {
-			pn.node.nodeStats.reportNotificationOnlyPacketSent(data.length);
+			pn.onNotificationOnlyPacketSent(data.length);
 		}
 
 		return true;
 	}
 
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey, boolean ackOnly) throws BlockedTooLongException {
-		if(logDEBUG)
-			Logger.debug(this, "Creating a packet for "+pn);
 		
 		checkForLostPackets();
 		
@@ -527,80 +489,82 @@ outer:
 		boolean mustSend = false;
 		long now = System.currentTimeMillis();
 		
-		HashMap<Integer, Long> moved = null; // FIXME some more memory efficient representation, since this will normally be very small?
-
-		// All acks must be sent within 200ms.
-		int numAcks = 0;
-		synchronized(acks) {
-			Iterator<Map.Entry<Integer, Long>> it = acks.entrySet().iterator();
-			while (it.hasNext() && packet.getLength() < maxPacketSize) {
-				Map.Entry<Integer, Long> entry = it.next();
-				int ack = entry.getKey();
-				if(entry.getValue() + MAX_ACK_DELAY < now)
-					mustSend = true;
-				if(logDEBUG) Logger.debug(this, "Trying to ack "+ack);
-				if(!packet.addAck(ack)) {
-					if(logDEBUG) Logger.debug(this, "Can't add ack "+ack);
-					break;
-				}
-				if(moved == null) moved = new HashMap<Integer, Long>();
-				moved.put(ack, entry.getValue());
-				++numAcks;
-				it.remove();
-			}
+		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
+		
+		AddedAcks moved = keyContext.addAcks(packet, maxPacketSize, now);
+		if(moved != null && moved.anyUrgentAcks) {
+			if(logDEBUG) Logger.debug(this, "Must send because urgent acks");
+			mustSend = true;
 		}
 		
-		if(numAcks > MAX_ACKS)
+		int numAcks = packet.countAcks();
+		
+		if(numAcks > MAX_ACKS) {
 			mustSend = true;
+		}
+		
+		if(numAcks > 0) {
+			if(logDEBUG) Logger.debug(this, "Added acks for "+this+" for "+pn.shortToString());
+		}
 		
 		if(!ackOnly) {
+			
+			boolean addedFragments = false;
 
-		// Always finish what we have started before considering sending more packets.
-		// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
-		for(int i = 0; i < startedByPrio.size(); i++) {
-			HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
-
-			//Try to finish messages that have been started
-			synchronized(started) {
-				Iterator<MessageWrapper> it = started.values().iterator();
-				while(it.hasNext() && packet.getLength() < maxPacketSize) {
-					MessageWrapper wrapper = it.next();
-					while(packet.getLength() < maxPacketSize) {
-						MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-						mustSend = true;
-						if(frag == null) break;
-						packet.addMessageFragment(frag);
-						sentPacket.addFragment(frag);
+			// Always finish what we have started before considering sending more packets.
+			// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
+			for(int i = 0; i < startedByPrio.size(); i++) {
+				HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
+				
+				//Try to finish messages that have been started
+				synchronized(started) {
+					Iterator<MessageWrapper> it = started.values().iterator();
+					while(it.hasNext() && packet.getLength() < maxPacketSize) {
+						MessageWrapper wrapper = it.next();
+						while(packet.getLength() < maxPacketSize) {
+							MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+							if(frag == null) break;
+							mustSend = true;
+							addedFragments = true;
+							packet.addMessageFragment(frag);
+							sentPacket.addFragment(frag);
+						}
 					}
 				}
 			}
-		}
-		
+			
+			if(addedFragments) {
+				if(logDEBUG) Logger.debug(this, "Added fragments for "+this+" (must send)");
+			}
+			
 		}
 		
 		if((!mustSend) && packet.getLength() >= (maxPacketSize * 4 / 5)) {
+			if(logDEBUG) Logger.debug(this, "Must send because packet is big on acks alone");
 			// Lots of acks to send, send a packet.
 			mustSend = true;
 		}
 		
-		if(!mustSend) {
-			if(messageQueue.mustSendNow(now) || messageQueue.mustSendSize(packet.getLength(), maxPacketSize))
+		if((!ackOnly) && (!mustSend)) {
+			if(messageQueue.mustSendNow(now) || messageQueue.mustSendSize(packet.getLength(), maxPacketSize)) {
+				if(logDEBUG) Logger.debug(this, "Must send because of message queue");
 				mustSend = true;
+			}
 		}
 		
 		if((!mustSend) && numAcks > 0) {
 			synchronized(bufferUsageLock) {
-				if(usedBufferOtherSide > MAX_BUFFER_SIZE / 2)
+				if(usedBufferOtherSide > MAX_BUFFER_SIZE / 2) {
+					if(logDEBUG) Logger.debug(this, "Must send because other side buffer size is "+usedBufferOtherSide);
 					mustSend = true;
+				}
 			}
 
 		}
 		
 		if(!mustSend) {
 			if(moved != null) {
-				synchronized(acks) {
-					acks.putAll(moved);
-				}
+				moved.abort();
 			}
 			return null;
 		}
@@ -608,155 +572,125 @@ outer:
 		if(ackOnly && numAcks == 0) return null;
 		
 		if(!ackOnly) {
-		
-		fragments:
-		for(int i = 0; i < startedByPrio.size(); i++) {
-			//Add messages from the message queue
-			while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
-				MessageItem item = null;
-				item = messageQueue.grabQueuedMessageItem(i);
-				if(item == null) break;
-
-				int bufferUsage;
-				synchronized(bufferUsageLock) {
-					bufferUsage = usedBufferOtherSide;
+			
+			fragments:
+				for(int i = 0; i < startedByPrio.size(); i++) {
+					//Add messages from the message queue
+					while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
+						MessageItem item = null;
+						item = messageQueue.grabQueuedMessageItem(i);
+						if(item == null) break;
+						
+						int bufferUsage;
+						synchronized(bufferUsageLock) {
+							bufferUsage = usedBufferOtherSide;
+						}
+						if((bufferUsage + item.buf.length) > MAX_BUFFER_SIZE) {
+							if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
+							messageQueue.pushfrontPrioritizedMessageItem(item);
+							break fragments;
+						}
+						
+						int messageID = getMessageID();
+						if(messageID == -1) {
+							if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
+							messageQueue.pushfrontPrioritizedMessageItem(item);
+							break fragments;
+						}
+						
+						if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item);
+						
+						MessageWrapper wrapper = new MessageWrapper(item, messageID);
+						MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+						if(frag == null) {
+							messageQueue.pushfrontPrioritizedMessageItem(item);
+							break;
+						}
+						packet.addMessageFragment(frag);
+						sentPacket.addFragment(frag);
+						
+						//Priority of the one we grabbed might be higher than i
+						HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
+						synchronized(queue) {
+							queue.put(messageID, wrapper);
+						}
+						
+						synchronized(bufferUsageLock) {
+							usedBufferOtherSide += item.buf.length;
+							if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide + " for "+pn.shortToString());
+						}
+					}
 				}
-				if((bufferUsage + item.buf.length) > MAX_BUFFER_SIZE) {
-					if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
-					messageQueue.pushfrontPrioritizedMessageItem(item);
-					break fragments;
-				}
-
-				int messageID = getMessageID();
-				if(messageID == -1) {
-					if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
-					messageQueue.pushfrontPrioritizedMessageItem(item);
-					break fragments;
-				}
-				
-				if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item);
-
-				MessageWrapper wrapper = new MessageWrapper(item, messageID);
-				MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-				if(frag == null) {
-					messageQueue.pushfrontPrioritizedMessageItem(item);
-					break;
-				}
-				packet.addMessageFragment(frag);
-				sentPacket.addFragment(frag);
-
-				//Priority of the one we grabbed might be higher than i
-				HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
-				synchronized(queue) {
-					queue.put(messageID, wrapper);
-				}
-
-				synchronized(bufferUsageLock) {
-					usedBufferOtherSide += item.buf.length;
-					if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide + " for "+pn.shortToString());
-				}
-			}
-		}
 		
 		}
 
 		if(packet.getLength() == 5) return null;
 
-		int seqNum = allocateSequenceNumber(sessionKey);
+		int seqNum = keyContext.allocateSequenceNumber(pn);
 		if(seqNum == -1) return null;
 		packet.setSequenceNumber(seqNum);
+		
+		if(logDEBUG && ackOnly) {
+			Logger.debug(this, "Sending ack-only packet length "+packet.getLength()+" for "+this);
+		} else if(logDEBUG && !ackOnly) {
+			Logger.debug(this, "Sending packet length "+packet.getLength()+" for "+this);
+		}
 
 		if(packet.getFragments().size() > 0) {
-			SessionKey brokenKey = null;
-			boolean mustDisconnect = false;
-			synchronized(sentPackets) {
-				if(sentPackets.get(seqNum) != null) {
-					// This should only happen when we are really unlucky and rekey to an overlapping packet number range.
-					brokenKey = sentPackets.get(seqNum).sessionKey;
-					if(brokenKey == sessionKey) {
-						Logger.error(this, "Duplicate packet seqnum on the same tracker! DISCONNECTING!");
-						brokenKey = null;
-						mustDisconnect = true;
-					} else {
-						Logger.error(this, "Sending packet "+seqNum+" on "+sessionKey+" but already present "+sentPackets.get(seqNum)+" for "+brokenKey+" - DUMPING ALL OLD MESSAGES WITH THIS TRACKER!");
-						for(Iterator<Map.Entry<Integer, SentPacket>> it =sentPackets.entrySet().iterator();it.hasNext();) {
-							Map.Entry<Integer, SentPacket> entry = it.next();
-							if(entry.getValue().sessionKey == brokenKey) {
-								Logger.error(this, "Assuming packet is lost as it uses the broken tracker: "+entry.getKey());
-								entry.getValue().lost();
-								it.remove();
-							}
-						}
-					}
-				}
-				sentPacket.sent(packet.getLength());
-				sentPackets.put(seqNum, sentPacket);
-			}
-			if(mustDisconnect) {
-				pn.forceDisconnect(false);
-			} else if(brokenKey != null) {
-				pn.dumpTracker(brokenKey);
-				Logger.error(this, "Disconnecting to sort it out");
-				pn.forceDisconnect(false);
-			}
+			keyContext.sent(sentPacket, seqNum, packet.getLength());
 		}
 
 		return packet;
 	}
 	
+	/** For unit tests */
+	int countSentPackets(SessionKey key) {
+		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) key.packetContext;
+		return keyContext.countSentPackets();
+	}
+	
 	public long timeCheckForLostPackets() {
 		long timeCheck = Long.MAX_VALUE;
-		synchronized(sentPackets) {
-			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
-			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT());
-			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
-			while(it.hasNext()) {
-				Map.Entry<Integer, SentPacket> e = it.next();
-				SentPacket s = e.getValue();
-				long t = (long) (s.getSentTime() + (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1));
-				if(t < timeCheck) timeCheck = t;
-			}
-		}
+		double averageRTT = averageRTT();
+		SessionKey key = pn.getCurrentKeyTracker();
+		if(key != null)
+			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)(key.packetContext)).timeCheckForLostPackets(averageRTT));
+		key = pn.getPreviousKeyTracker();
+		if(key != null)
+			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)(key.packetContext)).timeCheckForLostPackets(averageRTT));
+		key = pn.getUnverifiedKeyTracker();
+		if(key != null)
+			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)(key.packetContext)).timeCheckForLostPackets(averageRTT));
+		return timeCheck;
+	}
+	
+	private long timeCheckForAcks() {
+		long timeCheck = Long.MAX_VALUE;
+		SessionKey key = pn.getCurrentKeyTracker();
+		if(key != null)
+			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)key.packetContext).timeCheckForAcks());
+		key = pn.getPreviousKeyTracker();
+		if(key != null)
+			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)key.packetContext).timeCheckForAcks());
+		key = pn.getUnverifiedKeyTracker();
+		if(key != null)
+			timeCheck = Math.min(timeCheck, ((NewPacketFormatKeyContext)key.packetContext).timeCheckForAcks());
 		return timeCheck;
 	}
 
 	public void checkForLostPackets() {
-		//Mark packets as lost
-		int bigLostCount = 0;
-		synchronized(sentPackets) {
-			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
-			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT());
-			long curTime = System.currentTimeMillis();
-
-			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
-			while(it.hasNext()) {
-				Map.Entry<Integer, SentPacket> e = it.next();
-				SentPacket s = e.getValue();
-				if(s.getSentTime() < (curTime - (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1))) {
-					if(logMINOR) {
-						Logger.minor(this, "Assuming packet " + e.getKey() + " has been lost. "
-						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
-						                + "threshold " + (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
-					}
-					s.lost();
-					it.remove();
-					// FIXME should we apply this to all packets?
-					// FIXME sub-packetsize MTUs may be a problem
-					// The throttle only applies to big blocks.
-					if(s.packetLength > Node.PACKET_SIZE)
-						bigLostCount++;
-				}
-			}
-		}
-		if(bigLostCount != 0 && pn != null) {
-			PacketThrottle throttle = pn.getThrottle();
-			if(throttle != null) {
-				for(int i=0;i<bigLostCount;i++) {
-					throttle.notifyOfPacketLost();
-				}
-			}
-		}
-
+		if(pn == null) return;
+		double averageRTT = averageRTT();
+		long curTime = System.currentTimeMillis();
+		SessionKey key = pn.getCurrentKeyTracker();
+		if(key != null)
+			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
+		key = pn.getPreviousKeyTracker();
+		if(key != null)
+			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
+		key = pn.getUnverifiedKeyTracker();
+		if(key != null)
+			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 	}
 
 	public List<MessageItem> onDisconnect() {
@@ -797,11 +731,7 @@ outer:
 			}
 		}
 		// Check for acks.
-		long ret = Long.MAX_VALUE;
-		for(Long l : acks.values()) {
-			long timeout = l + MAX_ACK_DELAY;
-			if(ret > timeout) ret = timeout;
-		}
+		long ret = timeCheckForAcks();
 		
 		// Always wake up after half an RTT, check whether stuff is lost or needs ack'ing.
 		ret = Math.min(ret, System.currentTimeMillis() + Math.min(100, (long)averageRTT()/2));
@@ -817,18 +747,17 @@ outer:
 			canAllocateID = 
 				!seqNumGreaterThan(nextMessageID, (messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS, 28);
 		}
-
+		
 		if(canAllocateID) {
 			// Check whether we need to rekey.
 			SessionKey tracker = pn.getCurrentKeyTracker();
 			if(tracker == null) return false;
-			synchronized(sequenceNumberLock) {
-				if(tracker.nextSeqNum == tracker.firstSeqNumUsed) {
-					// We can't allocate more sequence numbers because we haven't rekeyed yet
-					pn.startRekeying();
-					Logger.error(this, "Can't send because we would block");
-					return false;
-				}
+			NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) tracker.packetContext;
+			if(!keyContext.canAllocateSeqNum()) {
+				// We can't allocate more sequence numbers because we haven't rekeyed yet
+				pn.startRekeying();
+				Logger.error(this, "Can't send because we would block");
+				return false;
 			}
 		}
 		
@@ -845,35 +774,6 @@ outer:
 		}
 		
 		return true;
-	}
-
-	private int allocateSequenceNumber(SessionKey tracker) {
-		synchronized(sequenceNumberLock) {
-			if(tracker != null) {
-				if(tracker.firstSeqNumUsed == -1) {
-					tracker.firstSeqNumUsed = tracker.nextSeqNum;
-					if(logMINOR) Logger.minor(this, "First seqnum used for " + tracker + " is " + tracker.firstSeqNumUsed);
-				} else {
-					if(tracker.nextSeqNum == tracker.firstSeqNumUsed) {
-						Logger.error(this, "Blocked because we haven't rekeyed yet");
-						pn.startRekeying();
-						return -1;
-					}
-
-					if(tracker.firstSeqNumUsed > tracker.nextSeqNum) {
-						if(tracker.firstSeqNumUsed - tracker.nextSeqNum < REKEY_THRESHOLD) pn.startRekeying();
-					} else {
-						if((NUM_SEQNUMS - tracker.nextSeqNum) + tracker.firstSeqNumUsed < REKEY_THRESHOLD) pn.startRekeying();
-					}
-				}
-			}
-
-			int seqNum = tracker.nextSeqNum++;
-			if((tracker.nextSeqNum == NUM_SEQNUMS) || (tracker.nextSeqNum < 0)) {
-				tracker.nextSeqNum = 0;
-			}
-			return seqNum;
-		}
 	}
 
 	private long blockedSince = -1;
@@ -895,14 +795,6 @@ outer:
 		return messageID;
 	}
 
-	private void processFullyReceived(byte[] buf) {
-		MessageCore core = pn.node.usm;
-		Message m = core.decodeSingleMessage(buf, 0, buf.length, pn, 0);
-		if(m != null) {
-			core.checkFilters(m, pn.crypto.socket);
-		}
-	}
-
 	private double averageRTT() {
 		if(pn != null) {
 			return pn.averagePingTime();
@@ -910,7 +802,7 @@ outer:
 		return 250;
 	}
 
-	private static class SentPacket {
+	static class SentPacket {
 		final SessionKey sessionKey;
 		NewPacketFormat npf;
 		LinkedList<MessageWrapper> messages = new LinkedList<MessageWrapper>();
@@ -977,7 +869,7 @@ outer:
 						}
 						if(!couldSend && npf.canSend()) {
 							//We aren't blocked anymore, notify packet sender
-							npf.pn.node.ps.wakeUp();
+							npf.pn.wakeUpSender();
 						}
 					}
 				}
@@ -1006,7 +898,7 @@ outer:
 			}
 
 			//Unless we disconnect these will be resent eventually
-			if(npf.pn != null) npf.pn.resendByteCounter.sentBytes(bytesToResend);
+			if(npf.pn != null) npf.pn.resentBytes(bytesToResend);
 		}
 
 		public void sent(int length) {
@@ -1072,5 +964,19 @@ outer:
 
 			return true;
 		}
+	}
+
+	public int countSendableMessages() {
+		int x = 0;
+		synchronized(startedByPrio) {
+			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+				synchronized(started) {
+					for(MessageWrapper wrapper : started.values()) {
+						if(wrapper.canSend()) x++;
+					}
+				}
+			}
+		}
+		return x;
 	}
 }
