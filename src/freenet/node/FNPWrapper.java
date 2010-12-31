@@ -161,15 +161,19 @@ public class FNPWrapper implements PacketFormat {
 	}
 
 	private boolean mustSendNotificationsNow(long now) {
+		SessionKey cur;
+		SessionKey prev;
 		synchronized(pn) {
-			SessionKey kt = pn.getCurrentKeyTracker();
-			if(kt != null) {
-				if(kt.packets.getNextUrgentTime() < now) return true;
-			}
-			kt = pn.getPreviousKeyTracker();
-			if(kt != null) if(kt.packets.getNextUrgentTime() < now) return true;
-			return false;
+			cur = pn.getCurrentKeyTracker();
+			prev = pn.getPreviousKeyTracker();
 		}
+		if(cur != null) {
+			if(cur.packets.getNextUrgentTime() < now) return true;
+		}
+		if(prev != null) {
+			if(prev.packets.getNextUrgentTime() < now) return true;
+		}
+		return false;
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now) {
