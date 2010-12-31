@@ -267,4 +267,15 @@ public class NewPacketFormatKeyContext {
 		return ret;
 	}
 
+	public void disconnected() {
+		synchronized(sentPackets) {
+			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
+			while(it.hasNext()) {
+				Map.Entry<Integer, SentPacket> e = it.next();
+				SentPacket s = e.getValue();
+				s.lost();
+			}
+		}
+	}
+
 }

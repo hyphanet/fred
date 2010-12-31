@@ -53,8 +53,6 @@ interface BasePeerNode extends PeerContext {
 
 	void onNotificationOnlyPacketSent(int length);
 
-	void dumpTracker(SessionKey brokenKey);
-
 	void resentBytes(int bytesToResend);
 
 	Random paddingGen();

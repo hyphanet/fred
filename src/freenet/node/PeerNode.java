@@ -1262,9 +1262,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				mi.onDisconnect();
 			}
 		}
-		if(cur != null) cur.packets.disconnected();
-		if(prev != null) prev.packets.disconnected();
-		if(unv != null) unv.packets.disconnected();
+		if(cur != null) cur.disconnected(false);
+		if(prev != null) prev.disconnected(false);
+		if(unv != null) unv.disconnected(false);
 		if(_lastThrottle != null)
 			_lastThrottle.maybeDisconnected();
 		node.lm.lostOrRestartedNode(this);
@@ -2125,8 +2125,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		if(oldPrev != null && oldPrev.packets != newTracker.packets)
 			oldPrev.packets.completelyDeprecated(newTracker);
+		if(oldPrev != null) oldPrev.disconnected(true);
 		if(oldCur != null && oldCur.packets != newTracker.packets)
 			oldCur.packets.completelyDeprecated(newTracker);
+		if(oldCur != null) oldCur.disconnected(true);
 		if(prev != null && prev.packets != newTracker.packets)
 			prev.packets.deprecated();
 		if(oldPacketFormat != null) {
@@ -2366,6 +2368,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(completelyDeprecatedTracker != null) {
 			if(completelyDeprecatedTracker.packets != tracker.packets)
 				completelyDeprecatedTracker.packets.completelyDeprecated(tracker);
+			completelyDeprecatedTracker.disconnected(true);
 		}
 	}
 
@@ -4722,22 +4725,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public long timeCheckForLostPackets() {
 		return packetFormat.timeCheckForLostPackets();
-	}
-
-	/** Only called for new format connections, for which we don't care about PacketTracker */
-	public void dumpTracker(SessionKey brokenKey) {
-		synchronized(this) {
-			if(currentTracker == brokenKey) {
-				currentTracker = null;
-				isConnected = false;
-			} else if(previousTracker == brokenKey)
-				previousTracker = null;
-			else if(unverifiedTracker == brokenKey)
-				unverifiedTracker = null;
-		}
-		// Update connected vs not connected status.
-		isConnected();
-		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
 	public void processDecryptedMessage(byte[] data, int offset, int length, int overhead) {

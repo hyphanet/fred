@@ -58,4 +58,10 @@ public class SessionKey {
 	public String toString() {
 		return super.toString()+":"+packets;
 	}
+
+	public void disconnected(boolean notPackets) {
+		if(!notPackets)
+			packets.disconnected();
+		packetContext.disconnected();
+	}
 }
