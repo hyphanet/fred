@@ -6,24 +6,18 @@ package freenet.node;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
 import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
-import freenet.io.comm.MessageCore;
 import freenet.io.comm.Peer.LocalAddressException;
-import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SparseBitmap;
 
@@ -125,7 +119,6 @@ public class NewPacketFormat implements PacketFormat {
 	LinkedList<byte[]> handleDecryptedPacket(NPFPacket packet, SessionKey sessionKey) {
 		LinkedList<byte[]> fullyReceived = new LinkedList<byte[]>();
 
-		int bigLostCount = 0;
 		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		for(int ack : packet.getAcks()) {
 			keyContext.ack(ack, pn);
