@@ -192,7 +192,7 @@ public class PacketSender implements Runnable {
 				}
 
 				try {
-					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp, !canSendThrottled)) {
+					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp, shouldThrottle && !canSendThrottled)) {
 						count = node.outputThrottle.getCount();
 						if(count > MAX_PACKET_SIZE)
 							canSendThrottled = true;
