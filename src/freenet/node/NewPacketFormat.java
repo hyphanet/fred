@@ -491,13 +491,13 @@ outer:
 		boolean mustSend = false;
 		long now = System.currentTimeMillis();
 		
-		int numAcks = 0;
-		
 		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		
 		AddedAcks moved = keyContext.addAcks(packet, maxPacketSize, now);
 		if(moved != null && moved.anyUrgentAcks)
 			mustSend = true;
+		
+		int numAcks = packet.countAcks();
 		
 		if(numAcks > MAX_ACKS)
 			mustSend = true;

@@ -353,4 +353,8 @@ class NPFPacket {
 	String fragmentsAsString() {
 		return Arrays.toString(fragments.toArray());
 	}
+
+	public int countAcks() {
+		return acks.size();
+	}
 }
