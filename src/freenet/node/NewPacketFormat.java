@@ -545,7 +545,7 @@ outer:
 			mustSend = true;
 		}
 		
-		if(!mustSend) {
+		if((!ackOnly) && (!mustSend)) {
 			if(messageQueue.mustSendNow(now) || messageQueue.mustSendSize(packet.getLength(), maxPacketSize)) {
 				if(logDEBUG) Logger.debug(this, "Must send because of message queue");
 				mustSend = true;
