@@ -480,8 +480,6 @@ outer:
 	}
 
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey, boolean ackOnly) throws BlockedTooLongException {
-		if(logDEBUG)
-			Logger.debug(this, "Creating a packet for "+pn);
 		
 		checkForLostPackets();
 		
@@ -499,10 +497,14 @@ outer:
 		
 		int numAcks = packet.countAcks();
 		
-		if(numAcks > MAX_ACKS)
+		if(numAcks > MAX_ACKS) {
 			mustSend = true;
+			if(logDEBUG) Logger.debug(this, "Added acks for "+this);
+		}
 		
 		if(!ackOnly) {
+			
+			boolean addedFragments = false;
 
 		// Always finish what we have started before considering sending more packets.
 		// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
@@ -517,12 +519,17 @@ outer:
 					while(packet.getLength() < maxPacketSize) {
 						MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
 						mustSend = true;
+						addedFragments = true;
 						if(frag == null) break;
 						packet.addMessageFragment(frag);
 						sentPacket.addFragment(frag);
 					}
 				}
 			}
+		}
+		
+		if(addedFragments) {
+			if(logDEBUG) Logger.debug(this, "Added fragments for "+this);
 		}
 		
 		}
