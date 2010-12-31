@@ -622,6 +622,12 @@ outer:
 		int seqNum = keyContext.allocateSequenceNumber(pn);
 		if(seqNum == -1) return null;
 		packet.setSequenceNumber(seqNum);
+		
+		if(logDEBUG && ackOnly) {
+			Logger.debug(this, "Sending ack-only packet length "+packet.getLength()+" for "+this);
+		} else if(logDEBUG && !ackOnly) {
+			Logger.debug(this, "Sending packet length "+packet.getLength()+" for "+this);
+		}
 
 		if(packet.getFragments().size() > 0) {
 			keyContext.sent(sentPacket, seqNum, packet.getLength());
