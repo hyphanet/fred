@@ -492,8 +492,10 @@ outer:
 		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		
 		AddedAcks moved = keyContext.addAcks(packet, maxPacketSize, now);
-		if(moved != null && moved.anyUrgentAcks)
+		if(moved != null && moved.anyUrgentAcks) {
+			if(logDEBUG) Logger.debug(this, "Must send because urgent acks");
 			mustSend = true;
+		}
 		
 		int numAcks = packet.countAcks();
 		
@@ -532,25 +534,30 @@ outer:
 			}
 			
 			if(addedFragments) {
-				if(logDEBUG) Logger.debug(this, "Added fragments for "+this);
+				if(logDEBUG) Logger.debug(this, "Added fragments for "+this+" (must send)");
 			}
 			
 		}
 		
 		if((!mustSend) && packet.getLength() >= (maxPacketSize * 4 / 5)) {
+			if(logDEBUG) Logger.debug(this, "Must send because packet is big on acks alone");
 			// Lots of acks to send, send a packet.
 			mustSend = true;
 		}
 		
 		if(!mustSend) {
-			if(messageQueue.mustSendNow(now) || messageQueue.mustSendSize(packet.getLength(), maxPacketSize))
+			if(messageQueue.mustSendNow(now) || messageQueue.mustSendSize(packet.getLength(), maxPacketSize)) {
+				if(logDEBUG) Logger.debug(this, "Must send because of message queue");
 				mustSend = true;
+			}
 		}
 		
 		if((!mustSend) && numAcks > 0) {
 			synchronized(bufferUsageLock) {
-				if(usedBufferOtherSide > MAX_BUFFER_SIZE / 2)
+				if(usedBufferOtherSide > MAX_BUFFER_SIZE / 2) {
+					if(logDEBUG) Logger.debug(this, "Must send because other side buffer size is "+usedBufferOtherSide);
 					mustSend = true;
+				}
 			}
 
 		}
