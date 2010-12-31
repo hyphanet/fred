@@ -110,17 +110,19 @@ public class NewPacketFormatKeyContext {
 			} else
 				return;
 		}
+		
+		int rt = (int) Math.min(rtt, Integer.MAX_VALUE);
+		PacketThrottle throttle = null;
 		if(pn != null) {
-			int rt = (int) Math.min(rtt, Integer.MAX_VALUE);
 			pn.reportPing(rt);
-			pn.getThrottle().setRoundTripTime(rt);
+			throttle = pn.getThrottle();
 		}
-		// FIXME should we apply this to all packets?
-		// FIXME sub-packetsize MTUs may be a problem
-		// The throttle only applies to big blocks.
-		if(packetLength > Node.PACKET_SIZE) {
-			PacketThrottle throttle = pn.getThrottle();
-			if(throttle != null) {
+		if(throttle != null) {
+			throttle.setRoundTripTime(rt);
+			// FIXME should we apply this to all packets?
+			// FIXME sub-packetsize MTUs may be a problem
+			// The throttle only applies to big blocks.
+			if(packetLength > Node.PACKET_SIZE) {
 				throttle.notifyOfPacketAcknowledged();
 			}
 		}
