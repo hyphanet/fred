@@ -66,7 +66,7 @@ public class NewPacketFormatKeyContext {
 	
 	boolean canAllocateSeqNum() {
 		synchronized(sequenceNumberLock) {
-			return nextSeqNum == firstSeqNumUsed;
+			return nextSeqNum != firstSeqNumUsed;
 		}
 	}
 
