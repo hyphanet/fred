@@ -499,7 +499,10 @@ outer:
 		
 		if(numAcks > MAX_ACKS) {
 			mustSend = true;
-			if(logDEBUG) Logger.debug(this, "Added acks for "+this);
+		}
+		
+		if(numAcks > 0) {
+			if(logDEBUG) Logger.debug(this, "Added acks for "+this+" for "+pn.shortToString());
 		}
 		
 		if(!ackOnly) {
