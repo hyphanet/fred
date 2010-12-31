@@ -305,6 +305,7 @@ public class PacketThrottle {
 	private class MyCallback implements AsyncMessageCallback {
 
 		private boolean finished = false;
+		private boolean sent = false;
 		
 		private AsyncMessageCallback chainCallback;
 		
@@ -349,6 +350,10 @@ public class PacketThrottle {
 		}
 
 		public void sent() {
+			synchronized(PacketThrottle.this) {
+				if(sent) return;
+				sent = true;
+			}
 			// Ignore
 			if(chainCallback != null) chainCallback.sent();
 		}
