@@ -22,12 +22,17 @@ import freenet.support.transport.ip.IPUtil;
  * If created with a name, then the name is primary, and the IP address can change.
  * Most code ripped from Peer.
  * 
+ * Propagates the IP address on equals() but not the hostname. Consistent with hashCode().
+ * Hence, a FreenetInetAddress with IP 1.2.3.4 and no hostname is *NOT* equal to one with
+ * the IP address and no name.
+ * 
  * Safe to put into HashMap's etc, but WILL CREATE DUPLICATES if you have two copies of 
  * the same IP address under different names (or no name).
  * 
- * Propagates the IP address on equals() but not the hostname.
+ * FIXME reconsider whether we need this. The lazy lookup is useful but not THAT useful,
+ * and we have a regular lookup task now anyway. And it's overly complex, leading to odd
+ * bugs.
  * @author amphibian
- *
  */
 public class FreenetInetAddress {
 
