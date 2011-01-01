@@ -191,6 +191,33 @@ public class FreenetInetAddress {
         // until it's needed to work better with dynamic DNS hostnames
 	}
 	
+	public boolean laxEquals(FreenetInetAddress addr) {
+		if(hostname != null) {
+			if(addr.hostname == null) {
+				if(_address == null) return false; // No basis for comparison.
+				if(addr._address != null) {
+					return _address.equals(addr._address);
+				}
+			} else {
+				if (!hostname.equalsIgnoreCase(addr.hostname)) {
+					return false;
+				}
+				// Now that we know we have the same hostname, we can propagate the IP.
+				if((_address != null) && (addr._address == null))
+					addr._address = _address;
+				if((addr._address != null) && (_address == null))
+					_address = addr._address;
+				// Except if we actually do have two different looked-up IPs!
+				if((addr._address != null) && (_address != null) && !addr._address.equals(_address))
+					return false;
+				// Equal.
+				return true;
+			}
+		}
+		// His hostname might not be null. Not a problem.
+		return _address.equals(addr._address);
+	}
+	
 	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof FreenetInetAddress)) {
