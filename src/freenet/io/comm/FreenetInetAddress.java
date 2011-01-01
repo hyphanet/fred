@@ -232,6 +232,8 @@ public class FreenetInetAddress {
 				return false;
 			// Equal.
 			return true;
+		} else if(addr.hostname != null /* && hostname == null */) {
+			return false;
 		}
 
 		// No hostname, go by address.
