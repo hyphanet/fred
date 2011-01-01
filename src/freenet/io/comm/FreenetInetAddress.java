@@ -21,6 +21,11 @@ import freenet.support.transport.ip.IPUtil;
  * Long-term InetAddress. If created with an IP address, then the IP address is primary.
  * If created with a name, then the name is primary, and the IP address can change.
  * Most code ripped from Peer.
+ * 
+ * Safe to put into HashMap's etc, but WILL CREATE DUPLICATES if you have two copies of 
+ * the same IP address under different names (or no name).
+ * 
+ * Propagates the IP address on equals() but not the hostname.
  * @author amphibian
  *
  */
