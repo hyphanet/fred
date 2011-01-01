@@ -486,7 +486,7 @@ public class PeerManager {
 		for(int i = 0; i < peerList.length; i++) {
 			Peer p = peerList[i].getPeer();
 			if(p == null) continue;
-			if(addr.equals(p.getFreenetAddress()))
+			if(addr.laxEquals(p.getFreenetAddress()))
 				return peerList[i];
 		}
 		return null;
