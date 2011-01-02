@@ -80,7 +80,7 @@ public class Announcer {
 	protected void start() {
 		if(!node.isOpennetEnabled()) return;
 		int darkPeers = node.peers.getDarknetPeers().length;
-		int openPeers = node.peers.getOpennetPeers(false).length;
+		int openPeers = node.peers.getOpennetPeers().length;
 		int oldOpenPeers = om.countOldOpennetPeers();
 		if(darkPeers + openPeers + oldOpenPeers == 0) {
 			// We know opennet is enabled.
@@ -320,7 +320,7 @@ public class Announcer {
 			node.executor.execute(new Runnable() {
 
 				public void run() {
-					for(OpennetPeerNode pn : node.peers.getOpennetPeers(false)) {
+					for(OpennetPeerNode pn : node.peers.getOpennetPeers()) {
 						node.peers.disconnect(pn, true, true, true);
 					}
 					for(SeedServerPeerNode pn : node.peers.getSeedServerPeersVector()) {
