@@ -173,7 +173,7 @@ public class PeerManager {
 				if(oldOpennetPeers)
 					msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
 				else if(isOpennet)
-					msg = "Read " + getOpennetPeers(false).length + " opennet peers from " + peersFile;
+					msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
 				else
 					msg = "Read " + getDarknetPeers().length + " darknet peers from " + peersFile;
 				Logger.normal(this, msg);
@@ -187,7 +187,7 @@ public class PeerManager {
 				if(oldOpennetPeers)
 					msg = "Read " + opennet.countOldOpennetPeers() + " old-opennet-peers from " + peersFile;
 				else if(isOpennet)
-					msg = "Read " + getOpennetPeers(false).length + " opennet peers from " + peersFile;
+					msg = "Read " + getOpennetPeers().length + " opennet peers from " + peersFile;
 				else
 					msg = "Read " + getDarknetPeers().length + " darknet peers from " + peersFile;
 				Logger.normal(this, msg);
@@ -1281,7 +1281,7 @@ public class PeerManager {
 		int peers, darknetPeers, opennetPeers;
 		synchronized(this) {
 			darknetPeers = this.getDarknetPeers().length;
-			opennetPeers = this.getOpennetPeers(false).length;
+			opennetPeers = this.getOpennetPeers().length;
 			peers = darknetPeers + opennetPeers; // Seednodes don't count.
 		}
 		OpennetManager om = node.getOpennet();
@@ -1665,7 +1665,7 @@ public class PeerManager {
 	}
 
 	public OpennetPeerNodeStatus[] getOpennetPeerNodeStatuses(boolean noHeavy) {
-		OpennetPeerNode[] peers = getOpennetPeers(false);
+		OpennetPeerNode[] peers = getOpennetPeers();
 		OpennetPeerNodeStatus[] _peerNodeStatuses = new OpennetPeerNodeStatus[peers.length];
 		for(int peerIndex = 0, peerCount = peers.length; peerIndex < peerCount; peerIndex++) {
 			_peerNodeStatuses[peerIndex] = (OpennetPeerNodeStatus) peers[peerIndex].getStatus(noHeavy);
@@ -1752,7 +1752,7 @@ public class PeerManager {
 	/**
 	 * Get the opennet peers list.
 	 */
-	public OpennetPeerNode[] getOpennetPeers(boolean includeSeedServers) {
+	public OpennetPeerNode[] getOpennetPeers() {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
@@ -1762,10 +1762,24 @@ public class PeerManager {
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] instanceof OpennetPeerNode)
 				v.add(peers[i]);
-			else if(includeSeedServers && peers[i] instanceof SeedServerPeerNode)
-				v.add(peers[i]);
 		}
 		return v.toArray(new OpennetPeerNode[v.size()]);
+	}
+	
+	public PeerNode[] getOpennetAndSeedServerPeers() {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		// FIXME optimise! Maybe maintain as a separate list?
+		Vector<PeerNode> v = new Vector<PeerNode>(myPeers.length);
+		for(int i = 0; i < peers.length; i++) {
+			if(peers[i] instanceof OpennetPeerNode)
+				v.add(peers[i]);
+			else if(peers[i] instanceof SeedServerPeerNode)
+				v.add(peers[i]);
+		}
+		return v.toArray(new PeerNode[v.size()]);
 	}
 
 	public boolean anyConnectedPeerHasAddress(FreenetInetAddress addr, PeerNode pn) {
@@ -1806,7 +1820,7 @@ public class PeerManager {
 	}
 
 	public PeerNode containsPeer(PeerNode pn) {
-		PeerNode[] peers = pn.isOpennet() ? ((PeerNode[]) getOpennetPeers(true)) : ((PeerNode[]) getDarknetPeers());
+		PeerNode[] peers = pn.isOpennet() ? ((PeerNode[]) getOpennetAndSeedServerPeers()) : ((PeerNode[]) getDarknetPeers());
 
 		for(int i = 0; i < peers.length; i++)
 			if(Arrays.equals(pn.getIdentity(), peers[i].getIdentity()))
