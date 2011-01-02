@@ -493,7 +493,7 @@ public class NodeCrypto {
 	public PeerNode[] getPeerNodes() {
 		if(node.peers == null) return null;
 		if(isOpennet)
-			return node.peers.getOpennetPeers();
+			return node.peers.getOpennetPeers(true);
 		else
 			return node.peers.getDarknetPeers();
 	}
