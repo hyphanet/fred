@@ -478,7 +478,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		negTypes = fs.getIntArray("auth.negTypes");
 		if(negTypes == null || negTypes.length == 0) {
 			if(fromAnonymousInitiator)
-				negTypes = mangler.supportedNegTypes(); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
+				negTypes = mangler.supportedNegTypes(false); // Assume compatible. Anonymous initiator = short-lived, and we already connected so we know we are.
 			else
 				throw new FSParseException("No negTypes!");
 		}
@@ -757,10 +757,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		totalInputSinceStartup = fs.getLong("totalInput", 0);
 		totalOutputSinceStartup = fs.getLong("totalOutput", 0);
 
-		if(negTypes[negTypes.length - 1] != 5) {
+		int lastNegType = negTypes[negTypes.length - 1];
+		
+		if(lastNegType < 5) {
 			packetFormat = new FNPWrapper(this);
 		} else {
-			packetFormat = new NewPacketFormat(this, 0, 0);
+			packetFormat = new NewPacketFormat(this, 0, 0, lastNegType == 6);
 		}
 
 		byte buffer[] = new byte[16];
@@ -2112,10 +2114,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
 			timeLastSentPacket = now;
 			if(packetFormat == null) {
-				if(negType != 5) {
+				if(negType < 5) {
 					packetFormat = new FNPWrapper(this);
 				} else {
-					packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
+					packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID, negType == 6);
 				}
 			}
 		}
@@ -3591,7 +3593,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	public int selectNegType(OutgoingPacketMangler mangler) {
 		int[] hisNegTypes;
-		int[] myNegTypes = mangler.supportedNegTypes();
+		int[] myNegTypes = mangler.supportedNegTypes(false);
 		synchronized(this) {
 			hisNegTypes = negTypes;
 		}
