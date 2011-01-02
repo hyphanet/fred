@@ -4783,10 +4783,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public boolean matchesIP(FreenetInetAddress addr) {
-		if(detectedPeer != null && detectedPeer.getFreenetAddress().equals(addr)) return true;
+		if(detectedPeer != null && detectedPeer.getFreenetAddress().laxEquals(addr)) return true;
 		if(nominalPeer != null) { // FIXME condition necessary???
 			for(Peer p : nominalPeer) {
-				if(p != null && p.getFreenetAddress().equals(addr)) return true;
+				if(p != null && p.getFreenetAddress().laxEquals(addr)) return true;
 			}
 		}
 		return false;
