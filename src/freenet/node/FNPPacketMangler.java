@@ -310,6 +310,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 					return;
 				}
+				// Might be a reply to us sending an anon auth packet.
+				// I.e. we are not the seednode, they are.
+				if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) {
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return;
+				}
 			}
 		}
 		
