@@ -4720,7 +4720,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
-		boolean result = packetFormat.handleReceivedPacket(buf, offset, length, now);
+		boolean result = packetFormat.handleReceivedPacket(buf, offset, length, now, replyTo);
 
 		// Assume it is connection setup or rekeying
 		if(!result) {

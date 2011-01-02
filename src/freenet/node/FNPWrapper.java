@@ -8,6 +8,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PacketSocketHandler;
+import freenet.io.comm.Peer;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -176,8 +177,8 @@ public class FNPWrapper implements PacketFormat {
 		return false;
 	}
 
-	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now) {
-		pn.crypto.packetMangler.process(buf, offset, length, pn.getPeer(), now);
+	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
+		pn.crypto.packetMangler.process(buf, offset, length, replyTo, now);
 		return true;
 	}
 
