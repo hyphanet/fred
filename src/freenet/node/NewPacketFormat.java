@@ -25,7 +25,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	private final int hmacLength;
 	private static final int HMAC_LENGTH_OLD = 4;
-	private static final int HMAC_LENGTH_NEW = 4;
+	private static final int HMAC_LENGTH_NEW = 10;
 	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
 	// FIXME increase this significantly to let it ride over network interruptions.
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
