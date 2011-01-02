@@ -18,7 +18,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, IncomingPacketFilterImpl.class);
 			}
 		});
 	}
