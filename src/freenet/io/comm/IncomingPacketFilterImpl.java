@@ -27,6 +27,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 	}
 
 	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
+		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
 		PeerNode pn = node.peers.getByPeer(peer);
 
