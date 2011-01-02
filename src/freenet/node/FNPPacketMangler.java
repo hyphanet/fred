@@ -614,7 +614,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4 || negType == 5)) {
+		if(!(negType == 2 || negType == 4 || negType == 5 || negType == 6)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -661,7 +661,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4 || negType == 5)) {
+		if(!(negType == 2 || negType == 4 || negType == 5 || negType == 6)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -727,7 +727,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} else if (negType == 1) {
 			Logger.error(this, "Old StationToStation (negType 1) not supported.");
 			return;
-		} else if (negType==2 || negType == 4 || negType == 5) {
+		} else if (negType==2 || negType == 4 || negType == 5 || negType == 6) {
 			// negType == 3 was buggy
 			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
 			// negType == 5 => same as 4, but use new packet format after negotiation
@@ -3035,7 +3035,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int negType = pn.selectNegType(this);
 		if(negType == -1) {
 			// Pick a random negType from what I do support
-			int[] negTypes = supportedNegTypes();
+			int[] negTypes = supportedNegTypes(true);
 			negType = negTypes[node.random.nextInt(negTypes.length)];
 			Logger.normal(this, "Cannot send handshake to "+pn+" because no common negTypes, choosing random negType of "+negType);
 		}
@@ -3072,8 +3072,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		item.pn.resendByteCounter.sentBytes(size);
 	}
 
-	public int[] supportedNegTypes() {
-		return new int[] { 2, 4, 5 };
+	/** FIXME: The code for neg type 5 is fine, but the 1314-1316 era included some very
+	 * buggy code. We can force them to use the old format instead by not advertising type
+	 * 5. Anything with support for type 6 won't have that bug. */
+	public int[] supportedNegTypes(boolean forPublic) {
+		if(forPublic)
+			return new int[] { 2, 4, 6 };
+		else
+			return new int[] { 2, 4, 5, 6 };
 	}
 
 	public int fullHeadersLengthOneMessage() {

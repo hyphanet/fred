@@ -23,7 +23,9 @@ import freenet.support.SparseBitmap;
 
 public class NewPacketFormat implements PacketFormat {
 
-	private static final int HMAC_LENGTH = 4;
+	private final int hmacLength;
+	private static final int HMAC_LENGTH_OLD = 4;
+	private static final int HMAC_LENGTH_NEW = 4;
 	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
 	// FIXME increase this significantly to let it ride over network interruptions.
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
@@ -64,7 +66,7 @@ public class NewPacketFormat implements PacketFormat {
 	private int usedBufferOtherSide = 0;
 	private final Object bufferUsageLock = new Object();
 
-	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
+	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID, boolean isNew) {
 		this.pn = pn;
 
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
@@ -79,6 +81,10 @@ public class NewPacketFormat implements PacketFormat {
 		nextMessageID = ourInitialMsgID;
 		messageWindowPtrAcked = ourInitialMsgID;
 		messageWindowPtrReceived = theirInitialMsgID;
+		if(isNew)
+			hmacLength = HMAC_LENGTH_NEW;
+		else
+			hmacLength = HMAC_LENGTH_OLD;
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now) {
@@ -300,7 +306,7 @@ outer:
 		for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
 			int index = (keyContext.watchListPointer + i) % keyContext.seqNumWatchList.length;
 			for(int j = 0; j < keyContext.seqNumWatchList[index].length; j++) {
-				if(keyContext.seqNumWatchList[index][j] != buf[offset + HMAC_LENGTH + j]) continue outer;
+				if(keyContext.seqNumWatchList[index][j] != buf[offset + hmacLength + j]) continue outer;
 			}
 			
 			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
@@ -328,18 +334,18 @@ outer:
 
 		ivCipher.encipher(IV, IV);
 
-		byte[] text = new byte[length - HMAC_LENGTH];
-		System.arraycopy(buf, offset + HMAC_LENGTH, text, 0, text.length);
-		byte[] hash = new byte[HMAC_LENGTH];
+		byte[] text = new byte[length - hmacLength];
+		System.arraycopy(buf, offset + hmacLength, text, 0, text.length);
+		byte[] hash = new byte[hmacLength];
 		System.arraycopy(buf, offset, hash, 0, hash.length);
 
 		if(!HMAC.verifyWithSHA256(sessionKey.hmacKey, text, hash)) return null;
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.incommingCipher, IV);
-		payloadCipher.blockDecipher(buf, offset + HMAC_LENGTH, length - HMAC_LENGTH);
+		payloadCipher.blockDecipher(buf, offset + hmacLength, length - hmacLength);
 
-		byte[] payload = new byte[length - HMAC_LENGTH];
-		System.arraycopy(buf, offset + HMAC_LENGTH, payload, 0, length - HMAC_LENGTH);
+		byte[] payload = new byte[length - hmacLength];
+		System.arraycopy(buf, offset + hmacLength, payload, 0, length - hmacLength);
 
 		NPFPacket p = NPFPacket.create(payload);
 
@@ -406,10 +412,10 @@ outer:
 		int maxPacketSize = pn.getMaxPacketSize();
 		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 
-		NPFPacket packet = createPacket(maxPacketSize - HMAC_LENGTH, pn.getMessageQueue(), sessionKey, ackOnly);
+		NPFPacket packet = createPacket(maxPacketSize - hmacLength, pn.getMessageQueue(), sessionKey, ackOnly);
 		if(packet == null) return false;
 
-		int paddedLen = packet.getLength() + HMAC_LENGTH;
+		int paddedLen = packet.getLength() + hmacLength;
 		if(pn.shouldPadDataPackets()) {
 			int packetLength = paddedLen;
 			if(logDEBUG) Logger.debug(this, "Pre-padding length: " + packetLength);
@@ -427,26 +433,26 @@ outer:
 		}
 
 		byte[] data = new byte[paddedLen];
-		packet.toBytes(data, HMAC_LENGTH, pn.paddingGen());
+		packet.toBytes(data, hmacLength, pn.paddingGen());
 
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
 		byte[] IV = new byte[ivCipher.getBlockSize() / 8];
 		System.arraycopy(sessionKey.ivNonce, 0, IV, 0, IV.length);
-		System.arraycopy(data, HMAC_LENGTH, IV, IV.length - 4, 4);
+		System.arraycopy(data, hmacLength, IV, IV.length - 4, 4);
 
 		ivCipher.encipher(IV, IV);
 
 		PCFBMode payloadCipher = PCFBMode.create(sessionKey.outgoingCipher, IV);
-		payloadCipher.blockEncipher(data, HMAC_LENGTH, paddedLen - HMAC_LENGTH);
+		payloadCipher.blockEncipher(data, hmacLength, paddedLen - hmacLength);
 
 		//Add hash
-		byte[] text = new byte[paddedLen - HMAC_LENGTH];
-		System.arraycopy(data, HMAC_LENGTH, text, 0, text.length);
+		byte[] text = new byte[paddedLen - hmacLength];
+		System.arraycopy(data, hmacLength, text, 0, text.length);
 
-		byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text, HMAC_LENGTH);
+		byte[] hash = HMAC.macWithSHA256(sessionKey.hmacKey, text, hmacLength);
 
-		System.arraycopy(hash, 0, data, 0, HMAC_LENGTH);
+		System.arraycopy(hash, 0, data, 0, hmacLength);
 
 		try {
 			if(logMINOR) {
