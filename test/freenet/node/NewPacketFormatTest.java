@@ -8,7 +8,7 @@ import junit.framework.TestCase;
 
 public class NewPacketFormatTest extends TestCase {
 	
-	static final boolean NEW_FORMAT = false;
+	static final boolean NEW_FORMAT = true;
 	
 	public void testEmptyCreation() throws BlockedTooLongException {
 		NewPacketFormat npf = new NewPacketFormat(null, 0, 0, NEW_FORMAT);
