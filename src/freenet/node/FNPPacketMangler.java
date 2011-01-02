@@ -85,7 +85,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private final NodeCrypto crypto;
 	private final MessageCore usm;
 	private final PacketSocketHandler sock;
-	private final EntropySource fnpTimingSource;
 	private final EntropySource myPacketDataSource;
 	/**
 	 * Objects cached during JFK message exchange: JFK(3,4) with authenticator as key
@@ -174,7 +173,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		this.crypto = crypt;
 		this.usm = node.usm;
 		this.sock = sock;
-		fnpTimingSource = new EntropySource();
 		myPacketDataSource = new EntropySource();
 		authenticatorCache = new HashMap<ByteArrayWrapper, byte[]>();
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
@@ -219,7 +217,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Note that the buffer can be modified by this method.
 	 */
 	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
-		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 
 		/**

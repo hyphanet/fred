@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
+import freenet.crypt.EntropySource;
 import freenet.node.FNPPacketMangler;
 import freenet.node.Node;
 import freenet.node.PeerNode;
@@ -12,10 +13,12 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 
 	private FNPPacketMangler mangler;
 	private Node node;
+	private final EntropySource fnpTimingSource;
 
 	public IncomingPacketFilterImpl(FNPPacketMangler mangler, Node node) {
 		this.mangler = mangler;
 		this.node = node;
+		fnpTimingSource = new EntropySource();
 	}
 
 	public boolean isDisconnected(PeerContext context) {
@@ -24,6 +27,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 	}
 
 	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
+		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
 		PeerNode pn = node.peers.getByPeer(peer);
 
 		if(pn != null) {
