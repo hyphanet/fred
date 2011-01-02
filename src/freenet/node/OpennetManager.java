@@ -200,7 +200,7 @@ public class OpennetManager {
 		peersLRU = new LRUQueue<PeerNode>();
 		oldPeers = new LRUQueue<PeerNode>();
 		node.peers.tryReadPeers(node.nodeDir().file("openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
-		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
+		OpennetPeerNode[] nodes = node.peers.getOpennetPeers(false);
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
 			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
 				long lastSuccess1 = pn1.timeLastSuccess();
