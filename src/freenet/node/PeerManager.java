@@ -478,15 +478,13 @@ public class PeerManager {
 	public PeerNode getByPeer(Peer peer) {
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
-			if(peer.equals(peerList[i].getPeer()))
+			if(peerList[i].matchesPeerAndPort(peer))
 				return peerList[i];
 		}
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(int i = 0; i < peerList.length; i++) {
-			Peer p = peerList[i].getPeer();
-			if(p == null) continue;
-			if(addr.laxEquals(p.getFreenetAddress()))
+			if(peerList[i].matchesIP(addr))
 				return peerList[i];
 		}
 		return null;
