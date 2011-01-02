@@ -4794,10 +4794,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public boolean matchesPeerAndPort(Peer peer) {
-		if(detectedPeer != null && detectedPeer.equals(peer)) return true;
+		if(detectedPeer != null && detectedPeer.laxEquals(peer)) return true;
 		if(nominalPeer != null) { // FIXME condition necessary???
 			for(Peer p : nominalPeer) {
-				if(p != null && p.equals(peer)) return true;
+				if(p != null && p.laxEquals(peer)) return true;
 			}
 		}
 		return false;
