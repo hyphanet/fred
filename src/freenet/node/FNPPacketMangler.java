@@ -217,7 +217,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Note that the buffer can be modified by this method.
 	 */
 	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
-		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 
 		/**
 		 * Look up the Peer.
