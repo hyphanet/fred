@@ -14,6 +14,7 @@ import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
 import freenet.io.comm.DMT;
+import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
 import freenet.support.LogThresholdCallback;
@@ -87,7 +88,7 @@ public class NewPacketFormat implements PacketFormat {
 			hmacLength = HMAC_LENGTH_OLD;
 	}
 
-	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now) {
+	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
 		NPFPacket packet = null;
 		SessionKey s = null;
 		for(int i = 0; i < 3; i++) {
