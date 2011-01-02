@@ -27,7 +27,7 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 		PeerNode pn = node.peers.getByPeer(peer);
 
 		if(pn != null) {
-			pn.handleReceivedPacket(buf, offset, length, now);
+			pn.handleReceivedPacket(buf, offset, length, now, peer);
 		} else {
 			Logger.normal(this, "Got packet from unknown address");
 			mangler.process(buf, offset, length, peer, now);
