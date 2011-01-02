@@ -2569,6 +2569,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					} catch(HostnameSyntaxException e) {
 						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + physical[i]);
 						continue;
+					} catch (PeerParseException e) {
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + physical[i]);
+						continue;
+					} catch (UnknownHostException e) {
+						// Should be impossible???
+						Logger.error(this, "Invalid hostname or IP Address syntax error while parsing new peer reference: " + physical[i]);
+						continue;
 					}
 					if(!nominalPeer.contains(p)) {
 						if(oldNominalPeer.contains(p)) {
