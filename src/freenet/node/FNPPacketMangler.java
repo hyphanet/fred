@@ -313,7 +313,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(pn.handshakeUnknownInitiator()) {
 					// Might be a reply to us sending an anon auth packet.
 					// I.e. we are not the seednode, they are.
-					if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) {
+					if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
 						if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 						return;
 					}
@@ -321,7 +321,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 		}
 		
-		boolean wantAnonAuthChangeIP = crypto.wantAnonAuthChangeIP();
+		boolean wantAnonAuthChangeIP = wantAnonAuth && crypto.wantAnonAuthChangeIP();
 		
 		if(wantAnonAuth && wantAnonAuthChangeIP) {
 			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) return;
