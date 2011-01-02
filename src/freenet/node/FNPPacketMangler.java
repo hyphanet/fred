@@ -209,15 +209,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * E_session_pcfb(data) // IV = first 32 bytes of packet
 	 *
 	 */
-	
-	/**
-	 * Decrypt and authenticate packet.
-	 * Then feed it to USM.checkFilters.
-	 * Packets generated should have a PeerNode on them.
-	 * Note that the buffer can be modified by this method.
-	 */
-	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
 
+	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
 		/**
 		 * Look up the Peer.
 		 * If we know it, check the packet with that key.
@@ -225,6 +218,17 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * occasionally change their IP addresses).
 		 */
 		PeerNode opn = node.peers.getByPeer(peer);
+		process(buf, offset, length, peer, opn, now);
+	}
+	
+	/**
+	 * Decrypt and authenticate packet.
+	 * Then feed it to USM.checkFilters.
+	 * Packets generated should have a PeerNode on them.
+	 * Note that the buffer can be modified by this method.
+	 */
+	public void process(byte[] buf, int offset, int length, Peer peer, PeerNode opn, long now) {
+
 		if(opn != null && opn.getOutgoingMangler() != this) {
 			Logger.error(this, "Apparently contacted by "+opn+") on "+this);
 			opn = null;

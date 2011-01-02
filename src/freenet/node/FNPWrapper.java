@@ -178,7 +178,7 @@ public class FNPWrapper implements PacketFormat {
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
-		pn.crypto.packetMangler.process(buf, offset, length, replyTo, now);
+		pn.crypto.packetMangler.process(buf, offset, length, replyTo, pn, now);
 		return true;
 	}
 
