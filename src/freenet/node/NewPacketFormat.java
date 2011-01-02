@@ -303,13 +303,17 @@ outer:
 			
 			int sequenceNumber = (int) ((0l + keyContext.watchListOffset + i) % NUM_SEQNUMS);
 			if(logDEBUG) Logger.debug(this, "Received packet matches sequence number " + sequenceNumber);
-			NPFPacket p = decipherFromSeqnum(buf, offset, length, sessionKey, sequenceNumber);
+			// Copy it to avoid side-effects.
+			byte[] copy = new byte[length];
+			System.arraycopy(buf, offset, copy, 0, length);
+			NPFPacket p = decipherFromSeqnum(copy, 0, length, sessionKey, sequenceNumber);
 			if(p != null) return p;
 		}
 
 		return null;
 	}
 
+	/** NOTE: THIS WILL DECRYPT THE DATA IN THE BUFFER !!! */
 	private NPFPacket decipherFromSeqnum(byte[] buf, int offset, int length, SessionKey sessionKey, int sequenceNumber) {
 		BlockCipher ivCipher = sessionKey.ivCipher;
 
