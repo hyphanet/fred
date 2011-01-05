@@ -46,9 +46,13 @@ public class FilePersistentConfig extends PersistentConfig {
 	}
 
 	public static FilePersistentConfig constructFilePersistentConfig(File f) throws IOException {
+		return constructFilePersistentConfig(f, null);
+	}
+
+	public static FilePersistentConfig constructFilePersistentConfig(File f, String header) throws IOException {
 		File filename = f;
 		File tempFilename = new File(f.getPath()+".tmp");
-		return new FilePersistentConfig(load(filename, tempFilename), filename, tempFilename);
+		return new FilePersistentConfig(load(filename, tempFilename), filename, tempFilename, header);
 	}
 
 	static SimpleFieldSet load(File filename, File tempFilename) throws IOException {

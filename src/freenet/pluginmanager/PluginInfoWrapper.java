@@ -2,8 +2,15 @@ package freenet.pluginmanager;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.io.File;
+import java.io.IOException;
 
 import freenet.l10n.NodeL10n;
+import freenet.clients.http.ConfigToadlet;
+import freenet.config.Config;
+import freenet.config.FilePersistentConfig;
+import freenet.config.SubConfig;
+import freenet.node.Node;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
@@ -16,6 +23,9 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	final PluginRespirator pr;
 	private final String threadName;
 	final FredPlugin plug;
+	private final Config config;
+	private final SubConfig subconfig;
+	private final ConfigToadlet configToadlet;
 	private final boolean isPproxyPlugin;
 	private final boolean isThreadlessPlugin;
 	private final boolean isIPDetectorPlugin;
@@ -29,16 +39,17 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	private final boolean isL10nPlugin;
 	private final boolean isBaseL10nPlugin;
 	private final boolean isUpdatedablePlugin;
+	private final boolean isConfigurablePlugin;
 	private final String filename;
 	private HashSet<String> toadletLinks = new HashSet<String>();
 	private volatile boolean stopping = false;
 	private volatile boolean unregistered = false;
 	
-	public PluginInfoWrapper(PluginRespirator pr, FredPlugin plug, String filename) {
+	public PluginInfoWrapper(Node node, FredPlugin plug, String filename) throws IOException {
 		this.plug = plug;
 		className = plug.getClass().toString();
 		this.filename = filename;
-		this.pr = pr;
+		this.pr = new PluginRespirator(node, this);
 		threadName = 'p' + className.replaceAll("^class ", "") + '_' + hashCode();
 		start = System.currentTimeMillis();
 		isBandwidthIndicator = (plug instanceof FredPluginBandwidthIndicator);
@@ -54,6 +65,18 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		isL10nPlugin = (plug instanceof FredPluginL10n);
 		isBaseL10nPlugin = (plug instanceof FredPluginBaseL10n);
 		isUpdatedablePlugin = (plug instanceof FredPluginUoF);
+		isConfigurablePlugin = (plug instanceof FredPluginConfigurable);
+		if(isConfigurablePlugin) {
+			config = FilePersistentConfig.constructFilePersistentConfig(new File(node.getCfgDir(), "plugin-"+getPluginClassName()+".ini"), "config options for plugin: "+getPluginClassName());
+			subconfig = new SubConfig(getPluginClassName(), config);
+			((FredPluginConfigurable)plug).setupConfig(subconfig);
+			config.finishedInit();
+			configToadlet = new ConfigToadlet(pr.getHLSimpleClient(), config, subconfig, node, node.clientCore, (FredPluginConfigurable)plug);
+		} else {
+			config = null;
+			subconfig = null;
+			configToadlet = null;
+		}
 	}
 
 	void setThread(Thread ps) {
@@ -227,6 +250,10 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		return isUpdatedablePlugin;
 	}
 
+	public boolean isConfigurablePlugin() {
+		return isConfigurablePlugin;
+	}
+
 	public synchronized boolean isStopping() {
 		return stopping;
 	}
@@ -243,7 +270,23 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		return this.plug;
 	}
 
+	public PluginRespirator getPluginRespirator() {
+		return pr;
+	}
+
 	public int compareTo(PluginInfoWrapper pi) {
 		return className.compareTo(pi.className);
+	}
+
+	public Config getConfig() {
+		return config;
+	}
+
+	public SubConfig getSubConfig() {
+		return subconfig;
+	}
+
+	public ConfigToadlet getConfigToadlet() {
+		return configToadlet;
 	}
 }

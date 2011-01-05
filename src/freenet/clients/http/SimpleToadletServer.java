@@ -61,12 +61,16 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	/** List of urlPrefix / Toadlet */ 
 	private final LinkedList<ToadletElement> toadlets;
 	private static class ToadletElement {
-		public ToadletElement(Toadlet t2, String urlPrefix) {
+		public ToadletElement(Toadlet t2, String urlPrefix, String menu, String name) {
 			t = t2;
 			prefix = urlPrefix;
+			this.menu = menu;
+			this.name = name;
 		}
 		Toadlet t;
 		String prefix;
+		String menu;
+		String name;
 	}
 
 	// Socket / Binding
@@ -742,11 +746,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb, FredPluginL10n l10n) {
-		ToadletElement te = new ToadletElement(t, urlPrefix);
+		ToadletElement te = new ToadletElement(t, urlPrefix, menu, name);
 		if(atFront) toadlets.addFirst(te);
 		else toadlets.addLast(te);
 		t.container = this;
-		if (name != null) {
+		if (menu != null && name != null) {
 			pageMaker.addNavigationLink(menu, urlPrefix, name, title, fullOnly, cb, l10n);
 		}
 	}
@@ -760,6 +764,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			ToadletElement e = i.next();
 			if(e.t == t) {
 				i.remove();
+				if(e.menu != null && e.name != null) {
+					pageMaker.removeNavigationLink(e.menu, e.name);
+				}
 				return;
 			}
 		}
