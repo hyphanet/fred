@@ -305,8 +305,6 @@ public class SimpleFieldSet {
 		if(allowMultiple && value.indexOf(MULTI_VALUE_CHAR) != -1) {
 			if(!fromRead)
 				throw new IllegalArgumentException("Appending a string to a SimpleFieldSet value should not contain the multi-value char \""+String.valueOf(MULTI_VALUE_CHAR)+"\" but it does: \"" +value+"\" for \""+key+"\"", new Exception("error"));
-			else
-				Logger.error(this, "Appending a string to a SimpleFieldSet value containing the multi-value char: \""+value+"\" for \""+key+"\" old value is \""+get(key)+"\" for read");
 		}
 		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
 			if(!shortLived) key = key.intern();
