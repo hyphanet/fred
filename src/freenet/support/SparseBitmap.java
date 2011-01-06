@@ -158,7 +158,7 @@ public class SparseBitmap implements Iterable<int[]> {
 		// FIXME OPTIMIZE: this is an incredibly stupid and inefficient but demonstrably correct way to evaluate this. Implement something better!
 		int total = 0;
 		for(int i=start;i<=end;i++) {
-			if(this.contains(i, i))
+			if(!contains(i, i))
 				total++;
 		}
 		return total;
