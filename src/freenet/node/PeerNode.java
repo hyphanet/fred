@@ -4791,10 +4791,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public void processDecryptedMessage(byte[] data, int offset, int length, int overhead) {
 		Message m = node.usm.decodeSingleMessage(data, offset, length, this, overhead);
 		if(m != null) {
-			node.usm.checkFilters(m, crypto.socket);
+			handleMessage(m);
 		}
 	}
 	
+	public void handleMessage(Message m) {
+		node.usm.checkFilters(m, crypto.socket);
+	}
+
 	public void sendEncryptedPacket(byte[] data) throws LocalAddressException {
 		crypto.socket.sendPacket(data, getPeer(), allowLocalAddresses());
 	}

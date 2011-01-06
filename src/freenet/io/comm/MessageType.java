@@ -39,14 +39,16 @@ public class MessageType {
 	private final HashMap<String, Class<?>> _linkedListTypes = new HashMap<String, Class<?>>();
 	private final boolean internalOnly;
 	private final short priority;
+	private final boolean isLossyPacketMessage;
 
 	public MessageType(String name, short priority) {
-	    this(name, priority, false);
+	    this(name, priority, false, false);
 	}
 	
-	public MessageType(String name, short priority, boolean internal) {
+	public MessageType(String name, short priority, boolean internal, boolean isLossyPacketMessage) {
 		_name = name;
 		this.priority = priority;
+		this.isLossyPacketMessage = isLossyPacketMessage;
 		internalOnly = internal;
 		Integer id = Integer.valueOf(name.hashCode());
 		if (_specs.containsKey(id)) {
@@ -152,5 +154,10 @@ public class MessageType {
 			length += Serializer.length(entry.getValue(), maxStringLength);
 		}
 		return length;
+	}
+
+	public boolean isLossyPacketMessage() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

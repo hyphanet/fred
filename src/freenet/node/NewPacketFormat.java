@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,6 +15,7 @@ import freenet.crypt.BlockCipher;
 import freenet.crypt.HMAC;
 import freenet.crypt.PCFBMode;
 import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
@@ -138,6 +140,30 @@ public class NewPacketFormat implements PacketFormat {
 		if(packet.getError() || (packet.getFragments().size() == 0)) {
 			if(logMINOR) Logger.minor(this, "Not acking because " + (packet.getError() ? "error" : "no fragments"));
 			dontAck = true;
+		}
+		ArrayList<Message> lossyMessages = null;
+		List<byte[]> l = packet.getLossyMessages();
+		if(l != null && !l.isEmpty())
+			lossyMessages = new ArrayList<Message>(l.size());
+		for(byte[] buf : packet.getLossyMessages()) {
+			// FIXME factor out parsing once we are sure these are not bogus.
+			// For now we have to be careful.
+			Message msg = Message.decodeMessageFromPacket(buf, 0, buf.length, pn, 0);
+			if(msg == null) {
+				lossyMessages.clear();
+				break;
+			}
+			if(!msg.getSpec().isLossyPacketMessage()) {
+				lossyMessages.clear();
+				break;
+			}
+			lossyMessages.add(msg);
+		}
+		if(lossyMessages != null) {
+			// Handle them *before* the rest.
+			if(logDEBUG) Logger.debug(this, "Successfully parsed "+lossyMessages.size()+" lossy packet messages");
+			for(Message msg : lossyMessages)
+				pn.handleMessage(msg);
 		}
 		for(MessageFragment fragment : packet.getFragments()) {
 			if(messageWindowPtrReceived + MSG_WINDOW_SIZE > NUM_MESSAGE_IDS) {

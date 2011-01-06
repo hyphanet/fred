@@ -371,7 +371,7 @@ public class DMT {
 	
 	// Internal only messages
 	
-	public static final MessageType testReceiveCompleted = new MessageType("testReceiveCompleted", PRIORITY_UNSPECIFIED, true) {{
+	public static final MessageType testReceiveCompleted = new MessageType("testReceiveCompleted", PRIORITY_UNSPECIFIED, true, false) {{
 		addField(UID, Long.class);
 		addField(SUCCESS, Boolean.class);
 		addField(REASON, String.class);
@@ -385,7 +385,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType testSendCompleted = new MessageType("testSendCompleted", PRIORITY_UNSPECIFIED, true) {{
+	public static final MessageType testSendCompleted = new MessageType("testSendCompleted", PRIORITY_UNSPECIFIED, true, false) {{
 		addField(UID, Long.class);
 		addField(SUCCESS, Boolean.class);
 		addField(REASON, String.class);
@@ -400,7 +400,7 @@ public class DMT {
 	}
 
 	// Node-To-Node Message (generic)
-	public static final MessageType nodeToNodeMessage = new MessageType("nodeToNodeMessage", PRIORITY_LOW, false) {{
+	public static final MessageType nodeToNodeMessage = new MessageType("nodeToNodeMessage", PRIORITY_LOW, false, false) {{
 		addField(NODE_TO_NODE_MESSAGE_TYPE, Integer.class);
 		addField(NODE_TO_NODE_MESSAGE_DATA, ShortBuffer.class);
 	}};
@@ -1590,7 +1590,7 @@ public class DMT {
 	
 	// New load management
 	
-	public static final MessageType FNPPeerLoadStatusByte = new MessageType("FNPPeerLoadStatusByte", PRIORITY_HIGH) {{
+	public static final MessageType FNPPeerLoadStatusByte = new MessageType("FNPPeerLoadStatusByte", PRIORITY_HIGH, false, true) {{
 		addField(OTHER_TRANSFERS_OUT_CHK, Byte.class);
 		addField(OTHER_TRANSFERS_IN_CHK, Byte.class);
 		addField(OTHER_TRANSFERS_OUT_SSK, Byte.class);
@@ -1605,7 +1605,7 @@ public class DMT {
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
-	public static final MessageType FNPPeerLoadStatusShort = new MessageType("FNPPeerLoadStatusShort", PRIORITY_HIGH) {{
+	public static final MessageType FNPPeerLoadStatusShort = new MessageType("FNPPeerLoadStatusShort", PRIORITY_HIGH, false, true) {{
 		addField(OTHER_TRANSFERS_OUT_CHK, Short.class);
 		addField(OTHER_TRANSFERS_IN_CHK, Short.class);
 		addField(OTHER_TRANSFERS_OUT_SSK, Short.class);
@@ -1620,7 +1620,7 @@ public class DMT {
 		addField(REAL_TIME_FLAG, Boolean.class);
 	}};
 	
-	public static final MessageType FNPPeerLoadStatusInt = new MessageType("FNPPeerLoadStatusInt", PRIORITY_HIGH) {{
+	public static final MessageType FNPPeerLoadStatusInt = new MessageType("FNPPeerLoadStatusInt", PRIORITY_HIGH, false, true) {{
 		addField(OTHER_TRANSFERS_OUT_CHK, Integer.class);
 		addField(OTHER_TRANSFERS_IN_CHK, Integer.class);
 		addField(OTHER_TRANSFERS_OUT_SSK, Integer.class);

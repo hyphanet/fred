@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.util.Random;
 
+import freenet.io.comm.Message;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.io.comm.PeerContext;
 
@@ -56,5 +57,7 @@ interface BasePeerNode extends PeerContext {
 	void resentBytes(int bytesToResend);
 
 	Random paddingGen();
+
+	void handleMessage(Message msg);
 
 }
