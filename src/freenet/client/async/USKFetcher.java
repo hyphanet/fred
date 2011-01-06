@@ -1251,7 +1251,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		final byte cryptoAlgorithm;
 		
 		// List of slots since the USKManager's current last known good edition.
-		private final KeyList fromLastKnownGood;
+		private final KeyList fromLastKnownSlot;
 		private TreeMap<Long, KeyList> fromSubscribers;
 		private TreeSet<Long> persistentHints = new TreeSet<Long>();
 		//private ArrayList<KeyList> fromCallbacks;
@@ -1262,7 +1262,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			this.pubKeyHash = origUSK.pubKeyHash;
 			this.cryptoAlgorithm = origUSK.cryptoAlgorithm;
 			if(logMINOR) Logger.minor(this, "Creating KeyList from last known good: "+lookedUp);
-			fromLastKnownGood = new KeyList(lookedUp);
+			fromLastKnownSlot = new KeyList(lookedUp);
 			fromSubscribers = new TreeMap<Long, KeyList>();
 			if(origUSK.suggestedEdition > lookedUp)
 				fromSubscribers.put(origUSK.suggestedEdition, new KeyList(origUSK.suggestedEdition));
@@ -1297,7 +1297,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				lookedUp > -1 || (backgroundPoll && !firstLoop) || fromSubscribers.isEmpty();
 			
 			if(probeFromLastKnownGood)
-				fromLastKnownGood.getNextEditions(toFetch, toPoll, lookedUp, alreadyRunning, random);
+				fromLastKnownSlot.getNextEditions(toFetch, toPoll, lookedUp, alreadyRunning, random);
 			
 			// If we have moved past the origUSK, then clear the KeyList for it.
 			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator();it.hasNext();) {
@@ -1322,7 +1322,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			allowedRandom -= runningRandom;
 			
 			if(allowedRandom > 0 && probeFromLastKnownGood) {
-				fromLastKnownGood.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(2, allowedRandom));
+				fromLastKnownSlot.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(2, allowedRandom));
 				allowedRandom-=2;
 			}
 			
@@ -1624,7 +1624,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			// FIXME: Take into account origUSK, subscribers, etc.
 			if(logMINOR) Logger.minor(this, "Getting datastore checker from "+lastSlot+" for "+origUSK+" on "+USKFetcher.this, new Exception("debug"));
 			ArrayList<KeyList.StoreSubChecker> checkers = new ArrayList<KeyList.StoreSubChecker>();
-			KeyList.StoreSubChecker c = fromLastKnownGood.checkStore(lastSlot+1);
+			KeyList.StoreSubChecker c = fromLastKnownSlot.checkStore(lastSlot+1);
 			if(c != null) checkers.add(c);
 			// If we have moved past the origUSK, then clear the KeyList for it.
 			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator(); it.hasNext(); ) {
@@ -1647,7 +1647,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		
 		public synchronized long match(NodeSSK key, long lastSlot) {
-			long ret = fromLastKnownGood.match(key, lastSlot);
+			long ret = fromLastKnownSlot.match(key, lastSlot);
 			if(ret != -1) return ret;
 			
 			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator(); it.hasNext(); ) {

@@ -618,6 +618,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		} catch (Db4oException e) {
 			killedDatabase = true;
+		} catch (Throwable t) {
+			// Let the rest of the node start up but kill the database
+			System.err.println("Failed to load persistent temporary buckets factory: "+t);
+			t.printStackTrace();
+			killedDatabase = true;
 		}
 		if(killedDatabase) {
 			persistentTempBucketFactory = null;

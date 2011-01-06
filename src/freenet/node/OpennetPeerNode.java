@@ -225,4 +225,8 @@ public class OpennetPeerNode extends PeerNode {
 		// Disconnect.
 		forceDisconnect(true);
 	}
+	
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		return node.shallWeRouteAccordingToOurPeersLocation();
+	}
 }

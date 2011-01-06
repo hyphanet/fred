@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -196,6 +197,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/** Used by maybeOnConnect */
 	private boolean wasDisconnected = true;
+	
+	/** Were we removed from the routing table? 
+	 * Used as a cache to avoid accessing PeerManager if not needed. */
+	private boolean removed;
+	
 	/**
 	* ARK fetcher.
 	*/
@@ -387,7 +393,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 *  The initiator has to ensure that nonces send back by the
 	 *  responder in message2 match what was chosen in message 1
 	 */
-	protected final HashMap<Peer,byte[]> jfkNoncesSent = new HashMap<Peer,byte[]>();
+	protected final LinkedList<byte[]> jfkNoncesSent = new LinkedList<byte[]>();
 	private static volatile boolean logMINOR;
 
 	static {
@@ -431,6 +437,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		myRef = new WeakReference<PeerNode>(this);
+		this.checkStatusAfterBackoff = new PeerNodeBackoffStatusChecker(myRef);
 		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
@@ -1785,14 +1792,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				this.lastAttemptedHandshakeIPUpdateTime = 0;
 				if(!isConnected)
 					return;
-				// Prevent leak by clearing, *but keep the current handshake*
-				newPeer = newPeer.dropHostName();
-				oldPeer = oldPeer.dropHostName();
-				byte[] newPeerHandshake = jfkNoncesSent.get(newPeer);
-				byte[] oldPeerHandshake = jfkNoncesSent.get(oldPeer);
-				jfkNoncesSent.clear();
-				jfkNoncesSent.put(newPeer, newPeerHandshake);
-				jfkNoncesSent.put(newPeer, oldPeerHandshake);
 			} else
 				return;
 		}
@@ -3400,13 +3399,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return peerNodeStatus;
 	}
 	
-	private final Runnable checkStatusAfterBackoff = new Runnable() {
-		
-		public void run() {
-			setPeerNodeStatus(System.currentTimeMillis(), true);
-		}
-		
-	};
+	private final Runnable checkStatusAfterBackoff;
 
 	public abstract boolean recordStatus();
 
@@ -3692,11 +3685,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
 	 */
-	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager, boolean b, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		if(crypto.isOpennet)
-			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, b, mangler);
+			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, true, mangler);
 		else
-			return new DarknetPeerNode(fs, node2, crypto, manager, b, mangler);
+			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null);
 	}
 
 	public byte[] getIdentity() {
@@ -3724,6 +3717,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * disconnected. */
 	public void forceCancelDisconnecting() {
 		synchronized(this) {
+			removed = false;
 			if(!disconnecting)
 				return;
 			disconnecting = false;
@@ -3733,8 +3727,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	/** Called when the peer is removed from the PeerManager */
 	public void onRemove() {
+		synchronized(this) {
+			removed = true;
+		}
+		node.getTicker().removeQueuedJob(checkStatusAfterBackoff);
 		disconnected(true, true);
 		stopARKFetcher();
+	}
+	
+	/** @return True if we have been removed from the peers list. */
+	synchronized boolean cachedRemoved() {
+		return removed;
 	}
 
 	public synchronized boolean isDisconnecting() {
@@ -4746,6 +4749,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * allow them to reconnect. */
 	public abstract void fatalTimeout();
 	
+	public abstract boolean shallWeRouteAccordingToOurPeersLocation();
+	
 	public PeerMessageQueue getMessageQueue() {
 		return messageQueue;
 	}
@@ -4767,6 +4772,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return packetFormat.timeCheckForLostPackets();
 	}
 
+	/** Only called for new format connections, for which we don't care about PacketTracker */
+	public void dumpTracker(SessionKey brokenKey) {
+		synchronized(this) {
+			if(currentTracker == brokenKey) {
+				currentTracker = null;
+				isConnected = false;
+			} else if(previousTracker == brokenKey)
+				previousTracker = null;
+			else if(unverifiedTracker == brokenKey)
+				unverifiedTracker = null;
+		}
+		// Update connected vs not connected status.
+		isConnected();
+		setPeerNodeStatus(System.currentTimeMillis());
+	}
+	
 	public void processDecryptedMessage(byte[] data, int offset, int length, int overhead) {
 		Message m = node.usm.decodeSingleMessage(data, offset, length, this, overhead);
 		if(m != null) {

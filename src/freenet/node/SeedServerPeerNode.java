@@ -164,5 +164,9 @@ public class SeedServerPeerNode extends PeerNode {
 		// Disconnect.
 		forceDisconnect(true);
 	}
+	
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		return false; // Irrelevant
+	}
 
 }

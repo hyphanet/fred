@@ -476,7 +476,7 @@ outer:
 			return false;
 		}
 		
-		packet.onSent(data.length);
+		packet.onSent(data.length, pn);
 
 		if(packet.getFragments().size() > 0) {
 			keyContext.sent(packet.getSequenceNumber(), packet.getLength());
@@ -911,9 +911,6 @@ outer:
 
 				bytesToResend += wrapper.lost(range[0], range[1]);
 			}
-
-			//Unless we disconnect these will be resent eventually
-			if(npf.pn != null) npf.pn.resentBytes(bytesToResend);
 		}
 
 		public void sent(int length) {

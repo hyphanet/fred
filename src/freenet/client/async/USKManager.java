@@ -486,7 +486,7 @@ public class USKManager {
 			USK clear = origUSK.clearCopy();
 			USKCallback[] callbacks = subscribersByClearUSK.get(clear);
 			if(callbacks == null){ // maybe we should throw something ? shall we allow multiple unsubscriptions ?
-				Logger.error(this, "The callback is null! it has been already unsubscribed, hasn't it?", new Exception("debug"));
+				if(logMINOR) Logger.minor(this, "No longer subscribed");
 				return;
 			}
 			int j=0;

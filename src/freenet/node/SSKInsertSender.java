@@ -575,6 +575,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	/** @return True if we got new data and are propagating it. False if something failed
      * and we need to try the next node. */
 	private DO handleSSKDataFoundHeaders(Message msg, PeerNode next, InsertTag thisTag) {
+		
 		/**
 		 * Data was already on node, and was NOT equal to what we sent. COLLISION!
 		 * 
@@ -729,7 +730,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	}
     
     private void finish(int code, PeerNode next) {
-    	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
+    	if(logMINOR) Logger.minor(this, "Finished: "+getStatusString(code)+" on "+this, new Exception("debug"));
     	
     	if(origTag != null) origTag.removeRoutingTo(next);
     	if(forkedRequestTag != null) forkedRequestTag.removeRoutingTo(next);
@@ -762,10 +763,14 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         return htl;
     }
 
+    public synchronized String getStatusString() {
+    	return getStatusString(status);
+    }
+    
     /**
      * @return The current status as a string
      */
-    public synchronized String getStatusString() {
+    public static String getStatusString(int status) {
         if(status == SUCCESS)
             return "SUCCESS";
         if(status == ROUTE_NOT_FOUND)
@@ -859,7 +864,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 	@Override
 	public String toString() {
-		return "SSKInsertSender:" + myKey;
+		return "SSKInsertSender:" + myKey+":"+uid;
 	}
 
 	public PeerNode[] getRoutedTo() {

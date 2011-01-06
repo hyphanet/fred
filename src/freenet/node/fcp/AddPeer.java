@@ -18,6 +18,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.OpennetDisabledException;
@@ -31,11 +32,19 @@ public class AddPeer extends FCPMessage {
 	
 	SimpleFieldSet fs;
 	final String identifier;
+	final FRIEND_TRUST trust;
 	
-	public AddPeer(SimpleFieldSet fs) {
+	public AddPeer(SimpleFieldSet fs) throws MessageInvalidException {
 		this.fs = fs;
 		this.identifier = fs.get("Identifier");
 		fs.removeValue("Identifier");
+		try {
+			this.trust = FRIEND_TRUST.valueOf(fs.get("Trust"));
+		} catch (NullPointerException e) {
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "AddPeer requires Trust", identifier, false);
+		} catch (IllegalArgumentException e) {
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid Trust value on AddPeer", identifier, false);
+		}
 	}
 
 	@Override
@@ -142,7 +151,7 @@ public class AddPeer extends FCPMessage {
 			System.out.println("Added opennet peer: "+pn);
 		} else {
 			try {
-				pn = node.createNewDarknetNode(fs);
+				pn = node.createNewDarknetNode(fs, trust);
 			} catch (FSParseException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref: "+e.getMessage(), identifier, false);
 			} catch (PeerParseException e) {

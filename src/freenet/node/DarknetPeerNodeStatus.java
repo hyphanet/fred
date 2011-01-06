@@ -1,5 +1,7 @@
 package freenet.node;
 
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+
 public class DarknetPeerNodeStatus extends PeerNodeStatus {
 
 	private final String name;
@@ -12,6 +14,8 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 
 	private final String privateDarknetCommentNote;
 	
+	private FRIEND_TRUST trustLevel;
+	
 	public DarknetPeerNodeStatus(DarknetPeerNode peerNode, boolean noHeavy) {
 		super(peerNode, noHeavy);
 		this.name = peerNode.getName();
@@ -19,6 +23,14 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 		this.listening = peerNode.isListenOnly();
 		this.disabled = peerNode.isDisabled();
 		this.privateDarknetCommentNote = peerNode.getPrivateDarknetCommentNote();
+		this.trustLevel = peerNode.getTrustLevel();
+	}
+	
+	/**
+	 * @return The peer's trust level.
+	 */
+	public FRIEND_TRUST getTrustLevel() {
+		return trustLevel;
 	}
 	
 	/**

@@ -330,7 +330,7 @@ class NPFPacket {
 		}
 	}
 
-	public void onSent(int totalPacketLength) {
+	public void onSent(int totalPacketLength, BasePeerNode pn) {
 		Iterator<MessageFragment> fragIt = fragments.iterator();
 		int totalMessageData = 0;
 		int size = fragments.size();
@@ -347,7 +347,7 @@ class NPFPacket {
 		while(fragIt.hasNext()) {
 			MessageFragment frag = fragIt.next();
 			// frag.wrapper is always non-null on sending.
-			frag.wrapper.onSent(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1, overhead / size);
+			frag.wrapper.onSent(frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1, overhead / size, pn);
 		}			
 	}
 	

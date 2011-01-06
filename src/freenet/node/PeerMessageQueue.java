@@ -8,6 +8,7 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
+import freenet.support.DoublyLinkedList;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.LogThresholdCallback;
@@ -130,9 +131,12 @@ public class PeerMessageQueue {
 							itemsByID.put(id, list);
 						} else {
 							if(list.items.isEmpty()) {
+								assert(list.getParent() == emptyItemsWithID);
 								// It already exists, so it has a valid time.
 								// Which is probably in the past, so use Forward.
 								moveFromEmptyToNonEmptyForward(list);
+							} else {
+								assert(list.getParent() == nonEmptyItemsWithID);
 							}
 						}
 					}
@@ -231,10 +235,12 @@ public class PeerMessageQueue {
 					itemsByID.put(id, list);
 				} else {
 					if(list.items.isEmpty()) {
+						assert(list.getParent() == emptyItemsWithID);
 						// It already exists, so it has a valid time.
 						// Which is probably in the past, so use Forward.
 						moveFromEmptyToNonEmptyForward(list);
-					}
+					} else
+						assert(list.getParent() == nonEmptyItemsWithID);
 				}
 			}
 			list.addFirst(item);
@@ -336,23 +342,36 @@ public class PeerMessageQueue {
 					Items tracker = itemsByID.get(id);
 					if(tracker != null) {
 						tracker.timeLastSent = now;
+						DoublyLinkedList<? super Items> parent = tracker.getParent();
 						// Demote the corresponding tracker to maintain round-robin.
 						if(tracker.items.isEmpty()) {
-							// FIXME remove paranoia
-							if(emptyItemsWithID == null) {
-								Logger.error(this, "Tracker empty yet non empty items list does not exist?!?");
-							} else {
+							if(emptyItemsWithID == null)
+								emptyItemsWithID = new DoublyLinkedListImpl<Items>();
+							if(parent == null) {
+								Logger.error(this, "Tracker is in itemsByID but not in either list! (empty)");
+							} else if(parent == emptyItemsWithID) {
+								// Normal. Remove it so we can re-add it in the right place.
 								emptyItemsWithID.remove(tracker);
-								addToEmptyBackward(tracker);
-							}
-						} else {
-							// FIXME remove paranoia
-							if(nonEmptyItemsWithID == null) { 
-								Logger.error(this, "Tracker not empty yet non empty items with ID does not exist?!?");
-							} else {
+							} else if(parent == nonEmptyItemsWithID) {
+								Logger.error(this, "Tracker is in non empty items list when is empty");
 								nonEmptyItemsWithID.remove(tracker);
-								addToNonEmptyBackward(tracker);
-							}
+							} else
+								assert(false);
+							addToEmptyBackward(tracker);
+						} else {
+							if(nonEmptyItemsWithID == null)
+								nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
+							if(parent == null) {
+								Logger.error(this, "Tracker is in itemsByID but not in either list! (non-empty)");
+							} else if(parent == nonEmptyItemsWithID) {
+								// Normal. Remove it so we can re-add it in the right place.
+								nonEmptyItemsWithID.remove(tracker);
+							} else if(parent == emptyItemsWithID) {
+								Logger.error(this, "Tracker is in empty items list when is non-empty");
+								emptyItemsWithID.remove(tracker);
+							} else
+								assert(false);
+							addToNonEmptyBackward(tracker);
 						}
 					}
 				}
@@ -420,7 +439,7 @@ public class PeerMessageQueue {
 						// Should not happen, but check for it anyway since it keeps happening. :(
 						Logger.error(this, "List is in nonEmptyItemsWithID yet it is empty?!: "+list);
 						nonEmptyItemsWithID.remove(list);
-						addToNonEmptyBackward(list);
+						addToEmptyBackward(list);
 						if(nonEmptyItemsWithID.isEmpty()) return size;
 						list = nonEmptyItemsWithID.head();
 						continue;
@@ -455,6 +474,7 @@ public class PeerMessageQueue {
 					else
 						list = prev.getNext();
 					messages.add(item);
+					added++;
 					addedNone = false;
 					MessageItem load = null;
 					if(mustSendLoadRT && item.sendLoadRT && !addPeerLoadStatsRT.value) {

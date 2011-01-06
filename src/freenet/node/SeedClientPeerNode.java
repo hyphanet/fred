@@ -89,7 +89,7 @@ public class SeedClientPeerNode extends PeerNode {
 
 	@Override
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
-		boolean ret = super.disconnected(dumpMessageQueue, dumpTrackers);
+		boolean ret = super.disconnected(true, true);
 		node.peers.disconnect(this, false, false, false);
 		return ret;
 	}
@@ -149,6 +149,10 @@ public class SeedClientPeerNode extends PeerNode {
 	public void fatalTimeout() {
 		// Disconnect.
 		forceDisconnect(true);
+	}
+	
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		return false; // Irrelevant
 	}
 
 }

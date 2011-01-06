@@ -879,6 +879,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 	}
 
+	private final int MAX_NONCES_PER_PEER = 10;
+	
 	/*
 	 * format:
 	 * Ni,g^i
@@ -901,7 +903,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		node.random.nextBytes(nonce);
 
 		synchronized (pn) {
-			pn.jfkNoncesSent.put(replyTo.dropHostName(), nonce);
+			pn.jfkNoncesSent.add(nonce);
+			if(pn.jfkNoncesSent.size() > MAX_NONCES_PER_PEER)
+				pn.jfkNoncesSent.removeFirst();
 		}
 
 		int modulusLength = DiffieHellman.modulusLengthInBytes();
@@ -1056,9 +1060,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		// sanity check
-		byte[] myNi;
+		byte[] myNi = null;
 		synchronized (pn) {
-			myNi = pn.jfkNoncesSent.get(replyTo.dropHostName());
+			for(byte[] buf : pn.jfkNoncesSent) {
+				if(Arrays.equals(nonceInitiator, buf))
+					myNi = buf;
+			}
 		}
 		// We don't except such a message;
 		if(myNi == null) {
@@ -2406,7 +2413,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		x=0;
 		short priority = DMT.PRIORITY_BULK_DATA;
 		for(int i=0;i<messages.length;i++) {
-			if(messages[i].formatted) continue;
+			assert(!messages[i].formatted);
 			if(messages[i].cb != null) {
 				System.arraycopy(messages[i].cb, 0, callbacks, x, messages[i].cb.length);
 				x += messages[i].cb.length;
@@ -2424,6 +2431,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				int totalMessageSize = 0;
 				for(int i=0;i<messageData.length;i++) totalMessageSize += messageData[i].length;
 				int overhead = size - totalMessageSize;
+				if(logMINOR) Logger.minor(this, "Overhead: "+overhead+" total messages size "+totalMessageSize+" for "+messageData.length+" messages");
 				for(int i=0;i<messageData.length;i++) {
 					MessageItem mi = newMsgs[i];
 					mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
@@ -2545,6 +2553,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			System.arraycopy(data, 0, buf, loc, len);
 			loc += len;
 		}
+		if(logMINOR) Logger.minor(this, "Packed data is "+loc+" bytes long.");
 		return processOutgoingPreformatted(buf, 0, loc, pn, callbacks, priority);
 	}
 
@@ -2685,6 +2694,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		1 + // number of forgotten packets
 		forgotPackets.length +
 		length; // the payload !
+		
+		if(logMINOR)
+			Logger.minor(this, "Fully packed data is "+packetLength+" bytes long");
 
 		boolean paddThisPacket = crypto.config.paddDataPackets();
 		int paddedLen;

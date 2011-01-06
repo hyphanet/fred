@@ -110,6 +110,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
@@ -1495,39 +1496,6 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		});
 		routeAccordingToOurPeersLocation = nodeConfig.getBoolean("routeAccordingToOurPeersLocation");
-
-		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
-
-			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				synchronized(Node.this) {
-					boolean wantFOAF = true;
-					if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM || newLevel == NETWORK_THREAT_LEVEL.HIGH) {
-						// Opennet is disabled.
-						if(securityLevels.friendsThreatLevel == FRIENDS_THREAT_LEVEL.HIGH)
-							wantFOAF = false;
-					}
-					routeAccordingToOurPeersLocation = wantFOAF;
-				}
-			}
-
-		});
-
-		securityLevels.addFriendsThreatLevelListener(new SecurityLevelListener<FRIENDS_THREAT_LEVEL>() {
-
-			public void onChange(FRIENDS_THREAT_LEVEL oldLevel, FRIENDS_THREAT_LEVEL newLevel) {
-				synchronized(Node.this) {
-					boolean wantFOAF = true;
-					NETWORK_THREAT_LEVEL networkLevel = securityLevels.networkThreatLevel;
-					if(networkLevel == NETWORK_THREAT_LEVEL.MAXIMUM || networkLevel == NETWORK_THREAT_LEVEL.HIGH) {
-						// Opennet is disabled.
-						if(newLevel == FRIENDS_THREAT_LEVEL.HIGH)
-							wantFOAF = false;
-					}
-					routeAccordingToOurPeersLocation = wantFOAF;
-				}
-			}
-
-		});
 
 		nodeConfig.register("enableSwapQueueing", true, sortOrder++, true, false, "Node.enableSwapQueueing", "Node.enableSwapQueueingLong", new BooleanCallback() {
 			@Override
@@ -5593,8 +5561,8 @@ public class Node implements TimeSkewDetectorCallback {
 	public void connectToSeednode(SeedServerTestPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.addPeer(node,false,false);
 	}
-	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler);
+	public void connect(Node node, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler, trust);
 	}
 
 	public short maxHTL() {
@@ -5637,8 +5605,8 @@ public class Node implements TimeSkewDetectorCallback {
 	public ProgramDirectory pluginDir() { return pluginDir; }
 
 
-	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler);
+	public DarknetPeerNode createNewDarknetNode(SimpleFieldSet fs, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		return new DarknetPeerNode(fs, this, darknetCrypto, peers, false, darknetCrypto.packetMangler, trust);
 	}
 
 	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
@@ -5883,7 +5851,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
-		return routeAccordingToOurPeersLocation && Version.lastGoodBuild() >= 1160;
+		return routeAccordingToOurPeersLocation;
 	}
 
 	public boolean objectCanNew(ObjectContainer container) {

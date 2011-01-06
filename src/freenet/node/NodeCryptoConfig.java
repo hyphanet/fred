@@ -191,19 +191,6 @@ public class NodeCryptoConfig {
 		});
 		alwaysAllowLocalAddresses = config.getBoolean("alwaysAllowLocalAddresses");
 		
-		if(!isOpennet) {
-			securityLevels.addFriendsThreatLevelListener(new SecurityLevelListener<FRIENDS_THREAT_LEVEL>() {
-
-				public void onChange(FRIENDS_THREAT_LEVEL oldLevel, FRIENDS_THREAT_LEVEL newLevel) {
-					if(newLevel == FRIENDS_THREAT_LEVEL.HIGH)
-						alwaysAllowLocalAddresses = false;
-					if(oldLevel == FRIENDS_THREAT_LEVEL.HIGH)
-						alwaysAllowLocalAddresses = false;
-				}
-				
-			});
-		}
-		
 		config.register("assumeNATed", true, sortOrder++, true, true, "Node.assumeNATed", "Node.assumeNATedLong", new BooleanCallback() {
 
 			@Override

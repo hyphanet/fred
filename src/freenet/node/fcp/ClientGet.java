@@ -453,97 +453,77 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		handler.queue(msg);
 	}
 
-	private void trySendProgress(FCPMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
-		int verbosityMask = 0;
-		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-			FCPMessage oldProgress = null;
-			if(msg instanceof SimpleProgressMessage) {
-				oldProgress = progressPending;
-				progressPending = (SimpleProgressMessage)msg;
-				verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
-				if(client != null) {
-					RequestStatusCache cache = client.getRequestStatusCache();
-					if(cache != null) {
-						cache.updateStatus(identifier, ((SimpleProgressMessage)progressPending).getEvent());
-					}
-				}
-			} else if(msg instanceof SendingToNetworkMessage) {
-				sentToNetwork = true;
-				verbosityMask = ClientGet.VERBOSITY_SENT_TO_NETWORK;
-			} else if(msg instanceof CompatibilityMode) {
-				CompatibilityMode compat = (CompatibilityMode)msg;
-				if(compatMessage != null) {
-					if(persistenceType == PERSIST_FOREVER) container.activate(compatMessage, 1);
-					compatMessage.merge(compat.min, compat.max, compat.cryptoKey, compat.dontCompress, compat.definitive);
-					if(persistenceType == PERSIST_FOREVER) container.store(compatMessage);
-				} else {
-					compatMessage = compat;
-					if(persistenceType == PERSIST_FOREVER) {
-						container.store(compatMessage);
-						container.store(this);
-					}
-				}
-				verbosityMask = ClientGet.VERBOSITY_COMPATIBILITY_MODE;
-				if(client != null) {
-					RequestStatusCache cache = client.getRequestStatusCache();
-					if(cache != null) {
-						cache.updateDetectedCompatModes(identifier, compat.getModes(), compat.cryptoKey);
-					}
-				}
-			} else if(msg instanceof ExpectedHashes) {
-				if(expectedHashes != null) {
-					Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
-				} else {
-					this.expectedHashes = (ExpectedHashes)msg;
-					if(persistenceType == PERSIST_FOREVER) {
-						container.store(this);
-					}
-				}
-				verbosityMask = ClientGet.VERBOSITY_EXPECTED_HASHES;
-			} else if(msg instanceof ExpectedMIME) {
-				foundDataMimeType = ((ExpectedMIME) msg).expectedMIME;
-				if(persistenceType == PERSIST_FOREVER) {
-					container.store(this);
-				}
-				if(client != null) {
-					RequestStatusCache cache = client.getRequestStatusCache();
-					if(cache != null) {
-						cache.updateExpectedMIME(identifier, foundDataMimeType);
-					}
-				}
-				verbosityMask = VERBOSITY_EXPECTED_TYPE;
-			} else if(msg instanceof ExpectedDataLength) {
-				foundDataLength = ((ExpectedDataLength) msg).dataLength;
-				if(persistenceType == PERSIST_FOREVER) {
-					container.store(this);
-				}
-				if(client != null) {
-					RequestStatusCache cache = client.getRequestStatusCache();
-					if(cache != null) {
-						cache.updateExpectedDataLength(identifier, foundDataLength);
-					}
-				}
-				verbosityMask = VERBOSITY_EXPECTED_SIZE;
-			} else
-				verbosityMask = -1;
-			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
-				container.store(this);
-				if(oldProgress != null) {
-					container.activate(oldProgress, 1);
-					oldProgress.removeFrom(container);
+	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler, ObjectContainer container) {
+		FCPMessage oldProgress = null;
+		if(msg instanceof SimpleProgressMessage) {
+			oldProgress = progressPending;
+			progressPending = (SimpleProgressMessage)msg;
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateStatus(identifier, ((SimpleProgressMessage)progressPending).getEvent());
 				}
 			}
-		} else {
-			if(msg instanceof SimpleProgressMessage)
-				verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
-			else if(msg instanceof SendingToNetworkMessage)
-				verbosityMask = ClientGet.VERBOSITY_SENT_TO_NETWORK;
-			else if(msg instanceof CompatibilityMode)
-				verbosityMask = ClientGet.VERBOSITY_COMPATIBILITY_MODE;
-			else if(msg instanceof ExpectedHashes)
-				verbosityMask = ClientGet.VERBOSITY_EXPECTED_HASHES;
-			else
-				verbosityMask = -1;
+		} else if(msg instanceof SendingToNetworkMessage) {
+			sentToNetwork = true;
+		} else if(msg instanceof CompatibilityMode) {
+			CompatibilityMode compat = (CompatibilityMode)msg;
+			if(compatMessage != null) {
+				if(persistenceType == PERSIST_FOREVER) container.activate(compatMessage, 1);
+				compatMessage.merge(compat.min, compat.max, compat.cryptoKey, compat.dontCompress, compat.definitive);
+				if(persistenceType == PERSIST_FOREVER) container.store(compatMessage);
+			} else {
+				compatMessage = compat;
+				if(persistenceType == PERSIST_FOREVER) {
+					container.store(compatMessage);
+					container.store(this);
+				}
+			}
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateDetectedCompatModes(identifier, compat.getModes(), compat.cryptoKey);
+				}
+			}
+		} else if(msg instanceof ExpectedHashes) {
+			if(expectedHashes != null) {
+				Logger.error(this, "Got a new ExpectedHashes", new Exception("debug"));
+			} else {
+				this.expectedHashes = (ExpectedHashes)msg;
+				if(persistenceType == PERSIST_FOREVER) {
+					container.store(this);
+				}
+			}
+		} else if(msg instanceof ExpectedMIME) {
+			foundDataMimeType = ((ExpectedMIME) msg).expectedMIME;
+			if(persistenceType == PERSIST_FOREVER) {
+				container.store(this);
+			}
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateExpectedMIME(identifier, foundDataMimeType);
+				}
+			}
+		} else if(msg instanceof ExpectedDataLength) {
+			foundDataLength = ((ExpectedDataLength) msg).dataLength;
+			if(persistenceType == PERSIST_FOREVER) {
+				container.store(this);
+			}
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateExpectedDataLength(identifier, foundDataLength);
+				}
+			}
+		} else
+			assert(false);
+		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+			container.store(this);
+			if(oldProgress != null) {
+				container.activate(oldProgress, 1);
+				oldProgress.removeFrom(container);
+			}
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(client, 1);
@@ -559,10 +539,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	@Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container) {
-		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
-			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
-			return;
-		}
 		if(!onlyData) {
 			if(includePersistentRequest) {
 				FCPMessage msg = persistentTagMessage(container);
@@ -599,6 +575,13 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(expectedHashes, Integer.MAX_VALUE);
 			handler.queue(expectedHashes);
+		}
+
+		if (foundDataMimeType != null) {
+			handler.queue(new ExpectedMIME(identifier, global, foundDataMimeType));
+		}
+		if (foundDataLength > 0) {
+			handler.queue(new ExpectedDataLength(identifier, global, foundDataLength));
 		}
 	}
 
@@ -706,26 +689,41 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		// Don't need to lock, verbosity is final and finished is never unset.
 		if(finished) return;
 		final FCPMessage progress;
+		final int verbosityMask;
 		if(ce instanceof SplitfileProgressEvent) {
-			if(!((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS))
+			verbosityMask = ClientGet.VERBOSITY_SPLITFILE_PROGRESS;
+			if((verbosity & verbosityMask) == 0)
 				return;
 			lastActivity = System.currentTimeMillis();
 			progress =
 				new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
 		} else if(ce instanceof SendingToNetworkEvent) {
-			if(!((verbosity & VERBOSITY_SENT_TO_NETWORK) == VERBOSITY_SENT_TO_NETWORK))
+			verbosityMask = ClientGet.VERBOSITY_SENT_TO_NETWORK;
+			if((verbosity & verbosityMask) == 0)
 				return;
 			progress = new SendingToNetworkMessage(identifier, global);
 		} else if(ce instanceof SplitfileCompatibilityModeEvent) {
+			verbosityMask = ClientGet.VERBOSITY_COMPATIBILITY_MODE;
+			if((verbosity & verbosityMask) == 0)
+				return;
 			SplitfileCompatibilityModeEvent event = (SplitfileCompatibilityModeEvent)ce;
 			progress = new CompatibilityMode(identifier, global, event.minCompatibilityMode, event.maxCompatibilityMode, event.splitfileCryptoKey, event.dontCompress, event.bottomLayer);
 		} else if(ce instanceof ExpectedHashesEvent) {
+			verbosityMask = ClientGet.VERBOSITY_EXPECTED_HASHES;
+			if((verbosity & verbosityMask) == 0)
+				return;
 			ExpectedHashesEvent event = (ExpectedHashesEvent)ce;
 			progress = new ExpectedHashes(event, identifier, global);
 		} else if(ce instanceof ExpectedMIMEEvent) {
+			verbosityMask = VERBOSITY_EXPECTED_TYPE;
+			if((verbosity & verbosityMask) == 0)
+				return;
 			ExpectedMIMEEvent event = (ExpectedMIMEEvent)ce;
 			progress = new ExpectedMIME(identifier, global, event.expectedMIMEType);
 		} else if(ce instanceof ExpectedFileSizeEvent) {
+			verbosityMask = VERBOSITY_EXPECTED_SIZE;
+			if((verbosity & verbosityMask) == 0)
+				return;
 			ExpectedFileSizeEvent event = (ExpectedFileSizeEvent)ce;
 			progress = new ExpectedDataLength(identifier, global, event.expectedSize);
 		}
@@ -736,7 +734,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				context.jobRunner.queue(new DBJob() {
 
 					public boolean run(ObjectContainer container, ClientContext context) {
-						trySendProgress(progress, null, container);
+						trySendProgress(progress, verbosityMask, null, container);
 						return false;
 					}
 
@@ -745,7 +743,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				// Not much we can do
 			}
 		} else {
-			trySendProgress(progress, null, container);
+			trySendProgress(progress, verbosityMask, null, container);
 		}
 	}
 

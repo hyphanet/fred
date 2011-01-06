@@ -196,13 +196,19 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						// Delete the existing job because the new job will run first.
 						Object o = timedJobsByTime.get(t);
 						if(o instanceof Job) {
-							timedJobsQueued.remove(job);
-							timedJobsByTime.remove(t);
+							if(o.equals(job)) {
+								timedJobsQueued.remove(job);
+								timedJobsByTime.remove(t);
+							} else
+								timedJobsByTime.remove(t);
 						} else {
 							Job[] jobs = (Job[]) o;
 							if(jobs.length == 1) {
-								timedJobsQueued.remove(jobs[0]);
-								timedJobsByTime.remove(t);
+								if(jobs[0].equals(job)) {
+									timedJobsQueued.remove(jobs[0]);
+									timedJobsByTime.remove(t);
+								} else
+									timedJobsByTime.remove(t);
 							} else {
 								Job[] newJobs = new Job[jobs.length-1];
 								int x = 0;
@@ -260,6 +266,46 @@ public class PrioritizedTicker implements Ticker, Runnable {
 	public int queuedJobs() {
 		synchronized(timedJobsByTime) {
 			return timedJobsByTime.size();
+		}
+	}
+
+	public void removeQueuedJob(Runnable runnable) {
+		Job job = new Job(null, runnable);
+		synchronized(timedJobsByTime) {
+			if(timedJobsQueued.containsKey(job)) {
+				Long t = timedJobsQueued.get(job);
+				if(t == null) return;
+				Object o = timedJobsByTime.get(t);
+				if(o == null) return;
+				if(o instanceof Job) {
+					timedJobsQueued.remove(job);
+					timedJobsByTime.remove(t);
+				} else {
+					Job[] jobs = (Job[]) o;
+					if(jobs.length == 1) {
+						timedJobsQueued.remove(jobs[0]);
+						timedJobsByTime.remove(t);
+					} else {
+						Job[] newJobs = new Job[jobs.length-1];
+						int x = 0;
+						for(int i=0;i<jobs.length;i++) {
+							if(jobs[i].equals(job)) {
+								timedJobsQueued.remove(jobs[i]);
+								continue;
+							}
+							newJobs[x++] = jobs[i];
+						}
+						if(x == 0) {
+							timedJobsByTime.remove(t);
+						} else if(x != newJobs.length) {
+							jobs = newJobs;
+							newJobs = new Job[x];
+							System.arraycopy(jobs, 0, newJobs, 0, x);
+							timedJobsByTime.put(t, newJobs);
+						}
+					}
+				}
+			}
 		}
 	}
 	

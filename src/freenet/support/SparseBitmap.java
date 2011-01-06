@@ -153,4 +153,15 @@ public class SparseBitmap implements Iterable<int[]> {
 			return r1.start - r2.start;
 		}
 	}
+
+	/** @return The number of slots between start and end that are not marked as present */
+	public int notOverlapping(int start, int end) {
+		// FIXME OPTIMIZE: this is an incredibly stupid and inefficient but demonstrably correct way to evaluate this. Implement something better!
+		int total = 0;
+		for(int i=start;i<=end;i++) {
+			if(!contains(i, i))
+				total++;
+		}
+		return total;
+	}
 }
