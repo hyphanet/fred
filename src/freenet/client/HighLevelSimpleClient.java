@@ -130,6 +130,13 @@ public interface HighLevelSimpleClient {
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName) throws InsertException;
 
 	/**
+	 * Blocking insert of multiple files as a manifest (or zip manifest, etc).
+	 * The map can contain either string -> bucket, string -> manifestitem or string -> map, the latter
+	 * indicating subdirs.
+	 */
+	public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName, short priorityClass) throws InsertException;
+
+	/**
 	 * Get the FetchContext so you can customise the search process. Has settings for all sorts of things
 	 * such as how many times to retry each block, whether to follow redirects, whether to open containers,
 	 * etc.

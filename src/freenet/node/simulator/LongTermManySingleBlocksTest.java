@@ -172,6 +172,9 @@ public class LongTermManySingleBlocksTest {
 	private static final int INSERTED_BLOCKS = 32;
 
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd", Locale.US);
+	static {
+		dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+	}
 	private static final GregorianCalendar today = (GregorianCalendar) Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
 	public static void main(String[] args) {

@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 
 import freenet.support.Logger.LogLevel;
 
@@ -339,6 +340,7 @@ public abstract class Fields {
 		//gc.setTimeInMillis(time*1000);
 
 		DateFormat f = new SimpleDateFormat("yyyyMMdd-HH:mm:ss");
+		f.setTimeZone(TimeZone.getTimeZone("GMT"));
 		//String dateString = f.format(c.getTime());
 		String dateString = f.format(new Date(time * 1000));
 

@@ -189,7 +189,7 @@ public class PersistentBlobTempBucketFactory {
 				Logger.error(this, "Tag for index "+tag.index+" is over MAXINT yet the file length is not?!");
 				continue;
 			}
-			if(tag.index > blocks) {
+			if(tag.index >= freeBlocksCache.getSize()) {
 				if(tag.isFree) {
 					if(tag.bucket != null) {
 						Logger.error(this, "Block is marked free, is beyond the end of the file, yet has a bucket!! Freeing anyway...");

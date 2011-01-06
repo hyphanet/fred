@@ -174,9 +174,6 @@ public class PacketSender implements Runnable {
 				
 				boolean shouldThrottle = pn.shouldThrottle();
 
-				if(shouldThrottle && !canSendThrottled)
-					continue;
-
 				// Is the node dead?
 				if(now - lastReceivedPacketTime > pn.maxTimeBetweenReceivedPackets()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
@@ -195,7 +192,7 @@ public class PacketSender implements Runnable {
 				}
 
 				try {
-					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
+					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp, shouldThrottle && !canSendThrottled)) {
 						count = node.outputThrottle.getCount();
 						if(count > MAX_PACKET_SIZE)
 							canSendThrottled = true;
@@ -221,6 +218,8 @@ public class PacketSender implements Runnable {
 					if(urgentTime < Long.MAX_VALUE && logMINOR)
 						Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn.getPeer());
 					nextActionTime = Math.min(nextActionTime, urgentTime);
+				} else {
+					nextActionTime = Math.min(nextActionTime, pn.timeCheckForLostPackets());
 				}
 			} else
 				// Not connected

@@ -461,7 +461,7 @@ loadWaiterLoop:
 					return;
 				}
 			}
-			Logger.error(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid);
+			Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+") on "+RequestSender.this);
     		// Fatal timeout
     		next.localRejectedOverload("FatalTimeout");
     		forwardRejectedOverload();

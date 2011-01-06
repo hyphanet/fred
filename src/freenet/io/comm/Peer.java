@@ -120,7 +120,8 @@ public class Peer implements WritableToDataOutputStream {
 	 */
     public Peer(String physical, boolean allowUnknown, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, PeerParseException, UnknownHostException {
         int offset = physical.lastIndexOf(':'); // ipv6
-        if(offset < 0) throw new PeerParseException();
+        if(offset < 0) 
+        	throw new PeerParseException("No port number: \""+physical+"\"");
         String host = physical.substring(0, offset);
         addr = new FreenetInetAddress(host, allowUnknown, checkHostnameOrIPSyntax);
         String strport = physical.substring(offset+1);
@@ -142,7 +143,27 @@ public class Peer implements WritableToDataOutputStream {
 	public boolean isNull() {
 		return _port == 0;
 	}
+	
+	// FIXME same issues as with FreenetInetAddress.laxEquals/equals/strictEquals
+	public boolean laxEquals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (!(o instanceof Peer)) {
+			return false;
+		}
 
+		final Peer peer = (Peer) o;
+
+		if (_port != peer._port) {
+			return false;
+		}
+		if(!addr.laxEquals(peer.addr))
+			return false;
+		return true;
+	}
+
+	// FIXME same issues as with FreenetInetAddress.laxEquals/equals/strictEquals
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) {
