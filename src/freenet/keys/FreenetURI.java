@@ -190,6 +190,7 @@ public class FreenetURI implements Cloneable {
 
 	public FreenetURI(FreenetURI uri) {
 //		this.uniqueHashCode = super.hashCode();
+		if(uri.keyType == null) throw new NullPointerException();
 		keyType = uri.keyType;
 		docName = uri.docName;
 		if(uri.metaStr != null) {
