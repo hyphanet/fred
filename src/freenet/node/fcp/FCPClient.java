@@ -417,6 +417,7 @@ public class FCPClient {
 			} catch (Throwable t) {
 				// Try to load the rest. :<
 				Logger.error(this, "BROKEN REQUEST LOADING PERSISTENT REQUEST STATUS: "+t, t);
+				// FIXME tell the user in wrapper.log or even in a useralert.
 			}
 			// FIXME deactivate? Unconditional deactivate depends on callers. Keep-as-is would need merge with addPersistentRequests.
 		}
