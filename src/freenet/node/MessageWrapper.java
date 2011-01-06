@@ -188,14 +188,18 @@ public class MessageWrapper {
 		}
 	}
 
-	public void onSent(int start, int end, int overhead) {
+	public void onSent(int start, int end, int overhead, BasePeerNode pn) {
 		int report = 0;
+		int resent = 0;
 		boolean completed = false;
 		synchronized(sent) {
-			if(everSent.contains(start, end))
+			if(everSent.contains(start, end)) {
 				report = 0;
-			else
+				resent = end - start + 1 + overhead;
+			} else {
 				report = everSent.notOverlapping(start, end) + overhead;
+				resent = end - start + 1 + overhead - report;
+			}
 			if(sent.contains(0, item.buf.length-1)) {
 				// Maybe completed
 				if(reportedSent)
@@ -208,6 +212,8 @@ public class MessageWrapper {
 		}
 		if(report != 0)
 			item.onSent(report);
+		if(resent != 0 && pn != null)
+			pn.resentBytes(resent);
 		if(completed)
 			item.onSentAll();
 	}
