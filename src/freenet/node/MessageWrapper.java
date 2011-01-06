@@ -165,7 +165,6 @@ public class MessageWrapper {
 			System.arraycopy(item.buf, start, fragmentData, 0, dataLength);
 
 			sent.add(start, start + dataLength - 1);
-			everSent.add(start, start + dataLength - 1);
 			if(logDEBUG) Logger.debug(this, "Using range "+start+" to "+(start+dataLength-1)+" gives "+sent);
 		}
 
@@ -200,6 +199,7 @@ public class MessageWrapper {
 				report = everSent.notOverlapping(start, end) + overhead;
 				resent = end - start + 1 + overhead - report;
 			}
+			everSent.add(start, end);
 			if(sent.contains(0, item.buf.length-1)) {
 				// Maybe completed
 				if(reportedSent)
