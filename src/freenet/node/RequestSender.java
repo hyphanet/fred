@@ -456,7 +456,7 @@ loadWaiterLoop:
 				if(lastNode != waitingFor) return;
 				if(status != -1) return;
 			}
-			Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+")");
+			Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+") on "+RequestSender.this);
     		// Fatal timeout
     		next.localRejectedOverload("FatalTimeout");
     		forwardRejectedOverload();

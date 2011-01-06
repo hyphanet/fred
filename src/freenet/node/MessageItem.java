@@ -79,15 +79,6 @@ public class MessageItem {
 				Logger.error(this, "Caught "+t+" reporting "+length+" sent bytes on "+this, t);
 			}
 		}
-		if(cb != null) {
-			for(int i=0;i<cb.length;i++) {
-				try {
-					cb[i].sent();
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
-				}
-			}
-		}
 	}
 
 	public short getPriority() {
@@ -137,6 +128,19 @@ public class MessageItem {
 			return -1;
 		} else {
 			return (Long)o;
+		}
+	}
+
+	/** Called the first time we have sent all of the message. */
+	public void onSentAll() {
+		if(cb != null) {
+			for(int i=0;i<cb.length;i++) {
+				try {
+					cb[i].sent();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
+				}
+			}
 		}
 	}
 }

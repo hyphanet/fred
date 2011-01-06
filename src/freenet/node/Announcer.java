@@ -205,7 +205,7 @@ public class Announcer {
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, node.peers, false, om.crypto.packetMangler);
-				if(node.wantAnonAuth() && Arrays.equals(node.getOpennetIdentity(), seed.identity)) {
+				if(node.wantAnonAuth(true) && Arrays.equals(node.getOpennetIdentity(), seed.identity)) {
                                     if(logMINOR)
                                         Logger.minor("Not adding: I am a seednode attempting to connect to myself!", seed.userToString());
                                     continue;

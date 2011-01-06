@@ -60,6 +60,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		BROWSER_WARNING,
 		// We have to set up UPnP before reaching the bandwidth stage, so we can autodetect bandwidth settings.
 		MISC,
+		OPENNET,
 		SECURITY_NETWORK,
 		SECURITY_FRIENDS,
 		SECURITY_PHYSICAL,
@@ -69,7 +70,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		CONGRATZ,
 		FINAL;
 	}
-
 
 	FirstTimeWizardToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
@@ -117,6 +117,46 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
+		} else if(currentStep == WIZARD_STEP.OPENNET){
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("opennetChoicePageTitle"), false, ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
+
+			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
+			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+
+			infoboxHeader.addChild("#", l10n("opennetChoiceTitle"));
+			
+			infoboxContent.addChild("p", l10n("opennetChoiceIntroduction"));
+			
+			HTMLNode form = infoboxContent.addChild("form", new String[] { "action", "method", "id" }, new String[] { "GET", ".", "opennetChoiceForm" });
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "step", WIZARD_STEP.SECURITY_NETWORK.name() });
+			
+			HTMLNode p = form.addChild("p");
+			HTMLNode input = p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "opennet", "false" });
+			input.addChild("b", l10n("opennetChoiceConnectFriends")+":");
+			p.addChild("br");
+			p.addChild("i", l10n("opennetChoicePro"));
+			p.addChild("#", ": "+l10n("opennetChoiceConnectFriendsPRO"));
+			p.addChild("br");
+			p.addChild("i", l10n("opennetChoiceCon"));
+			p.addChild("#", ": "+l10n("opennetChoiceConnectFriendsCON", "minfriends", "5"));
+			
+			p = form.addChild("p");
+			input = p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "opennet", "true" });
+			input.addChild("b", l10n("opennetChoiceConnectStrangers")+":");
+			p.addChild("br");
+			p.addChild("i", l10n("opennetChoicePro"));
+			p.addChild("#", ": "+l10n("opennetChoiceConnectStrangersPRO"));
+			p.addChild("br");
+			p.addChild("i", l10n("opennetChoiceCon"));
+			p.addChild("#", ": "+l10n("opennetChoiceConnectStrangersCON"));
+			
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "opennetF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			return;
 		} else if(currentStep == WIZARD_STEP.SECURITY_NETWORK) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), false, ctx);
 			HTMLNode pageNode = page.outer;
@@ -125,35 +165,45 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+			
+			if(!request.isParameterSet("opennet")) {
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.OPENNET);
+				return;
+			}
+			
+			boolean opennet = Fields.stringToBool(request.getParam("opennet", "false"));
 
-			infoboxHeader.addChild("#", l10nSec("networkThreatLevelShort"));
-			//infoboxContent.addChild("p", l10nSec("networkThreatLevel"));
-			infoboxContent.addChild("p", l10nSec("networkThreatLevel.opennetIntro"));
+			infoboxHeader.addChild("#", l10n(opennet ? "networkThreatLevelHeaderOpennet" : "networkThreatLevelHeaderDarknet"));
+			infoboxContent.addChild("p", l10n(opennet ? "networkThreatLevelIntroOpennet" : "networkThreatLevelIntroDarknet"));
 			HTMLNode form = ctx.addFormChild(infoboxContent, ".", "networkSecurityForm");
 			String controlName = "security-levels.networkThreatLevel";
-			HTMLNode p = form.addChild("p");
-			p.addChild("b", l10nSec("networkThreatLevel.opennetLabel"));
-			p.addChild("#", ": "+l10nSec("networkThreatLevel.opennetExplain"));
-			HTMLNode div = form.addChild("div", "class", "opennetDiv");
-			for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.OPENNET_VALUES) {
-				HTMLNode input;
-				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
-				input.addChild("b", l10nSec("networkThreatLevel.name."+level));
-				input.addChild("#", ": ");
-				NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+			if(opennet) {
+				HTMLNode div = form.addChild("div", "class", "opennetDiv");
+				for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.OPENNET_VALUES) {
+					HTMLNode input;
+					input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
+					input.addChild("b", l10nSec("networkThreatLevel.name."+level));
+					input.addChild("#", ": ");
+					NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+					HTMLNode inner = input.addChild("p").addChild("i");
+					NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold" },
+							new HTMLNode[] { HTMLNode.STRONG });
+				}
 			}
-			p = form.addChild("p");
-			p.addChild("b", l10nSec("networkThreatLevel.darknetLabel"));
-			p.addChild("#", ": "+l10nSec("networkThreatLevel.darknetExplain"));
-			div = form.addChild("div", "class", "darknetDiv");
-			for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.DARKNET_VALUES) {
-				HTMLNode input;
-				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
-				input.addChild("b", l10nSec("networkThreatLevel.name."+level));
-				input.addChild("#", ": ");
-				NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+			if(!opennet) {
+				HTMLNode div = form.addChild("div", "class", "darknetDiv");
+				for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.DARKNET_VALUES) {
+					HTMLNode input;
+					input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
+					input.addChild("b", l10nSec("networkThreatLevel.name."+level));
+					input.addChild("#", ": ");
+					NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
+					HTMLNode inner = input.addChild("p").addChild("i");
+					NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold" },
+							new HTMLNode[] { HTMLNode.STRONG });
+				}
+				form.addChild("p").addChild("b", l10nSec("networkThreatLevel.opennetFriendsWarning"));
 			}
-			form.addChild("p").addChild("b", l10nSec("networkThreatLevel.opennetFriendsWarning"));
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkSecurityF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
@@ -732,7 +782,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						}
 					});
 			}
-			super.writeTemporaryRedirect(ctx, "step7", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
+			super.writeTemporaryRedirect(ctx, "step7", TOADLET_URL+"?step="+WIZARD_STEP.OPENNET);
 			return;
 
 		}
@@ -751,7 +801,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	private String l10n(String key) {
 		return NodeL10n.getBase().getString("FirstTimeWizardToadlet."+key);
 	}
-
+	
+	private String l10n(String key, String pattern, String value) {
+		return NodeL10n.getBase().getString("FirstTimeWizardToadlet."+key, pattern, value);
+	}
+	
 	private void _setDatastoreSize(String selectedStoreSize) {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);

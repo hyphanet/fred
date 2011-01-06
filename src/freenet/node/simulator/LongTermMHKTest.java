@@ -62,6 +62,9 @@ public class LongTermMHKTest {
 	private static final int DELTA = 7;
 
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd", Locale.US);
+	static {
+		dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+	}
 	private static final GregorianCalendar today = (GregorianCalendar) Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
 	public static void main(String[] args) {
