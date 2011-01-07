@@ -1225,6 +1225,7 @@ public class NodeStats implements Persistable {
 	}
 
 	private void rejected(String reason, boolean isLocal) {
+		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") : "+reason);
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
 		else this.localPreemptiveRejectReasons.inc(reason);
 	}
