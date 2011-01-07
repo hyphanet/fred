@@ -87,7 +87,7 @@ class NPFPacket {
 
 			if(!isFragmented && !firstFragment) {
 				// Padding or lossy messages.
-				tryParseLossyMessages(packet, plaintext, offset);
+				offset = tryParseLossyMessages(packet, plaintext, offset);
 				break;
 			}
 
@@ -172,28 +172,31 @@ class NPFPacket {
 			packet.fragments.add(new MessageFragment(shortMessage, isFragmented, firstFragment,
 			                messageID, fragmentLength, messageLength, fragmentOffset, fragmentData, null));
 		}
+		
+		packet.length = offset;
 
 		return packet;
 	}
 
-	private static void tryParseLossyMessages(NPFPacket packet,
+	private static int tryParseLossyMessages(NPFPacket packet,
 			byte[] plaintext, int offset) {
+		int origOffset = offset;
 		while(true) {
 			if((plaintext[offset] & ~0x1F) != 0)
-				return; // Padding
+				return offset; // Padding
 			// Else it might be some per-packet lossy messages
 			offset++;
 			int len = plaintext[offset] & 0xFF;
 			offset++;
 			if(len > plaintext.length - offset) {
 				packet.lossyMessages.clear();
-				return;
+				return origOffset;
 			}
 			byte[] fragment = new byte[len];
 			System.arraycopy(plaintext, offset, fragment, 0, len);
 			packet.lossyMessages.add(fragment);
 			offset += len;
-			if(offset == plaintext.length) return;
+			if(offset == plaintext.length) return offset;
 		}
 	}
 
