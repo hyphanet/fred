@@ -135,7 +135,7 @@ public class FNPWrapper implements PacketFormat {
 			// Force packet to have a sequence number.
 			Message m = DMT.createFNPVoid();
 			pn.addToLocalNodeSentMessagesToStatistic(m);
-			messages.add(new MessageItem(m, null, null, pn));
+			messages.add(new MessageItem(m, null, null));
 		}
 
 		if(!messages.isEmpty()) {

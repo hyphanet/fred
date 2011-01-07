@@ -222,11 +222,11 @@ public class Message {
 		_payload.put(key, value);
 	}
 
-	public byte[] encodeToPacket(PeerContext destination) {
-		return encodeToPacket(destination, true, false);
+	public byte[] encodeToPacket() {
+		return encodeToPacket(true, false);
 	}
 
-	private byte[] encodeToPacket(PeerContext destination, boolean includeSubMessages, boolean isSubMessage) {
+	private byte[] encodeToPacket(boolean includeSubMessages, boolean isSubMessage) {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 
@@ -237,7 +237,7 @@ public class Message {
 		try {
 			dos.writeInt(_spec.getName().hashCode());
 			for (String name : _spec.getOrderedFields()) {
-				Serializer.writeToDataOutputStream(_payload.get(name), dos, destination);
+				Serializer.writeToDataOutputStream(_payload.get(name), dos);
 			}
 			dos.flush();
 		} catch (IOException e) {
@@ -247,7 +247,7 @@ public class Message {
 
 		if(_subMessages != null && includeSubMessages) {
 			for(int i=0;i<_subMessages.size();i++) {
-				byte[] temp = _subMessages.get(i).encodeToPacket(destination, false, true);
+				byte[] temp = _subMessages.get(i).encodeToPacket(false, true);
 				try {
 					dos.writeShort(temp.length);
 					dos.write(temp);

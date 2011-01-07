@@ -1108,7 +1108,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			throw new NotConnectedException();
 		}
 		addToLocalNodeSentMessagesToStatistic(msg);
-		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, ctr, this);
+		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, ctr);
 		long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
 		int x = messageQueue.queueAndEstimateSize(item);
@@ -4855,7 +4855,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public MessageItem makeLoadStats(boolean realtime, boolean boostPriority) {
 		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert());
 		if(msg == null) return null;
-		return new MessageItem(msg, null, node.nodeStats.allocationNoticesCounter, this, boostPriority ? DMT.PRIORITY_NOW : (short)-1);
+		return new MessageItem(msg, null, node.nodeStats.allocationNoticesCounter, boostPriority ? DMT.PRIORITY_NOW : (short)-1);
 	}
 
 	public boolean grabSendLoadStatsASAP(boolean realtime) {

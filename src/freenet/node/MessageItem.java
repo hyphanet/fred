@@ -29,7 +29,7 @@ public class MessageItem {
 	final boolean sendLoadRT;
 	final boolean sendLoadBulk;
 
-	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, BasePeerNode pn, short overridePriority) {
+	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, short overridePriority) {
 		this.msg = msg2;
 		this.cb = cb2;
 		formatted = false;
@@ -41,10 +41,10 @@ public class MessageItem {
 			priority = msg2.getSpec().getPriority();
 		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
 		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
-		buf = msg.encodeToPacket(pn);
+		buf = msg.encodeToPacket();
 	}
 
-	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, PeerNode pn) {
+	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr) {
 		this.msg = msg2;
 		this.cb = cb2;
 		formatted = false;
@@ -53,7 +53,7 @@ public class MessageItem {
 		priority = msg2.getSpec().getPriority();
 		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
 		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
-		buf = msg.encodeToPacket(pn);
+		buf = msg.encodeToPacket();
 	}
 
 	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority, boolean sendLoadRT, boolean sendLoadBulk) {

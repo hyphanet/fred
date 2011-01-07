@@ -27,7 +27,6 @@ import java.util.List;
 
 import freenet.io.WritableToDataOutputStream;
 import freenet.io.comm.Peer;
-import freenet.io.comm.PeerContext;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
@@ -101,7 +100,7 @@ public class Serializer {
 		}
 	}
 
-	public static void writeToDataOutputStream(Object object, DataOutputStream dos, PeerContext ctx) throws IOException {	
+	public static void writeToDataOutputStream(Object object, DataOutputStream dos) throws IOException {	
 		Class<?> type = object.getClass();
 		if (type.equals(Long.class)) {
 			dos.writeLong(((Long) object).longValue());
@@ -127,7 +126,7 @@ public class Serializer {
 			dos.writeInt(ll.size());
 			synchronized (ll) {
 				for (Object o : ll) {
-					writeToDataOutputStream(o, dos, ctx);
+					writeToDataOutputStream(o, dos);
 				}
 			}
 		} else if (type.equals(Byte.class)) {
