@@ -29,7 +29,7 @@ public class MessageItem {
 	final boolean sendLoadRT;
 	final boolean sendLoadBulk;
 
-	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, PeerNode pn, short overridePriority) {
+	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, BasePeerNode pn, short overridePriority) {
 		this.msg = msg2;
 		this.cb = cb2;
 		formatted = false;
