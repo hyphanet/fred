@@ -804,12 +804,20 @@ public class PeerMessageQueue {
 		MutableBoolean addPeerLoadStatsRT = new MutableBoolean();
 		MutableBoolean addPeerLoadStatsBulk = new MutableBoolean();
 		
-		if(pn.grabSendLoadStatsASAP(false)) {
-			size += 2 + MAX_PEER_LOAD_STATS_SIZE;
+		// Only add if we are asking for multiple messages i.e. for old FNP.
+		// NFP will handle this itself.
+		if(maxMessages > 1) {
+			if(pn.grabSendLoadStatsASAP(false)) {
+				size += 2 + MAX_PEER_LOAD_STATS_SIZE;
+				addPeerLoadStatsRT.value = true;
+			}
+			if(pn.grabSendLoadStatsASAP(true)) {
+				size += 2 + MAX_PEER_LOAD_STATS_SIZE;
+				addPeerLoadStatsBulk.value = true;
+			}
+		} else {
+			// Don't worry about it.
 			addPeerLoadStatsRT.value = true;
-		}
-		if(pn.grabSendLoadStatsASAP(true)) {
-			size += 2 + MAX_PEER_LOAD_STATS_SIZE;
 			addPeerLoadStatsBulk.value = true;
 		}
 		
@@ -821,9 +829,9 @@ public class PeerMessageQueue {
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(incomplete.value) {
-				if(addPeerLoadStatsRT.value)
+				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
-				if(addPeerLoadStatsBulk.value)
+				if(addPeerLoadStatsBulk.value && maxMessages > 1)
 					addLoadStats(now, messages, false);
 				return -size;
 			}
@@ -840,9 +848,9 @@ public class PeerMessageQueue {
 				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
 			}
 			if(incomplete.value) {
-				if(addPeerLoadStatsRT.value)
+				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
-				if(addPeerLoadStatsBulk.value)
+				if(addPeerLoadStatsBulk.value && maxMessages > 1)
 					addLoadStats(now, messages, false);
 				return -size;
 			}
@@ -854,9 +862,9 @@ public class PeerMessageQueue {
 				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
 			}
 			if(incomplete.value) {
-				if(addPeerLoadStatsRT.value)
+				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
-				if(addPeerLoadStatsBulk.value)
+				if(addPeerLoadStatsBulk.value && maxMessages > 1)
 					addLoadStats(now, messages, false);
 				return -size;
 			}
@@ -870,9 +878,9 @@ public class PeerMessageQueue {
 				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
 			}
 			if(incomplete.value) {
-				if(addPeerLoadStatsRT.value)
+				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
-				if(addPeerLoadStatsBulk.value)
+				if(addPeerLoadStatsBulk.value && maxMessages > 1)
 					addLoadStats(now, messages, false);
 				return -size;
 			}
@@ -884,9 +892,9 @@ public class PeerMessageQueue {
 				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
 			}
 			if(incomplete.value) {
-				if(addPeerLoadStatsRT.value)
+				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
-				if(addPeerLoadStatsBulk.value)
+				if(addPeerLoadStatsBulk.value && maxMessages > 1)
 					addLoadStats(now, messages, false);
 				return -size;
 			}
@@ -896,9 +904,9 @@ public class PeerMessageQueue {
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(incomplete.value) {
-				if(addPeerLoadStatsRT.value)
+				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
-				if(addPeerLoadStatsBulk.value)
+				if(addPeerLoadStatsBulk.value && maxMessages > 1)
 					addLoadStats(now, messages, false);
 				return -size;
 			}
