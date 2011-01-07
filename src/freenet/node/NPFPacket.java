@@ -290,7 +290,7 @@ class NPFPacket {
 			System.arraycopy(padding, 0, buf, offset, padding.length);
 
 			byte b = (byte) (buf[offset] & 0x9F); //Make sure firstFragment and isFragmented isn't set
-			if((b & 0x1F) == 0)
+			if(b == 0x1F)
 				b |= 1; // Make sure it doesn't match the pattern for lossy messages
 			buf[offset] = b;
 		}
