@@ -599,7 +599,7 @@ outer:
 					if(item != null) {
 						byte[] buf = item.getData();
 						haveAddedStatsBulk = buf;
-						packet.addLossyMessage(buf);
+						packet.addLossyMessage(buf, maxPacketSize);
 					}
 				}
 				
@@ -608,7 +608,7 @@ outer:
 					if(item != null) {
 						byte[] buf = item.getData();
 						haveAddedStatsRT = buf;
-						packet.addLossyMessage(buf);
+						packet.addLossyMessage(buf, maxPacketSize);
 					}
 				}
 			}
@@ -765,7 +765,7 @@ outer:
 							if(item != null) {
 								byte[] buf = item.getData();
 								haveAddedStatsBulk = item.buf;
-								packet.addLossyMessage(buf);
+								packet.addLossyMessage(buf, maxPacketSize);
 							}
 						}
 						
@@ -774,7 +774,7 @@ outer:
 							if(item != null) {
 								byte[] buf = item.getData();
 								haveAddedStatsRT = item.buf;
-								packet.addLossyMessage(buf);
+								packet.addLossyMessage(buf, maxPacketSize);
 							}
 						}
 					}						

@@ -341,7 +341,14 @@ class NPFPacket {
 		return length;
 	}
 	
-
+	public boolean addLossyMessage(byte[] buf, int maxPacketSize) {
+		if(length + buf.length + 2 > maxPacketSize) return false;
+		if(buf.length > 255) throw new IllegalArgumentException();
+		lossyMessages.add(buf);
+		length += buf.length + 2;
+		return true;
+	}
+	
 	public void removeLossyMessage(byte[] buf) {
 		lossyMessages.remove(buf);
 	}
