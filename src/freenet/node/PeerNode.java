@@ -4854,4 +4854,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return new MessageItem(msg, null, node.nodeStats.allocationNoticesCounter, this);
 	}
 
+	public boolean grabSendLoadStatsASAP(boolean realtime) {
+		return loadSender(realtime).grabSendASAP();
+	}
+
 }

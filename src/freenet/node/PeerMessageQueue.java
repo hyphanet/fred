@@ -804,11 +804,11 @@ public class PeerMessageQueue {
 		MutableBoolean addPeerLoadStatsRT = new MutableBoolean();
 		MutableBoolean addPeerLoadStatsBulk = new MutableBoolean();
 		
-		if(pn.loadSender(false).grabSendASAP()) {
+		if(pn.grabSendLoadStatsASAP(false)) {
 			size += 2 + MAX_PEER_LOAD_STATS_SIZE;
 			addPeerLoadStatsRT.value = true;
 		}
-		if(pn.loadSender(true).grabSendASAP()) {
+		if(pn.grabSendLoadStatsASAP(true)) {
 			size += 2 + MAX_PEER_LOAD_STATS_SIZE;
 			addPeerLoadStatsBulk.value = true;
 		}
