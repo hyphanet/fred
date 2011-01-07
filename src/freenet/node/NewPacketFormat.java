@@ -548,8 +548,8 @@ outer:
 			if(logDEBUG) Logger.debug(this, "Added acks for "+this+" for "+pn.shortToString());
 		}
 		
-		boolean haveAddedStatsBulk = false;
-		boolean haveAddedStatsRT = false;
+		byte[] haveAddedStatsBulk = null;
+		byte[] haveAddedStatsRT = null;
 		
 		if(!ackOnly) {
 			
@@ -578,11 +578,11 @@ outer:
 								packet.addMessageFragment(frag);
 								sentPacket.addFragment(frag);
 								if(!wrapper.canSend()) {
-									if((!haveAddedStatsBulk) && wrapper.getItem().sendLoadBulk) {
+									if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
 										addStatsBulk = true;
 										break;
 									}
-									if((!haveAddedStatsRT) && wrapper.getItem().sendLoadRT) {
+									if((haveAddedStatsRT == null) && wrapper.getItem().sendLoadRT) {
 										addStatsRT = true;
 										break;
 									}
@@ -596,18 +596,18 @@ outer:
 				
 				if(addStatsBulk) {
 					MessageItem item = pn.makeLoadStats(false, false);
-					haveAddedStatsBulk = true;
 					if(item != null) {
 						byte[] buf = item.getData();
+						haveAddedStatsBulk = buf;
 						packet.addLossyMessage(buf);
 					}
 				}
 				
 				if(addStatsRT) {
 					MessageItem item = pn.makeLoadStats(true, false);
-					haveAddedStatsRT = true;
 					if(item != null) {
 						byte[] buf = item.getData();
+						haveAddedStatsRT = buf;
 						packet.addLossyMessage(buf);
 					}
 				}
@@ -675,14 +675,20 @@ outer:
 			
 			if(sendStatsBulk) {
 				MessageItem item = pn.makeLoadStats(false, true);
-				haveAddedStatsBulk = true;
+				if(haveAddedStatsBulk != null) {
+					packet.removeLossyMessage(haveAddedStatsBulk);
+				}
 				messageQueue.pushfrontPrioritizedMessageItem(item);
+				haveAddedStatsBulk = item.buf;
 			}
 			
 			if(sendStatsRT) {
 				MessageItem item = pn.makeLoadStats(true, true);
-				haveAddedStatsRT = true;
+				if(haveAddedStatsRT != null) {
+					packet.removeLossyMessage(haveAddedStatsRT);
+				}
 				messageQueue.pushfrontPrioritizedMessageItem(item);
+				haveAddedStatsRT = item.buf;
 			}
 			
 			fragments:
@@ -740,11 +746,11 @@ outer:
 							}
 							
 							if(!wrapper.canSend()) {
-								if((!haveAddedStatsBulk) && wrapper.getItem().sendLoadBulk) {
+								if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
 									addStatsBulk = true;
 									break;
 								}
-								if((!haveAddedStatsRT) && wrapper.getItem().sendLoadRT) {
+								if((haveAddedStatsRT == null) && wrapper.getItem().sendLoadRT) {
 									addStatsRT = true;
 									break;
 								}
@@ -756,18 +762,18 @@ outer:
 						
 						if(addStatsBulk) {
 							MessageItem item = pn.makeLoadStats(false, false);
-							haveAddedStatsBulk = true;
 							if(item != null) {
 								byte[] buf = item.getData();
+								haveAddedStatsBulk = item.buf;
 								packet.addLossyMessage(buf);
 							}
 						}
 						
 						if(addStatsRT) {
 							MessageItem item = pn.makeLoadStats(true, false);
-							haveAddedStatsRT = true;
 							if(item != null) {
 								byte[] buf = item.getData();
+								haveAddedStatsRT = item.buf;
 								packet.addLossyMessage(buf);
 							}
 						}
