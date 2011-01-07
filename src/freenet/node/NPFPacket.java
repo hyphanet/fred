@@ -179,7 +179,7 @@ class NPFPacket {
 	private static void tryParseLossyMessages(NPFPacket packet,
 			byte[] plaintext, int offset) {
 		while(true) {
-			if((plaintext[offset] & 0x1F) != 0)
+			if((plaintext[offset] & ~0x1F) != 0)
 				return; // Padding
 			// Else it might be some per-packet lossy messages
 			offset++;
