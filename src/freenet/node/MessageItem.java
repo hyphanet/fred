@@ -29,6 +29,21 @@ public class MessageItem {
 	final boolean sendLoadRT;
 	final boolean sendLoadBulk;
 
+	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, PeerNode pn, short overridePriority) {
+		this.msg = msg2;
+		this.cb = cb2;
+		formatted = false;
+		this.ctrCallback = ctr;
+		this.submitted = System.currentTimeMillis();
+		if(overridePriority > 0)
+			priority = overridePriority;
+		else
+			priority = msg2.getSpec().getPriority();
+		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
+		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
+		buf = msg.encodeToPacket(pn);
+	}
+
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, PeerNode pn) {
 		this.msg = msg2;
 		this.cb = cb2;

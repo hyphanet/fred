@@ -60,8 +60,16 @@ interface BasePeerNode extends PeerContext {
 
 	void handleMessage(Message msg);
 
-	MessageItem makeLoadStats(boolean realtime);
+	/** Make a load stats message.
+	 * @param realtime True for the realtime load stats, false for the bulk load stats.
+	 * @param highPriority If true, boost the priority so it gets sent fast.
+	 */
+	MessageItem makeLoadStats(boolean realtime, boolean highPriority);
 	
 	boolean grabSendLoadStatsASAP(boolean realtime);
+
+	/** Set the load stats to be sent asap. E.g. if we grabbed it and can't actually 
+	 * execute the send for some reason. */
+	void setSendLoadStatsASAP(boolean realtime);
 
 }

@@ -595,7 +595,7 @@ outer:
 				if(!(addStatsBulk || addStatsRT)) break;
 				
 				if(addStatsBulk) {
-					MessageItem item = pn.makeLoadStats(false);
+					MessageItem item = pn.makeLoadStats(false, false);
 					haveAddedStatsBulk = true;
 					if(item != null) {
 						byte[] buf = item.getData();
@@ -604,7 +604,7 @@ outer:
 				}
 				
 				if(addStatsRT) {
-					MessageItem item = pn.makeLoadStats(true);
+					MessageItem item = pn.makeLoadStats(true, false);
 					haveAddedStatsRT = true;
 					if(item != null) {
 						byte[] buf = item.getData();
@@ -649,9 +649,41 @@ outer:
 			return null;
 		}
 		
-		if(ackOnly && numAcks == 0) return null;
+		boolean sendStatsBulk = false, sendStatsRT = false, cantSend = false;
 		
 		if(!ackOnly) {
+			
+			sendStatsBulk = pn.grabSendLoadStatsASAP(false);
+			sendStatsRT = pn.grabSendLoadStatsASAP(true);
+			
+			if(sendStatsBulk || sendStatsRT) {
+				cantSend = !canSend();
+				if(cantSend) {
+					if(sendStatsBulk)
+						pn.setSendLoadStatsASAP(false);
+					if(sendStatsRT)
+						pn.setSendLoadStatsASAP(true);
+				} else {
+					mustSend = true;
+				}
+			}
+		}
+		
+		if(ackOnly && numAcks == 0) return null;
+		
+		if((!ackOnly) && (!cantSend)) {
+			
+			if(sendStatsBulk) {
+				MessageItem item = pn.makeLoadStats(false, true);
+				haveAddedStatsBulk = true;
+				messageQueue.pushfrontPrioritizedMessageItem(item);
+			}
+			
+			if(sendStatsRT) {
+				MessageItem item = pn.makeLoadStats(true, true);
+				haveAddedStatsRT = true;
+				messageQueue.pushfrontPrioritizedMessageItem(item);
+			}
 			
 			fragments:
 				for(int i = 0; i < startedByPrio.size(); i++) {
@@ -723,7 +755,7 @@ outer:
 						if(!(addStatsBulk || addStatsRT)) break;
 						
 						if(addStatsBulk) {
-							MessageItem item = pn.makeLoadStats(false);
+							MessageItem item = pn.makeLoadStats(false, false);
 							haveAddedStatsBulk = true;
 							if(item != null) {
 								byte[] buf = item.getData();
@@ -732,7 +764,7 @@ outer:
 						}
 						
 						if(addStatsRT) {
-							MessageItem item = pn.makeLoadStats(true);
+							MessageItem item = pn.makeLoadStats(true, false);
 							haveAddedStatsRT = true;
 							if(item != null) {
 								byte[] buf = item.getData();
