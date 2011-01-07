@@ -907,9 +907,8 @@ public class PeerMessageQueue {
 	}
 	
 	private void addLoadStats(long now, ArrayList<MessageItem> messages, boolean realtime) {
-		Message msg = pn.loadSender(realtime).makeLoadStats(now, pn.node.nodeStats.outwardTransfersPerInsert());
-		if(msg != null) {
-			MessageItem load = new MessageItem(msg, null, pn.node.nodeStats.allocationNoticesCounter, pn);
+		MessageItem load = pn.makeLoadStats(realtime);
+		if(load != null) {
 			if(logMINOR && load != null)
 				Logger.minor(this, "Adding load message (realtime) to packet for "+pn);
 			messages.add(load);

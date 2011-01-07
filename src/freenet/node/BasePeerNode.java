@@ -60,4 +60,6 @@ interface BasePeerNode extends PeerContext {
 
 	void handleMessage(Message msg);
 
+	MessageItem makeLoadStats(boolean realtime);
+
 }

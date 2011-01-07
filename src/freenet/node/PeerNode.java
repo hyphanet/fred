@@ -4847,4 +4847,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		return false;
 	}
+	
+	public MessageItem makeLoadStats(boolean realtime) {
+		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert());
+		if(msg == null) return null;
+		return new MessageItem(msg, null, node.nodeStats.allocationNoticesCounter, this);
+	}
+
 }
