@@ -187,4 +187,21 @@ public class NullBasePeerNode implements BasePeerNode {
 		return null;
 	}
 
+	public void handleMessage(Message msg) {
+		throw new UnsupportedOperationException();
+	}
+
+	public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
+		// Don't send load stats.
+		return null;
+	}
+
+	public boolean grabSendLoadStatsASAP(boolean realtime) {
+		return false;
+	}
+
+	public void setSendLoadStatsASAP(boolean realtime) {
+		throw new UnsupportedOperationException();
+	}
+
 }
