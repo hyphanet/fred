@@ -174,11 +174,6 @@ public class NullBasePeerNode implements BasePeerNode {
 		// Do nothing
 	}
 
-	public void dumpTracker(SessionKey brokenKey) {
-		// Do nothing as we are not tracking sessionkeys, the test is probably passing them in.
-		// Will be overridden by some tests.
-	}
-
 	public void resentBytes(int bytesToResend) {
 		// Ignore
 	}
