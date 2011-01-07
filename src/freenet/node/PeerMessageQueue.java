@@ -828,7 +828,7 @@ public class PeerMessageQueue {
 			if(i < minPriority) continue;
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
-			if(incomplete.value) {
+			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
 				if(addPeerLoadStatsBulk.value && maxMessages > 1)
@@ -847,7 +847,7 @@ public class PeerMessageQueue {
 				sendBalance--;
 				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
 			}
-			if(incomplete.value) {
+			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
 				if(addPeerLoadStatsBulk.value && maxMessages > 1)
@@ -861,7 +861,7 @@ public class PeerMessageQueue {
 				sendBalance++;
 				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
 			}
-			if(incomplete.value) {
+			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
 				if(addPeerLoadStatsBulk.value && maxMessages > 1)
@@ -877,7 +877,7 @@ public class PeerMessageQueue {
 				sendBalance++;
 				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
 			}
-			if(incomplete.value) {
+			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
 				if(addPeerLoadStatsBulk.value && maxMessages > 1)
@@ -891,7 +891,7 @@ public class PeerMessageQueue {
 				sendBalance--;
 				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
 			}
-			if(incomplete.value) {
+			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
 				if(addPeerLoadStatsBulk.value && maxMessages > 1)
@@ -903,7 +903,7 @@ public class PeerMessageQueue {
 			if(i < minPriority) continue;
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
 			size = queuesByPriority[i].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
-			if(incomplete.value) {
+			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
 					addLoadStats(now, messages, true);
 				if(addPeerLoadStatsBulk.value && maxMessages > 1)
