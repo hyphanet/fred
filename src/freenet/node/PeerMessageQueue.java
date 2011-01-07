@@ -46,7 +46,7 @@ public class PeerMessageQueue {
 	private boolean mustSendLoadRT;
 	private boolean mustSendLoadBulk;
 	
-	private final PeerNode pn;
+	private final BasePeerNode pn;
 	
 	private static final int MAX_PEER_LOAD_STATS_SIZE = DMT.FNPPeerLoadStatusInt.getMaxSize(0);
 	
@@ -628,7 +628,7 @@ public class PeerMessageQueue {
 
 	}
 
-	PeerMessageQueue(PeerNode parent) {
+	PeerMessageQueue(BasePeerNode parent) {
 		pn = parent;
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
 		for(int i=0;i<queuesByPriority.length;i++)
