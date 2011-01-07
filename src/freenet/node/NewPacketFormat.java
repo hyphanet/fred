@@ -599,6 +599,7 @@ outer:
 					if(item != null) {
 						byte[] buf = item.getData();
 						haveAddedStatsBulk = buf;
+						// FIXME if this fails, drop some messages.
 						packet.addLossyMessage(buf, maxPacketSize);
 					}
 				}
@@ -608,6 +609,7 @@ outer:
 					if(item != null) {
 						byte[] buf = item.getData();
 						haveAddedStatsRT = buf;
+						// FIXME if this fails, drop some messages.
 						packet.addLossyMessage(buf, maxPacketSize);
 					}
 				}
@@ -765,6 +767,7 @@ outer:
 							if(item != null) {
 								byte[] buf = item.getData();
 								haveAddedStatsBulk = item.buf;
+								// FIXME if this fails, drop some messages.
 								packet.addLossyMessage(buf, maxPacketSize);
 							}
 						}
@@ -774,6 +777,7 @@ outer:
 							if(item != null) {
 								byte[] buf = item.getData();
 								haveAddedStatsRT = item.buf;
+								// FIXME if this fails, drop some messages.
 								packet.addLossyMessage(buf, maxPacketSize);
 							}
 						}
