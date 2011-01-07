@@ -392,7 +392,7 @@ public class NPFPacketTest extends TestCase {
 		checkEquals(correctData, data);
 	}
 	
-	private void checkEquals(byte[] correctData, byte[] data) {
+	public static void checkEquals(byte[] correctData, byte[] data) {
 		assertEquals("Packet lengths differ:", correctData.length, data.length);
 		for(int i = 0; i < data.length; i++) {
 			if(data[i] != correctData[i]) {
