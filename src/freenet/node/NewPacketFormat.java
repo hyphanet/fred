@@ -548,28 +548,67 @@ outer:
 			if(logDEBUG) Logger.debug(this, "Added acks for "+this+" for "+pn.shortToString());
 		}
 		
+		boolean haveAddedStatsBulk = false;
+		boolean haveAddedStatsRT = false;
+		
 		if(!ackOnly) {
 			
 			boolean addedFragments = false;
-
-			// Always finish what we have started before considering sending more packets.
-			// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
-			for(int i = 0; i < startedByPrio.size(); i++) {
-				HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
+			
+			while(true) {
 				
-				//Try to finish messages that have been started
-				synchronized(started) {
-					Iterator<MessageWrapper> it = started.values().iterator();
-					while(it.hasNext() && packet.getLength() < maxPacketSize) {
-						MessageWrapper wrapper = it.next();
-						while(packet.getLength() < maxPacketSize) {
-							MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-							if(frag == null) break;
-							mustSend = true;
-							addedFragments = true;
-							packet.addMessageFragment(frag);
-							sentPacket.addFragment(frag);
+				boolean addStatsBulk = false;
+				boolean addStatsRT = false;
+				
+				// Always finish what we have started before considering sending more packets.
+				// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
+				for(int i = 0; i < startedByPrio.size(); i++) {
+					HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
+					
+					//Try to finish messages that have been started
+					synchronized(started) {
+						Iterator<MessageWrapper> it = started.values().iterator();
+						while(it.hasNext() && packet.getLength() < maxPacketSize) {
+							MessageWrapper wrapper = it.next();
+							while(packet.getLength() < maxPacketSize) {
+								MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+								if(frag == null) break;
+								mustSend = true;
+								addedFragments = true;
+								packet.addMessageFragment(frag);
+								sentPacket.addFragment(frag);
+								if(!wrapper.canSend()) {
+									if((!haveAddedStatsBulk) && wrapper.getItem().sendLoadBulk) {
+										addStatsBulk = true;
+										break;
+									}
+									if((!haveAddedStatsRT) && wrapper.getItem().sendLoadRT) {
+										addStatsRT = true;
+										break;
+									}
+								}
+							}
 						}
+					}
+				}
+				
+				if(!(addStatsBulk || addStatsRT)) break;
+				
+				if(addStatsBulk) {
+					MessageItem item = pn.makeLoadStats(false);
+					haveAddedStatsBulk = true;
+					if(item != null) {
+						byte[] buf = item.getData();
+						packet.addLossyMessage(buf);
+					}
+				}
+				
+				if(addStatsRT) {
+					MessageItem item = pn.makeLoadStats(true);
+					haveAddedStatsRT = true;
+					if(item != null) {
+						byte[] buf = item.getData();
+						packet.addLossyMessage(buf);
 					}
 				}
 			}
@@ -616,51 +655,91 @@ outer:
 			
 			fragments:
 				for(int i = 0; i < startedByPrio.size(); i++) {
-					//Add messages from the message queue
-					while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
-						MessageItem item = null;
-						item = messageQueue.grabQueuedMessageItem(i);
-						if(item == null) break;
+
+					prio:
+					while(true) {
 						
-						int bufferUsage;
-						synchronized(bufferUsageLock) {
-							bufferUsage = usedBufferOtherSide;
-						}
-						if((bufferUsage + item.buf.length) > MAX_BUFFER_SIZE) {
-							if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
-							messageQueue.pushfrontPrioritizedMessageItem(item);
-							break fragments;
+						boolean addStatsBulk = false;
+						boolean addStatsRT = false;
+						
+						//Add messages from the message queue
+						while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
+							MessageItem item = null;
+							item = messageQueue.grabQueuedMessageItem(i);
+							if(item == null) break prio;
+							
+							int bufferUsage;
+							synchronized(bufferUsageLock) {
+								bufferUsage = usedBufferOtherSide;
+							}
+							if((bufferUsage + item.buf.length) > MAX_BUFFER_SIZE) {
+								if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
+								messageQueue.pushfrontPrioritizedMessageItem(item);
+								break fragments;
+							}
+							
+							int messageID = getMessageID();
+							if(messageID == -1) {
+								if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
+								messageQueue.pushfrontPrioritizedMessageItem(item);
+								break fragments;
+							}
+							
+							if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item);
+							
+							MessageWrapper wrapper = new MessageWrapper(item, messageID);
+							MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
+							if(frag == null) {
+								messageQueue.pushfrontPrioritizedMessageItem(item);
+								break prio;
+							}
+							packet.addMessageFragment(frag);
+							sentPacket.addFragment(frag);
+							
+							//Priority of the one we grabbed might be higher than i
+							HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
+							synchronized(queue) {
+								queue.put(messageID, wrapper);
+							}
+							
+							synchronized(bufferUsageLock) {
+								usedBufferOtherSide += item.buf.length;
+								if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide + " for "+pn.shortToString());
+							}
+							
+							if(!wrapper.canSend()) {
+								if((!haveAddedStatsBulk) && wrapper.getItem().sendLoadBulk) {
+									addStatsBulk = true;
+									break;
+								}
+								if((!haveAddedStatsRT) && wrapper.getItem().sendLoadRT) {
+									addStatsRT = true;
+									break;
+								}
+							}
+
 						}
 						
-						int messageID = getMessageID();
-						if(messageID == -1) {
-							if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
-							messageQueue.pushfrontPrioritizedMessageItem(item);
-							break fragments;
+						if(!(addStatsBulk || addStatsRT)) break;
+						
+						if(addStatsBulk) {
+							MessageItem item = pn.makeLoadStats(false);
+							haveAddedStatsBulk = true;
+							if(item != null) {
+								byte[] buf = item.getData();
+								packet.addLossyMessage(buf);
+							}
 						}
 						
-						if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item);
-						
-						MessageWrapper wrapper = new MessageWrapper(item, messageID);
-						MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
-						if(frag == null) {
-							messageQueue.pushfrontPrioritizedMessageItem(item);
-							break;
+						if(addStatsRT) {
+							MessageItem item = pn.makeLoadStats(true);
+							haveAddedStatsRT = true;
+							if(item != null) {
+								byte[] buf = item.getData();
+								packet.addLossyMessage(buf);
+							}
 						}
-						packet.addMessageFragment(frag);
-						sentPacket.addFragment(frag);
-						
-						//Priority of the one we grabbed might be higher than i
-						HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
-						synchronized(queue) {
-							queue.put(messageID, wrapper);
-						}
-						
-						synchronized(bufferUsageLock) {
-							usedBufferOtherSide += item.buf.length;
-							if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide + " for "+pn.shortToString());
-						}
-					}
+					}						
 				}
 		
 		}
