@@ -370,11 +370,12 @@ public class NPFPacketTest extends TestCase {
 		p.addLossyMessage(lossyFragment);
 		p.addLossyMessage(lossyFragment2);
 		byte[] encoded = new byte[p.getLength() + 20];
-		p.toBytes(encoded, 0, new Random());
+		int randomSeed = new Random().nextInt();
+		p.toBytes(encoded, 0, new Random(randomSeed));
 		NPFPacket received = NPFPacket.create(encoded);
 		assertEquals(1, received.getFragments().size());
 		assertEquals(0, received.countAcks());
-		assertEquals(2, received.getLossyMessages().size());
+		assertEquals("Seed was "+randomSeed, 2, received.getLossyMessages().size());
 		assertEquals(p.getLength(), received.getLength());
 		assertEquals(encoded.length - 20, received.getLength());
 		byte[] decodedFragData = received.getFragments().get(0).fragmentData;
