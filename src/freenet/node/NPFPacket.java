@@ -182,7 +182,7 @@ class NPFPacket {
 			byte[] plaintext, int offset) {
 		int origOffset = offset;
 		while(true) {
-			if((plaintext[offset] & ~0x1F) != 0)
+			if(plaintext[offset] != 0x1F)
 				return offset; // Padding
 			// Else it might be some per-packet lossy messages
 			offset++;
