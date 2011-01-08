@@ -690,20 +690,24 @@ outer:
 			
 			if(sendStatsBulk) {
 				MessageItem item = pn.makeLoadStats(false, true);
-				if(haveAddedStatsBulk != null) {
-					packet.removeLossyMessage(haveAddedStatsBulk);
+				if(item != null) {
+					if(haveAddedStatsBulk != null) {
+						packet.removeLossyMessage(haveAddedStatsBulk);
+					}
+					messageQueue.pushfrontPrioritizedMessageItem(item);
+					haveAddedStatsBulk = item.buf;
 				}
-				messageQueue.pushfrontPrioritizedMessageItem(item);
-				haveAddedStatsBulk = item.buf;
 			}
 			
 			if(sendStatsRT) {
 				MessageItem item = pn.makeLoadStats(true, true);
-				if(haveAddedStatsRT != null) {
-					packet.removeLossyMessage(haveAddedStatsRT);
+				if(item != null) {
+					if(haveAddedStatsRT != null) {
+						packet.removeLossyMessage(haveAddedStatsRT);
+					}
+					messageQueue.pushfrontPrioritizedMessageItem(item);
+					haveAddedStatsRT = item.buf;
 				}
-				messageQueue.pushfrontPrioritizedMessageItem(item);
-				haveAddedStatsRT = item.buf;
 			}
 			
 			fragments:
