@@ -468,7 +468,7 @@ outer:
 
 				Logger.minor(this, "Sending packet " + packet.getSequenceNumber() + " ("
 				                + data.length + " bytes) with fragments " + fragments + " and "
-				                + packet.getAcks().size() + " acks");
+				                + packet.getAcks().size() + " acks on "+this);
 			}
 			pn.sendEncryptedPacket(data);
 		} catch (LocalAddressException e) {
@@ -613,7 +613,7 @@ outer:
 							break fragments;
 						}
 						
-						if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item);
+						if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item+" for "+this);
 						
 						MessageWrapper wrapper = new MessageWrapper(item, messageID);
 						MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
