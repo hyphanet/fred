@@ -186,6 +186,10 @@ class NPFPacket {
 				return offset; // Padding
 			// Else it might be some per-packet lossy messages
 			offset++;
+			if(offset >= plaintext.length) {
+				packet.lossyMessages.clear();
+				return origOffset;
+			}
 			int len = plaintext[offset] & 0xFF;
 			offset++;
 			if(len > plaintext.length - offset) {
