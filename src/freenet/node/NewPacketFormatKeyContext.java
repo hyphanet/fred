@@ -41,6 +41,8 @@ public class NewPacketFormatKeyContext {
 	private static final int MIN_RTT_FOR_RETRANSMIT = 250;
 	private static final int NUM_RTTS_TO_LOOSE = 2;
 	
+	private int maxSeenInFlight;
+	
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	static {
@@ -208,6 +210,11 @@ public class NewPacketFormatKeyContext {
 		synchronized(sentPackets) {
 			sentPacket.sent(length);
 			sentPackets.put(seqNum, sentPacket);
+			int inFlight = sentPackets.size();
+			if(inFlight > maxSeenInFlight) {
+				maxSeenInFlight = inFlight;
+				if(logDEBUG) Logger.debug(this, "Max seen in flight new record: "+maxSeenInFlight+" for "+this);
+			}
 		}
 	}
 
