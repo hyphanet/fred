@@ -3,6 +3,7 @@ package freenet.node;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class OpennetPeerNode extends PeerNode {
@@ -222,6 +223,7 @@ public class OpennetPeerNode extends PeerNode {
 
 	@Override
 	public void fatalTimeout() {
+		Logger.normal(this, "Disconnecting "+this+" because of fatal timeout");
 		// Disconnect.
 		forceDisconnect(true);
 	}
