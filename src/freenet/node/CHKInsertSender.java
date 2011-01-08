@@ -183,6 +183,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			} else {
 				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
 				pn.fatalTimeout();
+				thisTag.removeRoutingTo(pn);
 			}
 		}
 
@@ -558,6 +559,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							// Second timeout.
 							// Definitely caused by the next node, fatal.
 							Logger.error(this, "Got second (local) timeout on "+this+" from "+next);
+							thisTag.removeRoutingTo(next);
 							next.fatalTimeout();
 							return;
 						}
@@ -647,6 +649,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		next.localRejectedOverload("AfterInsertAcceptedRejectedTimeout");
 		
 		// Since we definitely sent the DataInsert, this is definitely the fault of the next node.
+		origTag.removeRoutingTo(next);
 		next.fatalTimeout();
 		
 		finish(TIMED_OUT, next);
@@ -859,6 +862,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 								public void onTimeout() {
 									// Grrr!
 									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
+									tag.removeRoutingTo(next);
 									next.fatalTimeout();
 								}
 
@@ -882,6 +886,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 
 				public void onTimeout() {
+					tag.removeRoutingTo(next);
 					next.fatalTimeout();
 				}
 

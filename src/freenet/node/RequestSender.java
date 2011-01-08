@@ -860,6 +860,7 @@ loadWaiterLoop:
 						// FIXME or wait for it and then cancel the transfer
 						// FIXME or introduce a cancel function for requests (probable security issues!)
 						Logger.error(this, "Timed out waiting for Accepted/Rejected but then got Accepted from "+next+", treating as fatal on "+RequestSender.this);
+						origTag.removeRoutingTo(next);
 						next.fatalTimeout();
 					}
 				}
@@ -870,6 +871,7 @@ loadWaiterLoop:
 
 				public void onTimeout() {
 					Logger.error(this, "Fatal timeout waiting for Accepted/Rejected from "+next+" on "+RequestSender.this);
+					origTag.removeRoutingTo(next);
 					next.fatalTimeout();
 				}
 

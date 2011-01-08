@@ -486,6 +486,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 								public void onTimeout() {
 									// Grrr!
 									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
+									tag.removeRoutingTo(next);
 									next.fatalTimeout();
 								}
 
@@ -509,6 +510,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
 
 				public void onTimeout() {
+					tag.removeRoutingTo(next);
 					next.fatalTimeout();
 				}
 
