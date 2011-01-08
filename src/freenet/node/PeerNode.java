@@ -4459,8 +4459,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				lastFullStats = stats;
 				timeLastSentAllocationNotice = now;
 				countAllocationNotices++;
-				timeLastSentAllocationNotice = now;
-				countAllocationNotices++;
 				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+lastSentAllocationInput+" input "+lastSentAllocationOutput+" output.");
 			}
 			Message msg = DMT.createFNPPeerLoadStatus(stats);
