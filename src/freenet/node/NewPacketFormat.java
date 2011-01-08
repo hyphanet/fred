@@ -428,7 +428,12 @@ outer:
 			if(!ackOnly) {
 				delta = (timeLastCalledMaybeSendPacketNotAckOnly == 0) ? -1 : (now - timeLastCalledMaybeSendPacketNotAckOnly);
 				timeLastCalledMaybeSendPacketNotAckOnly = now;
-				if(logDEBUG && delta != -1) Logger.debug(this, "Last called maybe send packet without ack only: "+delta+" on "+this);
+				if(logDEBUG && delta != -1) {
+					if(delta > 10000)
+						Logger.error(this, "Last called maybe send packet without ack only: "+delta+" on "+this);
+					else
+						Logger.debug(this, "Last called maybe send packet without ack only: "+delta+" on "+this);
+				}
 			}
 		}
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
