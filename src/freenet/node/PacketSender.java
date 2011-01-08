@@ -160,6 +160,8 @@ public class PacketSender implements Runnable {
 		int newBrokeAt = brokeAt;
 		for(int i = 0; i < nodes.length; i++) {
 			int idx = (i + brokeAt + 1) % nodes.length;
+			if(logMINOR)
+				Logger.minor(this, "Trying index "+idx+" of "+nodes.length+" canSend="+canSendThrottled);
 			PeerNode pn = nodes[idx];
                         final long lastReceivedPacketTime = pn.lastReceivedPacketTime();
 			lastReceivedPacketFromAnyNode =
