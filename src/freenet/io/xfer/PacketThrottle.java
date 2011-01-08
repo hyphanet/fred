@@ -52,6 +52,9 @@ public class PacketThrottle {
 	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
 	private long _roundTripTime = 500, _totalPackets, _droppedPackets;
+	/** The size of the window, in packets.
+	 * Window size must not drop below 1.0. Partly this is because we need to be able to send one packet, so it is a logical lower bound.
+	 * But mostly it is because of the non-slow-start division by _windowSize! */
 	private float _windowSize = 2;
 	private final int PACKET_SIZE;
 	private boolean slowStart = true;
@@ -81,13 +84,14 @@ public class PacketThrottle {
 		_droppedPackets++;
 		_totalPackets++;
 		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+		if(_windowSize < 1.0F) _windowSize = 1.0F;
 		slowStart = false;
 		if(logMINOR)
 			Logger.minor(this, "notifyOfPacketLost(): "+this);
 		_packetSeqWindowFullChecked = _packetSeq;
     }
 
-    public synchronized void notifyOfPacketAcknowledged() {
+    public synchronized void notifyOfPacketAcknowledged(double maxWindowSize) {
         _totalPackets++;
 		// If we didn't use the whole window, shrink the window a bit.
 		// This is similar but not identical to RFC2861
@@ -97,6 +101,7 @@ public class PacketThrottle {
         	if(_packetSeqWindowFull < _packetSeqWindowFullChecked) {
         		// We haven't used the full window once since we last checked.
         		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+        		if(_windowSize < 1.0F) _windowSize = 1.0F;
             	_packetSeqWindowFullChecked += windowSize;
             	if(logMINOR) Logger.minor(this, "Window not used since we last checked: full="+_packetSeqWindowFull+" last checked="+_packetSeqWindowFullChecked+" window = "+_windowSize+" for "+this);
         		return;
@@ -108,7 +113,10 @@ public class PacketThrottle {
     		if(logMINOR) Logger.minor(this, "Still in slow start");
     		_windowSize += _windowSize / SLOW_START_DIVISOR;
     		// Avoid craziness if there is lag in detecting packet loss.
-    		if(_windowSize > 1.0E12) slowStart = false;
+    		if(_windowSize > maxWindowSize) slowStart = false;
+    		// Window size must not drop below 1.0. Partly this is because we need to be able to send one packet, so it is a logical lower bound.
+    		// But mostly it is because of the non-slow-start division by _windowSize!
+    		if(_windowSize < 1.0F) _windowSize = 1.0F;
     	} else {
     		_windowSize += (PACKET_TRANSMIT_INCREMENT / _windowSize);
     	}

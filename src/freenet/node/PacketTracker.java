@@ -531,7 +531,7 @@ public class PacketTracker {
 			if(sentPacketsContents.remove(realSeqNo))
 				if(buf.length > Node.PACKET_SIZE) {
 					PacketThrottle throttle = pn.getThrottle();
-					throttle.notifyOfPacketAcknowledged();
+					throttle.notifyOfPacketAcknowledged(1024);
 					throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 				}
 			if(logMINOR)
@@ -578,7 +578,7 @@ public class PacketTracker {
 		if(sentPacketsContents.remove(realSeqNo))
 			if(buf.length > Node.PACKET_SIZE) {
 				PacketThrottle throttle = pn.getThrottle();
-				throttle.notifyOfPacketAcknowledged();
+				throttle.notifyOfPacketAcknowledged(1024);
 				throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 			}
 		try {

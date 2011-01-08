@@ -41,6 +41,8 @@ public class NewPacketFormatKeyContext {
 	private static final int MIN_RTT_FOR_RETRANSMIT = 250;
 	private static final int NUM_RTTS_TO_LOOSE = 2;
 	
+	private int maxSeenInFlight;
+	
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 	static {
@@ -101,12 +103,14 @@ public class NewPacketFormatKeyContext {
 	public void ack(int ack, BasePeerNode pn) {
 		long rtt;
 		int packetLength = 0;
+		int maxSize;
 		synchronized(sentPackets) {
 			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack);
 			SentPacket sent = sentPackets.remove(ack);
 			if(sent != null) {
 				rtt = sent.acked();
 				packetLength = sent.packetLength;
+				maxSize = (maxSeenInFlight * 2) + 10;
 			} else
 				return;
 		}
@@ -123,7 +127,7 @@ public class NewPacketFormatKeyContext {
 			// FIXME sub-packetsize MTUs may be a problem
 			// The throttle only applies to big blocks.
 			if(packetLength > Node.PACKET_SIZE) {
-				throttle.notifyOfPacketAcknowledged();
+				throttle.notifyOfPacketAcknowledged(maxSize);
 			}
 		}
 	}
@@ -208,6 +212,11 @@ public class NewPacketFormatKeyContext {
 		synchronized(sentPackets) {
 			sentPacket.sent(length);
 			sentPackets.put(seqNum, sentPacket);
+			int inFlight = sentPackets.size();
+			if(inFlight > maxSeenInFlight) {
+				maxSeenInFlight = inFlight;
+				if(logDEBUG) Logger.debug(this, "Max seen in flight new record: "+maxSeenInFlight+" for "+this);
+			}
 		}
 	}
 

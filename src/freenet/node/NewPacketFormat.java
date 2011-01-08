@@ -32,7 +32,7 @@ public class NewPacketFormat implements PacketFormat {
 	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
 	// FIXME increase this significantly to let it ride over network interruptions.
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
-	private static final int MAX_BUFFER_SIZE = 256 * 1024;
+	static final int MAX_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
 	static final long NUM_SEQNUMS = 2147483648l;
@@ -68,6 +68,9 @@ public class NewPacketFormat implements PacketFormat {
 	private int usedBuffer = 0;
 	private int usedBufferOtherSide = 0;
 	private final Object bufferUsageLock = new Object();
+	
+	private long timeLastCalledMaybeSendPacketIncAckOnly;
+	private long timeLastCalledMaybeSendPacketNotAckOnly;
 
 	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID, boolean isNew) {
 		this.pn = pn;
@@ -418,6 +421,16 @@ outer:
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	throws BlockedTooLongException {
+		synchronized(this) {
+			long delta = (timeLastCalledMaybeSendPacketIncAckOnly == 0) ? -1 : (now - timeLastCalledMaybeSendPacketIncAckOnly);
+			timeLastCalledMaybeSendPacketIncAckOnly = now;
+			if(logDEBUG && delta != -1) Logger.debug(this, "Last called maybe send packet with ack only: "+delta+" on "+this);
+			if(!ackOnly) {
+				delta = (timeLastCalledMaybeSendPacketNotAckOnly == 0) ? -1 : (now - timeLastCalledMaybeSendPacketNotAckOnly);
+				timeLastCalledMaybeSendPacketNotAckOnly = now;
+				if(logDEBUG && delta != -1) Logger.debug(this, "Last called maybe send packet without ack only: "+delta+" on "+this);
+			}
+		}
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
@@ -494,7 +507,7 @@ outer:
 
 				Logger.minor(this, "Sending packet " + packet.getSequenceNumber() + " ("
 				                + data.length + " bytes) with fragments " + fragments + " and "
-				                + packet.getAcks().size() + " acks");
+				                + packet.getAcks().size() + " acks on "+this);
 			}
 			pn.sendEncryptedPacket(data);
 		} catch (LocalAddressException e) {
@@ -725,7 +738,7 @@ outer:
 								break fragments;
 							}
 							
-							if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item);
+							if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item+" for "+this);
 							
 							MessageWrapper wrapper = new MessageWrapper(item, messageID);
 							MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());
