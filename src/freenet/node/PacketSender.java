@@ -192,7 +192,8 @@ public class PacketSender implements Runnable {
 				}
 
 				try {
-					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp, shouldThrottle && !canSendThrottled)) {
+					boolean ackOnly = shouldThrottle && !canSendThrottled;
+					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly)) {
 						count = node.outputThrottle.getCount();
 						if(count > MAX_PACKET_SIZE)
 							canSendThrottled = true;
@@ -203,7 +204,10 @@ public class PacketSender implements Runnable {
 							if(logMINOR)
 								Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 							nextActionTime = Math.min(nextActionTime, now + canSendAt);
-							newBrokeAt = idx;
+							if(!ackOnly) {
+								if(logMINOR) Logger.minor(this, "Setting next starting point to "+idx);
+								newBrokeAt = idx;
+							}
 						}
 					}
 				} catch (BlockedTooLongException e) {
