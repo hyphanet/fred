@@ -14,6 +14,8 @@ public class MessageWrapper {
 	private final boolean isShortMessage;
 	private final int messageID;
 	private boolean reportedSent;
+	private final long created;
+	private int resends;
 
 	//Sorted lists of non-overlapping ranges. If you need to lock both, lock sent first
 	private final SparseBitmap acks = new SparseBitmap();
@@ -36,6 +38,7 @@ public class MessageWrapper {
 		this.item = item;
 		isShortMessage = item.buf.length <= 255;
 		this.messageID = messageID;
+		created = System.currentTimeMillis();
 	}
 
 	private boolean alreadyAcked = false;
@@ -56,6 +59,8 @@ public class MessageWrapper {
 						}
 					}
 					alreadyAcked = true;
+					if(logMINOR)
+						Logger.minor(this, "Total round trip time for message "+messageID+" : "+item+" : "+(System.currentTimeMillis() - created)+" in "+resends+" resends");
 				}
 				return true;
 			}
@@ -68,6 +73,7 @@ public class MessageWrapper {
 		int size = end - start + 1;
 		synchronized(sent) {
 		synchronized(acks) {
+			resends++;
 			sent.remove(start, end);
 
 			for(int[] range : acks) {
@@ -165,7 +171,7 @@ public class MessageWrapper {
 			System.arraycopy(item.buf, start, fragmentData, 0, dataLength);
 
 			sent.add(start, start + dataLength - 1);
-			if(logDEBUG) Logger.debug(this, "Using range "+start+" to "+(start+dataLength-1)+" gives "+sent);
+			if(logDEBUG) Logger.debug(this, "Using range "+start+" to "+(start+dataLength-1)+" gives "+sent+" on "+messageID);
 		}
 
 		boolean isFragmented = !((start == 0) && (dataLength == item.buf.length));
