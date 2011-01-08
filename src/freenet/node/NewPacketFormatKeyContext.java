@@ -103,12 +103,14 @@ public class NewPacketFormatKeyContext {
 	public void ack(int ack, BasePeerNode pn) {
 		long rtt;
 		int packetLength = 0;
+		int maxSize;
 		synchronized(sentPackets) {
 			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack);
 			SentPacket sent = sentPackets.remove(ack);
 			if(sent != null) {
 				rtt = sent.acked();
 				packetLength = sent.packetLength;
+				maxSize = (maxSeenInFlight * 2) + 10;
 			} else
 				return;
 		}
@@ -125,7 +127,7 @@ public class NewPacketFormatKeyContext {
 			// FIXME sub-packetsize MTUs may be a problem
 			// The throttle only applies to big blocks.
 			if(packetLength > Node.PACKET_SIZE) {
-				throttle.notifyOfPacketAcknowledged(4 * NewPacketFormat.MAX_BUFFER_SIZE / Node.PACKET_SIZE);
+				throttle.notifyOfPacketAcknowledged(maxSize);
 			}
 		}
 	}
