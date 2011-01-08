@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.LinkedList;
+
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.support.MutableBoolean;
@@ -161,16 +163,17 @@ public class NewPacketFormatTest extends TestCase {
 		assertEquals(0, receiver.handleDecryptedPacket(packet1, receiverKey).size());
 	}
 	
-	public void testLoadStatsLowLevel() throws BlockedTooLongException, InterruptedException {
-		final byte[] loadMessage = 
-			new byte[] { (byte)0xFF, (byte)0xEE, (byte)0xDD, (byte)0xCC, (byte)0xBB, (byte)0xAA};
+	// Test sending it when the peer wants it to be sent. This is as a real message, *not* as a lossy message.
+	public void testLoadStatsSendWhenPeerWants() throws BlockedTooLongException, InterruptedException {
+		final Message loadMessage = DMT.createFNPVoid();
+		final MutableBoolean gotMessage = new MutableBoolean();
 		final SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		NullBasePeerNode senderNode = new NullBasePeerNode() {
 			
 			boolean shouldSend = true;
 			
 			public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
-				return new MessageItem(loadMessage, null, false, null, (short) 0, false, false);
+				return new MessageItem(loadMessage, null, null, (short)0);
 			}
 
 			public synchronized boolean grabSendLoadStatsASAP(boolean realtime) {
@@ -191,7 +194,23 @@ public class NewPacketFormatTest extends TestCase {
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0, NEW_FORMAT);
 		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
-		NullBasePeerNode receiverNode = new NullBasePeerNode();
+		NullBasePeerNode receiverNode = new NullBasePeerNode() {
+			
+			public void handleMessage(Message msg) {
+				assert(msg.getSpec().equals(DMT.FNPVoid));
+				synchronized(gotMessage) {
+					gotMessage.value = true;
+				}
+			}
+			
+			public void processDecryptedMessage(byte[] data, int offset, int length, int overhead) {
+				Message m = Message.decodeMessageFromPacket(data, offset, length, this, overhead);
+				if(m != null) {
+					handleMessage(m);
+				}
+			}
+			
+		};
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0, NEW_FORMAT);
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
@@ -199,34 +218,66 @@ public class NewPacketFormatTest extends TestCase {
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);
-		assert(packet1 != null);
-		assert(packet1.getLossyMessages().size() == 1);
+		assert(packet1.getLossyMessages().size() == 0);
+		assert(packet1.getFragments().size() == 2);
+		synchronized(gotMessage) {
+			assert(!gotMessage.value);
+		}
+		LinkedList<byte[]> finished = receiver.handleDecryptedPacket(packet1, receiverKey);
+		assertEquals(2, finished.size());
+		for(byte[] buffer : finished) {
+			receiverNode.processDecryptedMessage(buffer, 0, buffer.length, 0);
+		}
+		
+		synchronized(gotMessage) {
+			assert(gotMessage.value);
+		}
+	}
+	
+	// Test sending it as a per-packet lossy message.
+	public void testLoadStatsLowLevel() throws BlockedTooLongException, InterruptedException {
+		final byte[] loadMessage = 
+			new byte[] { (byte)0xFF, (byte)0xEE, (byte)0xDD, (byte)0xCC, (byte)0xBB, (byte)0xAA};
+		final SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
+		NullBasePeerNode senderNode = new NullBasePeerNode() {
+			
+			public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
+				return new MessageItem(loadMessage, null, false, null, (short) 0, false, false);
+			}
+
+			@Override
+			public SessionKey getCurrentKeyTracker() {
+				return senderKey;
+			}
+
+		};
+		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0, NEW_FORMAT);
+		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
+		NullBasePeerNode receiverNode = new NullBasePeerNode();
+		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0, NEW_FORMAT);
+		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
+
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true));
+
+		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
+		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);
+		assertTrue(packet1 != null);
+		assertEquals(1, packet1.getFragments().size());
+		assertEquals(1, packet1.getLossyMessages().size());
 		NPFPacketTest.checkEquals(loadMessage, packet1.getLossyMessages().get(0));
 		// Don't decode the packet because it's not a real message.
 	}
 	
-	// Test including message decoding.
+	// Test sending load message as a per-packet lossy message, including message decoding.
 	public void testLoadStatsHighLevel() throws BlockedTooLongException, InterruptedException {
 		final Message loadMessage = DMT.createFNPVoid();
 		final MutableBoolean gotMessage = new MutableBoolean();
 		NullBasePeerNode senderNode = new NullBasePeerNode() {
 			
-			boolean shouldSend = true;
-			
 			public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
 				return new MessageItem(loadMessage, null, null, (short)0);
 			}
 
-			public synchronized boolean grabSendLoadStatsASAP(boolean realtime) {
-				boolean ret = shouldSend;
-				shouldSend = false;
-				return ret;
-			}
-
-			public synchronized void setSendLoadStatsASAP(boolean realtime) {
-				shouldSend = true;
-			}
-			
 			public void handleMessage(Message msg) {
 				assert(msg.getSpec().equals(DMT.FNPVoid));
 				synchronized(gotMessage) {
@@ -237,25 +288,33 @@ public class NewPacketFormatTest extends TestCase {
 		};
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0, NEW_FORMAT);
 		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
-		NullBasePeerNode receiverNode = new NullBasePeerNode();
+		NullBasePeerNode receiverNode = new NullBasePeerNode() {
+			
+			public void handleMessage(Message msg) {
+				assert(msg.getSpec().equals(DMT.FNPVoid));
+				synchronized(gotMessage) {
+					gotMessage.value = true;
+				}
+			}
+			
+		};
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0, NEW_FORMAT);
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true));
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);
-		assert(packet1.getLossyMessages().size() == 1);
+		assertEquals(1, packet1.getFragments().size());
+		assertEquals(1, packet1.getLossyMessages().size());
+		synchronized(gotMessage) {
+			assert(!gotMessage.value);
+		}
 		assertEquals(1, receiver.handleDecryptedPacket(packet1, receiverKey).size());
 		synchronized(gotMessage) {
 			assert(gotMessage.value);
 		}
 	}
-	
-	
-	// Next test: Test including it opportunistically when a message wants it.
-	
-	// Next test: Test including it when the peernode says it is needed soon. And ensure we don't include it opportunistically in this case.
 	
 }

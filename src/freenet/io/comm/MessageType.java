@@ -157,7 +157,6 @@ public class MessageType {
 	}
 
 	public boolean isLossyPacketMessage() {
-		// TODO Auto-generated method stub
-		return false;
+		return isLossyPacketMessage;
 	}
 }

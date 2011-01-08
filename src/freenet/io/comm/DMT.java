@@ -1346,7 +1346,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType FNPVoid = new MessageType("FNPVoid", PRIORITY_LOW) {{
+	public static final MessageType FNPVoid = new MessageType("FNPVoid", PRIORITY_LOW, false, true) {{
 	}};
 	
 	public static final Message createFNPVoid() {
