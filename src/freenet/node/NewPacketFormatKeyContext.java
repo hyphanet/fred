@@ -123,7 +123,7 @@ public class NewPacketFormatKeyContext {
 			// FIXME sub-packetsize MTUs may be a problem
 			// The throttle only applies to big blocks.
 			if(packetLength > Node.PACKET_SIZE) {
-				throttle.notifyOfPacketAcknowledged();
+				throttle.notifyOfPacketAcknowledged(4 * NewPacketFormat.MAX_BUFFER_SIZE / Node.PACKET_SIZE);
 			}
 		}
 	}

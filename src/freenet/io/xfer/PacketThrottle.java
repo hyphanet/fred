@@ -91,7 +91,7 @@ public class PacketThrottle {
 		_packetSeqWindowFullChecked = _packetSeq;
     }
 
-    public synchronized void notifyOfPacketAcknowledged() {
+    public synchronized void notifyOfPacketAcknowledged(double maxWindowSize) {
         _totalPackets++;
 		// If we didn't use the whole window, shrink the window a bit.
 		// This is similar but not identical to RFC2861
@@ -113,7 +113,7 @@ public class PacketThrottle {
     		if(logMINOR) Logger.minor(this, "Still in slow start");
     		_windowSize += _windowSize / SLOW_START_DIVISOR;
     		// Avoid craziness if there is lag in detecting packet loss.
-    		if(_windowSize > 1.0E12) slowStart = false;
+    		if(_windowSize > maxWindowSize) slowStart = false;
     		// Window size must not drop below 1.0. Partly this is because we need to be able to send one packet, so it is a logical lower bound.
     		// But mostly it is because of the non-slow-start division by _windowSize!
     		if(_windowSize < 1.0F) _windowSize = 1.0F;
