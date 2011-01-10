@@ -13,6 +13,7 @@ import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
+import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.NodeL10n;
@@ -1084,7 +1085,7 @@ public class StatisticsToadlet extends Toadlet {
 		overviewList.addChild("li", "RAMBucketPoolSize:\u00a0" + SizeUtil.formatSize(core.tempBucketFactory.getRamUsed())+ " / "+ SizeUtil.formatSize(core.tempBucketFactory.getMaxRamUsed()));
 		overviewList.addChild("li", "uptimeAverage:\u00a0" + fix3p1pct.format(node.uptime.getUptime()));
 		
-		long[] decoded = FNPPacketMangler.getDecodedPackets();
+		long[] decoded = IncomingPacketFilterImpl.getDecodedPackets();
 		if(decoded != null) {
 			overviewList.addChild("li", "packetsDecoded:\u00a0"+fix3p1pct.format(((double)decoded[0])/((double)decoded[1]))+"\u00a0("+decoded[1]+")");
 		}

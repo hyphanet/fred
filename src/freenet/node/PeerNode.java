@@ -4758,11 +4758,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
-		if(packetFormat.handleReceivedPacket(buf, offset, length, now, replyTo))
-			return true;
-
-		// Assume it is connection setup or rekeying
-		return crypto.packetMangler.process(buf, offset, length, replyTo, now);
+		return packetFormat.handleReceivedPacket(buf, offset, length, now, replyTo);
 	}
 
 	public void checkForLostPackets() {
