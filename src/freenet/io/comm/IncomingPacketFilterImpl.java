@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import freenet.crypt.EntropySource;
 import freenet.node.FNPPacketMangler;
 import freenet.node.Node;
@@ -37,18 +39,37 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 		if(context == null) return false;
 		return !context.isConnected();
 	}
+	
+	private static final AtomicLong successfullyDecodedPackets = new AtomicLong();
+	private static final AtomicLong failedDecodePackets = new AtomicLong();
+	
+	public static long[] getDecodedPackets() {
+		if(!logMINOR) return null;
+		long decoded = successfullyDecodedPackets.get();
+		long failed = failedDecodePackets.get();
+		return new long[] { decoded, decoded+failed };
+	}
 
-	public boolean process(byte[] buf, int offset, int length, Peer peer, long now) {
+	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
 		PeerNode pn = node.peers.getByPeer(peer);
 
 		if(pn != null) {
-			return pn.handleReceivedPacket(buf, offset, length, now, peer);
+			if(pn.handleReceivedPacket(buf, offset, length, now, peer)) {
+				if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+				return DECODED.DECODED;
+			}
 		} else {
 			Logger.normal(this, "Got packet from unknown address");
-			return mangler.process(buf, offset, length, peer, now);
 		}
+		DECODED decoded = mangler.process(buf, offset, length, peer, now);
+		if(decoded == DECODED.DECODED) {
+			if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+		} else if(decoded == DECODED.NOT_DECODED) {
+			if(logMINOR) failedDecodePackets.incrementAndGet();
+		}
+		return decoded;
 	}
 
 }
