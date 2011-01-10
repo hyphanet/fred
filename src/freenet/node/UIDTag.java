@@ -284,7 +284,7 @@ public abstract class UIDTag {
 	 * @param next
 	 */
 	public synchronized void handlingTimeout(PeerNode next) {
-		if(handlingTimeouts != null)
+		if(handlingTimeouts == null)
 			handlingTimeouts = new HashSet<PeerNode>();
 		handlingTimeouts.add(next);
 	}
