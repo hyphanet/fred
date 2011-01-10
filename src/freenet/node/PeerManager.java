@@ -489,6 +489,29 @@ public class PeerManager {
 		}
 		return null;
 	}
+	
+	/**
+	 * Find the node with the given Peer address, or IP address. Checks the outgoing
+	 * packet mangler as well.
+	 * @param peer
+	 * @param mangler
+	 * @return
+	 */
+	public PeerNode getByPeer(Peer peer, FNPPacketMangler mangler) {
+		PeerNode[] peerList = myPeers;
+		for(int i = 0; i < peerList.length; i++) {
+			if(peerList[i].matchesPeerAndPort(peer) && peerList[i].getOutgoingMangler() == mangler)
+				return peerList[i];
+		}
+		// Try a match by IP address if we can't match exactly by IP:port.
+		FreenetInetAddress addr = peer.getFreenetAddress();
+		for(int i = 0; i < peerList.length; i++) {
+			if(peerList[i].matchesIP(addr) && peerList[i].getOutgoingMangler() == mangler)
+				return peerList[i];
+		}
+		return null;
+	}
+
 
 	/**
 	 * Connect to a node provided the fieldset representing it.
