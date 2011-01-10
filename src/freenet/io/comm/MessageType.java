@@ -108,9 +108,10 @@ public class MessageType {
 	    return _name.hashCode();
 	}
 	
-	public static MessageType getSpec(Integer specID) {
+	public static MessageType getSpec(Integer specID, boolean dontLog) {
 		if (!_specs.containsKey(specID)) {
-			Logger.error(MessageType.class, "Unrecognised message type received (" + specID + ')');
+			if(!dontLog)
+				Logger.error(MessageType.class, "Unrecognised message type received (" + specID + ')');
 			return null;
 		}
 		return _specs.get(specID);

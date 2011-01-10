@@ -71,14 +71,19 @@ public class Message {
 	
 	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
-		return decodeMessage(bb, peer, length + overhead, true, false);
+		return decodeMessage(bb, peer, length + overhead, true, false, false);
+	}
+	
+	public static Message decodeMessageLax(byte[] buf, PeerContext peer, int overhead) {
+		ByteBufferInputStream bb = new ByteBufferInputStream(buf);
+		return decodeMessage(bb, peer, buf.length + overhead, true, false, true);
 	}
 
 	private static Message decodeMessage(ByteBufferInputStream bb, PeerContext peer, int recvByteCount,
-	        boolean mayHaveSubMessages, boolean inSubMessage) {
+	        boolean mayHaveSubMessages, boolean inSubMessage, boolean veryLax) {
 		MessageType mspec;
 		try {
-			mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()));
+			mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()), veryLax);
 		} catch (IOException e1) {
 			if(logDEBUG)
 				Logger.debug(Message.class,"Failed to read message type: "+e1, e1);
@@ -115,7 +120,7 @@ public class Message {
 		    			return m;
 		    		}
 		    		try {
-		    			Message subMessage = decodeMessage(bb2, peer, 0, false, true);
+		    			Message subMessage = decodeMessage(bb2, peer, 0, false, true, veryLax);
 		    			if(subMessage == null) return m;
 		    			if(logMINOR) Logger.minor(Message.class, "Adding submessage: "+subMessage);
 		    			m.addSubMessage(subMessage);

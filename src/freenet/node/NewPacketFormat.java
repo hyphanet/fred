@@ -19,6 +19,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
+import freenet.support.ByteBufferInputStream;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -151,7 +152,7 @@ public class NewPacketFormat implements PacketFormat {
 		for(byte[] buf : packet.getLossyMessages()) {
 			// FIXME factor out parsing once we are sure these are not bogus.
 			// For now we have to be careful.
-			Message msg = Message.decodeMessageFromPacket(buf, 0, buf.length, pn, 0);
+			Message msg = Message.decodeMessageLax(buf, pn, 0);
 			if(msg == null) {
 				lossyMessages.clear();
 				break;
