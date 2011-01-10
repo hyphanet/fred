@@ -4859,5 +4859,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		loadSender(realtime).setSendASAP();
 	}
 
+	public boolean isOldFNP() {
+		return packetFormat instanceof FNPWrapper;
+	}
+
 	
 }
