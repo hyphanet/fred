@@ -228,7 +228,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 	public DECODED process(byte[] buf, int offset, int length, Peer peer, PeerNode opn, long now) {
 
 		if(opn != null && opn.getOutgoingMangler() != this) {
-			Logger.error(this, "Apparently contacted by "+opn+") on "+this);
+			Logger.error(this, "Apparently contacted by "+opn+") on "+this, new Exception("error"));
 			opn = null;
 		}
 		PeerNode pn;
