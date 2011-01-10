@@ -611,6 +611,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			nodeReference = Fields.trimLines(nodeReference);
 			fs = new SimpleFieldSet(nodeReference, false, true);
 			if(!fs.getEndMarker().endsWith("End")) {
+				Logger.error(this, "Trying to add noderef with end marker \""+fs.getEndMarker()+"\"");
 				return PeerAdditionReturnCodes.WRONG_ENCODING;
 			}
 			fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
