@@ -640,6 +640,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	private Message waitForAccepted(PeerNode next, InsertTag thisTag) {
 		Message msg;
 		
+		thisTag.handlingTimeout(next);
+		
 		MessageFilter mf = makeAcceptedRejectedFilter(next, ACCEPTED_TIMEOUT);
 
         while (true) {

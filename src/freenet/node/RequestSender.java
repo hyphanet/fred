@@ -841,6 +841,8 @@ loadWaiterLoop:
 	private void handleAcceptedRejectedTimeout(final PeerNode next,
 			final RequestTag origTag) {
 		
+		origTag.handlingTimeout(next);
+		
 		int timeout = fetchTimeout;
 		
 		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout);
