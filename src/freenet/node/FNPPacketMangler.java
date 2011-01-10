@@ -32,6 +32,7 @@ import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.IncomingPacketFilter;
+import freenet.io.comm.IncomingPacketFilter.DECODED;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.NotConnectedException;
@@ -67,7 +68,7 @@ import freenet.support.io.NativeThread;
  * include queueing etc. (that may require some interface
  * changes in IncomingPacketFilter).
  */
-public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFilter {
+public class FNPPacketMangler implements OutgoingPacketMangler {
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
