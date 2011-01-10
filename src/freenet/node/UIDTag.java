@@ -209,9 +209,12 @@ public abstract class UIDTag {
 						expected = false;
 					}
 				}
-				if(!expected)
-					Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo+" yet not reassigned on "+this, new Exception("debug"));
-				else
+				if(!expected) {
+					if(handlingTimeouts != null)
+						Logger.normal(this, "Unlocked handler but still routing to "+currentlyRoutingTo+" - expected because have timed out so a fork might have succeeded and we might be waiting for the original");
+					else
+						Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo+" yet not reassigned on "+this, new Exception("debug"));
+				} else
 					reassignToSelf();
 			}
 			return false;
@@ -230,6 +233,7 @@ public abstract class UIDTag {
 					}
 				}
 				if(!expected)
+					// Fork succeeds can't happen for fetch-offered-keys.
 					Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom+" yet not reassigned on "+this, new Exception("debug"));
 				else
 					reassignToSelf();
