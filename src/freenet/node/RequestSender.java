@@ -392,7 +392,7 @@ loadWaiterLoop:
             synchronized(this) {
             	receivingAsync = true;
             }
-            WaitForAcceptedCallback cb = new WaitForAcceptedCallback(lastNode);
+            WaitForAcceptedCallback cb = new WaitForAcceptedCallback(lastNode, false);
             cb.schedule();
             return;
         }
@@ -408,14 +408,18 @@ loadWaiterLoop:
     	// If it has
     	
     	private final PeerNode waitingFor;
+    	private final boolean noReroute;
 
-		public WaitForAcceptedCallback(PeerNode source) {
+		public WaitForAcceptedCallback(PeerNode source, boolean noReroute) {
 			waitingFor = source;
+			this.noReroute = noReroute;
 		}
 
 		public void onMatched(Message msg) {
 			
-        	DO action = handleMessage(msg);
+			assert(waitingFor == msg.getSource());
+			
+        	DO action = handleMessage(msg, noReroute, waitingFor);
         	
         	if(action == DO.FINISHED)
         		return;
@@ -855,15 +859,9 @@ loadWaiterLoop:
 						// Ok.
 						origTag.removeRoutingTo(next);
 					} else {
-						assert(m.getSpec() == DMT.FNPAccepted);
-						// Uh oh ...
-						// Now what?!
-						// FIXME fork it and accept the data if any
-						// FIXME or wait for it and then cancel the transfer
-						// FIXME or introduce a cancel function for requests (probable security issues!)
-						Logger.error(this, "Timed out waiting for Accepted/Rejected but then got Accepted from "+next+", treating as fatal on "+RequestSender.this);
-						origTag.removeRoutingTo(next);
-						next.fatalTimeout();
+						// Accepted. May as well wait for the data, if any.
+						WaitForAcceptedCallback cb = new WaitForAcceptedCallback(next, true);
+						cb.schedule();
 					}
 				}
 				
@@ -933,33 +931,33 @@ loadWaiterLoop:
 		return mf;
 	}
 
-	private DO handleMessage(Message msg) {
+	private DO handleMessage(Message msg, boolean wasFork, PeerNode source) {
 		//For debugging purposes, remember the number of responses AFTER the insert, and the last message type we received.
 		gotMessages++;
 		lastMessage=msg.getSpec().getName();
     	
     	if(msg.getSpec() == DMT.FNPDataNotFound) {
-    		handleDataNotFound(msg);
+    		handleDataNotFound(msg, wasFork, source);
     		return DO.FINISHED;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
-    		handleRecentlyFailed(msg);
+    		handleRecentlyFailed(msg, wasFork, source);
     		return DO.FINISHED;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRouteNotFound) {
-    		handleRouteNotFound(msg);
+    		handleRouteNotFound(msg, source);
     		return DO.NEXT_PEER;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRejectedOverload) {
-    		if(handleRejectedOverload(msg)) return DO.WAIT;
+    		if(handleRejectedOverload(msg, source)) return DO.WAIT;
     		else return DO.NEXT_PEER;
     	}
 
     	if((!isSSK) && msg.getSpec() == DMT.FNPCHKDataFound) {
-    		handleCHKDataFound(msg);
+    		handleCHKDataFound(msg, wasFork, source);
     		return DO.FINISHED;
     	}
     	
@@ -967,7 +965,7 @@ loadWaiterLoop:
     		
     		if(!handleSSKPubKey(msg)) return DO.NEXT_PEER;
 			if(sskData != null && headers != null) {
-				finishSSK(next);
+				finishSSK(next, wasFork);
 				return DO.FINISHED;
 			}
 			return DO.WAIT;
@@ -980,7 +978,7 @@ loadWaiterLoop:
         	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
         	
         	if(pubKey != null && headers != null) {
-        		finishSSK(next);
+        		finishSSK(next, wasFork);
         		return DO.FINISHED;
         	}
         	return DO.WAIT;
@@ -994,7 +992,7 @@ loadWaiterLoop:
         	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
     		
         	if(pubKey != null && sskData != null) {
-        		finishSSK(next);
+        		finishSSK(next, wasFork);
         		return DO.FINISHED;
         	}
         	return DO.WAIT;
@@ -1046,7 +1044,7 @@ loadWaiterLoop:
 		}
 	}
 
-	private void handleCHKDataFound(Message msg) {
+	private void handleCHKDataFound(Message msg, final boolean wasFork, PeerNode next) {
     	// Found data
     	
     	// First get headers
@@ -1119,14 +1117,18 @@ loadWaiterLoop:
     					verifyAndCommit(data);
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
-    					finish(VERIFY_FAILURE, sentTo, false);
+    					if(!wasFork)
+    						finish(VERIFY_FAILURE, sentTo, false);
+    					else
+    						origTag.removeRoutingTo(sentTo);
     					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     					return;
     				}
     				finish(SUCCESS, sentTo, false);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
-        			finish(INTERNAL_ERROR, sentTo, true);
+        			if(!wasFork)
+        				finish(INTERNAL_ERROR, sentTo, true);
     			}
     		}
     		
@@ -1157,7 +1159,8 @@ loadWaiterLoop:
     				// We do an ordinary backoff in all cases.
     				// This includes the case where we decide not to turtle the request. This is reasonable as if it had completely quickly we wouldn't have needed to make that choice.
     				sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason());
-    				finish(TRANSFER_FAILED, sentTo, false);
+    				if(!wasFork)
+    					finish(TRANSFER_FAILED, sentTo, false);
     				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     				int reason = e.getReason();
     				boolean timeout = (!br.senderAborted()) &&
@@ -1177,15 +1180,17 @@ loadWaiterLoop:
     				node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
-        			finish(INTERNAL_ERROR, sentTo, true);
+        			if(!wasFork)
+        				finish(INTERNAL_ERROR, sentTo, true);
     			}
     		}
     		
     	});
 	}
 
-	/** @return True to continue waiting for this node, false to move on to another. */
-	private boolean handleRejectedOverload(Message msg) {
+	/** @param next 
+	 * @return True to continue waiting for this node, false to move on to another. */
+	private boolean handleRejectedOverload(Message msg, PeerNode next) {
 		
 		// Non-fatal - probably still have time left
 		forwardRejectedOverload();
@@ -1205,7 +1210,7 @@ loadWaiterLoop:
 		return true;
 	}
 
-	private void handleRouteNotFound(Message msg) {
+	private void handleRouteNotFound(Message msg, PeerNode next) {
 		// Backtrack within available hops
 		short newHtl = msg.getShort(DMT.HTL);
 		if(newHtl < htl) htl = newHtl;
@@ -1214,13 +1219,16 @@ loadWaiterLoop:
 		origTag.removeRoutingTo(next);
 	}
 
-	private void handleDataNotFound(Message msg) {
+	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
 		next.successNotOverload();
-		finish(DATA_NOT_FOUND, next, false);
+		if(!wasFork)
+			finish(DATA_NOT_FOUND, next, false);
+		else
+			this.origTag.removeRoutingTo(next);
 		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 
-	private void handleRecentlyFailed(Message msg) {
+	private void handleRecentlyFailed(Message msg, boolean wasFork, PeerNode next) {
 		next.successNotOverload();
 		/*
 		 * Must set a correct recentlyFailedTimeLeft before calling this finish(), because it will be
@@ -1280,15 +1288,20 @@ loadWaiterLoop:
 			// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
 		// FIXME we need to create the FT entry.
+		if(!wasFork)
 			finish(RECENTLY_FAILED, next, false);
+		else
+			this.origTag.removeRoutingTo(next);
+		
 			node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, source);
 	}
 
 	/**
      * Finish fetching an SSK. We must have received the data, the headers and the pubkey by this point.
      * @param next The node we received the data from.
+	 * @param wasFork 
      */
-	private void finishSSK(PeerNode next) {
+	private void finishSSK(PeerNode next, boolean wasFork) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
 			node.storeShallow(block, canWriteClientCache, canWriteDatastore, false);
@@ -1297,7 +1310,10 @@ loadWaiterLoop:
 			finish(SUCCESS, next, false);
 		} catch (SSKVerifyException e) {
 			Logger.error(this, "Failed to verify: "+e+" from "+next, e);
-			finish(VERIFY_FAILURE, next, false);
+			if(!wasFork)
+				finish(VERIFY_FAILURE, next, false);
+			else
+				this.origTag.removeRoutingTo(next);
 			return;
 		} catch (KeyCollisionException e) {
 			Logger.normal(this, "Collision on "+this);
@@ -1447,6 +1463,14 @@ loadWaiterLoop:
 	
 	private long transferTime;
 	
+	/** Complete the request. Note that if the request was forked (which unfortunately is
+	 * possible because of timeouts awaiting Accepted/Rejected), it is *possible* that 
+	 * there are other forks still running; UIDTag will wait for them. Hence a fork that 
+	 * fails should NOT call this method, however a fork that succeeds SHOULD call it. 
+	 * @param code The completion code.
+	 * @param next The node being routed to.
+	 * @param fromOfferedKey Whether this was the result of fetching an offered key.
+	 */
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ") on "+this);
         
