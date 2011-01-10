@@ -38,16 +38,16 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 		return !context.isConnected();
 	}
 
-	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
+	public boolean process(byte[] buf, int offset, int length, Peer peer, long now) {
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
 		PeerNode pn = node.peers.getByPeer(peer);
 
 		if(pn != null) {
-			pn.handleReceivedPacket(buf, offset, length, now, peer);
+			return pn.handleReceivedPacket(buf, offset, length, now, peer);
 		} else {
 			Logger.normal(this, "Got packet from unknown address");
-			mangler.process(buf, offset, length, peer, now);
+			return mangler.process(buf, offset, length, peer, now);
 		}
 	}
 

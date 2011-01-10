@@ -210,7 +210,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 *
 	 */
 
-	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
+	public boolean process(byte[] buf, int offset, int length, Peer peer, long now) {
 		/**
 		 * Look up the Peer.
 		 * If we know it, check the packet with that key.
@@ -218,7 +218,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * occasionally change their IP addresses).
 		 */
 		PeerNode opn = node.peers.getByPeer(peer);
-		process(buf, offset, length, peer, opn, now);
+		return process(buf, offset, length, peer, opn, now);
 	}
 	
 	/**
@@ -227,7 +227,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Packets generated should have a PeerNode on them.
 	 * Note that the buffer can be modified by this method.
 	 */
-	public void process(byte[] buf, int offset, int length, Peer peer, PeerNode opn, long now) {
+	public boolean process(byte[] buf, int offset, int length, Peer peer, PeerNode opn, long now) {
 
 		if(opn != null && opn.getOutgoingMangler() != this) {
 			Logger.error(this, "Apparently contacted by "+opn+") on "+this);
@@ -242,32 +242,32 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(logMINOR) Logger.minor(this, "Trying current key tracker for exact match");
 				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker(), now)) {
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return true;
 				}
 				// Try with old key
 				if(logMINOR) Logger.minor(this, "Trying previous key tracker for exact match");
 				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker(), now)) {
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return true;
 				}
 				// Try with unverified key
 				if(logMINOR) Logger.minor(this, "Trying unverified key tracker for exact match");
 				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker(), now)) {
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return true;
 				}
 			}
 			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {
 				// Might be an auth packet
 				if(tryProcessAuth(buf, offset, length, opn, peer, false, now)) {
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return true;
 				}
 				// Might be a reply to us sending an anon auth packet.
 				// I.e. we are not the seednode, they are.
 				if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) {
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return true;
 				}
 			}
 		}
@@ -282,25 +282,25 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					// IP address change
 					pn.changedIP(peer);
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return true;
 				}
 				if(logDEBUG) Logger.debug(this, "Trying previous key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return true;
 				}
 				if(logDEBUG) Logger.debug(this, "Trying unverified key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return true;
 				}
 			}
 		}
-		if(node.isStopping()) return;
+		if(node.isStopping()) return false;
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
 			for(int i=0;i<peers.length;i++) {
@@ -308,14 +308,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(pn == opn) continue;
 				if(tryProcessAuth(buf, offset, length, pn, peer,false, now)) {
 					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return true;
 				}
 				if(pn.handshakeUnknownInitiator()) {
 					// Might be a reply to us sending an anon auth packet.
 					// I.e. we are not the seednode, they are.
 					if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
 						if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-						return;
+						return true;
 					}
 				}
 			}
@@ -324,7 +324,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		boolean wantAnonAuthChangeIP = wantAnonAuth && crypto.wantAnonAuthChangeIP();
 		
 		if(wantAnonAuth && wantAnonAuthChangeIP) {
-			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) return;
+			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) return true;
 		}
 
 		boolean didntTryOldOpennetPeers;
@@ -336,7 +336,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				// Try old connections.
 				PeerNode[] oldPeers = opennet.getOldPeers();
 				for(int i=0;i<oldPeers.length;i++) {
-					if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true, now)) return;
+					if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true, now)) return true;
 				}
 				didntTryOldOpennetPeers = false;
 			} else
@@ -344,13 +344,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} else
 			didntTryOldOpennetPeers = false;
 		if(wantAnonAuth) {
-			if(tryProcessAuthAnon(buf, offset, length, peer)) return;
+			if(tryProcessAuthAnon(buf, offset, length, peer)) return true;
 		}
 		
 		if(wantAnonAuth && !wantAnonAuthChangeIP) {
 			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) {
 				Logger.error(this, "Last resort match anon-auth against all anon setup peernodes succeeded - this should not happen! (It can happen if they change address)");
-				return;
+				return true;
 			}
 		}
 
@@ -363,6 +363,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
                 
                 if(logMINOR && !didntTryOldOpennetPeers)
                 	failedDecodePackets.incrementAndGet();
+                
+                return false;
 	}
 	
 	private boolean checkAnonAuthChangeIP(PeerNode opn, byte[] buf, int offset, int length, Peer peer, long now) {
