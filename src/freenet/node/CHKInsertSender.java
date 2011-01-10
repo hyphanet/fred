@@ -135,6 +135,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			if(!success) {
 				setTransferTimedOut();
 			}
+			thisTag.removeRoutingTo(pn);
 			return true;
 		}
 		
@@ -149,7 +150,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					CHKInsertSender.this.setTransferTimedOut();
 				}
 				receivedNotice(!anyTimedOut);
-				thisTag.removeRoutingTo(pn);
 			} else {
 				Logger.error(this, "received completion notice for wrong node: "+pn+" != "+this.pn);
 			}			
