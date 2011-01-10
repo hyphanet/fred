@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import freenet.crypt.EntropySource;
 import freenet.node.FNPPacketMangler;
 import freenet.node.Node;
+import freenet.node.NodeCrypto;
 import freenet.node.PeerNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -26,12 +27,14 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 	}
 
 	private FNPPacketMangler mangler;
+	private NodeCrypto crypto;
 	private Node node;
 	private final EntropySource fnpTimingSource;
 
-	public IncomingPacketFilterImpl(FNPPacketMangler mangler, Node node) {
+	public IncomingPacketFilterImpl(FNPPacketMangler mangler, Node node, NodeCrypto crypto) {
 		this.mangler = mangler;
 		this.node = node;
+		this.crypto = crypto;
 		fnpTimingSource = new EntropySource();
 	}
 
@@ -53,20 +56,30 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
-		PeerNode pn = node.peers.getByPeer(peer, mangler);
+		PeerNode opn = node.peers.getByPeer(peer, mangler);
 
-		if(pn != null) {
-			if(pn.handleReceivedPacket(buf, offset, length, now, peer)) {
+		if(opn != null) {
+			if(opn.handleReceivedPacket(buf, offset, length, now, peer)) {
 				if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 				return DECODED.DECODED;
 			}
 		} else {
 			Logger.normal(this, "Got packet from unknown address");
 		}
-		DECODED decoded = mangler.process(buf, offset, length, peer, pn, now);
+		DECODED decoded = mangler.process(buf, offset, length, peer, opn, now);
 		if(decoded == DECODED.DECODED) {
 			if(logMINOR) successfullyDecodedPackets.incrementAndGet();
 		} else if(decoded == DECODED.NOT_DECODED) {
+			
+			for(PeerNode pn : crypto.getPeerNodes()) {
+				if(pn == opn) continue;
+				if(pn.isOldFNP()) continue;
+				if(opn.handleReceivedPacket(buf, offset, length, now, peer)) {
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return DECODED.DECODED;
+				}
+			}
+			
 			if(logMINOR) failedDecodePackets.incrementAndGet();
 		}
 		return decoded;

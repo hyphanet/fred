@@ -4824,4 +4824,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		return false;
 	}
+
+	public boolean isOldFNP() {
+		return packetFormat instanceof FNPWrapper;
+	}
+
 }
