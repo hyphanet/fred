@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Vector;
 
 import freenet.io.comm.DMT;
+import freenet.io.comm.IncomingPacketFilter.DECODED;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PacketSocketHandler;
@@ -178,8 +179,7 @@ public class FNPWrapper implements PacketFormat {
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
-		pn.crypto.packetMangler.process(buf, offset, length, replyTo, pn, now);
-		return true;
+		return pn.crypto.packetMangler.process(buf, offset, length, replyTo, pn, now) == DECODED.DECODED;
 	}
 
 	public List<MessageItem> onDisconnect() {
