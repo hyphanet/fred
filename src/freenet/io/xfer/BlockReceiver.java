@@ -309,7 +309,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 						}
 
 						public void onTimeout() {
-							Logger.error(this, "Other side did not acknowlege transfer failure on "+this);
+							Logger.error(this, "Other side did not acknowlege transfer failure on "+BlockReceiver.this);
 							_timeoutHandler.onFatalTimeout(_sender);
 						}
 
