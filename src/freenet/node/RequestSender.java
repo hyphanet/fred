@@ -476,10 +476,10 @@ loadWaiterLoop:
 				waitingFor.localRejectedOverload("FatalTimeoutForked");
 			} else {
 				// Fatal timeout
-				next.localRejectedOverload("FatalTimeout");
+				waitingFor.localRejectedOverload("FatalTimeout");
 				forwardRejectedOverload();
-				finish(TIMED_OUT, next, false);
-				node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
+				finish(TIMED_OUT, waitingFor, false);
+				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.REJECT_TIME, source);
 			}
     		
 			// Wait for second timeout.
