@@ -169,7 +169,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			   if this times out, we don't have any time to report to the node of origin the timeout notification (anyTimedOut?).
 			 */
 			// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
-			Logger.normal(this, "Timed out waiting for a final ack from: "+pn+" on "+this);
+			Logger.normal(this, "Timed out waiting for a final ack from: "+pn+" on "+this, new Exception("debug"));
 			if(receivedNotice(false)) {
 				pn.localRejectedOverload("InsertTimeoutNoFinalAck");
 				// First timeout. Wait for second timeout.
