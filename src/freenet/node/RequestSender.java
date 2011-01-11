@@ -424,8 +424,10 @@ loadWaiterLoop:
         	if(action == DO.FINISHED)
         		return;
         	else if(action == DO.NEXT_PEER) {
-        		// Try another peer
-        		routeRequests();
+        		if(!noReroute) {
+        			// Try another peer
+        			routeRequests();
+        		}
         	} else /*if(action == DO.WAIT)*/ {
         		// Try again.
         		schedule();
@@ -457,14 +459,22 @@ loadWaiterLoop:
 
 		public void onTimeout() {
 			synchronized(RequestSender.this) {
-				if(lastNode != waitingFor) {
-					if(logMINOR) Logger.minor(this, "Timeout but has moved on: waiting for "+waitingFor+" but moved on to "+lastNode+" on "+uid);
-					return;
+				if(!noReroute) {
+					if(lastNode != waitingFor) {
+						if(logMINOR) Logger.minor(this, "Timeout but has moved on: waiting for "+waitingFor+" but moved on to "+lastNode+" on "+uid);
+						return;
+					}
+					if(status != -1) {
+						if(logMINOR) Logger.minor(this, "Timed out but already set status to "+status);
+						return;
+					}
 				}
-				if(status != -1) {
-					if(logMINOR) Logger.minor(this, "Timed out but already set status to "+status);
-					return;
-				}
+			}
+			if(noReroute) {
+				if(logMINOR) Logger.minor(this, "Timed out after waiting for fork to "+waitingFor);
+				waitingFor.localRejectedOverload("FatalTimeoutForked");
+				origTag.removeRoutingTo(waitingFor);
+				return;
 			}
 			Logger.error(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid);
     		// Fatal timeout
@@ -478,6 +488,7 @@ loadWaiterLoop:
 		public void onDisconnect(PeerContext ctx) {
 			Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
 			next.noLongerRoutingTo(origTag, false);
+			if(noReroute) return;
 			// Try another peer.
 			routeRequests();
 		}
