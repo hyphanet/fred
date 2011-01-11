@@ -412,7 +412,7 @@ loadWaiterLoop:
 		public WaitForAcceptedCallback(PeerNode source, boolean noReroute) {
 			waitingFor = source;
 			this.noReroute = noReroute;
-            deadline = System.currentTimeMillis() + fetchTimeout;
+			deadline = System.currentTimeMillis() + fetchTimeout;
 		}
 
 		public void onMatched(Message msg) {
@@ -482,7 +482,41 @@ loadWaiterLoop:
     		forwardRejectedOverload();
     		finish(TIMED_OUT, next, false);
     		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
-    		// Finished, can't try another node as timed out.
+    		
+			// Wait for second timeout.
+    		// FIXME make this async.
+    		long deadline = System.currentTimeMillis() + fetchTimeout;
+			while(true) {
+				
+				Message msg;
+				try {
+		        	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis()));
+					msg = node.usm.waitFor(createMessageFilter(timeout), RequestSender.this);
+				} catch (DisconnectedException e) {
+					Logger.normal(this, "Disconnected from " + next
+							+ " while waiting for InsertReply on " + this);
+					origTag.removeRoutingTo(next);
+					return;
+				}
+				
+				if(msg == null) {
+					// Second timeout.
+					Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
+					next.fatalTimeout();
+					origTag.removeRoutingTo(next);
+					return;
+				}
+				
+				DO action = handleMessage(msg, noReroute, waitingFor);
+				
+				if(action == DO.FINISHED)
+					return;
+				else if(action == DO.NEXT_PEER) {
+					origTag.removeRoutingTo(next);
+					return; // Don't try others
+				}
+				// else if(action == DO.WAIT) continue;
+			}
 		}
 
 		public void onDisconnect(PeerContext ctx) {
