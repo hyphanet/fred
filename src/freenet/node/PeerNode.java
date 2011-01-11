@@ -4863,5 +4863,4 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return packetFormat instanceof FNPWrapper;
 	}
 
-	
 }
