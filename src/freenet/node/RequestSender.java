@@ -438,7 +438,7 @@ loadWaiterLoop:
         	long now = System.currentTimeMillis();
         	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - now));
         	if(timeout >= 0) {
-        		MessageFilter mf = createMessageFilter(timeout);
+        		MessageFilter mf = createMessageFilter(timeout, waitingFor);
         		try {
         			node.usm.addAsyncFilter(mf, this, RequestSender.this);
         		} catch (DisconnectedException e) {
@@ -489,7 +489,7 @@ loadWaiterLoop:
 				Message msg;
 				try {
 		        	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis()));
-					msg = node.usm.waitFor(createMessageFilter(timeout), RequestSender.this);
+					msg = node.usm.waitFor(createMessageFilter(timeout, waitingFor), RequestSender.this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for InsertReply on " + this);
@@ -955,7 +955,7 @@ loadWaiterLoop:
 		return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
 	}
 
-	private MessageFilter createMessageFilter(int timeout) {
+	private MessageFilter createMessageFilter(int timeout, PeerNode next) {
 		MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPDataNotFound);
 		MessageFilter mfRF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRecentlyFailed);
 		MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRouteNotFound);
