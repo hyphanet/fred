@@ -474,14 +474,13 @@ loadWaiterLoop:
 			if(noReroute) {
 				if(logMINOR) Logger.minor(this, "Timed out after waiting for fork to "+waitingFor);
 				waitingFor.localRejectedOverload("FatalTimeoutForked");
-				origTag.removeRoutingTo(waitingFor);
-				return;
+			} else {
+				// Fatal timeout
+				next.localRejectedOverload("FatalTimeout");
+				forwardRejectedOverload();
+				finish(TIMED_OUT, next, false);
+				node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
 			}
-    		// Fatal timeout
-    		next.localRejectedOverload("FatalTimeout");
-    		forwardRejectedOverload();
-    		finish(TIMED_OUT, next, false);
-    		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
     		
 			// Wait for second timeout.
     		// FIXME make this async.
