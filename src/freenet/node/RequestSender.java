@@ -472,7 +472,6 @@ loadWaiterLoop:
 			}
 			Logger.error(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
 			if(noReroute) {
-				if(logMINOR) Logger.minor(this, "Timed out after waiting for fork to "+waitingFor);
 				waitingFor.localRejectedOverload("FatalTimeoutForked");
 			} else {
 				// Fatal timeout
