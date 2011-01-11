@@ -105,7 +105,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private int gotMessages;
     private String lastMessage;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
-    private long deadline;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -387,7 +386,6 @@ loadWaiterLoop:
             
             gotMessages = 0;
             lastMessage = null;
-            deadline = System.currentTimeMillis() + fetchTimeout;
             
             synchronized(this) {
             	receivingAsync = true;
@@ -409,10 +407,12 @@ loadWaiterLoop:
     	
     	private final PeerNode waitingFor;
     	private final boolean noReroute;
+    	private final long deadline;
 
 		public WaitForAcceptedCallback(PeerNode source, boolean noReroute) {
 			waitingFor = source;
 			this.noReroute = noReroute;
+            deadline = System.currentTimeMillis() + fetchTimeout;
 		}
 
 		public void onMatched(Message msg) {
