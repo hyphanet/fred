@@ -390,7 +390,7 @@ loadWaiterLoop:
             synchronized(this) {
             	receivingAsync = true;
             }
-            WaitForAcceptedCallback cb = new WaitForAcceptedCallback(lastNode, false);
+            MainLoopCallback cb = new MainLoopCallback(lastNode, false);
             cb.schedule();
             return;
         }
@@ -400,7 +400,7 @@ loadWaiterLoop:
     	return (int) (System.currentTimeMillis() - timeSentRequest);
     }
     
-    private class WaitForAcceptedCallback implements SlowAsyncMessageFilterCallback {
+    private class MainLoopCallback implements SlowAsyncMessageFilterCallback {
     	
     	// Needs to be a separate class so it can check whether the main loop has moved on to another peer.
     	// If it has
@@ -409,7 +409,7 @@ loadWaiterLoop:
     	private final boolean noReroute;
     	private final long deadline;
 
-		public WaitForAcceptedCallback(PeerNode source, boolean noReroute) {
+		public MainLoopCallback(PeerNode source, boolean noReroute) {
 			waitingFor = source;
 			this.noReroute = noReroute;
 			deadline = System.currentTimeMillis() + fetchTimeout;
@@ -905,7 +905,7 @@ loadWaiterLoop:
 						origTag.removeRoutingTo(next);
 					} else {
 						// Accepted. May as well wait for the data, if any.
-						WaitForAcceptedCallback cb = new WaitForAcceptedCallback(next, true);
+						MainLoopCallback cb = new MainLoopCallback(next, true);
 						cb.schedule();
 					}
 				}
