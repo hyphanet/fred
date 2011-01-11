@@ -223,9 +223,11 @@ public class OpennetPeerNode extends PeerNode {
 
 	@Override
 	public void fatalTimeout() {
-		Logger.normal(this, "Disconnecting "+this+" because of fatal timeout");
-		// Disconnect.
-		forceDisconnect(true);
+		Logger.normal(this, "Opennet peer "+this+" is having timeout problems");
+		// FIXME reinstate disconnection.
+//		Logger.normal(this, "Disconnecting "+this+" because of fatal timeout");
+//		// Disconnect.
+//		forceDisconnect(true);
 	}
 	
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
