@@ -54,11 +54,7 @@ public class Version {
 
 	/** Oldest build of Fred we will talk to */
 	private static final int oldLastGoodBuild = 1323;
-<<<<<<< HEAD:src/freenet/node/Version.java
-	private static final int newLastGoodBuild = 1325;
-=======
 	private static final int newLastGoodBuild = 1326;
->>>>>>> build01326:src/freenet/node/Version.java
 	static final long transitionTime;
 
 	static {

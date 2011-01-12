@@ -44,7 +44,7 @@ public class NewPacketFormatTest extends TestCase {
 	public void testLostLastAck() throws BlockedTooLongException, InterruptedException {
 		NullBasePeerNode senderNode = new NullBasePeerNode();
 		NewPacketFormat sender = new NewPacketFormat(senderNode, 0, 0);
-		PeerMessageQueue senderQueue = new PeerMessageQueue(new NullBasePeerNode()); // FIXME senderNode
+		PeerMessageQueue senderQueue = new PeerMessageQueue(senderNode);
 		NullBasePeerNode receiverNode = new NullBasePeerNode();
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
 		PeerMessageQueue receiverQueue = new PeerMessageQueue(receiverNode);
