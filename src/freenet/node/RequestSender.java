@@ -532,6 +532,10 @@ loadWaiterLoop:
 		public int getPriority() {
 			return NativeThread.NORM_PRIORITY;
 		}
+		
+		public String toString() {
+			return super.toString()+":"+waitingFor+":"+noReroute+":"+RequestSender.this;
+		}
     	
     };
     
