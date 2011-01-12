@@ -772,7 +772,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(lastNegType < 5) {
 			packetFormat = new FNPWrapper(this);
 		} else {
-			packetFormat = new NewPacketFormat(this, 0, 0, lastNegType == 6);
+			packetFormat = new NewPacketFormat(this, 0, 0);
 		}
 
 		byte buffer[] = new byte[16];
@@ -2127,7 +2127,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(negType < 5) {
 					packetFormat = new FNPWrapper(this);
 				} else {
-					packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID, negType == 6);
+					packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
 				}
 			}
 		}

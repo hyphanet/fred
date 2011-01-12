@@ -25,8 +25,7 @@ import freenet.support.SparseBitmap;
 public class NewPacketFormat implements PacketFormat {
 
 	private final int hmacLength;
-	private static final int HMAC_LENGTH_OLD = 4;
-	private static final int HMAC_LENGTH_NEW = 10;
+	private static final int HMAC_LENGTH = 10;
 	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
 	// FIXME increase this significantly to let it ride over network interruptions.
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
@@ -70,7 +69,7 @@ public class NewPacketFormat implements PacketFormat {
 	private long timeLastCalledMaybeSendPacketIncAckOnly;
 	private long timeLastCalledMaybeSendPacketNotAckOnly;
 
-	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID, boolean isNew) {
+	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
 
 		startedByPrio = new ArrayList<HashMap<Integer, MessageWrapper>>(DMT.NUM_PRIORITIES);
@@ -85,10 +84,7 @@ public class NewPacketFormat implements PacketFormat {
 		nextMessageID = ourInitialMsgID;
 		messageWindowPtrAcked = ourInitialMsgID;
 		messageWindowPtrReceived = theirInitialMsgID;
-		if(isNew)
-			hmacLength = HMAC_LENGTH_NEW;
-		else
-			hmacLength = HMAC_LENGTH_OLD;
+		hmacLength = HMAC_LENGTH;
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
