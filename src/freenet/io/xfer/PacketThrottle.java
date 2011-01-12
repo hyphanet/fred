@@ -325,6 +325,7 @@ public class PacketThrottle {
 		}
 
 		public void acknowledged() {
+			sent(true); // Make sure it is called at least once.
 			synchronized(PacketThrottle.this) {
 				if(finished) {
 					if(logMINOR) Logger.minor(this, "Already acked, ignoring callback: "+this);
@@ -359,10 +360,16 @@ public class PacketThrottle {
 			if(logMINOR) Logger.minor(this, "Removed packet: error for "+this);
 			if(chainCallback != null) chainCallback.fatalError();
 		}
-
+		
 		public void sent() {
+			sent(false);
+		}
+
+		public void sent(boolean error) {
 			synchronized(PacketThrottle.this) {
 				if(sent) return;
+				if(error)
+					Logger.error(this, "Acknowledged called but not sent, assuming it has been sent on "+this);
 				sent = true;
 			}
 			ctr.sentPayload(packetSize);
