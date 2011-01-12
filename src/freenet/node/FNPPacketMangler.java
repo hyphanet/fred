@@ -1717,10 +1717,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| (sharedData[7] & 0xFF);
 		pn.theirInitialMsgID =
 			unknownInitiator ? getInitialMessageID(pn.identity) :
-				getInitialMessageID(crypto.myIdentity, pn.identity);
+				getInitialMessageID(pn.identity, crypto.myIdentity);
 		pn.ourInitialMsgID =
 			unknownInitiator ? getInitialMessageID(pn.identity) :
-				getInitialMessageID(pn.identity, crypto.myIdentity);
+				getInitialMessageID(crypto.myIdentity, pn.identity);
 
 		if(negType <= 4) {
 			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
