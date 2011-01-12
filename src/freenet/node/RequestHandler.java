@@ -329,8 +329,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		synchronized(this) {
 			if(this.status == RequestSender.NOT_FINISHED)
 				this.status = status;
-			else
+			else {
+				if(logMINOR) Logger.minor(this, "Ignoring onRequestSenderFinished as status is already "+this.status);
 				return;
+			}
 			tooLate = responseDeadline > 0 && now > responseDeadline;
 		}
 		
