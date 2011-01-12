@@ -3145,7 +3145,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 	public int[] supportedNegTypes(boolean forPublic) {
 		if(forPublic)
-			return new int[] { 2, 4, 7 };
+			return new int[] { 2, 4, 6, 7 };
 		else
 			return new int[] { 2, 4, 6, 7 };
 	}
