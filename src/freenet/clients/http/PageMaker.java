@@ -201,6 +201,8 @@ public final class PageMaker {
 	
 	public synchronized void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb, FredPluginL10n l10n) {
 		SubMenu menu = subMenus.get(menutext);
+		if(menu == null)
+			throw new NullPointerException("there is no menu named "+menutext);
 		menu.addNavigationLink(path, name, title, fullOnly, cb, l10n);
 	}
 	
@@ -307,10 +309,6 @@ public final class PageMaker {
 			final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()) + "\u00a0");
 			network.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.networkThreatLevelShort"));
 			network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
-
-			final HTMLNode friends = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getFriendsThreatLevel()) + "\u00a0");
-			friends.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.friendsThreatLevelShort"));
-			friends.addAttribute("class", node.securityLevels.getFriendsThreatLevel().toString().toLowerCase());
 
 			final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
 			physical.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevelShort"));

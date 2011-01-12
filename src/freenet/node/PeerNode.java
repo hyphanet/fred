@@ -3692,11 +3692,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	 * Create a DarknetPeerNode or an OpennetPeerNode as appropriate
 	 */
-	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager, boolean b, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public static PeerNode create(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager manager, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		if(crypto.isOpennet)
-			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, b, mangler);
+			return new OpennetPeerNode(fs, node2, crypto, opennet, manager, true, mangler);
 		else
-			return new DarknetPeerNode(fs, node2, crypto, manager, b, mangler);
+			return new DarknetPeerNode(fs, node2, crypto, manager, true, mangler, null);
 	}
 
 	public byte[] getIdentity() {
@@ -4734,18 +4734,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public IncomingLoadSummaryStats getIncomingLoadStats(boolean realTime) {
 		return outputLoadTracker(realTime).getIncomingLoadStats();
 	}
+
+	public abstract boolean shallWeRouteAccordingToOurPeersLocation();
 	
 	public PeerMessageQueue getMessageQueue() {
 		return messageQueue;
 	}
 
-	public void handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
-		boolean result = packetFormat.handleReceivedPacket(buf, offset, length, now, replyTo);
-
-		// Assume it is connection setup or rekeying
-		if(!result) {
-			crypto.packetMangler.process(buf, offset, length, replyTo, now);
-		}
+	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
+		return packetFormat.handleReceivedPacket(buf, offset, length, now, replyTo);
 	}
 
 	public void checkForLostPackets() {
@@ -4756,6 +4753,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return packetFormat.timeCheckForLostPackets();
 	}
 
+	/** Only called for new format connections, for which we don't care about PacketTracker */
+	public void dumpTracker(SessionKey brokenKey) {
+		synchronized(this) {
+			if(currentTracker == brokenKey) {
+				currentTracker = null;
+				isConnected = false;
+			} else if(previousTracker == brokenKey)
+				previousTracker = null;
+			else if(unverifiedTracker == brokenKey)
+				unverifiedTracker = null;
+		}
+		// Update connected vs not connected status.
+		isConnected();
+		setPeerNodeStatus(System.currentTimeMillis());
+	}
+	
 	public void processDecryptedMessage(byte[] data, int offset, int length, int overhead) {
 		Message m = node.usm.decodeSingleMessage(data, offset, length, this, overhead);
 		if(m != null) {
@@ -4811,4 +4824,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		return false;
 	}
+
+	public boolean isOldFNP() {
+		return packetFormat instanceof FNPWrapper;
+	}
+
 }

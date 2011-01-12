@@ -3,9 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 import freenet.crypt.EntropySource;
 import freenet.node.FNPPacketMangler;
 import freenet.node.Node;
+import freenet.node.NodeCrypto;
 import freenet.node.PeerNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -24,12 +27,14 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 	}
 
 	private FNPPacketMangler mangler;
+	private NodeCrypto crypto;
 	private Node node;
 	private final EntropySource fnpTimingSource;
 
-	public IncomingPacketFilterImpl(FNPPacketMangler mangler, Node node) {
+	public IncomingPacketFilterImpl(FNPPacketMangler mangler, Node node, NodeCrypto crypto) {
 		this.mangler = mangler;
 		this.node = node;
+		this.crypto = crypto;
 		fnpTimingSource = new EntropySource();
 	}
 
@@ -37,18 +42,47 @@ public class IncomingPacketFilterImpl implements IncomingPacketFilter {
 		if(context == null) return false;
 		return !context.isConnected();
 	}
+	
+	private static final AtomicLong successfullyDecodedPackets = new AtomicLong();
+	private static final AtomicLong failedDecodePackets = new AtomicLong();
+	
+	public static long[] getDecodedPackets() {
+		if(!logMINOR) return null;
+		long decoded = successfullyDecodedPackets.get();
+		long failed = failedDecodePackets.get();
+		return new long[] { decoded, decoded+failed };
+	}
 
-	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
+	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
-		PeerNode pn = node.peers.getByPeer(peer);
+		PeerNode opn = node.peers.getByPeer(peer, mangler);
 
-		if(pn != null) {
-			pn.handleReceivedPacket(buf, offset, length, now, peer);
+		if(opn != null) {
+			if(opn.handleReceivedPacket(buf, offset, length, now, peer)) {
+				if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+				return DECODED.DECODED;
+			}
 		} else {
 			Logger.normal(this, "Got packet from unknown address");
-			mangler.process(buf, offset, length, peer, now);
 		}
+		DECODED decoded = mangler.process(buf, offset, length, peer, opn, now);
+		if(decoded == DECODED.DECODED) {
+			if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+		} else if(decoded == DECODED.NOT_DECODED) {
+			
+			for(PeerNode pn : crypto.getPeerNodes()) {
+				if(pn == opn) continue;
+				if(pn.isOldFNP()) continue;
+				if(pn.handleReceivedPacket(buf, offset, length, now, peer)) {
+					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
+					return DECODED.DECODED;
+				}
+			}
+			
+			if(logMINOR) failedDecodePackets.incrementAndGet();
+		}
+		return decoded;
 	}
 
 }

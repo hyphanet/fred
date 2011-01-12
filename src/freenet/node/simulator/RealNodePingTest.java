@@ -12,6 +12,7 @@ import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -32,6 +33,8 @@ public class RealNodePingTest {
 	
 	public static final int DARKNET_PORT1 = RealNodeNetworkColoringTest.DARKNET_PORT_END;
 	public static final int DARKNET_PORT2 = RealNodeNetworkColoringTest.DARKNET_PORT_END+1;
+	
+	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
 
     public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
         RandomSource random = NodeStarter.globalTestInit("pingtest", false, LogLevel.ERROR, "", true);
@@ -40,8 +43,8 @@ public class RealNodePingTest {
         Node node1 = NodeStarter.createTestNode(DARKNET_PORT1, 0, "pingtest", true, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 65536, true, false, false, false, false, false, true, 0, false, false, true, false, null);
         Node node2 = NodeStarter.createTestNode(DARKNET_PORT2, 0, "pingtest", true, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 65536, true, false, false, false, false, false, true, 0, false, false, true, false, null);
         // Connect
-        node1.connect(node2);
-        node2.connect(node1);
+        node1.connect(node2, trust);
+        node2.connect(node1, trust);
         // No swapping
         node1.start(true);
         node2.start(true);

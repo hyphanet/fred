@@ -62,7 +62,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		MISC,
 		OPENNET,
 		SECURITY_NETWORK,
-		SECURITY_FRIENDS,
 		SECURITY_PHYSICAL,
 		NAME_SELECTION,
 		BANDWIDTH,
@@ -205,31 +204,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				form.addChild("p").addChild("b", l10nSec("networkThreatLevel.opennetFriendsWarning"));
 			}
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkSecurityF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if(currentStep == WIZARD_STEP.SECURITY_FRIENDS) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("friendsSecurityPageTitle"), false, ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-
-			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
-			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-
-			infoboxHeader.addChild("#", l10nSec("friendsThreatLevelShort"));
-			infoboxContent.addChild("p", l10nSec("friendsThreatLevel"));
-			HTMLNode form = ctx.addFormChild(infoboxContent, ".", "friendsSecurityForm");
-			HTMLNode div = form.addChild("div", "class", "opennetDiv");
-			String controlName = "security-levels.friendsThreatLevel";
-			for(FRIENDS_THREAT_LEVEL level : FRIENDS_THREAT_LEVEL.values()) {
-				HTMLNode input;
-				input = div.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
-				input.addChild("b", l10nSec("friendsThreatLevel.name."+level));
-				input.addChild("#", ": ");
-				NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.friendsThreatLevel.choice."+level, new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
-			}
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "friendsSecurityF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
@@ -535,46 +509,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				} else if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
 						request.isPartSet("security-levels.networkThreatLevel.tryConfirm")) {
 					super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
-					return;
-				}
-			}
-			core.node.securityLevels.setThreatLevel(newThreatLevel);
-			core.storeConfig();
-			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
-			return;
-		} else if(request.isPartSet("security-levels.friendsThreatLevel")) {
-			// We don't require a confirmation here, since it's one page at a time, so there's less information to
-			// confuse the user, and we don't know whether the node has friends yet etc.
-			// FIXME should we have confirmation here???
-			String friendsThreatLevel = request.getPartAsString("security-levels.friendsThreatLevel", 128);
-			FRIENDS_THREAT_LEVEL newThreatLevel = SecurityLevels.parseFriendsThreatLevel(friendsThreatLevel);
-			if(newThreatLevel == null) {
-				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
-				return;
-			}
-			if((newThreatLevel == FRIENDS_THREAT_LEVEL.HIGH)) {
-				if((!request.isPartSet("security-levels.friendsThreatLevel.confirm")) &&
-					(!request.isPartSet("security-levels.friendsThreatLevel.tryConfirm"))) {
-					PageNode page = ctx.getPageMaker().getPageNode(l10n("friendsSecurityPageTitle"), false, ctx);
-					HTMLNode pageNode = page.outer;
-					HTMLNode content = page.content;
-
-					HTMLNode infobox = content.addChild("div", "class", "infobox infobox-information");
-					infobox.addChild("div", "class", "infobox-header", l10nSec("friendsThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newThreatLevel)));
-					HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-					HTMLNode formNode = ctx.addFormChild(infoboxContent, ".", "configFormSecLevels");
-					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.friendsThreatLevel", friendsThreatLevel });
-					HTMLNode p = formNode.addChild("p");
-					NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.highFriendsThreatLevelWarning", new String[] { "bold" }, new HTMLNode[] { HTMLNode.STRONG });
-					formNode.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "security-levels.friendsThreatLevel.confirm", "off" }, l10nSec("highFriendsThreatLevelCheckbox"));
-					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.friendsThreatLevel.tryConfirm", "on" });
-					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
-					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("continue")});
-					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-					return;
-				} else if((!request.isPartSet("security-levels.friendsThreatLevel.confirm")) &&
-						request.isPartSet("security-levels.friendsThreatLevel.tryConfirm")) {
-					super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
 					return;
 				}
 			}

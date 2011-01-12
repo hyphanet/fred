@@ -461,7 +461,7 @@ loadWaiterLoop:
 					return;
 				}
 			}
-			Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+") on "+RequestSender.this);
+			Logger.error(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid);
     		// Fatal timeout
     		next.localRejectedOverload("FatalTimeout");
     		forwardRejectedOverload();
@@ -1587,6 +1587,7 @@ loadWaiterLoop:
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
+		if(logMINOR) Logger.minor(this, "Sent bytes: "+x+" for "+this+" isSSK="+isSSK, new Exception("debug"));
 		node.nodeStats.requestSentBytes(isSSK, x);
 	}
 	

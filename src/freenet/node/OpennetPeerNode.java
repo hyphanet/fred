@@ -219,4 +219,9 @@ public class OpennetPeerNode extends PeerNode {
 	protected void maybeClearPeerAddedTimeOnRestart(long now) {
 		// Do nothing.
 	}
+
+	@Override
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		return node.shallWeRouteAccordingToOurPeersLocation();
+	}
 }

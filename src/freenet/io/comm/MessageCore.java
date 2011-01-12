@@ -125,7 +125,8 @@ public class MessageCore {
 					if(logMINOR)
 						Logger.minor(this, "Removing "+f);
 					i.remove();
-					_timedOutFilters.add(f);
+					if(!_timedOutFilters.contains(f))
+						_timedOutFilters.add(f);
 				}
 				// Do not break after finding a non-timed-out filter because some filters may 
 				// be timed out because their client callbacks say they should be.

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.DarknetPeerNodeStatus;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -41,6 +42,8 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 				return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getName());
 			}else if(sortBy.equals("privnote")){
 				return ((DarknetPeerNodeStatus)firstNode).getPrivateDarknetCommentNote().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getPrivateDarknetCommentNote());
+			} else if(sortBy.equals("trust")){
+				return ((DarknetPeerNodeStatus)firstNode).getTrustLevel().compareTo(((DarknetPeerNodeStatus)secondNode).getTrustLevel());
 			} else
 				return super.customCompare(firstNode, secondNode, sortBy);
 		}
@@ -68,6 +71,17 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		// name column
 		peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
 	}
+	
+	@Override
+	protected boolean hasTrustColumn() {
+		return true;
+	}
+
+	@Override
+	protected void drawTrustColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
+		peerRow.addChild("td", "class", "peer-trust").addChild("#", ((DarknetPeerNodeStatus)peerNodeStatus).getTrustLevel().name());
+	}
+
 
 	@Override
 	protected boolean hasPrivateNoteColumn() {
@@ -133,6 +147,12 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		actionSelect.addChild("option", "value", "", l10n("separator"));
 		actionSelect.addChild("option", "value", "remove", l10n("removePeers"));
 		peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doAction", l10n("go") });
+		peerForm.addChild("br");
+		peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doChangeTrust", l10n("changeTrustButton") });
+		HTMLNode changeTrustLevelSelect = peerForm.addChild("select", new String[] { "id", "name" }, new String[] { "changeTrust", "changeTrust" });
+		for(FRIEND_TRUST trust : FRIEND_TRUST.valuesBackwards()) {
+			changeTrustLevelSelect.addChild("option", "value", trust.name(), l10n("peerTrust."+trust.name()));
+		}
 	}
 
 	@Override
@@ -313,6 +333,16 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
 					peerNodes[i].setAllowLocalAddresses(false);
+				}
+			}
+			redirectHere(ctx);
+			return;
+		} else if (request.isPartSet("changeTrust") && request.isPartSet("doChangeTrust")) {
+			FRIEND_TRUST trust = FRIEND_TRUST.valueOf(request.getPartAsStringFailsafe("changeTrust", 10));
+			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {	
+					peerNodes[i].setTrustLevel(trust);
 				}
 			}
 			redirectHere(ctx);
