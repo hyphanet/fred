@@ -344,9 +344,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			PeerNode routedLast = rs == null ? null : rs.routedLast();
 			// A certain number of these are normal.
 			Logger.normal(this, "requestsender took too long to respond to requestor (" + TimeUtil.formatTime((now - searchStartTime), 2, true) + "/" + (rs == null ? "null" : rs.getStatusString()) + ") routed to " + (routedLast == null ? "null" : routedLast.shortToString()));
-			applyByteCounts();
-			unregisterRequestHandlerWithNode();
-			return;
+			// We need to send the RejectedOverload (or whatever) anyway, for two-stage timeout.
+			// Otherwise the downstream node will assume it's our fault.
 		}
 
 		if(status == RequestSender.NOT_FINISHED)
