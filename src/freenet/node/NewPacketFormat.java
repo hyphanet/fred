@@ -116,7 +116,6 @@ public class NewPacketFormat implements PacketFormat {
 			Logger.warning(this, "Could not decrypt received packet");
 			return false;
 		}
-		if(logMINOR) Logger.minor(this, "Received packet " + packet.getSequenceNumber());
 
 		pn.receivedPacket(false, true);
 		pn.verified(s);
@@ -348,7 +347,10 @@ outer:
 			byte[] copy = new byte[length];
 			System.arraycopy(buf, offset, copy, 0, length);
 			NPFPacket p = decipherFromSeqnum(copy, 0, length, sessionKey, sequenceNumber);
-			if(p != null) return p;
+			if(p != null) {
+				if(logMINOR) Logger.minor(this, "Received packet " + p.getSequenceNumber()+" on "+sessionKey);
+				return p;
+			}
 		}
 
 		return null;
