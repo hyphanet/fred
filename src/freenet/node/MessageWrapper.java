@@ -206,7 +206,7 @@ public class MessageWrapper {
 				resent = end - start + 1 + overhead - report;
 			}
 			everSent.add(start, end);
-			if(sent.contains(0, item.buf.length-1)) {
+			if(everSent.contains(0, item.buf.length-1)) {
 				// Maybe completed
 				if(reportedSent)
 					completed = false;
