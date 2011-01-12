@@ -26,6 +26,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
 import freenet.node.MessageItem;
+import freenet.node.PeerNode;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -271,7 +272,7 @@ public class PacketThrottle {
 			Logger.error(this, "Congestion control wait time: "+waitTime+" for "+this);
 		else if(logMINOR)
 			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
-		MyCallback callback = new MyCallback(cbForAsyncSend, packetSize, ctr);
+		MyCallback callback = new MyCallback(cbForAsyncSend, packetSize, ctr, peer != null && peer instanceof PeerNode && ((PeerNode)peer).isOldFNP());
 		MessageItem sent;
 		try {
 			sent = peer.sendAsync(msg, callback, ctr);
@@ -315,13 +316,15 @@ public class PacketThrottle {
 		private boolean sent = false;
 		private final int packetSize;
 		private final ByteCounter ctr;
+		private final boolean isOldFNP;
 		
 		private AsyncMessageCallback chainCallback;
 		
-		public MyCallback(AsyncMessageCallback cbForAsyncSend, int packetSize, ByteCounter ctr) {
+		public MyCallback(AsyncMessageCallback cbForAsyncSend, int packetSize, ByteCounter ctr, boolean isOldFNP) {
 			this.chainCallback = cbForAsyncSend;
 			this.packetSize = packetSize;
 			this.ctr = ctr;
+			this.isOldFNP = isOldFNP;
 		}
 
 		public void acknowledged() {
@@ -368,8 +371,13 @@ public class PacketThrottle {
 		public void sent(boolean error) {
 			synchronized(PacketThrottle.this) {
 				if(sent) return;
-				if(error)
-					Logger.error(this, "Acknowledged called but not sent, assuming it has been sent on "+this);
+				if(error) {
+					if(!isOldFNP)
+						Logger.error(this, "Acknowledged called but not sent, assuming it has been sent on "+this);
+					else
+						// This looks like an old-FNP bug. Log at a lower priority.
+						Logger.normal(this, "Acknowledged called but not sent, assuming it has been sent on "+this);
+				}
 				sent = true;
 			}
 			ctr.sentPayload(packetSize);
