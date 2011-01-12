@@ -1222,14 +1222,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| ((sharedData[5] & 0xFF) << 16)
 				| ((sharedData[6] & 0xFF) << 8)
 				| (sharedData[7] & 0xFF);
-		int theirInitialMsgID= ((sharedData[8] & 0xFF) << 24)
-				| ((sharedData[9] & 0xFF) << 16)
-				| ((sharedData[10] & 0xFF) << 8)
-				| (sharedData[11] & 0xFF);
-		int ourInitialMsgID= ((sharedData[12] & 0xFF) << 24)
-				| ((sharedData[13] & 0xFF) << 16)
-				| ((sharedData[14] & 0xFF) << 8)
-				| (sharedData[15] & 0xFF);
+		int theirInitialMsgID =
+			unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
+				getInitialMessageID(pn.identity, crypto.myIdentity);
+		int ourInitialMsgID =
+			unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
+				getInitialMessageID(crypto.myIdentity, pn.identity);
 
 		if(negType <= 4) {
 			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
@@ -1717,14 +1715,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				| ((sharedData[5] & 0xFF) << 16)
 				| ((sharedData[6] & 0xFF) << 8)
 				| (sharedData[7] & 0xFF);
-		pn.ourInitialMsgID= ((sharedData[8] & 0xFF) << 24)
-				| ((sharedData[9] & 0xFF) << 16)
-				| ((sharedData[10] & 0xFF) << 8)
-				| (sharedData[11] & 0xFF);
-		pn.theirInitialMsgID= ((sharedData[12] & 0xFF) << 24)
-				| ((sharedData[13] & 0xFF) << 16)
-				| ((sharedData[14] & 0xFF) << 8)
-				| (sharedData[15] & 0xFF);
+		pn.theirInitialMsgID =
+			unknownInitiator ? getInitialMessageID(pn.identity) :
+				getInitialMessageID(crypto.myIdentity, pn.identity);
+		pn.ourInitialMsgID =
+			unknownInitiator ? getInitialMessageID(pn.identity) :
+				getInitialMessageID(pn.identity, crypto.myIdentity);
 
 		if(negType <= 4) {
 			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
@@ -1793,6 +1789,34 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this,"Message3 timeout error:Sending packet for"+pn.getPeer());
 	}
 
+	private int getInitialMessageID(byte[] identity) {
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(identity);
+		// Similar to JFK keygen, should be safe enough.
+		try {
+			md.update("INITIAL0".getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
+		byte[] hashed = md.digest();
+		SHA256.returnMessageDigest(md);
+		return Fields.bytesToInt(hashed, 0);
+	}
+
+	private int getInitialMessageID(byte[] identity, byte[] otherIdentity) {
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(identity);
+		md.update(otherIdentity);
+		// Similar to JFK keygen, should be safe enough.
+		try {
+			md.update("INITIAL1".getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
+		byte[] hashed = md.digest();
+		SHA256.returnMessageDigest(md);
+		return Fields.bytesToInt(hashed, 0);
+	}
 
 	/*
 	 * Format:
