@@ -296,6 +296,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			for(int i=0;i<peers.length;i++) {
 				pn = peers[i];
 				if(pn == opn) continue;
+				if(logDEBUG)
+					Logger.debug(this, "Trying auth with "+pn);
 				if(tryProcessAuth(buf, offset, length, pn, peer,false, now)) {
 					return DECODED.DECODED;
 				}
@@ -618,7 +620,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4 || negType == 7)) {
+		if(!(negType == 2 || negType == 4 || negType == 6 || negType == 7)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -665,7 +667,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4 || negType == 7)) {
+		if(!(negType == 2 || negType == 4 || negType == 6 || negType == 7)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -731,7 +733,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		} else if (negType == 1) {
 			Logger.error(this, "Old StationToStation (negType 1) not supported.");
 			return;
-		} else if (negType==2 || negType == 4 || negType == 7) {
+		} else if (negType==2 || negType == 4 || negType == 6 || negType == 7) {
 			// negType == 3 was buggy
 			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
 			// negType == 5 => same as 4, but use new packet format after negotiation
@@ -1228,6 +1230,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		int ourInitialMsgID =
 			unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
 				getInitialMessageID(crypto.myIdentity, pn.identity);
+		if(logMINOR)
+			Logger.minor(this, "Their initial message ID: "+theirInitialMsgID+" ours "+ourInitialMsgID);
 
 		if(negType <= 4) {
 			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
@@ -1721,6 +1725,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		pn.ourInitialMsgID =
 			unknownInitiator ? getInitialMessageID(pn.identity) :
 				getInitialMessageID(crypto.myIdentity, pn.identity);
+			
+		if(logMINOR)
+			Logger.minor(this, "Their initial message ID: "+pn.theirInitialMsgID+" ours "+pn.ourInitialMsgID);
+
 
 		if(negType <= 4) {
 			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
@@ -3112,12 +3120,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		item.pn.resendByteCounter.sentBytes(size);
 	}
 
-	// FIXME get rid of forPublic cruft.
 	public int[] supportedNegTypes(boolean forPublic) {
 		if(forPublic)
 			return new int[] { 2, 4, 7 };
 		else
-			return new int[] { 2, 4, 7 };
+			return new int[] { 2, 4, 6, 7 };
 	}
 
 	public int fullHeadersLengthOneMessage() {
