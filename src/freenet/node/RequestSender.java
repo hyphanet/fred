@@ -358,57 +358,57 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 return;
             }
             
-            RequestLikelyAcceptedState expectedAcceptState = 
-            	next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.UNKNOWN, false);
+        loadWaiterLoop:
+        	while(true) {
             
-            if(logMINOR && expectedAcceptState != null) 
-            	Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState);
-            
-            synchronized(this) {
-            	lastNode = next;
-            }
-			
-            if(logMINOR) Logger.minor(this, "Routing request to "+next);
-            nodesRoutedTo.add(next);
-            
-            Message req = createDataRequest();
-            
-            // Not possible to get an accurate time for sending, guaranteed to be not later than the time of receipt.
-            // Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.
-            // So take it from when we first started to try to send the request.
-            // See comments below when handling FNPRecentlyFailed for why we need this.
-            synchronized(this) {
-            	timeSentRequest = System.currentTimeMillis();
-            }
-			
-            origTag.addRoutedTo(next, false);
-            
-            try {
-            	//This is the first contact to this node, it is more likely to timeout
-				/*
-				 * using sendSync could:
-				 *   make ACCEPTED_TIMEOUT more accurate (as it is measured from the send-time),
-				 *   use a lot of our time that we have to fulfill this request (simply waiting on the send queue, or longer if the node just went down),
-				 * using sendAsync could:
-				 *   make ACCEPTED_TIMEOUT much more likely,
-				 *   leave many hanging-requests/unclaimedFIFO items,
-				 *   potentially make overloaded peers MORE overloaded (we make a request and promptly forget about them).
-				 * 
-				 * Don't use sendAsync().
-				 */
-            	next.sendSync(req, this);
-            } catch (NotConnectedException e) {
-            	Logger.minor(this, "Not connected");
-            	next.noLongerRoutingTo(origTag, false);
-            	continue;
-            }
-            
-            synchronized(this) {
-            	hasForwarded = true;
-            }
-            
-loadWaiterLoop:
-            while(true) {
+        		RequestLikelyAcceptedState expectedAcceptState = 
+        			next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.UNKNOWN, false);
+        		
+        		if(logMINOR && expectedAcceptState != null) 
+        			Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState);
+        		
+        		synchronized(this) {
+        			lastNode = next;
+        		}
+        		
+        		if(logMINOR) Logger.minor(this, "Routing request to "+next);
+        		nodesRoutedTo.add(next);
+        		
+        		Message req = createDataRequest();
+        		
+        		// Not possible to get an accurate time for sending, guaranteed to be not later than the time of receipt.
+        		// Why? Because by the time the sent() callback gets called, it may already have been acked, under heavy load.
+        		// So take it from when we first started to try to send the request.
+        		// See comments below when handling FNPRecentlyFailed for why we need this.
+        		synchronized(this) {
+        			timeSentRequest = System.currentTimeMillis();
+        		}
+        		
+        		origTag.addRoutedTo(next, false);
+        		
+        		try {
+        			//This is the first contact to this node, it is more likely to timeout
+        			/*
+        			 * using sendSync could:
+        			 *   make ACCEPTED_TIMEOUT more accurate (as it is measured from the send-time),
+        			 *   use a lot of our time that we have to fulfill this request (simply waiting on the send queue, or longer if the node just went down),
+        			 * using sendAsync could:
+        			 *   make ACCEPTED_TIMEOUT much more likely,
+        			 *   leave many hanging-requests/unclaimedFIFO items,
+        			 *   potentially make overloaded peers MORE overloaded (we make a request and promptly forget about them).
+        			 * 
+        			 * Don't use sendAsync().
+        			 */
+        			next.sendSync(req, this);
+        		} catch (NotConnectedException e) {
+        			Logger.minor(this, "Not connected");
+        			next.noLongerRoutingTo(origTag, false);
+        			continue peerLoop;
+        		}
+        		
+        		synchronized(this) {
+        			hasForwarded = true;
+        		}
             	
             	DO action = waitForAccepted(expectedAcceptState);
             	// Here FINISHED means accepted, WAIT means try again (soft reject).
@@ -907,7 +907,7 @@ loadWaiterLoop:
 					// FIXME soft rejects, only check then, but don't backoff if sane
 					// FIXME recalculate with broader check, allow a few percent etc.
     				
-    				// FIXME new load management introduces soft rejects and waiting.
+					// FIXME new load management introduces soft rejects and waiting.
 //    				if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
 //    					if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
 //    					nodesRoutedTo.remove(next);
@@ -920,7 +920,7 @@ loadWaiterLoop:
     					// Give up on this one, try another
     					next.noLongerRoutingTo(origTag, false);
     					return DO.NEXT_PEER;
-//    				}
+//   				}
     			}
     			//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
     			continue;
@@ -1114,7 +1114,7 @@ loadWaiterLoop:
     	WAIT,
     	NEXT_PEER
     }
-
+	
     /** @return True unless the pubkey is broken and we should try another node */
     private boolean handleSSKPubKey(Message msg) {
 		if(logMINOR) Logger.minor(this, "Got pubkey on "+uid);
