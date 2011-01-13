@@ -1917,7 +1917,6 @@ loadWaiterLoop:
 	}
 	
 	private void sendAbortDownstreamTransfers(int reason, String desc) {
-		origTag.setRequestSenderFinished(TRANSFER_FAILED);
 		synchronized (listeners) {
 			abortDownstreamTransfersReason = reason;
 			abortDownstreamTransfersDesc = desc;
