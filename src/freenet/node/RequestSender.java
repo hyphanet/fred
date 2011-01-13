@@ -361,6 +361,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
             boolean triedAll = false;
             
+            int tryCount = 0;
+            
         loadWaiterLoop:
         	while(true) {
             
@@ -417,6 +419,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         		
         		origTag.addRoutedTo(next, false);
         		
+        		tryCount++;
+        		
         		try {
         			//This is the first contact to this node, it is more likely to timeout
         			/*
@@ -452,6 +456,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		break;
             	}
             } // loadWaiterLoop
+            
+            if(logMINOR) Logger.minor(this, "Took "+tryCount+" tries");
             
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
