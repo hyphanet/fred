@@ -991,8 +991,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
      
-    	if(origTag != null) origTag.removeRoutingTo(next);
-    	if(forkedRequestTag != null) forkedRequestTag.removeRoutingTo(next);
+    	// If there is an InsertReply, it always happens before the transfer completion notice.
+    	// So we do NOT need to removeRoutingTo().
     	
         synchronized(this) {
         	if(allTransfersCompleted) return; // Already called. Doesn't prevent race condition resulting in the next bit running but that's not really a problem.
