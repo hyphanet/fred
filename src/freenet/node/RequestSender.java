@@ -1242,16 +1242,18 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	synchronized(this) {
     		transferringFrom = next;
     	}
-    	node.getTicker().queueTimedJob(new Runnable() {
-    		
-    		public void run() {
-    			synchronized(RequestSender.this) {
-    				if(transferringFrom != from) return;
+    	if(realTimeFlag) {
+    		node.getTicker().queueTimedJob(new Runnable() {
+    			
+    			public void run() {
+    				synchronized(RequestSender.this) {
+    					if(transferringFrom != from) return;
+    				}
+    				makeTurtle();
     			}
-    			makeTurtle();
-    		}
-    		
-    	}, 60*1000);
+    			
+    		}, 60*1000);
+    	}
     	final PeerNode sentTo = next;
 			receivingAsync = true;
     	br.receive(new BlockReceiverCompletion() {
