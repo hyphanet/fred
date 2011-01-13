@@ -83,6 +83,9 @@ public class PNGFilter implements ContentDataFilter {
 			FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs)
 			throws DataFilterException, IOException {
 		DataInputStream dis = null;
+		boolean hasSeenIHDR = false;
+		boolean hasSeenIEND = false;
+		boolean hasSeenIDAT = false;
 		try {
                         long offset = 0;
 			dis = new DataInputStream(input);
@@ -105,12 +108,9 @@ public class PNGFilter implements ContentDataFilter {
 
 			// Check the chunks :
 			// @see http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.Summary-of-standard-chunks
-			boolean hasSeenIHDR = false;
-			boolean hasSeenIEND = false;
-			boolean hasSeenIDAT = false;
 			String lastChunkType = "";
 
-			while (dis.available() > 0) {
+			while (dis.available() > 0 && !hasSeenIEND) {
 				boolean skip = false;
 				baos.reset();
 				String chunkTypeString = null;
@@ -300,13 +300,14 @@ public class PNGFilter implements ContentDataFilter {
 			if (!(hasSeenIEND && hasSeenIHDR))
 				throwError("Missing IEND or IHDR!", "Missing IEND or IHDR!");
                         
-			if (hasSeenIEND && dis.available() > 0)
-				throwError("IEND not last chunk", "IEND not last chunk");
+			if (hasSeenIEND)
+				return; // Strip everything after IEND.
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throwError("ArrayIndexOutOfBoundsException while filtering", "ArrayIndexOutOfBoundsException while filtering");
 		} catch (NegativeArraySizeException e) {
 			throwError("NegativeArraySizeException while filtering", "NegativeArraySizeException while filtering");
 		} catch (EOFException e) {
+			if(hasSeenIEND && hasSeenIHDR) return;
 			throwError("EOF Exception while filtering", "EOF Exception while filtering");
 		}
 	}

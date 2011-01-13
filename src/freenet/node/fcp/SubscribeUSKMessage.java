@@ -34,6 +34,7 @@ public class SubscribeUSKMessage extends FCPMessage {
 	final String identifier;
 	final short prio;
 	final short prioProgress;
+	final boolean realTimeFlag;
 	
 	public SubscribeUSKMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		this.identifier = fs.get("Identifier");
@@ -52,6 +53,7 @@ public class SubscribeUSKMessage extends FCPMessage {
 		this.dontPoll = Fields.stringToBool(fs.get("DontPoll"), false);
 		prio = fs.getShort("PriorityClass", RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS);
 		prioProgress = fs.getShort("PriorityClassProgress", (short)Math.max(0, prio-1));
+		realTimeFlag = fs.getBoolean("RealTimeFlag", false);
 	}
 
 	@Override

@@ -9,8 +9,8 @@ import java.util.WeakHashMap;
 import com.db4o.ObjectContainer;
 
 import freenet.node.SendableGet;
-import freenet.node.Ticker;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 
 /** 
  * When a SendableGet is completed, we add it to the cooldown tracker. We 

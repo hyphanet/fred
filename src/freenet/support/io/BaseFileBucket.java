@@ -19,7 +19,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
-public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
+public abstract class BaseFileBucket implements Bucket {
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
 
@@ -482,35 +482,4 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	 */
 	public abstract File getFile();
 	
-	public synchronized SimpleFieldSet toFieldSet() {
-		if(deleteOnFinalize()) return null;
-		SimpleFieldSet fs = new SimpleFieldSet(false);
-		fs.putSingle("Type", "FileBucket");
-		fs.putSingle("Filename", getFile().toString());
-		fs.put("Length", size());
-		return fs;
-	}
-
-	public static Bucket create(SimpleFieldSet fs, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
-		String tmp = fs.get("Filename");
-		if(tmp == null) throw new CannotCreateFromFieldSetException("No filename");
-		File file = FileUtil.getCanonicalFile(new File(tmp));
-		if(f.matches(file)) {
-			return PersistentTempFileBucket.create(fs, f);
-		}
-		tmp = fs.get("Length");
-		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
-		try {
-			long length = Fields.parseLong(tmp, -1);
-			if(length !=  file.length())
-				throw new CannotCreateFromFieldSetException("Invalid length: should be "+length+" actually "+file.length()+" on "+file);
-		} catch (NumberFormatException e) {
-			throw new CannotCreateFromFieldSetException("Corrupt length "+tmp, e);
-		}
-		FileBucket bucket = new FileBucket(file, false, true, false, false, false);
-		if(file.exists()) // no point otherwise!
-			f.register(file);
-		return bucket;
-	}
-
 }

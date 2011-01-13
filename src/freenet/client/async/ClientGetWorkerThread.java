@@ -80,6 +80,7 @@ public class ClientGetWorkerThread extends Thread {
 		this.charset = charset;
 		this.prefetchHook = prefetchHook;
 		this.tagReplacer = tagReplacer;
+		if(logMINOR) Logger.minor(this, "Created worker thread for "+uri+" mime type "+mimeType+" filter data = "+filterData+" charset "+charset);
 	}
 
 	@Override

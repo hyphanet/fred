@@ -76,6 +76,9 @@ public class LongTermPushPullTest {
 	private static final int MAX_N = 8;
 
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd", Locale.US);
+	static {
+		dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+	}
 	private static final Calendar today = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
 	public static void main(String[] args) {
@@ -268,7 +271,7 @@ public class LongTermPushPullTest {
 			//System.out.println("LINE: "+line);
 			String[] split = line.split(",");
 			Date date = dateFormat.parse(split[0]);
-			GregorianCalendar calendar = new GregorianCalendar();
+			GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 			calendar.setTime(date);
 			System.out.println("Date: "+dateFormat.format(calendar.getTime()));
 			if(prevDate != null) {

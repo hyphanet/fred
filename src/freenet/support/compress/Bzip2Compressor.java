@@ -7,7 +7,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,6 +18,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.CountedOutputStream;
+import freenet.support.io.NoCloseProxyOutputStream;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class Bzip2Compressor implements Compressor {
@@ -81,23 +81,6 @@ public class Bzip2Compressor implements Compressor {
 		}
 	}
 	
-	static class NoCloseProxyOutputStream extends FilterOutputStream {
-
-		public NoCloseProxyOutputStream(OutputStream arg0) {
-			super(arg0);
-		}
-		
-		public void write(byte[] buf, int offset, int length) throws IOException {
-			out.write(buf, offset, length);
-		}
-		
-		@Override
-		public void close() throws IOException {
-			// Don't close the underlying stream.
-		}
-		
-	};
-
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		CBZip2InputStream bz2is = new CBZip2InputStream(new BufferedInputStream(is));
 		long written = 0;

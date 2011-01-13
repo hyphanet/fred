@@ -315,6 +315,10 @@ public class HTMLNode implements XMLCharacterClasses {
 		return new HTMLNode("a", "href", path);
 	}
 
+	public static HTMLNode linkInNewWindow(String path) {
+		return new HTMLNode("a", new String[] { "href", "target" }, new String[] { path, "_blank" });
+	}
+
 	public static HTMLNode text(String text) {
 		return new HTMLNode("#", text);
 	}

@@ -23,10 +23,29 @@ import freenet.crypt.ciphers.Rijndael;
  */
 public class PCFBMode {
     
+	/** The underlying block cipher. */
     protected BlockCipher c;
+    /** The register, with which data is XOR'ed */
     protected byte[] feedback_register;
+    /** When this reaches the end of the register, we refillBuffer() i.e. re-encrypt the
+     * register. */
     protected int registerPointer;
     
+    /** Create the PCFB with no IV. The caller must either:
+     * a) Call reset() with a proper IV, or 
+     * b) Accept the initial IV of all zero's. (We will still encrypt this before using it).
+     * If the key is random and never reused, for instance if it is a one time key or 
+     * derived from a hash, b) may be acceptable. It is used in some parts of Freenet. 
+     * However, it is very bad practice cryptographically, and we should get rid of it.
+     * NOTE THAT IV:KEY PAIRS *MUST* BE UNIQUE! If two instances use the same key with the
+     * same empty IV, the bad guys will be able to XOR the two ciphertexts to get the XOR
+     * of the plaintext. If they can deduce the register's value they may even be able to
+     * decrypt the next 32 bytes, however after that they should hopefully be stumped -
+     * but it will certainly make more sophisticated attacks easier.
+     * FIXME CRYPTO !!!
+     * @param c The underlying block cipher
+     * @deprecated
+     */
     public static PCFBMode create(BlockCipher c) {
     	if(c instanceof Rijndael)
     		return new RijndaelPCFBMode((Rijndael)c);
@@ -34,9 +53,18 @@ public class PCFBMode {
     }
     
     public static PCFBMode create(BlockCipher c, byte[] iv) {
+    	return create(c, iv, 0);
+    }
+    
+    /** Create the PCFB with an IV. The register pointer will be set to the end of the IV,
+     * so refillBuffer() will be called prior to any encryption. IV's *must* be unique for
+     * a given key. IT IS STRONGLY RECOMMENDED TO USE THIS CONSTRUCTOR, THE OTHER ONE WILL 
+     * BE REMOVED EVENTUALLY. 
+     * @param offset */
+    public static PCFBMode create(BlockCipher c, byte[] iv, int offset) {
     	if(c instanceof Rijndael)
-    		return new RijndaelPCFBMode((Rijndael)c, iv);
-    	return new PCFBMode(c, iv);
+    		return new RijndaelPCFBMode((Rijndael)c, iv, offset);
+    	return new PCFBMode(c, iv, offset);
     }
     
     protected PCFBMode(BlockCipher c) {
@@ -45,9 +73,10 @@ public class PCFBMode {
         registerPointer = feedback_register.length;
     }
 
-    protected PCFBMode(BlockCipher c, byte[] iv) {
+    protected PCFBMode(BlockCipher c, byte[] iv, int offset) {
         this(c);
-        System.arraycopy(iv, 0, feedback_register, 0, feedback_register.length);
+        System.arraycopy(iv, offset, feedback_register, 0, feedback_register.length);
+        // registerPointer is already set to the end by this(c), so we will refillBuffer() immediately.
     }
 
     /**
@@ -96,6 +125,13 @@ public class PCFBMode {
     public int lengthIV() {
         return feedback_register.length;
     }
+
+    /**
+     * returns the length of the IV for a PCFB created with a specific cipher.
+     */
+	public static int lengthIV(BlockCipher c) {
+		return c.getBlockSize() >> 3;
+	}
 
     /**
      * Deciphers one byte of data, by XOR'ing the ciphertext byte with
@@ -169,4 +205,5 @@ public class PCFBMode {
 
         registerPointer=0;
     }
+
 }

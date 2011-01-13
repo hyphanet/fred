@@ -369,7 +369,7 @@ public class BucketChainBucket implements Bucket {
 		throw new UnsupportedOperationException();
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		Vector<Bucket> newBuckets = new Vector<Bucket>();
 		for(int i=0;i<buckets.size();i++) {
 			Bucket data = buckets.get(i);

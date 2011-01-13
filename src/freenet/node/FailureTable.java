@@ -105,6 +105,10 @@ public class FailureTable implements OOMHook {
 	 * @param timeout
 	 */
 	public void onFailed(Key key, PeerNode routedTo, short htl, int timeout) {
+		if(timeout < 0 || timeout > REJECT_TIME) {
+			Logger.error(this, "Bogus timeout "+timeout, new Exception("error"));
+			timeout = Math.max(Math.min(REJECT_TIME, timeout), 0);
+		}
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
@@ -119,6 +123,11 @@ public class FailureTable implements OOMHook {
 	}
 	
 	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int timeout, PeerNode requestor) {
+		if(timeout < -1 || timeout > REJECT_TIME) {
+			// -1 is a valid no-op.
+			Logger.error(this, "Bogus timeout "+timeout, new Exception("error"));
+			timeout = Math.max(Math.min(REJECT_TIME, timeout), -1);
+		}
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
@@ -371,7 +380,11 @@ public class FailureTable implements OOMHook {
 		// Either a peer wants it, in which case we want it for them,
 		// or we want it, or we have requested it in the past, in which case
 		// we will probably want it in the future.
-		node.clientCore.queueOfferedKey(key);
+		// FIXME: Not safe to queue offered keys as realtime????
+		// For the same reason that priorities are not safe?
+		// But do it at low priorities?
+		// Offers mostly happen for SSKs anyway ... reconsider?
+		node.clientCore.queueOfferedKey(key, false);
 	}
 
 	private synchronized void trimOffersList(long now) {
@@ -397,16 +410,16 @@ public class FailureTable implements OOMHook {
 	 * @param source The node that asked for the key.
 	 * @throws NotConnectedException If the sender ceases to be connected.
 	 */
-	public void sendOfferedKey(final Key key, final boolean isSSK, final boolean needPubKey, final long uid, final PeerNode source, final OfferReplyTag tag) throws NotConnectedException {
+	public void sendOfferedKey(final Key key, final boolean isSSK, final boolean needPubKey, final long uid, final PeerNode source, final OfferReplyTag tag, final boolean realTimeFlag) throws NotConnectedException {
 		this.offerExecutor.execute(new Runnable() {
 			public void run() {
 				try {
-					innerSendOfferedKey(key, isSSK, needPubKey, uid, source, tag);
+					innerSendOfferedKey(key, isSSK, needPubKey, uid, source, tag, realTimeFlag);
 				} catch (NotConnectedException e) {
-					node.unlockUID(uid, isSSK, false, false, true, false, tag);
+					tag.unlockHandler();
 					// Too bad.
 				} catch (Throwable t) {
-					node.unlockUID(uid, isSSK, false, false, true, false, tag);
+					tag.unlockHandler();
 					Logger.error(this, "Caught "+t+" sending offered key", t);
 				}
 			}
@@ -418,13 +431,13 @@ public class FailureTable implements OOMHook {
 	 * on a separate thread. However, blocking disk I/O *should happen on this thread*. We deliberately
 	 * serialise it, as high latencies can otherwise result.
 	 */
-	protected void innerSendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, final PeerNode source, final OfferReplyTag tag) throws NotConnectedException {
+	protected void innerSendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, final PeerNode source, final OfferReplyTag tag, final boolean realTimeFlag) throws NotConnectedException {
 		if(isSSK) {
 			SSKBlock block = node.fetch((NodeSSK)key, false, false, false, false, true, null);
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
-				node.unlockUID(uid, isSSK, false, false, true, false, tag);
+				tag.unlockHandler();
 				return;
 			}
 			
@@ -453,7 +466,7 @@ public class FailureTable implements OOMHook {
 					} catch (PeerRestartedException e) {
 						// :(
 					} finally {
-						node.unlockUID(uid, isSSK, false, false, true, false, tag);
+						tag.unlockHandler();
 					}
 				}
 				
@@ -468,7 +481,7 @@ public class FailureTable implements OOMHook {
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
-				node.unlockUID(uid, isSSK, false, false, true, false, tag);
+				tag.unlockHandler();
 				return;
 			}
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
@@ -480,10 +493,10 @@ public class FailureTable implements OOMHook {
         				new BlockTransmitterCompletion() {
 
 					public void blockTransferFinished(boolean success) {
-						node.unlockUID(uid, isSSK, false, false, true, false, tag);
+						tag.unlockHandler();
 					}
 					
-				});
+				}, realTimeFlag);
         	node.executor.execute(new PrioRunnable() {
 
 				public int getPriority() {
@@ -636,13 +649,13 @@ public class FailureTable implements OOMHook {
 		}
 	}
 
-	public boolean peersWantKey(Key key) {
+	public boolean peersWantKey(Key key, PeerNode apartFrom) {
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = entriesByKey.get(key);
 			if(entry == null) return false; // Nobody cares
 		}
-		return entry.othersWant(null);
+		return entry.othersWant(apartFrom);
 	}
 
 	public void handleLowMemory() throws Exception {

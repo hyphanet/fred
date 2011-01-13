@@ -134,7 +134,9 @@ public class NodeCryptoConfig {
 		}, false);
 		dropProbability = config.getInt("testingDropPacketsEvery"); 
 		
-		config.register("oneConnectionPerIP", isOpennet, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",
+		config.register("oneConnectionPerIP", isOpennet, sortOrder++, true, false,
+				(isOpennet ? "OpennetManager" : "Node") + ".oneConnectionPerIP",
+				(isOpennet ? "OpennetManager" : "Node") + ".oneConnectionPerIPLong",
 				new BooleanCallback() {
 
 					@Override
@@ -188,19 +190,6 @@ public class NodeCryptoConfig {
 					}			
 		});
 		alwaysAllowLocalAddresses = config.getBoolean("alwaysAllowLocalAddresses");
-		
-		if(!isOpennet) {
-			securityLevels.addFriendsThreatLevelListener(new SecurityLevelListener<FRIENDS_THREAT_LEVEL>() {
-
-				public void onChange(FRIENDS_THREAT_LEVEL oldLevel, FRIENDS_THREAT_LEVEL newLevel) {
-					if(newLevel == FRIENDS_THREAT_LEVEL.HIGH)
-						alwaysAllowLocalAddresses = false;
-					if(oldLevel == FRIENDS_THREAT_LEVEL.HIGH)
-						alwaysAllowLocalAddresses = false;
-				}
-				
-			});
-		}
 		
 		config.register("assumeNATed", true, sortOrder++, true, true, "Node.assumeNATed", "Node.assumeNATedLong", new BooleanCallback() {
 

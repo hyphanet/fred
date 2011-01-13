@@ -16,12 +16,14 @@ public class SingleKeyListener implements KeyListener {
 	private boolean done;
 	private short prio;
 	private final boolean persistent;
+	private final boolean realTime;
 
-	public SingleKeyListener(Key key, BaseSingleFileFetcher fetcher, short prio, boolean persistent) {
+	public SingleKeyListener(Key key, BaseSingleFileFetcher fetcher, short prio, boolean persistent, boolean realTime) {
 		this.key = key;
 		this.fetcher = fetcher;
 		this.prio = prio;
 		this.persistent = persistent;
+		this.realTime = realTime;
 	}
 
 	public long countKeys() {
@@ -91,6 +93,10 @@ public class SingleKeyListener implements KeyListener {
 
 	public boolean isSSK() {
 		return key instanceof NodeSSK;
+	}
+
+	public boolean isRealTime() {
+		return realTime;
 	}
 
 }

@@ -32,6 +32,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.NoCloseProxyOutputStream;
 
 /**
  * Insert a bunch of files as single Archive with .metadata
@@ -80,6 +81,7 @@ public class ContainerInserter implements ClientPutState {
 	private final boolean dontCompress;
 	final byte[] forceCryptoKey;
 	final byte cryptoAlgorithm;
+	private final boolean realTimeFlag;
 
 	/**
 	 * Insert a bunch of files as single Archive with .metadata
@@ -108,7 +110,8 @@ public class ContainerInserter implements ClientPutState {
 			boolean freeData,
 			boolean earlyEncode2,
 			byte[] forceCryptoKey,
-			byte cryptoAlgorithm) {
+			byte cryptoAlgorithm,
+			boolean realTimeFlag) {
 		parent = parent2;
 		cb = cb2;
 		hashCode = super.hashCode();
@@ -125,6 +128,7 @@ public class ContainerInserter implements ClientPutState {
 		containerItems = new ArrayList<ContainerElement>();
 		this.forceCryptoKey = forceCryptoKey;
 		this.cryptoAlgorithm = cryptoAlgorithm;
+		this.realTimeFlag = realTimeFlag;
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -202,7 +206,7 @@ public class ContainerInserter implements ClientPutState {
 		}
 		
 		// Treat it as a splitfile for purposes of determining reinsert count.
-		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, dc, getCHKOnly, reportMetadataOnly, token, archiveType, true, null, earlyEncode, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey);
+		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, realTimeFlag, dc, getCHKOnly, reportMetadataOnly, token, archiveType, true, null, earlyEncode, true, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey);
 		if(logMINOR)
 			Logger.minor(this, "Inserting container: "+sfi+" for "+this);
 		cb.onTransition(this, sfi, container);
@@ -295,6 +299,10 @@ public class ContainerInserter implements ClientPutState {
 	private String createTarBucket(OutputStream os, @SuppressWarnings("unused") ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 		
+		// FIXME: TarOutputStream.finish() does NOT call TarBuffer.flushBlock() from TarBuffer.close().
+		// So we wrap it here and call close().
+		// Fix it in Contrib, release a new jar, require the new jar, then clean up this code.
+		os = new NoCloseProxyOutputStream(os);
 		TarOutputStream tarOS = new TarOutputStream(os);
 		tarOS.setLongFileMode(TarOutputStream.LONGFILE_GNU);
 		TarEntry ze;
@@ -314,6 +322,7 @@ public class ContainerInserter implements ClientPutState {
 		tarOS.closeEntry();
 		// Both finish() and close() are necessary.
 		tarOS.finish();
+		tarOS.close();
 		
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}

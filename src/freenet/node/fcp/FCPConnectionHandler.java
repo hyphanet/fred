@@ -90,7 +90,7 @@ public class FCPConnectionHandler implements Closeable {
 	private final HashMap<String, DirectoryAccess> checkedDirectories = new HashMap<String, DirectoryAccess>();
 	// DDACheckJobs in flight
 	private final HashMap<File, DDACheckJob> inTestDirectories = new HashMap<File, DDACheckJob>();
-	public final RequestClient connectionRequestClient = new RequestClient() {
+	public final RequestClient connectionRequestClientBulk = new RequestClient() {
 		
 		public boolean persistent() {
 			return false;
@@ -98,6 +98,25 @@ public class FCPConnectionHandler implements Closeable {
 		
 		public void removeFrom(ObjectContainer container) {
 			throw new UnsupportedOperationException();
+		}
+
+		public boolean realTimeFlag() {
+			return false;
+		}
+		
+	};
+	public final RequestClient connectionRequestClientRT = new RequestClient() {
+		
+		public boolean persistent() {
+			return false;
+		}
+		
+		public void removeFrom(ObjectContainer container) {
+			throw new UnsupportedOperationException();
+		}
+
+		public boolean realTimeFlag() {
+			return true;
 		}
 		
 	};
@@ -352,6 +371,7 @@ public class FCPConnectionHandler implements Closeable {
 				if(!persistent) {
 					try {
 						cp = new ClientPut(this, message, server, null);
+						requestsByIdentifier.put(id, cp);
 					} catch (IdentifierCollisionException e) {
 						success = false;
 					} catch (MessageInvalidException e) {
@@ -360,7 +380,6 @@ public class FCPConnectionHandler implements Closeable {
 					} catch (MalformedURLException e) {
 						failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
 					}
-					requestsByIdentifier.put(id, cp);
 				} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 					try {
 						server.core.clientContext.jobRunner.queue(new DBJob() {
@@ -789,6 +808,13 @@ public class FCPConnectionHandler implements Closeable {
 			sub = uskSubscriptions.remove(identifier);
 		}
 		sub.unsubscribe();
+	}
+
+	public RequestClient connectionRequestClient(boolean realTime) {
+		if(realTime)
+			return connectionRequestClientRT;
+		else
+			return connectionRequestClientBulk;
 	}
 
 }

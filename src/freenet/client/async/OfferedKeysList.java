@@ -58,8 +58,8 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	private final NodeClientCore core;
 	private final boolean isSSK;
 	
-	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK) {
-		super(false);
+	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK, boolean realTimeFlag) {
+		super(false, realTimeFlag);
 		this.keys = new HashSet<Key>();
 		this.keysList = new Vector<Key>();
 		this.random = random;
@@ -168,7 +168,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 						// Ignore
 					}
 					
-				}, true, false);
+				}, true, false, realTimeFlag);
 				// FIXME reconsider canWriteClientCache=false parameter.
 				return true;
 			}
@@ -211,11 +211,11 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public ClientRequestScheduler getScheduler(ClientContext context) {
+	public ClientRequestScheduler getScheduler(ObjectContainer container, ClientContext context) {
 		if(isSSK)
-			return context.getSskFetchScheduler();
+			return context.getSskFetchScheduler(realTimeFlag);
 		else
-			return context.getChkFetchScheduler();
+			return context.getChkFetchScheduler(realTimeFlag);
 	}
 
 	public void removeFrom(ObjectContainer container) {

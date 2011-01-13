@@ -138,21 +138,21 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.nodeToNodeMessage) {
 			node.receivedNodeToNodeMessage(m, source);
 			return true;
-		} else if(spec == DMT.UOMAnnounce && source.isRealConnection()) {
+		} else if(spec == DMT.UOMAnnounce && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleAnnounce(m, source);
-		} else if(spec == DMT.UOMRequestRevocation && source.isRealConnection()) {
+		} else if(spec == DMT.UOMRequestRevocation && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleRequestRevocation(m, source);
-		} else if(spec == DMT.UOMSendingRevocation && source.isRealConnection()) {
+		} else if(spec == DMT.UOMSendingRevocation && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingRevocation(m, source);
-		} else if(spec == DMT.UOMRequestMain && source.isRealConnection()) {
+		} else if(spec == DMT.UOMRequestMain && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			node.nodeUpdater.uom.handleRequestJar(m, source, false);
 			return true;
-		} else if(spec == DMT.UOMRequestExtra && source.isRealConnection()) {
+		} else if(spec == DMT.UOMRequestExtra && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			node.nodeUpdater.uom.handleRequestJar(m, source, true);
 			return true;
-		} else if(spec == DMT.UOMSendingMain && source.isRealConnection()) {
+		} else if(spec == DMT.UOMSendingMain && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
-		} else if(spec == DMT.UOMSendingExtra && source.isRealConnection()) {
+		} else if(spec == DMT.UOMSendingExtra && node.nodeUpdater.isEnabled() && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingExt(m, source);
 		} else if(spec == DMT.FNPOpennetAnnounceRequest) {
 			return handleAnnounceRequest(m, source);
@@ -287,16 +287,17 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
 		boolean isSSK = key instanceof NodeSSK;
-		OfferReplyTag tag = new OfferReplyTag(isSSK, source);
-		node.lockUID(uid, isSSK, false, true, false, tag);
+        boolean realTimeFlag = DMT.getRealTimeFlag(m);
+		OfferReplyTag tag = new OfferReplyTag(isSSK, source, realTimeFlag, uid, node);
+		node.lockUID(uid, isSSK, false, true, false, realTimeFlag, tag);
 		boolean needPubKey;
 		try {
 		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		RejectReason reject = 
-			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false, false);
+			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false, false, realTimeFlag);
 		if(reject != null) {
 			Logger.normal(this, "Rejecting FNPGetOfferedKey from "+source+" for "+key+" : "+reject);
-			Message rejected = DMT.createFNPRejectedOverload(uid, true);
+			Message rejected = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
 			if(reject.soft)
 				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
@@ -304,22 +305,22 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(uid, isSSK, false, false, true, false, tag);
+			tag.unlockHandler(reject.soft);
 			return true;
 		}
 		
 		} catch (Error e) {
-			node.unlockUID(uid, isSSK, false, false, true, false, tag);
+			tag.unlockHandler();
 			throw e;
 		} catch (RuntimeException e) {
-			node.unlockUID(uid, isSSK, false, false, true, false, tag);
+			tag.unlockHandler();
 			throw e;
 		} // Otherwise, sendOfferedKey is responsible for unlocking. 
 		
 		// Accept it.
 		
 		try {
-			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source, tag);
+			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source, tag,realTimeFlag);
 		} catch (NotConnectedException e) {
 			// Too bad.
 		}
@@ -383,8 +384,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
         short htl = m.getShort(DMT.HTL);
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
-        final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source);
-		if(!node.lockUID(id, isSSK, false, false, false, tag)) {
+        boolean realTimeFlag = DMT.getRealTimeFlag(m);
+        final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE, source, realTimeFlag, id, node);
+		if(!node.lockUID(id, isSSK, false, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -407,11 +409,11 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(block != null)
 			tag.setNotRoutedOnwards();
 		
-		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null && !meta.isOldBlock(), false);
+		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null, false, realTimeFlag);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting "+(isSSK ? "SSK" : "CHK")+" request from "+source.getPeer()+" preemptively because "+rejectReason);
-			Message rejected = DMT.createFNPRejectedOverload(id, true);
+			Message rejected = DMT.createFNPRejectedOverload(id, true, true, realTimeFlag);
 			if(rejectReason.soft)
 				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
@@ -420,7 +422,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
 			tag.setRejected();
-			node.unlockUID(id, isSSK, false, false, false, false, tag);
+			tag.unlockHandler(rejectReason.soft);
 			// Do not tell failure table.
 			// Otherwise an attacker can flood us with requests very cheaply and purge our
 			// failure table even though we didn't accept any of them.
@@ -428,7 +430,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		nodeStats.reportIncomingRequestLocation(key.toNormalizedDouble());
 		//if(!node.lockUID(id)) return false;
-		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key, tag, block);
+		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key, tag, block, realTimeFlag);
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 		return true;
 	}
@@ -445,8 +447,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		}
-		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source);
-		if(!node.lockUID(id, isSSK, true, false, false, tag)) {
+        boolean realTimeFlag = DMT.getRealTimeFlag(m);
+		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag, id, node);
+		if(!node.lockUID(id, isSSK, true, false, false, realTimeFlag, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -469,10 +472,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(preference != null)
 			preferInsert = preference.getBoolean(DMT.PREFER_INSERT);
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false, preferInsert);
+		RejectReason rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false, preferInsert, realTimeFlag);
 		if(rejectReason != null) {
 			Logger.normal(this, "Rejecting insert from "+source.getPeer()+" preemptively because "+rejectReason);
-			Message rejected = DMT.createFNPRejectedOverload(id, true);
+			Message rejected = DMT.createFNPRejectedOverload(id, true, true, realTimeFlag);
 			if(rejectReason.soft)
 				rejected.addSubMessage(DMT.createFNPRejectIsSoft());
 			try {
@@ -480,7 +483,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, true, false, false, false, tag);
+			tag.unlockHandler(rejectReason.soft);
 			return true;
 		}
 		long now = System.currentTimeMillis();
@@ -489,17 +492,17 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	        byte[] data = ((ShortBuffer) m.getObject(DMT.DATA)).getData();
 	        byte[] headers = ((ShortBuffer) m.getObject(DMT.BLOCK_HEADERS)).getData();
 	        short htl = m.getShort(DMT.HTL);
-			SSKInsertHandler rh = new SSKInsertHandler(key, data, headers, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable, preferInsert, ignoreLowBackoff);
+			SSKInsertHandler rh = new SSKInsertHandler(key, data, headers, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else if(m.getSpec().equals(DMT.FNPSSKInsertRequestNew)) {
 			NodeSSK key = (NodeSSK) m.getObject(DMT.FREENET_ROUTING_KEY);
 			short htl = m.getShort(DMT.HTL);
-			SSKInsertHandler rh = new SSKInsertHandler(key, null, null, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable, preferInsert, ignoreLowBackoff);
+			SSKInsertHandler rh = new SSKInsertHandler(key, null, null, htl, source, id, node, now, tag, node.canWriteDatastoreInsert(htl), forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
-			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now, tag, forkOnCacheable, preferInsert, ignoreLowBackoff);
+			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now, tag, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
@@ -522,7 +525,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
 		if(source.shouldRejectProbeRequest()) {
 			Logger.normal(this, "Rejecting probe request from "+source.getPeer());
-			Message rejected = DMT.createFNPRejectedOverload(id, true);
+			Message rejected = DMT.createFNPRejectedOverload(id, true, false, false);
 			try {
 				source.sendAsync(rejected, null, node.nodeStats.probeRequestCtr);
 			} catch (NotConnectedException e) {
@@ -533,7 +536,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		double target = m.getDouble(DMT.TARGET_LOCATION);
 		if(target > 1.0 || target < 0.0) {
 			Logger.normal(this, "Rejecting invalid (target="+target+") probe request from "+source.getPeer());
-			Message rejected = DMT.createFNPRejectedOverload(id, true);
+			Message rejected = DMT.createFNPRejectedOverload(id, true, false, false);
 			try {
 				source.sendAsync(rejected, null, node.nodeStats.probeRequestCtr);
 			} catch (NotConnectedException e) {
@@ -572,7 +575,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		node.completed(uid);
 		try {
 			if(!node.nodeStats.shouldAcceptAnnouncement(uid)) {
-				Message msg = DMT.createFNPRejectedOverload(uid, true);
+				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {
@@ -582,7 +585,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			if(!source.shouldAcceptAnnounce(uid)) {
 				node.nodeStats.endAnnouncement(uid);
-				Message msg = DMT.createFNPRejectedOverload(uid, true);
+				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {

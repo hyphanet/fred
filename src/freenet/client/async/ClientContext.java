@@ -12,15 +12,13 @@ import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
-import freenet.node.KeysFetchingLocally;
-import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
-import freenet.node.Ticker;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.RealCompressor;
 import freenet.support.io.FilenameGenerator;
@@ -36,10 +34,14 @@ import freenet.support.io.PersistentTempBucketFactory;
 public class ClientContext {
 	
 	public transient FECQueue fecQueue;
-	private transient ClientRequestScheduler sskFetchScheduler;
-	private transient ClientRequestScheduler chkFetchScheduler;
-	private transient ClientRequestScheduler sskInsertScheduler;
-	private transient ClientRequestScheduler chkInsertScheduler;
+	private transient ClientRequestScheduler sskFetchSchedulerBulk;
+	private transient ClientRequestScheduler chkFetchSchedulerBulk;
+	private transient ClientRequestScheduler sskInsertSchedulerBulk;
+	private transient ClientRequestScheduler chkInsertSchedulerBulk;
+	private transient ClientRequestScheduler sskFetchSchedulerRT;
+	private transient ClientRequestScheduler chkFetchSchedulerRT;
+	private transient ClientRequestScheduler sskInsertSchedulerRT;
+	private transient ClientRequestScheduler chkInsertSchedulerRT;
 	private transient UserAlertManager alerts;
 	public transient final DBJobRunner jobRunner;
 	public transient final Executor mainExecutor;
@@ -60,25 +62,24 @@ public class ClientContext {
 	public transient final RealCompressor rc;
 	public transient final DatastoreChecker checker;
 	public transient final CooldownTracker cooldownTracker;
-	public transient KeysFetchingLocally fetching;
+	public transient DownloadCache downloadCache;
 
-	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
+	public ClientContext(long bootID, long nodeDBHandle, DBJobRunner jobRunner, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker, HealingQueue hq,
 			USKManager uskManager, RandomSource strongRandom, 
 			Random fastWeakRandom, Ticker ticker, 
 			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc, DatastoreChecker checker) {
-		this.bootID = core.node.bootID;
+		this.bootID = bootID;
 		this.fecQueue = fecQueue;
-		jobRunner = core;
+		this.jobRunner = jobRunner;
 		this.mainExecutor = mainExecutor;
-		this.nodeDBHandle = core.node.nodeDBHandle;
+		this.nodeDBHandle = nodeDBHandle;
 		this.backgroundBlockEncoder = blockEncoder;
 		this.random = strongRandom;
 		this.archiveManager = archiveManager;
 		this.persistentBucketFactory = ptbf;
 		this.tempBucketFactory = tbf;
-		if(tempBucketFactory == null) throw new NullPointerException();
 		this.healingQueue = hq;
 		this.uskManager = uskManager;
 		this.fastWeakRandom = fastWeakRandom;
@@ -91,29 +92,32 @@ public class ClientContext {
 	}
 	
 	public void init(RequestStarterGroup starters, UserAlertManager alerts) {
-		this.sskFetchScheduler = starters.sskFetchScheduler;
-		this.chkFetchScheduler = starters.chkFetchScheduler;
-		this.sskInsertScheduler = starters.sskPutScheduler;
-		this.chkInsertScheduler = starters.chkPutScheduler;
-		this.fetching = chkFetchScheduler.fetchingKeys();
+		this.sskFetchSchedulerBulk = starters.sskFetchSchedulerBulk;
+		this.chkFetchSchedulerBulk = starters.chkFetchSchedulerBulk;
+		this.sskInsertSchedulerBulk = starters.sskPutSchedulerBulk;
+		this.chkInsertSchedulerBulk = starters.chkPutSchedulerBulk;
+		this.sskFetchSchedulerRT = starters.sskFetchSchedulerRT;
+		this.chkFetchSchedulerRT = starters.chkFetchSchedulerRT;
+		this.sskInsertSchedulerRT = starters.sskPutSchedulerRT;
+		this.chkInsertSchedulerRT = starters.chkPutSchedulerRT;
 		this.alerts = alerts;
 		this.cooldownTracker.startMaintenance(ticker);
 	}
 
-	public ClientRequestScheduler getSskFetchScheduler() {
-		return sskFetchScheduler;
+	public ClientRequestScheduler getSskFetchScheduler(boolean realTime) {
+		return realTime ? sskFetchSchedulerRT : sskFetchSchedulerBulk;
 	}
 	
-	public ClientRequestScheduler getChkFetchScheduler() {
-		return chkFetchScheduler;
+	public ClientRequestScheduler getChkFetchScheduler(boolean realTime) {
+		return realTime ? chkFetchSchedulerRT : chkFetchSchedulerBulk;
 	}
 	
-	public ClientRequestScheduler getSskInsertScheduler() {
-		return sskInsertScheduler;
+	public ClientRequestScheduler getSskInsertScheduler(boolean realTime) {
+		return realTime ? sskInsertSchedulerRT : sskInsertSchedulerBulk;
 	}
 	
-	public ClientRequestScheduler getChkInsertScheduler() {
-		return chkInsertScheduler;
+	public ClientRequestScheduler getChkInsertScheduler(boolean realTime) {
+		return realTime ? chkInsertSchedulerRT : chkInsertSchedulerBulk;
 	}
 	
 	/** 
@@ -248,9 +252,9 @@ public class ClientContext {
 	 * Get the RequestScheduler responsible for the given key type. This is used to queue low level requests.
 	 * @param ssk If true, get the SSK request scheduler. If false, get the CHK request scheduler.
 	 */
-	public RequestScheduler getFetchScheduler(boolean ssk) {
-		if(ssk) return sskFetchScheduler;
-		return chkFetchScheduler;
+	public RequestScheduler getFetchScheduler(boolean ssk, boolean realTime) {
+		if(ssk) return realTime ? sskFetchSchedulerRT : sskFetchSchedulerBulk;
+		return realTime ? chkFetchSchedulerRT : chkFetchSchedulerBulk;
 	}
 	
 	/** Tell db4o never to store the ClientContext in the database. If it did it would pull in all sorts of
@@ -289,6 +293,10 @@ public class ClientContext {
 		} else {
 			alerts.register(alert);
 		}
+	}
+
+	public void setDownloadCache(DownloadCache cache) {
+		this.downloadCache = cache;
 	}
 	
 }

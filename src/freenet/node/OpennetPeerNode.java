@@ -3,6 +3,7 @@ package freenet.node;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class OpennetPeerNode extends PeerNode {
@@ -218,5 +219,19 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	protected void maybeClearPeerAddedTimeOnRestart(long now) {
 		// Do nothing.
+	}
+
+	@Override
+	public void fatalTimeout() {
+		if(node.isStopping()) return;
+		Logger.normal(this, "Opennet peer "+this+" is having timeout problems");
+		// FIXME reinstate disconnection.
+//		Logger.normal(this, "Disconnecting "+this+" because of fatal timeout");
+//		// Disconnect.
+//		forceDisconnect(true);
+	}
+	
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		return node.shallWeRouteAccordingToOurPeersLocation();
 	}
 }

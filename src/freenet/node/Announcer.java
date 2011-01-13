@@ -119,6 +119,7 @@ public class Announcer {
 		boolean announceNow = false;
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
+		System.out.println("Trying to connect to some seednodes...");
 		List<SimpleFieldSet> seeds = Announcer.readSeednodes(node.nodeDir().file(SEEDNODES_FILENAME));
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -204,7 +205,7 @@ public class Announcer {
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, node.peers, false, om.crypto.packetMangler);
-				if(node.wantAnonAuth() && Arrays.equals(node.getOpennetIdentity(), seed.identity)) {
+				if(node.wantAnonAuth(true) && Arrays.equals(node.getOpennetIdentity(), seed.identity)) {
                                     if(logMINOR)
                                         Logger.minor("Not adding: I am a seednode attempting to connect to myself!", seed.userToString());
                                     continue;
@@ -273,14 +274,15 @@ public class Announcer {
 
 	public int getAnnouncementThreshold() {
 		// First, do we actually need to announce?
-		int target = Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAim() / 2);
+		int target = Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAimIncludingDarknet() / 2);
 		return target;
 	}
 
 	/** @return True if we have enough peers that we don't need to announce. */
 	boolean enoughPeers() {
+		if(om.stopping()) return true;
 		// Do we want to send an announcement to the node?
-		int opennetCount = node.peers.countConnectedOpennetPeers();
+		int opennetCount = node.peers.countConnectedPeers();
 		int target = getAnnouncementThreshold();
 		if(opennetCount >= target) {
 			if(logMINOR)
@@ -291,24 +293,53 @@ public class Announcer {
 			}
 			return true;
 		}
-		if(node.nodeUpdater == null || (!node.nodeUpdater.isEnabled()) ||
+		boolean killAnnouncement = false;
+		if((!node.nodeUpdater.isEnabled()) ||
 				(node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed())) {
 			// If we also have 10 TOO_NEW peers, we should shut down the announcement,
 			// because we're obviously broken and would only be spamming the seednodes
-			if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) +
-					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
+			synchronized(this) {
+				// Once we have shut down announcement, this persists until the auto-updater
+				// is enabled.
+				if(killedAnnouncementTooOld) return true;
+			}
+			if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
 				synchronized(this) {
 					if(killedAnnouncementTooOld) return true;
 					killedAnnouncementTooOld = true;
+					killAnnouncement = true;
 				}
 				Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				if(node.clientCore != null)
 					node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
-				return true;
 			}
 
 		}
+		
+		if(killAnnouncement) {
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					for(OpennetPeerNode pn : node.peers.getOpennetPeers()) {
+						node.peers.disconnect(pn, true, true, true);
+					}
+					for(SeedServerPeerNode pn : node.peers.getSeedServerPeersVector()) {
+						node.peers.disconnect(pn, true, true, true);
+					}
+				}
+				
+			});
+			return true;
+		} else {
+			if(node.nodeUpdater.isEnabled() && node.nodeUpdater.isArmed() &&
+					node.nodeUpdater.uom.fetchingFromTwo() &&
+					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 5) {
+				// No point announcing at the moment, but we might need to if a transfer falls through.
+				return true;
+			}
+		}
+		
 		synchronized(timeGotEnoughPeersLock) {
 			timeGotEnoughPeers = -1;
 		}
@@ -532,7 +563,8 @@ public class Announcer {
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
 				// be more than that period in the future.
 				node.peers.disconnect(seed, true, false, false);
-				System.out.println("Announcement to "+seed.userToString()+" completed.");
+				int shallow=node.maxHTL()-(totalAdded+totalNotWanted);
+				System.out.println("Announcement to "+seed.userToString()+" completed ("+totalAdded+" added, "+totalNotWanted+" not wanted, "+shallow+" shallow)");
 				if(announceNow)
 					maybeSendAnnouncement();
 			}
@@ -685,5 +717,16 @@ public class Announcer {
 
 	private String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("Announcer."+key, pattern, value);
+	}
+
+	public void reannounce() {
+		System.out.println("Re-announcing...");
+		maybeSendAnnouncementOffThread();
+	}
+
+	public boolean isWaitingForUpdater() {
+		synchronized(this) {
+			return killedAnnouncementTooOld;
+		}
 	}
 }

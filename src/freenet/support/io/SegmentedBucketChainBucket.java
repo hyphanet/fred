@@ -87,7 +87,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		this.cacheWholeBucket = cacheWholeBucket;
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		return null;
 	}
 

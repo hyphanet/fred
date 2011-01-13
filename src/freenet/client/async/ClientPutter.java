@@ -8,6 +8,7 @@ import java.io.IOException;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
+import freenet.client.FetchContext;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -170,7 +171,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 						ClientMetadata meta = cm;
 						if(meta != null) meta = persistent() ? meta.clone() : meta;
 						currentState =
-							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, 
+							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, realTimeFlag, 
 									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, Key.ALGO_AES_PCFB_256_SHA256, cryptoKey);
 					} else
 						currentState =
@@ -334,6 +335,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(client, 1);
+		FreenetURI u;
 		synchronized(this) {
 			if(this.uri != null) {
 				Logger.error(this, "onEncode() called twice? Already have a uri: "+uri+" for "+this);
@@ -343,9 +345,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			this.uri = key.getURI();
 			if(targetFilename != null)
 				uri = uri.pushMetaString(targetFilename);
+			u = uri;
 		}
-		if(persistent())
+		if(persistent()) {
 			container.store(this);
+			u = u.clone();
+		}
 		client.onGeneratedURI(uri, this, container);
 	}
 
@@ -375,6 +380,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
+	}
+	
+	/**
+	 * @return The data {@link Bucket} which is used by this ClientPutter.
+	 */
+	public Bucket getData() {
+		return data;
 	}
 
 	/** Get the final URI to the inserted data */
@@ -532,6 +544,5 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		container.activate(data, 5);
 		System.out.println("Data: "+data);
 	}
-
-
+	
 }

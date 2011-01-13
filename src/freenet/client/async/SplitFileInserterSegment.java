@@ -127,10 +127,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	/** When this reaches crossCheckBlocks, we can encode the check blocks. */
 	private int encodedCrossCheckBlocks;
 
-	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, BaseClientPutter putter,
+	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, boolean realTimeFlag, BaseClientPutter putter,
 			short splitfileAlgo, int crossCheckBlocks, int checkBlockCount, Bucket[] origDataBlocks,
 			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, byte cryptoAlgorithm, byte[] cryptoKey, ObjectContainer container) {
-		super(persistent);
+		super(persistent, realTimeFlag);
 		this.crossCheckBlocks = crossCheckBlocks;
 		this.crossSegmentsByBlock = new SplitFileInserterCrossSegment[origDataBlocks.length + crossCheckBlocks];
 		this.parent = parent;
@@ -276,7 +276,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	private void schedule(ObjectContainer container, ClientContext context) {
 		if(!getCHKOnly) {
-			this.getScheduler(context).registerInsert(this, persistent, false, container);
+			this.getScheduler(container, context).registerInsert(this, persistent, false, container);
 		} else {
 			tryEncode(container, context);
 		}
@@ -1208,7 +1208,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							throw new LowLevelPutException(LowLevelPutException.COLLISION);
 						}
 					else
-						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT);
+						core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed for "+e);

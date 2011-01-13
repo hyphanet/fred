@@ -56,7 +56,7 @@ public class SlashdotStoreTest extends TestCase {
 		
 		ClientCHK key = block.getClientKey();
 		
-		CHKBlock verify = store.fetch(key.getNodeCHK(), false, null);
+		CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 		String data = decodeBlock(verify, key);
 		assertEquals(test, data);
 	}
@@ -74,7 +74,7 @@ public class SlashdotStoreTest extends TestCase {
 		
 		ClientCHK key = block.getClientKey();
 		
-		CHKBlock verify = store.fetch(key.getNodeCHK(), false, null);
+		CHKBlock verify = store.fetch(key.getNodeCHK(), false, false, null);
 		if(verify == null) return; // Expected outcome
 		String data = decodeBlock(verify, key);
 		System.err.println("Got data: "+data+" but should have been deleted!");

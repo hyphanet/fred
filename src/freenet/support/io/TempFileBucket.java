@@ -1,13 +1,11 @@
 package freenet.support.io;
 
 import java.io.File;
-import java.io.IOException;
 
 import com.db4o.ObjectContainer;
-import freenet.support.LogThresholdCallback;
 
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
@@ -21,7 +19,7 @@ import freenet.support.api.Bucket;
  *
  * @author     giannij
  */
-public class TempFileBucket extends BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
+public class TempFileBucket extends BaseFileBucket implements Bucket {
 	long filenameID;
 	final FilenameGenerator generator;
 	private boolean readOnly;
@@ -77,14 +75,6 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 	
 	@Override
-	public SimpleFieldSet toFieldSet() {
-		if(deleteOnFinalize())
-			return null; // Not persistent
-		// For subclasses i.e. PersistentTempFileBucket
-		return super.toFieldSet();
-	}
-
-	@Override
 	protected boolean createFileOnly() {
 		return false;
 	}
@@ -127,7 +117,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		container.delete(this);
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());

@@ -30,6 +30,7 @@ import freenet.node.Announcer;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.node.OpennetManager;
 import freenet.node.PeerNode;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
@@ -257,7 +258,7 @@ public class NodeUpdateManager {
 			context.maxSplitfileBlockRetries = -1;
 			context.maxTempLength = maxSize;
 			context.maxOutputLength = maxSize;
-			ClientGetter get = new ClientGetter(this, freenetURI, context, priority, node.nonPersistentClient, null, null);
+			ClientGetter get = new ClientGetter(this, freenetURI, context, priority, node.nonPersistentClientBulk, null, null);
 			try {
 				node.clientCore.clientContext.start(get);
 			} catch (DatabaseDisabledException e) {
@@ -1039,6 +1040,17 @@ public class NodeUpdateManager {
 
 	public void arm() {
 		armed = true;
+		OpennetManager om = node.getOpennet();
+		if(om != null) {
+			if(om.waitingForUpdater()) {
+				synchronized(this) {
+					// Reannounce and count it from now.
+					if(gotJarTime > 0)
+						gotJarTime = System.currentTimeMillis();
+				}
+				om.reannounce();
+			}
+		}
 		deployOffThread(0);
 	}
 
@@ -1326,6 +1338,6 @@ public class NodeUpdateManager {
 	}
 
         protected boolean isSeednode() {
-            return (node.isOpennetEnabled() && node.wantAnonAuth());
+            return (node.isOpennetEnabled() && node.wantAnonAuth(true));
         }
 }

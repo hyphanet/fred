@@ -15,6 +15,7 @@ import java.text.DecimalFormat;
 
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 import freenet.support.io.Closer;
 
 /**

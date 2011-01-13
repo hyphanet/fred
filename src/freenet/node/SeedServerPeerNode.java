@@ -159,4 +159,14 @@ public class SeedServerPeerNode extends PeerNode {
 		// Do nothing.
 	}
 
+	@Override
+	public void fatalTimeout() {
+		// Disconnect.
+		forceDisconnect(true);
+	}
+	
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		return false; // Irrelevant
+	}
+
 }

@@ -9,10 +9,12 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
+import freenet.io.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -63,8 +65,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	private final boolean forkOnCacheable;
 	private final boolean preferInsert;
 	private final boolean ignoreLowBackoff;
-    
-    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) {
+	private final boolean realTimeFlag;
+
+    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) {
         this.req = req;
         this.node = node;
         this.uid = id;
@@ -79,6 +82,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         this.forkOnCacheable = forkOnCacheable;
         this.preferInsert = preferInsert;
         this.ignoreLowBackoff = ignoreLowBackoff;
+        this.realTimeFlag = realTimeFlag;
     }
     
     @Override
@@ -98,7 +102,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             tag.handlerThrew(t);
         } finally {
         	if(logMINOR) Logger.minor(this, "Exiting CHKInsertHandler.run() for "+uid);
-            node.unlockUID(uid, false, true, false, false, false, tag);
+        	tag.unlockHandler();
         }
     }
 
@@ -133,6 +137,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         
         if(msg == null) {
         	try {
+        		// Nodes wait until they have the DataInsert before forwarding, so there is absolutely no excuse: There is a local problem here!
         		if(source.isConnected() && (startTime > (source.timeLastConnectionCompleted()+Node.HANDSHAKE_TIMEOUT*4)))
         			Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
         		Message tooSlow = DMT.createFNPRejectedTimeout(uid);
@@ -140,8 +145,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
         		source.sendAsync(m, null, this);
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-        		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false);
+        		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null);
         		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
+        		source.localRejectedOverload("TimedOutAwaitingDataInsert");
+        		source.fatalTimeout();
         		return;
         	} catch (NotConnectedException e) {
         		if(logMINOR) Logger.minor(this, "Lost connection to source");
@@ -160,8 +167,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
-            sender = node.makeInsertSender(key, htl, uid, tag, source, headers, prb, false, false, forkOnCacheable, preferInsert, ignoreLowBackoff);
-        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false);
+            sender = node.makeInsertSender(key, htl, uid, tag, source, headers, prb, false, false, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
+        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, myTimeoutHandler);
         
         // Receive the data, off thread
         Runnable dataReceiver = new DataReceiver();
@@ -205,7 +212,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             if((!receivedRejectedOverload) && sender.receivedRejectedOverload()) {
             	receivedRejectedOverload = true;
             	// Forward it
-            	Message m = DMT.createFNPRejectedOverload(uid, false);
+            	Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
             	try {
 					source.sendSync(m, this);
 				} catch (NotConnectedException e) {
@@ -225,7 +232,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             if((status == CHKInsertSender.TIMED_OUT) ||
             		(status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD) ||
             		(status == CHKInsertSender.INTERNAL_ERROR)) {
-                msg = DMT.createFNPRejectedOverload(uid, true);
+                msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
                 try {
 					source.sendSync(msg, this);
 				} catch (NotConnectedException e) {
@@ -274,7 +281,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             
             // Otherwise...?
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
-            msg = DMT.createFNPRejectedOverload(uid, true);
+            msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
             try {
 				source.sendSync(msg, this);
 			} catch (NotConnectedException e) {
@@ -451,7 +458,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			}
         			// Cancel the sender
         			if(sender != null)
-        				sender.receiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
+        				sender.onReceiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
         			runThread.interrupt();
         			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
         			try {
@@ -521,4 +528,29 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}
+	
+	private BlockReceiverTimeoutHandler myTimeoutHandler = new BlockReceiverTimeoutHandler() {
+
+		/** We timed out waiting for a block from the request sender. We do not know 
+		 * whether it is the fault of the request sender or that of some previous node.
+		 * The PRB will be cancelled, resulting in all outgoing transfers for this insert
+		 * being cancelled quickly. If the problem occurred on a previous node, we will
+		 * receive a cancel. So we are consistent with the nodes we routed to, and it is
+		 * safe to wait for the node that routed to us to send an explicit cancel. We do
+		 * not need to do anything yet. */
+		public void onFirstTimeout() {
+			// Do nothing.
+		}
+
+		/** We timed out, and the sender did not send us a timeout message, even after we
+		 * told it we were cancelling. Hence, we know that it was at fault. We need to 
+		 * take action against it.
+		 */
+		public void onFatalTimeout(PeerContext receivingFrom) {
+			Logger.error(this, "Fatal timeout receiving insert "+CHKInsertHandler.this+" from "+receivingFrom);
+			((PeerNode)receivingFrom).fatalTimeout();
+		}
+		
+	};
+    
 }

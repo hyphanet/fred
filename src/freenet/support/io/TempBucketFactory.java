@@ -394,7 +394,7 @@ public class TempBucketFactory implements BucketFactory {
 			}
 		}
 
-		public Bucket createShadow() throws IOException {
+		public Bucket createShadow() {
 			return currentBucket.createShadow();
 		}
 

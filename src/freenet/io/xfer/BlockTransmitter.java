@@ -37,11 +37,11 @@ import freenet.node.MessageItem;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.node.PrioRunnable;
 import freenet.node.SyncSendWaitedTooLongException;
-import freenet.node.Ticker;
 import freenet.support.BitArray;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.NativeThread;
@@ -72,6 +72,7 @@ public class BlockTransmitter {
 	final PeerContext _destination;
 	private boolean _sentSendAborted;
 	final long _uid;
+	private final boolean realTime;
 	final PartiallyReceivedBlock _prb;
 	private LinkedList<Integer> _unsent;
 	private BlockSenderJob _senderThread = new BlockSenderJob();
@@ -137,7 +138,7 @@ public class BlockTransmitter {
 		/** @return True . */
 		private boolean innerRun(int packetNo) {
 			try {
-				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets.copy(), _prb.getPacket(packetNo), realTime), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
 				synchronized(itemsPending) {
 					itemsPending.add(item);
 				}
@@ -200,7 +201,8 @@ public class BlockTransmitter {
 		
 	}
 	
-	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, BlockTransmitterCompletion callback) {
+	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, BlockTransmitterCompletion callback, boolean realTime) {
+		this.realTime = realTime;
 		_ticker = ticker;
 		_executor = _ticker.getExecutor();
 		_callback = callback;
@@ -357,14 +359,39 @@ public class BlockTransmitter {
 		}
 		if(blockSendsPending != 0) {
 			if(logMINOR) Logger.minor(this, "maybeFail() waiting for "+blockSendsPending+" block sends on "+this);
-			return nullFuture; // Wait for blockSendsPending to reach 0
+			if(_sentSendAborted)
+				return nullFuture; // Wait for blockSendsPending to reach 0
+			else {
+				_sentSendAborted = true;
+				// They have sent us a cancel, but we still need to send them an ack or they will do a fatal timeout.
+				return new Future() {
+
+					public void execute() {
+						try {
+							innerSendAborted(reason, description);
+						} catch (NotConnectedException e) {
+							onDisconnect();
+						}
+					}
+				
+				};
+			}
 		}
 		if(logMINOR) Logger.minor(this, "maybeFail() completing on "+this);
 		_completed = true;
 		decRunningBlockTransmits();
+		final boolean sendAborted = _sentSendAborted;
+		_sentSendAborted = true;
 		return new Future() {
 
 			public void execute() {
+				if(!sendAborted) {
+					try {
+						innerSendAborted(reason, description);
+					} catch (NotConnectedException e) {
+						onDisconnect();
+					}
+				}
 				callCallback(false);
 			}
 			
@@ -453,7 +480,10 @@ public class BlockTransmitter {
 
 		public boolean shouldTimeout() {
 			synchronized(_senderThread) {
-				if(_receivedSendCompletion || _failed || _completed) return true; 
+				// We are waiting for the send completion, which is set on timeout as well as on receiving a message.
+				// In some corner cases we might want to get the allReceived after setting _failed, so don't timeout on _failed.
+				// We do want to timeout on _completed because that means everything is finished - it is only set in maybeComplete() and maybeFail().
+				if(_receivedSendCompletion || _completed) return true; 
 			}
 			return false;
 		}
@@ -494,7 +524,10 @@ public class BlockTransmitter {
 
 		public boolean shouldTimeout() {
 			synchronized(_senderThread) {
-				if(_receivedSendCompletion || _failed || _completed) return true; 
+				// We are waiting for the send completion, which is set on timeout as well as on receiving a message.
+				// We don't want to timeout on _failed because we can set _failed, send sendAborted, and then wait for the acknowledging sendAborted.
+				// We do want to timeout on _completed because that means everything is finished - it is only set in maybeComplete() and maybeFail().
+				if(_receivedSendCompletion || _completed) return true; 
 			}
 			return false;
 		}

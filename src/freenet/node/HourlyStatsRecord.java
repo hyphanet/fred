@@ -68,6 +68,12 @@ public class HourlyStatsRecord {
 		assert logDist < (-1.0 + 0x1.0p-1022/* Double.MIN_NORMAL */);
 		int distBucket = ((int)Math.floor(-1 * logDist));
 		if (distBucket >= byDist.length) distBucket = byDist.length - 1;
+		
+		if(ssk) {
+			byHTL[htl].locDiffCHK.report(logDist);
+		} else {
+			byHTL[htl].locDiffSSK.report(logDist);
+		}
 
 		if (success) {
 			if (ssk) {
@@ -163,14 +169,19 @@ public class HourlyStatsRecord {
 				int sskRS = (int)line.sskRemoteSuccess.countReports();
 				int sskF = (int)line.sskFailure.countReports();
 				int sskT = sskLS + sskRS + sskF;
+				
+				double locdiffCHK = line.locDiffCHK.currentValue();
+				locdiffCHK = Math.pow(2.0, locdiffCHK);
+				double locdiffSSK = line.locDiffSSK.currentValue();
+				locdiffSSK = Math.pow(2.0, locdiffSSK);
 
 				double chkRate = 0.;
 				double sskRate = 0.;
 				if (chkT > 0) chkRate = ((double)(chkLS + chkRS)) / (chkT);
 				if (sskT > 0) sskRate = ((double)(sskLS + sskRS)) / (sskT);
 
-				row.addChild("td", fix3p3pct.format(chkRate) + nbsp + "(" + chkLS + "," + chkRS + "," + chkT + ")");
-				row.addChild("td", fix3p3pct.format(sskRate) + nbsp + "(" + sskLS + "," + sskRS + "," + sskT + ")");
+				row.addChild("td", fix3p3pct.format(chkRate) + nbsp + "(" + chkLS + "," + chkRS + "," + chkT + ")"+nbsp+"("+fix4p.format(locdiffCHK)+")");
+				row.addChild("td", fix3p3pct.format(sskRate) + nbsp + "(" + sskLS + "," + sskRS + "," + sskT + ")"+nbsp+"("+fix4p.format(locdiffSSK)+")");
 
 				totalCHKLS += chkLS;
 				totalCHKRS+= chkRS;
@@ -198,6 +209,8 @@ public class HourlyStatsRecord {
 		TrivialRunningAverage sskLocalSuccess;
 		TrivialRunningAverage sskRemoteSuccess;
 		TrivialRunningAverage sskFailure;
+		TrivialRunningAverage locDiffCHK;
+		TrivialRunningAverage locDiffSSK;
 
 		StatsLine() {
 			chkLocalSuccess = new TrivialRunningAverage();
@@ -206,6 +219,8 @@ public class HourlyStatsRecord {
 			sskLocalSuccess = new TrivialRunningAverage();
 			sskRemoteSuccess = new TrivialRunningAverage();
 			sskFailure = new TrivialRunningAverage();
+			locDiffCHK = new TrivialRunningAverage();
+			locDiffSSK = new TrivialRunningAverage();
 		}
 
 		public String toString() {

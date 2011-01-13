@@ -77,19 +77,21 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	private long sentRequestTime;
 	private final boolean isInsert;
 	private final boolean isSSK;
+	final boolean realTime;
 	
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
-			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK) {
+			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK, boolean realTime) {
 		this.core = node;
 		this.stats = core.nodeStats;
 		this.throttle = throttle;
-		this.name = name;
+		this.name = name + (realTime ? " (realtime)" : " (bulk)");
 		this.outputBucket = outputBucket;
 		this.inputBucket = inputBucket;
 		this.averageOutputBytesPerRequest = averageOutputBytesPerRequest;
 		this.averageInputBytesPerRequest = averageInputBytesPerRequest;
 		this.isInsert = isInsert;
 		this.isSSK = isSSK;
+		this.realTime = realTime;
 	}
 
 	void setScheduler(RequestScheduler sched) {
@@ -156,8 +158,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					} while(now < sleepUntil);
 				}
 				RejectReason reason;
+				assert(req.realTimeFlag == realTime);
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY && !req.localRequestOnly) {
-					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT)) != null) {
+					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false, isInsert && Node.PREFER_INSERT_DEFAULT, req.realTimeFlag)) != null) {
 						if(logMINOR)
 							Logger.minor(this, "Not sending local request: "+reason);
 						// Wait one throttle-delay before trying again
@@ -265,6 +268,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		
 	}
 
+	/** LOCKING: Caller must avoid locking while calling this function. In particular,
+	 * if the RequestStarter lock is held we will get a deadlock. */
 	public void wakeUp() {
 		synchronized(this) {
 			notifyAll();

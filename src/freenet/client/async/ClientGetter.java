@@ -173,7 +173,7 @@ public class ClientGetter extends BaseClientGetter {
 				resetBlocks();
 				currentState = SingleFileFetcher.create(this, this,
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						true, container, context);
+						true, container, context, realTimeFlag);
 			}
 			if(persistent() && oldHashes != null) {
 				for(HashResult res : oldHashes) {
@@ -851,4 +851,5 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent()) container.store(this);
 		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
 	}
+	
 }

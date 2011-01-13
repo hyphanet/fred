@@ -62,6 +62,9 @@ public class LongTermMHKTest {
 	private static final int DELTA = 7;
 
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd", Locale.US);
+	static {
+		dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+	}
 	private static final GregorianCalendar today = (GregorianCalendar) Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
 	public static void main(String[] args) {
@@ -230,7 +233,7 @@ public class LongTermMHKTest {
 				//System.out.println("LINE: "+line);
 				String[] split = line.split("!");
 				Date date = dateFormat.parse(split[0]);
-				GregorianCalendar calendar = new GregorianCalendar();
+				GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 				calendar.setTime(date);
 				System.out.println("Date: "+dateFormat.format(calendar.getTime()));
 				GregorianCalendar target = (GregorianCalendar) today.clone();
@@ -294,7 +297,7 @@ public class LongTermMHKTest {
 					linesNoURL++;
 					continue;
 				}
-				if(target.getTimeInMillis() == calendar.getTimeInMillis()) {
+				if(Math.abs(target.getTimeInMillis() - calendar.getTimeInMillis()) < 12*60*60*1000) {
 					System.out.println("Found row for target date "+dateFormat.format(target.getTime())+" : "+dateFormat.format(calendar.getTime()));
 					System.out.println("Version: "+split[1]);
 					match = true;

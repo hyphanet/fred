@@ -45,14 +45,14 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	public SimpleSendableInsert(NodeClientCore core, KeyBlock block, short prioClass) {
-		super(false);
+		super(false, false);
 		this.block = block;
 		this.prioClass = prioClass;
-		this.client = core.node.nonPersistentClient;
+		this.client = core.node.nonPersistentClientBulk;
 		if(block instanceof CHKBlock)
-			scheduler = core.requestStarters.chkPutScheduler;
+			scheduler = core.requestStarters.chkPutSchedulerBulk;
 		else if(block instanceof SSKBlock)
-			scheduler = core.requestStarters.sskPutScheduler;
+			scheduler = core.requestStarters.sskPutSchedulerBulk;
 		else
 			throw new IllegalArgumentException("Don't know what to do with "+block);
 		if(!scheduler.isInsertScheduler())
@@ -60,7 +60,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 	
 	public SimpleSendableInsert(KeyBlock block, short prioClass, RequestClient client, ClientRequestScheduler scheduler) {
-		super(false);
+		super(false, false);
 		this.block = block;
 		this.prioClass = prioClass;
 		this.client = client;
@@ -93,7 +93,8 @@ public class SimpleSendableInsert extends SendableInsert {
 				// Ignore keyNum, key, since this is a single block
 				try {
 					if(logMINOR) Logger.minor(this, "Starting request: "+this);
-					core.realPut(block, req.canWriteClientCache, Node.FORK_ON_CACHEABLE_DEFAULT, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT);
+					// FIXME bulk flag
+					core.realPut(block, req.canWriteClientCache, Node.FORK_ON_CACHEABLE_DEFAULT, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, false);
 				} catch (LowLevelPutException e) {
 					onFailure(e, req.token, null, context);
 					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
@@ -196,4 +197,5 @@ public class SimpleSendableInsert extends SendableInsert {
 	public boolean localRequestOnly(ObjectContainer container) {
 		return false;
 	}
+
 }

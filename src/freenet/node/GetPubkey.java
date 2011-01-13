@@ -51,6 +51,8 @@ public class GetPubkey {
 	 * @return A public key, or null.
 	 */
 	public DSAPublicKey getKey(byte[] hash, boolean canReadClientCache, boolean forULPR, BlockMetadata meta) {
+		boolean ignoreOldBlocks = !node.getWriteLocalToDatastore();
+		if(canReadClientCache) ignoreOldBlocks = false;
 		ByteArrayWrapper w = new ByteArrayWrapper(hash);
 		if (logMINOR)
 			Logger.minor(this, "Getting pubkey: " + HexUtil.bytesToHex(hash));
@@ -69,38 +71,38 @@ public class GetPubkey {
 		try {
 			DSAPublicKey key = null;
 			if(pubKeyClientcache != null && canReadClientCache)
-				key = pubKeyClientcache.fetch(hash, false, meta);
+				key = pubKeyClientcache.fetch(hash, false, false, meta);
 			if(node.oldPKClientCache != null && canReadClientCache && key == null) {
 				PubkeyStore pks = node.oldPKClientCache;
-				if(pks != null) key = pks.fetch(hash, false, meta);
+				if(pks != null) key = pks.fetch(hash, false, false, meta);
 				if(key != null && logMINOR)
 					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old client cache");
 			}
 			// We can *read* from the datastore even if nearby, but we cannot promote in that case.
 			if(key == null) {
-				key = pubKeyDatastore.fetch(hash, false, meta);
+				key = pubKeyDatastore.fetch(hash, false, ignoreOldBlocks, meta);
 				if(key != null && logMINOR)
 					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from store");
 			}
 			if(key == null) {
 				PubkeyStore pks = node.oldPK;
-				if(pks != null) key = pks.fetch(hash, false, meta);
+				if(pks != null) key = pks.fetch(hash, false, ignoreOldBlocks, meta);
 				if(key != null && logMINOR)
 					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old store");
 			}
 			if (key == null) {
-				key = pubKeyDatacache.fetch(hash, false, meta);
+				key = pubKeyDatacache.fetch(hash, false, ignoreOldBlocks, meta);
 				if(key != null && logMINOR)
 					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
 			}
 			if(key == null) {
 				PubkeyStore pks = node.oldPKCache;
-				if(pks != null) key = pks.fetch(hash, false, meta);
+				if(pks != null) key = pks.fetch(hash, false, ignoreOldBlocks, meta);
 				if(key != null && logMINOR)
 					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old cache");
 			}
 			if(key == null && pubKeySlashdotcache != null && forULPR) {
-				key = pubKeySlashdotcache.fetch(hash, false, meta);
+				key = pubKeySlashdotcache.fetch(hash, false, ignoreOldBlocks, meta);
 				if (logMINOR)
 					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from slashdot cache");
 			}

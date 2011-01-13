@@ -37,6 +37,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.PageMaker.THEME;
+import freenet.clients.http.Toadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -50,7 +51,6 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.SecurityLevelListener;
-import freenet.node.Ticker;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.fcp.ClientPut;
 import freenet.node.useralerts.AbstractUserAlert;
@@ -60,6 +60,7 @@ import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.SerialExecutor;
+import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
@@ -397,7 +398,8 @@ public class PluginManager {
 			if (plug == null)
 				return null; // Already loaded
 			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
-			pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this, plug));
+			pi = new PluginInfoWrapper(node, plug, filename);
+			PluginHandler.startPlugin(PluginManager.this, pi);
 			synchronized (pluginWrappers) {
 				pluginWrappers.add(pi);
 				pluginsFailedLoad.remove(filename);
@@ -631,11 +633,34 @@ public class PluginManager {
 
 	}
 
-	void register(FredPlugin plug, PluginInfoWrapper pi) {
-		// handles FProxy? If so, register
+	void register(PluginInfoWrapper pi) {
+		FredPlugin plug = pi.getPlugin();
 
+		// handles FProxy? If so, register
 		if(pi.isPproxyPlugin())
 			registerToadlet(plug);
+
+		if(pi.isConfigurablePlugin()) {
+			// Registering the toadlet with atFront=false means that
+			// the node's ConfigToadlet will clobber the plugin's
+			// ConfigToadlet and the page will not be visible. So it
+			// must be registered with atFront=true. This means that
+			// malicious plugins could try to hijack node config
+			// pages, to ill effect. Let's avoid that.
+			boolean pluginIsTryingToHijackNodeConfig = false;
+			for(SubConfig subconfig : node.config.getConfigs()) {
+				if(pi.getPluginClassName().equals(subconfig.getPrefix())) {
+					pluginIsTryingToHijackNodeConfig = true;
+					break;
+				}
+			}
+			if(pluginIsTryingToHijackNodeConfig) {
+				Logger.warning(this, "The plugin loaded from "+pi.getFilename()+" is attempting to hijack a node configuration page; refusing to register its ConfigToadlet");
+			} else {
+				Toadlet toadlet = pi.getConfigToadlet();
+				core.getToadletContainer().register(toadlet, "FProxyToadlet.categoryConfig", toadlet.path(), true, "ConfigToadlet."+pi.getPluginClassName()+".label", "ConfigToadlet."+pi.getPluginClassName()+".tooltip", true, null, (FredPluginL10n)pi.getPlugin());
+			}
+		}
 
 		if(pi.isIPDetectorPlugin())
 			node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
@@ -1022,17 +1047,17 @@ public class PluginManager {
 		addOfficialPlugin("HelloWorld", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"));
 		addOfficialPlugin("HelloFCP", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"));
 		addOfficialPlugin("JSTUN", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
-		addOfficialPlugin("KeyUtils", false, 5003, false, new FreenetURI("CHK@dF9Lg7Q7Bbt4uZ4OANVaSlgrUmHmV0Pj03Y1SCaN1Fw,H5Wj5VCgI4JSusMGonUiPlAwSVAahN0Bzw2v1C6QvcA,AAIC--8/KeyUtils.jar"));
+		addOfficialPlugin("KeyUtils", false, 5007, false, new FreenetURI("CHK@c16sREW1FPGYGn2gdhy0ZSpLKmenMnQehdbZFe5QE5Y,3OHVJ~4skzUw5TsRTo3jKupKr4-JHq27N3nHdIJ6oiw,AAIC--8/KeyUtils.jar"));
 		addOfficialPlugin("MDNSDiscovery", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
 		addOfficialPlugin("SNMP", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"));
 		addOfficialPlugin("TestGallery", false, 1, false, new FreenetURI("CHK@LfJVh1EkCr4ry0yDW74vwxkX-3nkr~ztW2z0SUZHfC0,-mz7l39dC6n0RTUiSokjC~pUDO7PWZ89miYesKH0-WA,AAIC--8/TestGallery.jar"));
 		addOfficialPlugin("ThawIndexBrowser", false, 4, true, new FreenetURI("CHK@424rWuNPGY8FjiF4MMDPCwle4MboQg6GOmFReUhbJqU,79Zd2brL9PwZd7z2OL2DXW4xTNvm81EEYVYGmbLG5Jg,AAIC--8/ThawIndexBrowser.jar"));
 		addOfficialPlugin("UPnP", true, 10003, false, new FreenetURI("CHK@chunCVhavqu60gWdf1jlAzKyVhEx7Hy99BaDpoU~xlc,iI-VcHxkg66W8-61P-bHzJYTx9PYrI2GuGIjC4Lg8mI,AAIC--8/UPnP.jar"));
-		addOfficialPlugin("XMLLibrarian", false, 25, true, new FreenetURI("CHK@PzdgNIKIzYKet2x6rk2i9TMA8R3RTKf7~H7NBB-D1m4,8rfAK29Z8LkAcmwfVgF0RBGtTxaZZBmc7qcX5AoQUEo,AAIC--8/XMLLibrarian.jar"));
-		addOfficialPlugin("XMLSpider", false, 46, true, new FreenetURI("CHK@2FZYDhLSbhGQXeVfJNptV1~V3dNmS4zI59PpNaBlRqo,bvvqS-mMgeWHgLpEJzzYc18xY2urQSGYPmq4nmmJV6k,AAIC--8/XMLSpider.jar"));
+		addOfficialPlugin("XMLLibrarian", false, 26, true, new FreenetURI("CHK@TvjyCaG1dx0xIBSJkXSKA1ZT4I~NkRKeQqwC0a0bhFM,JiQe4CRjF1RwhQRFFQzP-ih9t2i0peV0tBCfJAeFCdk,AAIC--8/XMLLibrarian.jar"));
+		addOfficialPlugin("XMLSpider", false, 47, true, new FreenetURI("CHK@IQU400XKMx~nMEfdXV2YokCzJxx6BeCBmIObzZuq1zo,cY6UJ~KWGESJvaFajXHfr9UZUKJzt7gkmqUKUIZF5SE,AAIC--8/XMLSpider.jar"));
 		addOfficialPlugin("Freereader", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
-		addOfficialPlugin("Library", false, 21, true, new FreenetURI("CHK@jkF54IAaH-pLmBS-evy5yTpHsYIKP4QkyAMoAVq4AoY,QQo5Hsq7pQJEptA7pISEteBQUDXO3dHmJxNN0g62UbY,AAIC--8/Library.jar"));
-		addOfficialPlugin("Spider", false, 47, false, new FreenetURI("CHK@avlS677YAH4q40rxTX9RiL87tNCer-KFkEH4ihf5Too,Rf8YkLYfNuZ4EshXgDjkMwE9dQJ8JuFHfhi6bu986mY,AAIC--8/Spider.jar"));
+		addOfficialPlugin("Library", false, 22, true, new FreenetURI("CHK@zDlkryQcPRuK11Y1IjB-Rh4I5b7SMUdhwLvaEpjdjZM,8tLr~U~wi5BpvkoJtMY5gWiusH5VIUtwaWj1GNVCdPk,AAIC--8/Library.jar"));
+		addOfficialPlugin("Spider", false, 48, false, new FreenetURI("CHK@DBgu6re-bD8M2elkdvReOROyZm4f2ppWaLBpJ0Cvo-k,RaD2v5HYVV1Xqit9v6FRaUpz-weoi3ilt4xxr~d9IfE,AAIC--8/Spider.jar"));
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}
@@ -1092,6 +1117,10 @@ public class PluginManager {
 
 		public void removeFrom(ObjectContainer container) {
 			// Do nothing.
+		}
+
+		public boolean realTimeFlag() {
+			return false;
 		}
 
 	};
@@ -1315,7 +1344,8 @@ public class PluginManager {
 						Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
 						try {
 							if(object instanceof FredPluginThreadless) {
-								((FredPlugin)object).runPlugin(new PluginRespirator(node, PluginManager.this, (FredPlugin)object));
+								PluginInfoWrapper pi = new PluginInfoWrapper(node, (FredPlugin)object, filename);
+								pi.getPlugin().runPlugin(pi.getPluginRespirator());
 							}
 						} catch (Throwable t) {
 							Logger.error(this, "Failed to start plugin (to prevent NPEs) while terminating it because it is too old: "+t, t);
@@ -1668,6 +1698,9 @@ public class PluginManager {
 
 	public void unregisterPlugin(PluginInfoWrapper wrapper, FredPlugin plug, boolean reloading) {
 		unregisterPluginToadlet(wrapper);
+		if(wrapper.isConfigurablePlugin()) {
+			core.getToadletContainer().unregister(wrapper.getConfigToadlet());
+		}
 		if(wrapper.isIPDetectorPlugin())
 			node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
 		if(wrapper.isPortForwardPlugin())

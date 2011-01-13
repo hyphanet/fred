@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.TimeZone;
 
+import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.annotation.AllowData;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
@@ -679,5 +680,9 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public URI getUri() {
 		return uri;
+	}
+
+	public REFILTER_POLICY getReFilterPolicy() {
+		return container.getReFilterPolicy();
 	}
 }

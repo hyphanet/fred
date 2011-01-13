@@ -18,7 +18,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
-public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
+public class DelayedFreeBucket implements Bucket {
 
 	private final PersistentFileTracker factory;
 	Bucket bucket;
@@ -48,12 +48,6 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		this.factory = factory;
 		this.bucket = bucket;
 		if(bucket == null) throw new NullPointerException();
-	}
-
-	public DelayedFreeBucket(SimpleFieldSet fs, RandomSource random, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
-		factory = f;
-		freed = false;
-		bucket = SerializableToFieldSetBucketUtil.create(fs.subset("Underlying"), random, f);
 	}
 
 	public OutputStream getOutputStream() throws IOException {
@@ -97,22 +91,6 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		}
 	}
 
-	public SimpleFieldSet toFieldSet() {
-		if(freed) {
-			Logger.error(this, "Cannot serialize because already freed: "+this);
-			return null;
-		}
-		SimpleFieldSet fs = new SimpleFieldSet(false);
-		fs.putSingle("Type", "DelayedFreeBucket");
-		if(bucket instanceof SerializableToFieldSetBucket) {
-			fs.put("Underlying", ((SerializableToFieldSetBucket)bucket).toFieldSet());
-		} else {
-			Logger.error(this, "Cannot serialize underlying bucket: "+bucket);
-			return null;
-		}
-		return fs;
-	}
-
 	public void storeTo(ObjectContainer container) {
 		bucket.storeTo(container);
 		container.store(this);
@@ -153,7 +131,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		container.activate(bucket, 1);
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		return bucket.createShadow();
 	}
 

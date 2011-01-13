@@ -32,6 +32,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
@@ -220,7 +221,7 @@ public class PeerManager {
 				fs = new SimpleFieldSet(br, false, true);
 				PeerNode pn;
 				try {
-					pn = PeerNode.create(fs, node, crypto, opennet, this, true, mangler);
+					pn = PeerNode.create(fs, node, crypto, opennet, this, mangler);
 				} catch(FSParseException e2) {
 					Logger.error(this, "Could not parse peer: " + e2 + '\n' + fs.toString(), e2);
 					continue;
@@ -477,25 +478,46 @@ public class PeerManager {
 	public PeerNode getByPeer(Peer peer) {
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
-			if(peer.equals(peerList[i].getPeer()))
+			if(peerList[i].matchesPeerAndPort(peer))
 				return peerList[i];
 		}
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(int i = 0; i < peerList.length; i++) {
-			Peer p = peerList[i].getPeer();
-			if(p == null) continue;
-			if(addr.equals(p.getFreenetAddress()))
+			if(peerList[i].matchesIP(addr))
+				return peerList[i];
+		}
+		return null;
+	}
+	
+	/**
+	 * Find the node with the given Peer address, or IP address. Checks the outgoing
+	 * packet mangler as well.
+	 * @param peer
+	 * @param mangler
+	 * @return
+	 */
+	public PeerNode getByPeer(Peer peer, FNPPacketMangler mangler) {
+		PeerNode[] peerList = myPeers;
+		for(int i = 0; i < peerList.length; i++) {
+			if(peerList[i].matchesPeerAndPort(peer) && peerList[i].getOutgoingMangler() == mangler)
+				return peerList[i];
+		}
+		// Try a match by IP address if we can't match exactly by IP:port.
+		FreenetInetAddress addr = peer.getFreenetAddress();
+		for(int i = 0; i < peerList.length; i++) {
+			if(peerList[i].matchesIP(addr) && peerList[i].getOutgoingMangler() == mangler)
 				return peerList[i];
 		}
 		return null;
 	}
 
+
 	/**
 	 * Connect to a node provided the fieldset representing it.
 	 */
-	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		PeerNode pn = node.createNewDarknetNode(noderef);
+	public void connect(SimpleFieldSet noderef, OutgoingPacketMangler mangler, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		PeerNode pn = node.createNewDarknetNode(noderef, trust);
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
 			if(Arrays.equals(peerList[i].identity, pn.identity))
@@ -946,7 +968,7 @@ public class PeerManager {
 			double diff = realDiff;
 			
 			double[] peersLocation = p.getPeersLocation();
-			if((peersLocation != null) && (node.shallWeRouteAccordingToOurPeersLocation())) {
+			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
 				for(double l : peersLocation) {
 					boolean ignoreLoc = false; // Because we've already been there
 					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
@@ -1168,7 +1190,7 @@ public class PeerManager {
 		}
 		for(PeerNode pn : peers) {
 			if(pn instanceof DarknetPeerNode)
-				sb.append(pn.exportDiskFieldSet());
+				sb.append(pn.exportDiskFieldSet().toOrderedString());
 		}
 		
 		return sb.toString();
@@ -1182,7 +1204,7 @@ public class PeerManager {
 		}
 		for(PeerNode pn : peers) {
 			if(pn instanceof OpennetPeerNode)
-				sb.append(pn.exportDiskFieldSet());
+				sb.append(pn.exportDiskFieldSet().toOrderedString());
 		}
 		
 		return sb.toString();
@@ -1192,7 +1214,7 @@ public class PeerManager {
 		StringBuilder sb = new StringBuilder();
 		for(PeerNode pn : om.getOldPeers()) {
 			if(pn instanceof OpennetPeerNode)
-				sb.append(pn.exportDiskFieldSet());
+				sb.append(pn.exportDiskFieldSet().toOrderedString());
 		}
 		
 		return sb.toString();
@@ -1766,6 +1788,22 @@ public class PeerManager {
 		}
 		return v.toArray(new OpennetPeerNode[v.size()]);
 	}
+	
+	public PeerNode[] getOpennetAndSeedServerPeers() {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		// FIXME optimise! Maybe maintain as a separate list?
+		Vector<PeerNode> v = new Vector<PeerNode>(myPeers.length);
+		for(int i = 0; i < peers.length; i++) {
+			if(peers[i] instanceof OpennetPeerNode)
+				v.add(peers[i]);
+			else if(peers[i] instanceof SeedServerPeerNode)
+				v.add(peers[i]);
+		}
+		return v.toArray(new PeerNode[v.size()]);
+	}
 
 	public boolean anyConnectedPeerHasAddress(FreenetInetAddress addr, PeerNode pn) {
 		PeerNode[] peers;
@@ -1805,7 +1843,7 @@ public class PeerManager {
 	}
 
 	public PeerNode containsPeer(PeerNode pn) {
-		PeerNode[] peers = pn.isOpennet() ? ((PeerNode[]) getOpennetPeers()) : ((PeerNode[]) getDarknetPeers());
+		PeerNode[] peers = pn.isOpennet() ? ((PeerNode[]) getOpennetAndSeedServerPeers()) : ((PeerNode[]) getDarknetPeers());
 
 		for(int i = 0; i < peers.length; i++)
 			if(Arrays.equals(pn.getIdentity(), peers[i].getIdentity()))

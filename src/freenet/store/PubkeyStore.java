@@ -26,8 +26,8 @@ public class PubkeyStore extends StoreCallback<DSAPublicKey> {
 		}
 	}
 
-	public DSAPublicKey fetch(byte[] hash, boolean dontPromote, BlockMetadata meta) throws IOException {
-		return store.fetch(hash, null, dontPromote, false, false, meta);
+	public DSAPublicKey fetch(byte[] hash, boolean dontPromote, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
+		return store.fetch(hash, null, dontPromote, false, false, ignoreOldBlocks, meta);
 	}
 	
 	final private static byte[] empty = new byte[0];

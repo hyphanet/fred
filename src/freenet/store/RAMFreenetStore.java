@@ -44,11 +44,15 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 	}
 	
 	public synchronized T fetch(byte[] routingKey, byte[] fullKey,
-			boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
+			boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, boolean ignoreOldBlocks, BlockMetadata meta) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		Block block = blocksByRoutingKey.get(key);
 		if(block == null) {
 			misses++;
+			return null;
+		}
+		if(ignoreOldBlocks && block.oldBlock) {
+			Logger.normal(this, "Ignoring old block");
 			return null;
 		}
 		try {
@@ -57,7 +61,8 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 			hits++;
 			if(!dontPromote)
 				blocksByRoutingKey.push(key, block);
-			if(meta != null && block.oldBlock) meta.oldBlock = true;
+			if(meta != null && block.oldBlock)
+				meta.setOldBlock();
 			return ret;
 		} catch (KeyVerifyException e) {
 			blocksByRoutingKey.removeKey(key);
@@ -95,7 +100,11 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 				boolean equals = Arrays.equals(oldBlock.data, data) &&
 					Arrays.equals(oldBlock.header, header) &&
 					(storeFullKeys ? Arrays.equals(oldBlock.fullKey, fullKey) : true);
-				if(equals) return;
+				if(equals) {
+					if(!isOldBlock)
+						oldBlock.oldBlock = false;
+					return;
+				}
 				if(overwrite) {
 					oldBlock.data = data;
 					oldBlock.header = header;
@@ -107,6 +116,8 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 				}
 				return;
 			} else {
+				if(!isOldBlock)
+					oldBlock.oldBlock = false;
 				return;
 			}
 		}

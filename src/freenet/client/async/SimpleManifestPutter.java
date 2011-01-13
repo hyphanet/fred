@@ -37,6 +37,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
+import freenet.support.io.NoCloseProxyOutputStream;
 
 public class SimpleManifestPutter extends BaseClientPutter implements PutCompletionCallback {
 
@@ -65,7 +66,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block =
 				new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey);
+				new SingleFileInserter(this, this, block, false, ctx, realTimeFlag, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent, 0, 0, null, cryptoAlgorithm, forceCryptoKey);
 			metadata = null;
 			containerHandle = null;
 		}
@@ -991,7 +992,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.
 			metadataInserter =
-				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, realTimeFlag, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent(), 0, 0, null, cryptoAlgorithm, ckey);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata+" for "+this);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
@@ -1021,6 +1022,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private String createTarBucket(Bucket inputBucket, OutputStream os, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 
+		// FIXME: TarOutputStream.finish() does NOT call TarBuffer.flushBlock() from TarBuffer.close().
+		// So we wrap it here and call close().
+		// Fix it in Contrib, release a new jar, require the new jar, then clean up this code.
+		os = new NoCloseProxyOutputStream(os);
 		TarOutputStream tarOS = new TarOutputStream(os);
 		tarOS.setLongFileMode(TarOutputStream.LONGFILE_GNU);
 		TarEntry ze;
@@ -1054,6 +1059,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		tarOS.closeEntry();
 		// Both finish() and close() are necessary.
 		tarOS.finish();
+		tarOS.close();
 
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}
@@ -1125,7 +1131,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 				// Don't random-encrypt the metadata.
 				SingleFileInserter metadataInserter =
-					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, null);
+					new SingleFileInserter(this, this, ib, true, ctx, realTimeFlag, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent(), 0, 0, null, cryptoAlgorithm, null);
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
@@ -1480,9 +1486,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 			}
 		}
-		if(token != baseMetadata)
-			token.removeFrom(container);
 		if(persistent()) {
+			if(token != baseMetadata)
+				token.removeFrom(container);
 			container.ext().store(metadataPuttersByMetadata, 2);
 			container.deactivate(metadataPuttersByMetadata, 1);
 			state.removeFrom(container, context);

@@ -11,13 +11,31 @@ import java.util.Date;
 import java.util.HashSet;
 
 import freenet.support.CurrentTimeUTC;
-import freenet.support.StringValidityChecker;
 import freenet.support.TimeUtil;
 
+/**
+ * @author xor (xor@freenetproject.org)
+ */
 public class Cookie {
-	
+	/**
+	 * FIXME: Where was this taken from?
+	 */
 	private static final HashSet<Character> invalidValueCharacters =
 		new HashSet<Character>(Arrays.asList(new Character[] { '(', ')', '[', ']', '{', '}', '=', ',', '\"', '/', '\\', '?', '@', ':', ';' }));
+	
+	/**
+	 * Taken from this discussion:
+		<TheSeeker>        CTL            = <any US-ASCII control character
+		<TheSeeker>                         (octets 0 - 31) and DEL (127)>
+		<TheSeeker>        CHAR           = <any US-ASCII character (octets 0 - 127)>
+		<TheSeeker>        token          = 1*<any CHAR except CTLs or separators>
+		<TheSeeker>        separators     = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\" | <"> | "/" | "[" | "]" | "?" | "=" | "{" | "}" | SP | HT
+		<TheSeeker> so, anything from 32-126 that isn't in that list of seperators is valid.
+		<p0s> TheSeeker: where did you copy that from?
+		<TheSeeker> http://www.ietf.org/rfc/rfc2616.txt
+	*/
+	public static final HashSet<Character> httpSeparatorCharacters =
+		new HashSet<Character>(Arrays.asList(new Character[] { '(', ')', '<', '>', '@', ',', ';', ':', '\\', '\"', '/', '[', ']', '?', '=', '{', '}', ' ', '\t' }));
 	
 	private static final Charset usasciiCharset = Charset.forName("US-ASCII");
 	
@@ -134,15 +152,54 @@ public class Cookie {
 		return path;
 	}
 	
-	public static String validateName(String name) {
-		name = name.trim().toLowerCase(); // RFC2965: Name is case insensitive
 
+	/**
+	 * Validates the name of a cookie against a mixture of RFC2965, RFC2616 (from IETF.org) and personal choice :|
+	 * The personal choice is mostly that it uses isISOControl for determining control characters instead of the
+	 * list in the RFC - therefore, more characters are considered as control characters. 
+	 * So effectively this function is more restrictive than the RFCs.
+	 * TODO: Read the RFCs in depth and make this function fully compatible.
+	 */
+	public static String validateName(String name) {
 		if("".equals(name))
 			throw new IllegalArgumentException("Name is empty.");
+		
+		final String newName = new String(usasciiCharset.encode(name).array());
+		
+		if(newName.equals(name) == false)
+			throw new IllegalArgumentException("Invalid name, contains non-US-ASCII characters: " + name);
+		
+		name = newName.trim().toLowerCase(); // RFC2965: Name is case insensitive
+		
+		/*
+		<TheSeeker>        CTL            = <any US-ASCII control character
+		<TheSeeker>                         (octets 0 - 31) and DEL (127)>
+		<TheSeeker>        CHAR           = <any US-ASCII character (octets 0 - 127)>
+		<TheSeeker>        token          = 1*<any CHAR except CTLs or separators>
+		<TheSeeker>        separators     = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\" | <"> | "/" | "[" | "]" | "?" | "=" | "{" | "}" | SP | HT
+		<TheSeeker> so, anything from 32-126 that isn't in that list of seperators is valid.
+		<p0s> TheSeeker: where did you copy that from?
+		<TheSeeker> http://www.ietf.org/rfc/rfc2616.txt
+		<TheSeeker> The following grammar uses the notation, and tokens DIGIT (decimal digits), token (informally, a sequence of non-special, non-white space characters), and http_URL from the HTTP/1.1 specification [RFC2616] to describe their syntax.
+		<TheSeeker>        quoted-string  = ( <"> *(qdtext | quoted-pair ) <"> )
+		<TheSeeker>        qdtext         = <any TEXT except <">>
+		<TheSeeker>        TEXT           = <any OCTET except CTLs, but including LWS>
+		<TheSeeker>        LWS            = [CRLF] 1*( SP | HT )
+		<TheSeeker>        OCTET          = <any 8-bit sequence of data>
+		<TheSeeker> so, if it's quoted, it can be anything 32-126 and 128-255 (except a quote char, obviously)
+		*/
 
-		// FIXME: This is more restrictive than the official allowed content of a cookie name because I was too lazy for finding out the exact requirements.
-		if(StringValidityChecker.isLatinLettersAndNumbersOnly(name) == false)
-			throw new IllegalArgumentException("Only letters and numbers are allowed as name, found: " + name);
+		for(Character c : name.toCharArray()) {
+			if(Character.isWhitespace(c))
+				throw new IllegalArgumentException("Invalid name, contains whitespace: " + name);
+			
+			// From isISOControl javadoc: A character is considered to be an ISO control character if its in the range [0,31] or [127,159]
+			if(Character.isISOControl(c))
+				throw new IllegalArgumentException("Invalid name, contains control characters.");
+			
+			if(httpSeparatorCharacters.contains(c))
+				throw new IllegalArgumentException("Invalid name, contains one of the explicitely disallowed characters: " + name);
+		}
 		
 		if(		name.startsWith("$")
 				|| "comment".equals(name)
@@ -159,6 +216,13 @@ public class Cookie {
 		return name;
 	}
 	
+	/**
+	 * Validates the value of a cookie against a mixture of RFC2965, RFC2616 (from IETF.org) and personal choice :|
+	 * The personal choice is mostly that it uses isISOControl for determining control characters instead of the
+	 * list in the RFC - therefore, more characters are considered as control characters. 
+	 * So effectively this function is more restrictive than the RFCs.
+	 * TODO: Read the RFCs in depth and make this function fully compatible.
+	 */
 	public static String validateValue(String value) {
 		String newValue = new String(usasciiCharset.encode(value).array());
 		
@@ -166,16 +230,32 @@ public class Cookie {
 			throw new IllegalArgumentException("Invalid value, contains non-US-ASCII characters: " + value);
 		
 		newValue = newValue.trim();
-	
-		// FIXME: This is more restrictive than the official allowed content of a value because I was too lazy for finding out the exact requirements.
-		
+
+		/*
+		<TheSeeker>        CTL            = <any US-ASCII control character
+		<TheSeeker>                         (octets 0 - 31) and DEL (127)>
+		<TheSeeker>        CHAR           = <any US-ASCII character (octets 0 - 127)>
+		<TheSeeker>        token          = 1*<any CHAR except CTLs or separators>
+		<TheSeeker>        separators     = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\" | <"> | "/" | "[" | "]" | "?" | "=" | "{" | "}" | SP | HT
+		<TheSeeker> so, anything from 32-126 that isn't in that list of seperators is valid.
+		<p0s> TheSeeker: where did you copy that from?
+		<TheSeeker> http://www.ietf.org/rfc/rfc2616.txt
+		<TheSeeker> The following grammar uses the notation, and tokens DIGIT (decimal digits), token (informally, a sequence of non-special, non-white space characters), and http_URL from the HTTP/1.1 specification [RFC2616] to describe their syntax.
+		<TheSeeker>        quoted-string  = ( <"> *(qdtext | quoted-pair ) <"> )
+		<TheSeeker>        qdtext         = <any TEXT except <">>
+		<TheSeeker>        TEXT           = <any OCTET except CTLs, but including LWS>
+		<TheSeeker>        LWS            = [CRLF] 1*( SP | HT )
+		<TheSeeker>        OCTET          = <any 8-bit sequence of data>
+		<TheSeeker> so, if it's quoted, it can be anything 32-126 and 128-255 (except a quote char, obviously)
+		*/
+
 		for(Character c : newValue.toCharArray()) {
-			if(Character.isWhitespace(c))
-				throw new IllegalArgumentException("Invalid value, contains whitespace: " + value);
-			
+			// We allow whitespace in the value because quotation is allowed and supported by the parser in ReceivedCookie
+
 			if(Character.isISOControl(c))
 				throw new IllegalArgumentException("Invalid value, contains control characters.");
 			
+			// TODO: The source of the invalid value characters list is not mentioned in its javadoc - it has to be re-validated
 			if(invalidValueCharacters.contains(c))
 				throw new IllegalArgumentException("Invalid value, contains one of the explicitely disallowed characters: " + value);
 		}

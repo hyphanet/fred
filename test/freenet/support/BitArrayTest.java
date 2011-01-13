@@ -180,5 +180,29 @@ public class BitArrayTest extends TestCase {
 		methodBitArray.setBit(oneByteBits-1,false);
 		assertEquals(methodBitArray.firstOne(),-1);
 	}
+	
+	public void testLastOne() {
+		BitArray array = new BitArray(16);
+		array.setAllOnes();
+		for(int i=15;i>=0;i--) {
+			assertEquals(i, array.lastOne(Integer.MAX_VALUE));
+			assertEquals(i, array.lastOne(i+1));
+			assertEquals(i, array.lastOne(i+8));
+			array.setBit(i, false);
+		}
+		assert(array.lastOne(Integer.MAX_VALUE) == -1);
+		assert(array.lastOne(0) == -1);
+	}
+	
+	public void testShrinkGrow() {
+		BitArray array = new BitArray(16);
+		array.setAllOnes();
+		array.setSize(9);
+		array.setSize(16);
+		for(int i=9;i<16;i++)
+			assert(!array.bitAt(i));
+		for(int i=0;i<9;i++)
+			assert(array.bitAt(i));
+	}
 
 }

@@ -26,15 +26,43 @@ public class NativeThread extends Thread {
 	public final static boolean HAS_THREE_NICE_LEVELS;
 	public final static boolean HAS_ENOUGH_NICE_LEVELS;
 	public final static boolean HAS_PLENTY_NICE_LEVELS;
+
 	
-	// 5 is enough generally for our purposes.
-	public static final int ENOUGH_NICE_LEVELS = 5;
-	public static final int MIN_PRIORITY = 1;
-	public static final int LOW_PRIORITY = 3;
-	public static final int NORM_PRIORITY = 5;
-	public static final int HIGH_PRIORITY = 7;
-	public static final int MAX_PRIORITY = 10;
+	// TODO: Wire in.
+	public static enum PriorityLevel {
+		MIN_PRIORITY(1),
+		LOW_PRIORITY(3),
+		NORM_PRIORITY(5),
+		HIGH_PRIORITY(7),
+		MAX_PRIORITY(10);
+		
+		public final int value;
+		
+		PriorityLevel(int myValue) {
+			value = myValue;
+		}
+		
+		public static PriorityLevel fromValue(int value) {
+			for(PriorityLevel level :PriorityLevel.values()) {
+				if(level.value == value)
+					return level;
+			}
+			
+			throw new IllegalArgumentException();
+		}
+	}
 	
+	
+
+	public static final int ENOUGH_NICE_LEVELS = PriorityLevel.values().length;
+	public static final int MIN_PRIORITY = PriorityLevel.MIN_PRIORITY.value;
+	public static final int LOW_PRIORITY = PriorityLevel.LOW_PRIORITY.value;
+	public static final int NORM_PRIORITY = PriorityLevel.NORM_PRIORITY.value;
+	public static final int HIGH_PRIORITY = PriorityLevel.HIGH_PRIORITY.value;
+	public static final int MAX_PRIORITY = PriorityLevel.MAX_PRIORITY.value;
+	
+	
+
 	static {
 		Logger.minor(NativeThread.class, "Running init()");
 		// Loading the NativeThread library isn't useful on macos
@@ -63,6 +91,7 @@ public class NativeThread extends Thread {
 		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
 	}
 	
+
 	public NativeThread(String name, int priority, boolean dontCheckRenice) {
 		super(name);
 		this.currentPriority = priority;
@@ -150,5 +179,20 @@ public class NativeThread extends Thread {
 
 	public static boolean usingNativeCode() {
 		return _loadNative && !_disabled;
+	}
+	
+	public static String normalizeName(String name) {
+		if(name.indexOf(" for ") != -1)
+			name = name.substring(0, name.indexOf(" for "));
+		if(name.indexOf("@") != -1)
+			name = name.substring(0, name.indexOf("@"));
+		if (name.indexOf("(") != -1)
+			name = name.substring(0, name.indexOf("("));
+		
+		return name;
+	}
+	
+	public String getNormalizedName() {
+		return normalizeName(getName());
 	}
 }

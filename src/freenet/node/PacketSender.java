@@ -159,7 +159,10 @@ public class PacketSender implements Runnable {
 
 		int newBrokeAt = brokeAt;
 		for(int i = 0; i < nodes.length; i++) {
+			now = System.currentTimeMillis();
 			int idx = (i + brokeAt + 1) % nodes.length;
+			if(logMINOR)
+				Logger.minor(this, "Trying index "+idx+" of "+nodes.length+" canSend="+canSendThrottled);
 			PeerNode pn = nodes[idx];
                         final long lastReceivedPacketTime = pn.lastReceivedPacketTime();
 			lastReceivedPacketFromAnyNode =
@@ -173,9 +176,6 @@ public class PacketSender implements Runnable {
 			if(pn.isConnected()) {
 				
 				boolean shouldThrottle = pn.shouldThrottle();
-
-				if(shouldThrottle && !canSendThrottled)
-					continue;
 
 				// Is the node dead?
 				if(now - lastReceivedPacketTime > pn.maxTimeBetweenReceivedPackets()) {
@@ -195,7 +195,8 @@ public class PacketSender implements Runnable {
 				}
 
 				try {
-					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
+					boolean ackOnly = shouldThrottle && !canSendThrottled;
+					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly)) {
 						count = node.outputThrottle.getCount();
 						if(count > MAX_PACKET_SIZE)
 							canSendThrottled = true;
@@ -206,7 +207,10 @@ public class PacketSender implements Runnable {
 							if(logMINOR)
 								Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 							nextActionTime = Math.min(nextActionTime, now + canSendAt);
-							newBrokeAt = idx;
+							if(!ackOnly) {
+								if(logMINOR) Logger.minor(this, "Setting next starting point to "+idx);
+								newBrokeAt = idx;
+							}
 						}
 					}
 				} catch (BlockedTooLongException e) {
@@ -221,6 +225,8 @@ public class PacketSender implements Runnable {
 					if(urgentTime < Long.MAX_VALUE && logMINOR)
 						Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn.getPeer());
 					nextActionTime = Math.min(nextActionTime, urgentTime);
+				} else {
+					nextActionTime = Math.min(nextActionTime, pn.timeCheckForLostPackets());
 				}
 			} else
 				// Not connected

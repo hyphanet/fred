@@ -26,10 +26,10 @@ import java.util.Map;
 import java.util.Vector;
 
 import freenet.node.PeerNode;
-import freenet.node.Ticker;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 import freenet.support.TimeUtil;
 import freenet.support.Logger.LogLevel;
 
@@ -125,7 +125,10 @@ public class MessageCore {
 					if(logMINOR)
 						Logger.minor(this, "Removing "+f);
 					i.remove();
-					_timedOutFilters.add(f);
+					if(!_timedOutFilters.contains(f))
+						_timedOutFilters.add(f);
+					else
+						Logger.error(this, "Filter "+f+" is in filter list twice!");
 				}
 				// Do not break after finding a non-timed-out filter because some filters may 
 				// be timed out because their client callbacks say they should be.

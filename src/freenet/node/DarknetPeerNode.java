@@ -31,6 +31,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
@@ -83,15 +84,32 @@ public class DarknetPeerNode extends PeerNode {
 	
 	/** Queued-to-send N2NM extra peer data file numbers */
 	private LinkedHashSet<Integer> queuedToSendN2NMExtraPeerDataFileNumbers;
+	
+	private FRIEND_TRUST trustLevel;
 
 	private static boolean logMINOR;
+	
+	public enum FRIEND_TRUST {
+		LOW,
+		NORMAL,
+		HIGH;
+		
+		public static FRIEND_TRUST[] valuesBackwards() {
+			FRIEND_TRUST[] valuesBackwards = new FRIEND_TRUST[values().length];
+			for(int i=0;i<values().length;i++)
+				valuesBackwards[i] = values()[values().length-i-1];
+			return valuesBackwards;
+		}
+
+	}
 	
 	/**
 	 * Create a darknet PeerNode from a SimpleFieldSet
 	 * @param fs The SimpleFieldSet to parse
 	 * @param node2 The running Node we are part of.
+	 * @param trust If this is a new node, we will use this parameter to set the initial trust level.
 	 */
-	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler, FRIEND_TRUST trust) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
 		
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
@@ -109,6 +127,16 @@ public class DarknetPeerNode extends PeerNode {
 			disableRouting = disableRoutingHasBeenSetLocally = Fields.stringToBool(metadata.get("disableRoutingHasBeenSetLocally"), false);
 			ignoreSourcePort = Fields.stringToBool(metadata.get("ignoreSourcePort"), false);
 			allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
+			String s = metadata.get("trustLevel");
+			if(s != null) {
+				trustLevel = FRIEND_TRUST.valueOf(s);
+			} else {
+				trustLevel = node.securityLevels.getDefaultFriendTrust();
+				System.err.println("Assuming friend ("+name+") trust is opposite of friend seclevel: "+trustLevel);
+			}
+		} else {
+			if(trust == null) throw new IllegalArgumentException();
+			trustLevel = trust;
 		}
 	
 		// Setup the private darknet comment note
@@ -191,8 +219,10 @@ public class DarknetPeerNode extends PeerNode {
 			fs.putSingle("ignoreSourcePort", "true");
 		if(allowLocalAddresses)
 			fs.putSingle("allowLocalAddresses", "true");
-	if(disableRoutingHasBeenSetLocally)
-		fs.putSingle("disableRoutingHasBeenSetLocally", "true");
+		if(disableRoutingHasBeenSetLocally)
+			fs.putSingle("disableRoutingHasBeenSetLocally", "true");
+		fs.putSingle("trustLevel", trustLevel.name());
+
 		return fs;
 	}
 
@@ -1413,6 +1443,10 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(this) {
 			fo = hisFileOffersByUID.get(id);
 		}
+		if(fo == null) {
+			Logger.error(this, "Cannot accept transfer "+id+" - does not exist");
+			return;
+		}
 		fo.accept();
 	}
 	
@@ -1420,6 +1454,10 @@ public class DarknetPeerNode extends PeerNode {
 		FileOffer fo;
 		synchronized(this) {
 			fo = hisFileOffersByUID.remove(id);
+		}
+		if(fo == null) {
+			Logger.error(this, "Cannot accept transfer "+id+" - does not exist");
+			return;
 		}
 		fo.reject();
 	}
@@ -1605,5 +1643,34 @@ public class DarknetPeerNode extends PeerNode {
 			peerAddedTime = 0;
 		if(!neverConnected)
 			peerAddedTime = 0;
+	}
+
+	// FIXME find a better solution???
+	@Override
+	public void fatalTimeout() {
+		if(node.isStopping()) return;
+		Logger.error(this, "Disconnecting from darknet node "+this+" because of fatal timeout");
+		System.err.println("Your friend node \""+getName()+"\" ("+getPeer()+") is having severe problems. We have disconnected to try to limit the effect on us. It will reconnect soon.");
+		// FIXME post a useralert
+		// Disconnect.
+		forceDisconnect(false);
+	}
+
+	public synchronized FRIEND_TRUST getTrustLevel() {
+		return trustLevel;
+	}
+
+	@Override
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		if(!node.shallWeRouteAccordingToOurPeersLocation()) return false; // Globally disabled
+		if(trustLevel == FRIEND_TRUST.LOW) return false;
+		return true;
+	}
+
+	public void setTrustLevel(FRIEND_TRUST trust) {
+		synchronized(this) {
+			trustLevel = trust;
+		}
+		node.peers.writePeers();
 	}
 }

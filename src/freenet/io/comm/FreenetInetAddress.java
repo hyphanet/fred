@@ -21,8 +21,18 @@ import freenet.support.transport.ip.IPUtil;
  * Long-term InetAddress. If created with an IP address, then the IP address is primary.
  * If created with a name, then the name is primary, and the IP address can change.
  * Most code ripped from Peer.
+ * 
+ * Propagates the IP address on equals() but not the hostname. Consistent with hashCode().
+ * Hence, a FreenetInetAddress with IP 1.2.3.4 and no hostname is *NOT* equal to one with
+ * the IP address and no name.
+ * 
+ * Safe to put into HashMap's etc, but WILL CREATE DUPLICATES if you have two copies of 
+ * the same IP address under different names (or no name).
+ * 
+ * FIXME reconsider whether we need this. The lazy lookup is useful but not THAT useful,
+ * and we have a regular lookup task now anyway. And it's overly complex, leading to odd
+ * bugs.
  * @author amphibian
- *
  */
 public class FreenetInetAddress {
 
@@ -181,6 +191,33 @@ public class FreenetInetAddress {
         // until it's needed to work better with dynamic DNS hostnames
 	}
 	
+	public boolean laxEquals(FreenetInetAddress addr) {
+		if(hostname != null) {
+			if(addr.hostname == null) {
+				if(_address == null) return false; // No basis for comparison.
+				if(addr._address != null) {
+					return _address.equals(addr._address);
+				}
+			} else {
+				if (!hostname.equalsIgnoreCase(addr.hostname)) {
+					return false;
+				}
+				// Now that we know we have the same hostname, we can propagate the IP.
+				if((_address != null) && (addr._address == null))
+					addr._address = _address;
+				if((addr._address != null) && (_address == null))
+					_address = addr._address;
+				// Except if we actually do have two different looked-up IPs!
+				if((addr._address != null) && (_address != null) && !addr._address.equals(_address))
+					return false;
+				// Equal.
+				return true;
+			}
+		}
+		// His hostname might not be null. Not a problem.
+		return _address.equals(addr._address);
+	}
+	
 	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof FreenetInetAddress)) {
@@ -232,6 +269,8 @@ public class FreenetInetAddress {
 				return false;
 			// Equal.
 			return true;
+		} else if(addr.hostname != null /* && hostname == null */) {
+			return false;
 		}
 
 		// No hostname, go by address.

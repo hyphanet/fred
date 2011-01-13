@@ -10,11 +10,13 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.updateableelements.PushDataManager;
@@ -32,7 +34,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PrioRunnable;
 import freenet.node.SecurityLevelListener;
-import freenet.node.Ticker;
+import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.Executor;
@@ -40,6 +42,7 @@ import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
@@ -58,12 +61,16 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	/** List of urlPrefix / Toadlet */ 
 	private final LinkedList<ToadletElement> toadlets;
 	private static class ToadletElement {
-		public ToadletElement(Toadlet t2, String urlPrefix) {
+		public ToadletElement(Toadlet t2, String urlPrefix, String menu, String name) {
 			t = t2;
 			prefix = urlPrefix;
+			this.menu = menu;
+			this.name = name;
 		}
 		Toadlet t;
 		String prefix;
+		String menu;
+		String name;
 	}
 
 	// Socket / Binding
@@ -341,6 +348,33 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	private boolean haveCalledFProxy = false;
 	
+	// FIXME factor this out to a global helper class somehow?
+	
+	private class ReFilterCallback extends StringCallback implements EnumerableOptionCallback {
+
+		public String[] getPossibleValues() {
+			REFILTER_POLICY[] possible = REFILTER_POLICY.values();
+			String[] ret = new String[possible.length];
+			for(int i=0;i<possible.length;i++)
+				ret[i] = possible[i].name();
+			return ret;
+		}
+
+		@Override
+		public String get() {
+			return refilterPolicy.name();
+		}
+
+		@Override
+		public void set(String val) throws InvalidConfigValueException,
+				NodeNeedRestartException {
+			refilterPolicy = REFILTER_POLICY.valueOf(val);
+		}
+		
+	};
+	
+	private final ReFilterCallback refilterPolicyCallback = new ReFilterCallback();
+	
 	public void createFproxy() {
 		synchronized(this) {
 			if(haveCalledFProxy) return;
@@ -584,6 +618,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		doRobots = fproxyConfig.getBoolean("doRobots");
 		
+		fproxyConfig.register("refilterPolicy", "RE_FILTER", 
+				configItemOrder++, true, false, "SimpleToadletServer.refilterPolicy", "SimpleToadletServer.refilterPolicyLong", refilterPolicyCallback);
+		
+		this.refilterPolicy = REFILTER_POLICY.valueOf(fproxyConfig.getString("refilterPolicy"));
+		
+		// Network seclevel not physical seclevel because bad filtering can cause network level anonymity breaches.
 		SimpleToadletServer.isPanicButtonToBeShown = fproxyConfig.getBoolean("showPanicButton");
 		SimpleToadletServer.noConfirmPanic = fproxyConfig.getBoolean("noConfirmPanic");
 		
@@ -669,6 +709,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public void finishStart() {
+		core.node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel,
+					NETWORK_THREAT_LEVEL newLevel) {
+				// At LOW, we do ACCEPT_OLD.
+				// Otherwise we do RE_FILTER.
+				// But we don't change it unless it changes from LOW to not LOW.
+				if(newLevel == NETWORK_THREAT_LEVEL.LOW && newLevel != oldLevel) {
+					refilterPolicy = REFILTER_POLICY.ACCEPT_OLD;
+				} else if(oldLevel == NETWORK_THREAT_LEVEL.LOW && newLevel != oldLevel) {
+					refilterPolicy = REFILTER_POLICY.RE_FILTER;
+				}
+			}
+			
+		});
 		core.node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
 
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
@@ -691,11 +746,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb, FredPluginL10n l10n) {
-		ToadletElement te = new ToadletElement(t, urlPrefix);
+		ToadletElement te = new ToadletElement(t, urlPrefix, menu, name);
 		if(atFront) toadlets.addFirst(te);
 		else toadlets.addLast(te);
 		t.container = this;
-		if (name != null) {
+		if (menu != null && name != null) {
 			pageMaker.addNavigationLink(menu, urlPrefix, name, title, fullOnly, cb, l10n);
 		}
 	}
@@ -709,6 +764,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			ToadletElement e = i.next();
 			if(e.t == t) {
 				i.remove();
+				if(e.menu != null && e.name != null) {
+					pageMaker.removeNavigationLink(e.menu, e.name);
+				}
 				return;
 			}
 		}
@@ -949,6 +1007,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	public NodeClientCore getCore(){
 		return core;
+	}
+	
+	private REFILTER_POLICY refilterPolicy;
+
+	public REFILTER_POLICY getReFilterPolicy() {
+		return refilterPolicy;
 	}
 
 }

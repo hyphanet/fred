@@ -74,6 +74,7 @@ import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.SizeUtil;
 import freenet.support.api.BooleanCallback;
@@ -359,11 +360,15 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						0, 2, 0, 0, new SimpleEventProducer(),
 						false, Node.FORK_ON_CACHEABLE_DEFAULT, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, 0, 0, InsertContext.CompatibilityMode.COMPAT_CURRENT), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
-		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor, storeChecker);
+		clientContext = new ClientContext(node.bootID, nodeDBHandle, this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor, storeChecker);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 
-		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
+		try {
+			requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
+		} catch (InvalidConfigValueException e1) {
+			throw new NodeInitException(NodeInitException.EXIT_BAD_CONFIG, e1.toString());
+		}
 		clientContext.init(requestStarters, alerts);
 		initKeys(container);
 
@@ -507,6 +512,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		// FCP (including persistent requests so needs to start before FProxy)
 		try {
 			fcpServer = FCPServer.maybeCreate(node, this, node.config, container);
+			clientContext.setDownloadCache(fcpServer);
 			if(!killedDatabase)
 				fcpServer.load(container);
 		} catch(IOException e) {
@@ -611,6 +617,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			e2.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		} catch (Db4oException e) {
+			killedDatabase = true;
+		} catch (Throwable t) {
+			// Let the rest of the node start up but kill the database
+			System.err.println("Failed to load persistent temporary buckets factory: "+t);
+			t.printStackTrace();
 			killedDatabase = true;
 		}
 		if(killedDatabase) {
@@ -805,6 +816,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 
 		persister.start();
+		
+		requestStarters.start();
 
 		storeChecker.start(node.executor, "Datastore checker");
 		if(fcpServer != null)
@@ -890,11 +903,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
-	public void asyncGet(Key key, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache) {
+	public void asyncGet(Key key, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache, final boolean realTimeFlag) {
 		final long uid = makeUID();
 		final boolean isSSK = key instanceof NodeSSK;
-		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null);
-		if(!node.lockUID(uid, isSSK, false, false, true, tag)) {
+		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET, null, realTimeFlag, uid, node);
+		if(!node.lockUID(uid, isSSK, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			return;
 		}
@@ -921,11 +934,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			 * @param uidTransferred If this is set, the RequestSender has taken on 
 			 * responsibility for unlocking the UID specified. We should not unlock it.
 			 */
-			public void onRequestSenderFinished(int status, long uidTransferred) {
-				// If transfer coalescing has happened, we may have already unlocked.
-				if(uidTransferred != uid)
-					node.unlockUID(uid, isSSK, false, true, false, true, tag);
-				tag.setRequestSenderFinished(status);
+			public void onRequestSenderFinished(int status) {
+				tag.unlockHandler();
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
 			}
@@ -933,7 +943,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			public void onAbortDownstreamTransfers(int reason, String desc) {
 				// Ignore, onRequestSenderFinished will also be called.
 			}
-		}, tag, canReadClientCache, canWriteClientCache, htl);
+		}, tag, canReadClientCache, canWriteClientCache, htl, realTimeFlag);
 	}
 
 	/**
@@ -942,36 +952,35 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
 	 * @param key
 	 */
-	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl) {
+	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl, boolean realTimeFlag) {
 		try {
-			Object o = node.makeRequestSender(key, htl, uid, tag, null, false, false, offersOnly, canReadClientCache, canWriteClientCache);
+			Object o = node.makeRequestSender(key, htl, uid, tag, null, false, false, offersOnly, canReadClientCache, canWriteClientCache, realTimeFlag);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
-				node.unlockUID(uid, isSSK, false, true, false, true, tag);
+				tag.unlockHandler();
 				return; // Already have it.
 			}
 			RequestSender rs = (RequestSender) o;
-			tag.setSender(rs);
 			rs.addListener(listener);
 			if(rs.uid != uid)
-				node.unlockUID(uid, isSSK, false, false, false, true, tag);
+				tag.unlockHandler();
 			// Else it has started a request.
 			if(logMINOR)
 				Logger.minor(this, "Started " + o + " for " + uid + " for " + key);
 		} catch(RuntimeException e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(uid, isSSK, false, true, false, true, tag);
+			tag.unlockHandler();
 		} catch(Error e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(uid, isSSK, false, true, false, true, tag);
+			tag.unlockHandler();
 		}
 	}
 
-	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
+	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		if(key instanceof ClientCHK)
-			return realGetCHK((ClientCHK) key, localOnly, ignoreStore, canWriteClientCache);
+			return realGetCHK((ClientCHK) key, localOnly, ignoreStore, canWriteClientCache, realTimeFlag);
 		else if(key instanceof ClientSSK)
-			return realGetSSK((ClientSSK) key, localOnly, ignoreStore, canWriteClientCache);
+			return realGetSSK((ClientSSK) key, localOnly, ignoreStore, canWriteClientCache, realTimeFlag);
 		else
 			throw new IllegalArgumentException("Not a CHK or SSK: " + key);
 	}
@@ -987,17 +996,17 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * @return The fetched block.
 	 * @throws LowLevelGetException
 	 */
-	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
+	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
-		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null);
-		if(!node.lockUID(uid, false, false, false, true, tag)) {
+		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
+		if(!node.lockUID(uid, false, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		RequestSender rs = null;
 		try {
-			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache);
+			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache, realTimeFlag);
 			if(o instanceof CHKBlock)
 				try {
 					tag.setServedFromDatastore();
@@ -1015,7 +1024,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				waitStatus = rs.waitUntilStatusChange(waitStatus);
 				if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
 					// See below; inserts count both
-					requestStarters.rejectedOverload(false, false);
+					requestStarters.rejectedOverload(false, false, realTimeFlag);
 					rejectedOverload = true;
 				}
 
@@ -1042,10 +1051,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 					if(!rejectedOverload) {
 						// See below
-						requestStarters.rejectedOverload(false, false);
+						requestStarters.rejectedOverload(false, false, realTimeFlag);
 						rejectedOverload = true;
 						long rtt = System.currentTimeMillis() - startTime;
-						node.nodeStats.reportCHKTime(rtt, false);
+						double targetLocation=key.getNodeCHK().toNormalizedDouble();
+						node.nodeStats.reportCHKOutcome(rtt, false, targetLocation);
 					}
 				} else
 					if(rs.hasForwarded() &&
@@ -1056,11 +1066,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						(status == RequestSender.VERIFY_FAILURE) ||
 						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
 						long rtt = System.currentTimeMillis() - startTime;
+						double targetLocation=key.getNodeCHK().toNormalizedDouble();
 						if(!rejectedOverload)
-							requestStarters.requestCompleted(false, false, key.getNodeKey(true));
+							requestStarters.requestCompleted(false, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
-						requestStarters.chkRequestThrottle.successfulCompletion(rtt);
-						node.nodeStats.reportCHKTime(rtt, status == RequestSender.SUCCESS);
+						requestStarters.getThrottle(false, false, realTimeFlag).successfulCompletion(rtt);
+						node.nodeStats.reportCHKOutcome(rtt, status == RequestSender.SUCCESS, targetLocation);
 						if(status == RequestSender.SUCCESS) {
 							Logger.minor(this, "Successful CHK fetch took "+rtt);
 						}
@@ -1105,22 +1116,21 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			if(rs == null || !(rs.abortedDownstreamTransfers() || rs.mustUnlock()))
-				node.unlockUID(uid, false, false, true, false, true, tag);
+			tag.unlockHandler();
 		}
 	}
 
-	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
+	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache, boolean realTimeFlag) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = makeUID();
-		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null);
-		if(!node.lockUID(uid, true, false, false, true, tag)) {
+		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL, null, realTimeFlag, uid, node);
+		if(!node.lockUID(uid, true, false, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		RequestSender rs = null;
 		try {
-			Object o = node.makeRequestSender(key.getNodeKey(true), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache);
+			Object o = node.makeRequestSender(key.getNodeKey(true), node.maxHTL(), uid, tag, null, localOnly, ignoreStore, false, true, canWriteClientCache, realTimeFlag);
 			if(o instanceof SSKBlock)
 				try {
 					tag.setServedFromDatastore();
@@ -1139,7 +1149,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			while(true) {
 				waitStatus = rs.waitUntilStatusChange(waitStatus);
 				if((!rejectedOverload) && (waitStatus & RequestSender.WAIT_REJECTED_OVERLOAD) != 0) {
-					requestStarters.rejectedOverload(true, false);
+					requestStarters.rejectedOverload(true, false, realTimeFlag);
 					rejectedOverload = true;
 				}
 
@@ -1163,7 +1173,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				if((status == RequestSender.TIMED_OUT) ||
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 					if(!rejectedOverload) {
-						requestStarters.rejectedOverload(true, false);
+						requestStarters.rejectedOverload(true, false, realTimeFlag);
 						rejectedOverload = true;
 					}
 				} else
@@ -1177,9 +1187,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						long rtt = System.currentTimeMillis() - startTime;
 
 						if(!rejectedOverload)
-							requestStarters.requestCompleted(true, false, key.getNodeKey(true));
+							requestStarters.requestCompleted(true, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
-						requestStarters.sskRequestThrottle.successfulCompletion(rtt);
+						requestStarters.getThrottle(true, false, realTimeFlag).successfulCompletion(rtt);
 					}
 
 				if(rs.getStatus() == RequestSender.SUCCESS)
@@ -1219,8 +1229,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 			}
 		} finally {
-			if(rs == null || !(rs.abortedDownstreamTransfers() || rs.mustUnlock()))
-				node.unlockUID(uid, true, false, true, false, true, tag);
+			tag.unlockHandler();
 		}
 	}
 
@@ -1232,30 +1241,30 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * @param canWriteClientCache
 	 * @throws LowLevelPutException
 	 */
-	public void realPut(KeyBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) throws LowLevelPutException {
+	public void realPut(KeyBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) throws LowLevelPutException {
 		if(block instanceof CHKBlock)
-			realPutCHK((CHKBlock) block, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
+			realPutCHK((CHKBlock) block, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 		else if(block instanceof SSKBlock)
-			realPutSSK((SSKBlock) block, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
+			realPutSSK((SSKBlock) block, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 		else
 			throw new IllegalArgumentException("Unknown put type " + block.getClass());
 	}
 
-	public void realPutCHK(CHKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) throws LowLevelPutException {
+	public void realPutCHK(CHKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) throws LowLevelPutException {
 		byte[] data = block.getData();
 		byte[] headers = block.getHeaders();
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
 		CHKInsertSender is;
 		long uid = makeUID();
-		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null);
-		if(!node.lockUID(uid, false, true, false, true, tag)) {
+		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
+		if(!node.lockUID(uid, false, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
 		try {
 			long startTime = System.currentTimeMillis();
 			is = node.makeInsertSender(block.getKey(),
-				node.maxHTL(), uid, tag, null, headers, prb, false, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff);
+				node.maxHTL(), uid, tag, null, headers, prb, false, canWriteClientCache, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 			boolean hasReceivedRejectedOverload = false;
 			// Wait for status
 			while(true) {
@@ -1271,7 +1280,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 				if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
 					hasReceivedRejectedOverload = true;
-					requestStarters.rejectedOverload(false, true);
+					requestStarters.rejectedOverload(false, true, realTimeFlag);
 				}
 			}
 
@@ -1288,7 +1297,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 				if(is.anyTransfersFailed() && (!hasReceivedRejectedOverload)) {
 					hasReceivedRejectedOverload = true; // not strictly true but same effect
-					requestStarters.rejectedOverload(false, true);
+					requestStarters.rejectedOverload(false, true, realTimeFlag);
 				}
 			}
 
@@ -1304,8 +1313,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					long len = endTime - startTime;
 
 					// RejectedOverload requests count towards RTT (timed out ones don't).
-					requestStarters.chkInsertThrottle.successfulCompletion(len);
-					requestStarters.requestCompleted(false, true, block.getKey());
+					requestStarters.getThrottle(false, true, realTimeFlag).successfulCompletion(len);
+					requestStarters.requestCompleted(false, true, block.getKey(), realTimeFlag);
 				}
 
 			// Get status explicitly, *after* completed(), so that it will be RECEIVE_FAILED if the receive failed.
@@ -1359,15 +1368,15 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			node.unlockUID(uid, false, true, true, false, true, tag);
+			tag.unlockHandler();
 		}
 	}
 
-	public void realPutSSK(SSKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff) throws LowLevelPutException {
+	public void realPutSSK(SSKBlock block, boolean canWriteClientCache, boolean forkOnCacheable, boolean preferInsert, boolean ignoreLowBackoff, boolean realTimeFlag) throws LowLevelPutException {
 		SSKInsertSender is;
 		long uid = makeUID();
-		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null);
-		if(!node.lockUID(uid, true, true, false, true, tag)) {
+		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL, null, realTimeFlag, uid, node);
+		if(!node.lockUID(uid, true, true, false, true, realTimeFlag, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -1376,9 +1385,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			// Be consistent: use the client cache to check for collisions as this is a local insert.
 			SSKBlock altBlock = node.fetch(block.getKey(), false, true, canWriteClientCache, false, false, null);
 			if(altBlock != null && !altBlock.equals(block))
-				throw new LowLevelPutException(LowLevelPutException.COLLISION);
+				throw new LowLevelPutException(altBlock);
 			is = node.makeInsertSender(block,
-				node.maxHTL(), uid, tag, null, false, canWriteClientCache, false, forkOnCacheable, preferInsert, ignoreLowBackoff);
+				node.maxHTL(), uid, tag, null, false, canWriteClientCache, false, forkOnCacheable, preferInsert, ignoreLowBackoff, realTimeFlag);
 			boolean hasReceivedRejectedOverload = false;
 			// Wait for status
 			while(true) {
@@ -1394,7 +1403,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 				if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
 					hasReceivedRejectedOverload = true;
-					requestStarters.rejectedOverload(true, true);
+					requestStarters.rejectedOverload(true, true, realTimeFlag);
 				}
 			}
 
@@ -1421,8 +1430,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					// It worked!
 					long endTime = System.currentTimeMillis();
 					long rtt = endTime - startTime;
-					requestStarters.requestCompleted(true, true, block.getKey());
-					requestStarters.sskInsertThrottle.successfulCompletion(rtt);
+					requestStarters.requestCompleted(true, true, block.getKey(), realTimeFlag);
+					requestStarters.getThrottle(true, true, realTimeFlag).successfulCompletion(rtt);
 				}
 
 			int status = is.getStatus();
@@ -1442,21 +1451,37 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());
 
 			if(is.hasCollided()) {
+				SSKBlock collided = is.getBlock();
 				// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
 				try {
 					// Has collided *on the network*, not locally.
-					node.storeInsert(is.getBlock(), deep, true, canWriteClientCache, false);
+					node.storeInsert(collided, deep, true, canWriteClientCache, false);
 				} catch(KeyCollisionException e) {
 					// collision race?
 					// should be impossible.
 					Logger.normal(this, "collision race? is="+is, e);
 				}
-				throw new LowLevelPutException(LowLevelPutException.COLLISION);
+				throw new LowLevelPutException(collided);
 			} else
 				try {
 					node.storeInsert(block, deep, false, canWriteClientCache, false);
 				} catch(KeyCollisionException e) {
-					throw new LowLevelPutException(LowLevelPutException.COLLISION);
+					LowLevelPutException failed = new LowLevelPutException(LowLevelPutException.COLLISION);
+					NodeSSK key = block.getKey();
+					KeyBlock collided = node.fetch(key, true, canWriteClientCache, false, false, null);
+					if(collided == null) {
+						Logger.error(this, "Collided but no key?!");
+						// Could be a race condition.
+						try {
+							node.store(block, false, canWriteClientCache, false, false);
+						} catch (KeyCollisionException e2) {
+							Logger.error(this, "Collided but no key and still collided!");
+							throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, "Collided, can't find block, but still collides!", e);
+						}
+					}
+					
+					failed.setCollidedBlock(collided);
+					throw failed;
 				}
 
 
@@ -1490,16 +1515,29 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		} finally {
-			node.unlockUID(uid, true, true, true, false, true, tag);
+			tag.unlockHandler();
 		}
 	}
 
+	/** @deprecated Only provided for compatibility with old plugins! Plugins must specify! */
 	public HighLevelSimpleClient makeClient(short prioClass) {
-		return makeClient(prioClass, false);
+		return makeClient(prioClass, false, false);
 	}
 
+	/** @deprecated Only provided for compatibility with old plugins! Plugins must specify! */
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
-		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, forceDontIgnoreTooManyPathComponents);
+		return makeClient(prioClass, forceDontIgnoreTooManyPathComponents, false);
+	}
+
+	/**
+	 * @param prioClass The priority to run requests at.
+	 * @param realTimeFlag If true, requests are latency-optimised. If false, they are 
+	 * throughput-optimised. Fewer latency-optimised ("real time") requests are accepted
+	 * but their transfers are faster. Latency-optimised requests are expected to be bursty,
+	 * whereas throughput-optimised (bulk) requests can be constant. 
+	 */
+	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents, boolean realTimeFlag) {
+		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, forceDontIgnoreTooManyPathComponents, realTimeFlag);
 	}
 
 	public FCPServer getFCPServer() {
@@ -1580,7 +1618,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public boolean allowDownloadTo(File filename) {
 		PHYSICAL_THREAT_LEVEL physicalThreatLevel = node.securityLevels.getPhysicalThreatLevel();
-		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.HIGH || physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM)
+		if(physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM)
 			return false;
 		if(downloadAllowedEverywhere)
 			return true;
@@ -1629,15 +1667,15 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	/** Queue the offered key. */
-	public void queueOfferedKey(Key key) {
-		ClientRequestScheduler sched =
-			key instanceof NodeSSK ? requestStarters.sskFetchScheduler : requestStarters.chkFetchScheduler;
-		sched.queueOfferedKey(key);
+	public void queueOfferedKey(Key key, boolean realTime) {
+		ClientRequestScheduler sched = requestStarters.getScheduler(key instanceof NodeSSK, false, realTime);
+		sched.queueOfferedKey(key, realTime);
 	}
 
 	public void dequeueOfferedKey(Key key) {
-		ClientRequestScheduler sched =
-			key instanceof NodeSSK ? requestStarters.sskFetchScheduler : requestStarters.chkFetchScheduler;
+		ClientRequestScheduler sched = requestStarters.getScheduler(key instanceof NodeSSK, false, false);
+		sched.dequeueOfferedKey(key);
+		sched = requestStarters.getScheduler(key instanceof NodeSSK, false, true);
 		sched.dequeueOfferedKey(key);
 	}
 
@@ -1664,6 +1702,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private long lastCommitted = System.currentTimeMillis();
 
 	static final int MAX_COMMIT_INTERVAL = 30*1000;
+	
+	static final int SOON_COMMIT_INTERVAL = 5*1000;
 
 	class DBJobWrapper implements Runnable {
 
@@ -1692,6 +1732,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					if(!killed) {
 						long now = System.currentTimeMillis();
 						if(now - lastCommitted > MAX_COMMIT_INTERVAL) {
+							lastCommitted = now;
+							commit = true;
+						} else if(commitSoon && now - lastCommitted > SOON_COMMIT_INTERVAL) {
+							commitSoon = false;
+							lastCommitted = now;
+							commit = true;
+						} else if(commitSoon && !clientDatabaseExecutor.anyQueued()) {
+							commitSoon = false;
 							lastCommitted = now;
 							commit = true;
 						}
@@ -1857,6 +1905,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public synchronized void setCommitThisTransaction() {
 		commitThisTransaction = true;
+	}
+	
+	private boolean commitSoon;
+	
+	public synchronized void setCommitSoon() {
+		commitSoon = true;
 	}
 
 	public static int getMaxBackgroundUSKFetchers() {

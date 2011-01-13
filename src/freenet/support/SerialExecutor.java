@@ -31,6 +31,8 @@ public class SerialExecutor implements Executor {
 	private Executor realExecutor;
 
 	private static final int NEWJOB_TIMEOUT = 5*60*1000;
+	
+	private Thread runningThread;
 
 	private final Runnable runner = new PrioRunnable() {
 
@@ -39,6 +41,10 @@ public class SerialExecutor implements Executor {
 		}
 
 		public void run() {
+			synchronized(syncLock) {
+				runningThread = Thread.currentThread();
+			}
+			try {
 			while(true) {
 				synchronized (syncLock) {
 						threadWaiting = true;
@@ -66,6 +72,11 @@ public class SerialExecutor implements Executor {
 					Logger.error(this, "While running "+job+" on "+this);
 				}
 			}
+			} finally {
+				synchronized(syncLock) {
+					runningThread = null;
+				}
+			}
 		}
 
 	};
@@ -77,6 +88,7 @@ public class SerialExecutor implements Executor {
 	}
 
 	public void start(Executor realExecutor, String name) {
+		assert(realExecutor != this);
 		this.realExecutor=realExecutor;
 		this.name=name;
 		synchronized (syncLock) {
@@ -133,6 +145,12 @@ public class SerialExecutor implements Executor {
 	public int getWaitingThreadsCount() {
 		synchronized (syncLock) {
 			return (threadStarted && threadWaiting) ? 1 : 0;
+		}
+	}
+
+	public boolean onThread() {
+		synchronized(syncLock) {
+			return Thread.currentThread() == runningThread;
 		}
 	}
 }

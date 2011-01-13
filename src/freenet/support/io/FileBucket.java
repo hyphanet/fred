@@ -4,7 +4,6 @@
 package freenet.support.io;
 
 import java.io.File;
-import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 
@@ -16,7 +15,7 @@ import freenet.support.api.Bucket;
  * 
  * @author oskar
  */
-public class FileBucket extends BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
+public class FileBucket extends BaseFileBucket implements Bucket {
 
 	protected final File file;
 	protected boolean readOnly;
@@ -136,7 +135,7 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 //		Logger.minor(this, "Deleting "+this, new Exception("debug"));
 //	}
 //	
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		String fnam = file.getPath();
 		File newFile = new File(fnam);
 		return new FileBucket(newFile, true, false, false, false, false);

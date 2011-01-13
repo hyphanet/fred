@@ -23,8 +23,8 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	
 	protected final List<BaseSendableGet>recentSuccesses;
 	
-	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs, RandomSource random) {
-		super(forInserts, forSSKs, random);
+	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs, boolean forRT, RandomSource random) {
+		super(forInserts, forSSKs, forRT, random);
 		this.sched = sched;
 		if(!forInserts)
 			recentSuccesses = new LinkedList<BaseSendableGet>();

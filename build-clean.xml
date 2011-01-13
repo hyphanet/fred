@@ -216,7 +216,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<copy todir="${main.make}/freenet/l10n">
 			<fileset dir="${main.src}/freenet/l10n">
 				<include name="freenet.l10n.*.properties"/>
-				<include name="freenet.l10n.*.tab"/>
+				<include name="iso-*.tab"/>
 			</fileset>
 		</copy>
 	</target>
@@ -326,7 +326,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<!-- Documentation                                                       -->
 	<!-- =================================================================== -->
 
-	<target name="init-doc">
+	<target name="init-doc" unless="${doc.skip}">
 		<mkdir dir="${doc.api}"/>
 	</target>
 

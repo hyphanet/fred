@@ -7,6 +7,7 @@ import java.util.Vector;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.async.ClientContext;
+import freenet.clients.http.FProxyFetchInProgress.REFILTER_POLICY;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
@@ -43,7 +44,7 @@ public class FProxyFetchTracker implements Runnable {
 		this.rc = rc;
 	}
 	
-	public FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize, FetchContext fctx) throws FetchException {
+	public FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize, FetchContext fctx, REFILTER_POLICY refilterPolicy) throws FetchException {
 		FProxyFetchInProgress progress;
 		/* LOCKING:
 		 * Call getWaiter() inside the fetchers lock, since we will purge old 
@@ -54,7 +55,7 @@ public class FProxyFetchTracker implements Runnable {
 			if(waiter!=null){
 				return waiter;
 			}
-			progress = new FProxyFetchInProgress(this, key, maxSize, fetchIdentifiers++, context, fctx != null ? fctx : this.fctx, rc);
+			progress = new FProxyFetchInProgress(this, key, maxSize, fetchIdentifiers++, context, fctx != null ? fctx : this.fctx, rc, refilterPolicy);
 			fetchers.put(key, progress);
 		}
 		try {
@@ -69,6 +70,12 @@ public class FProxyFetchTracker implements Runnable {
 		return progress.getWaiter();
 		// FIXME promote a fetcher when it is re-used
 		// FIXME get rid of fetchers over some age
+	}
+	
+	void removeFetcher(FProxyFetchInProgress progress) {
+		synchronized(fetchers) {
+			fetchers.removeElement(progress.uri, progress);
+		}
 	}
 	
 	public FProxyFetchWaiter makeWaiterForFetchInProgress(FreenetURI key,long maxSize, FetchContext fctx){

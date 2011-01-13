@@ -13,6 +13,7 @@ import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
+import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.NodeL10n;
@@ -36,6 +37,7 @@ import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.NativeThread;
 
 public class StatisticsToadlet extends Toadlet {
 
@@ -204,24 +206,15 @@ public class StatisticsToadlet extends Toadlet {
            
 			
 			if(numberOfConnected + numberOfRoutingBackedOff > 0) {
-				// Load balancing box
-				// Include overall window, and RTTs for each
-				RequestStarterGroup starters = core.requestStarters;
-				double window = starters.getWindow();
-				double realWindow = starters.getRealWindow();
-				HTMLNode loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-				loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting");
-				HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
-				HTMLNode loadStatsList = loadStatsContent.addChild("ul");
-				loadStatsList.addChild("li", l10n("globalWindow")+": "+window);
-				loadStatsList.addChild("li", l10n("realGlobalWindow")+": "+realWindow);
-				loadStatsList.addChild("li", starters.statsPageLine(false, false));
-				loadStatsList.addChild("li", starters.statsPageLine(true, false));
-				loadStatsList.addChild("li", starters.statsPageLine(false, true));
-				loadStatsList.addChild("li", starters.statsPageLine(true, true));
-				loadStatsList.addChild("li", starters.diagnosticThrottlesLine(false));
-				loadStatsList.addChild("li", starters.diagnosticThrottlesLine(true));
 				
+				HTMLNode loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				
+				drawLoadBalancingBox(loadStatsInfobox, false);
+				
+				loadStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				
+				drawLoadBalancingBox(loadStatsInfobox, true);
+								
 				// Psuccess box
 				HTMLNode successRateBox = nextTableCell.addChild("div", "class", "infobox");
 				successRateBox.addChild("div", "class", "infobox-header", l10n("successRate"));
@@ -367,11 +360,44 @@ public class StatisticsToadlet extends Toadlet {
 				HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
 				addCombinedSpecialisation(nodeSpecialisationTable, myLocation, outgoingLocalRequestsCount, outgoingLocalRequestLocation, outgoingRequestsCount, outgoingRequestLocation);
 			}
+
+			overviewTableRow = overviewTable.addChild("tr");
+			nextTableCell = overviewTableRow.addChild("td", "class", "first");
+
+			// success rate per location
+			int[] locationSuccessRatesArray = stats.chkSuccessRatesByLocation.getPercentageArray(1000);
+
+			{
+				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
+				nodeSpecialisationInfobox.addChild("div", "class", "infobox-header", "Local\u00a0CHK\u00a0Success\u00a0Rates\u00a0By\u00a0Location");
+				HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
+				addSpecialisation(nodeSpecialisationTable, myLocation, 1000, locationSuccessRatesArray);
+			}
 		}
 		
 		}
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+	}
+
+	private void drawLoadBalancingBox(HTMLNode loadStatsInfobox, boolean realTime) {
+		// Load balancing box
+		// Include overall window, and RTTs for each
+		
+		loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting "+(realTime ? "RealTime" : "Bulk"));
+		HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
+		RequestStarterGroup starters = core.requestStarters;
+		double window = starters.getWindow(realTime);
+		double realWindow = starters.getRealWindow(realTime);
+		HTMLNode loadStatsList = loadStatsContent.addChild("ul");
+		loadStatsList.addChild("li", l10n("globalWindow")+": "+window);
+		loadStatsList.addChild("li", l10n("realGlobalWindow")+": "+realWindow);
+		loadStatsList.addChild("li", starters.statsPageLine(false, false, realTime));
+		loadStatsList.addChild("li", starters.statsPageLine(true, false, realTime));
+		loadStatsList.addChild("li", starters.statsPageLine(false, true, realTime));
+		loadStatsList.addChild("li", starters.statsPageLine(true, true, realTime));
+		loadStatsList.addChild("li", starters.diagnosticThrottlesLine(false));
+		loadStatsList.addChild("li", starters.diagnosticThrottlesLine(true));
 	}
 
 	private void drawRejectReasonsBox(HTMLNode nextTableCell, boolean local) {
@@ -1059,7 +1085,7 @@ public class StatisticsToadlet extends Toadlet {
 		overviewList.addChild("li", "RAMBucketPoolSize:\u00a0" + SizeUtil.formatSize(core.tempBucketFactory.getRamUsed())+ " / "+ SizeUtil.formatSize(core.tempBucketFactory.getMaxRamUsed()));
 		overviewList.addChild("li", "uptimeAverage:\u00a0" + fix3p1pct.format(node.uptime.getUptime()));
 		
-		long[] decoded = FNPPacketMangler.getDecodedPackets();
+		long[] decoded = IncomingPacketFilterImpl.getDecodedPackets();
 		if(decoded != null) {
 			overviewList.addChild("li", "packetsDecoded:\u00a0"+fix3p1pct.format(((double)decoded[0])/((double)decoded[1]))+"\u00a0("+decoded[1]+")");
 		}
@@ -1077,25 +1103,13 @@ public class StatisticsToadlet extends Toadlet {
 
 	// FIXME this should probably be moved to nodestats so it can be used by FCP??? would have to make ThreadBunch public :<
 	private void getThreadNames(HTMLNode threadUsageList) {
-		int count = 0;
-		Thread[] threads;
-		while(true) {
-			count = Math.max(stats.rootThreadGroup.activeCount(), count);
-			threads = new Thread[count*2+50];
-			stats.rootThreadGroup.enumerate(threads);
-			if(threads[threads.length-1] == null) break;
-		}
+		Thread[] threads = stats.getThreads();
+
 		LinkedHashMap<String, ThreadBunch> map = new LinkedHashMap<String, ThreadBunch>();
 		int totalCount = 0;
 		for(int i=0;i<threads.length;i++) {
 			if(threads[i] == null) break;
-			String name = threads[i].getName();
-			if(name.indexOf(" for ") != -1)
-				name = name.substring(0, name.indexOf(" for "));
-			if(name.indexOf("@") != -1)
-				name = name.substring(0, name.indexOf("@"));
-			if (name.indexOf("(") != -1)
-				name = name.substring(0, name.indexOf("("));
+			String name = NativeThread.normalizeName(threads[i].getName());
 			ThreadBunch bunch = map.get(name);
 			if(bunch != null) {
 				bunch.count++;
@@ -1154,7 +1168,6 @@ public class StatisticsToadlet extends Toadlet {
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.5, false, 1.0),   "mark" }, "|");
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.625, false, 1.0), "mark" }, "+");
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.75, false, 1.0),  "mark" }, "--");
-		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
 		final Object[] knownLocsCopy = stats.getKnownLocations(-1);
@@ -1258,6 +1271,7 @@ public class StatisticsToadlet extends Toadlet {
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.5, false, 1.0),   "mark" }, "|");
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.625, false, 1.0), "mark" }, "+");
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.75, false, 1.0),  "mark" }, "--");
+		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(0.875, false, 1.0), "mark" }, "+");
 		peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { "position: absolute; top: " + PEER_CIRCLE_RADIUS + "px; left: " + (PEER_CIRCLE_RADIUS + PEER_CIRCLE_ADDITIONAL_FREE_SPACE) + "px", "mark" }, "+");
 
 		PeerNodeStatus peerNodeStatus;
@@ -1271,6 +1285,13 @@ public class StatisticsToadlet extends Toadlet {
 			peerLocation = peerNodeStatus.getLocation();
 			if(!peerNodeStatus.isSearchable()) continue;
 			if(peerLocation < 0.0 || peerLocation > 1.0) continue;
+			double[] foafLocations=peerNodeStatus.getPeersLocation();
+			if (foafLocations!=null && peerNodeStatus.isRoutable()) {
+				for (double foafLocation : foafLocations) {
+					//one grey dot for each "Friend-of-a-friend"
+					peerCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(foafLocation, false, 0.9), "disconnected" }, ".");
+				}
+			}
 			newPeerCount++;
 			peerDistance = Location.distance( myLocation, peerLocation );
 			histogramIndex = (int) (Math.floor(peerDistance * HISTOGRAM_LENGTH * 2));

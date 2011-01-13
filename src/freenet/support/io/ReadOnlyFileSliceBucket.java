@@ -12,13 +12,12 @@ import java.io.RandomAccessFile;
 
 import com.db4o.ObjectContainer;
 
-import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /**
  * FIXME: implement a hash verifying version of this.
  */
-public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBucket {
+public class ReadOnlyFileSliceBucket implements Bucket {
 
 	private final File file;
 	private final long startAt;
@@ -28,29 +27,6 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		this.file = new File(f.getPath()); // copy so we can delete it
 		this.startAt = startAt;
 		this.length = length;
-	}
-
-	public ReadOnlyFileSliceBucket(SimpleFieldSet fs) throws CannotCreateFromFieldSetException {
-		String tmp = fs.get("Filename");
-		if(tmp == null)
-			throw new CannotCreateFromFieldSetException("No filename");
-		this.file = new File(tmp);
-		tmp = fs.get("Length");
-		if(tmp == null)
-			throw new CannotCreateFromFieldSetException("No length");
-		try {
-			length = Long.parseLong(tmp);
-		} catch(NumberFormatException e) {
-			throw new CannotCreateFromFieldSetException("Corrupt length " + tmp, e);
-		}
-		tmp = fs.get("Offset");
-		if(tmp == null)
-			throw new CannotCreateFromFieldSetException("No offset");
-		try {
-			startAt = Long.parseLong(tmp);
-		} catch(NumberFormatException e) {
-			throw new CannotCreateFromFieldSetException("Corrupt offset " + tmp, e);
-		}
 	}
 
 	public OutputStream getOutputStream() throws IOException {
@@ -142,15 +118,6 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	public void free() {
 	}
 
-	public SimpleFieldSet toFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(false);
-		fs.putSingle("Type", "ReadOnlyFileSliceBucket");
-		fs.putSingle("Filename", file.toString());
-		fs.put("Offset", startAt);
-		fs.put("Length", length);
-		return fs;
-	}
-
 	public void storeTo(ObjectContainer container) {
 		container.store(this);
 	}
@@ -165,7 +132,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		container.activate(file, 5);
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		String fnam = new String(file.getPath());
 		File newFile = new File(fnam);
 		return new ReadOnlyFileSliceBucket(newFile, startAt, length);

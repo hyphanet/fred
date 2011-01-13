@@ -24,11 +24,15 @@ import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.KeyEncodeException;
 import freenet.keys.KeyVerifyException;
+import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
+import freenet.keys.SSKVerifyException;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -38,6 +42,7 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.store.KeyCollisionException;
+import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
@@ -109,8 +114,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	 * @param persistent
 	 * @param freeData
 	 */
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
-		super(persistent);
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, boolean realTimeFlag, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
+		super(persistent, realTimeFlag);
 		assert(persistent == parent.persistent());
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
@@ -176,7 +181,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	protected void onEncode(ClientKey key, ObjectContainer container, ClientContext context) {
+	protected void onEncode(final ClientKey key, ObjectContainer container, final ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			if(resultingURI != null) return;
@@ -186,7 +191,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.store(this);
 			container.activate(cb, 1);
 		}
-		cb.onEncode(key, this, container, context);
+		if(!persistent) {
+			context.mainExecutor.execute(new Runnable() {
+				
+				public void run() {
+					cb.onEncode(key, SingleBlockInserter.this, null, context);
+				}
+			}, "Got URI");
+		} else {
+			cb.onEncode(key, this, container, context);
+		}
 		if(persistent)
 			container.deactivate(cb, 1);
 	}
@@ -369,7 +383,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					container.deactivate(cb, 1);
 			}
 		} else {
-			getScheduler(context).registerInsert(this, persistent, true, container);
+			getScheduler(container, context).registerInsert(this, persistent, true, container);
 		}
 	}
 
@@ -523,29 +537,37 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				k = key;
 				if(block.persistent) {
 					req.setGeneratedKey(key);
-				} else if(!req.localRequestOnly) {
-					context.mainExecutor.execute(new Runnable() {
-
-						public void run() {
-							orig.onEncode(key, null, context);
-						}
-
-					}, "Got URI");
-
+				} else {
+					orig.onEncode(key, null, context);
 				}
 				if(req.localRequestOnly)
 					try {
 						core.node.store(b, false, req.canWriteClientCache, true, false);
 					} catch (KeyCollisionException e) {
-						throw new LowLevelPutException(LowLevelPutException.COLLISION);
+						LowLevelPutException failed = new LowLevelPutException(LowLevelPutException.COLLISION);
+						KeyBlock collided = core.node.fetch(k.getNodeKey(), true, req.canWriteClientCache, false, false, null);
+						if(collided == null) {
+							Logger.error(this, "Collided but no key?!");
+							// Could be a race condition.
+							try {
+								core.node.store(b, false, req.canWriteClientCache, true, false);
+							} catch (KeyCollisionException e2) {
+								Logger.error(this, "Collided but no key and still collided!");
+								throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, "Collided, can't find block, but still collides!", e);
+							}
+						}
+						
+						failed.setCollidedBlock(collided);
+						throw failed;
 					}
 				else
-					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT);
+					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable, Node.PREFER_INSERT_DEFAULT, Node.IGNORE_LOW_BACKOFF_DEFAULT, req.realTimeFlag);
 			} catch (LowLevelPutException e) {
+				if(logMINOR) Logger.minor(this, "Caught "+e, e);
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
 					try {
-						ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)k, true, true, req.canWriteClientCache);
+						ClientSSKBlock collided = ClientSSKBlock.construct(((SSKBlock)e.getCollidedBlock()), (ClientSSK)k);
 						byte[] data = collided.memoryDecode(true);
 						byte[] inserting = BucketTools.toByteArray(block.copyBucket);
 						if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
@@ -554,6 +576,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 								orig.onEncode(k, null, context);
 							req.onInsertSuccess(context);
 							return true;
+						} else {
+							if(SingleBlockInserter.logMINOR) Logger.minor(this, "Apparently real collision: collided.isMetadata="+collided.isMetadata()+" block.isMetadata="+block.isMetadata+
+									" collided.codec="+collided.getCompressionCodec()+" block.codec="+block.compressionCodec+
+									" collided.datalength="+data.length+" block.datalength="+inserting.length+" H(collided)="+Fields.hashCode(data)+" H(inserting)="+Fields.hashCode(inserting));
 						}
 					} catch (KeyVerifyException e1) {
 						Logger.error(this, "Caught "+e1+" when checking collision!", e1);
@@ -570,27 +596,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				block.copyBucket.free();
 			}
 			if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request succeeded");
-			if(req.localRequestOnly) {
-				// Must run on-thread or we will have exploding threads.
-				// Plus must run before onInsertSuccess().
-				if(!block.persistent)
-					orig.onEncode(key, null, context);
-				req.onInsertSuccess(context);
-			} else if(!block.persistent) {
-				// Must run after onEncode.
-				context.mainExecutor.execute(new Runnable() {
-
-					public void run() {
-						// Make absolutely sure even if we run the two jobs out of order.
-						// Overhead for double-checking should be very low.
-						orig.onEncode(key, null, context);
-						req.onInsertSuccess(context);
-					}
-
-				}, "Succeeded");
-			} else {
-				req.onInsertSuccess(context);
-			}
+			req.onInsertSuccess(context);
 			return true;
 		}
 	}
@@ -883,5 +889,5 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
 		onEncode(key, container, context);
 	}
-	
+
 }

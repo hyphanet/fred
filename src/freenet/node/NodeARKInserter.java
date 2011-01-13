@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientPutCallback;
@@ -154,10 +155,10 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 		
 		if(logMINOR) Logger.minor(this, "Inserting " + darknetOpennetString + " ARK: " + uri + "  contents:\n" + s);
 		
-
+		InsertContext ctx = node.clientCore.makeClient((short)0, true).getInsertContext(true);
 		inserter = new ClientPutter(this, b, uri,
 					null, // Modern ARKs easily fit inside 1KB so should be pure SSKs => no MIME type; this improves fetchability considerably
-					node.clientCore.makeClient((short)0, true).getInsertContext(true),
+					ctx,
 					RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, false, node.clientCore.clientContext, null);
 		
 		try {
@@ -263,6 +264,10 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
+	}
+
+	public boolean realTimeFlag() {
+		return false;
 	}
 
 }

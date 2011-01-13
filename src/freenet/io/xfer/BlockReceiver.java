@@ -29,12 +29,13 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
-import freenet.node.Ticker;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MedianMeanRunningAverage;
 
@@ -67,14 +68,55 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		});
 	}
 
+	public interface BlockReceiverTimeoutHandler {
+		
+		/** After a block times out, we call this callback. Once it returns, we cancel the
+		 * PRB and wait for a cancel message or the second timeout. Hence, if the problem
+		 * is on the node sending the data, we will get the first timeout then the second
+		 * (fatal) timeout. But if the problem is upstream, we will only get the first
+		 * timeout. 
+		 * 
+		 * Simple requests will need to implement this and transfer ownership of
+		 * the request to this node, because the source node will end the request as soon
+		 * as it sees the transfer cancel resulting from the PRB being cancelled; 
+		 * assigning the UID to ourselves keeps it consistent, and thus avoids severe load
+		 * management problems (resulting in e.g. constantly sending requests to a node 
+		 * which are then rejected because we think we have capacity when we don't). */
+		void onFirstTimeout();
+		
+		/** After the first timeout, we wait for either a cancel message (sendAborted 
+		 * here), or the second timeout. If we get the second timeout, the problem was
+		 * caused by the node we are receiving the data from, rather than upstream. In
+		 * which case, we may need to take severe action against the node responsible, 
+		 * because we do not know whether or not it thinks the transfer is still running.
+		 * If it is still running and yet we cancel it, we will think that there is 
+		 * capacity for more requests on the node when there isn't, resulting in load 
+		 * management problems as above. */
+		void onFatalTimeout(PeerContext source);
+	}
+	
+	private BlockReceiverTimeoutHandler nullTimeoutHandler = new BlockReceiverTimeoutHandler() {
+
+		public void onFirstTimeout() {
+			// Do nothing
+		}
+
+		public void onFatalTimeout(PeerContext source) {
+			// Do nothing
+		}
+		
+	};
+	
 	/*
 	 * RECEIPT_TIMEOUT must be less than 60 seconds because BlockTransmitter times out after not
 	 * hearing from us in 60 seconds. Without contact from the transmitter, we will try sending
 	 * at most MAX_CONSECUTIVE_MISSING_PACKET_REPORTS every RECEIPT_TIMEOUT to recover.
 	 */
-	public static final int RECEIPT_TIMEOUT = 30000;
+	public final int RECEIPT_TIMEOUT;
+	public static final int RECEIPT_TIMEOUT_REALTIME = 5000;
+	public static final int RECEIPT_TIMEOUT_BULK = 30000;
 	// TODO: This should be proportional to the calculated round-trip-time, not a constant
-	public static final int MAX_ROUND_TRIP_TIME = RECEIPT_TIMEOUT;
+	public final int MAX_ROUND_TRIP_TIME;
 	public static final int MAX_CONSECUTIVE_MISSING_PACKET_REPORTS = 4;
 	public static final int MAX_SEND_INTERVAL = 500;
 	public static final int CLEANUP_TIMEOUT = 5000;
@@ -90,15 +132,21 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	private MessageFilter discardFilter;
 	private long discardEndTime;
 	private boolean senderAborted;
+	private final boolean _realTime;
 //	private final boolean _doTooLong;
+	private final BlockReceiverTimeoutHandler _timeoutHandler;
 
-	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong) {
+	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong, boolean realTime, BlockReceiverTimeoutHandler timeoutHandler) {
+		_timeoutHandler = timeoutHandler == null ? nullTimeoutHandler : timeoutHandler;
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;
 		_usm = usm;
 		_ctr = ctr;
 		_ticker = ticker;
+		_realTime = realTime;
+		RECEIPT_TIMEOUT = _realTime ? RECEIPT_TIMEOUT_REALTIME : RECEIPT_TIMEOUT_BULK;
+		MAX_ROUND_TRIP_TIME = RECEIPT_TIMEOUT;
 //		_doTooLong = doTooLong;
 	}
 
@@ -163,6 +211,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 						truncateTimeout = true;
 					} else {
 						_prb.addPacket(packetNo, data);
+						if(logMINOR) {
+							synchronized(BlockReceiver.this) {
+								long interval = System.currentTimeMillis() - timeStartedWaiting;
+								Logger.minor(this, "Packet interval: "+interval+" = "+TimeUtil.formatTime(interval, 2, true)+" from "+_sender);
+							}
+						}
 						// Check that we have what the sender thinks we have
 						for (int x = 0; x < sent.getSize(); x++) {
 							if (sent.bitAt(x) && !_prb.isReceived(x)) {
@@ -235,6 +289,47 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests");
 				complete(RetrievalException.SENDER_DIED,
 						"Sender unresponsive to resend requests");
+				
+				_timeoutHandler.onFirstTimeout();
+				// If upstream caused the problem, then sender will itself timeout
+				// and will tell us. So wait for a timeout.
+				// It is important for load management that the two sides agree on the number of transfers happening.
+				// Therefore we need to not complete until the other side has acknowledged that the transfer has been cancelled.
+				MessageFilter mfSendAborted = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
+				try {
+					_usm.addAsyncFilter(mfSendAborted, new SlowAsyncMessageFilterCallback() {
+
+						public void onMatched(Message m) {
+							// Ok.
+							if(logMINOR) Logger.minor(this, "Transfer cancel acknowledged");
+						}
+
+						public boolean shouldTimeout() {
+							return false;
+						}
+
+						public void onTimeout() {
+							Logger.error(this, "Other side did not acknowlege transfer failure on "+BlockReceiver.this);
+							_timeoutHandler.onFatalTimeout(_sender);
+						}
+
+						public void onDisconnect(PeerContext ctx) {
+							// Ok.
+						}
+
+						public void onRestarted(PeerContext ctx) {
+							// Ok.
+						}
+
+						public int getPriority() {
+							return NativeThread.NORM_PRIORITY;
+						}
+						
+					}, _ctr);
+				} catch (DisconnectedException e) {
+					// Ignore
+				}
+				
 				return;
 			} catch (AbortedException e) {
 				// We didn't cause it?!

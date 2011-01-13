@@ -120,6 +120,19 @@ public class LocalFileInsertToadlet extends Toadlet {
 
 			
 			File[] files = currentPath.listFiles();
+			
+			if(files == null) {
+				File home = new File(System.getProperty("user.home")); // FIXME what if user.home is denied?
+				if(home.equals(currentPath)) {
+					sendErrorPage(toadletContext, 403, "Forbidden", l10n("dirAccessDenied"));
+					return;
+				}
+				currentPath = home;
+				writePermanentRedirect(toadletContext, "Found", "?path=" + URLEncoder.encode(currentPath.getAbsolutePath(),true)+extra);
+				return;
+
+			}
+			
 			Arrays.sort(files, new Comparator<File>() {
 				public int compare(File firstFile, File secondFile) {
 					if (firstFile.isDirectory() && !secondFile.isDirectory()) {

@@ -82,6 +82,6 @@ public interface Bucket {
 	 * possibly return too-short data etc. In some use cases e.g. on fproxy, 
 	 * this is acceptable.
 	 */
-	public Bucket createShadow() throws IOException;
+	public Bucket createShadow();
 
 }

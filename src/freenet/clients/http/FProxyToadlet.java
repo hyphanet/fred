@@ -318,6 +318,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				filterControl.addChild("div", l10n("filterDataMessage"));
 			}
 			if (threatLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
+				optionForm.addChild("br");
 				NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadToDiskSecurityWarning",
 						new String[] {"bold" }, new HTMLNode[] { HTMLNode.STRONG });
 				//optionForm.addChild("#", l10n("downloadToDiskSecurityWarning") + " ");
@@ -340,7 +341,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(filterChecked) f.addAttribute("checked", "checked");
 			filterControl.addChild("div", l10n("filterDataMessage"));
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace",
-					new String[] { "page" }, new HTMLNode[] { DOWNLOADS_LINK });
+					new String[] { "page", "bold" }, new HTMLNode[] { DOWNLOADS_LINK, HTMLNode.STRONG });
 		}
 	}
 	
@@ -582,16 +583,19 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		String accept = headers.get("accept");
 		FProxyFetchResult fr = null;
 		if(logMINOR) Logger.minor(this, "UA = "+ua+" accept = "+accept);
-		if(isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload")) {
+		
+		boolean canSendProgress = 
+			isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload");
+		
 			FProxyFetchWaiter fetch = null;
 			try {
-				fetch = fetchTracker.makeFetcher(key, maxSize, fctx);
+				fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
 			} catch (FetchException e) {
 				fe = fr.failed;
 			}
 			if(fetch != null)
 			while(true) {
-			fr = fetch.getResult();
+			fr = fetch.getResult(!canSendProgress);
 			if(fr.hasData()) {
 				
 				if(fr.getFetchCount() > 1 && !fr.hasWaited() && fr.getFetchCount() > 1 && key.isUSK() && context.uskManager.lookupKnownGood(USK.create(key)) > key.getSuggestedEdition()) {
@@ -600,7 +604,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					fr = null;
 					fetch = null;
 					try {
-						fetch = fetchTracker.makeFetcher(key, maxSize, fctx);
+						fetch = fetchTracker.makeFetcher(key, maxSize, fctx, ctx.getReFilterPolicy());
 					} catch (FetchException e) {
 						fe = fr.failed;
 					}
@@ -618,7 +622,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				fe = fr.failed;
 				fetch.close(); // Not waiting any more, but still locked the results until sent
 				break;
-			} else {
+			} else if(canSendProgress) {
 				if(logMINOR) Logger.minor(this, "Still in progress");
 				// Still in progress
 				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled() && ua != null && !ua.contains("AppleWebKit/");
@@ -675,9 +679,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				fr.close();
 				fetch.close();
 				return;
+			} else if(fr != null)
+				fr.close();
 			}
-			}
-		}
 		
 		try {
 			if(logMINOR)
@@ -692,7 +696,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					FProxyFetchResult result=null;
 					try{
 						waiter=progress.getWaiter();
-						result=waiter.getResult();
+						result=waiter.getResult(false);
 						if(result.failed==null && result.data!=null){
 							mimeType=result.mimeType;
 							data=result.data;
@@ -717,6 +721,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 						}
 						public void removeFrom(ObjectContainer container) {
 							throw new UnsupportedOperationException();
+						}
+						public boolean realTimeFlag() {
+							return true;
 						} }, fctx); 
 					
 					// Now, is it safe?
@@ -1003,7 +1010,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		// FIXME how to change these on the fly when the interface language is changed?
 		
-		HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
+		HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true, true);
 		
 		random = new byte[32];
 		core.random.nextBytes(random);
@@ -1016,6 +1023,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 			public void removeFrom(ObjectContainer container) {
 				// Do nothing.
+			}
+
+			public boolean realTimeFlag() {
+				return true;
 			}
 			
 		});
@@ -1204,6 +1215,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	@Override
 	public String path() {
 		return "/";
+	}
+
+	public boolean realTimeFlag() {
+		return true;
 	}
 	
 }

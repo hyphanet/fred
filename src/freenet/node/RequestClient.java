@@ -17,6 +17,14 @@ public interface RequestClient {
 	 * Is this request persistent? **Must not change!**
 	 */
 	public boolean persistent();
+	
+	/** Send the request with the real time flag enabled? Real-time requests are given 
+	 * a higher priority in data transfers, but fewer of them are accepted. They are 
+	 * optimised for latency rather than throughput, and are expected to be bursty rather
+	 * than continual.
+	 * **Must not change!**
+	 */
+	public boolean realTimeFlag();
 
 	public void removeFrom(ObjectContainer container);
 

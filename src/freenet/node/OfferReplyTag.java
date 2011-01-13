@@ -11,8 +11,8 @@ public class OfferReplyTag extends UIDTag {
 
 	final boolean ssk;
 	
-	public OfferReplyTag(boolean isSSK, PeerNode source) {
-		super(source);
+	public OfferReplyTag(boolean isSSK, PeerNode source, boolean realTimeFlag, long uid, Node node) {
+		super(source, realTimeFlag, uid, node);
 		ssk = isSSK;
 	}
 
@@ -34,6 +34,21 @@ public class OfferReplyTag extends UIDTag {
 	public int expectedTransfersOut(boolean ignoreLocalVsRemote,
 			int outwardTransfersPerInsert) {
 		return 1;
+	}
+
+	@Override
+	public boolean isSSK() {
+		return ssk;
+	}
+
+	@Override
+	public boolean isInsert() {
+		return false;
+	}
+
+	@Override
+	public boolean isOfferReply() {
+		return true;
 	}
 
 }

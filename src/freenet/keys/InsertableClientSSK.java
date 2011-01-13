@@ -125,8 +125,7 @@ public class InsertableClientSSK extends ClientSSK {
 			// Encrypt data. Data encryption key = H(plaintext data).
 
 			aes.initialize(origDataHash);
-			PCFBMode pcfb = PCFBMode.create(aes);
-			pcfb.reset(origDataHash);
+			PCFBMode pcfb = PCFBMode.create(aes, origDataHash);
 
 			pcfb.blockEncipher(data, 0, data.length);
 

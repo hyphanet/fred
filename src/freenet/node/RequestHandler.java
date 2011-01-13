@@ -66,8 +66,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private long responseDeadline;
 	private BlockTransmitter bt;
 	private final RequestTag tag;
+	private final boolean realTimeFlag;
 	KeyBlock passedInKeyBlock;
-	private boolean dontUnlock = false;
 
 	@Override
 	public String toString() {
@@ -84,10 +84,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * @param tag
 	 * @param passedInKeyBlock We ALWAYS look up in the datastore before starting a request.
 	 */
-	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key, RequestTag tag, KeyBlock passedInKeyBlock) {
+	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key, RequestTag tag, KeyBlock passedInKeyBlock, boolean realTimeFlag) {
 		req = m;
 		node = n;
 		uid = id;
+		this.realTimeFlag = realTimeFlag;
 		this.source = source;
 		this.htl = htl;
 		this.tag = tag;
@@ -109,22 +110,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			Logger.normal(this, "requestor gone, could not start request handler wait");
 			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(e);
-			boolean dontUnlock;
-			synchronized(this) {
-				dontUnlock = this.dontUnlock;
-			}
-			if(!dontUnlock)
-				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+			tag.unlockHandler();
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			node.removeTransferringRequestHandler(uid);
 			tag.handlerThrew(t);
-			boolean dontUnlock;
-			synchronized(this) {
-				dontUnlock = this.dontUnlock;
-			}
-			if(!dontUnlock)
-				node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+			tag.unlockHandler();
 		}
 	}
 	private Exception previousApplyByteCountCall;
@@ -189,7 +180,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			passedInKeyBlock = null; // For GC
 			return;
 		} else
-			o = node.makeRequestSender(key, htl, uid, tag, source, false, true, false, false, false);
+			o = node.makeRequestSender(key, htl, uid, tag, source, false, true, false, false, false, realTimeFlag);
 
 		if(o == null) { // ran out of htl?
 			Message dnf = DMT.createFNPDataNotFound(uid);
@@ -204,7 +195,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				rs = (RequestSender) o;
 				//If we cannot respond before this time, the 'source' node has already fatally timed out (and we need not return packets which will not be claimed)
 				searchStartTime = System.currentTimeMillis();
-				responseDeadline = searchStartTime + RequestSender.FETCH_TIMEOUT + queueTime;
+				responseDeadline = searchStartTime + rs.fetchTimeout() + queueTime;
 			}
 			rs.addListener(this);
 		}
@@ -215,7 +206,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			if(!sentRejectedOverload) {
 				// Forward RejectedOverload
 				//Note: This message is only decernable from the terminal messages by the IS_LOCAL flag being false. (!IS_LOCAL)->!Terminal
-				Message msg = DMT.createFNPRejectedOverload(uid, false);
+				Message msg = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
 				source.sendAsync(msg, null, this);
 				//If the status changes (e.g. to SUCCESS), there is little need to send yet another reject overload.
 				sentRejectedOverload = true;
@@ -238,15 +229,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 					public boolean onAbort() {
 						if(node.hasKey(key, false, false)) return true; // Don't want it
-						if(node.failureTable.peersWantKey(key)) {
+						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
 							Logger.error(this, "Downstream transfer successful but upstream transfer failed. Reassigning tag to self because want the data for ourselves on "+this);
 							node.reassignTagToSelf(tag);
-							rs.setMustUnlock();
-							synchronized(this) {
-								dontUnlock = true;
-							}
-							// FIXME move unlocking logic into UIDTag and always wait for both the handler and the sender.
 							return false; // Want it
 						}
 						return true;
@@ -264,7 +250,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						transferFinished(success);
 					}
 					
-				});
+				}, realTimeFlag);
 			node.addTransferringRequestHandler(uid);
 			bt.sendAsync();
 		} catch(NotConnectedException e) {
@@ -335,11 +321,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		return true;
 	}
 
-	/** If this is set, the transfer was turtled, the RequestSender took on responsibility
-	 * for unlocking the UID given, we should not unlock it. */
-	private long dontUnlockUID = -1;
-	
-	public void onRequestSenderFinished(int status, long grabbedUID) {
+	public void onRequestSenderFinished(int status) {
 		if(logMINOR) Logger.minor(this, "onRequestSenderFinished("+status+") on "+this);
 		long now = System.currentTimeMillis();
 
@@ -347,11 +329,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		synchronized(this) {
 			if(this.status == RequestSender.NOT_FINISHED)
 				this.status = status;
-			else
+			else {
+				if(logMINOR) Logger.minor(this, "Ignoring onRequestSenderFinished as status is already "+this.status);
 				return;
+			}
 			tooLate = responseDeadline > 0 && now > responseDeadline;
-			if(grabbedUID != -1)
-				dontUnlockUID = grabbedUID;
 		}
 		
 		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble());
@@ -362,9 +344,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			PeerNode routedLast = rs == null ? null : rs.routedLast();
 			// A certain number of these are normal.
 			Logger.normal(this, "requestsender took too long to respond to requestor (" + TimeUtil.formatTime((now - searchStartTime), 2, true) + "/" + (rs == null ? "null" : rs.getStatusString()) + ") routed to " + (routedLast == null ? "null" : routedLast.shortToString()));
-			applyByteCounts();
-			unregisterRequestHandlerWithNode();
-			return;
+			// We need to send the RejectedOverload (or whatever) anyway, for two-stage timeout.
+			// Otherwise the downstream node will assume it's our fault.
 		}
 
 		if(status == RequestSender.NOT_FINISHED)
@@ -389,7 +370,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					// Locally generated.
 					// Propagate back to source who needs to reduce send rate
 					///@bug: we may not want to translate fatal timeouts into non-fatal timeouts.
-					Message reject = DMT.createFNPRejectedOverload(uid, true);
+					Message reject = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
 					sendTerminal(reject);
 					return;
 				case RequestSender.ROUTE_NOT_FOUND:
@@ -410,7 +391,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						maybeCompleteTransfer();
 						return;
 					}
-					reject = DMT.createFNPRejectedOverload(uid, true);
+					reject = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
 					sendTerminal(reject);
 					return;
 				case RequestSender.TRANSFER_FAILED:
@@ -423,7 +404,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					return;
 				default:
 					// Treat as internal error
-					reject = DMT.createFNPRejectedOverload(uid, true);
+					reject = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
 					sendTerminal(reject);
 					throw new IllegalStateException("Unknown status code " + status);
 			}
@@ -453,7 +434,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				// Bug! This is impossible!
 				Logger.error(this, "Status is "+status+" but we never started a transfer on " + uid);
 				// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
-				reject = DMT.createFNPRejectedOverload(uid, true);
+				reject = DMT.createFNPRejectedOverload(uid, true, false, false);
 			} else {
 				xferFinished = readyToFinishTransfer();
 				xferSuccess = transferSuccess;
@@ -555,7 +536,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 								Logger.normal(this, "requestor gone, could not start request handler wait");
 								node.removeTransferringRequestHandler(uid);
 								tag.handlerThrew(e);
-								node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+								tag.unlockHandler();
 							}
 						} else {
 							//also for byte logging, since the block is the 'terminal' message.
@@ -565,7 +546,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						node.nodeStats.remoteRequest(false, success, true, htl, key.toNormalizedDouble());
 					}
 					
-				});
+				}, realTimeFlag);
 			node.addTransferringRequestHandler(uid);
 			source.sendAsync(df, null, this);
 			bt.sendAsync();
@@ -575,10 +556,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	private void unregisterRequestHandlerWithNode() {
 		node.removeTransferringRequestHandler(uid);
-		synchronized(this) {
-			if(uid == dontUnlockUID) return;
-		}
-		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
+		tag.unlockHandler();
 	}
 
 	/**

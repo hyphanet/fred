@@ -1,14 +1,23 @@
 package freenet.clients.http;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.ClientMetadata;
+import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.async.CacheFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
@@ -19,12 +28,17 @@ import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.client.filter.ContentFilter;
+import freenet.client.filter.MIMEType;
+import freenet.client.filter.UnknownContentTypeException;
 import freenet.keys.FreenetURI;
+import freenet.keys.USK;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.io.Closer;
 
 /** 
  * Fetching a page for a browser.
@@ -32,6 +46,16 @@ import freenet.support.api.Bucket;
  * LOCKING: The lock on this object is always taken last.
  */
 public class FProxyFetchInProgress implements ClientEventListener, ClientGetCallback {
+	
+	/** What to do when we find data which matches the request but it has already been 
+	 * filtered, assuming we want a filtered copy. */
+	public enum REFILTER_POLICY {
+		RE_FILTER, // Re-run the filter over data that has already been filtered. Probably requires allocating a new temp file.
+		ACCEPT_OLD, // Accept the old filtered data. Only as safe as the filter when the data was originally downloaded.
+		RE_FETCH // Fetch the data again. Unnecessary in most cases, avoids any possibility of filter artefacts.
+	}
+	
+	private final REFILTER_POLICY refilterPolicy;
 	
 	private static volatile boolean logMINOR;
 	
@@ -100,7 +124,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	/** Stores the fetch context this class was created with*/
 	private FetchContext fctx;
 	
-	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc) {
+	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc, REFILTER_POLICY refilter) {
+		this.refilterPolicy = refilter;
 		this.tracker = tracker;
 		this.uri = key;
 		this.maxSize = maxSize2;
@@ -145,7 +170,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 
 	public void start(ClientContext context) throws FetchException {
 		try {
-			context.start(getter);
+			if(!checkCache(context))
+				context.start(getter);
 		} catch (FetchException e) {
 			synchronized(this) {
 				this.failed = e;
@@ -159,6 +185,138 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				this.finished = true;
 			}
 		}
+	}
+
+	/** Look up the key in the downloads queue.
+	 * @return True if it was found and we don't need to start the request. */
+	private boolean checkCache(ClientContext context) {
+		// Fproxy uses lookupInstant() with mustCopy = false. I.e. it can reuse stuff unsafely. If the user frees it it's their fault.
+		if(bogusUSK(context)) return false;
+		CacheFetchResult result = context.downloadCache == null ? null : context.downloadCache.lookupInstant(uri, !fctx.filterData, false, null);
+		if(result == null) return false;
+		Bucket data = null;
+		String mimeType = null;
+		if((!fctx.filterData) && (!result.alreadyFiltered)) {
+			if(fctx.overrideMIME == null || fctx.overrideMIME.equals(result.getMimeType())) {
+				// Works as-is.
+				// Any time we re-use old content we need to remove the tracker because it may not remain available.
+				tracker.removeFetcher(this);
+				onSuccess(result, null, null);
+				return true;
+			} else if(fctx.overrideMIME != null && !fctx.overrideMIME.equals(result.getMimeType())) {
+				// Change the MIME type.
+				tracker.removeFetcher(this);
+				onSuccess(new FetchResult(new ClientMetadata(fctx.overrideMIME), result.asBucket()), null, null);
+				return true;
+			} 
+		} else if(result.alreadyFiltered) {
+			if(refilterPolicy == REFILTER_POLICY.RE_FETCH || !fctx.filterData) {
+				// Can't use it.
+				result = null;
+			} else if(fctx.filterData) {
+				if(shouldAcceptCachedFilteredData(fctx, result)) {
+					if(refilterPolicy == REFILTER_POLICY.ACCEPT_OLD) {
+						tracker.removeFetcher(this);
+						onSuccess(result, null, null);
+						return true;
+					} // else re-filter
+				} else
+					return false;
+			} else {
+				return false;
+			}
+		}
+		data = result.asBucket();
+		mimeType = result.getMimeType();
+		if(mimeType == null || mimeType.equals("")) mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
+		if(fctx.overrideMIME != null && !result.alreadyFiltered)
+			mimeType = fctx.overrideMIME;
+		else if(fctx.overrideMIME != null && !mimeType.equals(fctx.overrideMIME)) {
+			// Doesn't work.
+			return false;
+		}
+		String fullMimeType = mimeType;
+		mimeType = ContentFilter.stripMIMEType(mimeType);
+		MIMEType type = ContentFilter.getMIMEType(mimeType);
+		if(type == null || ((!type.safeToRead) && type.readFilter == null)) {
+			UnknownContentTypeException e = new UnknownContentTypeException(mimeType);
+			data.free();
+			onFailure(new FetchException(e.getFetchErrorCode(), data.size(), e, mimeType), null, null);
+			return true;
+		} else if(type.safeToRead) {
+			tracker.removeFetcher(this);
+			onSuccess(new FetchResult(new ClientMetadata(mimeType), data), null, null);
+			return true;
+		} else {
+			// Try to filter it.
+			Bucket output = null;
+			InputStream is = null;
+			OutputStream os = null;
+			try {
+				output = context.tempBucketFactory.makeBucket(-1);
+				is = data.getInputStream();
+				os = output.getOutputStream();
+				ContentFilter.filter(is, os, fullMimeType, uri.toURI("/"), null, null, fctx.charset);
+				is.close();
+				is = null;
+				os.close();
+				os = null;
+				// Since we are not re-using the data bucket, we can happily stay in the FProxyFetchTracker.
+				this.onSuccess(new FetchResult(new ClientMetadata(fullMimeType), output), null, null);
+				output = null;
+				return true;
+			} catch (IOException e) {
+				Logger.normal(this, "Failed filtering coalesced data in fproxy");
+				// Failed. :|
+				// Let it run normally.
+				return false;
+			} catch (URISyntaxException e) {
+				Logger.error(this, "Impossible: "+e, e);
+				return false;
+			} finally {
+				Closer.close(is);
+				Closer.close(os);
+				Closer.close(output);
+				Closer.close(data);
+			}
+		}
+	}
+
+	/** If the key is a USK and a) we are requested to do an exhaustive search, or b) 
+	 * there is a later version, then we can't use the download queue as a cache.
+	 * @return True if we can't use the download queue, false if we can. */
+	private boolean bogusUSK(ClientContext context) {
+		if(!uri.isUSK()) return false;
+		long edition = uri.getSuggestedEdition();
+		if(edition < 0) 
+			return true; // Need to do the fetch.
+		USK usk;
+		try {
+			usk = USK.create(uri);
+		} catch (MalformedURLException e) {
+			return false; // Will fail later.
+		}
+		long ret = context.uskManager.lookupKnownGood(usk);
+		if(ret == -1) return false;
+		return ret > edition;
+	}
+
+	private boolean shouldAcceptCachedFilteredData(FetchContext fctx,
+			CacheFetchResult result) {
+		// FIXME allow the charset if it's the same
+		if(fctx.charset != null) return false;
+		boolean okay = false;
+		if(fctx.overrideMIME == null) {
+			return true;
+		} else {
+			String finalMIME = result.getMimeType();
+			if(fctx.overrideMIME.equals(finalMIME))
+				return true;
+			else if(ContentFilter.stripMIMEType(finalMIME).equals(fctx.overrideMIME) && fctx.charset == null)
+				return true;
+			// FIXME we could make this work in a few more cases... it doesn't matter much though as usually people don't override the MIME type!
+		}
+		return false;
 	}
 
 	public void onRemoveEventProducer(ObjectContainer container) {

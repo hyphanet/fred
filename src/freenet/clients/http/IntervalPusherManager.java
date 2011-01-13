@@ -5,7 +5,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import freenet.clients.http.updateableelements.BaseUpdateableElement;
 import freenet.clients.http.updateableelements.PushDataManager;
-import freenet.node.Ticker;
+import freenet.support.Ticker;
 
 /** This manager object will push elements at a fixed interval */
 public class IntervalPusherManager {

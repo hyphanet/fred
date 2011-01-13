@@ -106,7 +106,7 @@ public class ArrayBucket implements Bucket {
 		container.delete(this);
 	}
 
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		return null;
 	}
 }

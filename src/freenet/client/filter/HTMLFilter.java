@@ -2371,7 +2371,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		@Override
-		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
+		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) throws DataFilterException {
 			if (t.unparsedAttrs.length != 2 && t.unparsedAttrs.length != 3) {
 				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid length");
 				return null;
@@ -2384,21 +2384,38 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid ending (length 3)");
 				return null;
 			}
-			if (!t.unparsedAttrs[0].equals("version=\"1.0\"")) {
+			if (!(t.unparsedAttrs[0].equals("version=\"1.0\"") || t.unparsedAttrs[0].equals("version='1.0'"))) {
 				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid version");
 				return null;
 			}
-			if (!(t.unparsedAttrs[1].startsWith("encoding=\"")
-				&& (t.unparsedAttrs[1].endsWith("\"?") || t.unparsedAttrs[1].endsWith("\"")))) {
+			String encodingAttr = t.unparsedAttrs[1];
+			if(encodingAttr.startsWith("encoding=\"")) {
+				if(!encodingAttr.endsWith("\"")) {
+					if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid encoding");
+					return null;
+				}
+			} else if(encodingAttr.startsWith("encoding='")) {
+				if(!encodingAttr.endsWith("'")) {
+					if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid encoding");
+					return null;
+				}
+			} else {
 				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid encoding");
 				return null;
 			}
-			if (!t.unparsedAttrs[1]
-				.substring(10, t.unparsedAttrs[1].length() - 1)
-				.equalsIgnoreCase(pc.charset)) {
-				if (logMINOR) Logger.minor(this, "Deleting xml declaration (invalid charset "
-						+ t.unparsedAttrs[1].substring(10, t.unparsedAttrs[1].length() - 1) + ")");
-				return null;
+			
+			String charset = encodingAttr.substring("encoding='".length(), encodingAttr.length()-1);
+			
+			if (!charset.equalsIgnoreCase(pc.charset)) {
+				if(pc.charset != null && !charset.equalsIgnoreCase(pc.charset)) {
+					if (logMINOR) Logger.minor(this, "Deleting xml declaration (invalid charset "
+							+ charset + " should be "+pc.charset + ")");
+					return null;
+				} else if(pc.detectedCharset != null) {
+					throwFilterException(l10n("multipleCharsetsInMeta"));
+				} else {
+					pc.detectedCharset = charset;
+				}
 			}
 			return t;
 		}

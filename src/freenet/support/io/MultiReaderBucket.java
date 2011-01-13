@@ -169,7 +169,7 @@ public class MultiReaderBucket {
 			container.delete(MultiReaderBucket.this);
 		}
 
-		public Bucket createShadow() throws IOException {
+		public Bucket createShadow() {
 			return null;
 		}
 		

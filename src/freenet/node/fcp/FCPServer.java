@@ -20,9 +20,11 @@ import freenet.client.FetchContext;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertContext;
+import freenet.client.async.CacheFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.async.DownloadCache;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -52,7 +54,7 @@ import freenet.support.io.NoFreeBucket;
 /**
  * FCP server process.
  */
-public class FCPServer implements Runnable {
+public class FCPServer implements Runnable, DownloadCache {
 
 	FCPPersistentRoot persistentRoot;
 	private static boolean logMINOR;
@@ -96,13 +98,14 @@ public class FCPServer implements Runnable {
 		defaultInsertContext = client.getInsertContext(false);
 		
 		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null, whiteboard, null);
+		globalRebootClient.setRequestStatusCache(new RequestStatusCache(), null);
 		
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		
 	}
 	
 	public void load(ObjectContainer container) {
-		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, whiteboard, container);
+		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, whiteboard, new RequestStatusCache(), container);
 		globalForeverClient = persistentRoot.globalForeverClient;
 	}
 	
@@ -445,16 +448,13 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	public ClientRequest[] getGlobalRequests(ObjectContainer container) throws DatabaseDisabledException {
+	public RequestStatus[] getGlobalRequests() throws DatabaseDisabledException {
 		if(core.killedDatabase()) throw new DatabaseDisabledException();
-		List<ClientRequest> v = new ArrayList<ClientRequest>();
-		globalRebootClient.addPersistentRequests(v, false, null);
-		if(!container.ext().isActive(globalForeverClient)) {
-			Logger.error(this, "Somebody deactivated the global queue!");
-			container.activate(globalForeverClient, 2);
-		}
-		globalForeverClient.addPersistentRequests(v, false, container);
-		return v.toArray(new ClientRequest[v.size()]);
+		List<RequestStatus> v = new ArrayList<RequestStatus>();
+		globalRebootClient.addPersistentRequestStatus(v);
+		if(globalForeverClient != null)
+			globalForeverClient.addPersistentRequestStatus(v);
+		return v.toArray(new RequestStatus[v.size()]);
 	}
 
 	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException, DatabaseDisabledException {
@@ -545,7 +545,7 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	public void makePersistentGlobalRequestBlocking(final FreenetURI fetchURI, final boolean filterData, final String expectedMimeType, final String persistenceTypeString, final String returnTypeString) throws NotAllowedException, IOException, DatabaseDisabledException {
+	public void makePersistentGlobalRequestBlocking(final FreenetURI fetchURI, final boolean filterData, final String expectedMimeType, final String persistenceTypeString, final String returnTypeString, final boolean realTimeFlag) throws NotAllowedException, IOException, DatabaseDisabledException {
 		class OutputWrapper {
 			NotAllowedException ne;
 			IOException ioe;
@@ -563,7 +563,7 @@ public class FCPServer implements Runnable {
 				NotAllowedException ne = null;
 				IOException ioe = null;
 				try {
-					makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType, persistenceTypeString, returnTypeString, container);
+					makePersistentGlobalRequest(fetchURI, filterData, expectedMimeType, persistenceTypeString, returnTypeString, realTimeFlag, container);
 					return true;
 				} catch (NotAllowedException e) {
 					ne = e;
@@ -666,7 +666,7 @@ public class FCPServer implements Runnable {
 	 * @throws NotAllowedException 
 	 * @throws IOException 
 	 */
-	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, ObjectContainer container) throws NotAllowedException, IOException {
+	public void makePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, String expectedMimeType, String persistenceTypeString, String returnTypeString, boolean realTimeFlag, ObjectContainer container) throws NotAllowedException, IOException {
 		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
 		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
 		File returnFilename = null, returnTempFilename = null;
@@ -680,20 +680,20 @@ public class FCPServer implements Runnable {
 //				File returnFilename, File returnTempFilename) throws IdentifierCollisionException {
 		
 		try {
-			innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getPreferredFilename(), returnFilename, returnTempFilename, container);
+			innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getPreferredFilename(), returnFilename, returnTempFilename, realTimeFlag, container);
 			return;
 		} catch (IdentifierCollisionException ee) {
 			try {
-				innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getDocName(), returnFilename, returnTempFilename, container);
+				innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.getDocName(), returnFilename, returnTempFilename, realTimeFlag, container);
 				return;
 			} catch (IdentifierCollisionException e) {
 				try {
-					innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.toString(false, false), returnFilename, returnTempFilename, container);
+					innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy:"+fetchURI.toString(false, false), returnFilename, returnTempFilename, realTimeFlag, container);
 					return;
 				} catch (IdentifierCollisionException e1) {
 					// FIXME maybe use DateFormat
 					try {
-						innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy ("+System.currentTimeMillis()+ ')', returnFilename, returnTempFilename, container);
+						innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, "FProxy ("+System.currentTimeMillis()+ ')', returnFilename, returnTempFilename, realTimeFlag, container);
 						return;
 					} catch (IdentifierCollisionException e2) {
 						while(true) {
@@ -701,7 +701,7 @@ public class FCPServer implements Runnable {
 							try {
 								core.random.nextBytes(buf);
 								String id = "FProxy:"+Base64.encode(buf);
-								innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, id, returnFilename, returnTempFilename, container);
+								innerMakePersistentGlobalRequest(fetchURI, filterData, persistence, returnType, id, returnFilename, returnTempFilename, realTimeFlag, container);
 								return;
 							} catch (IdentifierCollisionException e3) {}
 						}
@@ -744,12 +744,12 @@ public class FCPServer implements Runnable {
 	}
 
 	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean filterData, boolean persistRebootOnly, short returnType, String id, File returnFilename,
-			File returnTempFilename, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
+			File returnTempFilename, boolean realTimeFlag, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
 		final ClientGet cg = 
 			new ClientGet(persistRebootOnly ? globalRebootClient : globalForeverClient, fetchURI, defaultFetchContext.localRequestOnly, 
 					defaultFetchContext.ignoreStore, filterData, QUEUE_MAX_RETRIES,
 					QUEUE_MAX_RETRIES, QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id,
-					Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename, null, false, this, container);
+					Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename, null, false, realTimeFlag, this, container);
 		cg.register(container, false);
 		cg.start(container, core.clientContext);
 	}
@@ -904,6 +904,11 @@ public class FCPServer implements Runnable {
 			return new FetchResult(new ClientMetadata(get.getMIMEType(null)), new NoFreeBucket(get.getBucket(null)));
 		}
 		
+		FetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key, false);
+		if(result != null) {
+			return result;
+		}
+		
 		class OutputWrapper {
 			FetchResult result;
 			boolean done;
@@ -920,31 +925,7 @@ public class FCPServer implements Runnable {
 			public boolean run(ObjectContainer container, ClientContext context) {
 				FetchResult result = null;
 				try {
-					ClientGet get = globalForeverClient.getCompletedRequest(key, container);
-					container.activate(get, 1);
-					if(get != null) {
-						Bucket origData = get.getBucket(container);
-						container.activate(origData, 5);
-						Bucket newData;
-						try {
-							newData = origData.createShadow();
-						} catch (IOException e) {
-							Logger.error(this, "Caught error "+e+" trying to create shallow copy, copying data...", e);
-							newData = null;
-						}
-						if(newData == null) {
-							try {
-								newData = core.tempBucketFactory.makeBucket(origData.size());
-								BucketTools.copy(origData, newData);
-							} catch (IOException e) {
-								Logger.error(this, "Unable to copy data: "+e, e);
-								result = null;
-								return false;
-							}
-						}
-						result = new FetchResult(new ClientMetadata(get.getMIMEType(container)), newData);
-					}
-					container.deactivate(get, 1);
+					result = lookup(key, false, context, container, false, null);
 				} finally {
 					synchronized(ow) {
 						ow.result = result;
@@ -979,6 +960,82 @@ public class FCPServer implements Runnable {
 	
 	public Whiteboard getWhiteboard(){
 		return whiteboard;
+	}
+
+	public CacheFetchResult lookupInstant(FreenetURI key, boolean noFilter, boolean mustCopy, Bucket preferred) {
+		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
+		
+		Bucket origData = null;
+		String mime = null;
+		boolean filtered = false;
+		
+		if(get != null && ((!noFilter) || (!(filtered = get.filterData(null))))) {
+			origData = new NoFreeBucket(get.getBucket(null));
+			mime = get.getMIMEType(null);
+		}
+		
+		if(origData == null && globalForeverClient != null) {
+			CacheFetchResult result = globalForeverClient.getRequestStatusCache().getShadowBucket(key, noFilter);
+			if(result != null) {
+				mime = result.getMimeType();
+				origData = result.asBucket();
+				filtered = result.alreadyFiltered;
+			}
+		}
+		
+		if(origData == null) return null;
+		
+		if(!mustCopy)
+			return new CacheFetchResult(new ClientMetadata(mime), origData, filtered);
+		
+		Bucket newData = null;
+		try {
+			if(preferred != null) newData = preferred;
+			else newData = core.tempBucketFactory.makeBucket(origData.size());
+			BucketTools.copy(origData, newData);
+			if(origData.size() != newData.size()) {
+				Logger.normal(this, "Maybe it disappeared under us?");
+				newData.free();
+				newData = null;
+				return null;
+			}
+			return new CacheFetchResult(new ClientMetadata(mime), newData, filtered);
+		} catch (IOException e) {
+			// Maybe it was freed?
+			Logger.normal(this, "Unable to copy data: "+e, e);
+			return null;
+		}
+		
+	}
+
+	public CacheFetchResult lookup(FreenetURI key, boolean noFilter, ClientContext context,
+			ObjectContainer container, boolean mustCopy, Bucket preferred) {
+		if(globalForeverClient == null) return null;
+		ClientGet get = globalForeverClient.getCompletedRequest(key, container);
+		container.activate(get, 1);
+		if(get != null) {
+			boolean filtered = get.filterData(container);
+			Bucket origData = get.getBucket(container);
+			container.activate(origData, 5);
+			Bucket newData = null;
+			if(!mustCopy)
+				newData = origData.createShadow();
+			if(newData == null) {
+				try {
+					if(preferred != null)
+						newData = preferred;
+					else
+						newData = core.tempBucketFactory.makeBucket(origData.size());
+					BucketTools.copy(origData, newData);
+				} catch (IOException e) {
+					Logger.error(this, "Unable to copy data: "+e, e);
+					return null;
+				}
+			}
+			container.deactivate(get, 1);
+			return new CacheFetchResult(new ClientMetadata(get.getMIMEType(container)), newData, filtered);
+		}
+		return null;
 	}
 	
 }

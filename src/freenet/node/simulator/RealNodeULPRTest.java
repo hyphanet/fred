@@ -26,6 +26,7 @@ import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.node.DarknetPeerNode.FRIEND_TRUST;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.store.KeyCollisionException;
 import freenet.support.Executor;
@@ -73,7 +74,10 @@ public class RealNodeULPRTest extends RealNodeTest {
     static final boolean ENABLE_ULPRS = true; // This is the point of the test, but it's probably a good idea to be able to do a comparison if we want to
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = true;
     static final boolean ENABLE_FOAF = true;
+    static final boolean REAL_TIME_FLAG = false;
     
+	static final FRIEND_TRUST trust = FRIEND_TRUST.LOW;
+
     public static final int DARKNET_PORT_BASE = RealNodeSecretPingTest.DARKNET_PORT_END;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
@@ -114,8 +118,8 @@ public class RealNodeULPRTest extends RealNodeTest {
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             int next = (i+1) % NUMBER_OF_NODES;
             int prev = (i+NUMBER_OF_NODES-1)%NUMBER_OF_NODES;
-            nodes[i].connect(nodes[next]);
-            nodes[i].connect(nodes[prev]);
+            nodes[i].connect(nodes[next], trust);
+            nodes[i].connect(nodes[prev], trust);
         }
         Logger.normal(RealNodeRoutingTest.class, "Connected nodes");
         // Now add some random links
@@ -128,8 +132,8 @@ public class RealNodeULPRTest extends RealNodeTest {
             //System.out.println(""+nodeA+" -> "+nodeB);
             Node a = nodes[nodeA];
             Node b = nodes[nodeB];
-            a.connect(b);
-            b.connect(a);
+            a.connect(b, trust);
+            b.connect(a, trust);
         }
         
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
@@ -209,7 +213,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         for(int i=0;i<nodes.length;i++) {
         	System.out.println("Searching from node "+i);
         	try {
-        		nodes[i%nodes.length].clientCore.realGetKey(fetchKey, false, false, false);
+        		nodes[i%nodes.length].clientCore.realGetKey(fetchKey, false, false, false, REAL_TIME_FLAG);
         		System.err.println("TEST FAILED: KEY ALREADY PRESENT!!!"); // impossible!
         		System.exit(EXIT_KEY_EXISTS);
         	} catch (LowLevelGetException e) {

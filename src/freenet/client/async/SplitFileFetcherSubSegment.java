@@ -68,7 +68,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 	
 	SplitFileFetcherSubSegment(SplitFileFetcherSegment segment, ClientRequester parent, int retryCount) {
-		super(parent);
+		super(parent, false);
 		this.segment = segment;
 		this.retryCount = retryCount;
 		if(parent == null) throw new NullPointerException();

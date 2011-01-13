@@ -32,7 +32,7 @@ import freenet.support.io.NullBucket;
 
 /**
  * Test case for {@link freenet.support.compress.GzipCompressor} class.
- * 
+ *
  * @author stuart martin &lt;wavey@freenetproject.org&gt;
  */
 public class GzipCompressorTest extends TestCase {
@@ -51,7 +51,7 @@ public class GzipCompressorTest extends TestCase {
 	/**
 	 * test GZIP compressor's identity and functionality
 	 */
-	public void testGzipCompressor() {
+	public void testGzipCompressor() throws IOException {
 		Compressor.COMPRESSOR_TYPE gzipCompressor = Compressor.COMPRESSOR_TYPE.GZIP;
 		Compressor compressorZero = Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)0);
 
@@ -59,7 +59,7 @@ public class GzipCompressorTest extends TestCase {
 		assertEquals(gzipCompressor, compressorZero);
 	}
 
-	public void testCompress() {
+	public void testCompress() throws IOException {
 
 		// do gzip compression
 		byte[] compressedData = doCompress(UNCOMPRESSED_DATA_1.getBytes());
@@ -73,20 +73,20 @@ public class GzipCompressorTest extends TestCase {
 		}
 	}
 
-	public void testBucketDecompress() {
-		
+	public void testBucketDecompress() throws IOException {
+
 		byte[] compressedData = COMPRESSED_DATA_1;
-		
+
 		// do gzip decompression with buckets
 		byte[] uncompressedData = doBucketDecompress(compressedData);
-		
+
 		// is the (round-tripped) uncompressed string the same as the original?
 		String uncompressedString = new String(uncompressedData);
 		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
 	}
 
-	public void testByteArrayDecompress() {
-		// build 5k array 
+	public void testByteArrayDecompress() throws IOException {
+		// build 5k array
 		byte[] originalUncompressedData = new byte[5 * 1024];
 		for(int i = 0; i < originalUncompressedData.length; i++) {
 			originalUncompressedData[i] = 1;
@@ -97,11 +97,7 @@ public class GzipCompressorTest extends TestCase {
 
 		int writtenBytes = 0;
 
-		try {
-			writtenBytes = Compressor.COMPRESSOR_TYPE.GZIP.decompress(compressedData, 0, compressedData.length, outUncompressedData);
-		} catch (CompressionOutputSizeException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		}
+		writtenBytes = Compressor.COMPRESSOR_TYPE.GZIP.decompress(compressedData, 0, compressedData.length, outUncompressedData);
 
 		assertEquals(writtenBytes, originalUncompressedData.length);
 		assertEquals(originalUncompressedData.length, outUncompressedData.length);
@@ -112,30 +108,31 @@ public class GzipCompressorTest extends TestCase {
 		}
 	}
 
-	public void testCompressException() {
-		
+	public void testCompressException() throws IOException {
+
 		byte[] uncompressedData = UNCOMPRESSED_DATA_1.getBytes();
 		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
 			Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32, 32);
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
 			// expect this
-		}		
+			return;
+		}
+		// TODO LOW codec doesn't actually enforce size limit
+		//fail("did not throw expected CompressionOutputSizeException");
 	}
 
-	public void testDecompressException() {
+	public void testDecompressException() throws IOException {
 		// build 5k array
 		byte[] uncompressedData = new byte[5 * 1024];
 		for(int i = 0; i < uncompressedData.length; i++) {
 			uncompressedData[i] = 1;
 		}
-		
+
 		byte[] compressedData = doCompress(uncompressedData);
-		
+
 		Bucket inBucket = new ArrayBucket(compressedData);
 		NullBucket outBucket = new NullBucket();
 		InputStream decompressorInput = null;
@@ -146,34 +143,28 @@ public class GzipCompressorTest extends TestCase {
 			Compressor.COMPRESSOR_TYPE.GZIP.decompress(decompressorInput, decompressorOutput, 4096 + 10, 4096 + 20);
 			decompressorInput.close();
 			decompressorOutput.close();
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
 			// expect this
+			return;
 		} finally {
 			Closer.close(decompressorInput);
 			Closer.close(decompressorOutput);
 			inBucket.free();
 			outBucket.free();
 		}
+		fail("did not throw expected CompressionOutputSizeException");
 	}
-	
-	private byte[] doBucketDecompress(byte[] compressedData) {
+
+	private byte[] doBucketDecompress(byte[] compressedData) throws IOException {
 		ByteArrayInputStream decompressorInput = new ByteArrayInputStream(compressedData);
 		ByteArrayOutputStream decompressorOutput = new ByteArrayOutputStream();
 
-		try {
-			Compressor.COMPRESSOR_TYPE.GZIP.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
-		} catch (Exception e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		}
+		Compressor.COMPRESSOR_TYPE.GZIP.decompress(decompressorInput, decompressorOutput, 32768, 32768 * 2);
 
 		byte[] outBuf = decompressorOutput.toByteArray();
 		try {
 			decompressorInput.close();
 			decompressorOutput.close();
-		} catch(IOException e) {
-			fail("unexpected exception thrown : "+ e.getMessage());
 		} finally {
 			Closer.close(decompressorInput);
 			Closer.close(decompressorOutput);
@@ -182,33 +173,19 @@ public class GzipCompressorTest extends TestCase {
 		return outBuf;
 	}
 
-	private byte[] doCompress(byte[] uncompressedData) {
+	private byte[] doCompress(byte[] uncompressedData) throws IOException {
 		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 		Bucket outBucket = null;
 
-		try {
-			outBucket = Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32768, 32768);
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		} catch (CompressionOutputSizeException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		}
+		outBucket = Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32768, 32768);
 
 		InputStream in = null;
-		try {
-			in = outBucket.getInputStream();
-		} catch (IOException e1) {
-			fail("unexpected exception thrown : " + e1.getMessage());
-		}
+		in = outBucket.getInputStream();
 		long size = outBucket.size();
 		byte[] outBuf = new byte[(int) size];
 
-		try {
-			in.read(outBuf);
-		} catch (IOException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		}
+		in.read(outBuf);
 
 		return outBuf;
 	}

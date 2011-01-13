@@ -28,9 +28,9 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
-import freenet.node.Ticker;
 import freenet.node.Version;
 import freenet.support.Logger;
+import freenet.support.Ticker;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -511,4 +511,8 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		throw new UnsupportedOperationException();
 	}
 	
+	public boolean realTimeFlag() {
+		return false;
+	}
+
 }

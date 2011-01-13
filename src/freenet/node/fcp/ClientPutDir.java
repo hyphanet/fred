@@ -53,7 +53,7 @@ public class ClientPutDir extends ClientPutBase {
 			HashMap<String, Object> manifestElements, boolean wasDiskPut, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
 		super(checkEmptySSK(message.uri, "site", server.core.clientContext), message.identifier, message.verbosity, null,
 				handler, message.priorityClass, message.persistenceType, message.clientToken,
-				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.compatibilityMode, server, container);
+				message.global, message.getCHKOnly, message.dontCompress, message.localRequestOnly, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, message.realTimeFlag, message.compatibilityMode, server, container);
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.wasDiskPut = wasDiskPut;
 		
@@ -83,8 +83,8 @@ public class ClientPutDir extends ClientPutBase {
 	*	Puts a disk dir
 	 * @throws InsertException 
 	*/
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, FCPServer server, ObjectContainer container) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
-		super(checkEmptySSK(uri, "site", server.core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, FCPServer server, ObjectContainer container) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
+		super(checkEmptySSK(uri, "site", server.core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
 		wasDiskPut = true;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
@@ -100,8 +100,8 @@ public class ClientPutDir extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, HashMap<String, Object> elements, String defaultName, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
-		super(checkEmptySSK(uri, "site", server.core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, HashMap<String, Object> elements, String defaultName, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, boolean realTimeFlag, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
+		super(checkEmptySSK(uri, "site", server.core.clientContext), identifier, verbosity , null, null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, false, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, realTimeFlag, null, InsertContext.CompatibilityMode.COMPAT_CURRENT, server, container);
 		wasDiskPut = false;
 		logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
 		this.manifestElements = elements;
@@ -175,9 +175,17 @@ public class ClientPutDir extends ClientPutBase {
 		if(finished) return;
 		if(started) return;
 		try {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(putter, 1);
 			if(putter != null)
 				putter.start(container, context);
 			started = true;
+			if(client != null) {
+				RequestStatusCache cache = client.getRequestStatusCache();
+				if(cache != null) {
+					cache.updateStarted(identifier, true);
+				}
+			}
 			if(logMINOR) Logger.minor(this, "Started "+putter+" for "+this+" persistence="+persistenceType);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage(container);
@@ -295,6 +303,12 @@ public class ClientPutDir extends ClientPutBase {
 	public boolean restart(ObjectContainer container, ClientContext context, final boolean disableFilterData) {
 		if(!canRestart()) return false;
 		setVarsRestart(container);
+		if(client != null) {
+			RequestStatusCache cache = client.getRequestStatusCache();
+			if(cache != null) {
+				cache.updateStarted(identifier, false);
+			}
+		}
 		makePutter(container, context);
 		start(container, context);
 		return true;
@@ -337,4 +351,52 @@ public class ClientPutDir extends ClientPutBase {
 	protected void onStopCompressing() {
 		// Ignore
 	}
+	
+	@Override
+	RequestStatus getStatus(ObjectContainer container) {
+		FreenetURI finalURI = getFinalURI(container);
+		if(finalURI != null) finalURI = getFinalURI(container).clone();
+		int failureCode = (short)-1;
+		String failureReasonShort = null;
+		String failureReasonLong = null;
+		if(putFailedMessage != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(putFailedMessage, 5);
+			failureCode = putFailedMessage.code;
+			failureReasonShort = putFailedMessage.getShortFailedMessage();
+			failureReasonShort = putFailedMessage.getLongFailedMessage();
+			if(persistenceType == PERSIST_FOREVER)
+				container.deactivate(putFailedMessage, 5);
+		}
+		
+		int total=0, min=0, fetched=0, fatal=0, failed=0;
+		boolean totalFinalized = false;
+		
+		if(progressMessage != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(progressMessage, 2);
+			if(progressMessage instanceof SimpleProgressMessage) {
+				SimpleProgressMessage msg = (SimpleProgressMessage)progressMessage;
+				total = (int) msg.getTotalBlocks();
+				min = (int) msg.getMinBlocks();
+				fetched = (int) msg.getFetchedBlocks();
+				fatal = (int) msg.getFatalyFailedBlocks();
+				failed = (int) msg.getFailedBlocks();
+				totalFinalized = msg.isTotalFinalized();
+			}
+		}
+		
+		FreenetURI targetURI = uri;
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(targetURI, Integer.MAX_VALUE);
+			targetURI = targetURI.clone();
+		}
+		
+		return new UploadDirRequestStatus(identifier, persistenceType, started, finished, 
+				succeeded, total, min, fetched, fatal, failed, totalFinalized, 
+				lastActivity, priorityClass, finalURI, targetURI, failureCode,
+				failureReasonShort, failureReasonLong, totalSize, numberOfFiles);
+	}
+	
+
 }

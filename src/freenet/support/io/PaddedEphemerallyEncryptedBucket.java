@@ -8,20 +8,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Random;
 
-import freenet.support.math.MersenneTwister;
-
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.support.HexUtil;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.math.MersenneTwister;
 
 /**
  * A proxy Bucket which adds:
@@ -30,12 +27,13 @@ import freenet.support.api.Bucket;
  * 
  * CRYPTO WARNING: This uses PCFB with no IV. That means it is only safe if the key is unique!
  */
-public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToFieldSetBucket {
+public class PaddedEphemerallyEncryptedBucket implements Bucket {
 
 	private final Bucket bucket;
 	private final int minPaddedSize;
 	/** The decryption key. */
 	private final byte[] key;
+	private final byte[] iv;
 	private final byte[] randomSeed;
 	private long dataLength;
 	private boolean readOnly;
@@ -70,69 +68,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		weakPRNG.nextBytes(randomSeed);
 		strongPRNG.nextBytes(tempKey);
 		this.key = tempKey;
+		this.iv = new byte[32];
+		strongPRNG.nextBytes(iv);
 		this.minPaddedSize = minSize;
 		readOnly = false;
 		lastOutputStream = 0;
 		dataLength = 0;
-	}
-
-	/**
-	 * Load an existing PaddedEphemerallyEncryptedBucket, with a key.
-	 * The bucket can and should already exist.
-	 * @param bucket
-	 * @param minSize
-	 * @param knownSize The size of the data. This cannot be deduced from the bucket
-	 * alone and must be specified. If the bucket is smaller than this, we throw.
-	 * @param key
-	 * @param origRandom
-	 * @throws IOException 
-	 */
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom) throws IOException {
-		if(bucket.size() < knownSize)
-			throw new IOException("Bucket "+bucket+" is too small on disk - knownSize="+knownSize+" but bucket.size="+bucket.size()+" for "+bucket);
-		this.dataLength = knownSize;
-		this.bucket = bucket;
-		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
-		randomSeed = new byte[32];
-		origRandom.nextBytes(randomSeed);
-		this.key = key;
-		this.minPaddedSize = minSize;
-		readOnly = false;
-		lastOutputStream = 0;
-	}
-
-	public PaddedEphemerallyEncryptedBucket(SimpleFieldSet fs, RandomSource origRandom, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
-		String tmp = fs.get("DataLength");
-		if(tmp == null)
-			throw new CannotCreateFromFieldSetException("No DataLength");
-		try {
-			dataLength = Long.parseLong(tmp);
-		} catch (NumberFormatException e) {
-			throw new CannotCreateFromFieldSetException("Corrupt dataLength: "+tmp, e);
-		}
-		SimpleFieldSet underlying = fs.subset("Underlying");
-		if(underlying == null)
-			throw new CannotCreateFromFieldSetException("No underlying bucket");
-		bucket = SerializableToFieldSetBucketUtil.create(underlying, origRandom, f);
-		tmp = fs.get("DecryptKey");
-		if(tmp == null)
-			throw new CannotCreateFromFieldSetException("No key");
-		key = HexUtil.hexToBytes(tmp);
-		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
-		tmp = fs.get("MinPaddedSize");
-		if(tmp == null)
-			throw new CannotCreateFromFieldSetException("No MinPaddedSize!");
-		else {
-			try {
-				minPaddedSize = Integer.parseInt(tmp);
-			} catch (NumberFormatException e) {
-				throw new CannotCreateFromFieldSetException("Corrupt dataLength: "+tmp, e);
-			}
-		}
-		if(dataLength > bucket.size())
-			throw new CannotCreateFromFieldSetException("Underlying bucket "+bucket+" is too small: should be "+dataLength+" actually "+bucket.size());
-		randomSeed = new byte[32];
-		origRandom.nextBytes(randomSeed);
 	}
 
 	public PaddedEphemerallyEncryptedBucket(PaddedEphemerallyEncryptedBucket orig, Bucket newBucket) {
@@ -143,6 +84,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		setReadOnly();
 		this.bucket = newBucket;
 		this.minPaddedSize = orig.minPaddedSize;
+		if(orig.iv != null) {
+			iv = new byte[32];
+			System.arraycopy(orig.iv, 0, iv, 0, 32);
+		} else {
+			iv = null;
+		}
 	}
 
 	public OutputStream getOutputStream() throws IOException {
@@ -165,8 +112,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			this.out = out;
 			dataLength = 0;
 			this.streamNumber = streamNumber;
-			Rijndael aes = getRijndael();
-			pcfb = PCFBMode.create(aes);
+			pcfb = getPCFB();
 		}
 		
 		@Override
@@ -253,8 +199,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		
 		public PaddedEphemerallyEncryptedInputStream(InputStream in) {
 			this.in = in;
-			Rijndael aes = getRijndael();
-			pcfb = PCFBMode.create(aes);
+			pcfb = getPCFB();
 			ptr = 0;
 		}
 		
@@ -346,6 +291,16 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		return aes;
 	}
 
+	public PCFBMode getPCFB() {
+		Rijndael aes = getRijndael();
+		if(iv != null)
+			return PCFBMode.create(aes, iv);
+		else
+			// FIXME CRYPTO We should probably migrate all old buckets automatically so we can get rid of this?
+			// Since the key is unique it is actually almost safe to use all zeros IV, but it's better to use a real IV.
+			return PCFBMode.create(aes);
+	}
+
 	public String getName() {
 		return "Encrypted:"+bucket.getName();
 	}
@@ -385,28 +340,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		return key;
 	}
 
-	public SimpleFieldSet toFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(false);
-		fs.putSingle("Type", "PaddedEphemerallyEncryptedBucket");
-		synchronized(this) {
-			fs.put("DataLength", dataLength);
-		}
-		if(key != null) {
-			fs.putSingle("DecryptKey", HexUtil.bytesToHex(key));
-		} else {
-			Logger.error(this, "Cannot serialize because no key");
-			return null;
-		}
-		if(bucket instanceof SerializableToFieldSetBucket) {
-			fs.put("Underlying", ((SerializableToFieldSetBucket)bucket).toFieldSet());
-		} else {
-			Logger.error(this, "Cannot serialize underlying bucket: "+bucket);
-			return null;
-		}
-		fs.put("MinPaddedSize", minPaddedSize);
-		return fs;
-	}
-
 	public void storeTo(ObjectContainer container) {
 		bucket.storeTo(container);
 		container.store(this);
@@ -425,7 +358,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		container.activate(bucket, 1);
 	}
 	
-	public Bucket createShadow() throws IOException {
+	public Bucket createShadow() {
 		Bucket newUnderlying = bucket.createShadow();
 		if(newUnderlying == null) return null;
 		return new PaddedEphemerallyEncryptedBucket(this, newUnderlying);

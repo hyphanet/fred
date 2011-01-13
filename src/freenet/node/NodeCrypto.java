@@ -31,6 +31,7 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker.Status;
 import freenet.io.comm.FreenetInetAddress;
+import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.keys.FreenetURI;
@@ -157,7 +158,7 @@ public class NodeCrypto {
 
 		socket.setDropProbability(config.getDropProbability());
 
-		socket.setLowLevelFilter(packetMangler = new FNPPacketMangler(node, this, socket));
+		packetMangler = new FNPPacketMangler(node, this, socket);
 
 		detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
 
@@ -282,6 +283,7 @@ public class NodeCrypto {
 	}
 
 	public void start() {
+		socket.setLowLevelFilter(new IncomingPacketFilterImpl(packetMangler, node, this));
 		packetMangler.start();
 		socket.start();
 	}
@@ -353,7 +355,7 @@ public class NodeCrypto {
 
 	SimpleFieldSet exportPublicCryptoFieldSet(boolean forSetup, boolean forAnonInitiator) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		int[] negTypes = packetMangler.supportedNegTypes();
+		int[] negTypes = packetMangler.supportedNegTypes(true);
 		if(!(forSetup || forAnonInitiator))
 			// Can't change on setup.
 			// Anonymous initiator doesn't need identity as we don't use it.
@@ -491,7 +493,7 @@ public class NodeCrypto {
 	public PeerNode[] getPeerNodes() {
 		if(node.peers == null) return null;
 		if(isOpennet)
-			return node.peers.getOpennetPeers();
+			return node.peers.getOpennetAndSeedServerPeers();
 		else
 			return node.peers.getDarknetPeers();
 	}
@@ -591,6 +593,14 @@ public class NodeCrypto {
 				return handle;
 			}
 		}
+	}
+
+	public boolean wantAnonAuth() {
+		return node.wantAnonAuth(isOpennet);
+	}
+	
+	public boolean wantAnonAuthChangeIP() {
+		return node.wantAnonAuthChangeIP(isOpennet);
 	}
 }
 
