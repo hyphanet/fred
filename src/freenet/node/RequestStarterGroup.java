@@ -419,10 +419,14 @@ public class RequestStarterGroup {
 	}
 
 	public void setUseAIMDs(boolean val) {
-		chkFetchScheduler.setUseAIMDs(val);
-		sskFetchScheduler.setUseAIMDs(val);
-		chkPutScheduler.setUseAIMDs(val);
-		sskPutScheduler.setUseAIMDs(val);
+		chkFetchSchedulerBulk.setUseAIMDs(val);
+		sskFetchSchedulerBulk.setUseAIMDs(val);
+		chkPutSchedulerBulk.setUseAIMDs(val);
+		sskPutSchedulerBulk.setUseAIMDs(val);
+		chkFetchSchedulerRT.setUseAIMDs(val);
+		sskFetchSchedulerRT.setUseAIMDs(val);
+		chkPutSchedulerRT.setUseAIMDs(val);
+		sskPutSchedulerRT.setUseAIMDs(val);
 	}
 	
 }
