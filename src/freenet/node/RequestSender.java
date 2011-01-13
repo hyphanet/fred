@@ -363,6 +363,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
             int tryCount = 0;
             
+            long startedTryingPeer = System.currentTimeMillis();
+            
         loadWaiterLoop:
         	while(true) {
             
@@ -457,7 +459,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	}
             } // loadWaiterLoop
             
-            if(logMINOR) Logger.minor(this, "Took "+tryCount+" tries");
+            long now = System.currentTimeMillis();
+            if(logMINOR) Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(now-startedTryingPeer));
             
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
