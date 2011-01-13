@@ -426,7 +426,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					next = waited;
         					expectedAcceptState = waiter.getAcceptedState();
         					long endTime = System.currentTimeMillis();
-        					if(logMINOR) Logger.minor(this, "Sending to "+next+ " after waited for "+TimeUtil.formatTime(endTime-startTime));
+        					if(logMINOR) Logger.minor(this, "Sending to "+next+ " after waited for "+TimeUtil.formatTime(endTime-startTime)+" realtime="+realTimeFlag);
         				}
         				
         			}
