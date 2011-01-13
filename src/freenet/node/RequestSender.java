@@ -365,6 +365,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
             long startedTryingPeer = System.currentTimeMillis();
             
+            boolean waitedForLoadManagement = false;
+            boolean retriedForLoadManagement = false;
+            
         loadWaiterLoop:
         	while(true) {
             
@@ -386,6 +389,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			} else {
         				if(logMINOR)
         					Logger.minor(this, "Cannot send to "+next);
+        				waitedForLoadManagement = true;
         				SlotWaiter waiter = next.createSlotWaiter(origTag, isSSK ? RequestType.SSK_REQUEST : RequestType.CHK_REQUEST, false, realTimeFlag);
         				waiter.addWaitingFor(next);
         				if(waiter.waitForAny() == null) {
@@ -450,7 +454,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	DO action = waitForAccepted(expectedAcceptState);
             	// Here FINISHED means accepted, WAIT means try again (soft reject).
             	if(action == DO.WAIT) {
-					//retriedForLoadManagement = true;
+					retriedForLoadManagement = true;
             		continue loadWaiterLoop;
             	} else if(action == DO.NEXT_PEER) {
             		continue peerLoop;
@@ -460,7 +464,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             } // loadWaiterLoop
             
             long now = System.currentTimeMillis();
-            if(logMINOR) Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(now-startedTryingPeer));
+            if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
+            	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(now-startedTryingPeer)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement);
             
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
