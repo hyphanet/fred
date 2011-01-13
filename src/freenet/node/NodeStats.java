@@ -1161,6 +1161,9 @@ public class NodeStats implements Persistable {
 		// Even if we do we still need to allow the guaranteed allocation for each peer.
 		// Except when we do that, we have to offer it via ULPRs afterwards ...
 		// Yes but the GetOfferedKey's are subject to load management, so no problem.
+		if(bandwidthLiabilityOutput > bandwidthAvailableOutputUpperLimit) {
+			Logger.warning(this, "Above upper limit. Not rejecting as this can occasionally happen due to reassigns: upper limit "+bandwidthAvailableOutputUpperLimit+" usage is "+bandwidthLiabilityOutput);
+		}
 		
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutputLowerLimit) {
 			
