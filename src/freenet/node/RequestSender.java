@@ -33,6 +33,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.node.FailureTable.BlockOffer;
 import freenet.node.FailureTable.OfferList;
+import freenet.node.NodeStats.RequestType;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.PeerNode.OutputLoadTracker;
 import freenet.node.PeerNode.RequestLikelyAcceptedState;
@@ -358,14 +359,56 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 return;
             }
             
+            boolean triedLikely = false;
+            boolean triedLikelyAgain = false;
+            boolean triedAll = false;
+            
         loadWaiterLoop:
         	while(true) {
             
-        		RequestLikelyAcceptedState expectedAcceptState = 
+        		RequestLikelyAcceptedState expectedAcceptState;
+        		expectedAcceptState = 
         			next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.UNKNOWN, false);
         		
-        		if(logMINOR && expectedAcceptState != null) 
-        			Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState);
+        		if(expectedAcceptState == RequestLikelyAcceptedState.UNKNOWN) {
+        			// No stats, old style, just go for it.
+        			// This can happen both when talking to an old node and when we've just connected, but should not be the case for long enough to be a problem.
+        			triedAll = true;
+        		} else {
+        			RequestLikelyAcceptedState minAcceptable = 
+        				triedLikely ? RequestLikelyAcceptedState.GUARANTEED :
+        					RequestLikelyAcceptedState.LIKELY;
+        			expectedAcceptState = 
+        				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, minAcceptable, false);
+        			
+        			if(expectedAcceptState != null) {
+        				if(logMINOR)
+        					Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState);
+        				if(expectedAcceptState == RequestLikelyAcceptedState.LIKELY) {
+        					if(triedLikely) {
+        						if(triedLikelyAgain) triedAll = true;
+        						else triedLikelyAgain = true;
+        					} else {
+        						triedLikely = true;
+        					}
+        				}
+        			} else {
+        				if(logMINOR)
+        					Logger.minor(this, "Cannot send to "+next+" : does not meet threshold "+minAcceptable);
+        				SlotWaiter waiter = next.createSlotWaiter(origTag, isSSK ? RequestType.SSK_REQUEST : RequestType.CHK_REQUEST, false, realTimeFlag);
+        				waiter.addWaitingFor(next);
+        				if(waiter.waitForAny() == null) {
+        					// Broken due to low capacity???
+        					Logger.error(this, "Unable to route even after waiting to "+next);
+        					// Try another peer
+        					continue peerLoop;
+        				} else {
+        					expectedAcceptState = waiter.getAcceptedState();
+        				}
+        				
+        			}
+        			// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
+        		}
         		
         		synchronized(this) {
         			lastNode = next;
