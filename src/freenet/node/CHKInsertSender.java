@@ -623,6 +623,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 								} else {
 									// Our task is complete, one node (quite deep), has accepted the insert.
 									// The request will not be routed to any other nodes, this is where the data *should* be.
+									// We will removeRoutingTo() after the node has sent the transfer completion notice, which never happens before the InsertReply.
 									return;
 								}
 				            }
@@ -670,6 +671,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				} else {
 					// Our task is complete, one node (quite deep), has accepted the insert.
 					// The request will not be routed to any other nodes, this is where the data *should* be.
+					// We will removeRoutingTo() after the node has sent the transfer completion notice, which never happens before the InsertReply.
 					finish(SUCCESS, next);
 					return;
 				}
