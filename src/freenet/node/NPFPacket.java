@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -32,6 +33,10 @@ class NPFPacket {
 	private int sequenceNumber;
 	private final SortedSet<Integer> acks = new TreeSet<Integer>();
 	private final LinkedList<MessageFragment> fragments = new LinkedList<MessageFragment>();
+	/** Messages that are specific to a single packet and can be happily lost if it is lost. 
+	 * They must be processed before the rest of the messages.
+	 * With early versions, these might be bogus, so be careful parsing them. */
+	private final LinkedList<byte[]> lossyMessages = new LinkedList<byte[]>();
 	private boolean error;
 	private int length = 5; //Sequence number (4), numAcks(1)
 
@@ -81,7 +86,8 @@ class NPFPacket {
 			boolean firstFragment = (plaintext[offset] & 0x20) != 0;
 
 			if(!isFragmented && !firstFragment) {
-				//Remainder of packet is padding
+				// Padding or lossy messages.
+				offset = tryParseLossyMessages(packet, plaintext, offset);
 				break;
 			}
 
@@ -166,8 +172,36 @@ class NPFPacket {
 			packet.fragments.add(new MessageFragment(shortMessage, isFragmented, firstFragment,
 			                messageID, fragmentLength, messageLength, fragmentOffset, fragmentData, null));
 		}
+		
+		packet.length = offset;
 
 		return packet;
+	}
+
+	private static int tryParseLossyMessages(NPFPacket packet,
+			byte[] plaintext, int offset) {
+		int origOffset = offset;
+		while(true) {
+			if(plaintext[offset] != 0x1F)
+				return offset; // Padding
+			// Else it might be some per-packet lossy messages
+			offset++;
+			if(offset >= plaintext.length) {
+				packet.lossyMessages.clear();
+				return origOffset;
+			}
+			int len = plaintext[offset] & 0xFF;
+			offset++;
+			if(len > plaintext.length - offset) {
+				packet.lossyMessages.clear();
+				return origOffset;
+			}
+			byte[] fragment = new byte[len];
+			System.arraycopy(plaintext, offset, fragment, 0, len);
+			packet.lossyMessages.add(fragment);
+			offset += len;
+			if(offset == plaintext.length) return offset;
+		}
 	}
 
 	public int toBytes(byte[] buf, int offset, Random paddingGen) {
@@ -242,6 +276,16 @@ class NPFPacket {
 			System.arraycopy(fragment.fragmentData, 0, buf, offset, fragment.fragmentLength);
 			offset += fragment.fragmentLength;
 		}
+		
+		if(!lossyMessages.isEmpty()) {
+			for(byte[] msg : lossyMessages) {
+				buf[offset++] = 0x1F;
+				assert(msg.length <= 255);
+				buf[offset++] = (byte) msg.length;
+				System.arraycopy(msg, 0, buf, offset, msg.length);
+				offset += msg.length;
+			}
+		}
 
 		if(offset < buf.length) {
 			//More room, so add padding
@@ -249,7 +293,10 @@ class NPFPacket {
 			paddingGen.nextBytes(padding);
 			System.arraycopy(padding, 0, buf, offset, padding.length);
 
-			buf[offset] = (byte) (buf[offset] & 0x9F); //Make sure firstFragment and isFragmented isn't set
+			byte b = (byte) (buf[offset] & 0x9F); //Make sure firstFragment and isFragmented isn't set
+			if(b == 0x1F)
+				b += 1; // Make sure it doesn't match the pattern for lossy messages
+			buf[offset] = b;
 		}
 
 		return offset;
@@ -292,6 +339,31 @@ class NPFPacket {
 		oldMsgIDLength = msgIDLength;
 
 		return length;
+	}
+	
+	public int addLossyMessage(byte[] buf) {
+		if(buf.length > 255) throw new IllegalArgumentException();
+		lossyMessages.add(buf);
+		length += buf.length + 2;
+		return length;
+	}
+	
+	public boolean addLossyMessage(byte[] buf, int maxPacketSize) {
+		if(length + buf.length + 2 > maxPacketSize) return false;
+		if(buf.length > 255) throw new IllegalArgumentException();
+		lossyMessages.add(buf);
+		length += buf.length + 2;
+		return true;
+	}
+	
+	public void removeLossyMessage(byte[] buf) {
+		lossyMessages.remove(buf);
+	}
+	/** Get the list of lossy messages. Note that for early versions these may be bogus,
+	 * so be careful when parsing them. Note also that these must be processed before the
+	 * rest of the messages on the packet. */
+	public List<byte[]> getLossyMessages() {
+		return lossyMessages;
 	}
 
 	public boolean getError() {

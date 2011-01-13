@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.util.Arrays;
+import java.util.Random;
 
 import junit.framework.TestCase;
 
@@ -314,11 +315,85 @@ public class NPFPacketTest extends TestCase {
 		p.addMessageFragment(new MessageFragment(true, false, true, 2500, 10, 10, 0, new byte[10], null));
 		assertEquals(46, p.getLength());
 	}
+	
+	public void testEncodeDecodeLossyPerPacketMessages() {
+		NPFPacket p = new NPFPacket();
+		byte[] fragData = new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};
+		p.addMessageFragment(new MessageFragment(true, false, true, 0, 8, 8, 0,
+                fragData, null));
+		byte[] lossyFragment = new byte[] { (byte)0xFF, (byte)0xEE, (byte)0xDD, (byte)0xCC, (byte)0xBB, (byte)0xAA};
+		p.addLossyMessage(lossyFragment);
+		byte[] encoded = new byte[p.getLength()];
+		p.toBytes(encoded, 0, null);
+		NPFPacket received = NPFPacket.create(encoded);
+		assertEquals(1, received.getFragments().size());
+		assertEquals(0, received.countAcks());
+		assertEquals(1, received.getLossyMessages().size());
+		assertEquals(encoded.length, received.getLength());
+		byte[] decodedFragData = received.getFragments().get(0).fragmentData;
+		checkEquals(fragData, decodedFragData);
+		byte[] decodedLossyMessage = received.getLossyMessages().get(0);
+		checkEquals(lossyFragment, decodedLossyMessage);
+	}
+
+	public void testEncodeDecodeLossyPerPacketMessages2() {
+		NPFPacket p = new NPFPacket();
+		byte[] fragData = new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};
+		p.addMessageFragment(new MessageFragment(true, false, true, 0, 8, 8, 0,
+                fragData, null));
+		byte[] lossyFragment = new byte[] { (byte)0xFF, (byte)0xEE, (byte)0xDD, (byte)0xCC, (byte)0xBB, (byte)0xAA};
+		byte[] lossyFragment2 = new byte[] { (byte)0xAA, (byte)0x99, (byte)0x88, (byte)0x77, (byte)0x66, (byte)0x55};
+		p.addLossyMessage(lossyFragment);
+		p.addLossyMessage(lossyFragment2);
+		byte[] encoded = new byte[p.getLength()];
+		p.toBytes(encoded, 0, null);
+		NPFPacket received = NPFPacket.create(encoded);
+		assertEquals(1, received.getFragments().size());
+		assertEquals(0, received.countAcks());
+		assertEquals(2, received.getLossyMessages().size());
+		assertEquals(encoded.length, received.getLength());
+		byte[] decodedFragData = received.getFragments().get(0).fragmentData;
+		checkEquals(fragData, decodedFragData);
+		byte[] decodedLossyMessage = received.getLossyMessages().get(0);
+		checkEquals(lossyFragment, decodedLossyMessage);
+		decodedLossyMessage = received.getLossyMessages().get(1);
+		checkEquals(lossyFragment2, decodedLossyMessage);
+	}
+
+	public void testEncodeDecodeLossyPerPacketMessages2Padded() {
+		NPFPacket p = new NPFPacket();
+		byte[] fragData = new byte[] {(byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xAB, (byte)0xCD, (byte)0xEF};
+		p.addMessageFragment(new MessageFragment(true, false, true, 0, 8, 8, 0,
+                fragData, null));
+		byte[] lossyFragment = new byte[] { (byte)0xFF, (byte)0xEE, (byte)0xDD, (byte)0xCC, (byte)0xBB, (byte)0xAA};
+		byte[] lossyFragment2 = new byte[] { (byte)0xAA, (byte)0x99, (byte)0x88, (byte)0x77, (byte)0x66, (byte)0x55};
+		p.addLossyMessage(lossyFragment);
+		p.addLossyMessage(lossyFragment2);
+		byte[] encoded = new byte[p.getLength() + 20];
+		int randomSeed = new Random().nextInt();
+		p.toBytes(encoded, 0, new Random(randomSeed));
+		NPFPacket received = NPFPacket.create(encoded);
+		assertEquals(1, received.getFragments().size());
+		assertEquals(0, received.countAcks());
+		assertEquals("Seed was "+randomSeed, 2, received.getLossyMessages().size());
+		assertEquals(p.getLength(), received.getLength());
+		assertEquals(encoded.length - 20, received.getLength());
+		byte[] decodedFragData = received.getFragments().get(0).fragmentData;
+		checkEquals(fragData, decodedFragData);
+		byte[] decodedLossyMessage = received.getLossyMessages().get(0);
+		checkEquals(lossyFragment, decodedLossyMessage);
+		decodedLossyMessage = received.getLossyMessages().get(1);
+		checkEquals(lossyFragment2, decodedLossyMessage);
+	}
 
 	private void checkPacket(NPFPacket packet, byte[] correctData) {
 		byte[] data = new byte[packet.getLength()];
 		packet.toBytes(data, 0, null);
-
+		
+		checkEquals(correctData, data);
+	}
+	
+	public static void checkEquals(byte[] correctData, byte[] data) {
 		assertEquals("Packet lengths differ:", correctData.length, data.length);
 		for(int i = 0; i < data.length; i++) {
 			if(data[i] != correctData[i]) {

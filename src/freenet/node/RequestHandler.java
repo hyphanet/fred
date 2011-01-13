@@ -206,7 +206,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			if(!sentRejectedOverload) {
 				// Forward RejectedOverload
 				//Note: This message is only decernable from the terminal messages by the IS_LOCAL flag being false. (!IS_LOCAL)->!Terminal
-				Message msg = DMT.createFNPRejectedOverload(uid, false);
+				Message msg = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
 				source.sendAsync(msg, null, this);
 				//If the status changes (e.g. to SUCCESS), there is little need to send yet another reject overload.
 				sentRejectedOverload = true;
@@ -329,8 +329,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		synchronized(this) {
 			if(this.status == RequestSender.NOT_FINISHED)
 				this.status = status;
-			else
+			else {
+				if(logMINOR) Logger.minor(this, "Ignoring onRequestSenderFinished as status is already "+this.status);
 				return;
+			}
 			tooLate = responseDeadline > 0 && now > responseDeadline;
 		}
 		
@@ -342,9 +344,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			PeerNode routedLast = rs == null ? null : rs.routedLast();
 			// A certain number of these are normal.
 			Logger.normal(this, "requestsender took too long to respond to requestor (" + TimeUtil.formatTime((now - searchStartTime), 2, true) + "/" + (rs == null ? "null" : rs.getStatusString()) + ") routed to " + (routedLast == null ? "null" : routedLast.shortToString()));
-			applyByteCounts();
-			unregisterRequestHandlerWithNode();
-			return;
+			// We need to send the RejectedOverload (or whatever) anyway, for two-stage timeout.
+			// Otherwise the downstream node will assume it's our fault.
 		}
 
 		if(status == RequestSender.NOT_FINISHED)
@@ -369,7 +370,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					// Locally generated.
 					// Propagate back to source who needs to reduce send rate
 					///@bug: we may not want to translate fatal timeouts into non-fatal timeouts.
-					Message reject = DMT.createFNPRejectedOverload(uid, true);
+					Message reject = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
 					sendTerminal(reject);
 					return;
 				case RequestSender.ROUTE_NOT_FOUND:
@@ -390,7 +391,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						maybeCompleteTransfer();
 						return;
 					}
-					reject = DMT.createFNPRejectedOverload(uid, true);
+					reject = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
 					sendTerminal(reject);
 					return;
 				case RequestSender.TRANSFER_FAILED:
@@ -403,7 +404,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					return;
 				default:
 					// Treat as internal error
-					reject = DMT.createFNPRejectedOverload(uid, true);
+					reject = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
 					sendTerminal(reject);
 					throw new IllegalStateException("Unknown status code " + status);
 			}
@@ -433,7 +434,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				// Bug! This is impossible!
 				Logger.error(this, "Status is "+status+" but we never started a transfer on " + uid);
 				// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
-				reject = DMT.createFNPRejectedOverload(uid, true);
+				reject = DMT.createFNPRejectedOverload(uid, true, false, false);
 			} else {
 				xferFinished = readyToFinishTransfer();
 				xferSuccess = transferSuccess;

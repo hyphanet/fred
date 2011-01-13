@@ -3,8 +3,8 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger.LogLevel;
 
 /**
@@ -39,6 +39,10 @@ public abstract class UIDTag {
 	private HashSet<PeerNode> currentlyRoutingTo = null;
 	/** Node we are currently doing an offered-key-fetch from */
 	private HashSet<PeerNode> fetchingOfferedKeyFrom = null;
+	/** We are waiting for two stage timeouts from these nodes. If the handler is unlocked
+	 * and there are still nodes in the above two, we will log an error; but if those nodes
+	 * are here too, we will reassignTagToSelf and not log an error. */
+	private HashSet<PeerNode> handlingTimeouts = null;
 	protected boolean notRoutedOnwards;
 	final long uid;
 	
@@ -101,6 +105,9 @@ public abstract class UIDTag {
 		synchronized(this) {
 			if(fetchingOfferedKeyFrom == null) return;
 			fetchingOfferedKeyFrom.remove(next);
+			if(handlingTimeouts != null) {
+				handlingTimeouts.remove(next);
+			}
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
@@ -112,6 +119,9 @@ public abstract class UIDTag {
 		synchronized(this) {
 			if(currentlyRoutingTo == null) return;
 			currentlyRoutingTo.remove(next);
+			if(handlingTimeouts != null) {
+				handlingTimeouts.remove(next);
+			}
 			if(!mustUnlock()) return;
 			noRecordUnlock = this.noRecordUnlock;
 		}
@@ -187,13 +197,47 @@ public abstract class UIDTag {
 		if(hasUnlocked) return false;
 		if(!unlockedHandler) return false;
 		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
-			if(!(reassigned || wasLocal))
-				Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo+" yet not reassigned on "+this, new Exception("debug"));
+			if(!(reassigned || wasLocal)) {
+				boolean expected = false;
+				if(handlingTimeouts != null) {
+					expected = true;
+					for(PeerNode pn : currentlyRoutingTo) {
+						if(handlingTimeouts.contains(pn)) {
+							if(logMINOR) Logger.debug(this, "Still waiting for "+pn.shortToString()+" but expected because handling timeout in unlockHandler - will reassign to self to resolve timeouts");
+							continue;
+						}
+						expected = false;
+					}
+				}
+				if(!expected) {
+					if(handlingTimeouts != null)
+						Logger.normal(this, "Unlocked handler but still routing to "+currentlyRoutingTo+" - expected because have timed out so a fork might have succeeded and we might be waiting for the original");
+					else
+						Logger.error(this, "Unlocked handler but still routing to "+currentlyRoutingTo+" yet not reassigned on "+this, new Exception("debug"));
+				} else
+					reassignToSelf();
+			}
 			return false;
 		}
 		if(fetchingOfferedKeyFrom != null && !fetchingOfferedKeyFrom.isEmpty()) {
-			if(!(reassigned || wasLocal))
-				Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom+" yet not reassigned on "+this, new Exception("debug"));
+			if(!(reassigned || wasLocal)) {
+				boolean expected = false;
+				if(handlingTimeouts != null) {
+					expected = true;
+					for(PeerNode pn : fetchingOfferedKeyFrom) {
+						if(handlingTimeouts.contains(pn)) {
+							if(logMINOR) Logger.debug(this, "Still waiting for "+pn.shortToString()+" but expected because handling timeout in unlockHandler - will reassign to self to resolve timeouts");
+							continue;
+						}
+						expected = false;
+					}
+				}
+				if(!expected)
+					// Fork succeeds can't happen for fetch-offered-keys.
+					Logger.error(this, "Unlocked handler but still fetching offered keys from "+fetchingOfferedKeyFrom+" yet not reassigned on "+this, new Exception("debug"));
+				else
+					reassignToSelf();
+			}
 			return false;
 		}
 		Logger.normal(this, "Unlocking "+this, new Exception("debug"));
@@ -236,6 +280,17 @@ public abstract class UIDTag {
 		if(fetchingOfferedKeyFrom != null)
 			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
 		return sb.toString();
+	}
+
+	/** Mark a peer as handling a timeout. Hence if when the handler is unlocked, this 
+	 * peer is still marked as routing to (or fetching offered keys from), rather than 
+	 * logging an error, we will reassign this tag to self, to wait for the fatal timeout.
+	 * @param next
+	 */
+	public synchronized void handlingTimeout(PeerNode next) {
+		if(handlingTimeouts == null)
+			handlingTimeouts = new HashSet<PeerNode>();
+		handlingTimeouts.add(next);
 	}
 
 }

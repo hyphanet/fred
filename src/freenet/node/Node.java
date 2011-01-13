@@ -750,6 +750,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final short DEFAULT_MAX_HTL = (short)18;
 	private short maxHTL;
 	private boolean skipWrapperWarning;
+	private int maxPacketSize;
 	/** Should inserts ignore low backoff times by default? */
 	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
@@ -2524,6 +2525,30 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 
 		skipWrapperWarning = nodeConfig.getBoolean("skipWrapperWarning");
+		
+		nodeConfig.register("maxPacketSize", 1280, sortOrder++, true, true, "Node.maxPacketSize", "Node.maxPacketSizeLong", new IntCallback() {
+
+			@Override
+			public Integer get() {
+				synchronized(Node.this) {
+					return maxPacketSize;
+				}
+			}
+
+			@Override
+			public void set(Integer val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				synchronized(Node.this) {
+					if(val == maxPacketSize) return;
+					if(val < UdpSocketHandler.MIN_MTU) throw new InvalidConfigValueException("Must be over 576");
+					if(val > 1492) throw new InvalidConfigValueException("Larger than ethernet frame size unlikely to work!");
+					maxPacketSize = val;
+				}
+			}
+			
+		}, true);
+		
+		maxPacketSize = nodeConfig.getInt("maxPacketSize");
 
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
@@ -6244,5 +6269,16 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	public boolean getUseSlashdotCache() {
 		return useSlashdotCache;
+	}
+
+
+	public int getMinimumMTU() {
+		int mtu;
+		synchronized(this) {
+			mtu = maxPacketSize;
+		}
+		int detected = ipDetector.getMinimumDetectedMTU();
+		if(detected < mtu) return detected;
+		return mtu;
 	}
 }

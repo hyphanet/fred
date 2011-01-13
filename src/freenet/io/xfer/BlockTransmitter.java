@@ -359,14 +359,39 @@ public class BlockTransmitter {
 		}
 		if(blockSendsPending != 0) {
 			if(logMINOR) Logger.minor(this, "maybeFail() waiting for "+blockSendsPending+" block sends on "+this);
-			return nullFuture; // Wait for blockSendsPending to reach 0
+			if(_sentSendAborted)
+				return nullFuture; // Wait for blockSendsPending to reach 0
+			else {
+				_sentSendAborted = true;
+				// They have sent us a cancel, but we still need to send them an ack or they will do a fatal timeout.
+				return new Future() {
+
+					public void execute() {
+						try {
+							innerSendAborted(reason, description);
+						} catch (NotConnectedException e) {
+							onDisconnect();
+						}
+					}
+				
+				};
+			}
 		}
 		if(logMINOR) Logger.minor(this, "maybeFail() completing on "+this);
 		_completed = true;
 		decRunningBlockTransmits();
+		final boolean sendAborted = _sentSendAborted;
+		_sentSendAborted = true;
 		return new Future() {
 
 			public void execute() {
+				if(!sendAborted) {
+					try {
+						innerSendAborted(reason, description);
+					} catch (NotConnectedException e) {
+						onDisconnect();
+					}
+				}
 				callCallback(false);
 			}
 			

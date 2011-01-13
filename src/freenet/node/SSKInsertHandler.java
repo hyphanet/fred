@@ -230,7 +230,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             if((!receivedRejectedOverload) && sender.receivedRejectedOverload()) {
             	receivedRejectedOverload = true;
             	// Forward it
-            	Message m = DMT.createFNPRejectedOverload(uid, false);
+            	Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
             	try {
 					source.sendSync(m, this);
 				} catch (NotConnectedException e) {
@@ -276,7 +276,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             if((status == SSKInsertSender.TIMED_OUT) ||
             		(status == SSKInsertSender.GENERATED_REJECTED_OVERLOAD) ||
             		(status == SSKInsertSender.INTERNAL_ERROR)) {
-                Message msg = DMT.createFNPRejectedOverload(uid, true);
+                Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
                 try {
 					source.sendSync(msg, this);
 				} catch (NotConnectedException e) {
@@ -319,7 +319,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             
             // Otherwise...?
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
-            Message msg = DMT.createFNPRejectedOverload(uid, true);
+            Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
             try {
 				source.sendSync(msg, this);
 			} catch (NotConnectedException e) {

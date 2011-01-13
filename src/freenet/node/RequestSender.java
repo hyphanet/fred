@@ -22,6 +22,7 @@ import freenet.io.comm.RetrievalException;
 import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
+import freenet.io.xfer.BlockReceiver.BlockReceiverTimeoutHandler;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
@@ -90,6 +91,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private boolean hasForwarded;
     private PeerNode transferringFrom;
     private boolean turtleMode;
+    private boolean reassignedToSelfDueToMultipleTimeouts;
     private boolean sentBackoffTurtle;
     /** Set when we start to think about going to turtle mode - not unset if we get cancelled instead. */
     private boolean tryTurtle;
@@ -104,7 +106,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private int gotMessages;
     private String lastMessage;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
-    private long deadline;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -218,6 +219,27 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     }
     
     public void run() {
+    	node.getTicker().queueTimedJob(new Runnable() {
+    		
+    		public void run() {
+    			// Because we can reroute, and we apply the same timeout for each peer,
+    			// it is possible for us to exceed the timeout. In which case the downstream
+				// node will get impatient. So we need to reassign to self when this happens,
+				// so that we don't ourselves get blamed.
+				
+				synchronized(this) {
+					if(status != NOT_FINISHED) return;
+					if(transferringFrom != null) return;
+					reassignedToSelfDueToMultipleTimeouts = true;
+				}
+				
+				// We are still routing, yet we have exceeded the per-peer timeout, probably due to routing to multiple nodes e.g. RNFs and accepted timeouts.
+				Logger.normal(this, "Reassigning to self on timeout: "+RequestSender.this);
+				
+				reassignToSelfOnTimeout();
+			}
+    		
+    	}, fetchTimeout);
         try {
         	realRun();
         } catch (Throwable t) {
@@ -306,6 +328,20 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.REJECT_TIME, source);
                 return;
             }
+            
+            // If we are unable to reply in a reasonable time, and we haven't started a 
+            // transfer, we should not route further. There are other cases e.g. we 
+            // reassign to self (due to external timeout) while waiting for the data, then
+            // get a transfer without timing out on the node. In that case we will get the
+            // data, but just for ourselves.
+            boolean failed;
+            synchronized(this) {
+            	failed = reassignedToSelfDueToMultipleTimeouts;
+            }
+            if(failed) {
+            	finish(TIMED_OUT, null, false);
+            	return;
+            }
 
 			routeAttempts++;
             
@@ -386,12 +422,11 @@ loadWaiterLoop:
             
             gotMessages = 0;
             lastMessage = null;
-            deadline = System.currentTimeMillis() + fetchTimeout;
             
             synchronized(this) {
             	receivingAsync = true;
             }
-            WaitForAcceptedCallback cb = new WaitForAcceptedCallback(lastNode);
+            MainLoopCallback cb = new MainLoopCallback(lastNode, false);
             cb.schedule();
             return;
         }
@@ -401,26 +436,34 @@ loadWaiterLoop:
     	return (int) (System.currentTimeMillis() - timeSentRequest);
     }
     
-    private class WaitForAcceptedCallback implements SlowAsyncMessageFilterCallback {
+    private class MainLoopCallback implements SlowAsyncMessageFilterCallback {
     	
     	// Needs to be a separate class so it can check whether the main loop has moved on to another peer.
     	// If it has
     	
     	private final PeerNode waitingFor;
+    	private final boolean noReroute;
+    	private final long deadline;
 
-		public WaitForAcceptedCallback(PeerNode source) {
+		public MainLoopCallback(PeerNode source, boolean noReroute) {
 			waitingFor = source;
+			this.noReroute = noReroute;
+			deadline = System.currentTimeMillis() + fetchTimeout;
 		}
 
 		public void onMatched(Message msg) {
 			
-        	DO action = handleMessage(msg);
+			assert(waitingFor == msg.getSource());
+			
+        	DO action = handleMessage(msg, noReroute, waitingFor);
         	
         	if(action == DO.FINISHED)
         		return;
         	else if(action == DO.NEXT_PEER) {
-        		// Try another peer
-        		routeRequests();
+        		if(!noReroute) {
+        			// Try another peer
+        			routeRequests();
+        		}
         	} else /*if(action == DO.WAIT)*/ {
         		// Try again.
         		schedule();
@@ -431,7 +474,7 @@ loadWaiterLoop:
         	long now = System.currentTimeMillis();
         	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - now));
         	if(timeout >= 0) {
-        		MessageFilter mf = createMessageFilter(timeout);
+        		MessageFilter mf = createMessageFilter(timeout, waitingFor);
         		try {
         			node.usm.addAsyncFilter(mf, this, RequestSender.this);
         		} catch (DisconnectedException e) {
@@ -452,27 +495,68 @@ loadWaiterLoop:
 
 		public void onTimeout() {
 			synchronized(RequestSender.this) {
-				if(lastNode != waitingFor) {
-					if(logMINOR) Logger.minor(this, "Timeout but has moved on: waiting for "+waitingFor+" but moved on to "+lastNode+" on "+uid);
-					return;
-				}
-				if(status != -1) {
-					if(logMINOR) Logger.minor(this, "Timed out but already set status to "+status);
-					return;
+				if(!noReroute) {
+					if(lastNode != waitingFor) {
+						if(logMINOR) Logger.minor(this, "Timeout but has moved on: waiting for "+waitingFor+" but moved on to "+lastNode+" on "+uid);
+						return;
+					}
+					if(status != -1) {
+						if(logMINOR) Logger.minor(this, "Timed out but already set status to "+status);
+						return;
+					}
 				}
 			}
-			Logger.error(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid);
-    		// Fatal timeout
-    		next.localRejectedOverload("FatalTimeout");
-    		forwardRejectedOverload();
-    		finish(TIMED_OUT, next, false);
-    		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
-    		// Finished, can't try another node as timed out.
+			Logger.error(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
+			if(noReroute) {
+				waitingFor.localRejectedOverload("FatalTimeoutForked");
+			} else {
+				// Fatal timeout
+				waitingFor.localRejectedOverload("FatalTimeout");
+				forwardRejectedOverload();
+				finish(TIMED_OUT, waitingFor, false);
+				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.REJECT_TIME, source);
+			}
+    		
+			// Wait for second timeout.
+    		// FIXME make this async.
+    		long deadline = System.currentTimeMillis() + fetchTimeout;
+			while(true) {
+				
+				Message msg;
+				try {
+		        	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis()));
+					msg = node.usm.waitFor(createMessageFilter(timeout, waitingFor), RequestSender.this);
+				} catch (DisconnectedException e) {
+					Logger.normal(this, "Disconnected from " + next
+							+ " while waiting for InsertReply on " + this);
+					origTag.removeRoutingTo(next);
+					return;
+				}
+				
+				if(msg == null) {
+					// Second timeout.
+					Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
+					next.fatalTimeout();
+					origTag.removeRoutingTo(next);
+					return;
+				}
+				
+				DO action = handleMessage(msg, noReroute, waitingFor);
+				
+				if(action == DO.FINISHED)
+					return;
+				else if(action == DO.NEXT_PEER) {
+					origTag.removeRoutingTo(next);
+					return; // Don't try others
+				}
+				// else if(action == DO.WAIT) continue;
+			}
 		}
 
 		public void onDisconnect(PeerContext ctx) {
 			Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
 			next.noLongerRoutingTo(origTag, false);
+			if(noReroute) return;
 			// Try another peer.
 			routeRequests();
 		}
@@ -483,6 +567,10 @@ loadWaiterLoop:
 
 		public int getPriority() {
 			return NativeThread.NORM_PRIORITY;
+		}
+		
+		public String toString() {
+			return super.toString()+":"+waitingFor+":"+noReroute+":"+RequestSender.this;
 		}
     	
     };
@@ -541,6 +629,9 @@ loadWaiterLoop:
         		if(reply == null) {
         			// We gave it a chance, don't give it another.
         			offers.deleteLastOffer();
+        			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+        			// FIXME bug #4613 consider two-stage timeout.
+        			pn.fatalTimeout();
     	        	origTag.removeFetchingOfferedKeyFrom(pn);
         			continue;
         		} else {
@@ -560,7 +651,11 @@ loadWaiterLoop:
 					continue;
 				}
         		if(reply == null) {
+        			// We gave it a chance, don't give it another.
             		offers.deleteLastOffer();
+        			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+        			// FIXME bug #4613 consider two-stage timeout.
+        			pn.fatalTimeout();
     	        	origTag.removeFetchingOfferedKeyFrom(pn);
         			continue;
         		} else {
@@ -696,7 +791,7 @@ loadWaiterLoop:
         		}
         		fireCHKTransferBegins();
 				
-        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag);
+        		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
         		
        			if(logMINOR) Logger.minor(this, "Receiving data");
        			final PeerNode p = pn;
@@ -761,21 +856,8 @@ loadWaiterLoop:
     	while(true) {
     		
     		Message msg;
-    		/**
-    		 * What are we waiting for?
-    		 * FNPAccepted - continue
-    		 * FNPRejectedLoop - go to another node
-    		 * FNPRejectedOverload - propagate back to source, go to another node if local
-    		 */
     		
-    		MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
-    		MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
-    		MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
-    		
-    		// mfRejectedOverload must be the last thing in the or
-    		// So its or pointer remains null
-    		// Otherwise we need to recreate it below
-    		MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+    		MessageFilter mf = makeAcceptedRejectedFilter(next, ACCEPTED_TIMEOUT);
     		
     		try {
     			msg = node.usm.waitFor(mf, this);
@@ -793,10 +875,7 @@ loadWaiterLoop:
     			forwardRejectedOverload();
     			node.failureTable.onFailed(key, next, htl, timeSinceSent());
     			// Try next node
-    			// It could still be running. So the timeout is fatal to the node.
-    			Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
-    			//next.fatalTimeout();
-    			next.noLongerRoutingTo(origTag, false);
+    			handleAcceptedRejectedTimeout(next, origTag);
     			return DO.NEXT_PEER;
     		}
     		
@@ -846,7 +925,77 @@ loadWaiterLoop:
     	}
 	}
 
-	private MessageFilter createMessageFilter(int timeout) {
+	private void handleAcceptedRejectedTimeout(final PeerNode next,
+			final RequestTag origTag) {
+		
+		origTag.handlingTimeout(next);
+		
+		int timeout = fetchTimeout;
+		
+		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout);
+		try {
+			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+
+				public void onMatched(Message m) {
+					if(m.getSpec() == DMT.FNPRejectedLoop ||
+							m.getSpec() == DMT.FNPRejectedOverload) {
+						// Ok.
+						origTag.removeRoutingTo(next);
+					} else {
+						// Accepted. May as well wait for the data, if any.
+						MainLoopCallback cb = new MainLoopCallback(next, true);
+						cb.schedule();
+					}
+				}
+				
+				public boolean shouldTimeout() {
+					return false;
+				}
+
+				public void onTimeout() {
+					Logger.error(this, "Fatal timeout waiting for Accepted/Rejected from "+next+" on "+RequestSender.this);
+					origTag.removeRoutingTo(next);
+					next.fatalTimeout();
+				}
+
+				public void onDisconnect(PeerContext ctx) {
+					origTag.removeRoutingTo(next);
+				}
+
+				public void onRestarted(PeerContext ctx) {
+					origTag.removeRoutingTo(next);
+				}
+
+				public int getPriority() {
+					return NativeThread.NORM_PRIORITY;
+				}
+				
+			}, this);
+		} catch (DisconnectedException e) {
+			origTag.removeRoutingTo(next);
+		}
+	}
+
+	private MessageFilter makeAcceptedRejectedFilter(PeerNode next,
+			int acceptedTimeout) {
+		/**
+		 * What are we waiting for?
+		 * FNPAccepted - continue
+		 * FNPRejectedLoop - go to another node
+		 * FNPRejectedOverload - propagate back to source, go to another node if local
+		 */
+		
+		MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPAccepted);
+		MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedLoop);
+		MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedOverload);
+		
+		// mfRejectedOverload must be the last thing in the or
+		// So its or pointer remains null
+		// Otherwise we need to recreate it below
+		return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+	}
+
+	private MessageFilter createMessageFilter(int timeout, PeerNode next) {
 		MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPDataNotFound);
 		MessageFilter mfRF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRecentlyFailed);
 		MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRouteNotFound);
@@ -865,33 +1014,33 @@ loadWaiterLoop:
 		return mf;
 	}
 
-	private DO handleMessage(Message msg) {
+	private DO handleMessage(Message msg, boolean wasFork, PeerNode source) {
 		//For debugging purposes, remember the number of responses AFTER the insert, and the last message type we received.
 		gotMessages++;
 		lastMessage=msg.getSpec().getName();
     	
     	if(msg.getSpec() == DMT.FNPDataNotFound) {
-    		handleDataNotFound(msg);
+    		handleDataNotFound(msg, wasFork, source);
     		return DO.FINISHED;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRecentlyFailed) {
-    		handleRecentlyFailed(msg);
+    		handleRecentlyFailed(msg, wasFork, source);
     		return DO.FINISHED;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRouteNotFound) {
-    		handleRouteNotFound(msg);
+    		handleRouteNotFound(msg, source);
     		return DO.NEXT_PEER;
     	}
     	
     	if(msg.getSpec() == DMT.FNPRejectedOverload) {
-    		if(handleRejectedOverload(msg)) return DO.WAIT;
+    		if(handleRejectedOverload(msg, source)) return DO.WAIT;
     		else return DO.NEXT_PEER;
     	}
 
     	if((!isSSK) && msg.getSpec() == DMT.FNPCHKDataFound) {
-    		handleCHKDataFound(msg);
+    		handleCHKDataFound(msg, wasFork, source);
     		return DO.FINISHED;
     	}
     	
@@ -899,7 +1048,7 @@ loadWaiterLoop:
     		
     		if(!handleSSKPubKey(msg)) return DO.NEXT_PEER;
 			if(sskData != null && headers != null) {
-				finishSSK(next);
+				finishSSK(next, wasFork);
 				return DO.FINISHED;
 			}
 			return DO.WAIT;
@@ -912,7 +1061,7 @@ loadWaiterLoop:
         	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
         	
         	if(pubKey != null && headers != null) {
-        		finishSSK(next);
+        		finishSSK(next, wasFork);
         		return DO.FINISHED;
         	}
         	return DO.WAIT;
@@ -926,7 +1075,7 @@ loadWaiterLoop:
         	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
     		
         	if(pubKey != null && sskData != null) {
-        		finishSSK(next);
+        		finishSSK(next, wasFork);
         		return DO.FINISHED;
         	}
         	return DO.WAIT;
@@ -978,7 +1127,7 @@ loadWaiterLoop:
 		}
 	}
 
-	private void handleCHKDataFound(Message msg) {
+	private void handleCHKDataFound(Message msg, final boolean wasFork, PeerNode next) {
     	// Found data
     	
     	// First get headers
@@ -997,7 +1146,7 @@ loadWaiterLoop:
     	fireCHKTransferBegins();
     	
     	final long tStart = System.currentTimeMillis();
-    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag);
+    	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
     	
     	if(logMINOR) Logger.minor(this, "Receiving data");
     	final PeerNode from = next;
@@ -1051,14 +1200,18 @@ loadWaiterLoop:
     					verifyAndCommit(data);
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
-    					finish(VERIFY_FAILURE, sentTo, false);
+    					if(!wasFork)
+    						finish(VERIFY_FAILURE, sentTo, false);
+    					else
+    						origTag.removeRoutingTo(sentTo);
     					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     					return;
     				}
     				finish(SUCCESS, sentTo, false);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
-        			finish(INTERNAL_ERROR, sentTo, true);
+        			if(!wasFork)
+        				finish(INTERNAL_ERROR, sentTo, true);
     			}
     		}
     		
@@ -1089,7 +1242,8 @@ loadWaiterLoop:
     				// We do an ordinary backoff in all cases.
     				// This includes the case where we decide not to turtle the request. This is reasonable as if it had completely quickly we wouldn't have needed to make that choice.
     				sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason());
-    				finish(TRANSFER_FAILED, sentTo, false);
+    				if(!wasFork)
+    					finish(TRANSFER_FAILED, sentTo, false);
     				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     				int reason = e.getReason();
     				boolean timeout = (!br.senderAborted()) &&
@@ -1109,15 +1263,17 @@ loadWaiterLoop:
     				node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
-        			finish(INTERNAL_ERROR, sentTo, true);
+        			if(!wasFork)
+        				finish(INTERNAL_ERROR, sentTo, true);
     			}
     		}
     		
     	});
 	}
 
-	/** @return True to continue waiting for this node, false to move on to another. */
-	private boolean handleRejectedOverload(Message msg) {
+	/** @param next 
+	 * @return True to continue waiting for this node, false to move on to another. */
+	private boolean handleRejectedOverload(Message msg, PeerNode next) {
 		
 		// Non-fatal - probably still have time left
 		forwardRejectedOverload();
@@ -1137,7 +1293,7 @@ loadWaiterLoop:
 		return true;
 	}
 
-	private void handleRouteNotFound(Message msg) {
+	private void handleRouteNotFound(Message msg, PeerNode next) {
 		// Backtrack within available hops
 		short newHtl = msg.getShort(DMT.HTL);
 		if(newHtl < htl) htl = newHtl;
@@ -1146,13 +1302,16 @@ loadWaiterLoop:
 		origTag.removeRoutingTo(next);
 	}
 
-	private void handleDataNotFound(Message msg) {
+	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
 		next.successNotOverload();
-		finish(DATA_NOT_FOUND, next, false);
+		if(!wasFork)
+			finish(DATA_NOT_FOUND, next, false);
+		else
+			this.origTag.removeRoutingTo(next);
 		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 
-	private void handleRecentlyFailed(Message msg) {
+	private void handleRecentlyFailed(Message msg, boolean wasFork, PeerNode next) {
 		next.successNotOverload();
 		/*
 		 * Must set a correct recentlyFailedTimeLeft before calling this finish(), because it will be
@@ -1212,15 +1371,20 @@ loadWaiterLoop:
 			// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
 		// FIXME we need to create the FT entry.
+		if(!wasFork)
 			finish(RECENTLY_FAILED, next, false);
+		else
+			this.origTag.removeRoutingTo(next);
+		
 			node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, source);
 	}
 
 	/**
      * Finish fetching an SSK. We must have received the data, the headers and the pubkey by this point.
      * @param next The node we received the data from.
+	 * @param wasFork 
      */
-	private void finishSSK(PeerNode next) {
+	private void finishSSK(PeerNode next, boolean wasFork) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
 			node.storeShallow(block, canWriteClientCache, canWriteDatastore, false);
@@ -1229,7 +1393,10 @@ loadWaiterLoop:
 			finish(SUCCESS, next, false);
 		} catch (SSKVerifyException e) {
 			Logger.error(this, "Failed to verify: "+e+" from "+next, e);
-			finish(VERIFY_FAILURE, next, false);
+			if(!wasFork)
+				finish(VERIFY_FAILURE, next, false);
+			else
+				this.origTag.removeRoutingTo(next);
 			return;
 		} catch (KeyCollisionException e) {
 			Logger.normal(this, "Collision on "+this);
@@ -1379,6 +1546,14 @@ loadWaiterLoop:
 	
 	private long transferTime;
 	
+	/** Complete the request. Note that if the request was forked (which unfortunately is
+	 * possible because of timeouts awaiting Accepted/Rejected), it is *possible* that 
+	 * there are other forks still running; UIDTag will wait for them. Hence a fork that 
+	 * fails should NOT call this method, however a fork that succeeds SHOULD call it. 
+	 * @param code The completion code.
+	 * @param next The node being routed to.
+	 * @param fromOfferedKey Whether this was the result of fetching an offered key.
+	 */
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ") on "+this);
         
@@ -1449,6 +1624,7 @@ loadWaiterLoop:
 			opennetFinished = true;
 			notifyAll();
 		}
+		
     }
 
     /** Wait for the opennet completion message and discard it */
@@ -1730,8 +1906,17 @@ loadWaiterLoop:
 	private String abortDownstreamTransfersDesc;
 	private boolean receivingAsync;
 	
+	private void reassignToSelfOnTimeout() {
+		origTag.reassignToSelf();
+		synchronized(listeners) {
+			for(Listener l : listeners) {
+				l.onRequestSenderFinished(TIMED_OUT);
+			}
+			listeners.clear();
+		}
+	}
+	
 	private void sendAbortDownstreamTransfers(int reason, String desc) {
-		origTag.setRequestSenderFinished(TRANSFER_FAILED);
 		synchronized (listeners) {
 			abortDownstreamTransfersReason = reason;
 			abortDownstreamTransfersDesc = desc;
@@ -1793,4 +1978,24 @@ loadWaiterLoop:
 		return fetchTimeout;
 	}
 
+	BlockReceiverTimeoutHandler myTimeoutHandler = new BlockReceiverTimeoutHandler() {
+
+		/** The data receive has failed. A block timed out. The PRB will be cancelled as
+		 * soon as we return, and that will cause the source node to consider the request
+		 * finished. Meantime we don't know whether the upstream node has finished or not.
+		 * So we reassign the request to ourself, and then wait for the second timeout. */
+		public void onFirstTimeout() {
+			node.reassignTagToSelf(origTag);
+		}
+
+		/** The timeout appears to have been caused by the node we are directly connected
+		 * to. So we need to disconnect the node, or take other fairly strong sanctions,
+		 * to avoid load management problems. */
+		public void onFatalTimeout(PeerContext receivingFrom) {
+			Logger.error(this, "Fatal timeout receiving requested block on "+this+" from "+receivingFrom);
+			((PeerNode)receivingFrom).fatalTimeout();
+		}
+		
+	};
+	
 }

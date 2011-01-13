@@ -248,7 +248,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			_sock.send(packet);
 			tracker.sentPacketTo(destination);
-			boolean isLocal = !IPUtil.isValidAddress(address, false);
+			boolean isLocal = (!IPUtil.isValidAddress(address, false)) && (IPUtil.isValidAddress(address, true));
 			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH, isLocal);
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
 		} catch (IOException e) {
@@ -277,7 +277,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	 * @return The maximum packet size supported by this SocketManager, not including transport (UDP/IP) headers.
 	 */
 	public int getMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis? How? PMTU would require JNI, although it might be worth it...
-		final int minAdvertisedMTU = node.ipDetector.getMinimumDetectedMTU();
+		final int minAdvertisedMTU = node.getMinimumMTU();
 
 		// We don't want the MTU detection thingy to prevent us to send PacketTransmits!
 		if(disableMTUDetection || minAdvertisedMTU < MIN_MTU){

@@ -159,7 +159,6 @@ public class NodeCrypto {
 		socket.setDropProbability(config.getDropProbability());
 
 		packetMangler = new FNPPacketMangler(node, this, socket);
-		socket.setLowLevelFilter(new IncomingPacketFilterImpl(packetMangler, node, this));
 
 		detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
 
@@ -284,6 +283,7 @@ public class NodeCrypto {
 	}
 
 	public void start() {
+		socket.setLowLevelFilter(new IncomingPacketFilterImpl(packetMangler, node, this));
 		packetMangler.start();
 		socket.start();
 	}

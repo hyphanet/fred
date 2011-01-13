@@ -1126,6 +1126,24 @@ public class NodeStats implements Persistable {
 		return outputAvailablePerSecond * limit;
 	}
 
+	/** Should the request be rejected due to bandwidth liability?
+	 * 
+	 * @param bandwidthAvailableOutputUpperLimit The overall upper limit, already calculated.
+	 * @param requestsSnapshot The requests running.
+	 * @param input True if this is input bandwidth, false if it is output bandwidth.
+	 * @param limit The limit period in seconds.
+	 * @param source The source of the request.
+	 * @param isLocal True if the request is local.
+	 * @param isSSK True if it is an SSK request.
+	 * @param isInsert True if it is an insert.
+	 * @param isOfferReply True if it is a GetOfferedKey.
+	 * @param hasInStore True if we have the data in the store, and can return it, so 
+	 * won't need to route it onwards.
+	 * @param transfersPerInsert The average number of outgoing transfers per insert.
+	 * @param realTimeFlag True if this is a real-time request, false if it is a bulk
+	 * request.
+	 * @return A string explaining why, or null if we can accept the request.
+	 */
 	private String checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
 			RunningRequestsSnapshot requestsSnapshot, boolean input, long limit,
 			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag) {
@@ -1138,13 +1156,13 @@ public class NodeStats implements Persistable {
 		
 		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert, realTimeFlag);
 		
-		// If over the upper limit, reject.
-		
-		if(logMINOR) Logger.minor(this, limit+" second limit: "+bandwidthAvailableOutputUpperLimit+" expected output liability: "+bandwidthLiabilityOutput);
+		// Ignore the upper limit.
+		// Because we reassignToSelf() in various tricky timeout conditions, it is possible to exceed it.
+		// Even if we do we still need to allow the guaranteed allocation for each peer.
+		// Except when we do that, we have to offer it via ULPRs afterwards ...
+		// Yes but the GetOfferedKey's are subject to load management, so no problem.
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutputUpperLimit) {
-			pInstantRejectIncoming.report(1.0);
-			rejected(name+" bandwidth liability", isLocal);
-			return name+" bandwidth liability ("+bandwidthLiabilityOutput+" > "+bandwidthAvailableOutputUpperLimit+")";
+			Logger.warning(this, "Above upper limit. Not rejecting as this can occasionally happen due to reassigns: upper limit "+bandwidthAvailableOutputUpperLimit+" usage is "+bandwidthLiabilityOutput);
 		}
 		
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutputLowerLimit) {
@@ -1164,7 +1182,7 @@ public class NodeStats implements Persistable {
 		return null;
 	}
 
-	static final boolean SEND_LOAD_STATS_NOTICES = false;
+	static final boolean SEND_LOAD_STATS_NOTICES = true;
 	
 	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer, int transfersPerInsert, boolean realTimeFlag) {
 		
@@ -1225,6 +1243,7 @@ public class NodeStats implements Persistable {
 	}
 
 	private void rejected(String reason, boolean isLocal) {
+		if(logMINOR) Logger.minor(this, "Rejecting (local="+isLocal+") : "+reason);
 		if(!isLocal) preemptiveRejectReasons.inc(reason);
 		else this.localPreemptiveRejectReasons.inc(reason);
 	}
