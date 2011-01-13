@@ -388,7 +388,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			
         			if(expectedAcceptState != null) {
         				if(logMINOR)
-        					Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState);
+        					Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState+" realtime="+realTimeFlag);
         			} else {
         				if(logMINOR)
         					Logger.minor(this, "Cannot send to "+next);
