@@ -119,6 +119,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		
 		/** @return True unless we had already received a notice. */
 		private boolean receivedNotice(boolean success) {
+			if(logMINOR) Logger.minor(this, "Received notice: "+success+" on "+this);
 			synchronized(this) {
 				if (receivedCompletionNotice) {
 					if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
