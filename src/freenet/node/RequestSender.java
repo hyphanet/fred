@@ -976,13 +976,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     				
     				if(logMINOR) Logger.minor(this, "Is local");
   
-					if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
-						Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
 					// FIXME soft rejects, only check then, but don't backoff if sane
 					// FIXME recalculate with broader check, allow a few percent etc.
     				
     				if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
     					if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
+    					if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
+    						Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
     					nodesRoutedTo.remove(next);
     					origTag.removeRoutingTo(next);
     					return DO.WAIT;
