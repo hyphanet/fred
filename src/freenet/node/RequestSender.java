@@ -393,7 +393,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	next.sendSync(req, this);
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
-	        	origTag.removeRoutingTo(next);
+            	next.noLongerRoutingTo(origTag, false);
             	continue;
             }
             
@@ -529,7 +529,7 @@ loadWaiterLoop:
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for InsertReply on " + this);
-					origTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(origTag, false);
 					return;
 				}
 				
@@ -537,7 +537,7 @@ loadWaiterLoop:
 					// Second timeout.
 					Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
 					next.fatalTimeout();
-					origTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(origTag, false);
 					return;
 				}
 				
@@ -546,7 +546,7 @@ loadWaiterLoop:
 				if(action == DO.FINISHED)
 					return;
 				else if(action == DO.NEXT_PEER) {
-					origTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(origTag, false);
 					return; // Don't try others
 				}
 				// else if(action == DO.WAIT) continue;
@@ -607,7 +607,7 @@ loadWaiterLoop:
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
 				offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
+				pn.noLongerRoutingTo(origTag, true);
 				continue;
 			}
         	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPRejectedOverload);
@@ -623,7 +623,7 @@ loadWaiterLoop:
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
 					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 					continue;
 				}
         		if(reply == null) {
@@ -632,7 +632,7 @@ loadWaiterLoop:
         			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
         			// FIXME bug #4613 consider two-stage timeout.
         			pn.fatalTimeout();
-    	        	origTag.removeFetchingOfferedKeyFrom(pn);
+    				pn.noLongerRoutingTo(origTag, true);
         			continue;
         		} else {
         			if(handleCHKOfferReply(reply, pn, offer, offers)) return true;
@@ -647,7 +647,7 @@ loadWaiterLoop:
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
 					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 					continue;
 				}
         		if(reply == null) {
@@ -656,7 +656,7 @@ loadWaiterLoop:
         			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
         			// FIXME bug #4613 consider two-stage timeout.
         			pn.fatalTimeout();
-    	        	origTag.removeFetchingOfferedKeyFrom(pn);
+    				pn.noLongerRoutingTo(origTag, true);
         			continue;
         		} else {
         			if(handleSSKOfferReply(reply, pn, offer, offers)) return true;
@@ -676,14 +676,14 @@ loadWaiterLoop:
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
 			offers.keepLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
+			pn.noLongerRoutingTo(origTag, true);
 			return false;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
 			offers.deleteLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
+			pn.noLongerRoutingTo(origTag, true);
 			return false;
 		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
 			headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
@@ -696,13 +696,13 @@ loadWaiterLoop:
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting data for offer for "+key);
 				offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
+				pn.noLongerRoutingTo(origTag, true);
 	        	return false;
 			}
 			if(dataMessage == null) {
 				Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key);
 				offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
+				pn.noLongerRoutingTo(origTag, true);
 				return false;
 			}
 			sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
@@ -715,13 +715,13 @@ loadWaiterLoop:
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
 					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 					return false;
 				}
 				if(pk == null) {
 					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
 					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 					return false;
 				}
 				try {
@@ -729,7 +729,7 @@ loadWaiterLoop:
 				} catch (CryptFormatException e) {
 					Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
 					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 					return false;
 				}
 				
@@ -738,7 +738,7 @@ loadWaiterLoop:
 				} catch (SSKVerifyException e) {
 					Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
 					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
+					pn.noLongerRoutingTo(origTag, true);
 					return false;
 				}
 			}
@@ -748,11 +748,11 @@ loadWaiterLoop:
 				return true;
 			} else {
         		offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
+				pn.noLongerRoutingTo(origTag, true);
         		return false;
 			}
 		} else {
-        	origTag.removeFetchingOfferedKeyFrom(pn);
+			pn.noLongerRoutingTo(origTag, true);
 			return false;
 		}
 	}
@@ -765,14 +765,14 @@ loadWaiterLoop:
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
 			offers.keepLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
+			pn.noLongerRoutingTo(origTag, true);
         	return false;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
 			offers.deleteLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
+			pn.noLongerRoutingTo(origTag, true);
         	return false;
 		} else if(reply.getSpec() == DMT.FNPCHKDataFound) {
 			headers = ((ShortBuffer)reply.getObject(DMT.BLOCK_HEADERS)).getData();
@@ -940,7 +940,7 @@ loadWaiterLoop:
 					if(m.getSpec() == DMT.FNPRejectedLoop ||
 							m.getSpec() == DMT.FNPRejectedOverload) {
 						// Ok.
-						origTag.removeRoutingTo(next);
+						next.noLongerRoutingTo(origTag, false);
 					} else {
 						// Accepted. May as well wait for the data, if any.
 						MainLoopCallback cb = new MainLoopCallback(next, true);
@@ -954,16 +954,16 @@ loadWaiterLoop:
 
 				public void onTimeout() {
 					Logger.error(this, "Fatal timeout waiting for Accepted/Rejected from "+next+" on "+RequestSender.this);
-					origTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(origTag, false);
 					next.fatalTimeout();
 				}
 
 				public void onDisconnect(PeerContext ctx) {
-					origTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(origTag, false);
 				}
 
 				public void onRestarted(PeerContext ctx) {
-					origTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(origTag, false);
 				}
 
 				public int getPriority() {
@@ -972,7 +972,7 @@ loadWaiterLoop:
 				
 			}, this);
 		} catch (DisconnectedException e) {
-			origTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(origTag, false);
 		}
 	}
 
@@ -1084,7 +1084,7 @@ loadWaiterLoop:
     	
    		Logger.error(this, "Unexpected message: "+msg);
    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
-		origTag.removeRoutingTo(next);
+   		next.noLongerRoutingTo(origTag, false);
    		return DO.NEXT_PEER;
     	
 	}
@@ -1117,12 +1117,12 @@ loadWaiterLoop:
 			pubKey = null;
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
     		node.failureTable.onFailed(key, next, htl, timeSinceSent());
-			origTag.removeRoutingTo(next);
+    		next.noLongerRoutingTo(origTag, false);
 			return false; // try next node
 		} catch (CryptFormatException e) {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
     		node.failureTable.onFailed(key, next, htl, timeSinceSent());
-			origTag.removeRoutingTo(next);
+    		next.noLongerRoutingTo(origTag, false);
 			return false; // try next node
 		}
 	}
@@ -1203,7 +1203,7 @@ loadWaiterLoop:
     					if(!wasFork)
     						finish(VERIFY_FAILURE, sentTo, false);
     					else
-    						origTag.removeRoutingTo(sentTo);
+    						sentTo.noLongerRoutingTo(origTag, false);
     					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     					return;
     				}
@@ -1286,7 +1286,7 @@ loadWaiterLoop:
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
 			// Give up on this one, try another
-			origTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(origTag, false);
 			return false;
 		}
 		//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.
@@ -1299,7 +1299,7 @@ loadWaiterLoop:
 		if(newHtl < htl) htl = newHtl;
 		next.successNotOverload();
 		node.failureTable.onFailed(key, next, htl, timeSinceSent());
-		origTag.removeRoutingTo(next);
+		next.noLongerRoutingTo(origTag, false);
 	}
 
 	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
@@ -1307,7 +1307,7 @@ loadWaiterLoop:
 		if(!wasFork)
 			finish(DATA_NOT_FOUND, next, false);
 		else
-			this.origTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(origTag, false);
 		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 
@@ -1374,7 +1374,7 @@ loadWaiterLoop:
 		if(!wasFork)
 			finish(RECENTLY_FAILED, next, false);
 		else
-			this.origTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(origTag, false);
 		
 			node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, source);
 	}
@@ -1396,7 +1396,7 @@ loadWaiterLoop:
 			if(!wasFork)
 				finish(VERIFY_FAILURE, next, false);
 			else
-				this.origTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(origTag, false);
 			return;
 		} catch (KeyCollisionException e) {
 			Logger.normal(this, "Collision on "+this);
@@ -1561,9 +1561,9 @@ loadWaiterLoop:
     	
     	if(next != null) {
     		if(fromOfferedKey)
-    			origTag.removeFetchingOfferedKeyFrom(next);
+    			next.noLongerRoutingTo(origTag, true);
     		else
-    			origTag.removeRoutingTo(next);
+    			next.noLongerRoutingTo(origTag, false);
     	}
 		
         synchronized(this) {

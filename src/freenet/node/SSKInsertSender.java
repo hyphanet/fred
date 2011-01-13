@@ -248,7 +248,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				next.sendAsync(request, null, this);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			}
             sentRequest = true;
@@ -269,17 +269,17 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				next.sendThrottledMessage(dataMsg, data.length, this, SSKInsertHandler.DATA_INSERT_TIMEOUT, false, null);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			} catch (WaitedTooLongException e) {
 				Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			} catch (SyncSendWaitedTooLongException e) {
 				// Impossible
 			} catch (PeerRestartedException e) {
 				if(logMINOR) Logger.minor(this, "Peer restarted: "+next);
-				thisTag.removeRoutingTo(next);
+				next.noLongerRoutingTo(thisTag, false);
 				continue;
 			}
             
@@ -291,7 +291,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             		next.sendAsync(pkMsg, null, this);
             	} catch (NotConnectedException e) {
             		if(logMINOR) Logger.minor(this, "Node disconnected while sending pubkey: "+next);
-					thisTag.removeRoutingTo(next);
+    				next.noLongerRoutingTo(thisTag, false);
             		continue;
             	}
             	
@@ -304,7 +304,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					newAck = node.usm.waitFor(mf1, this);
 				} catch (DisconnectedException e) {
 					if(logMINOR) Logger.minor(this, "Disconnected from "+next);
-					thisTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(thisTag, false);
 					continue;
 				}
             	
@@ -315,7 +315,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             		// This is a local timeout, they should send it immediately.
             		next.fatalTimeout();
 					forwardRejectedOverload();
-					thisTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(thisTag, false);
 					// Try another peer
 					continue;
             	}
@@ -332,7 +332,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for InsertReply on " + this);
-					thisTag.removeRoutingTo(next);
+					next.noLongerRoutingTo(thisTag, false);
 					break;
 				}
 
@@ -352,7 +352,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						} catch (DisconnectedException e) {
 							Logger.normal(this, "Disconnected from " + next
 									+ " while waiting for InsertReply on " + this);
-							thisTag.removeRoutingTo(next);
+							next.noLongerRoutingTo(thisTag, false);
 							return;
 						}
 						
@@ -360,7 +360,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 							// Second timeout.
 							Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
 							next.fatalTimeout();
-							thisTag.removeRoutingTo(next);
+							next.noLongerRoutingTo(thisTag, false);
 							return;
 						}
 						
@@ -369,7 +369,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						if(action == DO.FINISHED)
 							return;
 						else if(action == DO.NEXT_PEER) {
-							thisTag.removeRoutingTo(next);
+							next.noLongerRoutingTo(thisTag, false);
 							return; // Don't try others
 						}
 						// else if(action == DO.WAIT) continue;
@@ -466,7 +466,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					if(m.getSpec() == DMT.FNPRejectedLoop ||
 							m.getSpec() == DMT.FNPRejectedOverload) {
 						// Ok.
-						tag.removeRoutingTo(next);
+						next.noLongerRoutingTo(tag, false);
 					} else {
 						assert(m.getSpec() == DMT.FNPAccepted);
 						// We are not going to send the DataInsert.
@@ -486,21 +486,21 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 								public void onTimeout() {
 									// Grrr!
 									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
-									tag.removeRoutingTo(next);
+									next.noLongerRoutingTo(tag, false);
 									next.fatalTimeout();
 								}
 
 								public void onDisconnect(PeerContext ctx) {
-									tag.removeRoutingTo(next);
+									next.noLongerRoutingTo(tag, false);
 								}
 
 								public void onRestarted(PeerContext ctx) {
-									tag.removeRoutingTo(next);
+									next.noLongerRoutingTo(tag, false);
 								}
 								
 							}, SSKInsertSender.this);
 						} catch (DisconnectedException e) {
-							tag.removeRoutingTo(next);
+							next.noLongerRoutingTo(tag, false);
 						}
 					}
 				}
@@ -510,16 +510,16 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
 
 				public void onTimeout() {
-					tag.removeRoutingTo(next);
+					next.noLongerRoutingTo(tag, false);
 					next.fatalTimeout();
 				}
 
 				public void onDisconnect(PeerContext ctx) {
-					tag.removeRoutingTo(next);
+					next.noLongerRoutingTo(tag, false);
 				}
 
 				public void onRestarted(PeerContext ctx) {
-					tag.removeRoutingTo(next);
+					next.noLongerRoutingTo(tag, false);
 				}
 
 				public int getPriority() {
@@ -528,7 +528,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				
 			}, this);
 		} catch (DisconnectedException e) {
-			tag.removeRoutingTo(next);
+			next.noLongerRoutingTo(tag, false);
 		}
 	}
 
@@ -609,12 +609,12 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 		} catch (DisconnectedException e) {
 			if(logMINOR)
 				Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
-			thisTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(thisTag, false);
 			return DO.NEXT_PEER;
 		}
 		if(dataMessage == null) {
 			Logger.error(this, "Got headers but not data for datareply for insert from "+this);
-			thisTag.removeRoutingTo(next);
+			next.noLongerRoutingTo(thisTag, false);
 			return DO.NEXT_PEER;
 		}
 		// collided, overwrite data with remote data
@@ -736,8 +736,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+getStatusString(code)+" on "+this, new Exception("debug"));
     	
-    	if(origTag != null) origTag.removeRoutingTo(next);
-    	if(forkedRequestTag != null) forkedRequestTag.removeRoutingTo(next);
+    	if(origTag != null) next.noLongerRoutingTo(forkedRequestTag, false);
+    	if(forkedRequestTag != null) next.noLongerRoutingTo(forkedRequestTag, true);
     	
     	synchronized(this) {
     		if(status != NOT_FINISHED && status != TIMED_OUT)
