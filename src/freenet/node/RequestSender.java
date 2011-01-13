@@ -398,6 +398,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				
         			}
         			// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
+        			// In fact, we should report only after Accepted.
         		}
         		
         		synchronized(this) {
