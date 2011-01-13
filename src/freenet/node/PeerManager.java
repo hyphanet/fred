@@ -479,19 +479,40 @@ public class PeerManager {
 	public PeerNode getByPeer(Peer peer) {
 		PeerNode[] peerList = myPeers;
 		for(int i = 0; i < peerList.length; i++) {
-			if(peer.equals(peerList[i].getPeer()))
+			if(peerList[i].matchesPeerAndPort(peer))
 				return peerList[i];
 		}
 		// Try a match by IP address if we can't match exactly by IP:port.
 		FreenetInetAddress addr = peer.getFreenetAddress();
 		for(int i = 0; i < peerList.length; i++) {
-			Peer p = peerList[i].getPeer();
-			if(p == null) continue;
-			if(addr.equals(p.getFreenetAddress()))
+			if(peerList[i].matchesIP(addr))
 				return peerList[i];
 		}
 		return null;
 	}
+	
+	/**
+	 * Find the node with the given Peer address, or IP address. Checks the outgoing
+	 * packet mangler as well.
+	 * @param peer
+	 * @param mangler
+	 * @return
+	 */
+	public PeerNode getByPeer(Peer peer, FNPPacketMangler mangler) {
+		PeerNode[] peerList = myPeers;
+		for(int i = 0; i < peerList.length; i++) {
+			if(peerList[i].matchesPeerAndPort(peer) && peerList[i].getOutgoingMangler() == mangler)
+				return peerList[i];
+		}
+		// Try a match by IP address if we can't match exactly by IP:port.
+		FreenetInetAddress addr = peer.getFreenetAddress();
+		for(int i = 0; i < peerList.length; i++) {
+			if(peerList[i].matchesIP(addr) && peerList[i].getOutgoingMangler() == mangler)
+				return peerList[i];
+		}
+		return null;
+	}
+
 
 	/**
 	 * Connect to a node provided the fieldset representing it.
@@ -1768,6 +1789,22 @@ public class PeerManager {
 		}
 		return v.toArray(new OpennetPeerNode[v.size()]);
 	}
+	
+	public PeerNode[] getOpennetAndSeedServerPeers() {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		// FIXME optimise! Maybe maintain as a separate list?
+		Vector<PeerNode> v = new Vector<PeerNode>(myPeers.length);
+		for(int i = 0; i < peers.length; i++) {
+			if(peers[i] instanceof OpennetPeerNode)
+				v.add(peers[i]);
+			else if(peers[i] instanceof SeedServerPeerNode)
+				v.add(peers[i]);
+		}
+		return v.toArray(new PeerNode[v.size()]);
+	}
 
 	public boolean anyConnectedPeerHasAddress(FreenetInetAddress addr, PeerNode pn) {
 		PeerNode[] peers;
@@ -1807,7 +1844,7 @@ public class PeerManager {
 	}
 
 	public PeerNode containsPeer(PeerNode pn) {
-		PeerNode[] peers = pn.isOpennet() ? ((PeerNode[]) getOpennetPeers()) : ((PeerNode[]) getDarknetPeers());
+		PeerNode[] peers = pn.isOpennet() ? ((PeerNode[]) getOpennetAndSeedServerPeers()) : ((PeerNode[]) getDarknetPeers());
 
 		for(int i = 0; i < peers.length; i++)
 			if(Arrays.equals(pn.getIdentity(), peers[i].getIdentity()))

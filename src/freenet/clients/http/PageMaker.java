@@ -201,6 +201,8 @@ public final class PageMaker {
 	
 	public synchronized void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb, FredPluginL10n l10n) {
 		SubMenu menu = subMenus.get(menutext);
+		if(menu == null)
+			throw new NullPointerException("there is no menu named "+menutext);
 		menu.addNavigationLink(path, name, title, fullOnly, cb, l10n);
 	}
 	

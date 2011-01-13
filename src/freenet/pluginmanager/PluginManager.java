@@ -37,6 +37,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.PageMaker.THEME;
+import freenet.clients.http.Toadlet;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -397,7 +398,8 @@ public class PluginManager {
 			if (plug == null)
 				return null; // Already loaded
 			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
-			pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this, plug));
+			pi = new PluginInfoWrapper(node, plug, filename);
+			PluginHandler.startPlugin(PluginManager.this, pi);
 			synchronized (pluginWrappers) {
 				pluginWrappers.add(pi);
 				pluginsFailedLoad.remove(filename);
@@ -631,11 +633,34 @@ public class PluginManager {
 
 	}
 
-	void register(FredPlugin plug, PluginInfoWrapper pi) {
-		// handles FProxy? If so, register
+	void register(PluginInfoWrapper pi) {
+		FredPlugin plug = pi.getPlugin();
 
+		// handles FProxy? If so, register
 		if(pi.isPproxyPlugin())
 			registerToadlet(plug);
+
+		if(pi.isConfigurablePlugin()) {
+			// Registering the toadlet with atFront=false means that
+			// the node's ConfigToadlet will clobber the plugin's
+			// ConfigToadlet and the page will not be visible. So it
+			// must be registered with atFront=true. This means that
+			// malicious plugins could try to hijack node config
+			// pages, to ill effect. Let's avoid that.
+			boolean pluginIsTryingToHijackNodeConfig = false;
+			for(SubConfig subconfig : node.config.getConfigs()) {
+				if(pi.getPluginClassName().equals(subconfig.getPrefix())) {
+					pluginIsTryingToHijackNodeConfig = true;
+					break;
+				}
+			}
+			if(pluginIsTryingToHijackNodeConfig) {
+				Logger.warning(this, "The plugin loaded from "+pi.getFilename()+" is attempting to hijack a node configuration page; refusing to register its ConfigToadlet");
+			} else {
+				Toadlet toadlet = pi.getConfigToadlet();
+				core.getToadletContainer().register(toadlet, "FProxyToadlet.categoryConfig", toadlet.path(), true, "ConfigToadlet."+pi.getPluginClassName()+".label", "ConfigToadlet."+pi.getPluginClassName()+".tooltip", true, null, (FredPluginL10n)pi.getPlugin());
+			}
+		}
 
 		if(pi.isIPDetectorPlugin())
 			node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
@@ -1319,7 +1344,8 @@ public class PluginManager {
 						Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
 						try {
 							if(object instanceof FredPluginThreadless) {
-								((FredPlugin)object).runPlugin(new PluginRespirator(node, PluginManager.this, (FredPlugin)object));
+								PluginInfoWrapper pi = new PluginInfoWrapper(node, (FredPlugin)object, filename);
+								pi.getPlugin().runPlugin(pi.getPluginRespirator());
 							}
 						} catch (Throwable t) {
 							Logger.error(this, "Failed to start plugin (to prevent NPEs) while terminating it because it is too old: "+t, t);
@@ -1672,6 +1698,9 @@ public class PluginManager {
 
 	public void unregisterPlugin(PluginInfoWrapper wrapper, FredPlugin plug, boolean reloading) {
 		unregisterPluginToadlet(wrapper);
+		if(wrapper.isConfigurablePlugin()) {
+			core.getToadletContainer().unregister(wrapper.getConfigToadlet());
+		}
 		if(wrapper.isIPDetectorPlugin())
 			node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
 		if(wrapper.isPortForwardPlugin())

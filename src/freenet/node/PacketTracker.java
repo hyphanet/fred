@@ -93,11 +93,11 @@ public class PacketTracker {
 	final long trackerID;
 
 	/** Everything is clear to start with */
-	PacketTracker(PeerNode pn) {
-		this(pn, pn.node.random.nextLong() & Long.MAX_VALUE);
+	PacketTracker(PeerNode pn, int firstPacketNumber) {
+		this(pn, firstPacketNumber, pn.node.random.nextLong() & Long.MAX_VALUE);
 	}
 
-	PacketTracker(PeerNode pn, long tid) {
+	PacketTracker(PeerNode pn, int firstPacketNumber, long tid) {
 		trackerID = tid;
 		this.pn = pn;
 		ackQueue = new LinkedList<QueuedAck>();
@@ -110,7 +110,7 @@ public class PacketTracker {
 		packetsToResend = new HashSet<Integer>();
 		packetNumbersReceived = new ReceivedPacketNumbers(512);
 		isDeprecated = false;
-		nextPacketNumber = pn.node.random.nextInt(100 * 1000);
+		nextPacketNumber = firstPacketNumber;
 		createdTime = System.currentTimeMillis();
 	}
 
@@ -531,7 +531,7 @@ public class PacketTracker {
 			if(sentPacketsContents.remove(realSeqNo))
 				if(buf.length > Node.PACKET_SIZE) {
 					PacketThrottle throttle = pn.getThrottle();
-					throttle.notifyOfPacketAcknowledged();
+					throttle.notifyOfPacketAcknowledged(1024);
 					throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 				}
 			if(logMINOR)
@@ -578,7 +578,7 @@ public class PacketTracker {
 		if(sentPacketsContents.remove(realSeqNo))
 			if(buf.length > Node.PACKET_SIZE) {
 				PacketThrottle throttle = pn.getThrottle();
-				throttle.notifyOfPacketAcknowledged();
+				throttle.notifyOfPacketAcknowledged(1024);
 				throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 			}
 		try {
@@ -1014,7 +1014,7 @@ public class PacketTracker {
 			// Ignore packet#
 			if(logMINOR)
 				Logger.minor(this, "Queueing resend of what was once " + element.packetNumber);
-			messages[i] = new MessageItem(buf, callbacks, true, pn.resendByteCounter, element.priority);
+			messages[i] = new MessageItem(buf, callbacks, true, pn.resendByteCounter, element.priority, false, false);
 		}
 		pn.requeueMessageItems(messages, 0, messages.length, true);
 

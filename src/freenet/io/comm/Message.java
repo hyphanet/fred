@@ -66,17 +66,24 @@ public class Message {
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
 	short priority;
-
+	private boolean needsLoadRT;
+	private boolean needsLoadBulk;
+	
 	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
-		return decodeMessage(bb, peer, length + overhead, true, false);
+		return decodeMessage(bb, peer, length + overhead, true, false, false);
+	}
+	
+	public static Message decodeMessageLax(byte[] buf, PeerContext peer, int overhead) {
+		ByteBufferInputStream bb = new ByteBufferInputStream(buf);
+		return decodeMessage(bb, peer, buf.length + overhead, true, false, true);
 	}
 
 	private static Message decodeMessage(ByteBufferInputStream bb, PeerContext peer, int recvByteCount,
-	        boolean mayHaveSubMessages, boolean inSubMessage) {
+	        boolean mayHaveSubMessages, boolean inSubMessage, boolean veryLax) {
 		MessageType mspec;
 		try {
-			mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()));
+			mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()), veryLax);
 		} catch (IOException e1) {
 			if(logDEBUG)
 				Logger.debug(Message.class,"Failed to read message type: "+e1, e1);
@@ -113,7 +120,7 @@ public class Message {
 		    			return m;
 		    		}
 		    		try {
-		    			Message subMessage = decodeMessage(bb2, peer, 0, false, true);
+		    			Message subMessage = decodeMessage(bb2, peer, 0, false, true, veryLax);
 		    			if(subMessage == null) return m;
 		    			if(logMINOR) Logger.minor(Message.class, "Adding submessage: "+subMessage);
 		    			m.addSubMessage(subMessage);
@@ -220,11 +227,11 @@ public class Message {
 		_payload.put(key, value);
 	}
 
-	public byte[] encodeToPacket(PeerContext destination) {
-		return encodeToPacket(destination, true, false);
+	public byte[] encodeToPacket() {
+		return encodeToPacket(true, false);
 	}
 
-	private byte[] encodeToPacket(PeerContext destination, boolean includeSubMessages, boolean isSubMessage) {
+	private byte[] encodeToPacket(boolean includeSubMessages, boolean isSubMessage) {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 
@@ -235,7 +242,7 @@ public class Message {
 		try {
 			dos.writeInt(_spec.getName().hashCode());
 			for (String name : _spec.getOrderedFields()) {
-				Serializer.writeToDataOutputStream(_payload.get(name), dos, destination);
+				Serializer.writeToDataOutputStream(_payload.get(name), dos);
 			}
 			dos.flush();
 		} catch (IOException e) {
@@ -245,7 +252,7 @@ public class Message {
 
 		if(_subMessages != null && includeSubMessages) {
 			for(int i=0;i<_subMessages.size();i++) {
-				byte[] temp = _subMessages.get(i).encodeToPacket(destination, false, true);
+				byte[] temp = _subMessages.get(i).encodeToPacket(false, true);
 				try {
 					dos.writeShort(temp.length);
 					dos.write(temp);
@@ -359,6 +366,22 @@ public class Message {
 	
 	public void boostPriority() {
 		priority--;
+	}
+
+	public boolean needsLoadRT() {
+		return needsLoadRT;
+	}
+	
+	public boolean needsLoadBulk() {
+		return needsLoadBulk;
+	}
+	
+	public void setNeedsLoadRT() {
+		needsLoadRT = true;
+	}
+	
+	public void setNeedsLoadBulk() {
+		needsLoadBulk = true;
 	}
 
 }

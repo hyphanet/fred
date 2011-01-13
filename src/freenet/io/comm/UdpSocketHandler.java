@@ -16,6 +16,7 @@ import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
+import freenet.support.transport.ip.IPUtil;
 
 public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, PortForwardSensitiveSocketHandler {
 
@@ -192,8 +193,10 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private boolean getPacket(DatagramPacket packet) {
 		try {
 			_sock.receive(packet);
-			collector.addInfo(packet.getAddress() + ":" + packet.getPort(),
-					packet.getLength(), 0); // FIXME use (packet.getLength() + UDP_HEADERS_LENGTH)?
+			InetAddress address = packet.getAddress();
+			boolean isLocal = !IPUtil.isValidAddress(address, false);
+			collector.addInfo(address + ":" + packet.getPort(),
+					packet.getLength(), 0, isLocal); // FIXME use (packet.getLength() + UDP_HEADERS_LENGTH)?
 		} catch (SocketTimeoutException e1) {
 			return false;
 		} catch (IOException e2) {
@@ -245,7 +248,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			_sock.send(packet);
 			tracker.sentPacketTo(destination);
-			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH);
+			boolean isLocal = (!IPUtil.isValidAddress(address, false)) && (IPUtil.isValidAddress(address, true));
+			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH, isLocal);
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
 		} catch (IOException e) {
 			if(packet.getAddress() instanceof Inet6Address) {
@@ -262,18 +266,18 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	// http://www.studenten-ins-netz.net/inhalt/service_faq.html
 	// officially GRE is 1476 and PPPoE is 1492.
 	// unofficially, PPPoE is often 1472 (seen in the wild). Also PPPoATM is sometimes 1472.
-	static final int MAX_ALLOWED_MTU = 1400;
+	static final int MAX_ALLOWED_MTU = 1280;
 	// FIXME this is different for IPv6 (check all uses of constant when fixing)
 	public static final int UDP_HEADERS_LENGTH = 28;
 
-	public static final int MIN_MTU = 1100;
+	public static final int MIN_MTU = 576;
 	private volatile boolean disableMTUDetection = false;
 
 	/**
 	 * @return The maximum packet size supported by this SocketManager, not including transport (UDP/IP) headers.
 	 */
 	public int getMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis? How? PMTU would require JNI, although it might be worth it...
-		final int minAdvertisedMTU = node.ipDetector.getMinimumDetectedMTU();
+		final int minAdvertisedMTU = node.getMinimumMTU();
 
 		// We don't want the MTU detection thingy to prevent us to send PacketTransmits!
 		if(disableMTUDetection || minAdvertisedMTU < MIN_MTU){

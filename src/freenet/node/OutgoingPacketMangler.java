@@ -88,7 +88,7 @@ public interface OutgoingPacketMangler {
 	/**
 	 * List of supported negotiation types in preference order (best last)
 	 */
-	public int[] supportedNegTypes();
+	public int[] supportedNegTypes(boolean forPublic);
 	
 	/**
 	 * Size of the packet headers, in bytes, assuming only one message in this packet.

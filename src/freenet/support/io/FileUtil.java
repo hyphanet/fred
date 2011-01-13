@@ -364,7 +364,14 @@ final public class FileUtil {
 					continue;
 				}
 			}
-
+			
+			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Unix) {
+				if(StringValidityChecker.isUnixReservedPrintableFilenameCharacter(c)) {
+					sb.append(' ');
+					continue;
+				}
+			}
+			
 			// Nothing did continue; so the character is okay
 			sb.append(c);
 		}

@@ -196,13 +196,19 @@ public class PrioritizedTicker implements Ticker, Runnable {
 						// Delete the existing job because the new job will run first.
 						Object o = timedJobsByTime.get(t);
 						if(o instanceof Job) {
-							timedJobsQueued.remove(job);
-							timedJobsByTime.remove(t);
+							if(o.equals(job)) {
+								timedJobsQueued.remove(job);
+								timedJobsByTime.remove(t);
+							} else
+								timedJobsByTime.remove(t);
 						} else {
 							Job[] jobs = (Job[]) o;
 							if(jobs.length == 1) {
-								timedJobsQueued.remove(jobs[0]);
-								timedJobsByTime.remove(t);
+								if(jobs[0].equals(job)) {
+									timedJobsQueued.remove(jobs[0]);
+									timedJobsByTime.remove(t);
+								} else
+									timedJobsByTime.remove(t);
 							} else {
 								Job[] newJobs = new Job[jobs.length-1];
 								int x = 0;

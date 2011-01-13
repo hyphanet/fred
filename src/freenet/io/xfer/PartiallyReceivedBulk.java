@@ -142,7 +142,7 @@ public class PartiallyReceivedBulk {
 
 	public void abort(int errCode, String why) {
 		if(logMINOR)
-			Logger.normal(this, "Aborting "+this+": "+errCode+" : "+why, new Exception("debug"));
+			Logger.normal(this, "Aborting "+this+": "+errCode+" : "+why+" first missing is "+blocksReceived.firstZero(0), new Exception("debug"));
 		BulkTransmitter[] notifyBTs;
 		BulkReceiver notifyBR;
 		synchronized(this) {

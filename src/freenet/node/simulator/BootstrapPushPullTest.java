@@ -71,7 +71,7 @@ public class BootstrapPushPullTest {
 			node.park();
 			System.exit(EXIT_FAILED_TARGET);
 		}
-        System.out.println("Creating test data: "+TEST_SIZE+" bytes.");
+        System.err.println("Creating test data: "+TEST_SIZE+" bytes.");
         Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
         OutputStream os = data.getOutputStream();
         byte[] buf = new byte[4096];
@@ -82,7 +82,7 @@ public class BootstrapPushPullTest {
         	written += toWrite;
         }
         os.close();
-        System.out.println("Inserting test data.");
+        System.err.println("Inserting test data.");
         HighLevelSimpleClient client = node.clientCore.makeClient((short)0);
         InsertBlock block = new InsertBlock(data, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI);
         long startInsertTime = System.currentTimeMillis();
@@ -96,7 +96,7 @@ public class BootstrapPushPullTest {
 			return;
 		}
         long endInsertTime = System.currentTimeMillis();
-        System.out.println("RESULT: Insert took "+(endInsertTime-startInsertTime)+"ms ("+TimeUtil.formatTime(endInsertTime-startInsertTime)+") to "+uri+" .");
+        System.err.println("RESULT: Insert took "+(endInsertTime-startInsertTime)+"ms ("+TimeUtil.formatTime(endInsertTime-startInsertTime)+") to "+uri+" .");
         node.park();
 		
         // Bootstrap a second node.
@@ -125,7 +125,7 @@ public class BootstrapPushPullTest {
 			return;
 		}
 		long endFetchTime = System.currentTimeMillis();
-		System.out.println("RESULT: Fetch took "+(endFetchTime-startFetchTime)+"ms ("+TimeUtil.formatTime(endFetchTime-startFetchTime)+") of "+uri+" .");
+		System.err.println("RESULT: Fetch took "+(endFetchTime-startFetchTime)+"ms ("+TimeUtil.formatTime(endFetchTime-startFetchTime)+") of "+uri+" .");
 		secondNode.park();
 		System.exit(0);
 	    } catch (Throwable t) {

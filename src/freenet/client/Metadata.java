@@ -1337,6 +1337,7 @@ public class Metadata implements Cloneable {
 		dos.writeLong(FREENET_METADATA_MAGIC);
 		dos.writeShort(parsedVersion); // version
 		dos.writeByte(documentType);
+		boolean hasTopBlocks = topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0 || topCompatibilityMode != 0;
 		if(haveFlags()) {
 			short flags = 0;
 			if(splitfile) flags |= FLAGS_SPLITFILE;
@@ -1347,7 +1348,7 @@ public class Metadata implements Cloneable {
 			if(fullKeys) flags |= FLAGS_FULL_KEYS;
 			if(compressionCodec != null) flags |= FLAGS_COMPRESSED;
 			if(hashes != null) flags |= FLAGS_HASHES;
-			if(topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0) {
+			if(hasTopBlocks) {
 				assert(parsedVersion >= 1);
 				flags |= FLAGS_TOP_SIZE;
 			}
@@ -1362,7 +1363,7 @@ public class Metadata implements Cloneable {
 			}
 		}
 		
-		if(topBlocksRequired != 0 || topBlocksTotal != 0 || topSize != 0 || topCompressedSize != 0 || topCompatibilityMode != 0) {
+		if(hasTopBlocks) {
 			dos.writeLong(topSize);
 			dos.writeLong(topCompressedSize);
 			dos.writeInt(topBlocksRequired);
@@ -1427,16 +1428,25 @@ public class Metadata implements Cloneable {
 
 			dos.writeInt(splitfileBlocks);
 			dos.writeInt(splitfileCheckBlocks);
-			if(splitfileSingleCryptoKey == null) {
-				for(int i=0;i<splitfileBlocks;i++)
-					writeCHK(dos, splitfileDataKeys[i]);
-				for(int i=0;i<splitfileCheckBlocks;i++)
-					writeCHK(dos, splitfileCheckKeys[i]);
+			if(segments != null) {
+				for(int i=0;i<segmentCount;i++) {
+					segments[i].writeKeys(dos, false);
+				}
+				for(int i=0;i<segmentCount;i++) {
+					segments[i].writeKeys(dos, true);
+				}
 			} else {
-				for(int i=0;i<splitfileBlocks;i++)
-					dos.write(splitfileDataKeys[i].getRoutingKey());
-				for(int i=0;i<splitfileCheckBlocks;i++)
-					dos.write(splitfileCheckKeys[i].getRoutingKey());
+				if(splitfileSingleCryptoKey == null) {
+					for(int i=0;i<splitfileBlocks;i++)
+						writeCHK(dos, splitfileDataKeys[i]);
+					for(int i=0;i<splitfileCheckBlocks;i++)
+						writeCHK(dos, splitfileCheckKeys[i]);
+				} else {
+					for(int i=0;i<splitfileBlocks;i++)
+						dos.write(splitfileDataKeys[i].getRoutingKey());
+					for(int i=0;i<splitfileCheckBlocks;i++)
+						dos.write(splitfileCheckKeys[i].getRoutingKey());
+				}
 			}
 		}
 

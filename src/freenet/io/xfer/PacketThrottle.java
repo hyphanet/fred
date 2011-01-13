@@ -26,6 +26,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
 import freenet.node.MessageItem;
+import freenet.node.PeerNode;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -52,6 +53,9 @@ public class PacketThrottle {
 	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
 	private long _roundTripTime = 500, _totalPackets, _droppedPackets;
+	/** The size of the window, in packets.
+	 * Window size must not drop below 1.0. Partly this is because we need to be able to send one packet, so it is a logical lower bound.
+	 * But mostly it is because of the non-slow-start division by _windowSize! */
 	private float _windowSize = 2;
 	private final int PACKET_SIZE;
 	private boolean slowStart = true;
@@ -81,13 +85,14 @@ public class PacketThrottle {
 		_droppedPackets++;
 		_totalPackets++;
 		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+		if(_windowSize < 1.0F) _windowSize = 1.0F;
 		slowStart = false;
 		if(logMINOR)
 			Logger.minor(this, "notifyOfPacketLost(): "+this);
 		_packetSeqWindowFullChecked = _packetSeq;
     }
 
-    public synchronized void notifyOfPacketAcknowledged() {
+    public synchronized void notifyOfPacketAcknowledged(double maxWindowSize) {
         _totalPackets++;
 		// If we didn't use the whole window, shrink the window a bit.
 		// This is similar but not identical to RFC2861
@@ -97,6 +102,7 @@ public class PacketThrottle {
         	if(_packetSeqWindowFull < _packetSeqWindowFullChecked) {
         		// We haven't used the full window once since we last checked.
         		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+        		if(_windowSize < 1.0F) _windowSize = 1.0F;
             	_packetSeqWindowFullChecked += windowSize;
             	if(logMINOR) Logger.minor(this, "Window not used since we last checked: full="+_packetSeqWindowFull+" last checked="+_packetSeqWindowFullChecked+" window = "+_windowSize+" for "+this);
         		return;
@@ -107,6 +113,11 @@ public class PacketThrottle {
     	if(slowStart) {
     		if(logMINOR) Logger.minor(this, "Still in slow start");
     		_windowSize += _windowSize / SLOW_START_DIVISOR;
+    		// Avoid craziness if there is lag in detecting packet loss.
+    		if(_windowSize > maxWindowSize) slowStart = false;
+    		// Window size must not drop below 1.0. Partly this is because we need to be able to send one packet, so it is a logical lower bound.
+    		// But mostly it is because of the non-slow-start division by _windowSize!
+    		if(_windowSize < 1.0F) _windowSize = 1.0F;
     	} else {
     		_windowSize += (PACKET_TRANSMIT_INCREMENT / _windowSize);
     	}
@@ -261,11 +272,11 @@ public class PacketThrottle {
 			Logger.error(this, "Congestion control wait time: "+waitTime+" for "+this);
 		else if(logMINOR)
 			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
-		MyCallback callback = new MyCallback(cbForAsyncSend);
+		MyCallback callback = new MyCallback(cbForAsyncSend, packetSize, ctr, peer != null && peer instanceof PeerNode && ((PeerNode)peer).isOldFNP());
 		MessageItem sent;
 		try {
 			sent = peer.sendAsync(msg, callback, ctr);
-			ctr.sentPayload(packetSize);
+			if(logMINOR) Logger.minor(this, "Sending async for throttled message: "+msg);
 			if(blockForSend) {
 				synchronized(callback) {
 					long timeout = System.currentTimeMillis() + 60*1000;
@@ -302,14 +313,22 @@ public class PacketThrottle {
 	private class MyCallback implements AsyncMessageCallback {
 
 		private boolean finished = false;
+		private boolean sent = false;
+		private final int packetSize;
+		private final ByteCounter ctr;
+		private final boolean isOldFNP;
 		
 		private AsyncMessageCallback chainCallback;
 		
-		public MyCallback(AsyncMessageCallback cbForAsyncSend) {
+		public MyCallback(AsyncMessageCallback cbForAsyncSend, int packetSize, ByteCounter ctr, boolean isOldFNP) {
 			this.chainCallback = cbForAsyncSend;
+			this.packetSize = packetSize;
+			this.ctr = ctr;
+			this.isOldFNP = isOldFNP;
 		}
 
 		public void acknowledged() {
+			sent(true); // Make sure it is called at least once.
 			synchronized(PacketThrottle.this) {
 				if(finished) {
 					if(logMINOR) Logger.minor(this, "Already acked, ignoring callback: "+this);
@@ -344,8 +363,24 @@ public class PacketThrottle {
 			if(logMINOR) Logger.minor(this, "Removed packet: error for "+this);
 			if(chainCallback != null) chainCallback.fatalError();
 		}
-
+		
 		public void sent() {
+			sent(false);
+		}
+
+		public void sent(boolean error) {
+			synchronized(PacketThrottle.this) {
+				if(sent) return;
+				if(error) {
+					if(!isOldFNP)
+						Logger.error(this, "Acknowledged called but not sent, assuming it has been sent on "+this);
+					else
+						// This looks like an old-FNP bug. Log at a lower priority.
+						Logger.normal(this, "Acknowledged called but not sent, assuming it has been sent on "+this);
+				}
+				sent = true;
+			}
+			ctr.sentPayload(packetSize);
 			// Ignore
 			if(chainCallback != null) chainCallback.sent();
 		}

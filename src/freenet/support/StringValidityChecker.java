@@ -145,6 +145,10 @@ public final class StringValidityChecker {
 		return macOSReservedPrintableFilenameCharacters.contains(c);
 	}
 	
+	public static boolean isUnixReservedPrintableFilenameCharacter(char c) {
+		return c == '/';
+	}
+	
 	public static boolean containsNoIDNBlacklistCharacters(String text) {
 		for(Character c : text.toCharArray()) {
 			if(idnBlacklist.contains(c))
@@ -247,5 +251,5 @@ public final class StringValidityChecker {
 		
 		return true;
 	}
-	
+
 }

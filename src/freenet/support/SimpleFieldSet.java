@@ -164,7 +164,7 @@ public class SimpleFieldSet {
 					String before = line.substring(0, index);
 					String after = line.substring(index+1);
 					if(!shortLived) after = after.intern();
-					put(before, after, allowMultiple, false);
+					put(before, after, allowMultiple, false, true);
 				} else {
 					endMarker = line;
 					break;
@@ -256,7 +256,7 @@ public class SimpleFieldSet {
     public void putSingle(String key, String value) {
     	if(value == null) return;
     	if(!shortLived) value = value.intern();
-    	if(!put(key, value, false, false))
+    	if(!put(key, value, false, false, false))
     		throw new IllegalStateException("Value already exists: "+value+" but want to set "+key+" to "+value);
     }
 
@@ -271,7 +271,7 @@ public class SimpleFieldSet {
     public void putAppend(String key, String value) {
     	if(value == null) return;
     	if(!shortLived) value = value.intern();
-    	put(key, value, true, false);
+    	put(key, value, true, false, false);
     }
 
     /**
@@ -285,7 +285,7 @@ public class SimpleFieldSet {
     public void putOverwrite(String key, String value) {
     	if(value == null) return;
     	if(!shortLived) value = value.intern();
-    	put(key, value, false, true);
+    	put(key, value, false, true, false);
     }
 
     /**
@@ -298,10 +298,13 @@ public class SimpleFieldSet {
      * @return True unless allowMultiple was false and there was a pre-existing value,
      * or value was null.
      */
-	private synchronized final boolean put(String key, String value, boolean allowMultiple, boolean overwrite) {
+	private synchronized final boolean put(String key, String value, boolean allowMultiple, boolean overwrite, boolean fromRead) {
 		int idx;
 		if(value == null) return true; // valid no-op
 		if(value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept newlines !");
+		if(allowMultiple && (!fromRead) && value.indexOf(MULTI_VALUE_CHAR) != -1) {
+			throw new IllegalArgumentException("Appending a string to a SimpleFieldSet value should not contain the multi-value char \""+String.valueOf(MULTI_VALUE_CHAR)+"\" but it does: \"" +value+"\" for \""+key+"\"", new Exception("error"));
+		}
 		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
 			if(!shortLived) key = key.intern();
 
@@ -327,7 +330,7 @@ public class SimpleFieldSet {
 				if(!shortLived) before = before.intern();
 				subsets.put(before, fs);
 			}
-			fs.put(after, value, allowMultiple, overwrite);
+			fs.put(after, value, allowMultiple, overwrite, fromRead);
 		}
 		return true;
     }
@@ -351,7 +354,7 @@ public class SimpleFieldSet {
 
 	public void put(String key, boolean b) {
 		// Don't use putSingle, avoid intern check (Boolean.toString returns interned strings anyway)
-		put(key, Boolean.toString(b), false, false);
+		put(key, Boolean.toString(b), false, false, false);
 	}
 
 	public void put(String key, double windowSize) {

@@ -752,6 +752,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final short DEFAULT_MAX_HTL = (short)18;
 	private short maxHTL;
 	private boolean skipWrapperWarning;
+	private int maxPacketSize;
 	/** Should inserts ignore low backoff times by default? */
 	public static boolean IGNORE_LOW_BACKOFF_DEFAULT = false;
 	/** Definition of "low backoff times" for above. */
@@ -2554,6 +2555,30 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 
 		skipWrapperWarning = nodeConfig.getBoolean("skipWrapperWarning");
+		
+		nodeConfig.register("maxPacketSize", 1280, sortOrder++, true, true, "Node.maxPacketSize", "Node.maxPacketSizeLong", new IntCallback() {
+
+			@Override
+			public Integer get() {
+				synchronized(Node.this) {
+					return maxPacketSize;
+				}
+			}
+
+			@Override
+			public void set(Integer val) throws InvalidConfigValueException,
+					NodeNeedRestartException {
+				synchronized(Node.this) {
+					if(val == maxPacketSize) return;
+					if(val < UdpSocketHandler.MIN_MTU) throw new InvalidConfigValueException("Must be over 576");
+					if(val > 1492) throw new InvalidConfigValueException("Larger than ethernet frame size unlikely to work!");
+					maxPacketSize = val;
+				}
+			}
+			
+		}, true);
+		
+		maxPacketSize = nodeConfig.getInt("maxPacketSize");
 
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
@@ -5772,8 +5797,17 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Returns true if the packet receiver should try to decode/process packets that are not from a peer (i.e. from a seed connection)
 	 * The packet receiver calls this upon receiving an unrecognized packet.
 	 */
-	public boolean wantAnonAuth() {
-		return opennet != null && acceptSeedConnections;
+	public boolean wantAnonAuth(boolean isOpennet) {
+		if(isOpennet)
+			return opennet != null && acceptSeedConnections;
+		else
+			return false;
+	}
+	
+	// FIXME make this configurable
+	// Probably should wait until we have non-opennet anon auth so we can add it to NodeCrypto.
+	public boolean wantAnonAuthChangeIP(boolean isOpennet) {
+		return !isOpennet;
 	}
 
 	public boolean opennetDefinitelyPortForwarded() {
@@ -6325,5 +6359,15 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private void unregisterFriendsVisibilityAlert() {
 		clientCore.alerts.unregister(visibilityAlert);
+	}
+
+	public int getMinimumMTU() {
+		int mtu;
+		synchronized(this) {
+			mtu = maxPacketSize;
+		}
+		int detected = ipDetector.getMinimumDetectedMTU();
+		if(detected < mtu) return detected;
+		return mtu;
 	}
 }

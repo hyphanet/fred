@@ -27,7 +27,6 @@ import java.util.List;
 
 import freenet.io.WritableToDataOutputStream;
 import freenet.io.comm.Peer;
-import freenet.io.comm.PeerContext;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
@@ -101,7 +100,7 @@ public class Serializer {
 		}
 	}
 
-	public static void writeToDataOutputStream(Object object, DataOutputStream dos, PeerContext ctx) throws IOException {	
+	public static void writeToDataOutputStream(Object object, DataOutputStream dos) throws IOException {	
 		Class<?> type = object.getClass();
 		if (type.equals(Long.class)) {
 			dos.writeLong(((Long) object).longValue());
@@ -127,11 +126,36 @@ public class Serializer {
 			dos.writeInt(ll.size());
 			synchronized (ll) {
 				for (Object o : ll) {
-					writeToDataOutputStream(o, dos, ctx);
+					writeToDataOutputStream(o, dos);
 				}
 			}
 		} else if (type.equals(Byte.class)) {
 			dos.write(((Byte) object).byteValue());
+		} else {
+			throw new RuntimeException("Unrecognised field type: " + type);
+		}
+	}
+
+	/** Only works for simple messages!! */
+	public static int length(Class<?> type, int maxStringLength) {
+		if (type.equals(Long.class)) {
+			return 8;
+		} else if (type.equals(Boolean.class)) {
+			return 1;
+		} else if (type.equals(Integer.class)) {
+			return 4;
+		} else if (type.equals(Short.class)) {
+			return 2;
+		} else if (type.equals(Double.class)) {
+			return 8;
+		} else if (WritableToDataOutputStream.class.isAssignableFrom(type)) {
+			throw new IllegalArgumentException("Unknown length for "+type);
+		} else if (type.equals(String.class)) {
+			return 4 + maxStringLength * 2; // Written as chars
+		} else if (type.equals(LinkedList.class)) {
+			throw new IllegalArgumentException("Unknown length for LinkedList");
+		} else if (type.equals(Byte.class)) {
+			return 1;
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}

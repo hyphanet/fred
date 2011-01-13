@@ -452,7 +452,8 @@ public class FCPServer implements Runnable, DownloadCache {
 		if(core.killedDatabase()) throw new DatabaseDisabledException();
 		List<RequestStatus> v = new ArrayList<RequestStatus>();
 		globalRebootClient.addPersistentRequestStatus(v);
-		globalForeverClient.addPersistentRequestStatus(v);
+		if(globalForeverClient != null)
+			globalForeverClient.addPersistentRequestStatus(v);
 		return v.toArray(new RequestStatus[v.size()]);
 	}
 

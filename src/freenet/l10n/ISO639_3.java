@@ -6,8 +6,9 @@ package freenet.l10n;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collections;
+import java.util.Hashtable;
+import java.util.Map;
 
 import freenet.support.io.Closer;
 
@@ -25,7 +26,6 @@ import freenet.support.io.Closer;
  * http://www.sil.org/iso639-3/iso-639-3_20100707.tab
  * 
  * @author xor (xor@freenetproject.org)
- *
  */
 public final class ISO639_3 {
 
@@ -33,9 +33,11 @@ public final class ISO639_3 {
 	 * A class which represents a language code. It was translated from the example SQL-table-definition on
 	 * http://www.sil.org/iso639-3/download.asp
 	 * 
-	 * The quoted texts on the JavaDoc of the member variables are the original comments from the SQL-table-defintion.
+	 * The quoted texts on the JavaDoc of the member variables are the original comments from the SQL-table-definition.
+	 * 
+	 * All members are final, therefore objects of this class do not need to be cloned by clients of ISO639_3.
 	 */
-	public static final class LanguageCode {
+	public static final class LanguageCode implements Comparable<LanguageCode> {
 		/**
 		 * "The three-letter 639-3 identifier", 3 characters, not null.
 		 */
@@ -57,12 +59,12 @@ public final class ISO639_3 {
 		 */
 		public final String part1;
 
-		static enum Scope {
+		public static enum Scope {
 			Individual,
 			Macrolanguage,
 			Special;
 			
-			public static Scope fromTabFile(String abbreviation) {
+			private static Scope fromTabFile(String abbreviation) {
 				if(abbreviation.equals("I")) return Scope.Individual;
 				else if(abbreviation.equals("M")) return Scope.Macrolanguage;
 				else if(abbreviation.equals("S")) return Scope.Special;
@@ -75,7 +77,7 @@ public final class ISO639_3 {
 		 */
 		public final Scope scope;
 
-		static enum Type {
+		public static enum Type {
 			Ancient,
 			Constructed,
 			Extinct,
@@ -83,7 +85,7 @@ public final class ISO639_3 {
 			Living,
 			Special;
 			
-			public static Type fromTabFile(String abbreviation) {
+			private static Type fromTabFile(String abbreviation) {
 				if(abbreviation.equals("A")) return Type.Ancient;
 				else if(abbreviation.equals("C")) return Type.Constructed;
 				else if(abbreviation.equals("E")) return Type.Extinct;
@@ -146,13 +148,23 @@ public final class ISO639_3 {
 			return equals((LanguageCode)o);
 		}
 		
-		public String toString() {
-			return new String(id) + " = " + referenceName + " (type: " + type + ")";
+		@Override
+		public int hashCode() {
+			return id.hashCode();
 		}
+
+		public int compareTo(LanguageCode o) {
+			return id.compareTo(o.id);
+		}
+		
+		public String toString() {
+			return new String(id) + " = " + referenceName + " (scope: " + scope + "; type: " + type + ")";
+		}
+
 	}
 	
-	private static final Set<LanguageCode> loadFromTabFile() {
-		final HashSet<LanguageCode> codes = new HashSet<LanguageCode>(7705 * 2);
+	private static final Hashtable<String, LanguageCode> loadFromTabFile() {
+		final Hashtable<String, LanguageCode> codes = new Hashtable<String, LanguageCode>(7705 * 2);
 
 		InputStream in = null;
 		InputStreamReader isr = null;
@@ -204,7 +216,7 @@ public final class ISO639_3 {
 						tokens.length==8 ? tokens[7] : null
 						);
 				
-				if(!codes.add(newCode))
+				if(codes.put(newCode.id, newCode) != null)
 					throw new RuntimeException("Duplicate language code: " + newCode);
 			}
 		} catch(Exception e) {
@@ -218,8 +230,60 @@ public final class ISO639_3 {
 		return codes;
 	}
 	
+
+	private final Map<String, LanguageCode> allLanguagesCache;
+	
+	/**
+	 * Constructs a new ISO639_3 and loads the list of languages from the .tab file in the classpath.
+	 * The list is cached for the lifetime of this ISO639_3 object, make sure not to keep the ISO639_3 object alive
+	 * if you only use a small part of all languages.
+	 *  
+	 * @throws RuntimeException If the .tab file is not present in the classpath or if parsing fails.
+	 */
+	public ISO639_3() {
+		allLanguagesCache = Collections.unmodifiableMap(loadFromTabFile());
+	}
+	
+	/**
+	 * Gets a list of all languages.
+	 * 
+	 * @return Returns the map of all ISO639-3 language codes. The key in the returned list is the ID of the language code,
+	 * which is the 3-letter code of ISO639-3. The given map is unmodifiable since it is used for the cache.
+	 */
+	public final Map<String, LanguageCode> getLanguages() {		
+		return allLanguagesCache;
+	}
+	
+	/**
+	 * Gets a filtered list of languages. The list is cached for the lifetime of this ISO639_3 object.
+	 * 
+	 * @param scope Must not be null.
+	 * @param type Must not be null.
+	 * @return Gets a {@link Hashtable} of language codes with the given scope and type. The key in the returned list is the ID 
+	 * 			of the language code, which is the 3-letter code of ISO639-3. The given Hashtable is free for modification.
+	 */
+	public final Hashtable<String, LanguageCode> getLanguagesByScopeAndType(LanguageCode.Scope scope, LanguageCode.Type type) {
+		final Map<String, LanguageCode> all = getLanguages();
+		final Hashtable<String, LanguageCode> result = new Hashtable<String, LanguageCode>();
+		
+		for(final LanguageCode c : all.values()) {
+			if(c.scope.equals(scope) && c.type.equals(type))
+				result.put(c.id, c); // We do not clone the code because all its fields are final.
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * @return The special symbolic language code which is supposed to be a category for multiple languages.
+	 */
+	public final LanguageCode getMultilingualCode() {
+		return getLanguages().get("mul");
+		
+	}
+	
 	public static void main(String[] args) {
-		for(LanguageCode c : loadFromTabFile()) {
+		for(LanguageCode c : loadFromTabFile().values()) {
 			System.out.println(c);
 		}
 	}

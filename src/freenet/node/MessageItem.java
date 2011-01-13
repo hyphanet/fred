@@ -26,18 +26,37 @@ public class MessageItem {
 	private final short priority;
 	private long cachedID;
 	private boolean hasCachedID;
+	final boolean sendLoadRT;
+	final boolean sendLoadBulk;
 
-	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, PeerNode pn) {
+	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, short overridePriority) {
+		this.msg = msg2;
+		this.cb = cb2;
+		formatted = false;
+		this.ctrCallback = ctr;
+		this.submitted = System.currentTimeMillis();
+		if(overridePriority > 0)
+			priority = overridePriority;
+		else
+			priority = msg2.getSpec().getPriority();
+		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
+		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
+		buf = msg.encodeToPacket();
+	}
+
+	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr) {
 		this.msg = msg2;
 		this.cb = cb2;
 		formatted = false;
 		this.ctrCallback = ctr;
 		this.submitted = System.currentTimeMillis();
 		priority = msg2.getSpec().getPriority();
-		buf = msg.encodeToPacket(pn);
+		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
+		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
+		buf = msg.encodeToPacket();
 	}
 
-	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority) {
+	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority, boolean sendLoadRT, boolean sendLoadBulk) {
 		this.cb = cb2;
 		this.msg = null;
 		this.buf = data;
@@ -47,6 +66,8 @@ public class MessageItem {
 		this.ctrCallback = ctr;
 		this.submitted = System.currentTimeMillis();
 		this.priority = priority;
+		this.sendLoadRT = sendLoadRT;
+		this.sendLoadBulk = sendLoadBulk;
 	}
 
 	/**
@@ -71,15 +92,6 @@ public class MessageItem {
 				ctrCallback.sentBytes(length);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" reporting "+length+" sent bytes on "+this, t);
-			}
-		}
-		if(cb != null) {
-			for(int i=0;i<cb.length;i++) {
-				try {
-					cb[i].sent();
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
-				}
 			}
 		}
 	}
@@ -131,6 +143,19 @@ public class MessageItem {
 			return -1;
 		} else {
 			return (Long)o;
+		}
+	}
+
+	/** Called the first time we have sent all of the message. */
+	public void onSentAll() {
+		if(cb != null) {
+			for(int i=0;i<cb.length;i++) {
+				try {
+					cb[i].sent();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
+				}
+			}
 		}
 	}
 }

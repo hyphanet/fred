@@ -32,6 +32,7 @@ import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.IncomingPacketFilter;
+import freenet.io.comm.IncomingPacketFilter.DECODED;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.NotConnectedException;
@@ -67,7 +68,7 @@ import freenet.support.io.NativeThread;
  * include queueing etc. (that may require some interface
  * changes in IncomingPacketFilter).
  */
-public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFilter {
+public class FNPPacketMangler implements OutgoingPacketMangler {
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
@@ -85,7 +86,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private final NodeCrypto crypto;
 	private final MessageCore usm;
 	private final PacketSocketHandler sock;
-	private final EntropySource fnpTimingSource;
 	private final EntropySource myPacketDataSource;
 	/**
 	 * Objects cached during JFK message exchange: JFK(3,4) with authenticator as key
@@ -174,7 +174,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		this.crypto = crypt;
 		this.usm = node.usm;
 		this.sock = sock;
-		fnpTimingSource = new EntropySource();
 		myPacketDataSource = new EntropySource();
 		authenticatorCache = new HashMap<ByteArrayWrapper, byte[]>();
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
@@ -194,9 +193,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 	}
 
-	private static final AtomicLong successfullyDecodedPackets = new AtomicLong();
-	private static final AtomicLong failedDecodePackets = new AtomicLong();
-
 	/**
 	 * Packet format:
 	 *
@@ -211,17 +207,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * E_session_pcfb(data) // IV = first 32 bytes of packet
 	 *
 	 */
-	
-	/**
-	 * Decrypt and authenticate packet.
-	 * Then feed it to USM.checkFilters.
-	 * Packets generated should have a PeerNode on them.
-	 * Note that the buffer can be modified by this method.
-	 */
-	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
-		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
-		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 
+	public DECODED process(byte[] buf, int offset, int length, Peer peer, long now) {
 		/**
 		 * Look up the Peer.
 		 * If we know it, check the packet with that key.
@@ -229,43 +216,51 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * occasionally change their IP addresses).
 		 */
 		PeerNode opn = node.peers.getByPeer(peer);
+		return process(buf, offset, length, peer, opn, now);
+	}
+
+	/**
+	 * Decrypt and authenticate packet.
+	 * Then feed it to USM.checkFilters.
+	 * Packets generated should have a PeerNode on them.
+	 * Note that the buffer can be modified by this method.
+	 */
+	public DECODED process(byte[] buf, int offset, int length, Peer peer, PeerNode opn, long now) {
+
 		if(opn != null && opn.getOutgoingMangler() != this) {
-			Logger.error(this, "Apparently contacted by "+opn+") on "+this);
+			Logger.error(this, "Apparently contacted by "+opn+") on "+this, new Exception("error"));
 			opn = null;
 		}
 		PeerNode pn;
+		boolean wantAnonAuth = crypto.wantAnonAuth();
 
 		if(opn != null) {
 			if(logMINOR) Logger.minor(this, "Trying exact match");
 			if(length > HEADERS_LENGTH_MINIMUM) {
 				if(logMINOR) Logger.minor(this, "Trying current key tracker for exact match");
 				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker(), now)) {
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return DECODED.DECODED;
 				}
 				// Try with old key
 				if(logMINOR) Logger.minor(this, "Trying previous key tracker for exact match");
 				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker(), now)) {
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return DECODED.DECODED;
 				}
 				// Try with unverified key
 				if(logMINOR) Logger.minor(this, "Trying unverified key tracker for exact match");
 				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker(), now)) {
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return DECODED.DECODED;
 				}
 			}
 			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {
 				// Might be an auth packet
 				if(tryProcessAuth(buf, offset, length, opn, peer, false, now)) {
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return DECODED.DECODED;
 				}
-				// Might be a reply to an anon auth packet
+				// Might be a reply to us sending an anon auth packet.
+				// I.e. we are not the seednode, they are.
 				if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) {
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return DECODED.DECODED;
 				}
 			}
 		}
@@ -279,68 +274,47 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return DECODED.DECODED;
 				}
 				if(logDEBUG) Logger.debug(this, "Trying previous key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return DECODED.DECODED;
 				}
 				if(logDEBUG) Logger.debug(this, "Trying unverified key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return DECODED.DECODED;
 				}
 			}
 		}
-		if(node.isStopping()) return;
+		if(node.isStopping()) return DECODED.SHUTTING_DOWN;
 		// Disconnected node connecting on a new IP address?
 		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
 			for(int i=0;i<peers.length;i++) {
 				pn = peers[i];
 				if(pn == opn) continue;
+				if(logDEBUG)
+					Logger.debug(this, "Trying auth with "+pn);
 				if(tryProcessAuth(buf, offset, length, pn, peer,false, now)) {
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
+					return DECODED.DECODED;
+				}
+				if(pn.handshakeUnknownInitiator()) {
+					// Might be a reply to us sending an anon auth packet.
+					// I.e. we are not the seednode, they are.
+					if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
+						return DECODED.DECODED;
+					}
 				}
 			}
 		}
-		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
-		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
-			for(int i=0;i<anonPeers.length;i++) {
-				pn = anonPeers[i];
-				if(pn == opn) continue;
-				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
-				}
-			}
-		}
-		if(length > HEADERS_LENGTH_MINIMUM) {
-			for(int i=0;i<anonPeers.length;i++) {
-				pn = anonPeers[i];
-				if(pn == opn) continue;
-				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
-					pn.changedIP(peer);
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
-				}
-				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
-					pn.changedIP(peer);
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
-				}
-				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
-					pn.changedIP(peer);
-					if(logMINOR) successfullyDecodedPackets.incrementAndGet();
-					return;
-				}
-			}
+		
+		boolean wantAnonAuthChangeIP = wantAnonAuth && crypto.wantAnonAuthChangeIP();
+		
+		if(wantAnonAuth && wantAnonAuthChangeIP) {
+			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) return DECODED.DECODED;
 		}
 
 		boolean didntTryOldOpennetPeers;
@@ -352,33 +326,69 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				// Try old connections.
 				PeerNode[] oldPeers = opennet.getOldPeers();
 				for(int i=0;i<oldPeers.length;i++) {
-					if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true, now)) return;
+					if(tryProcessAuth(buf, offset, length, oldPeers[i], peer, true, now)) return DECODED.DECODED;
 				}
 				didntTryOldOpennetPeers = false;
 			} else
 				didntTryOldOpennetPeers = true;
 		} else
 			didntTryOldOpennetPeers = false;
-		if(node.wantAnonAuth()) {
-			if(tryProcessAuthAnon(buf, offset, length, peer)) return;
+		if(wantAnonAuth) {
+			if(tryProcessAuthAnon(buf, offset, length, peer))
+				return DECODED.DECODED;
+		}
+		
+		if(wantAnonAuth && !wantAnonAuthChangeIP) {
+			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) {
+				Logger.error(this, "Last resort match anon-auth against all anon setup peernodes succeeded - this should not happen! (It can happen if they change address)");
+				return DECODED.DECODED;
+			}
 		}
 
                 // Don't log too much if we are a seednode
-                if(logMINOR && crypto.isOpennet && node.wantAnonAuth()) {
+                if(logMINOR && crypto.isOpennet && wantAnonAuth) {
                 	if(!didntTryOldOpennetPeers)
                 		Logger.minor(this,"Unmatchable packet from "+peer);
                 } else
                     Logger.normal(this,"Unmatchable packet from "+peer);
                 
-                if(logMINOR && !didntTryOldOpennetPeers)
-                	failedDecodePackets.incrementAndGet();
+                if(!didntTryOldOpennetPeers)
+                	return DECODED.NOT_DECODED;
+                else
+                	return DECODED.DIDNT_WANT_OPENNET;
 	}
 	
-	public static long[] getDecodedPackets() {
-		if(!logMINOR) return null;
-		long decoded = successfullyDecodedPackets.get();
-		long failed = failedDecodePackets.get();
-		return new long[] { decoded, decoded+failed };
+	private boolean checkAnonAuthChangeIP(PeerNode opn, byte[] buf, int offset, int length, Peer peer, long now) {
+		PeerNode[] anonPeers = crypto.getAnonSetupPeerNodes();
+		PeerNode pn;
+		if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 3) {
+			for(int i=0;i<anonPeers.length;i++) {
+				pn = anonPeers[i];
+				if(pn == opn) continue;
+				if(tryProcessAuthAnonReply(buf, offset, length, pn, peer, now)) {
+					return true;
+				}
+			}
+		}
+		if(length > HEADERS_LENGTH_MINIMUM) {
+			for(int i=0;i<anonPeers.length;i++) {
+				pn = anonPeers[i];
+				if(pn == opn) continue;
+				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
+					pn.changedIP(peer);
+					return true;
+				}
+				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
+					pn.changedIP(peer);
+					return true;
+				}
+				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
+					pn.changedIP(peer);
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -610,7 +620,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4)) {
+		if(!(negType == 2 || negType == 4 || negType == 6 || negType == 7)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -657,7 +667,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 4)) {
+		if(!(negType == 2 || negType == 4 || negType == 6 || negType == 7)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -723,9 +733,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} else if (negType == 1) {
 			Logger.error(this, "Old StationToStation (negType 1) not supported.");
 			return;
-		} else if (negType==2 || negType == 4) {
+		} else if (negType==2 || negType == 4 || negType == 6 || negType == 7) {
 			// negType == 3 was buggy
 			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
+			// negType == 5 => same as 4, but use new packet format after negotiation
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
 			 * for the initiator and no identity protection for the responder
@@ -1188,9 +1199,58 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
-		byte[] Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+
+		/* 0 is the outgoing key for the initiator, 7 for the responder */
+		byte[] outgoingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "7");
+		byte[] incommingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
+
+		byte[] hmacKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "3");
+		byte[] ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
+		byte[] ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
+
+		/* Bytes  1-4:  Initial sequence number for the initiator
+		 * Bytes  5-8:  Initial sequence number for the responder
+		 * Bytes  9-12: Initial message id for the initiator
+		 * Bytes 13-16: Initial message id for the responder
+		 * Note that we are the responder */
+		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
+		int theirInitialSeqNum = ((sharedData[0] & 0xFF) << 24)
+				| ((sharedData[1] & 0xFF) << 16)
+				| ((sharedData[2] & 0xFF) << 8)
+				| (sharedData[3] & 0xFF);
+		int ourInitialSeqNum = ((sharedData[4] & 0xFF) << 24)
+				| ((sharedData[5] & 0xFF) << 16)
+				| ((sharedData[6] & 0xFF) << 8)
+				| (sharedData[7] & 0xFF);
+		int theirInitialMsgID, ourInitialMsgID;
+		if(negType >= 7) {
+			theirInitialMsgID =
+				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
+					getInitialMessageID(pn.identity, crypto.myIdentity);
+			ourInitialMsgID =
+				unknownInitiator ? getInitialMessageID(crypto.myIdentity) :
+					getInitialMessageID(crypto.myIdentity, pn.identity);
+		} else {
+			theirInitialMsgID= ((sharedData[8] & 0xFF) << 24)
+				| ((sharedData[9] & 0xFF) << 16)
+				| ((sharedData[10] & 0xFF) << 8)
+				| (sharedData[11] & 0xFF);
+			ourInitialMsgID= ((sharedData[12] & 0xFF) << 24)
+				| ((sharedData[13] & 0xFF) << 16)
+				| ((sharedData[14] & 0xFF) << 8)
+				| (sharedData[15] & 0xFF);
+		}
+		if(logMINOR)
+			Logger.minor(this, "Their initial message ID: "+theirInitialMsgID+" ours "+ourInitialMsgID);
+
+		if(negType <= 4) {
+			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
+			 * backwards compatible */
+			outgoingKey = incommingKey;
+		}
+
 		c.initialize(Ke);
 		int ivLength = PCFBMode.lengthIV(c);
 		int decypheredPayloadOffset = 0;
@@ -1260,9 +1320,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// At this point we know it's from the peer, so we can report a packet received.
 		pn.receivedPacket(true, false);
 
-		BlockCipher cs = null;
-		try { cs = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
-		cs.initialize(Ks);
+		BlockCipher outgoingCipher = null;
+		BlockCipher incommingCipher = null;
+		BlockCipher ivCipher = null;
+		try {
+			outgoingCipher = new Rijndael(256, 256);
+			incommingCipher = new Rijndael(256, 256);
+			ivCipher = new Rijndael(256, 256);
+		} catch (UnsupportedCipherException e) {
+			throw new RuntimeException(e);
+		}
+		outgoingCipher.initialize(outgoingKey);
+		incommingCipher.initialize(incommingKey);
+		ivCipher.initialize(ivKey);
 
 		// Promote if necessary
 		boolean dontWant = false;
@@ -1284,7 +1354,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 
-		long newTrackerID = pn.completedHandshake(bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false, false);
+		long newTrackerID = pn.completedHandshake(
+				bootID, hisRef, 0, hisRef.length, outgoingCipher, outgoingKey, incommingCipher,
+				incommingKey, replyTo, true, negType, trackerID, false, false, hmacKey, ivCipher,
+				ivNonce, ourInitialSeqNum, theirInitialSeqNum, ourInitialMsgID, theirInitialMsgID);
 
 		if(newTrackerID > 0) {
 
@@ -1503,8 +1576,27 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		// We change the key
-		c.initialize(pn.jfkKs);
-		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker) >= 0) {
+		BlockCipher ivCipher = null;
+		BlockCipher outgoingCipher = null;
+		BlockCipher incommingCipher = null;
+		try {
+			ivCipher = new Rijndael(256, 256);
+			outgoingCipher = new Rijndael(256, 256);
+			incommingCipher = new Rijndael(256, 256);
+		} catch (UnsupportedCipherException e) {
+			throw new RuntimeException(e);
+		}
+
+		outgoingCipher.initialize(pn.outgoingKey);
+		incommingCipher.initialize(pn.incommingKey);
+		ivCipher.initialize(pn.ivKey);
+
+		long newTrackerID = pn.completedHandshake(
+				bootID, hisRef, 0, hisRef.length, outgoingCipher, pn.outgoingKey, incommingCipher,
+				pn.incommingKey, replyTo, false, negType, trackerID, true, reusedTracker, pn.hmacKey,
+				ivCipher, pn.ivNonce, pn.ourInitialSeqNum, pn.theirInitialSeqNum, pn.ourInitialMsgID,
+				pn.theirInitialMsgID);
+		if(newTrackerID >= 0) {
 			if(dontWant) {
 				node.peers.disconnect(pn, true, true, true);
 			} else {
@@ -1519,7 +1611,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.setJFKBuffer(null);
 		pn.jfkKa = null;
 		pn.jfkKe = null;
-		pn.jfkKs = null;
+		pn.outgoingKey = null;
+		pn.incommingKey = null;
+		pn.hmacKey = null;
+		pn.ivKey = null;
+		pn.ivNonce = null;
+		pn.ourInitialSeqNum = 0;
+		pn.theirInitialSeqNum = 0;
+		pn.ourInitialMsgID = 0;
+		pn.theirInitialMsgID = 0;
 		// We want to clear it here so that new handshake requests
 		// will be sent with a different DH pair
 		pn.setKeyAgreementSchemeContext(null);
@@ -1606,9 +1706,59 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
-		pn.jfkKs = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+
+		/* 0 is the outgoing key for the initiator, 7 for the responder */
+		pn.outgoingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+		pn.incommingKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "7");
 		pn.jfkKe = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		pn.jfkKa = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
+
+		pn.hmacKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "3");
+		pn.ivKey = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "4");
+		pn.ivNonce = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "5");
+
+		/* Bytes  1-4:  Initial sequence number for the initiator
+		 * Bytes  5-8:  Initial sequence number for the responder
+		 * Bytes  9-12: Initial message id for the initiator
+		 * Bytes 13-16: Initial message id for the responder
+		 * Note that we are the initiator */
+		byte[] sharedData = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "6");
+		pn.ourInitialSeqNum = ((sharedData[0] & 0xFF) << 24)
+				| ((sharedData[1] & 0xFF) << 16)
+				| ((sharedData[2] & 0xFF) << 8)
+				| (sharedData[3] & 0xFF);
+		pn.theirInitialSeqNum = ((sharedData[4] & 0xFF) << 24)
+				| ((sharedData[5] & 0xFF) << 16)
+				| ((sharedData[6] & 0xFF) << 8)
+				| (sharedData[7] & 0xFF);
+		if(negType >= 7) {
+			pn.theirInitialMsgID =
+				unknownInitiator ? getInitialMessageID(pn.identity) :
+					getInitialMessageID(pn.identity, crypto.myIdentity);
+			pn.ourInitialMsgID =
+				unknownInitiator ? getInitialMessageID(pn.identity) :
+					getInitialMessageID(crypto.myIdentity, pn.identity);
+		} else {
+			pn.ourInitialMsgID= ((sharedData[8] & 0xFF) << 24)
+				| ((sharedData[9] & 0xFF) << 16)
+				| ((sharedData[10] & 0xFF) << 8)
+				| (sharedData[11] & 0xFF);
+			pn.theirInitialMsgID= ((sharedData[12] & 0xFF) << 24)
+				| ((sharedData[13] & 0xFF) << 16)
+				| ((sharedData[14] & 0xFF) << 8)
+				| (sharedData[15] & 0xFF);
+		}
+			
+		if(logMINOR)
+			Logger.minor(this, "Their initial message ID: "+pn.theirInitialMsgID+" ours "+pn.ourInitialMsgID);
+
+
+		if(negType <= 4) {
+			/* Negtypes <= 4 were deployed when the keys were split, so use the initiator key to be
+			 * backwards compatible */
+			pn.incommingKey = pn.outgoingKey;
+		}
+
 		c.initialize(pn.jfkKe);
 		int ivLength = PCFBMode.lengthIV(c);
 		byte[] iv = new byte[ivLength];
@@ -1670,6 +1820,34 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this,"Message3 timeout error:Sending packet for"+pn.getPeer());
 	}
 
+	private int getInitialMessageID(byte[] identity) {
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(identity);
+		// Similar to JFK keygen, should be safe enough.
+		try {
+			md.update("INITIAL0".getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
+		byte[] hashed = md.digest();
+		SHA256.returnMessageDigest(md);
+		return Fields.bytesToInt(hashed, 0);
+	}
+
+	private int getInitialMessageID(byte[] identity, byte[] otherIdentity) {
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(identity);
+		md.update(otherIdentity);
+		// Similar to JFK keygen, should be safe enough.
+		try {
+			md.update("INITIAL1".getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
+		byte[] hashed = md.digest();
+		SHA256.returnMessageDigest(md);
+		return Fields.bytesToInt(hashed, 0);
+	}
 
 	/*
 	 * Format:
@@ -1892,12 +2070,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		 * first one is ECB, and the second one is ECB XORed with the
 		 * ciphertext and plaintext of the first block).
 		 */
-		BlockCipher sessionCipher = tracker.sessionCipher;
+		BlockCipher sessionCipher = tracker.incommingCipher;
 		if(sessionCipher == null) {
 			if(logMINOR) Logger.minor(this, "No cipher");
 			return false;
 		}
-		if(logDEBUG) Logger.debug(this, "Decrypting with "+HexUtil.bytesToHex(tracker.sessionKey));
+		if(logDEBUG) Logger.debug(this, "Decrypting with "+HexUtil.bytesToHex(tracker.incommingKey));
 		int blockSize = sessionCipher.getBlockSize() >> 3;
 		if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
 			throw new IllegalStateException("Block size must be equal to key size");
@@ -2156,12 +2334,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				return;
 			}
 			if(logMINOR) Logger.minor(this, "Message "+i+" length "+length+", hash code: "+Fields.hashCode(decrypted, ptr, length));
-			Message m = usm.decodeSingleMessage(decrypted, ptr, length, tracker.pn, 1 + (overhead / messages));
+			tracker.pn.processDecryptedMessage(decrypted, ptr, length, 1 + (overhead / messages));
 			ptr+=length;
-			if(m != null) {
-				//Logger.minor(this, "Dispatching packet: "+m);
-				usm.checkFilters(m, sock);
-			}
 		}
 
 		tracker.pn.maybeRekey();
@@ -2852,8 +3026,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * including acks and resend requests. Is clobbered.
 	 */
 	private int processOutgoingFullyFormatted(byte[] plaintext, SessionKey kt) {
-		BlockCipher sessionCipher = kt.sessionCipher;
-		if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
+		BlockCipher sessionCipher = kt.outgoingCipher;
+		if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.outgoingKey));
 		if(sessionCipher == null) {
 			Logger.error(this, "Dropping packet send - have not handshaked yet");
 			return 0;
@@ -2932,7 +3106,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int negType = pn.selectNegType(this);
 		if(negType == -1) {
 			// Pick a random negType from what I do support
-			int[] negTypes = supportedNegTypes();
+			int[] negTypes = supportedNegTypes(true);
 			negType = negTypes[node.random.nextInt(negTypes.length)];
 			Logger.normal(this, "Cannot send handshake to "+pn+" because no common negTypes, choosing random negType of "+negType);
 		}
@@ -2969,8 +3143,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		item.pn.resendByteCounter.sentBytes(size);
 	}
 
-	public int[] supportedNegTypes() {
-		return new int[] { 2, 4 };
+	public int[] supportedNegTypes(boolean forPublic) {
+		if(forPublic)
+			return new int[] { 2, 4, 6, 7 };
+		else
+			return new int[] { 2, 4, 6, 7 };
 	}
 
 	public int fullHeadersLengthOneMessage() {
@@ -3120,7 +3297,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	private byte[] computeJFKSharedKey(BigInteger exponential, byte[] nI, byte[] nR, String what) {
-		assert("0".equals(what) || "1".equals(what) || "2".equals(what));
+		assert("0".equals(what) || "1".equals(what) || "2".equals(what) || "3".equals(what)
+				|| "4".equals(what) || "5".equals(what) || "6".equals(what) || "7".equals(what));
 		byte[] number = null;
 		try {
 			number = what.getBytes("UTF-8");
@@ -3148,7 +3326,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * We push to it until we reach the cap where we rekey or we reach the PFS interval
 	 */
 	private int getAuthenticatorCacheSize() {
-		if(crypto.isOpennet && node.wantAnonAuth()) // seednodes
+		if(crypto.isOpennet && node.wantAnonAuth(true)) // seednodes
 			return 5000; // 200kB
 		else
 			return 250; // 10kB
