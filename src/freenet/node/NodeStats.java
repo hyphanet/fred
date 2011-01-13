@@ -1138,14 +1138,11 @@ public class NodeStats implements Persistable {
 		
 		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert, realTimeFlag);
 		
-		// If over the upper limit, reject.
-		
-		if(logMINOR) Logger.minor(this, limit+" second limit: "+bandwidthAvailableOutputUpperLimit+" expected output liability: "+bandwidthLiabilityOutput);
-		if(bandwidthLiabilityOutput > bandwidthAvailableOutputUpperLimit) {
-			pInstantRejectIncoming.report(1.0);
-			rejected(name+" bandwidth liability", isLocal);
-			return name+" bandwidth liability ("+bandwidthLiabilityOutput+" > "+bandwidthAvailableOutputUpperLimit+")";
-		}
+		// Ignore the upper limit.
+		// Because we reassignToSelf() in various tricky timeout conditions, it is possible to exceed it.
+		// Even if we do we still need to allow the guaranteed allocation for each peer.
+		// Except when we do that, we have to offer it via ULPRs afterwards ...
+		// Yes but the GetOfferedKey's are subject to load management, so no problem.
 		
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutputLowerLimit) {
 			
