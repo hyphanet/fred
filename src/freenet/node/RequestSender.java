@@ -371,6 +371,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             boolean waitedForLoadManagement = false;
             boolean retriedForLoadManagement = false;
             
+            SlotWaiter waiter = null;
+            
         loadWaiterLoop:
         	while(true) {
             
@@ -394,9 +396,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				if(logMINOR)
         					Logger.minor(this, "Cannot send to "+next+" realtime="+realTimeFlag);
         				waitedForLoadManagement = true;
-        				SlotWaiter waiter = next.createSlotWaiter(origTag, type, false, realTimeFlag);
+        				if(waiter == null)
+        					waiter = next.createSlotWaiter(origTag, type, false, realTimeFlag);
+        				else
+        					waiter.addWaitingFor(next);
         				PeerNode oldNext = next;
-        				waiter.addWaitingFor(next);
         				PeerNode waited = waiter.waitForAny();
         				if(waited == null) {
         					if(logMINOR) Logger.minor(this, "Failed in wait - backoff, disconnection etc? Rerouting...");
@@ -420,10 +424,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         						oldNext.noLongerRoutingTo(origTag, false);
         						return;
         					} else {
-        						if(logMINOR) Logger.minor(this, "Adding new peer to the wait list: "+next);
-        						// Add the new peer to the list
-        						waiter.addWaitingFor(next);
-        						continue;
+        						if(logMINOR) Logger.minor(this, "Rerouted after failure in wait to "+next);
+        						// Wait for the old and the new too.
+        						continue loadWaiterLoop;
         					}
         				} else {
         					next = waited;
