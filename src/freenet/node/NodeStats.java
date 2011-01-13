@@ -1126,6 +1126,24 @@ public class NodeStats implements Persistable {
 		return outputAvailablePerSecond * limit;
 	}
 
+	/** Should the request be rejected due to bandwidth liability?
+	 * 
+	 * @param bandwidthAvailableOutputUpperLimit The overall upper limit, already calculated.
+	 * @param requestsSnapshot The requests running.
+	 * @param input True if this is input bandwidth, false if it is output bandwidth.
+	 * @param limit The limit period in seconds.
+	 * @param source The source of the request.
+	 * @param isLocal True if the request is local.
+	 * @param isSSK True if it is an SSK request.
+	 * @param isInsert True if it is an insert.
+	 * @param isOfferReply True if it is a GetOfferedKey.
+	 * @param hasInStore True if we have the data in the store, and can return it, so 
+	 * won't need to route it onwards.
+	 * @param transfersPerInsert The average number of outgoing transfers per insert.
+	 * @param realTimeFlag True if this is a real-time request, false if it is a bulk
+	 * request.
+	 * @return A string explaining why, or null if we can accept the request.
+	 */
 	private String checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
 			RunningRequestsSnapshot requestsSnapshot, boolean input, long limit,
 			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag) {
