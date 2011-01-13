@@ -393,7 +393,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					continue peerLoop;
         				} else {
         					expectedAcceptState = waiter.getAcceptedState();
-        					triedAll = true;
         				}
         				
         			}
