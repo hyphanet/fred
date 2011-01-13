@@ -421,6 +421,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					} else {
         						if(logMINOR) Logger.minor(this, "Adding new peer to the wait list: "+next);
         						// Add the new peer to the list
+        						waiter.addWaitingFor(next);
         						continue;
         					}
         				} else {
