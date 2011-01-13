@@ -619,7 +619,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 								
 								if (msg.getSpec() != DMT.FNPInsertReply) {
 									Logger.error(this, "Unknown reply: " + msg);
-									tag.removeRoutingTo(waitingFor);
 									return;
 								} else {
 									// Our task is complete, one node (quite deep), has accepted the insert.
