@@ -373,10 +373,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
             SlotWaiter waiter = null;
             
+            RequestLikelyAcceptedState lastExpectedAcceptState = null;
+            RequestLikelyAcceptedState expectedAcceptState = null;
+            
         loadWaiterLoop:
         	while(true) {
             
-        		RequestLikelyAcceptedState expectedAcceptState;
         		expectedAcceptState = 
         			next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
         		
@@ -386,12 +388,20 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			triedAll = true;
         			if(logMINOR) Logger.minor(this, "No load stats for "+next);
         		} else {
+        			lastExpectedAcceptState = expectedAcceptState;
+        			
         			expectedAcceptState = 
         				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
         			
         			if(expectedAcceptState != null) {
         				if(logMINOR)
         					Logger.minor(this, "Predicted accept state for "+this+" : "+expectedAcceptState+" realtime="+realTimeFlag);
+        				// FIXME sanity check based on new data. Backoff if not plausible.
+        				// FIXME recalculate with broader check, allow a few percent etc.
+        				if(lastExpectedAcceptState == RequestLikelyAcceptedState.GUARANTEED && 
+        						(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)) {
+        					Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState);
+        				}
         			} else {
         				if(logMINOR)
         					Logger.minor(this, "Cannot send to "+next+" realtime="+realTimeFlag);
