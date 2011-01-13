@@ -39,6 +39,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		 * or failure of dependant transfers from that node?
 		 * Includes timing out. */
 		boolean receivedCompletionNotice;
+		/** Set when we fatally timeout, or when we get a completion other than a timeout. */
+		boolean finishedWaiting;
 
 		/** Was the notification of successful transfer? */
 		boolean completionSucceeded;
@@ -70,10 +72,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							if(logMINOR)
 								Logger.minor(this, "Disconnected while adding filter");
 							BackgroundTransfer.this.completedTransfer(false);
-							BackgroundTransfer.this.receivedNotice(false);
+							BackgroundTransfer.this.receivedNotice(false, false);
 						}
 					} else {
-						BackgroundTransfer.this.receivedNotice(false);
+						BackgroundTransfer.this.receivedNotice(false, false);
 						pn.localRejectedOverload("TransferFailedInsert");
 					}
 				}
@@ -91,7 +93,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				this.realRun();
 			} catch (Throwable t) {
 				this.completedTransfer(false);
-				this.receivedNotice(false);
+				this.receivedNotice(false, false);
 				Logger.error(this, "Caught "+t, t);
 			}
 		}
@@ -117,16 +119,25 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 		}
 		
-		/** @return True unless we had already received a notice. */
-		private boolean receivedNotice(boolean success) {
+		/** @param timeout Whether this completion is the result of a timeout.
+		 * @return True unless we had already received a notice. */
+		private boolean receivedNotice(boolean success, boolean timeout) {
 			if(logMINOR) Logger.minor(this, "Received notice: "+success+" on "+this);
 			synchronized(this) {
+				if(finishedWaiting) {
+					Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+")", new Exception("error"));
+					return false;
+				}
 				if (receivedCompletionNotice) {
 					if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
+					if(timeout) // Fatal timeout.
+						finishedWaiting = true;
 					return false;
 				} else {
 				completionSucceeded = success;
 				receivedCompletionNotice = true;
+				if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
+					finishedWaiting = true;
 				notifyAll();
 				}
 			}
@@ -150,7 +161,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				if(anyTimedOut) {
 					CHKInsertSender.this.setTransferTimedOut();
 				}
-				receivedNotice(!anyTimedOut);
+				receivedNotice(!anyTimedOut, false);
 			} else {
 				Logger.error(this, "received completion notice for wrong node: "+pn+" != "+this.pn);
 			}			
@@ -158,7 +169,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		
 		public boolean shouldTimeout() {
 			//AFIACS, this will still let the filter timeout, but not call onMatched() twice.
-			return receivedCompletionNotice;
+			return finishedWaiting;
 		}
 		
 		private MessageFilter getNotificationMessageFilter() {
@@ -171,7 +182,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			 */
 			// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
 			Logger.normal(this, "Timed out waiting for a final ack from: "+pn+" on "+this, new Exception("debug"));
-			if(receivedNotice(false)) {
+			if(receivedNotice(false, true)) {
 				pn.localRejectedOverload("InsertTimeoutNoFinalAck");
 				// First timeout. Wait for second timeout.
 				try {
@@ -190,13 +201,13 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 
 		public void onDisconnect(PeerContext ctx) {
 			Logger.normal(this, "Disconnected "+ctx+" for "+this);
-			receivedNotice(true); // as far as we know
+			receivedNotice(true, false); // as far as we know
 			thisTag.removeRoutingTo(pn);
 		}
 
 		public void onRestarted(PeerContext ctx) {
 			Logger.normal(this, "Restarted "+ctx+" for "+this);
-			receivedNotice(true);
+			receivedNotice(true, false);
 			thisTag.removeRoutingTo(pn);
 		}
 
