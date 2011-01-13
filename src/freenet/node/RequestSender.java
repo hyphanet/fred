@@ -291,6 +291,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     
     private void routeRequests() {
         
+    	NodeStats.RequestType type =
+    		(key instanceof NodeSSK) ? NodeStats.RequestType.SSK_REQUEST : NodeStats.RequestType.CHK_REQUEST;
+    	
         peerLoop:
         while(true) {
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
@@ -390,7 +393,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				if(logMINOR)
         					Logger.minor(this, "Cannot send to "+next);
         				waitedForLoadManagement = true;
-        				SlotWaiter waiter = next.createSlotWaiter(origTag, isSSK ? RequestType.SSK_REQUEST : RequestType.CHK_REQUEST, false, realTimeFlag);
+        				SlotWaiter waiter = next.createSlotWaiter(origTag, type, false, realTimeFlag);
         				waiter.addWaitingFor(next);
         				if(waiter.waitForAny() == null) {
         					// Broken due to low capacity???
