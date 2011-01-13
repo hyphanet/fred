@@ -608,12 +608,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 								
 								if (msg.getSpec() != DMT.FNPInsertReply) {
 									Logger.error(this, "Unknown reply: " + msg);
-									finish(INTERNAL_ERROR, waitingFor);
 									return;
 								} else {
 									// Our task is complete, one node (quite deep), has accepted the insert.
 									// The request will not be routed to any other nodes, this is where the data *should* be.
-									finish(SUCCESS, waitingFor);
 									return;
 								}
 				            }
@@ -986,6 +984,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     	if(forkedRequestTag != null) forkedRequestTag.removeRoutingTo(next);
     	
         synchronized(this) {
+        	if(allTransfersCompleted) return; // Already called.
         	if((code == ROUTE_NOT_FOUND) && !sentRequest)
         		code = ROUTE_REALLY_NOT_FOUND;
 
