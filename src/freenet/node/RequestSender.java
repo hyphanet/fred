@@ -382,6 +382,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			// No stats, old style, just go for it.
         			// This can happen both when talking to an old node and when we've just connected, but should not be the case for long enough to be a problem.
         			triedAll = true;
+        			if(logMINOR) Logger.minor(this, "No load stats for "+next);
         		} else {
         			expectedAcceptState = 
         				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
