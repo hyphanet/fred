@@ -589,7 +589,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 									// Second timeout.
 									// Definitely caused by the next node, fatal.
 									Logger.error(this, "Got second (local) timeout on "+this+" from "+waitingFor);
-									tag.removeRoutingTo(waitingFor);
 									waitingFor.fatalTimeout();
 									return;
 								}
@@ -690,7 +689,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		next.localRejectedOverload("AfterInsertAcceptedRejectedTimeout");
 		
 		// Since we definitely sent the DataInsert, this is definitely the fault of the next node.
-		origTag.removeRoutingTo(next);
+		// However, we have always started the transfer by the time this is called, so we do NOT need to removeRoutingTo().
 		next.fatalTimeout();
 		
 		finish(TIMED_OUT, next);
