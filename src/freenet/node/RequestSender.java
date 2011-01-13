@@ -91,6 +91,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private boolean hasForwarded;
     private PeerNode transferringFrom;
     private boolean turtleMode;
+    private boolean reassignedToSelfDueToMultipleTimeouts;
     private boolean sentBackoffTurtle;
     /** Set when we start to think about going to turtle mode - not unset if we get cancelled instead. */
     private boolean tryTurtle;
@@ -218,6 +219,27 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     }
     
     public void run() {
+    	node.getTicker().queueTimedJob(new Runnable() {
+    		
+    		public void run() {
+    			// Because we can reroute, and we apply the same timeout for each peer,
+    			// it is possible for us to exceed the timeout. In which case the downstream
+				// node will get impatient. So we need to reassign to self when this happens,
+				// so that we don't ourselves get blamed.
+				
+				synchronized(this) {
+					if(status != NOT_FINISHED) return;
+					if(transferringFrom != null) return;
+					reassignedToSelfDueToMultipleTimeouts = true;
+				}
+				
+				// We are still routing, yet we have exceeded the per-peer timeout, probably due to routing to multiple nodes e.g. RNFs and accepted timeouts.
+				Logger.normal(this, "Reassigning to self on timeout: "+RequestSender.this);
+				
+				reassignToSelfOnTimeout();
+			}
+    		
+    	}, fetchTimeout);
         try {
         	realRun();
         } catch (Throwable t) {
@@ -305,6 +327,20 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 finish(DATA_NOT_FOUND, null, false);
                 node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.REJECT_TIME, source);
                 return;
+            }
+            
+            // If we are unable to reply in a reasonable time, and we haven't started a 
+            // transfer, we should not route further. There are other cases e.g. we 
+            // reassign to self (due to external timeout) while waiting for the data, then
+            // get a transfer without timing out on the node. In that case we will get the
+            // data, but just for ourselves.
+            boolean failed;
+            synchronized(this) {
+            	failed = reassignedToSelfDueToMultipleTimeouts;
+            }
+            if(failed) {
+            	finish(TIMED_OUT, null, false);
+            	return;
             }
 
 			routeAttempts++;
@@ -1869,6 +1905,16 @@ loadWaiterLoop:
 	private int abortDownstreamTransfersReason;
 	private String abortDownstreamTransfersDesc;
 	private boolean receivingAsync;
+	
+	private void reassignToSelfOnTimeout() {
+		origTag.reassignToSelf();
+		synchronized(listeners) {
+			for(Listener l : listeners) {
+				l.onRequestSenderFinished(TIMED_OUT);
+			}
+			listeners.clear();
+		}
+	}
 	
 	private void sendAbortDownstreamTransfers(int reason, String desc) {
 		origTag.setRequestSenderFinished(TRANSFER_FAILED);
