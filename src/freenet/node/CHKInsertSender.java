@@ -984,7 +984,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     	if(forkedRequestTag != null) forkedRequestTag.removeRoutingTo(next);
     	
         synchronized(this) {
-        	if(allTransfersCompleted) return; // Already called.
+        	if(allTransfersCompleted) return; // Already called. Doesn't prevent race condition resulting in the next bit running but that's not really a problem.
         	if((code == ROUTE_NOT_FOUND) && !sentRequest)
         		code = ROUTE_REALLY_NOT_FOUND;
 
@@ -1015,6 +1015,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
         
         	synchronized(this) {
+        		if(allTransfersCompleted) return;
         		if(failedRecv)
         			status = RECEIVE_FAILED;
         		allTransfersCompleted = true;
