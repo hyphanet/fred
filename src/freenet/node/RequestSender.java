@@ -381,6 +381,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
         loadWaiterLoop:
         	while(true) {
+        		if(logMINOR) Logger.minor(this, "Going around loop");
             
         		expectedAcceptState = 
         			next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
@@ -455,9 +456,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				}
         				
         			}
+    				if(logMINOR)
+    					Logger.minor(this, "Leaving new load management big block: Predicted accept state for "+this+" : "+expectedAcceptState+" realtime="+realTimeFlag);
         			// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
         			// In fact, we should report only after Accepted.
         		}
+        		if(logMINOR) Logger.minor(this, "Routing to "+next);
         		
         		synchronized(this) {
         			lastNode = next;
@@ -493,6 +497,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			 * 
         			 * Don't use sendAsync().
         			 */
+        			if(logMINOR) Logger.minor(this, "Sending "+req+" to "+next);
         			next.sendSync(req, this);
         		} catch (NotConnectedException e) {
         			Logger.minor(this, "Not connected");
@@ -504,14 +509,18 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			hasForwarded = true;
         		}
             	
+        		if(logMINOR) Logger.minor(this, "Waiting for accepted");
             	DO action = waitForAccepted(expectedAcceptState);
             	// Here FINISHED means accepted, WAIT means try again (soft reject).
             	if(action == DO.WAIT) {
 					retriedForLoadManagement = true;
+					if(logMINOR) Logger.minor(this, "Retrying");
             		continue loadWaiterLoop;
             	} else if(action == DO.NEXT_PEER) {
+					if(logMINOR) Logger.minor(this, "Trying next peer");
             		continue peerLoop;
             	} else { // FINISHED => accepted
+					if(logMINOR) Logger.minor(this, "Accepted!");
             		break;
             	}
             } // loadWaiterLoop
