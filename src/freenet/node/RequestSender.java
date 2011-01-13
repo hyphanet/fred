@@ -394,14 +394,35 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					Logger.minor(this, "Cannot send to "+next);
         				waitedForLoadManagement = true;
         				SlotWaiter waiter = next.createSlotWaiter(origTag, type, false, realTimeFlag);
+        				PeerNode oldNext = next;
         				waiter.addWaitingFor(next);
-        				if(waiter.waitForAny() == null) {
-        					// Broken due to low capacity???
-        					Logger.error(this, "Unable to route even after waiting to "+next);
-        					// Try another peer
-        					continue peerLoop;
+        				PeerNode waited = waiter.waitForAny();
+        				if(waited == null) {
+        					// Disconnected, low capacity, or backed off.
+        					// In any case, add another peer.
+        					
+        					// Route it
+        					next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+        							key, htl, 0, source == null);
+        					
+        					if(next == null) {
+        						if (logMINOR && rejectOverloads>0)
+        							Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
+        						// Backtrack
+        						finish(ROUTE_NOT_FOUND, null, false);
+        						node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
+        						oldNext.noLongerRoutingTo(origTag, false);
+        						return;
+        					} else {
+        						if(logMINOR) Logger.minor(this, "Adding new peer to the wait list: "+next);
+        						// Add the new peer to the list
+        						continue;
+        					}
         				} else {
+        					next = waited;
         					expectedAcceptState = waiter.getAcceptedState();
+        					long endTime = System.currentTimeMillis();
+        					if(logMINOR) Logger.minor(this, "Sending to "+next+ " after waited for "+TimeUtil.formatTime(endTime-startTime));
         				}
         				
         			}
