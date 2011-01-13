@@ -4580,6 +4580,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 		void onWaited(PeerNode peer, RequestLikelyAcceptedState state) {
+			if(logMINOR) Logger.minor(this, "Waking slot waiter "+this);
 			PeerNode[] all;
 			synchronized(this) {
 				if(acceptedBy != null) return;
