@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -4548,6 +4549,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		private boolean failed;
 		final boolean realTime;
 		
+		// FIXME the counter is a quick hack to ensure that the original ordering is preserved
+		// even after failures (transfer failures, backoffs).
+		// The real solution, which would likely result in simpler code as well as saving 
+		// a thread, is to make the wait loop in RequestSender asynchronous i.e. to not
+		// block at all there, but process the waiters in order in a callback when we get
+		// such a failure.
+		
+		final long counter;
+		static private long waiterCounter;
+		
 		SlotWaiter(UIDTag tag, RequestType type, PeerNode initial, boolean offeredKey, boolean realTime) {
 			this.tag = tag;
 			this.requestType = type;
@@ -4555,6 +4566,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			this.waitingFor = new HashSet<PeerNode>();
 			this.waitingFor.add(initial);
 			this.realTime = realTime;
+			synchronized(SlotWaiter.class) {
+				counter = waiterCounter++;
+			}
 		}
 		
 		public void addWaitingFor(PeerNode peer) {
@@ -4597,6 +4611,53 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				failed = true;
 			}
 		}
+		
+		public HashSet<PeerNode> waitingForList() {
+			synchronized(this) {
+				return new HashSet<PeerNode>(waitingFor);
+			}
+		}
+		
+		public PeerNode waitForAny() {
+			PeerNode[] all;
+			synchronized(this) {
+				if(!(acceptedBy == null && (!waitingFor.isEmpty()) && !failed)) {
+					if(logMINOR) Logger.minor(this, "Returning in first check: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
+					failed = false;
+					PeerNode got = acceptedBy;
+					acceptedBy = null; // Allow for it to wait again if necessary
+					return got;
+				}
+				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
+			}
+			// Double-check before blocking, prevent race condition.
+			for(PeerNode p : all) {
+				RequestLikelyAcceptedState accept = p.outputLoadTracker(realTime).tryRouteTo(tag, RequestLikelyAcceptedState.LIKELY, offeredKey);
+				if(accept != null) {
+					if(logMINOR) Logger.minor(this, "tryRouteTo() pre-wait check returned "+accept);
+					return p;
+				}
+			}
+			synchronized(this) {
+				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
+				failed = false;
+				PeerNode got = acceptedBy;
+				acceptedBy = null; // Allow for it to wait again if necessary
+				return got;
+			}
+		}
+		
+		public synchronized RequestLikelyAcceptedState getAcceptedState() {
+			return acceptedState;
+		}
+
 	}
 	
 	/** Uses the information we receive on the load on the target node to determine whether
@@ -4607,6 +4668,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		final boolean realTime;
 		
 		private PeerLoadStats lastIncomingLoadStats;
+		
+		private boolean dontSendUnlessGuaranteed;
 		
 		public void reportLoadStatus(PeerLoadStats stat) {
 			if(logMINOR) Logger.minor(this, "Got load status : "+stat);
@@ -4642,18 +4705,46 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, true));
 		}
 		
+		public RequestLikelyAcceptedState tryRouteTo(UIDTag tag,
+				RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
+			PeerLoadStats loadStats;
+			synchronized(this) {
+				loadStats = lastIncomingLoadStats;
+			}
+			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+			synchronized(routedToLock) {
+				if(loadStats == null) {
+					Logger.error(this, "Accepting because no load stats from "+this);
+					tag.addRoutedTo(PeerNode.this, offeredKey);
+					// FIXME maybe wait a bit, check the other side's version first???
+					return RequestLikelyAcceptedState.UNKNOWN;
+				}
+				// Requests already running to this node
+				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
+				runningRequests.log(PeerNode.this);
+				// Requests running from its other peers
+				RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
+				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
+				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState);
+				if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
+				tag.addRoutedTo(PeerNode.this, offeredKey);
+				return acceptState;
+			}
+		}
+		
 		// FIXME on capacity changing so that we should add another node???
 		// FIXME on backoff so that we should add another node???
 		
-		private final EnumMap<RequestType,LinkedHashSet<SlotWaiter>> slotWaiters = new EnumMap<RequestType,LinkedHashSet<SlotWaiter>>(RequestType.class);
+		private final EnumMap<RequestType,TreeMap<Long,SlotWaiter>> slotWaiters = new EnumMap<RequestType,TreeMap<Long,SlotWaiter>>(RequestType.class);
 		
 		void queueSlotWaiter(SlotWaiter waiter) {
 			boolean noLoadStats = false;
 			synchronized(routedToLock) {
 				noLoadStats = (this.lastIncomingLoadStats == null);
 				if(!noLoadStats) {
-					makeSlotWaiters(waiter.requestType).add(waiter);
-					slotWaiters.get(waiter.requestType).add(waiter);
+					TreeMap<Long,SlotWaiter> list = makeSlotWaiters(waiter.requestType);
+					list.put(waiter.counter, waiter);
+					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size());
 					return;
 				}
 			}
@@ -4661,10 +4752,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			waiter.onWaited(PeerNode.this, RequestLikelyAcceptedState.UNKNOWN);
 		}
 		
-		private LinkedHashSet<SlotWaiter> makeSlotWaiters(RequestType requestType) {
-			LinkedHashSet<SlotWaiter> slots = slotWaiters.get(requestType);
+		private TreeMap<Long,SlotWaiter> makeSlotWaiters(RequestType requestType) {
+			TreeMap<Long,SlotWaiter> slots = slotWaiters.get(requestType);
 			if(slots == null) {
-				slots = new LinkedHashSet<SlotWaiter>();
+				slots = new TreeMap<Long,SlotWaiter>();
 				slotWaiters.put(requestType, slots);
 			}
 			return slots;
@@ -4678,24 +4769,143 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		private void failSlotWaiters(boolean reallyFailed) {
 			for(RequestType type : RequestType.values()) {
-				LinkedHashSet<SlotWaiter> slots; 
+				TreeMap<Long,SlotWaiter> slots; 
 				synchronized(routedToLock) {
 					slots = slotWaiters.get(type);
 					if(slots == null) continue;
 					slotWaiters.remove(type);
 				}
-				for(SlotWaiter w : slots)
+				for(SlotWaiter w : slots.values())
 					w.onFailed(PeerNode.this, reallyFailed);
 			}
 		}
 		
 		private int slotWaiterTypeCounter = 0;
-		
+
 		private void maybeNotifySlotWaiter() {
-			// FIXME do nothing for now
-			// Will be used later by new load management
+			boolean ignoreLocalVsRemote = false;
+			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime);
+			boolean foundNever = true;
+			while(true) {
+				synchronized(routedToLock) {
+					if(slotWaiters.isEmpty()) {
+						if(logMINOR) Logger.minor(this, "No slot waiters for "+this);
+						return;
+					}
+				}
+				boolean foundNone = true;
+				RequestType type;
+				int typeNum;
+				synchronized(this) {
+					typeNum = slotWaiterTypeCounter;
+				}
+				for(int i=0;i<RequestType.values().length;i++) {
+					TreeMap<Long,SlotWaiter> list;
+					type = RequestType.values()[typeNum];
+					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
+					synchronized(routedToLock) {
+						list = slotWaiters.get(type);
+						if(list == null) {
+							if(logMINOR) Logger.minor(this, "No list");
+							continue;
+						}
+						if(list.isEmpty()) {
+							if(logMINOR) Logger.minor(this, "List empty");
+							continue;
+						}
+					}
+					if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
+					foundNone = false;
+					foundNever = false;
+					// Should be safe to collect these here, just a little expensive.
+					ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+					PeerLoadStats loadStats = lastIncomingLoadStats;
+					// Requests already running to this node
+					RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
+					runningRequests.log(PeerNode.this);
+					// Requests running from its other peers
+					RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
+					RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
+					if(acceptState == null || acceptState == RequestLikelyAcceptedState.UNLIKELY) {
+						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" - not waking up - type is "+type);
+						return;
+					}
+					SlotWaiter slot;
+					synchronized(routedToLock) {
+						if(dontSendUnlessGuaranteed && acceptState != RequestLikelyAcceptedState.GUARANTEED) {
+							if(logMINOR) Logger.minor(this, "Not accepting until guaranteed for "+PeerNode.this+" realtime="+realTime);
+							return;
+						}
+						Iterator<SlotWaiter> it = list.values().iterator();
+						slot = it.next();
+						it.remove();
+					}
+					if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up");
+					slot.onWaited(PeerNode.this, acceptState);
+					typeNum++;
+					if(typeNum == RequestType.values().length)
+						typeNum = 0;
+				}
+				if(foundNone) {
+					if(!foundNever) {
+						synchronized(this) {
+							slotWaiterTypeCounter = typeNum;
+						}
+					}
+					return;
+				}
+			}
 		}
 		
+		/** LOCKING: Call inside routedToLock 
+		 * @param otherRunningRequests 
+		 * @param runningRequests 
+		 * @param byteCountersInput 
+		 * @param byteCountersOutput */
+		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(RunningRequestsSnapshot runningRequests, RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, PeerLoadStats stats) {
+			RequestLikelyAcceptedState outputState = getRequestLikelyAcceptedState(false, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+			RequestLikelyAcceptedState inputState = getRequestLikelyAcceptedState(true, runningRequests, otherRunningRequests, ignoreLocalVsRemote, stats);
+			if(inputState.ordinal() > outputState.ordinal())
+				return inputState;
+			else
+				return outputState;
+		}
+		
+		private RequestLikelyAcceptedState getRequestLikelyAcceptedState(
+				boolean input,
+				RunningRequestsSnapshot runningRequests,
+				RunningRequestsSnapshot otherRunningRequests, boolean ignoreLocalVsRemote, 
+				PeerLoadStats stats) {
+			double ourUsage = runningRequests.calculate(ignoreLocalVsRemote, input);
+			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input)+" realtime "+realTime+" input "+input);
+			if(ourUsage < stats.peerLimit(input))
+				return RequestLikelyAcceptedState.GUARANTEED;
+			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, input);
+			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
+			if(ourUsage + theirUsage < stats.lowerLimit(input))
+				return RequestLikelyAcceptedState.LIKELY;
+			else
+				return RequestLikelyAcceptedState.UNLIKELY;
+		}
+
+		public void setDontSendUnlessGuaranteed() {
+			synchronized(routedToLock) {
+				if(!dontSendUnlessGuaranteed) {
+					Logger.error(this, "Setting don't-send-unless-guaranteed for "+PeerNode.this+" realtime="+realTime);
+					dontSendUnlessGuaranteed = true;
+				}
+			}
+		}
+
+		public void clearDontSendUnlessGuaranteed() {
+			synchronized(routedToLock) {
+				if(dontSendUnlessGuaranteed) {
+					Logger.error(this, "Clearing don't-send-unless-guaranteed for "+PeerNode.this+" realtime="+realTime);
+					dontSendUnlessGuaranteed = false;
+				}
+			}
+		}
+	
 	}
 	
 	public void noLongerRoutingTo(UIDTag tag, boolean offeredKey) {

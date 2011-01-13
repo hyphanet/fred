@@ -727,6 +727,20 @@ public class NodeStats implements Persistable {
 			return new RunningRequestsSnapshot(this);
 		}
 		
+		public double peerLimit(boolean input) {
+			if(input)
+				return inputBandwidthPeerLimit;
+			else
+				return outputBandwidthPeerLimit;
+		}
+
+		public double lowerLimit(boolean input) {
+			if(input)
+				return inputBandwidthLowerLimit;
+			else
+				return outputBandwidthLowerLimit;
+		}
+		
 	}
 	
 	class RunningRequestsSnapshot {
