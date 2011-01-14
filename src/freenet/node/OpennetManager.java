@@ -841,7 +841,7 @@ public class OpennetManager {
 		void gotNoderef(byte[] noderef);
 	}
 	
-	private class SyncNoderefCallback implements NoderefCallback {
+	private static class SyncNoderefCallback implements NoderefCallback {
 
 		byte[] returned;
 		boolean finished;
@@ -870,13 +870,13 @@ public class OpennetManager {
 	 * @param uid The UID of the parent request.
 	 * @return An opennet noderef.
 	 */
-	public byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr) {
+	public static byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr, Node node) {
 		SyncNoderefCallback cb = new SyncNoderefCallback();
-		waitForOpennetNoderef(isReply, source, uid, ctr, cb);
+		waitForOpennetNoderef(isReply, source, uid, ctr, cb, node);
 		return cb.waitForResult();
 	}
 	
-	public void waitForOpennetNoderef(final boolean isReply, final PeerNode source, final long uid, final ByteCounter ctr, final NoderefCallback callback) {
+	public static void waitForOpennetNoderef(final boolean isReply, final PeerNode source, final long uid, final ByteCounter ctr, final NoderefCallback callback, final Node node) {
 		// FIXME remove back compat code
 		MessageFilter mf =
 			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
@@ -903,7 +903,7 @@ public class OpennetManager {
 						long xferUID = msg.getLong(DMT.TRANSFER_UID);
 						int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
 						int realLength = msg.getInt(DMT.NODEREF_LENGTH);
-						complete(innerWaitForOpennetNoderef(xferUID, paddedLength, realLength, source, isReply, uid, false, ctr));
+						complete(innerWaitForOpennetNoderef(xferUID, paddedLength, realLength, source, isReply, uid, false, ctr, node));
 					}
 				}
 
@@ -941,15 +941,15 @@ public class OpennetManager {
 		}
 	}
 
-	byte[] innerWaitForOpennetNoderef(long xferUID, int paddedLength, int realLength, PeerNode source, boolean isReply, long uid, boolean sendReject, ByteCounter ctr) {
+	static byte[] innerWaitForOpennetNoderef(long xferUID, int paddedLength, int realLength, PeerNode source, boolean isReply, long uid, boolean sendReject, ByteCounter ctr, Node node) {
 		if (paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH) {
-			Logger.error(this, "Noderef too big: "+SizeUtil.formatSize(paddedLength)
+			Logger.error(OpennetManager.class, "Noderef too big: "+SizeUtil.formatSize(paddedLength)
 					+" real length "+SizeUtil.formatSize(realLength));
 			if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TOO_BIG, ctr);
 			return null;
 		}
 		if (realLength > paddedLength) {
-			Logger.error(this, "Real length larger than padded length: "
+			Logger.error(OpennetManager.class, "Real length larger than padded length: "
 					+ SizeUtil.formatSize(paddedLength)
 					+ " real length "+SizeUtil.formatSize(realLength));
 			if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_REAL_BIGGER_THAN_PADDED, ctr);
@@ -960,17 +960,17 @@ public class OpennetManager {
 		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
 		BulkReceiver br = new BulkReceiver(prb, source, xferUID, ctr);
 		if (logMINOR) {
-			Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
+			Logger.minor(OpennetManager.class, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
 		}
 		if (!br.receive()) {
 			if (source.isConnected()) {
-				String msg = "Failed to receive noderef bulk transfer for "+this+" : "
+				String msg = "Failed to receive noderef bulk transfer : "
 					+RetrievalException.getErrString(prb.getAbortReason())+" : "
 					+prb.getAbortDescription()+" from "+source;
 				if (prb.getAbortReason() != RetrievalException.SENDER_DISCONNECTED) {
-					Logger.warning(this, msg);
+					Logger.warning(OpennetManager.class, msg);
 				} else {
-					Logger.normal(this, msg);
+					Logger.normal(OpennetManager.class, msg);
 				}
 				if (sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TRANSFER_FAILED, ctr);
 			}
@@ -981,7 +981,7 @@ public class OpennetManager {
 		return noderef;
 	}
 
-	public void rejectRef(long uid, PeerNode source, int reason, ByteCounter ctr) {
+	public static void rejectRef(long uid, PeerNode source, int reason, ByteCounter ctr) {
 		Message msg = DMT.createFNPOpennetNoderefRejected(uid, reason);
 		try {
 			source.sendAsync(msg, null, ctr);

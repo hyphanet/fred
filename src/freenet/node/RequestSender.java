@@ -1555,7 +1555,7 @@ loadWaiterLoop:
 	 * @param fromOfferedKey Whether this was the result of fetching an offered key.
 	 */
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
-    	if(logMINOR) Logger.minor(this, "finish("+code+ ") on "+this);
+    	if(logMINOR) Logger.minor(this, "finish("+code+ ") on "+this+" from "+next);
         
     	boolean turtle;
     	
@@ -1656,7 +1656,7 @@ loadWaiterLoop:
     		
     		if(om == null) return; // Nothing to do
     		
-        	byte[] noderef = om.waitForOpennetNoderef(false, next, uid, this);
+        	byte[] noderef = om.waitForOpennetNoderef(false, next, uid, this, node);
         	
         	if(noderef == null) return;
         	
