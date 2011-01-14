@@ -736,8 +736,10 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+getStatusString(code)+" on "+this, new Exception("debug"));
     	
-    	if(origTag != null) next.noLongerRoutingTo(forkedRequestTag, false);
-    	if(forkedRequestTag != null) next.noLongerRoutingTo(forkedRequestTag, true);
+    	if(next != null) {
+    		if(origTag != null) next.noLongerRoutingTo(forkedRequestTag, false);
+    		if(forkedRequestTag != null) next.noLongerRoutingTo(forkedRequestTag, true);
+    	}
     	
     	synchronized(this) {
     		if(status != NOT_FINISHED && status != TIMED_OUT)
