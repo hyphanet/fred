@@ -1721,11 +1721,21 @@ loadWaiterLoop:
 			if(logMINOR)
 				Logger.minor(this, "Not connected sending ConnectReply on "+this+" to "+next);
     	} catch (WaitedTooLongForOpennetNoderefException e) {
+    		Logger.error(this, "RequestSender timed out waiting for noderef from "+next+" for "+this);
 			synchronized(this) {
 				opennetTimedOut = true;
 				opennetFinished = true;
 				notifyAll();
 			}
+			// We need to wait.
+			try {
+				OpennetManager.waitForOpennetNoderef(false, next, uid, this, node);
+			} catch (WaitedTooLongForOpennetNoderefException e1) {
+	    		Logger.error(this, "RequestSender FATAL TIMEOUT out waiting for noderef from "+next+" for "+this);
+				// Fatal timeout. Urgh.
+				next.fatalTimeout();
+			}
+    		ackOpennet(next);
 		} finally {
     		synchronized(this) {
     			opennetFinished = true;

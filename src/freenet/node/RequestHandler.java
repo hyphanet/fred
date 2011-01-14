@@ -732,7 +732,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				gotNoderef(null);
 			}
 
-			public void acked() {
+			public void acked(boolean timedOutMessage) {
 				gotNoderef(null);
 			}
 			
@@ -818,7 +818,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				gotNoderef(null);
 			}
 
-			public void acked() {
+			public void acked(boolean timedOutMessage) {
 				gotNoderef(null);
 			}
 			
