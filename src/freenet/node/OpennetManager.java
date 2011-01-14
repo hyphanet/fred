@@ -882,13 +882,11 @@ public class OpennetManager {
 			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
 			setTimeout(RequestSender.OPENNET_TIMEOUT).
 			setType(isReply ? DMT.FNPOpennetConnectReplyNew : DMT.FNPOpennetConnectDestinationNew);
-		if (!isReply) {
-			// Also waiting for an ack
-			MessageFilter mfAck =
-				MessageFilter.create().setSource(source).setField(DMT.UID, uid).
-				setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
-			mf = mfAck.or(mf);
-		}
+		// Also waiting for an ack
+		MessageFilter mfAck =
+			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
+			setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
+		mf = mfAck.or(mf);
 		try {
 			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 				
