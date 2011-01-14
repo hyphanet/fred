@@ -530,7 +530,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	}
 	
 	public String toString() {
-		return super.toString()+":"+this+":"+_sender.shortToString();
+		return super.toString()+":"+_uid+":"+_sender.shortToString();
 	}
 	
 }
