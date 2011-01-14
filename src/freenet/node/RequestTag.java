@@ -167,16 +167,22 @@ public class RequestTag extends UIDTag {
 		this.waitingForOpennet = next.myRef;
 	}
 
-	public synchronized void finishedWaitingForOpennet(PeerNode next) {
-		if(waitingForOpennet == null) {
-			Logger.error(this, "Not waiting for opennet!");
-			return;
+	public void finishedWaitingForOpennet(PeerNode next) {
+		boolean noRecordUnlock;
+		synchronized(this) {
+			if(waitingForOpennet == null) {
+				Logger.error(this, "Not waiting for opennet!");
+				return;
+			}
+			PeerNode got = waitingForOpennet.get();
+			if(got != next) {
+				Logger.error(this, "Finished waiting for opennet on "+next+" but was waiting for "+got);
+			}
+			waitingForOpennet = null;
+			if(!mustUnlock()) return;
+			noRecordUnlock = this.noRecordUnlock;
 		}
-		PeerNode got = waitingForOpennet.get();
-		if(got != next) {
-			Logger.error(this, "Finished waiting for opennet on "+next+" but was waiting for "+got);
-		}
-		waitingForOpennet = null;
+		innerUnlock(noRecordUnlock);
 	}
 	
 }
