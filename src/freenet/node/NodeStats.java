@@ -173,6 +173,7 @@ public class NodeStats implements Persistable {
 	final TrivialRunningAverage sskRemoteFetchPSuccess;
 	final TrivialRunningAverage blockTransferPSuccessRT;
 	final TrivialRunningAverage blockTransferPSuccessBulk;
+	final TrivialRunningAverage blockTransferPSuccessLocal;
 	final TrivialRunningAverage blockTransferFailTurtled;
 	final TrivialRunningAverage blockTransferFailTimeout;
 
@@ -474,6 +475,7 @@ public class NodeStats implements Persistable {
 		sskRemoteFetchPSuccess = new TrivialRunningAverage();
 		blockTransferPSuccessRT = new TrivialRunningAverage();
 		blockTransferPSuccessBulk = new TrivialRunningAverage();
+		blockTransferPSuccessLocal = new TrivialRunningAverage();
 		blockTransferFailTurtled = new TrivialRunningAverage();
 		blockTransferFailTimeout = new TrivialRunningAverage();
 
@@ -1802,6 +1804,7 @@ public class NodeStats implements Persistable {
 				sskRemoteFetchPSuccess,
 				blockTransferPSuccessRT,
 				blockTransferPSuccessBulk,
+				blockTransferPSuccessLocal,
 				blockTransferFailTurtled,
 				blockTransferFailTimeout
 		};
@@ -1813,6 +1816,7 @@ public class NodeStats implements Persistable {
 				l10n("remoteSSKs"),
 				l10n("blockTransfersRT"),
 				l10n("blockTransfersBulk"),
+				l10n("blockTransfersLocal"),
 				l10n("turtledDownstream"),
 				l10n("transfersTimedOut")
 		};
@@ -2410,19 +2414,23 @@ public class NodeStats implements Persistable {
 		return (getSentOverhead() * 1000.0) / uptime;
 	}
 
-	public synchronized void successfulBlockReceive(boolean realTimeFlag) {
+	public synchronized void successfulBlockReceive(boolean realTimeFlag, boolean isLocal) {
 		RunningAverage blockTransferPSuccess = realTimeFlag ? blockTransferPSuccessRT : blockTransferPSuccessBulk;
 		blockTransferPSuccess.report(1.0);
+		if(isLocal)
+			blockTransferPSuccessLocal.report(1.0);
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports()+" realtime="+realTimeFlag);
 	}
 
-	public synchronized void failedBlockReceive(boolean normalFetch, boolean timeout, boolean turtle, boolean realTimeFlag) {
+	public synchronized void failedBlockReceive(boolean normalFetch, boolean timeout, boolean turtle, boolean realTimeFlag, boolean isLocal) {
 		if(normalFetch) {
 			blockTransferFailTurtled.report(turtle ? 1.0 : 0.0);
 			blockTransferFailTimeout.report(timeout ? 1.0 : 0.0);
 		}
 		RunningAverage blockTransferPSuccess = realTimeFlag ? blockTransferPSuccessRT : blockTransferPSuccessBulk;
 		blockTransferPSuccess.report(0.0);
+		if(isLocal)
+			blockTransferPSuccessLocal.report(0.0);
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports()+" realtime="+realTimeFlag);
 	}
 
