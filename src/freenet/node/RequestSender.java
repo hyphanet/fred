@@ -1740,7 +1740,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			//      a delay of it's own if we don't get the expected message.
 			fireRequestSenderFinished(code);
 			
-			if(!fromOfferedKey) {
+			if(!(fromOfferedKey || isSSK)) {
 				finishOpennet(next);
 			}
         } else {
