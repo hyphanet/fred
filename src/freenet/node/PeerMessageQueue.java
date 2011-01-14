@@ -267,16 +267,19 @@ public class PeerMessageQueue {
 			return ptr;
 		}
 
-		public long getNextUrgentTime(long t, long now) {
+		/** Note that this does NOT consider the length of the queue, which can trigger a
+		 * send. This is intentional, and is relied upon by the bulk-or-realtime logic in
+		 * addMessages(). */
+		public long getNextUrgentTime(long t, long now, long maxCoalescingDelay) {
 			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
-				t = Math.min(t, itemsNonUrgent.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
+				t = Math.min(t, itemsNonUrgent.getFirst().submitted + maxCoalescingDelay);
 				if(t <= now) return t;
 			}
 			if(nonEmptyItemsWithID != null) {
 				for(Items items : nonEmptyItemsWithID) {
 					if(items.items.size() == 0) continue;
 					// It is possible that something requeued isn't urgent, so check anyway.
-					t = Math.min(t, items.items.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
+					t = Math.min(t, items.items.getFirst().submitted + maxCoalescingDelay);
 					if(t <= now) return t;
 					return t;
 				}
@@ -722,8 +725,9 @@ public class PeerMessageQueue {
 	 * @return
 	 */
 	public synchronized long getNextUrgentTime(long t, long now) {
-		for(PrioQueue queue : queuesByPriority) {
-			t = Math.min(t, queue.getNextUrgentTime(t, now));
+		for(int i=0;i<queuesByPriority.length;i++) {
+			PrioQueue queue = queuesByPriority[i];
+			t = Math.min(t, queue.getNextUrgentTime(t, now, i == DMT.PRIORITY_BULK_DATA ? PacketSender.MAX_COALESCING_DELAY_BULK : PacketSender.MAX_COALESCING_DELAY));
 			if(t <= now) return t; // How much in the past doesn't matter, as long as it's in the past.
 		}
 		return t;
