@@ -990,19 +990,19 @@ public class OpennetManager {
 		}
 	}
 
-	public SimpleFieldSet validateNoderef(byte[] noderef, int offset, int length, PeerNode from, boolean forceOpennetEnabled) {
+	public static SimpleFieldSet validateNoderef(byte[] noderef, int offset, int length, PeerNode from, boolean forceOpennetEnabled) {
     	SimpleFieldSet ref;
 		try {
 			ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
 		} catch (FSParseException e) {
-			Logger.error(this, "Invalid noderef: "+e, e);
+			Logger.error(OpennetManager.class, "Invalid noderef: "+e, e);
 			return null;
 		}
 		if(forceOpennetEnabled)
 			ref.put("opennet", true);
 
 		if(!OpennetPeerNode.validateRef(ref)) {
-			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+from);
+			Logger.error(OpennetManager.class, "Could not parse opennet noderef from "+from);
 			return null;
 		}
 
@@ -1029,22 +1029,22 @@ public class OpennetManager {
 
 
 	private static final long MAX_AGE = 7 * 24 * 60 * 60 * 1000;
-	private final TimeSortedHashtable<String> knownIds = new TimeSortedHashtable<String>();
+	private static final TimeSortedHashtable<String> knownIds = new TimeSortedHashtable<String>();
 
-	private void registerKnownIdentity(String d) {
+	private static void registerKnownIdentity(String d) {
 		if (logMINOR)
-			Logger.minor(this, "Known Id: " + d);
+			Logger.minor(OpennetManager.class, "Known Id: " + d);
 		long now = System.currentTimeMillis();
 
 		synchronized (knownIds) {
-			if(logMINOR) Logger.minor(this, "Adding Id " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(OpennetManager.class, "Adding Id " + d + " knownIds size " + knownIds.size());
 			knownIds.push(d, now);
-			if(logMINOR) Logger.minor(this, "Added Id " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(OpennetManager.class, "Added Id " + d + " knownIds size " + knownIds.size());
 			knownIds.removeBefore(now - MAX_AGE);
-			if(logMINOR) Logger.minor(this, "Added and pruned location " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(OpennetManager.class, "Added and pruned location " + d + " knownIds size " + knownIds.size());
 		}
 		if (logMINOR)
-			if(logMINOR) Logger.minor(this, "Estimated opennet size(session): " + knownIds.size());
+			if(logMINOR) Logger.minor(OpennetManager.class, "Estimated opennet size(session): " + knownIds.size());
 	}
     //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
 	public int getNetworkSizeEstimate(long timestamp) {
