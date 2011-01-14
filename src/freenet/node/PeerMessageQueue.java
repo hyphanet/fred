@@ -844,7 +844,7 @@ public class PeerMessageQueue {
 		boolean tryRealtimeFirst;
 		
 		synchronized(this) {
-			tryRealtimeFirst = lastSentRealTime;
+			tryRealtimeFirst = !lastSentRealTime;
 		}
 		
 		if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY_BULK) <= now) {
