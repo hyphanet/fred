@@ -842,8 +842,9 @@ public class OpennetManager {
 		void gotNoderef(byte[] noderef);
 		/** Timed out waiting for a noderef. */
 		void timedOut();
-		/** Got an ack - didn't timeout but there won't be a noderef. */
-		void acked();
+		/** Got an ack - didn't timeout but there won't be a noderef. 
+		 * @param timedOutMessage */
+		void acked(boolean timedOutMessage);
 	}
 	
 	private static class SyncNoderefCallback implements NoderefCallback {
@@ -857,7 +858,7 @@ public class OpennetManager {
 			finished = true;
 		}
 		
-		public void acked() {
+		public void acked(boolean timedOutMessage) {
 			gotNoderef(null);
 		}
 		
@@ -907,19 +908,25 @@ public class OpennetManager {
 		MessageFilter mfAck =
 			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
 			setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
-		mf = mfAck.or(mf);
+		// Also waiting for an upstream timed out.
+		MessageFilter mfAckTimeout =
+			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
+			setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedTimeout);
+		
+		mf = mfAck.or(mfAckTimeout.or(mf));
 		try {
 			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 				
 				boolean completed;
 
 				public void onMatched(Message msg) {
-					if (msg.getSpec() == DMT.FNPOpennetCompletedAck) {
+					if (msg.getSpec() == DMT.FNPOpennetCompletedAck || 
+							msg.getSpec() == DMT.FNPOpennetCompletedTimeout) {
 						synchronized(this) {
 							if(completed) return;
 							completed = true;
 						}
-						callback.acked();
+						callback.acked(msg.getSpec() == DMT.FNPOpennetCompletedTimeout);
 					} else {
 						// Noderef bulk transfer
 						long xferUID = msg.getLong(DMT.TRANSFER_UID);
