@@ -1785,13 +1785,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	try {
     		om = node.getOpennet();
     		
-    		if(om == null) return; // Nothing to do
-    		
-        	byte[] noderef = om.waitForOpennetNoderef(false, next, uid, this, node);
+        	byte[] noderef = OpennetManager.waitForOpennetNoderef(false, next, uid, this, node);
         	
         	if(noderef == null) return;
         	
-        	SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, next, false);
+        	SimpleFieldSet ref = OpennetManager.validateNoderef(noderef, 0, noderef.length, next, false);
         	
         	if(ref == null) return;
         	
