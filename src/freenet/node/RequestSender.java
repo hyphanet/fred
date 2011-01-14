@@ -1758,6 +1758,18 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		
     }
 
+	/** Acknowledge the opennet path folding attempt without sending a reference. Once
+	 * the send completes (asynchronously), unlock everything. */
+	private void ackOpennet(PeerNode next) {
+		Message msg = DMT.createFNPOpennetCompletedAck(uid);
+		// We probably should set opennetFinished after the send completes.
+		try {
+			next.sendAsync(msg, null, this);
+		} catch (NotConnectedException e) {
+			// Ignore.
+		}
+	}
+
     /** Wait for the opennet completion message and discard it */
     private void finishOpennetNull(PeerNode next) {
     	MessageFilter mf = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
@@ -1787,11 +1799,17 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     		
         	byte[] noderef = OpennetManager.waitForOpennetNoderef(false, next, uid, this, node);
         	
-        	if(noderef == null) return;
+        	if(noderef == null) {
+        		ackOpennet(next);
+        		return;
+        	}
         	
         	SimpleFieldSet ref = OpennetManager.validateNoderef(noderef, 0, noderef.length, next, false);
         	
-        	if(ref == null) return;
+        	if(ref == null) {
+        		ackOpennet(next);
+        		return;
+        	}
         	
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
 				// If we don't want it let somebody else have it
@@ -1810,12 +1828,15 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
 		} catch (FSParseException e) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
+    		ackOpennet(next);
 			return;
 		} catch (PeerParseException e) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
+    		ackOpennet(next);
 			return;
 		} catch (ReferenceSignatureVerificationException e) {
 			Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+next+" : "+e, e);
+    		ackOpennet(next);
 			return;
 		} catch (NotConnectedException e) {
 			// Hmmm... let the LRU deal with it
