@@ -1687,9 +1687,9 @@ public class DMT {
 	public static final String AVERAGE_TRANSFERS_OUT_PER_INSERT = "averageTransfersOutPerInsert";
 	
 	public static final String OTHER_TRANSFERS_OUT_CHK = "otherTransfersOutCHK";
-	public static final String OTHER_TRANSFERS_IN_CHK = "otherTransfersOutCHK";
-	public static final String OTHER_TRANSFERS_OUT_SSK = "otherTransfersOutCHK";
-	public static final String OTHER_TRANSFERS_IN_SSK = "otherTransfersOutCHK";
+	public static final String OTHER_TRANSFERS_IN_CHK = "otherTransfersInCHK";
+	public static final String OTHER_TRANSFERS_OUT_SSK = "otherTransfersOutSSK";
+	public static final String OTHER_TRANSFERS_IN_SSK = "otherTransfersInSSK";
 	
 	public static final String OUTPUT_BANDWIDTH_LOWER_LIMIT = "outputBandwidthLowerLimit";
 	public static final String OUTPUT_BANDWIDTH_UPPER_LIMIT = "outputBandwidthUpperLimit";
