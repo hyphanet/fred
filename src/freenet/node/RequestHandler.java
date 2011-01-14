@@ -709,7 +709,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		// Wait for response
 		
-		om.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
+		OpennetManager.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
 
 			public void gotNoderef(byte[] noderef) {
 				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
