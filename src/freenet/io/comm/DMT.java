@@ -756,6 +756,17 @@ public class DMT {
 		return msg;
 	}
 	
+	/** Sent when we wait for an FNP transfer or a completion from upstream and it never comes. */
+	public final static MessageType FNPOpennetCompletedTimeout = new MessageType("FNPOpennetCompletedTimeout", PRIORITY_LOW) {{
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createFNPOpennetCompletedTimeout(long uid) {
+		Message msg = new Message(FNPOpennetCompletedTimeout);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
 	/** Sent when a request completes and the data source wants to path fold. Starts a bulk data 
 	 * transfer including the (padded) noderef. 
 	 */
