@@ -65,7 +65,7 @@ public class MessageWrapper {
 					}
 					alreadyAcked = true;
 					if(logMINOR)
-						Logger.minor(this, "Total round trip time for message "+messageID+" : "+item+" : "+(System.currentTimeMillis() - created)+" in "+resends+" resends"+(pn == null ? "" : pn.shortToString()));
+						Logger.minor(this, "Total round trip time for message "+messageID+" : "+item+" : "+(System.currentTimeMillis() - created)+" in "+resends+" resends"+(pn == null ? "" : " for "+pn.shortToString()));
 				}
 				return true;
 			}
