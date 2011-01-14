@@ -447,7 +447,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				receiveCompleted = true;
         				CHKInsertHandler.this.notifyAll();
         			}
-        			node.nodeStats.successfulBlockReceive();
+        			node.nodeStats.successfulBlockReceive(realTimeFlag);
         		}
 
         		public void blockReceiveFailed(RetrievalException e) {
@@ -472,7 +472,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			else
         				// Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
         				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
-        			node.nodeStats.failedBlockReceive(false, false, false);
+        			node.nodeStats.failedBlockReceive(false, false, false, realTimeFlag);
         			return;
         		}
         		

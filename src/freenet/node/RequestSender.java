@@ -810,7 +810,7 @@ loadWaiterLoop:
 	                		if(logMINOR) Logger.minor(this, "Received data");
                 			verifyAndCommit(data);
 	                		finish(SUCCESS, p, true);
-	                		node.nodeStats.successfulBlockReceive();
+	                		node.nodeStats.successfulBlockReceive(realTimeFlag);
                 		} catch (KeyVerifyException e1) {
                 			Logger.normal(this, "Got data but verify failed: "+e1, e1);
                 			finish(GET_OFFER_VERIFY_FAILURE, p, true);
@@ -837,7 +837,7 @@ loadWaiterLoop:
 							// Backoff here anyway - the node really ought to have it!
 							p.transferFailed("RequestSenderGetOfferedTransferFailed");
 							offers.deleteLastOffer();
-							node.nodeStats.failedBlockReceive(false, false, false);
+							node.nodeStats.failedBlockReceive(false, false, false, realTimeFlag);
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
                 			finish(INTERNAL_ERROR, p, true);
@@ -1194,7 +1194,7 @@ loadWaiterLoop:
     					sentTo.unregisterTurtleTransfer(RequestSender.this);
     					node.unregisterTurtleTransfer(RequestSender.this);
     				}
-    				node.nodeStats.successfulBlockReceive();
+    				node.nodeStats.successfulBlockReceive(realTimeFlag);
     				if(logMINOR) Logger.minor(this, "Received data");
     				// Received data
     				try {
@@ -1261,7 +1261,7 @@ loadWaiterLoop:
     					// If it was turtled, and then failed, still treat it as a DNF.
     					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     				}
-    				node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
+    				node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE, realTimeFlag);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
         			if(!wasFork)
