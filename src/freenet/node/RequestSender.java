@@ -1735,14 +1735,25 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	// FIXME should this be called when fromOfferedKey??
        		node.nodeStats.requestCompleted(true, source != null, isSSK);
         	
-			//NOTE: because of the requesthandler implementation, this will block and wait
-			//      for downstream transfers on a CHK. The opennet stuff introduces
-			//      a delay of it's own if we don't get the expected message.
-			fireRequestSenderFinished(code);
-			
-			if(!(fromOfferedKey || isSSK)) {
-				finishOpennet(next);
-			}
+       		boolean doOpennet = !(fromOfferedKey || isSSK);
+       		
+       		if(doOpennet)
+       			origTag.waitingForOpennet(next);
+       		
+       		try {
+       			
+       			//NOTE: because of the requesthandler implementation, this will block and wait
+       			//      for downstream transfers on a CHK. The opennet stuff introduces
+       			//      a delay of it's own if we don't get the expected message.
+       			fireRequestSenderFinished(code);
+       			
+       			if(doOpennet) {
+       				finishOpennet(next);
+       			}
+       		} finally {
+       			if(doOpennet)
+       				origTag.finishedWaitingForOpennet(next);
+       		}
         } else {
         	node.nodeStats.requestCompleted(false, source != null, isSSK);
 			fireRequestSenderFinished(code);
