@@ -4593,12 +4593,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		final long counter;
 		static private long waiterCounter;
 		
-		SlotWaiter(UIDTag tag, RequestType type, PeerNode initial, boolean offeredKey, boolean realTime) {
+		SlotWaiter(UIDTag tag, RequestType type, boolean offeredKey, boolean realTime) {
 			this.tag = tag;
 			this.requestType = type;
 			this.offeredKey = offeredKey;
 			this.waitingFor = new HashSet<PeerNode>();
-			this.waitingFor.add(initial);
 			this.realTime = realTime;
 			synchronized(SlotWaiter.class) {
 				counter = waiterCounter++;
@@ -4963,8 +4962,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 	
-	SlotWaiter createSlotWaiter(RequestTag tag, RequestType type, boolean offeredKey, boolean realTime) {
-		return new SlotWaiter(tag, type, this, offeredKey, realTime);
+	static SlotWaiter createSlotWaiter(RequestTag tag, RequestType type, boolean offeredKey, boolean realTime) {
+		return new SlotWaiter(tag, type, offeredKey, realTime);
 	}
 
 	public IncomingLoadSummaryStats getIncomingLoadStats(boolean realTime) {
