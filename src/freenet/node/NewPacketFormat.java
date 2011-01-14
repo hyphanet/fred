@@ -378,7 +378,7 @@ outer:
 		byte[] payload = new byte[length - hmacLength];
 		System.arraycopy(buf, offset + hmacLength, payload, 0, length - hmacLength);
 
-		NPFPacket p = NPFPacket.create(payload);
+		NPFPacket p = NPFPacket.create(payload, pn);
 
 		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		synchronized(this) {
