@@ -364,7 +364,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			completed = true;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Transfer failed: "+reason+" : "+description);
+			Logger.minor(this, "Transfer failed: ("+(_realTime?"realtime":"bulk")+") "+reason+" : "+description);
 		_prb.removeListener(myListener);
 		_prb.abort(reason, description);
 		// Send the abort whether we have received one or not.
