@@ -396,6 +396,13 @@ public class LongTermManySingleBlocksTest {
 				}
 				
 				while(split.length > token + INSERTED_BLOCKS) {
+					if(split[token].length() == 0) {
+						System.err.println("Trying to parse "+token+" but is empty");
+						if(token > 0)
+							System.err.println("Prev token is "+split[token-1]);
+						if(token > 1)
+							System.err.println("Prev-prev token is "+split[token-2]);
+					}
 					int delta = Integer.parseInt(split[token]);
 					System.out.println("Delta: "+((1<<delta)-1)+" days");
 					token++;
