@@ -1609,11 +1609,7 @@ loadWaiterLoop:
 			fireRequestSenderFinished(code);
 			
 			if(!fromOfferedKey) {
-				if((!isSSK) && next != null && 
-						(next.isOpennet() || node.passOpennetRefsThroughDarknet()) ) {
-					finishOpennet(next);
-				} else
-					finishOpennetNull(next);
+				finishOpennet(next);
 			}
         } else {
         	node.nodeStats.requestCompleted(false, source != null, isSSK);
@@ -1637,19 +1633,6 @@ loadWaiterLoop:
 		} catch (NotConnectedException e) {
 			// Ignore.
 		}
-	}
-
-    /** Wait for the opennet completion message and discard it */
-    private void finishOpennetNull(PeerNode next) {
-    	MessageFilter mf = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
-    	
-    	try {
-			node.usm.addAsyncFilter(mf, new NullAsyncMessageFilterCallback(), this);
-		} catch (DisconnectedException e) {
-			// Fine by me.
-		}
-		
-		// FIXME support new format path folding
 	}
 
 	/**
