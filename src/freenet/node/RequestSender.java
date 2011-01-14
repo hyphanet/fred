@@ -34,6 +34,7 @@ import freenet.keys.SSKVerifyException;
 import freenet.node.FailureTable.BlockOffer;
 import freenet.node.FailureTable.OfferList;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.OpennetManager.WaitedTooLongForOpennetNoderefException;
 import freenet.node.PeerNode.OutputLoadTracker;
 import freenet.node.PeerNode.RequestLikelyAcceptedState;
 import freenet.node.PeerNode.SlotWaiter;
@@ -1666,7 +1667,8 @@ loadWaiterLoop:
     	OpennetManager om;
     	
     	try {
-        	byte[] noderef = OpennetManager.waitForOpennetNoderef(false, next, uid, this, node);
+    		byte[] noderef;
+   			noderef = OpennetManager.waitForOpennetNoderef(false, next, uid, this, node);
         	
         	if(noderef == null) {
         		ackOpennet(next);
@@ -1718,7 +1720,13 @@ loadWaiterLoop:
 			// Hmmm... let the LRU deal with it
 			if(logMINOR)
 				Logger.minor(this, "Not connected sending ConnectReply on "+this+" to "+next);
-    	} finally {
+    	} catch (WaitedTooLongForOpennetNoderefException e) {
+			synchronized(this) {
+				opennetTimedOut = true;
+				opennetFinished = true;
+				notifyAll();
+			}
+		} finally {
     		synchronized(this) {
     			opennetFinished = true;
     			notifyAll();
@@ -1731,13 +1739,18 @@ loadWaiterLoop:
     /** Have we finished all opennet-related activities? */
     private boolean opennetFinished;
     
+    /** Did we timeout waiting for opennet noderef? */
+    private boolean opennetTimedOut;
+    
     /** Opennet noderef from next node */
     private byte[] opennetNoderef;
     
-    public byte[] waitForOpennetNoderef() {
+    public byte[] waitForOpennetNoderef() throws WaitedTooLongForOpennetNoderefException {
     	synchronized(this) {
     		while(true) {
     			if(opennetFinished) {
+    				if(opennetTimedOut)
+    					throw new WaitedTooLongForOpennetNoderefException();
     				// Only one RequestHandler may take the noderef
     				byte[] ref = opennetNoderef;
     				opennetNoderef = null;

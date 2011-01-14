@@ -838,13 +838,28 @@ public class OpennetManager {
 	}
 
 	interface NoderefCallback {
+		/** Got a noderef. */
 		void gotNoderef(byte[] noderef);
+		/** Timed out waiting for a noderef. */
+		void timedOut();
+		/** Got an ack - didn't timeout but there won't be a noderef. */
+		void acked();
 	}
 	
 	private static class SyncNoderefCallback implements NoderefCallback {
 
 		byte[] returned;
 		boolean finished;
+		boolean timedOut;
+		
+		public synchronized void timedOut() {
+			timedOut = true;
+			finished = true;
+		}
+		
+		public void acked() {
+			gotNoderef(null);
+		}
 		
 		public synchronized void gotNoderef(byte[] noderef) {
 			returned = noderef;
@@ -852,15 +867,20 @@ public class OpennetManager {
 			notifyAll();
 		}
 		
-		public synchronized byte[] waitForResult() {
+		public synchronized byte[] waitForResult() throws WaitedTooLongForOpennetNoderefException {
 			while(!finished)
 				try {
 					wait();
 				} catch (InterruptedException e) {
 					// Ignore
 				}
+			if(timedOut) throw new WaitedTooLongForOpennetNoderefException();
 			return returned;
 		}
+		
+	}
+	
+	static class WaitedTooLongForOpennetNoderefException extends Exception {
 		
 	}
 	
@@ -870,7 +890,7 @@ public class OpennetManager {
 	 * @param uid The UID of the parent request.
 	 * @return An opennet noderef.
 	 */
-	public static byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr, Node node) {
+	public static byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr, Node node) throws WaitedTooLongForOpennetNoderefException {
 		SyncNoderefCallback cb = new SyncNoderefCallback();
 		waitForOpennetNoderef(isReply, source, uid, ctr, cb, node);
 		return cb.waitForResult();
