@@ -509,7 +509,7 @@ public class BlockTransmitter {
 	private AsyncMessageFilterCallback cbSendAborted = new SlowAsyncMessageFilterCallback() {
 
 		public void onMatched(Message msg) {
-			if(abortHandler.onAbort())
+			if((!_prb.isAborted()) && abortHandler.onAbort())
 				_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
 			Future fail;
 			synchronized(_senderThread) {
