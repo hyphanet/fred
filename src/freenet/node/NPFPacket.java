@@ -162,7 +162,7 @@ class NPFPacket {
 			}
 			byte[] fragmentData = new byte[fragmentLength];
 			if((offset + fragmentLength) > plaintext.length) {
-				if(logMINOR) Logger.minor(NPFPacket.class, "Fragment doesn't fit in the received packet");
+				Logger.error(NPFPacket.class, "Fragment doesn't fit in the received packet");
 				packet.error = true;
 				break;
 			}
