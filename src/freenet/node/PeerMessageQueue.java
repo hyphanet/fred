@@ -847,7 +847,7 @@ public class PeerMessageQueue {
 			tryRealtimeFirst = lastSentRealTime;
 		}
 		
-		if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY_BULK) > now) {
+		if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY_BULK) <= now) {
 			// Urgent bulk data.
 			if(queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY) > now) {
 				// Urgent bulk data but not urgent realtime data.
