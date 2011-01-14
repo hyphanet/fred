@@ -915,8 +915,11 @@ public class OpennetManager {
 
 				public void onMatched(Message msg) {
 					if (msg.getSpec() == DMT.FNPOpennetCompletedAck) {
-						// Acked (only possible if !isReply)
-						complete(null);
+						synchronized(this) {
+							if(completed) return;
+							completed = true;
+						}
+						callback.acked();
 					} else {
 						// Noderef bulk transfer
 						long xferUID = msg.getLong(DMT.TRANSFER_UID);
@@ -931,7 +934,11 @@ public class OpennetManager {
 				}
 
 				public void onTimeout() {
-					complete(null);
+					synchronized(this) {
+						if(completed) return;
+						completed = true;
+					}
+					callback.timedOut();
 				}
 
 				public void onDisconnect(PeerContext ctx) {
