@@ -841,8 +841,19 @@ public class PeerMessageQueue {
 			}
 		}
 		
+		boolean tryRealtimeFirst = sendBalance >= 0;
+		
+		if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY_BULK) > now) {
+			// Urgent bulk data.
+			if(queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY) > now) {
+				// Urgent bulk data but not urgent realtime data.
+				// Try bulk first.
+				tryRealtimeFirst = false;
+			}
+		}
+		
 		// FIXME token bucket?
-		if(sendBalance >= 0) {
+		if(tryRealtimeFirst) {
 			// Try realtime first
 			if(logMINOR) Logger.minor(this, "Trying realtime first");
 			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
