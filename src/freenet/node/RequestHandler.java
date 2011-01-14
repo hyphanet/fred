@@ -719,7 +719,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				unregisterRequestHandlerWithNode();
 			}
 			
-		});
+		}, node);
 	}
 
 	private void finishOpennetNoRelayInner(OpennetManager om, byte[] noderef) {
@@ -795,7 +795,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				unregisterRequestHandlerWithNode();
 			}
 			
-		});
+		}, node);
 
 
 	}
