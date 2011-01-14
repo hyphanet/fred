@@ -1016,7 +1016,7 @@ outer:
 				if(logDEBUG)
 					Logger.debug(this, "Acknowledging "+range[0]+" to "+range[1]+" on "+wrapper.getMessageID());
 
-				if(wrapper.ack(range[0], range[1])) {
+				if(wrapper.ack(range[0], range[1], npf.pn)) {
 					HashMap<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
 					MessageWrapper removed = null;
 					synchronized(started) {

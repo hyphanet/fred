@@ -42,13 +42,18 @@ public class MessageWrapper {
 	}
 
 	private boolean alreadyAcked = false;
+	public boolean ack(int start, int end) {
+		return ack(start, end, null);
+	}
+	
 	/**
 	 * Mark the given range as received.
 	 *
 	 * @param start the first byte to be marked
 	 * @param end the last byte to be marked
+	 * @param pn just for logging
 	 */
-	public boolean ack(int start, int end) {
+	public boolean ack(int start, int end, BasePeerNode pn) {
 		synchronized(acks) {
 			acks.add(start, end);
 			if(acks.contains(0, item.buf.length - 1)) {
@@ -60,7 +65,7 @@ public class MessageWrapper {
 					}
 					alreadyAcked = true;
 					if(logMINOR)
-						Logger.minor(this, "Total round trip time for message "+messageID+" : "+item+" : "+(System.currentTimeMillis() - created)+" in "+resends+" resends");
+						Logger.minor(this, "Total round trip time for message "+messageID+" : "+item+" : "+(System.currentTimeMillis() - created)+" in "+resends+" resends"+(pn == null ? "" : pn.shortToString()));
 				}
 				return true;
 			}
