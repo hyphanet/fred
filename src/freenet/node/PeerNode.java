@@ -4675,6 +4675,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 			}
 			synchronized(this) {
+				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this);
 				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
 					try {
 						wait();
