@@ -880,6 +880,7 @@ public class OpennetManager {
 		
 	}
 	
+	@SuppressWarnings("serial")
 	static class WaitedTooLongForOpennetNoderefException extends Exception {
 		
 	}
