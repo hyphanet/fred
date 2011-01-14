@@ -4916,6 +4916,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(logMINOR) Logger.minor(this, "Our usage is "+ourUsage+" peer limit is "+stats.peerLimit(input)+" lower limit is "+stats.lowerLimit(input)+" realtime "+realTime+" input "+input);
 			if(ourUsage < stats.peerLimit(input))
 				return RequestLikelyAcceptedState.GUARANTEED;
+			otherRunningRequests.log(PeerNode.this);
 			double theirUsage = otherRunningRequests.calculate(ignoreLocalVsRemote, input);
 			if(logMINOR) Logger.minor(this, "Their usage is "+theirUsage);
 			if(ourUsage + theirUsage < stats.lowerLimit(input))
