@@ -295,7 +295,7 @@ class NPFPacket {
 
 			byte b = (byte) (buf[offset] & 0x9F); //Make sure firstFragment and isFragmented isn't set
 			if(b == 0x1F)
-				b += 1; // Make sure it doesn't match the pattern for lossy messages
+				b = (byte)0x9F; // Make sure it doesn't match the pattern for lossy messages
 			buf[offset] = b;
 		}
 
