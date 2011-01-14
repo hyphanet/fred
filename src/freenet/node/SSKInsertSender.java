@@ -737,7 +737,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	if(logMINOR) Logger.minor(this, "Finished: "+getStatusString(code)+" on "+this, new Exception("debug"));
     	
     	if(next != null) {
-    		if(origTag != null) next.noLongerRoutingTo(forkedRequestTag, false);
+    		if(origTag != null) next.noLongerRoutingTo(origTag, false);
     		if(forkedRequestTag != null) next.noLongerRoutingTo(forkedRequestTag, true);
     	}
     	
