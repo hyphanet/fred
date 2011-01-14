@@ -841,7 +841,11 @@ public class PeerMessageQueue {
 			}
 		}
 		
-		boolean tryRealtimeFirst = sendBalance >= 0;
+		boolean tryRealtimeFirst;
+		
+		synchronized(this) {
+			tryRealtimeFirst = lastSentRealTime;
+		}
 		
 		if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY_BULK) > now) {
 			// Urgent bulk data.
@@ -858,9 +862,9 @@ public class PeerMessageQueue {
 			if(logMINOR) Logger.minor(this, "Trying realtime first");
 			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
-				size = s;
-				sendBalance--;
-				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
+				synchronized(this) {
+					lastSentRealTime = true;
+				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -873,8 +877,9 @@ public class PeerMessageQueue {
 			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				sendBalance++;
-				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
+				synchronized(this) {
+					lastSentRealTime = false;
+				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -889,8 +894,9 @@ public class PeerMessageQueue {
 			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				sendBalance++;
-				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
+				synchronized(this) {
+					lastSentRealTime = false;
+				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -903,8 +909,9 @@ public class PeerMessageQueue {
 			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				sendBalance--;
-				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
+				synchronized(this) {
+					lastSentRealTime = true;
+				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -953,18 +960,6 @@ public class PeerMessageQueue {
 		}
 	}
 
-	
-	/** This is incremented when a bulk packet is sent, and decremented when a realtime 
-	 * packet is sent. If it is positive we prefer realtime packets, and if it is negative 
-	 * we prefer bulk packets. Limits specified below ensure we don't burst either way for
-	 * too long. */
-	private int sendBalance;
-	
-	// FIXME compute these from time and bandwidth?
-	// We can't just record the time we sent the last bulk packet though, because we'd end up sending so few bulk packets that many would timeout.
-	
-	static final int MAX_BALANCE = 32; // Allow a burst of 32 realtime packets after a long period of bulk packets.
-	static final int MIN_BALANCE = -32; // Allow a burst of 32 bulk packets after a long period of realtime packets.
-	
+	private boolean lastSentRealTime;
 }
 
