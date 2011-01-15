@@ -52,6 +52,16 @@ public class PeerMessageQueue {
 	
 	private class PrioQueue {
 		
+		PrioQueue(int timeout, boolean timeoutSinceLastSend) {
+			this.timeout = timeout;
+			this.timeoutSinceLastSend = timeoutSinceLastSend;
+		}
+		
+		/** The timeout, period after which messages become urgent. */
+		final int timeout;
+		/** If true, the timeout is relative to the last send. */
+		final boolean timeoutSinceLastSend;
+		
 		private class Items extends DoublyLinkedListImpl.Item<Items> {
 			/** List of messages to send. Stuff to send first is at the beginning. */
 			final LinkedList<MessageItem> items;
@@ -270,18 +280,46 @@ public class PeerMessageQueue {
 		/** Note that this does NOT consider the length of the queue, which can trigger a
 		 * send. This is intentional, and is relied upon by the bulk-or-realtime logic in
 		 * addMessages(). */
-		public long getNextUrgentTime(long t, long now, long maxCoalescingDelay) {
-			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
-				t = Math.min(t, itemsNonUrgent.getFirst().submitted + maxCoalescingDelay);
-				if(t <= now) return t;
-			}
-			if(nonEmptyItemsWithID != null) {
-				for(Items items : nonEmptyItemsWithID) {
-					if(items.items.size() == 0) continue;
-					// It is possible that something requeued isn't urgent, so check anyway.
-					t = Math.min(t, items.items.getFirst().submitted + maxCoalescingDelay);
+		public long getNextUrgentTime(long t, long now) {
+			if(!timeoutSinceLastSend) {
+				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
+					t = Math.min(t, itemsNonUrgent.getFirst().submitted + timeout);
 					if(t <= now) return t;
-					return t;
+				}
+				if(nonEmptyItemsWithID != null) {
+					for(Items items : nonEmptyItemsWithID) {
+						if(items.items.size() == 0) continue;
+						// It is possible that something requeued isn't urgent, so check anyway.
+						t = Math.min(t, items.items.getFirst().submitted + timeout);
+						if(t <= now) return t;
+					}
+				}
+			} else {
+				if(nonEmptyItemsWithID != null) {
+					for(Items items : nonEmptyItemsWithID) {
+						if(items.items.size() == 0) continue;
+						if(items.timeLastSent > 0) {
+							t = Math.min(t, items.timeLastSent + timeout);
+							if(t <= now) return t;
+						} else {
+							// It is possible that something requeued isn't urgent, so check anyway.
+							t = Math.min(t, items.items.getFirst().submitted + timeout);
+							if(t <= now) return t;
+						}
+					}
+				}
+				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty() && timeoutSinceLastSend) {
+					for(MessageItem item : itemsNonUrgent) {
+						long uid = item.getID();
+						Items items = itemsByID.get(uid);
+						if(items.timeLastSent > 0) {
+							t = Math.min(t, items.timeLastSent + timeout);
+							if(t <= now) return t;
+						} else {
+							t = Math.min(t, itemsNonUrgent.getFirst().submitted + timeout);
+							if(t <= now) return t;
+						}
+					}
 				}
 			}
 			return t;
@@ -647,8 +685,12 @@ public class PeerMessageQueue {
 	PeerMessageQueue(BasePeerNode parent) {
 		pn = parent;
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
-		for(int i=0;i<queuesByPriority.length;i++)
-			queuesByPriority[i] = new PrioQueue();
+		for(int i=0;i<queuesByPriority.length;i++) {
+			if(i == DMT.PRIORITY_BULK_DATA)
+				queuesByPriority[i] = new PrioQueue(PacketSender.MAX_COALESCING_DELAY_BULK, true);
+			else
+				queuesByPriority[i] = new PrioQueue(PacketSender.MAX_COALESCING_DELAY, false);
+		}
 	}
 
 	/**
@@ -740,7 +782,7 @@ public class PeerMessageQueue {
 	public synchronized long getNextUrgentTime(long t, long now) {
 		for(int i=0;i<queuesByPriority.length;i++) {
 			PrioQueue queue = queuesByPriority[i];
-			t = Math.min(t, queue.getNextUrgentTime(t, now, i == DMT.PRIORITY_BULK_DATA ? PacketSender.MAX_COALESCING_DELAY_BULK : PacketSender.MAX_COALESCING_DELAY));
+			t = Math.min(t, queue.getNextUrgentTime(t, now));
 			if(t <= now) return t; // How much in the past doesn't matter, as long as it's in the past.
 		}
 		return t;
@@ -867,7 +909,7 @@ public class PeerMessageQueue {
 		if((!queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) &&
 				(!queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty())) {
 			// There is realtime data, and there is bulk data.
-			if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY_BULK) <= now) {
+			if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now) <= now) {
 				// The bulk data is urgent.
 				// The realtime data is assumed to be urgent because it is realtime.
 				// So alternate.
