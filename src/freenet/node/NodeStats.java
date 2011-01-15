@@ -123,6 +123,8 @@ public class NodeStats implements Persistable {
 
 	/** Average delay caused by throttling for sending a packet */
 	final TimeDecayingRunningAverage throttledPacketSendAverage;
+	final TimeDecayingRunningAverage throttledPacketSendAverageRT;
+	final TimeDecayingRunningAverage throttledPacketSendAverageBulk;
 
 	// Bytes used by each different type of local/remote chk/ssk request/insert
 	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
@@ -281,6 +283,10 @@ public class NodeStats implements Persistable {
 		this.activeThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		this.waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		throttledPacketSendAverage =
+			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
+		throttledPacketSendAverageRT =
+			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
+		throttledPacketSendAverageBulk =
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
 		nodePinger = new NodePinger(node);
 
@@ -579,6 +585,8 @@ public class NodeStats implements Persistable {
 						long after = System.currentTimeMillis();
 						// Report time it takes to grab the bytes.
 						throttledPacketSendAverage.report(after - now);
+						throttledPacketSendAverageRT.report(after - now);
+						throttledPacketSendAverageBulk.report(after - now);
 					}
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
@@ -1303,6 +1311,14 @@ public class NodeStats implements Persistable {
 				" CHK offer reply "+successfulChkOfferReplyBytesSentAverage.currentValue()+ '/' +successfulChkOfferReplyBytesReceivedAverage.currentValue()+
 				" SSK offer reply "+successfulSskOfferReplyBytesSentAverage.currentValue()+ '/' +successfulSskOfferReplyBytesReceivedAverage.currentValue());
 
+	}
+
+	public double getBwlimitDelayTimeRT() {
+		return throttledPacketSendAverageRT.currentValue();
+	}
+
+	public double getBwlimitDelayTimeBulk() {
+		return throttledPacketSendAverageBulk.currentValue();
 	}
 
 	public double getBwlimitDelayTime() {

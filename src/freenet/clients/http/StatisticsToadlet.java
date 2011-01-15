@@ -1027,6 +1027,8 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode overviewList = overviewInfoboxContent.addChild("ul");
 		/* node status values */
 		int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
+		int bwlimitDelayTimeRT = (int) stats.getBwlimitDelayTimeRT();
+		int bwlimitDelayTimeBulk = (int) stats.getBwlimitDelayTimeBulk();
 		int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
 		double numberOfRemotePeerLocationsSeenInSwaps = node.getNumberOfRemotePeerLocationsSeenInSwaps();
 
@@ -1056,6 +1058,8 @@ public class StatisticsToadlet extends Toadlet {
 		double routingMissDistanceOverall =  stats.routingMissDistanceOverall.currentValue();
 		double backedOffPercent =  stats.backedOffPercent.currentValue();
 		overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
+		overviewList.addChild("li", "bwlimitDelayTimeRT:\u00a0" + bwlimitDelayTimeRT + "ms");
+		overviewList.addChild("li", "bwlimitDelayTimeBulk:\u00a0" + bwlimitDelayTimeBulk + "ms");
 		overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
 		overviewList.addChild("li", "darknetSizeEstimateSession:\u00a0" + darknetSizeEstimateSession + "\u00a0nodes");
 		if(nodeUptimeSeconds > (24*60*60)) {  // 24 hours
