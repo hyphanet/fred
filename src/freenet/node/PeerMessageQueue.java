@@ -312,7 +312,7 @@ public class PeerMessageQueue {
 					for(MessageItem item : itemsNonUrgent) {
 						long uid = item.getID();
 						Items items = itemsByID.get(uid);
-						if(items.timeLastSent > 0) {
+						if(items != null && items.timeLastSent > 0) {
 							t = Math.min(t, items.timeLastSent + timeout);
 							if(t <= now) return t;
 						} else {
