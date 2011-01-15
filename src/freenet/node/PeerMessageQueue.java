@@ -311,13 +311,14 @@ public class PeerMessageQueue {
 				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty() && timeoutSinceLastSend) {
 					for(MessageItem item : itemsNonUrgent) {
 						long uid = item.getID();
-						Items items = itemsByID.get(uid);
+						Items items = itemsByID == null ? null : itemsByID.get(uid);
 						if(items != null && items.timeLastSent > 0) {
 							t = Math.min(t, items.timeLastSent + timeout);
 							if(t <= now) return t;
 						} else {
-							t = Math.min(t, itemsNonUrgent.getFirst().submitted + timeout);
+							t = Math.min(t, item.submitted + timeout);
 							if(t <= now) return t;
+							if(itemsByID == null) break; // Only the first one matters, since none have been sent.
 						}
 					}
 				}
