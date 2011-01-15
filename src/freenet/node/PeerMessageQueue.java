@@ -629,6 +629,19 @@ public class PeerMessageQueue {
 			}
 		}
 
+		public boolean isEmpty() {
+			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
+				return false;
+			}
+			if(nonEmptyItemsWithID != null) {
+				for(Items items : nonEmptyItemsWithID) {
+					if(items.items.size() == 0) continue;
+					return false;
+				}
+			}
+			return true;
+		}
+
 	}
 
 	PeerMessageQueue(BasePeerNode parent) {
@@ -841,18 +854,31 @@ public class PeerMessageQueue {
 			}
 		}
 		
-		boolean tryRealtimeFirst;
+		boolean tryRealtimeFirst = true;
 		
-		synchronized(this) {
-			tryRealtimeFirst = !lastSentRealTime;
-		}
+		// Most of the time there will only be bulk data.
+		// Bulk data has a long timeout - 30 seconds per block - so we can wait if necessary.
+		// Realtime is supposed to be bursty. 
+		// Realtime data is supposed to be urgent - it should be sent immediately.
+		// So when there is realtime data, we should give it preferential treatment.
+		// However, we do not want to starve the bulk data.
+		// So we should send realtime if there is realtime, unless the bulk data is older than 5000ms.
 		
-		if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY_BULK) <= now) {
-			// Urgent bulk data.
-			if(queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY) > now) {
-				// Urgent bulk data but not urgent realtime data.
-				// Try bulk first.
-				tryRealtimeFirst = false;
+		if((!queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) &&
+				(!queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty())) {
+			// There is realtime data, and there is bulk data.
+			if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now, PacketSender.MAX_COALESCING_DELAY_BULK) <= now) {
+				// The bulk data is urgent.
+				// The realtime data is assumed to be urgent because it is realtime.
+				// So alternate.
+				synchronized(this) {
+					tryRealtimeFirst = !lastSentRealTime;
+				}
+			} else {
+				// The bulk data is not urgent.
+				// So we should send the realtime data.
+				// This should not prejudice future decisions.
+				tryRealtimeFirst = true;
 			}
 		}
 		
