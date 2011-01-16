@@ -320,7 +320,7 @@ public class NewPacketFormat implements PacketFormat {
 
 			int seqNum = keyContext.watchListOffset;
 			for(int i = 0; i < keyContext.seqNumWatchList.length; i++) {
-				keyContext.seqNumWatchList[i] = encryptSequenceNumber(seqNum++, sessionKey);
+				keyContext.seqNumWatchList[i] = NewPacketFormat.encryptSequenceNumber(seqNum++, sessionKey);
 				if((seqNum == NUM_SEQNUMS) || (seqNum < 0)) seqNum = 0;
 			}
 		}
@@ -427,7 +427,7 @@ outer:
 		return (((i1 < i2) && ((i2 - i1) > halfValue)) || ((i1 > i2) && (i1 - i2 < halfValue)));
 	}
 
-	private byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
+	private static byte[] encryptSequenceNumber(int seqNum, SessionKey sessionKey) {
 		byte[] seqNumBytes = new byte[4];
 		seqNumBytes[0] = (byte) (seqNum >>> 24);
 		seqNumBytes[1] = (byte) (seqNum >>> 16);
