@@ -297,6 +297,10 @@ public abstract class Logger {
 		logger.log(c, s, LogLevel.ERROR);
 	}
 
+	public synchronized static void error(Class<?> c, String s, Throwable t) {
+		logger.log(c, s, t, LogLevel.ERROR);
+	}
+
 	public synchronized static void error(Object o, String s) {
 		logger.log(o, s, LogLevel.ERROR);
 	}
@@ -333,8 +337,16 @@ public abstract class Logger {
 		logger.log(c, s, LogLevel.NORMAL);
 	}
 
+	public synchronized static void normal(Class<?> c, String s, Throwable t) {
+		logger.log(c, s, t, LogLevel.NORMAL);
+	}
+
 	public synchronized static void warning(Class<?> c, String s) {
 		logger.log(c, s, LogLevel.WARNING);
+	}
+
+	public synchronized static void warning(Class<?> c, String s, Throwable t) {
+		logger.log(c, s, t, LogLevel.WARNING);
 	}
 
 	public synchronized static void warning(Object o, String s) {
