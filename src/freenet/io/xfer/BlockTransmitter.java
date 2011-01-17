@@ -222,6 +222,7 @@ public class BlockTransmitter {
 			// Will throw on running
 		}
 		throttle = _destination.getThrottle();
+		if(logMINOR) Logger.minor(this, "Starting block transmit for "+uid+" to "+destination.shortToString()+" realtime="+realTime+" throttle="+throttle);
 	}
 
 	private Runnable timeoutJob;

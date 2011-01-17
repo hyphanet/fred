@@ -1661,8 +1661,7 @@ loadWaiterLoop:
     	OpennetManager om;
     	
     	try {
-    		byte[] noderef;
-   			noderef = OpennetManager.waitForOpennetNoderef(false, next, uid, this, node);
+   			byte[] noderef = OpennetManager.waitForOpennetNoderef(false, next, uid, this, node);
         	
         	if(noderef == null) {
         		ackOpennet(next);

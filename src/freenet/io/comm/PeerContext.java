@@ -70,4 +70,6 @@ public interface PeerContext {
 	void transferFailed(String reason);
 
 	boolean unqueueMessage(MessageItem item);
+
+	void reportThrottledPacketSendTime(long time, boolean realTime);
 }
