@@ -291,7 +291,8 @@ public class PeerMessageQueue {
 						if(items.items.size() == 0) continue;
 						// It is possible that something requeued isn't urgent, so check anyway.
 						t = Math.min(t, items.items.getFirst().submitted + timeout);
-						if(t <= now) return t;
+						// Later items will have later expiry times.
+						return t;
 					}
 				}
 			} else {
