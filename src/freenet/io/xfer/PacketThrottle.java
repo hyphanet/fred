@@ -171,6 +171,7 @@ public class PacketThrottle {
 	public MessageItem sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend, boolean isRealTime) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
+		if(logMINOR) Logger.minor(this, "Sending throttled message "+msg+" to "+peer.shortToString()+" realtime="+isRealTime+" message.getPriority()="+msg.getPriority());
 		try {
 		synchronized(this) {
 			final long thisTicket=_packetTicketGenerator++;
