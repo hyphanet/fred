@@ -387,11 +387,11 @@ public class PacketThrottle {
 				sent = true;
 			}
 			ctr.sentPayload(packetSize);
-			// Ignore
-			if(chainCallback != null) chainCallback.sent();
 			long now = System.currentTimeMillis();
 			if(logMINOR) Logger.minor(this, "Total time taken for packet: "+(now - startTime)+" realtime="+realTime);
 			pn.reportThrottledPacketSendTime(now - startTime, realTime);
+			// Ignore
+			if(chainCallback != null) chainCallback.sent();
 		}
 		
 		@Override
