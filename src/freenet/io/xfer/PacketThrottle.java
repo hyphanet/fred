@@ -390,7 +390,7 @@ public class PacketThrottle {
 			// Ignore
 			if(chainCallback != null) chainCallback.sent();
 			long now = System.currentTimeMillis();
-			if(logMINOR) Logger.minor(this, "Total time taken for packet: "+(now - startTime));
+			if(logMINOR) Logger.minor(this, "Total time taken for packet: "+(now - startTime)+" realtime="+realTime);
 			pn.reportThrottledPacketSendTime(now - startTime, realTime);
 		}
 		
