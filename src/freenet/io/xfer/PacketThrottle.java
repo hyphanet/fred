@@ -168,7 +168,7 @@ public class PacketThrottle {
 	 * 
 	 * FIXME this would be significantly simpler, as well as faster, if it was asynchronous.
 	 */
-	public MessageItem sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
+	public MessageItem sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend, boolean isRealTime) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		try {
@@ -272,7 +272,7 @@ public class PacketThrottle {
 			Logger.error(this, "Congestion control wait time: "+waitTime+" for "+this);
 		else if(logMINOR)
 			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
-		MyCallback callback = new MyCallback(cbForAsyncSend, packetSize, ctr, peer != null && peer instanceof PeerNode && ((PeerNode)peer).isOldFNP());
+		MyCallback callback = new MyCallback(cbForAsyncSend, packetSize, ctr, peer != null && peer instanceof PeerNode && ((PeerNode)peer).isOldFNP(), start, peer, isRealTime);
 		MessageItem sent;
 		try {
 			sent = peer.sendAsync(msg, callback, ctr);
@@ -317,14 +317,20 @@ public class PacketThrottle {
 		private final int packetSize;
 		private final ByteCounter ctr;
 		private final boolean isOldFNP;
+		private final long startTime;
+		private final PeerContext pn;
+		private final boolean realTime;
 		
 		private AsyncMessageCallback chainCallback;
 		
-		public MyCallback(AsyncMessageCallback cbForAsyncSend, int packetSize, ByteCounter ctr, boolean isOldFNP) {
+		public MyCallback(AsyncMessageCallback cbForAsyncSend, int packetSize, ByteCounter ctr, boolean isOldFNP, long startTime, PeerContext pn, boolean realTime) {
 			this.chainCallback = cbForAsyncSend;
 			this.packetSize = packetSize;
 			this.ctr = ctr;
 			this.isOldFNP = isOldFNP;
+			this.startTime = startTime;
+			this.pn = pn;
+			this.realTime = realTime;
 		}
 
 		public void acknowledged() {
@@ -383,6 +389,9 @@ public class PacketThrottle {
 			ctr.sentPayload(packetSize);
 			// Ignore
 			if(chainCallback != null) chainCallback.sent();
+			long now = System.currentTimeMillis();
+			if(logMINOR) Logger.minor(this, "Total time taken for packet: "+(now - startTime));
+			pn.reportThrottledPacketSendTime(now - startTime, realTime);
 		}
 		
 		@Override
