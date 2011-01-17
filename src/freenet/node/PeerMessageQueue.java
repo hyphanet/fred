@@ -309,7 +309,7 @@ public class PeerMessageQueue {
 						}
 					}
 				}
-				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty() && timeoutSinceLastSend) {
+				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
 					for(MessageItem item : itemsNonUrgent) {
 						long uid = item.getID();
 						Items items = itemsByID == null ? null : itemsByID.get(uid);
