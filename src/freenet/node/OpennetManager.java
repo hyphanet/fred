@@ -856,6 +856,7 @@ public class OpennetManager {
 		public synchronized void timedOut() {
 			timedOut = true;
 			finished = true;
+			notifyAll();
 		}
 		
 		public void acked(boolean timedOutMessage) {
