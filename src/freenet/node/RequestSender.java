@@ -486,6 +486,7 @@ loadWaiterLoop:
 		}
 
 		public boolean shouldTimeout() {
+			if(noReroute) return false;
 			synchronized(RequestSender.this) {
 				if(lastNode != waitingFor) return true;
 				if(status != -1) return true;
