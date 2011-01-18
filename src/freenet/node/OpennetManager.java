@@ -838,13 +838,30 @@ public class OpennetManager {
 	}
 
 	interface NoderefCallback {
+		/** Got a noderef. */
 		void gotNoderef(byte[] noderef);
+		/** Timed out waiting for a noderef. */
+		void timedOut();
+		/** Got an ack - didn't timeout but there won't be a noderef. 
+		 * @param timedOutMessage */
+		void acked(boolean timedOutMessage);
 	}
 	
 	private static class SyncNoderefCallback implements NoderefCallback {
 
 		byte[] returned;
 		boolean finished;
+		boolean timedOut;
+		
+		public synchronized void timedOut() {
+			timedOut = true;
+			finished = true;
+			notifyAll();
+		}
+		
+		public void acked(boolean timedOutMessage) {
+			gotNoderef(null);
+		}
 		
 		public synchronized void gotNoderef(byte[] noderef) {
 			returned = noderef;
@@ -852,15 +869,21 @@ public class OpennetManager {
 			notifyAll();
 		}
 		
-		public synchronized byte[] waitForResult() {
+		public synchronized byte[] waitForResult() throws WaitedTooLongForOpennetNoderefException {
 			while(!finished)
 				try {
 					wait();
 				} catch (InterruptedException e) {
 					// Ignore
 				}
+			if(timedOut) throw new WaitedTooLongForOpennetNoderefException();
 			return returned;
 		}
+		
+	}
+	
+	@SuppressWarnings("serial")
+	static class WaitedTooLongForOpennetNoderefException extends Exception {
 		
 	}
 	
@@ -870,7 +893,7 @@ public class OpennetManager {
 	 * @param uid The UID of the parent request.
 	 * @return An opennet noderef.
 	 */
-	public static byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr, Node node) {
+	public static byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr, Node node) throws WaitedTooLongForOpennetNoderefException {
 		SyncNoderefCallback cb = new SyncNoderefCallback();
 		waitForOpennetNoderef(isReply, source, uid, ctr, cb, node);
 		return cb.waitForResult();
@@ -886,16 +909,25 @@ public class OpennetManager {
 		MessageFilter mfAck =
 			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
 			setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
-		mf = mfAck.or(mf);
+		// Also waiting for an upstream timed out.
+		MessageFilter mfAckTimeout =
+			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
+			setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedTimeout);
+		
+		mf = mfAck.or(mfAckTimeout.or(mf));
 		try {
 			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 				
 				boolean completed;
 
 				public void onMatched(Message msg) {
-					if (msg.getSpec() == DMT.FNPOpennetCompletedAck) {
-						// Acked (only possible if !isReply)
-						complete(null);
+					if (msg.getSpec() == DMT.FNPOpennetCompletedAck || 
+							msg.getSpec() == DMT.FNPOpennetCompletedTimeout) {
+						synchronized(this) {
+							if(completed) return;
+							completed = true;
+						}
+						callback.acked(msg.getSpec() == DMT.FNPOpennetCompletedTimeout);
 					} else {
 						// Noderef bulk transfer
 						long xferUID = msg.getLong(DMT.TRANSFER_UID);
@@ -910,7 +942,11 @@ public class OpennetManager {
 				}
 
 				public void onTimeout() {
-					complete(null);
+					synchronized(this) {
+						if(completed) return;
+						completed = true;
+					}
+					callback.timedOut();
 				}
 
 				public void onDisconnect(PeerContext ctx) {

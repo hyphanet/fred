@@ -41,6 +41,10 @@ class NPFPacket {
 	private int length = 5; //Sequence number (4), numAcks(1)
 
 	public static NPFPacket create(byte[] plaintext) {
+		return create(plaintext, null);
+	}
+	
+	public static NPFPacket create(byte[] plaintext, BasePeerNode pn) {
 		NPFPacket packet = new NPFPacket();
 		int offset = 0;
 
@@ -162,7 +166,7 @@ class NPFPacket {
 			}
 			byte[] fragmentData = new byte[fragmentLength];
 			if((offset + fragmentLength) > plaintext.length) {
-				if(logMINOR) Logger.minor(NPFPacket.class, "Fragment doesn't fit in the received packet");
+				Logger.error(NPFPacket.class, "Fragment doesn't fit in the received packet: offset is "+offset+" fragment length is "+fragmentLength+" plaintext length is "+plaintext.length+" message length "+messageLength+" message ID "+messageID+(pn == null ? "" : (" from "+pn.shortToString())));
 				packet.error = true;
 				break;
 			}

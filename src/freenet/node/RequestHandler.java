@@ -25,6 +25,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.OpennetManager.NoderefCallback;
+import freenet.node.OpennetManager.WaitedTooLongForOpennetNoderefException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -671,7 +672,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * sent a noderef (after we have handled the incoming noderef / ack / timeout). 
 	 */
 	private void finishOpennetInner(OpennetManager om) {
-		byte[] noderef = rs.waitForOpennetNoderef();
+		byte[] noderef;
+		try {
+			noderef = rs.waitForOpennetNoderef();
+		} catch (WaitedTooLongForOpennetNoderefException e) {
+			sendTerminal(DMT.createFNPOpennetCompletedTimeout(uid));
+			return;
+		}
 		if(noderef == null || 
 				node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
 			finishOpennetNoRelayInner(om);
@@ -711,12 +718,22 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		
 		OpennetManager.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
 
+			// We have already sent ours, so we don't need to worry about timeouts.
+			
 			public void gotNoderef(byte[] noderef) {
 				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
 				// in all cases he should unlock.
 				finishOpennetNoRelayInner(om, noderef);
 				applyByteCounts();
 				unregisterRequestHandlerWithNode();
+			}
+
+			public void timedOut() {
+				gotNoderef(null);
+			}
+
+			public void acked(boolean timedOutMessage) {
+				gotNoderef(null);
 			}
 			
 		}, node);
@@ -771,6 +788,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		// Now wait for reply from the request source.
 		
+		// We do not need to worry about timeouts here, because we have already sent our noderef.
+		
 		om.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
 
 			public void gotNoderef(byte[] newNoderef) {
@@ -793,6 +812,14 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				// in all cases he should unlock.
 				applyByteCounts();
 				unregisterRequestHandlerWithNode();
+			}
+
+			public void timedOut() {
+				gotNoderef(null);
+			}
+
+			public void acked(boolean timedOutMessage) {
+				gotNoderef(null);
 			}
 			
 		}, node);
