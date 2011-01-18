@@ -6012,7 +6012,7 @@ public class Node implements TimeSkewDetectorCallback {
 				if(senders[i] == sender) x++;
 			}
 			if(x == 0) {
-				Logger.error(this, "Turtle not in global register: "+sender+" for "+key);
+				Logger.error(this, "Turtle not in global register: "+sender+" for "+key, new Exception("debug"));
 				return;
 			}
 			if(senders.length == x) {
