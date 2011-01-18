@@ -3,8 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 
+import freenet.crypt.BlockCipher;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.support.MutableBoolean;
@@ -333,4 +336,32 @@ public class NewPacketFormatTest extends TestCase {
 		}
 	}
 	
+	public void testSequenceNumberEncryption() {
+		BlockCipher ivCipher = new Rijndael();
+		ivCipher.initialize(new byte[] {
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00
+		});
+
+		byte[] ivNonce = new byte[16];
+
+		BlockCipher incommingCipher = new Rijndael();
+		incommingCipher.initialize(new byte[] {
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00
+		});
+
+		SessionKey sessionKey = new SessionKey(null, null, null, null, incommingCipher, null, ivCipher, ivNonce, null, null);
+
+		byte[] encrypted = NewPacketFormat.encryptSequenceNumber(0, sessionKey);
+
+		//This has not actually been checked
+		byte[] correct = new byte[] {(byte) 0xF7, (byte) 0x95, (byte) 0xBD, (byte) 0x4A};
+
+		assertTrue(Arrays.equals(correct, encrypted));
+	}
 }
