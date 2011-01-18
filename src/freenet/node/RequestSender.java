@@ -99,8 +99,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private final boolean canWriteDatastore;
     private final boolean isSSK;
     
-    // State of the main loop which is more convenient to keep as private members
-    private PeerNode next;
     private long timeSentRequest;
     private int rejectOverloads;
     private int gotMessages;
@@ -248,7 +246,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         } finally {
         	if(status == NOT_FINISHED && !receivingAsync) {
         		Logger.error(this, "Not finished: "+this);
-        		finish(INTERNAL_ERROR, next, false);
+        		finish(INTERNAL_ERROR, null, false);
         	}
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
         }
@@ -276,7 +274,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	return;
         }
         
-        next = null;
 		routeAttempts=0;
 		starting = true;
         // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
@@ -289,6 +286,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private int highHTLFailureCount;
     
     private void routeRequests() {
+    	
+    	PeerNode next = null;
         
         peerLoop:
         while(true) {
@@ -404,7 +403,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 loadWaiterLoop:
             while(true) {
             	
-            	DO action = waitForAccepted();
+            	DO action = waitForAccepted(next);
             	// Here FINISHED means accepted, WAIT means try again (soft reject).
             	if(action == DO.WAIT) {
 					//retriedForLoadManagement = true;
@@ -853,7 +852,7 @@ loadWaiterLoop:
 	}
 
 	/** Here FINISHED means accepted, WAIT means try again (soft reject). */
-    private DO waitForAccepted() {
+    private DO waitForAccepted(PeerNode next) {
     	while(true) {
     		
     		Message msg;
@@ -1047,9 +1046,9 @@ loadWaiterLoop:
     	
     	if(isSSK && msg.getSpec() == DMT.FNPSSKPubKey) {
     		
-    		if(!handleSSKPubKey(msg)) return DO.NEXT_PEER;
+    		if(!handleSSKPubKey(msg, source)) return DO.NEXT_PEER;
 			if(sskData != null && headers != null) {
-				finishSSK(next, wasFork);
+				finishSSK(source, wasFork);
 				return DO.FINISHED;
 			}
 			return DO.WAIT;
@@ -1062,7 +1061,7 @@ loadWaiterLoop:
         	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
         	
         	if(pubKey != null && headers != null) {
-        		finishSSK(next, wasFork);
+        		finishSSK(source, wasFork);
         		return DO.FINISHED;
         	}
         	return DO.WAIT;
@@ -1076,7 +1075,7 @@ loadWaiterLoop:
         	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
     		
         	if(pubKey != null && sskData != null) {
-        		finishSSK(next, wasFork);
+        		finishSSK(source, wasFork);
         		return DO.FINISHED;
         	}
         	return DO.WAIT;
@@ -1084,8 +1083,8 @@ loadWaiterLoop:
     	}
     	
    		Logger.error(this, "Unexpected message: "+msg);
-   		node.failureTable.onFailed(key, next, htl, timeSinceSent());
-		origTag.removeRoutingTo(next);
+   		node.failureTable.onFailed(key, source, htl, timeSinceSent());
+		origTag.removeRoutingTo(source);
    		return DO.NEXT_PEER;
     	
 	}
@@ -1106,7 +1105,7 @@ loadWaiterLoop:
     }
 
     /** @return True unless the pubkey is broken and we should try another node */
-    private boolean handleSSKPubKey(Message msg) {
+    private boolean handleSSKPubKey(Message msg, PeerNode next) {
 		if(logMINOR) Logger.minor(this, "Got pubkey on "+uid);
 		byte[] pubkeyAsBytes = ((ShortBuffer)msg.getObject(DMT.PUBKEY_AS_BYTES)).getData();
 		try {
