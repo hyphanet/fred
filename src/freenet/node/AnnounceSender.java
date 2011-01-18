@@ -361,7 +361,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		long xferUID = msg.getLong(DMT.TRANSFER_UID);
 		int noderefLength = msg.getInt(DMT.NODEREF_LENGTH);
 		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
-		byte[] noderefBuf = om.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, next, false, uid, true, this);
+		byte[] noderefBuf = om.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, next, false, uid, true, this, node);
 		if(noderefBuf == null) {
 			return true; // Don't relay
 		}
@@ -470,7 +470,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		long xferUID = msg.getLong(DMT.TRANSFER_UID);
 		noderefLength = msg.getInt(DMT.NODEREF_LENGTH);
 		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
-		noderefBuf = om.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, source, false, uid, true, this);
+		noderefBuf = om.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, source, false, uid, true, this, node);
 		if(noderefBuf == null) {
 			return false;
 		}

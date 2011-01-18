@@ -199,4 +199,8 @@ public class NullBasePeerNode implements BasePeerNode {
 		throw new UnsupportedOperationException();
 	}
 
+	public void reportThrottledPacketSendTime(long time, boolean realTime) {
+		// Ignore.
+	}
+
 }

@@ -757,6 +757,17 @@ public class DMT {
 		return msg;
 	}
 	
+	/** Sent when we wait for an FNP transfer or a completion from upstream and it never comes. */
+	public final static MessageType FNPOpennetCompletedTimeout = new MessageType("FNPOpennetCompletedTimeout", PRIORITY_LOW) {{
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createFNPOpennetCompletedTimeout(long uid) {
+		Message msg = new Message(FNPOpennetCompletedTimeout);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
 	/** Sent when a request completes and the data source wants to path fold. Starts a bulk data 
 	 * transfer including the (padded) noderef. 
 	 */
@@ -1687,9 +1698,9 @@ public class DMT {
 	public static final String AVERAGE_TRANSFERS_OUT_PER_INSERT = "averageTransfersOutPerInsert";
 	
 	public static final String OTHER_TRANSFERS_OUT_CHK = "otherTransfersOutCHK";
-	public static final String OTHER_TRANSFERS_IN_CHK = "otherTransfersOutCHK";
-	public static final String OTHER_TRANSFERS_OUT_SSK = "otherTransfersOutCHK";
-	public static final String OTHER_TRANSFERS_IN_SSK = "otherTransfersOutCHK";
+	public static final String OTHER_TRANSFERS_IN_CHK = "otherTransfersInCHK";
+	public static final String OTHER_TRANSFERS_OUT_SSK = "otherTransfersOutSSK";
+	public static final String OTHER_TRANSFERS_IN_SSK = "otherTransfersInSSK";
 	
 	public static final String OUTPUT_BANDWIDTH_LOWER_LIMIT = "outputBandwidthLowerLimit";
 	public static final String OUTPUT_BANDWIDTH_UPPER_LIMIT = "outputBandwidthUpperLimit";
