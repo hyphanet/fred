@@ -1183,7 +1183,7 @@ loadWaiterLoop:
     				if(!turtle)
     					sentTo.transferSuccess();
     				else {
-    					Logger.normal(this, "TURTLE SUCCEEDED: "+key+" for "+this+" in "+TimeUtil.formatTime(transferTime, 2, true));
+    					Logger.normal(this, "TURTLE SUCCEEDED: "+key+" for "+RequestSender.this+" in "+TimeUtil.formatTime(transferTime, 2, true)+" from "+sentTo);
     					if(!turtleBackedOff)
     						sentTo.transferFailed("TurtledTransfer");
     					node.nodeStats.turtleSucceeded();
