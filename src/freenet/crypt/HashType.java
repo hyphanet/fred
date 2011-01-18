@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package freenet.crypt;
 
@@ -17,29 +17,29 @@ public enum HashType {
 	SHA512(16, "SHA-512", 64),
 	ED2K(32, null, 16),
 	TTH(64, null, 24);
-	
+
 	/** Bitmask for aggregation. */
 	public final int bitmask;
 	/** Name for MessageDigest purposes. Can contain dashes. */
 	public final String javaName;
 	public final int hashLength;
-	
+
 	HashType(int bitmask, int hashLength) {
 		this.bitmask = bitmask;
 		this.javaName = super.name();
 		this.hashLength = hashLength;
 	}
-	
+
 	HashType(int bitmask, String name, int hashLength) {
 		this.bitmask = bitmask;
 		this.javaName = name;
 		this.hashLength = hashLength;
 	}
-	
+
 	public MessageDigest get() throws NoSuchAlgorithmException {
 		if(javaName == null) {
 			if(this.name().equals("ED2K"))
-				return new Ed2Handler();
+				return new Ed2MessageDigest();
 			if(this.name().equals("TTH"))
 				return new TigerTree();
 		}
@@ -50,7 +50,7 @@ public enum HashType {
 			return MessageDigest.getInstance(javaName);
 		}
 	}
-	
+
 	public void recycle(MessageDigest md) {
 		if(this.equals(SHA256)) {
 			freenet.crypt.SHA256.returnMessageDigest(md);

@@ -6,8 +6,8 @@ import java.security.SecureRandom;
 import junit.framework.TestCase;
 
 public class NativeBigIntegerTest extends TestCase {
-	// Run with <code>ant -Dbenchmark=true</code> to do benchmark
-	private static final boolean BENCHMARK = Boolean.getBoolean("benchmark");
+	// Run with <code>ant -Dtest.benchmark=true</code> to do benchmark
+	private static final boolean BENCHMARK = Boolean.getBoolean("test.benchmark");
 	private static int numRuns = BENCHMARK ? 200 : 5;
 	private int runsProcessed;
 

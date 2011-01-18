@@ -5,9 +5,7 @@
  */
 package org.bitpedia.collider.core;
 
-import java.security.MessageDigest;
-
-public class Ed2Handler extends MessageDigest {
+public class Ed2Handler {
 	
 	private static final int EDSEG_SIZE = 1024*9500;
 	
@@ -15,11 +13,6 @@ public class Ed2Handler extends MessageDigest {
 	private Md4Handler top;   // the total file value
 	private long nextPos;
 
-	public Ed2Handler() {
-		super("ED2K");
-		analyzeInit();
-	}
-	
 	public void analyzeInit() {
 		
 		nextPos = 0;
@@ -79,34 +72,9 @@ public class Ed2Handler extends MessageDigest {
 	    // finish the segment in process
 	    byte[] innerDigest = seg.analyzeFinal();
 	    // feed it to the overall hash
-	    top.analyzeUpdate(innerDigest, 16);
+		top.analyzeUpdate(innerDigest, 16);
 		
 	    return top.analyzeFinal();
-	}
-
-	@Override
-	protected byte[] engineDigest() {
-		return analyzeFinal();
-	}
-
-	@Override
-	protected void engineReset() {
-		analyzeInit();
-	}
-
-	@Override
-	protected void engineUpdate(byte arg0) {
-		engineUpdate(new byte[] { arg0 }, 0, 1);
-	}
-
-	@Override
-	protected void engineUpdate(byte[] arg0, int arg1, int arg2) {
-		analyzeUpdate(arg0, arg1, arg2);
-	}
-	
-	@Override
-	protected int engineGetDigestLength() {
-		return 16;
 	}
 
 }
