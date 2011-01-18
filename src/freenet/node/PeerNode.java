@@ -2054,7 +2054,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			} else if(trackerID == -1) {
 				// Create a new tracker unconditionally
 				packets = new PacketTracker(this, firstPacketNumber);
-				notReusingTracker = true;
+				if(negType >= 5) {
+					if(previousTracker != null && !previousTracker.packets.wasUsed()) {
+						oldPrev = previousTracker;
+						previousTracker = null;
+						Logger.error(this, "Moving from old packet format to new packet format, previous tracker had packets in progress.");
+					}
+					if(currentTracker != null && !currentTracker.packets.wasUsed()) {
+						oldCur = currentTracker;
+						currentTracker = null;
+						Logger.error(this, "Moving from old packet format to new packet format, current tracker had packets in progress.");
+					}
+				} else {
+					notReusingTracker = true;
+				}
 				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
 			} else {
 				if(isJFK4 && negType >= 4 && trackerID < 0)
