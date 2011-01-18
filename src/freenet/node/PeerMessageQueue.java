@@ -52,6 +52,16 @@ public class PeerMessageQueue {
 	
 	private class PrioQueue {
 		
+		PrioQueue(int timeout, boolean timeoutSinceLastSend) {
+			this.timeout = timeout;
+			this.timeoutSinceLastSend = timeoutSinceLastSend;
+		}
+		
+		/** The timeout, period after which messages become urgent. */
+		final int timeout;
+		/** If true, the timeout is relative to the last send. */
+		final boolean timeoutSinceLastSend;
+		
 		private class Items extends DoublyLinkedListImpl.Item<Items> {
 			/** List of messages to send. Stuff to send first is at the beginning. */
 			final LinkedList<MessageItem> items;
@@ -95,6 +105,18 @@ public class PeerMessageQueue {
 		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
 		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
+			if(timeoutSinceLastSend) {
+				long id = item.getID();
+				if(itemsByID != null) {
+					Items it = itemsByID.get(id);
+					if(it != null && it.timeLastSent > 0 && it.timeLastSent + timeout <= System.currentTimeMillis()) {
+						it.addLast(item);
+						if(it.getParent() == emptyItemsWithID)
+							moveFromEmptyToNonEmptyBackward(it);
+						return;
+					}
+				}
+			}
 			if(itemsNonUrgent == null)
 				itemsNonUrgent = new LinkedList<MessageItem>();
 			itemsNonUrgent.addLast(item);
@@ -106,10 +128,20 @@ public class PeerMessageQueue {
 			int moved = 0;
 			while(it.hasNext()) {
 				MessageItem item = it.next();
-				if(item.submitted + PacketSender.MAX_COALESCING_DELAY <= now) {
+				Items list = null;
+				long id = item.getID();
+				if(itemsByID != null)
+					list = itemsByID.get(id);
+				boolean moveIt = false;
+				if(list != null && timeoutSinceLastSend) {
+					if(list.timeLastSent + timeout <= now)
+						moveIt = true;
+				}
+				if(item.submitted + timeout <= now) {
+					moveIt = true;
+				}
+				if(moveIt) {
 					// Move to urgent list
-					long id = item.getID();
-					Items list;
 					if(itemsByID == null) {
 						itemsByID = new HashMap<Long, Items>();
 						if(nonEmptyItemsWithID == null)
@@ -118,7 +150,6 @@ public class PeerMessageQueue {
 						nonEmptyItemsWithID.push(list);
 						itemsByID.put(id, list);
 					} else {
-						list = itemsByID.get(id);
 						if(list == null) {
 							list = new Items(id);
 							if(nonEmptyItemsWithID == null)
@@ -143,12 +174,11 @@ public class PeerMessageQueue {
 					list.addLast(item);
 					it.remove();
 					moved++;
-				} else {
-					if(logDEBUG && moved > 0)
-						Logger.debug(this, "Moved "+moved+" items to urgent round-robin");
-					return;
-				}
+				} else if(!timeoutSinceLastSend)
+					break;
 			}
+			if(logDEBUG && moved > 0)
+				Logger.debug(this, "Moved "+moved+" items to urgent round-robin");
 		}
 
 		private void moveFromEmptyToNonEmptyForward(Items list) {
@@ -267,18 +297,51 @@ public class PeerMessageQueue {
 			return ptr;
 		}
 
+		/** Note that this does NOT consider the length of the queue, which can trigger a
+		 * send. This is intentional, and is relied upon by the bulk-or-realtime logic in
+		 * addMessages(). */
 		public long getNextUrgentTime(long t, long now) {
-			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
-				t = Math.min(t, itemsNonUrgent.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
-				if(t <= now) return t;
-			}
-			if(nonEmptyItemsWithID != null) {
-				for(Items items : nonEmptyItemsWithID) {
-					if(items.items.size() == 0) continue;
-					// It is possible that something requeued isn't urgent, so check anyway.
-					t = Math.min(t, items.items.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
+			if(!timeoutSinceLastSend) {
+				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
+					t = Math.min(t, itemsNonUrgent.getFirst().submitted + timeout);
 					if(t <= now) return t;
-					return t;
+				}
+				if(nonEmptyItemsWithID != null) {
+					for(Items items : nonEmptyItemsWithID) {
+						if(items.items.size() == 0) continue;
+						// It is possible that something requeued isn't urgent, so check anyway.
+						t = Math.min(t, items.items.getFirst().submitted + timeout);
+						// Later items will have later expiry times.
+						return t;
+					}
+				}
+			} else {
+				if(nonEmptyItemsWithID != null) {
+					for(Items items : nonEmptyItemsWithID) {
+						if(items.items.size() == 0) continue;
+						if(items.timeLastSent > 0) {
+							t = Math.min(t, items.timeLastSent + timeout);
+							if(t <= now) return t;
+						} else {
+							// It is possible that something requeued isn't urgent, so check anyway.
+							t = Math.min(t, items.items.getFirst().submitted + timeout);
+							if(t <= now) return t;
+						}
+					}
+				}
+				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
+					for(MessageItem item : itemsNonUrgent) {
+						long uid = item.getID();
+						Items items = itemsByID == null ? null : itemsByID.get(uid);
+						if(items != null && items.timeLastSent > 0) {
+							t = Math.min(t, items.timeLastSent + timeout);
+							if(t <= now) return t;
+						} else {
+							t = Math.min(t, item.submitted + timeout);
+							if(t <= now) return t;
+							if(itemsByID == null) break; // Only the first one matters, since none have been sent.
+						}
+					}
 				}
 			}
 			return t;
@@ -626,13 +689,30 @@ public class PeerMessageQueue {
 			}
 		}
 
+		public boolean isEmpty() {
+			if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
+				return false;
+			}
+			if(nonEmptyItemsWithID != null) {
+				for(Items items : nonEmptyItemsWithID) {
+					if(items.items.size() == 0) continue;
+					return false;
+				}
+			}
+			return true;
+		}
+
 	}
 
 	PeerMessageQueue(BasePeerNode parent) {
 		pn = parent;
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
-		for(int i=0;i<queuesByPriority.length;i++)
-			queuesByPriority[i] = new PrioQueue();
+		for(int i=0;i<queuesByPriority.length;i++) {
+			if(i == DMT.PRIORITY_BULK_DATA)
+				queuesByPriority[i] = new PrioQueue(PacketSender.MAX_COALESCING_DELAY_BULK, true);
+			else
+				queuesByPriority[i] = new PrioQueue(PacketSender.MAX_COALESCING_DELAY, false);
+		}
 	}
 
 	/**
@@ -722,7 +802,8 @@ public class PeerMessageQueue {
 	 * @return
 	 */
 	public synchronized long getNextUrgentTime(long t, long now) {
-		for(PrioQueue queue : queuesByPriority) {
+		for(int i=0;i<queuesByPriority.length;i++) {
+			PrioQueue queue = queuesByPriority[i];
 			t = Math.min(t, queue.getNextUrgentTime(t, now));
 			if(t <= now) return t; // How much in the past doesn't matter, as long as it's in the past.
 		}
@@ -837,15 +918,43 @@ public class PeerMessageQueue {
 			}
 		}
 		
+		boolean tryRealtimeFirst = true;
+		
+		// Most of the time there will only be bulk data.
+		// Bulk data has a long timeout - 30 seconds per block - so we can wait if necessary.
+		// Realtime is supposed to be bursty. 
+		// Realtime data is supposed to be urgent - it should be sent immediately.
+		// So when there is realtime data, we should give it preferential treatment.
+		// However, we do not want to starve the bulk data.
+		// So we should send realtime if there is realtime, unless the bulk data is older than 5000ms.
+		
+		if((!queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) &&
+				(!queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty())) {
+			// There is realtime data, and there is bulk data.
+			if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now) <= now) {
+				// The bulk data is urgent.
+				// The realtime data is assumed to be urgent because it is realtime.
+				// So alternate.
+				synchronized(this) {
+					tryRealtimeFirst = !lastSentRealTime;
+				}
+			} else {
+				// The bulk data is not urgent.
+				// So we should send the realtime data.
+				// This should not prejudice future decisions.
+				tryRealtimeFirst = true;
+			}
+		}
+		
 		// FIXME token bucket?
-		if(sendBalance >= 0) {
+		if(tryRealtimeFirst) {
 			// Try realtime first
 			if(logMINOR) Logger.minor(this, "Trying realtime first");
 			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
-				size = s;
-				sendBalance--;
-				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
+				synchronized(this) {
+					lastSentRealTime = true;
+				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -858,8 +967,9 @@ public class PeerMessageQueue {
 			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				sendBalance++;
-				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
+				synchronized(this) {
+					lastSentRealTime = false;
+				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -874,8 +984,9 @@ public class PeerMessageQueue {
 			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				sendBalance++;
-				if(sendBalance > MAX_BALANCE) sendBalance = MAX_BALANCE;
+				synchronized(this) {
+					lastSentRealTime = false;
+				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -888,8 +999,9 @@ public class PeerMessageQueue {
 			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				sendBalance--;
-				if(sendBalance < MIN_BALANCE) sendBalance = MIN_BALANCE;
+				synchronized(this) {
+					lastSentRealTime = true;
+				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -938,18 +1050,6 @@ public class PeerMessageQueue {
 		}
 	}
 
-	
-	/** This is incremented when a bulk packet is sent, and decremented when a realtime 
-	 * packet is sent. If it is positive we prefer realtime packets, and if it is negative 
-	 * we prefer bulk packets. Limits specified below ensure we don't burst either way for
-	 * too long. */
-	private int sendBalance;
-	
-	// FIXME compute these from time and bandwidth?
-	// We can't just record the time we sent the last bulk packet though, because we'd end up sending so few bulk packets that many would timeout.
-	
-	static final int MAX_BALANCE = 32; // Allow a burst of 32 realtime packets after a long period of bulk packets.
-	static final int MIN_BALANCE = -32; // Allow a burst of 32 bulk packets after a long period of realtime packets.
-	
+	private boolean lastSentRealTime;
 }
 

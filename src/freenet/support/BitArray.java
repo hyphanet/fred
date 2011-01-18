@@ -207,7 +207,10 @@ public class BitArray implements WritableToDataOutputStream {
 		if(start >= _size) start = _size-1;
 		int startByte = start/8;
 		int startBit = start%8;
-		assert(startByte < _bits.length);
+		if(startByte >= _bits.length) {
+			System.err.println("Start byte is "+startByte+" _bits.length is "+_bits.length);
+			assert(false);
+		}
 		for(int i=startByte;i>=0;i--,startBit=7) {
 			byte b = _bits[i];
 			if(b == (byte)0) continue;

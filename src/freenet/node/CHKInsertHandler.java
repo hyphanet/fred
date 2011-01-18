@@ -447,7 +447,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				receiveCompleted = true;
         				CHKInsertHandler.this.notifyAll();
         			}
-        			node.nodeStats.successfulBlockReceive(realTimeFlag);
+        			node.nodeStats.successfulBlockReceive(realTimeFlag, false);
         		}
 
         		public void blockReceiveFailed(RetrievalException e) {
@@ -460,6 +460,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			if(sender != null)
         				sender.onReceiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
         			runThread.interrupt();
+        			tag.reassignToSelf(); // sender is finished, or will be very soon; we may however be waiting for the sendAborted downstream.
         			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
         			try {
         				source.sendSync(msg, CHKInsertHandler.this);
@@ -472,7 +473,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			else
         				// Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
         				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
-        			node.nodeStats.failedBlockReceive(false, false, false, realTimeFlag);
+        			node.nodeStats.failedBlockReceive(false, false, false, realTimeFlag, false);
         			return;
         		}
         		

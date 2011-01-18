@@ -123,6 +123,8 @@ public class NodeStats implements Persistable {
 
 	/** Average delay caused by throttling for sending a packet */
 	final TimeDecayingRunningAverage throttledPacketSendAverage;
+	final TimeDecayingRunningAverage throttledPacketSendAverageRT;
+	final TimeDecayingRunningAverage throttledPacketSendAverageBulk;
 
 	// Bytes used by each different type of local/remote chk/ssk request/insert
 	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
@@ -173,6 +175,7 @@ public class NodeStats implements Persistable {
 	final TrivialRunningAverage sskRemoteFetchPSuccess;
 	final TrivialRunningAverage blockTransferPSuccessRT;
 	final TrivialRunningAverage blockTransferPSuccessBulk;
+	final TrivialRunningAverage blockTransferPSuccessLocal;
 	final TrivialRunningAverage blockTransferFailTurtled;
 	final TrivialRunningAverage blockTransferFailTimeout;
 
@@ -280,6 +283,10 @@ public class NodeStats implements Persistable {
 		this.activeThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		this.waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		throttledPacketSendAverage =
+			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
+		throttledPacketSendAverageRT =
+			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
+		throttledPacketSendAverageBulk =
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
 		nodePinger = new NodePinger(node);
 
@@ -474,6 +481,7 @@ public class NodeStats implements Persistable {
 		sskRemoteFetchPSuccess = new TrivialRunningAverage();
 		blockTransferPSuccessRT = new TrivialRunningAverage();
 		blockTransferPSuccessBulk = new TrivialRunningAverage();
+		blockTransferPSuccessLocal = new TrivialRunningAverage();
 		blockTransferFailTurtled = new TrivialRunningAverage();
 		blockTransferFailTimeout = new TrivialRunningAverage();
 
@@ -577,6 +585,8 @@ public class NodeStats implements Persistable {
 						long after = System.currentTimeMillis();
 						// Report time it takes to grab the bytes.
 						throttledPacketSendAverage.report(after - now);
+						throttledPacketSendAverageRT.report(after - now);
+						throttledPacketSendAverageBulk.report(after - now);
 					}
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
@@ -1317,6 +1327,14 @@ public class NodeStats implements Persistable {
 
 	}
 
+	public double getBwlimitDelayTimeRT() {
+		return throttledPacketSendAverageRT.currentValue();
+	}
+
+	public double getBwlimitDelayTimeBulk() {
+		return throttledPacketSendAverageBulk.currentValue();
+	}
+
 	public double getBwlimitDelayTime() {
 		return throttledPacketSendAverage.currentValue();
 	}
@@ -1816,6 +1834,7 @@ public class NodeStats implements Persistable {
 				sskRemoteFetchPSuccess,
 				blockTransferPSuccessRT,
 				blockTransferPSuccessBulk,
+				blockTransferPSuccessLocal,
 				blockTransferFailTurtled,
 				blockTransferFailTimeout
 		};
@@ -1827,6 +1846,7 @@ public class NodeStats implements Persistable {
 				l10n("remoteSSKs"),
 				l10n("blockTransfersRT"),
 				l10n("blockTransfersBulk"),
+				l10n("blockTransfersLocal"),
 				l10n("turtledDownstream"),
 				l10n("transfersTimedOut")
 		};
@@ -2430,13 +2450,23 @@ public class NodeStats implements Persistable {
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports()+" realtime="+realTimeFlag);
 	}
 
-	public synchronized void failedBlockReceive(boolean normalFetch, boolean timeout, boolean turtle, boolean realTimeFlag) {
+	public synchronized void successfulBlockReceive(boolean realTimeFlag, boolean isLocal) {
+		RunningAverage blockTransferPSuccess = realTimeFlag ? blockTransferPSuccessRT : blockTransferPSuccessBulk;
+		blockTransferPSuccess.report(1.0);
+		if(isLocal)
+			blockTransferPSuccessLocal.report(1.0);
+		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports()+" realtime="+realTimeFlag);
+	}
+
+	public synchronized void failedBlockReceive(boolean normalFetch, boolean timeout, boolean turtle, boolean realTimeFlag, boolean isLocal) {
 		if(normalFetch) {
 			blockTransferFailTurtled.report(turtle ? 1.0 : 0.0);
 			blockTransferFailTimeout.report(timeout ? 1.0 : 0.0);
 		}
 		RunningAverage blockTransferPSuccess = realTimeFlag ? blockTransferPSuccessRT : blockTransferPSuccessBulk;
 		blockTransferPSuccess.report(0.0);
+		if(isLocal)
+			blockTransferPSuccessLocal.report(0.0);
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports()+" realtime="+realTimeFlag);
 	}
 
