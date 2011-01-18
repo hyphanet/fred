@@ -4344,12 +4344,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		Key key = sender.key;
 		synchronized(turtlingTransfers) {
 			if(!turtlingTransfers.containsKey(key)) {
-				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : DOES NOT EXIST");
+				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : DOES NOT EXIST", new Exception("debug"));
 				return;
 			}
 			RequestSender oldSender = turtlingTransfers.remove(key);
 			if(oldSender != sender) {
-				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : WRONG SENDER: "+oldSender);
+				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : WRONG SENDER: "+oldSender, new Exception("error"));
 				turtlingTransfers.put(key, oldSender);
 				return;
 			}
