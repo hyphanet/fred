@@ -111,7 +111,8 @@ public class PeerMessageQueue {
 					Items it = itemsByID.get(id);
 					if(it != null && it.timeLastSent > 0 && it.timeLastSent + timeout <= System.currentTimeMillis()) {
 						it.addLast(item);
-						moveFromEmptyToNonEmptyBackward(it);
+						if(it.getParent() == emptyItemsWithID)
+							moveFromEmptyToNonEmptyBackward(it);
 						return;
 					}
 				}
