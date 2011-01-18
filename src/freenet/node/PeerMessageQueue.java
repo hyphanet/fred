@@ -105,6 +105,17 @@ public class PeerMessageQueue {
 		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
 		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
+			if(timeoutSinceLastSend) {
+				long id = item.getID();
+				if(itemsByID != null) {
+					Items it = itemsByID.get(id);
+					if(it != null && it.timeLastSent > 0 && it.timeLastSent + timeout <= System.currentTimeMillis()) {
+						it.addLast(item);
+						moveFromEmptyToNonEmptyBackward(it);
+						return;
+					}
+				}
+			}
 			if(itemsNonUrgent == null)
 				itemsNonUrgent = new LinkedList<MessageItem>();
 			itemsNonUrgent.addLast(item);
