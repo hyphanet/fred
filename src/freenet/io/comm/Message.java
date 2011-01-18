@@ -159,6 +159,7 @@ public class Message {
 			_sourceRef = source.getWeakRef();
 		}
 		_receivedByteCount = recvByteCount;
+		priority = spec.getPriority();
 	}
 
 	public boolean getBoolean(String key) {

@@ -25,6 +25,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.OpennetManager.NoderefCallback;
+import freenet.node.OpennetManager.WaitedTooLongForOpennetNoderefException;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -231,7 +232,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						if(node.hasKey(key, false, false)) return true; // Don't want it
 						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
-							Logger.error(this, "Downstream transfer successful but upstream transfer failed. Reassigning tag to self because want the data for ourselves on "+this);
+							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for ourselves on "+RequestHandler.this);
 							node.reassignTagToSelf(tag);
 							return false; // Want it
 						}
@@ -671,7 +672,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	 * sent a noderef (after we have handled the incoming noderef / ack / timeout). 
 	 */
 	private void finishOpennetInner(OpennetManager om) {
-		byte[] noderef = rs.waitForOpennetNoderef();
+		byte[] noderef;
+		try {
+			noderef = rs.waitForOpennetNoderef();
+		} catch (WaitedTooLongForOpennetNoderefException e) {
+			sendTerminal(DMT.createFNPOpennetCompletedTimeout(uid));
+			return;
+		}
 		if(noderef == null || 
 				node.random.nextInt(OpennetManager.RESET_PATH_FOLDING_PROB) == 0) {
 			finishOpennetNoRelayInner(om);
@@ -709,8 +716,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		// Wait for response
 		
-		om.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
+		OpennetManager.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
 
+			// We have already sent ours, so we don't need to worry about timeouts.
+			
 			public void gotNoderef(byte[] noderef) {
 				// We have sent a noderef. It is not appropriate for the caller to call ackOpennet():
 				// in all cases he should unlock.
@@ -718,8 +727,16 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				applyByteCounts();
 				unregisterRequestHandlerWithNode();
 			}
+
+			public void timedOut() {
+				gotNoderef(null);
+			}
+
+			public void acked(boolean timedOutMessage) {
+				gotNoderef(null);
+			}
 			
-		});
+		}, node);
 	}
 
 	private void finishOpennetNoRelayInner(OpennetManager om, byte[] noderef) {
@@ -771,6 +788,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		// Now wait for reply from the request source.
 		
+		// We do not need to worry about timeouts here, because we have already sent our noderef.
+		
 		om.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
 
 			public void gotNoderef(byte[] newNoderef) {
@@ -794,8 +813,16 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				applyByteCounts();
 				unregisterRequestHandlerWithNode();
 			}
+
+			public void timedOut() {
+				gotNoderef(null);
+			}
+
+			public void acked(boolean timedOutMessage) {
+				gotNoderef(null);
+			}
 			
-		});
+		}, node);
 
 
 	}

@@ -30,6 +30,7 @@ public class RequestTag extends UIDTag {
 	int abortedDownstreamReason;
 	String abortedDownstreamDesc;
 	boolean handlerDisconnected;
+	private WeakReference<PeerNode> waitingForOpennet;
 
 	public RequestTag(boolean isSSK, START start, PeerNode source, boolean realTimeFlag, long uid, Node node) {
 		super(source, realTimeFlag, uid, node);
@@ -57,6 +58,7 @@ public class RequestTag extends UIDTag {
 	
 	protected synchronized boolean mustUnlock() {
 		if(sent && requestSenderFinishedCode == RequestSender.NOT_FINISHED) return false;
+		if(waitingForOpennet != null && waitingForOpennet.get() != null) return false;
 		return super.mustUnlock();
 	}
 
@@ -103,6 +105,10 @@ public class RequestTag extends UIDTag {
 		}
 		if(handlerDisconnected)
 			sb.append(" handlerDisconnected=true");
+		if(waitingForOpennet != null) {
+			PeerNode pn = waitingForOpennet.get();
+			sb.append(" waitingForOpennet="+pn == null ? "(null)" : pn.shortToString());
+		}
 		sb.append(" : ");
 		sb.append(super.toString());
 		if(handlerThrew != null)
@@ -155,4 +161,28 @@ public class RequestTag extends UIDTag {
 		return false;
 	}
 
+	public synchronized void waitingForOpennet(PeerNode next) {
+		if(waitingForOpennet != null)
+			Logger.error(this, "Have already waited for opennet: "+waitingForOpennet.get()+" on "+this, new Exception("error"));
+		this.waitingForOpennet = next.myRef;
+	}
+
+	public void finishedWaitingForOpennet(PeerNode next) {
+		boolean noRecordUnlock;
+		synchronized(this) {
+			if(waitingForOpennet == null) {
+				Logger.error(this, "Not waiting for opennet!");
+				return;
+			}
+			PeerNode got = waitingForOpennet.get();
+			if(got != next) {
+				Logger.error(this, "Finished waiting for opennet on "+next+" but was waiting for "+got);
+			}
+			waitingForOpennet = null;
+			if(!mustUnlock()) return;
+			noRecordUnlock = this.noRecordUnlock;
+		}
+		innerUnlock(noRecordUnlock);
+	}
+	
 }

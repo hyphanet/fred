@@ -364,7 +364,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			completed = true;
 		}
 		if(logMINOR)
-			Logger.minor(this, "Transfer failed: "+reason+" : "+description);
+			Logger.minor(this, "Transfer failed: ("+(_realTime?"realtime":"bulk")+") "+reason+" : "+description);
 		_prb.removeListener(myListener);
 		_prb.abort(reason, description);
 		// Send the abort whether we have received one or not.
@@ -527,6 +527,10 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 
 	public synchronized static int getRunningReceives() {
 		return runningBlockReceives;
+	}
+	
+	public String toString() {
+		return super.toString()+":"+_uid+":"+_sender.shortToString();
 	}
 	
 }

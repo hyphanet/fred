@@ -91,6 +91,7 @@ public class PacketTracker {
 	private long timeLastDecodedPacket;
 	/** Tracker ID. Must be positive. */
 	final long trackerID;
+	private boolean wasUsed;
 
 	/** Everything is clear to start with */
 	PacketTracker(PeerNode pn, int firstPacketNumber) {
@@ -158,6 +159,9 @@ public class PacketTracker {
 		QueuedAck qa = new QueuedAck(seqNumber);
 		synchronized(ackQueue) {
 			ackQueue.add(qa);
+		}
+		synchronized(this) {
+			wasUsed = true;
 		}
 	// Will go urgent in 200ms
 	}
@@ -401,6 +405,7 @@ public class PacketTracker {
 		}
 		synchronized(this) {
 			highestSeenIncomingSerialNumber = Math.max(highestSeenIncomingSerialNumber, seqNumber);
+			wasUsed = true;
 		}
 		if(logMINOR)
 			Logger.minor(this, "Handled received packet number " + seqNumber);
@@ -741,6 +746,7 @@ public class PacketTracker {
 		if(!pn.isConnected())
 			throw new NotConnectedException();
 		synchronized(this) {
+			wasUsed = true;
 			packetNumber = nextPacketNumber;
 			if(isDeprecated)
 				throw new KeyChangedException();
@@ -1114,5 +1120,9 @@ public class PacketTracker {
 
 	public synchronized long timeLastDecodedPacket() {
 		return timeLastDecodedPacket;
+	}
+
+	public synchronized boolean wasUsed() {
+		return wasUsed;
 	}
 }

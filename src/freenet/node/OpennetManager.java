@@ -838,13 +838,30 @@ public class OpennetManager {
 	}
 
 	interface NoderefCallback {
+		/** Got a noderef. */
 		void gotNoderef(byte[] noderef);
+		/** Timed out waiting for a noderef. */
+		void timedOut();
+		/** Got an ack - didn't timeout but there won't be a noderef. 
+		 * @param timedOutMessage */
+		void acked(boolean timedOutMessage);
 	}
 	
-	private class SyncNoderefCallback implements NoderefCallback {
+	private static class SyncNoderefCallback implements NoderefCallback {
 
 		byte[] returned;
 		boolean finished;
+		boolean timedOut;
+		
+		public synchronized void timedOut() {
+			timedOut = true;
+			finished = true;
+			notifyAll();
+		}
+		
+		public void acked(boolean timedOutMessage) {
+			gotNoderef(null);
+		}
 		
 		public synchronized void gotNoderef(byte[] noderef) {
 			returned = noderef;
@@ -852,15 +869,21 @@ public class OpennetManager {
 			notifyAll();
 		}
 		
-		public synchronized byte[] waitForResult() {
+		public synchronized byte[] waitForResult() throws WaitedTooLongForOpennetNoderefException {
 			while(!finished)
 				try {
 					wait();
 				} catch (InterruptedException e) {
 					// Ignore
 				}
+			if(timedOut) throw new WaitedTooLongForOpennetNoderefException();
 			return returned;
 		}
+		
+	}
+	
+	@SuppressWarnings("serial")
+	static class WaitedTooLongForOpennetNoderefException extends Exception {
 		
 	}
 	
@@ -870,40 +893,47 @@ public class OpennetManager {
 	 * @param uid The UID of the parent request.
 	 * @return An opennet noderef.
 	 */
-	public byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr) {
+	public static byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr, Node node) throws WaitedTooLongForOpennetNoderefException {
 		SyncNoderefCallback cb = new SyncNoderefCallback();
-		waitForOpennetNoderef(isReply, source, uid, ctr, cb);
+		waitForOpennetNoderef(isReply, source, uid, ctr, cb, node);
 		return cb.waitForResult();
 	}
 	
-	public void waitForOpennetNoderef(final boolean isReply, final PeerNode source, final long uid, final ByteCounter ctr, final NoderefCallback callback) {
+	public static void waitForOpennetNoderef(final boolean isReply, final PeerNode source, final long uid, final ByteCounter ctr, final NoderefCallback callback, final Node node) {
 		// FIXME remove back compat code
 		MessageFilter mf =
 			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
 			setTimeout(RequestSender.OPENNET_TIMEOUT).
 			setType(isReply ? DMT.FNPOpennetConnectReplyNew : DMT.FNPOpennetConnectDestinationNew);
-		if (!isReply) {
-			// Also waiting for an ack
-			MessageFilter mfAck =
-				MessageFilter.create().setSource(source).setField(DMT.UID, uid).
-				setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
-			mf = mfAck.or(mf);
-		}
+		// Also waiting for an ack
+		MessageFilter mfAck =
+			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
+			setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
+		// Also waiting for an upstream timed out.
+		MessageFilter mfAckTimeout =
+			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
+			setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedTimeout);
+		
+		mf = mfAck.or(mfAckTimeout.or(mf));
 		try {
 			node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
 				
 				boolean completed;
 
 				public void onMatched(Message msg) {
-					if (msg.getSpec() == DMT.FNPOpennetCompletedAck) {
-						// Acked (only possible if !isReply)
-						complete(null);
+					if (msg.getSpec() == DMT.FNPOpennetCompletedAck || 
+							msg.getSpec() == DMT.FNPOpennetCompletedTimeout) {
+						synchronized(this) {
+							if(completed) return;
+							completed = true;
+						}
+						callback.acked(msg.getSpec() == DMT.FNPOpennetCompletedTimeout);
 					} else {
 						// Noderef bulk transfer
 						long xferUID = msg.getLong(DMT.TRANSFER_UID);
 						int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
 						int realLength = msg.getInt(DMT.NODEREF_LENGTH);
-						complete(innerWaitForOpennetNoderef(xferUID, paddedLength, realLength, source, isReply, uid, false, ctr));
+						complete(innerWaitForOpennetNoderef(xferUID, paddedLength, realLength, source, isReply, uid, false, ctr, node));
 					}
 				}
 
@@ -912,7 +942,11 @@ public class OpennetManager {
 				}
 
 				public void onTimeout() {
-					complete(null);
+					synchronized(this) {
+						if(completed) return;
+						completed = true;
+					}
+					callback.timedOut();
 				}
 
 				public void onDisconnect(PeerContext ctx) {
@@ -941,15 +975,15 @@ public class OpennetManager {
 		}
 	}
 
-	byte[] innerWaitForOpennetNoderef(long xferUID, int paddedLength, int realLength, PeerNode source, boolean isReply, long uid, boolean sendReject, ByteCounter ctr) {
+	static byte[] innerWaitForOpennetNoderef(long xferUID, int paddedLength, int realLength, PeerNode source, boolean isReply, long uid, boolean sendReject, ByteCounter ctr, Node node) {
 		if (paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH) {
-			Logger.error(this, "Noderef too big: "+SizeUtil.formatSize(paddedLength)
+			Logger.error(OpennetManager.class, "Noderef too big: "+SizeUtil.formatSize(paddedLength)
 					+" real length "+SizeUtil.formatSize(realLength));
 			if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TOO_BIG, ctr);
 			return null;
 		}
 		if (realLength > paddedLength) {
-			Logger.error(this, "Real length larger than padded length: "
+			Logger.error(OpennetManager.class, "Real length larger than padded length: "
 					+ SizeUtil.formatSize(paddedLength)
 					+ " real length "+SizeUtil.formatSize(realLength));
 			if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_REAL_BIGGER_THAN_PADDED, ctr);
@@ -960,17 +994,17 @@ public class OpennetManager {
 		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
 		BulkReceiver br = new BulkReceiver(prb, source, xferUID, ctr);
 		if (logMINOR) {
-			Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
+			Logger.minor(OpennetManager.class, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
 		}
 		if (!br.receive()) {
 			if (source.isConnected()) {
-				String msg = "Failed to receive noderef bulk transfer for "+this+" : "
+				String msg = "Failed to receive noderef bulk transfer : "
 					+RetrievalException.getErrString(prb.getAbortReason())+" : "
 					+prb.getAbortDescription()+" from "+source;
 				if (prb.getAbortReason() != RetrievalException.SENDER_DISCONNECTED) {
-					Logger.warning(this, msg);
+					Logger.warning(OpennetManager.class, msg);
 				} else {
-					Logger.normal(this, msg);
+					Logger.normal(OpennetManager.class, msg);
 				}
 				if (sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TRANSFER_FAILED, ctr);
 			}
@@ -981,7 +1015,7 @@ public class OpennetManager {
 		return noderef;
 	}
 
-	public void rejectRef(long uid, PeerNode source, int reason, ByteCounter ctr) {
+	public static void rejectRef(long uid, PeerNode source, int reason, ByteCounter ctr) {
 		Message msg = DMT.createFNPOpennetNoderefRejected(uid, reason);
 		try {
 			source.sendAsync(msg, null, ctr);
@@ -990,19 +1024,19 @@ public class OpennetManager {
 		}
 	}
 
-	public SimpleFieldSet validateNoderef(byte[] noderef, int offset, int length, PeerNode from, boolean forceOpennetEnabled) {
+	public static SimpleFieldSet validateNoderef(byte[] noderef, int offset, int length, PeerNode from, boolean forceOpennetEnabled) {
     	SimpleFieldSet ref;
 		try {
 			ref = PeerNode.compressedNoderefToFieldSet(noderef, 0, noderef.length);
 		} catch (FSParseException e) {
-			Logger.error(this, "Invalid noderef: "+e, e);
+			Logger.error(OpennetManager.class, "Invalid noderef: "+e, e);
 			return null;
 		}
 		if(forceOpennetEnabled)
 			ref.put("opennet", true);
 
 		if(!OpennetPeerNode.validateRef(ref)) {
-			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+from);
+			Logger.error(OpennetManager.class, "Could not parse opennet noderef from "+from);
 			return null;
 		}
 
@@ -1029,22 +1063,22 @@ public class OpennetManager {
 
 
 	private static final long MAX_AGE = 7 * 24 * 60 * 60 * 1000;
-	private final TimeSortedHashtable<String> knownIds = new TimeSortedHashtable<String>();
+	private static final TimeSortedHashtable<String> knownIds = new TimeSortedHashtable<String>();
 
-	private void registerKnownIdentity(String d) {
+	private static void registerKnownIdentity(String d) {
 		if (logMINOR)
-			Logger.minor(this, "Known Id: " + d);
+			Logger.minor(OpennetManager.class, "Known Id: " + d);
 		long now = System.currentTimeMillis();
 
 		synchronized (knownIds) {
-			if(logMINOR) Logger.minor(this, "Adding Id " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(OpennetManager.class, "Adding Id " + d + " knownIds size " + knownIds.size());
 			knownIds.push(d, now);
-			if(logMINOR) Logger.minor(this, "Added Id " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(OpennetManager.class, "Added Id " + d + " knownIds size " + knownIds.size());
 			knownIds.removeBefore(now - MAX_AGE);
-			if(logMINOR) Logger.minor(this, "Added and pruned location " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(OpennetManager.class, "Added and pruned location " + d + " knownIds size " + knownIds.size());
 		}
 		if (logMINOR)
-			if(logMINOR) Logger.minor(this, "Estimated opennet size(session): " + knownIds.size());
+			if(logMINOR) Logger.minor(OpennetManager.class, "Estimated opennet size(session): " + knownIds.size());
 	}
     //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
 	public int getNetworkSizeEstimate(long timestamp) {

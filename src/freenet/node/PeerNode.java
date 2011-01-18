@@ -2054,7 +2054,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			} else if(trackerID == -1) {
 				// Create a new tracker unconditionally
 				packets = new PacketTracker(this, firstPacketNumber);
-				notReusingTracker = true;
+				if(negType >= 5) {
+					if(previousTracker != null && previousTracker.packets.wasUsed()) {
+						oldPrev = previousTracker;
+						previousTracker = null;
+						Logger.error(this, "Moving from old packet format to new packet format, previous tracker had packets in progress.");
+					}
+					if(currentTracker != null && currentTracker.packets.wasUsed()) {
+						oldCur = currentTracker;
+						currentTracker = null;
+						Logger.error(this, "Moving from old packet format to new packet format, current tracker had packets in progress.");
+					}
+				} else {
+					notReusingTracker = true;
+				}
 				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
 			} else {
 				if(isJFK4 && negType >= 4 && trackerID < 0)
@@ -2077,6 +2090,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				oldCur = currentTracker;
 				previousTracker = null;
 				currentTracker = null;
+			}
+			if(bootIDChanged) {
 				// Messages do not persist across restarts.
 				// Generally they would be incomprehensible, anything that isn't should be sent as
 				// connection initial messages by maybeOnConnect().
@@ -2099,8 +2114,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(currentTracker == null || currentTracker.packets.isDeprecated())
 					isConnected = false;
 			} else {
-				prev = currentTracker;
-				previousTracker = prev;
+				oldPrev = previousTracker;
+				previousTracker = currentTracker;
 				currentTracker = newTracker;
 				// Keep the old unverified tracker.
 				// In case of a race condition (two setups between A and B complete at the same time),
@@ -2163,7 +2178,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		if(throttle != null) throttle.maybeDisconnected();
 		Logger.normal(this, "Completed handshake with " + this + " on " + replyTo + " - current: " + currentTracker +
-			" old: " + previousTracker + " unverified: " + unverifiedTracker + " bootID: " + thisBootID + " for " + shortToString());
+			" old: " + previousTracker + " unverified: " + unverifiedTracker + " bootID: " + thisBootID + (bootIDChanged ? "(changed) " : "") + " for " + shortToString());
 
 		// Received a packet
 		receivedPacket(unverified, false);
@@ -3147,10 +3162,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return pingAverage.currentValue();
 	}
 
-	public void reportThrottledPacketSendTime(long timeDiff) {
+	public void reportThrottledPacketSendTime(long timeDiff, boolean realTime) {
 		node.nodeStats.throttledPacketSendAverage.report(timeDiff);
+		if(realTime)
+			node.nodeStats.throttledPacketSendAverageRT.report(timeDiff);
+		else
+			node.nodeStats.throttledPacketSendAverageBulk.report(timeDiff);
 		if(logMINOR)
-			Logger.minor(this, "Reporting throttled packet send time: " + timeDiff + " to " + getPeer());
+			Logger.minor(this, "Reporting throttled packet send time: " + timeDiff + " to " + getPeer()+" ("+(realTime?"realtime":"bulk")+")");
 	}
 
 	public void setRemoteDetectedPeer(Peer p) {
@@ -4223,7 +4242,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public MessageItem sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long deadline = System.currentTimeMillis() + timeout;
 		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
-		return getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback);
+		return getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback, msg.getPriority() == DMT.PRIORITY_REALTIME_DATA);
 	}
 
 	/**
@@ -4340,12 +4359,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		Key key = sender.key;
 		synchronized(turtlingTransfers) {
 			if(!turtlingTransfers.containsKey(key)) {
-				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : DOES NOT EXIST");
+				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : DOES NOT EXIST", new Exception("debug"));
 				return;
 			}
 			RequestSender oldSender = turtlingTransfers.remove(key);
 			if(oldSender != sender) {
-				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : WRONG SENDER: "+oldSender);
+				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : WRONG SENDER: "+oldSender, new Exception("error"));
 				turtlingTransfers.put(key, oldSender);
 				return;
 			}
@@ -4699,6 +4718,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 	
 	public void noLongerRoutingTo(UIDTag tag, boolean offeredKey) {
+		if(offeredKey && !(tag instanceof RequestTag))
+			throw new IllegalArgumentException("Only requests can have offeredKey=true");
 		synchronized(routedToLock) {
 			if(offeredKey)
 				tag.removeFetchingOfferedKeyFrom(this);

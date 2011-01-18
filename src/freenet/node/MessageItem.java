@@ -38,7 +38,7 @@ public class MessageItem {
 		if(overridePriority > 0)
 			priority = overridePriority;
 		else
-			priority = msg2.getSpec().getPriority();
+			priority = msg2.getPriority();
 		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
 		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
 		buf = msg.encodeToPacket();

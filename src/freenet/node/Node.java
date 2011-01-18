@@ -645,7 +645,8 @@ public class Node implements TimeSkewDetectorCallback {
 	final GetPubkey getPubKey;
 
 	/** RequestSender's currently transferring, by key */
-	private final HashMap<NodeCHK, RequestSender> transferringRequestSenders;
+	private final HashMap<NodeCHK, RequestSender> transferringRequestSendersRT;
+	private final HashMap<NodeCHK, RequestSender> transferringRequestSendersBulk;
 	/** UIDs of RequestHandler's currently transferring */
 	private final HashSet<Long> transferringRequestHandlers;
 	/** FetchContext for ARKs */
@@ -1128,7 +1129,8 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new Error(e3);
 		}
 		fLocalhostAddress = new FreenetInetAddress(localhostAddress);
-		transferringRequestSenders = new HashMap<NodeCHK, RequestSender>();
+		transferringRequestSendersRT = new HashMap<NodeCHK, RequestSender>();
+		transferringRequestSendersBulk = new HashMap<NodeCHK, RequestSender>();
 		transferringRequestHandlers = new HashSet<Long>();
 		runningUIDs = new HashMap<Long,UIDTag>();
 		runningCHKGetUIDsRT = new HashMap<Long,RequestTag>();
@@ -4070,6 +4072,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		// Transfer coalescing - match key only as HTL irrelevant
 		RequestSender sender = null;
+		HashMap<NodeCHK, RequestSender> transferringRequestSenders =
+			realTimeFlag ? transferringRequestSendersRT : transferringRequestSendersBulk;
 		synchronized(transferringRequestSenders) {
 			sender = transferringRequestSenders.get(key);
 		}
@@ -4118,6 +4122,8 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Add a transferring RequestSender to our HashMap.
 	 */
 	public void addTransferringSender(NodeCHK key, RequestSender sender) {
+		HashMap<NodeCHK, RequestSender> transferringRequestSenders =
+			sender.realTimeFlag ? transferringRequestSendersRT : transferringRequestSendersBulk;
 		synchronized(transferringRequestSenders) {
 			transferringRequestSenders.put(key, sender);
 		}
@@ -4462,6 +4468,8 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Remove a sender from the set of currently transferring senders.
 	 */
 	public void removeTransferringSender(NodeCHK key, RequestSender sender) {
+		HashMap<NodeCHK, RequestSender> transferringRequestSenders =
+			sender.realTimeFlag ? transferringRequestSendersRT : transferringRequestSendersBulk;
 		synchronized(transferringRequestSenders) {
 //			RequestSender rs = (RequestSender) transferringRequestSenders.remove(key);
 //			if(rs != sender) {
@@ -5069,9 +5077,14 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public int getNumTransferringRequestSenders() {
-		synchronized(transferringRequestSenders) {
-			return transferringRequestSenders.size();
+		int total = 0;
+		synchronized(transferringRequestSendersRT) {
+			total += transferringRequestSendersRT.size();
 		}
+		synchronized(transferringRequestSendersBulk) {
+			total += transferringRequestSendersBulk.size();
+		}
+		return total;
 	}
 
 	public int getNumTransferringRequestHandlers() {
@@ -5910,6 +5923,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		Logger.normal(this, "TURTLING: "+sender.key+" for "+sender);
 		// Do not transfer coalesce!!
+		HashMap<NodeCHK, RequestSender> transferringRequestSenders = sender.realTimeFlag ? transferringRequestSendersRT : transferringRequestSendersBulk;
 		synchronized(transferringRequestSenders) {
 			transferringRequestSenders.remove(sender.key);
 		}
@@ -5963,9 +5977,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void unregisterTurtleTransfer(RequestSender sender) {
 		Key key = sender.key;
+		if(logMINOR) Logger.minor(this, "Removing turtle "+sender+" for "+key);
 		synchronized(turtlingTransfers) {
 			if(!turtlingTransfers.containsKey(key)) {
-				Logger.error(this, "Removing turtle "+sender+" for "+key+" : DOES NOT EXIST IN GLOBAL TURTLES LIST");
+				Logger.error(this, "Removing turtle "+sender+" for "+key+" : DOES NOT EXIST IN GLOBAL TURTLES LIST", new Exception("debug"));
 				return;
 			}
 			RequestSender[] senders = turtlingTransfers.get(key);
@@ -5986,7 +6001,7 @@ public class Node implements TimeSkewDetectorCallback {
 				if(senders[i] == sender) x++;
 			}
 			if(x == 0) {
-				Logger.error(this, "Turtle not in global register: "+sender+" for "+key);
+				Logger.error(this, "Turtle not in global register: "+sender+" for "+key, new Exception("debug"));
 				return;
 			}
 			if(senders.length == x) {
