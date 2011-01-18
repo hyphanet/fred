@@ -528,7 +528,7 @@ loadWaiterLoop:
 		        	int timeout = (int)(Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis()));
 					msg = node.usm.waitFor(createMessageFilter(timeout, waitingFor), RequestSender.this);
 				} catch (DisconnectedException e) {
-					Logger.normal(this, "Disconnected from " + next
+					Logger.normal(this, "Disconnected from " + waitingFor
 							+ " while waiting for reply on " + this);
 					origTag.removeRoutingTo(waitingFor);
 					return;
@@ -536,8 +536,8 @@ loadWaiterLoop:
 				
 				if(msg == null) {
 					// Second timeout.
-					Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
-					next.fatalTimeout();
+					Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+waitingFor);
+					waitingFor.fatalTimeout();
 					origTag.removeRoutingTo(waitingFor);
 					return;
 				}
