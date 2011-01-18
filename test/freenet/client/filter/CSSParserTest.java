@@ -35,6 +35,8 @@ import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
+import freenet.support.TestProperty;
+
 public class CSSParserTest extends TestCase {
 
 
@@ -725,7 +727,9 @@ public class CSSParserTest extends TestCase {
 	
 	public void setUp() throws InvalidThresholdException {
 		new NodeL10n();
-    	//Logger.setupStdoutLogging(LogLevel.MINOR, "freenet.client.filter:DEBUG");
+		//if (TestProperty.VERBOSE) { 
+    	//	Logger.setupStdoutLogging(LogLevel.MINOR, "freenet.client.filter:DEBUG");
+    	//}
     	ContentFilter.init();
     	cssMIMEType = ContentFilter.getMIMEType("text/css");
 	}

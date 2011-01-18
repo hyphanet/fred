@@ -3,6 +3,8 @@ package freenet.client;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import freenet.support.TestProperty;
+
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.FECCodeFactory;
 import com.onionnetworks.fec.FECMath;
@@ -12,7 +14,6 @@ import com.onionnetworks.util.Util;
 
 public class CodeTest extends TestCase {
 
-	private static final boolean BENCHMARK = Boolean.getBoolean("benchmark");
 	public static FECMath fecMath = new FECMath(8);
 
 	public static final int KK = 192;
@@ -43,7 +44,7 @@ public class CodeTest extends TestCase {
 	}
 
 	public void testBenchmark() {
-		if(!BENCHMARK) return;
+		if(!TestProperty.BENCHMARK) return;
 
 		int lim = fecMath.gfSize + 1;
 		FECCode maybeNative = FECCodeFactory.getDefault().createFECCode(KK, lim);

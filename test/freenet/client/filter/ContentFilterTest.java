@@ -23,6 +23,8 @@ import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 import freenet.support.io.ArrayBucket;
 
+import freenet.support.TestProperty;
+
 /**
  * A simple meta-test to track regressions of the content-filter
  *
@@ -117,7 +119,9 @@ public class ContentFilterTest extends TestCase {
 	public void testHTMLFilter() throws Exception {
 		new NodeL10n();
 		
-    	Logger.setupStdoutLogging(LogLevel.MINOR, "freenet.client.filter.Generic:DEBUG");
+		if (TestProperty.VERBOSE) {
+    		Logger.setupStdoutLogging(LogLevel.MINOR, "freenet.client.filter.Generic:DEBUG");
+		}
 		
 		// General sanity checks
 		// is "relativization" working?
