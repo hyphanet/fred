@@ -116,10 +116,20 @@ public class PeerMessageQueue {
 			int moved = 0;
 			while(it.hasNext()) {
 				MessageItem item = it.next();
+				Items list = null;
+				long id = item.getID();
+				if(itemsByID != null)
+					list = itemsByID.get(id);
+				boolean moveIt = false;
+				if(list != null && timeoutSinceLastSend) {
+					if(list.timeLastSent + timeout <= now)
+						moveIt = true;
+				}
 				if(item.submitted + timeout <= now) {
+					moveIt = true;
+				}
+				if(moveIt) {
 					// Move to urgent list
-					long id = item.getID();
-					Items list;
 					if(itemsByID == null) {
 						itemsByID = new HashMap<Long, Items>();
 						if(nonEmptyItemsWithID == null)
@@ -128,7 +138,6 @@ public class PeerMessageQueue {
 						nonEmptyItemsWithID.push(list);
 						itemsByID.put(id, list);
 					} else {
-						list = itemsByID.get(id);
 						if(list == null) {
 							list = new Items(id);
 							if(nonEmptyItemsWithID == null)
@@ -153,12 +162,11 @@ public class PeerMessageQueue {
 					list.addLast(item);
 					it.remove();
 					moved++;
-				} else {
-					if(logDEBUG && moved > 0)
-						Logger.debug(this, "Moved "+moved+" items to urgent round-robin");
-					return;
-				}
+				} else if(!timeoutSinceLastSend)
+					break;
 			}
+			if(logDEBUG && moved > 0)
+				Logger.debug(this, "Moved "+moved+" items to urgent round-robin");
 		}
 
 		private void moveFromEmptyToNonEmptyForward(Items list) {
