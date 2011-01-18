@@ -116,7 +116,7 @@ public class PeerMessageQueue {
 			int moved = 0;
 			while(it.hasNext()) {
 				MessageItem item = it.next();
-				if(item.submitted + PacketSender.MAX_COALESCING_DELAY <= now) {
+				if(item.submitted + timeout <= now) {
 					// Move to urgent list
 					long id = item.getID();
 					Items list;
