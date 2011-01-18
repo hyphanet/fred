@@ -529,8 +529,8 @@ loadWaiterLoop:
 					msg = node.usm.waitFor(createMessageFilter(timeout, waitingFor), RequestSender.this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
-							+ " while waiting for InsertReply on " + this);
-					origTag.removeRoutingTo(next);
+							+ " while waiting for reply on " + this);
+					origTag.removeRoutingTo(waitingFor);
 					return;
 				}
 				
@@ -538,7 +538,7 @@ loadWaiterLoop:
 					// Second timeout.
 					Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
 					next.fatalTimeout();
-					origTag.removeRoutingTo(next);
+					origTag.removeRoutingTo(waitingFor);
 					return;
 				}
 				
@@ -547,7 +547,7 @@ loadWaiterLoop:
 				if(action == DO.FINISHED)
 					return;
 				else if(action == DO.NEXT_PEER) {
-					origTag.removeRoutingTo(next);
+					origTag.removeRoutingTo(waitingFor);
 					return; // Don't try others
 				}
 				// else if(action == DO.WAIT) continue;
