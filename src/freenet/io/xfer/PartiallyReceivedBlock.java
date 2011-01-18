@@ -147,7 +147,7 @@ public class PartiallyReceivedBlock {
 			return true;
 		}
 		if (_aborted) {
-			throw new AbortedException("PRB is aborted");
+			throw new AbortedException("PRB is aborted: "+_abortReason+" : "+_abortDescription+" received "+_receivedCount+" of "+_packets);
 		}
 		return false;
 	}
