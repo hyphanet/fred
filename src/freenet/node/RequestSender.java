@@ -1992,6 +1992,7 @@ loadWaiterLoop:
 	}
 
 	public void killTurtle(String description) {
+		if(logMINOR) Logger.minor(this, "Killing turtle "+this+" : "+description);
 		prb.abort(RetrievalException.TURTLE_KILLED, description);
 		node.failureTable.onFinalFailure(key, transferringFrom(), htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
