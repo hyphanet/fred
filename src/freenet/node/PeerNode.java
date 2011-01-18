@@ -2077,6 +2077,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				oldCur = currentTracker;
 				previousTracker = null;
 				currentTracker = null;
+			}
+			if(bootIDChanged) {
 				// Messages do not persist across restarts.
 				// Generally they would be incomprehensible, anything that isn't should be sent as
 				// connection initial messages by maybeOnConnect().
