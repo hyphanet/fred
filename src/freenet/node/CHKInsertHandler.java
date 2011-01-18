@@ -460,6 +460,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			if(sender != null)
         				sender.onReceiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
         			runThread.interrupt();
+        			tag.reassignToSelf(); // sender is finished, or will be very soon; we may however be waiting for the sendAborted downstream.
         			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
         			try {
         				source.sendSync(msg, CHKInsertHandler.this);

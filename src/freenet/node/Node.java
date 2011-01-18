@@ -5988,9 +5988,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void unregisterTurtleTransfer(RequestSender sender) {
 		Key key = sender.key;
+		if(logMINOR) Logger.minor(this, "Removing turtle "+sender+" for "+key);
 		synchronized(turtlingTransfers) {
 			if(!turtlingTransfers.containsKey(key)) {
-				Logger.error(this, "Removing turtle "+sender+" for "+key+" : DOES NOT EXIST IN GLOBAL TURTLES LIST");
+				Logger.error(this, "Removing turtle "+sender+" for "+key+" : DOES NOT EXIST IN GLOBAL TURTLES LIST", new Exception("debug"));
 				return;
 			}
 			RequestSender[] senders = turtlingTransfers.get(key);
@@ -6011,7 +6012,7 @@ public class Node implements TimeSkewDetectorCallback {
 				if(senders[i] == sender) x++;
 			}
 			if(x == 0) {
-				Logger.error(this, "Turtle not in global register: "+sender+" for "+key);
+				Logger.error(this, "Turtle not in global register: "+sender+" for "+key, new Exception("debug"));
 				return;
 			}
 			if(senders.length == x) {

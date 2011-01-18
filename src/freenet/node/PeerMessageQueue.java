@@ -105,6 +105,18 @@ public class PeerMessageQueue {
 		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
 		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
+			if(timeoutSinceLastSend) {
+				long id = item.getID();
+				if(itemsByID != null) {
+					Items it = itemsByID.get(id);
+					if(it != null && it.timeLastSent > 0 && it.timeLastSent + timeout <= System.currentTimeMillis()) {
+						it.addLast(item);
+						if(it.getParent() == emptyItemsWithID)
+							moveFromEmptyToNonEmptyBackward(it);
+						return;
+					}
+				}
+			}
 			if(itemsNonUrgent == null)
 				itemsNonUrgent = new LinkedList<MessageItem>();
 			itemsNonUrgent.addLast(item);
@@ -116,10 +128,20 @@ public class PeerMessageQueue {
 			int moved = 0;
 			while(it.hasNext()) {
 				MessageItem item = it.next();
-				if(item.submitted + PacketSender.MAX_COALESCING_DELAY <= now) {
+				Items list = null;
+				long id = item.getID();
+				if(itemsByID != null)
+					list = itemsByID.get(id);
+				boolean moveIt = false;
+				if(list != null && timeoutSinceLastSend) {
+					if(list.timeLastSent + timeout <= now)
+						moveIt = true;
+				}
+				if(item.submitted + timeout <= now) {
+					moveIt = true;
+				}
+				if(moveIt) {
 					// Move to urgent list
-					long id = item.getID();
-					Items list;
 					if(itemsByID == null) {
 						itemsByID = new HashMap<Long, Items>();
 						if(nonEmptyItemsWithID == null)
@@ -128,7 +150,6 @@ public class PeerMessageQueue {
 						nonEmptyItemsWithID.push(list);
 						itemsByID.put(id, list);
 					} else {
-						list = itemsByID.get(id);
 						if(list == null) {
 							list = new Items(id);
 							if(nonEmptyItemsWithID == null)
@@ -153,12 +174,11 @@ public class PeerMessageQueue {
 					list.addLast(item);
 					it.remove();
 					moved++;
-				} else {
-					if(logDEBUG && moved > 0)
-						Logger.debug(this, "Moved "+moved+" items to urgent round-robin");
-					return;
-				}
+				} else if(!timeoutSinceLastSend)
+					break;
 			}
+			if(logDEBUG && moved > 0)
+				Logger.debug(this, "Moved "+moved+" items to urgent round-robin");
 		}
 
 		private void moveFromEmptyToNonEmptyForward(Items list) {
@@ -291,7 +311,8 @@ public class PeerMessageQueue {
 						if(items.items.size() == 0) continue;
 						// It is possible that something requeued isn't urgent, so check anyway.
 						t = Math.min(t, items.items.getFirst().submitted + timeout);
-						if(t <= now) return t;
+						// Later items will have later expiry times.
+						return t;
 					}
 				}
 			} else {
@@ -308,7 +329,7 @@ public class PeerMessageQueue {
 						}
 					}
 				}
-				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty() && timeoutSinceLastSend) {
+				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
 					for(MessageItem item : itemsNonUrgent) {
 						long uid = item.getID();
 						Items items = itemsByID == null ? null : itemsByID.get(uid);

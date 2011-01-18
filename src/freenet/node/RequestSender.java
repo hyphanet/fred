@@ -931,7 +931,7 @@ loadWaiterLoop:
 		
 		origTag.handlingTimeout(next);
 		
-		int timeout = fetchTimeout;
+		int timeout = 60*1000;
 		
 		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout);
 		try {
@@ -1184,7 +1184,7 @@ loadWaiterLoop:
     				if(!turtle)
     					sentTo.transferSuccess();
     				else {
-    					Logger.normal(this, "TURTLE SUCCEEDED: "+key+" for "+this+" in "+TimeUtil.formatTime(transferTime, 2, true));
+    					Logger.normal(this, "TURTLE SUCCEEDED: "+key+" for "+RequestSender.this+" in "+TimeUtil.formatTime(transferTime, 2, true)+" from "+sentTo);
     					if(!turtleBackedOff)
     						sentTo.transferFailed("TurtledTransfer");
     					node.nodeStats.turtleSucceeded();
@@ -2008,6 +2008,7 @@ loadWaiterLoop:
 	}
 
 	public void killTurtle(String description) {
+		if(logMINOR) Logger.minor(this, "Killing turtle "+this+" : "+description);
 		prb.abort(RetrievalException.TURTLE_KILLED, description);
 		node.failureTable.onFinalFailure(key, transferringFrom(), htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
