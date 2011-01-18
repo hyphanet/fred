@@ -118,7 +118,9 @@ public abstract class UIDTag {
 		boolean noRecordUnlock;
 		synchronized(this) {
 			if(currentlyRoutingTo == null) return;
-			currentlyRoutingTo.remove(next);
+			if(!currentlyRoutingTo.remove(next)) {
+				Logger.warning(this, "Removing wrong node or removing twice? on "+this+" : "+next, new Exception("debug"));
+			}
 			if(handlingTimeouts != null) {
 				handlingTimeouts.remove(next);
 			}
