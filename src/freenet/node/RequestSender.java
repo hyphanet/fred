@@ -930,7 +930,7 @@ loadWaiterLoop:
 		
 		origTag.handlingTimeout(next);
 		
-		int timeout = fetchTimeout;
+		int timeout = 60*1000;
 		
 		MessageFilter mf = makeAcceptedRejectedFilter(next, timeout);
 		try {
