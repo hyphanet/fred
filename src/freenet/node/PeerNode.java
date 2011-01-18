@@ -4703,6 +4703,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 	
 	public void noLongerRoutingTo(UIDTag tag, boolean offeredKey) {
+		if(offeredKey && !(tag instanceof RequestTag))
+			throw new IllegalArgumentException("Only requests can have offeredKey=true");
 		synchronized(routedToLock) {
 			if(offeredKey)
 				tag.removeFetchingOfferedKeyFrom(this);
