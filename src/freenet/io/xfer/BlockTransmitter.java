@@ -118,8 +118,13 @@ public class BlockTransmitter {
 							// Wait for PRB callback to tell us we have more packets.
 							return;
 						}
-						else
+						else {
 							packetNo = _unsent.removeFirst();
+							if(_sentPackets.bitAt(packetNo)) {
+								Logger.error(this, "Already sent packet in run(): "+packetNo+" for "+this+" unsent is "+_unsent+" sent is "+_sentPackets, new Exception("error"));
+								continue;
+							}
+						}
 					}
 					if(!innerRun(packetNo)) return;
 				}
@@ -591,6 +596,14 @@ public class BlockTransmitter {
 
 					public void packetReceived(int packetNo) {
 						synchronized(_senderThread) {
+							if(_unsent.contains(packetNo)) {
+								Logger.error(this, "Already in unsent: "+packetNo+" for "+this+" unsent is "+_unsent, new Exception("error"));
+								return;
+							}
+							if(_sentPackets.bitAt(packetNo)) {
+								Logger.error(this, "Already sent packet in packetReceived: "+packetNo+" for "+this+" unsent is "+_unsent+" sent is "+_sentPackets, new Exception("error"));
+								return;
+							}
 							_unsent.addLast(packetNo);
 							timeAllSent = -1;
 							_sentPackets.setBit(packetNo, false);
