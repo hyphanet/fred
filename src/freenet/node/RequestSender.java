@@ -555,8 +555,8 @@ loadWaiterLoop:
 		}
 
 		public void onDisconnect(PeerContext ctx) {
-			Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
-			next.noLongerRoutingTo(origTag, false);
+			Logger.normal(this, "Disconnected from "+waitingFor+" while waiting for data on "+uid);
+			waitingFor.noLongerRoutingTo(origTag, false);
 			if(noReroute) return;
 			// Try another peer.
 			routeRequests();
