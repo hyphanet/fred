@@ -2114,8 +2114,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(currentTracker == null || currentTracker.packets.isDeprecated())
 					isConnected = false;
 			} else {
-				prev = currentTracker;
-				previousTracker = prev;
+				oldPrev = previousTracker;
+				previousTracker = currentTracker;
 				currentTracker = newTracker;
 				// Keep the old unverified tracker.
 				// In case of a race condition (two setups between A and B complete at the same time),
