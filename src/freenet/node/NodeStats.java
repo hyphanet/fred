@@ -586,9 +586,14 @@ public class NodeStats implements Persistable {
 						node.outputThrottle.recycle(estimatedSizeOfOneThrottledPacket);
 						long after = System.currentTimeMillis();
 						// Report time it takes to grab the bytes.
+						// FIXME: This can be really stubborn sometimes, I'm not sure why, e.g. RT getting set to 1546ms and then not changing for 5min+, even though the maths says it should change significantly each time. Added some logging.
+						if(logMINOR)
+							Logger.minor(this, "Reporting guesstimated packet send time "+(after - now)+" average is "+throttledPacketSendAverage.currentValue()+" rt "+throttledPacketSendAverageRT.currentValue()+" bulk "+throttledPacketSendAverage.currentValue());
 						throttledPacketSendAverage.report(after - now);
 						throttledPacketSendAverageRT.report(after - now);
 						throttledPacketSendAverageBulk.report(after - now);
+						if(logMINOR)
+							Logger.minor(this, "After reported guesstimated send time "+(after - now)+" average is "+throttledPacketSendAverage.currentValue()+" rt "+throttledPacketSendAverageRT.currentValue()+" bulk "+throttledPacketSendAverage.currentValue());
 					}
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
