@@ -343,7 +343,7 @@ public class MessageCore {
 				if (filter.match(m)) {
 					i.remove();
 					ret = m;
-					if(logMINOR) Logger.debug(this, "Matching from _unclaimed");
+					if(logMINOR) Logger.minor(this, "Matching from _unclaimed");
 					break;
 				} else if (m.localInstantiationTime < messageDropTime) {
 					i.remove();
