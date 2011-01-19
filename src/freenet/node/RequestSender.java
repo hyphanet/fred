@@ -1913,6 +1913,7 @@ loadWaiterLoop:
 	
 	private void fireCHKTransferBegins() {
 		synchronized (listeners) {
+			if(sentCHKTransferBegins) return;
 			sentCHKTransferBegins = true;
 			for (Listener l : listeners) {
 				try {
