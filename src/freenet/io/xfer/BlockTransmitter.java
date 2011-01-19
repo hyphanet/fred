@@ -606,7 +606,6 @@ public class BlockTransmitter {
 							}
 							_unsent.addLast(packetNo);
 							timeAllSent = -1;
-							_sentPackets.setBit(packetNo, false);
 							_senderThread.schedule();
 						}
 					}
