@@ -136,7 +136,7 @@ public class MessageCore {
 					else
 						Logger.error(this, "Filter "+f+" is in filter list twice!");
 				} else {
-					if(nextTimeout > f.getTimeout())
+					if(f.hasCallback() && nextTimeout > f.getTimeout())
 						nextTimeout = f.getTimeout();
 				}
 				// Do not break after finding a non-timed-out filter because some filters may 

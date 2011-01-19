@@ -431,4 +431,8 @@ public final class MessageFilter {
 			return _or.anyConnectionsDropped();
 		return false;
 	}
+
+	public synchronized boolean hasCallback() {
+		return _callback != null;
+	}
 }
