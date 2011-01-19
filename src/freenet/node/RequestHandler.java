@@ -790,7 +790,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		
 		// We do not need to worry about timeouts here, because we have already sent our noderef.
 		
-		om.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
+		OpennetManager.waitForOpennetNoderef(true, source, uid, this, new NoderefCallback() {
 
 			public void gotNoderef(byte[] newNoderef) {
 				
