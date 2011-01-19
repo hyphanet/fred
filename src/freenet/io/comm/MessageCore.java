@@ -60,7 +60,8 @@ public class MessageCore {
 	// FIXME this is the only way that async callbacks get notified of timeouts,
 	// and some of those have fairly short timeouts e.g. 10 seconds for Accepted/Rejected, 5 seconds for a realtime block receive.
 	// So this needs to be short ... but it's not very efficient, will cause contention.
-	private static final int FILTER_REMOVE_TIME = 100;
+	private static final int MAX_FILTER_REMOVE_TIME = 1000;
+	private static final int MIN_FILTER_REMOVE_TIME = 100;
 	private long startedTime;
 	
 	public synchronized long getStartedTime() {
@@ -100,22 +101,24 @@ public class MessageCore {
     	ticker.queueTimedJob(new Runnable() {
 
 			public void run() {
+				long now = System.currentTimeMillis();
+				long nextRun = now + MAX_FILTER_REMOVE_TIME;
 				try {
-					removeTimedOutFilters();
+					nextRun = removeTimedOutFilters(nextRun);
 				} catch (Throwable t) {
 					Logger.error(this, "Failed to remove timed out filters: "+t, t);
 				} finally {
-					ticker.queueTimedJob(this, FILTER_REMOVE_TIME);
+					ticker.queueTimedJob(this, Math.max(MIN_FILTER_REMOVE_TIME, System.currentTimeMillis() - nextRun));
 				}
 			}
     		
-    	}, FILTER_REMOVE_TIME);
+    	}, MIN_FILTER_REMOVE_TIME);
     }
     
     /**
      * Remove timed out filters.
      */
-	void removeTimedOutFilters() {
+	long removeTimedOutFilters(long nextTimeout) {
 		long tStart = System.currentTimeMillis() + 1;
 		// Extra millisecond to give waitFor() a chance to remove the filter.
 		// Avoids exhaustive and unsuccessful search in waitFor() removal of a timed out filter.
@@ -132,6 +135,9 @@ public class MessageCore {
 						_timedOutFilters.add(f);
 					else
 						Logger.error(this, "Filter "+f+" is in filter list twice!");
+				} else {
+					if(nextTimeout > f.getTimeout())
+						nextTimeout = f.getTimeout();
 				}
 				// Do not break after finding a non-timed-out filter because some filters may 
 				// be timed out because their client callbacks say they should be.
@@ -154,6 +160,7 @@ public class MessageCore {
 			else
 				if(logMINOR) Logger.minor(this, "removeTimedOutFilters took "+(tEnd-tStart)+"ms");
 		}
+		return nextTimeout;
 	}
 
 	/**
