@@ -127,6 +127,7 @@ public class BlockTransmitter {
 							}
 						}
 						copy = _sentPackets.copy();
+						_sentPackets.setBit(packetNo, true);
 					}
 					if(!innerRun(packetNo, copy)) return;
 				}
@@ -181,7 +182,6 @@ public class BlockTransmitter {
 			boolean success = false;
 			boolean complete = false;
 			synchronized (_senderThread) {
-				_sentPackets.setBit(packetNo, true);
 				if(_unsent.size() == 0 && getNumSent() == _prb._packets) {
 					//No unsent packets, no unreceived packets
 					sendAllSentNotification();
