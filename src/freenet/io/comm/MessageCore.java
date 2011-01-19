@@ -56,8 +56,11 @@ public class MessageCore {
 	private final LinkedList<Message> _unclaimed = new LinkedList<Message>();
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
 	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = 10*60*1000;  // 10 minutes; maybe this should be per message type??
-	// Every second, remove all timed out filters
-	private static final int FILTER_REMOVE_TIME = 1000;
+	// Every 100ms, remove all timed out filters.
+	// FIXME this is the only way that async callbacks get notified of timeouts,
+	// and some of those have fairly short timeouts e.g. 10 seconds for Accepted/Rejected, 5 seconds for a realtime block receive.
+	// So this needs to be short ... but it's not very efficient, will cause contention.
+	private static final int FILTER_REMOVE_TIME = 100;
 	private long startedTime;
 	
 	public synchronized long getStartedTime() {
