@@ -63,11 +63,11 @@ public class NodeStats implements Persistable {
 	/** Maximum throttled packet delay. If the throttled packet delay is greater
 	 * than this, reject all packets. */
 	public static final long MAX_THROTTLE_DELAY_RT = 2000;
-	public static final long MAX_THROTTLE_DELAY_BULK = 20000;
+	public static final long MAX_THROTTLE_DELAY_BULK = 10000;
 	/** If the throttled packet delay is less than this, reject no packets; if it's
 	 * between the two, reject some packets. */
 	public static final long SUB_MAX_THROTTLE_DELAY_RT = 1000;
-	public static final long SUB_MAX_THROTTLE_DELAY_BULK = 10000;
+	public static final long SUB_MAX_THROTTLE_DELAY_BULK = 5000;
 	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
 	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY_BULK;
 	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
