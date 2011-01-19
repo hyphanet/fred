@@ -112,6 +112,7 @@ public class BlockTransmitter {
 			try {
 				while(true) {
 					int packetNo = -1;
+					BitArray copy;
 					synchronized(_senderThread) {
 						if(_failed || _receivedSendCompletion || _completed) return;
 						if(_unsent.size() == 0) {
@@ -125,8 +126,9 @@ public class BlockTransmitter {
 								continue;
 							}
 						}
+						copy = _sentPackets.copy();
 					}
-					if(!innerRun(packetNo)) return;
+					if(!innerRun(packetNo, copy)) return;
 				}
 			} finally {
 				synchronized(this) {
@@ -141,9 +143,9 @@ public class BlockTransmitter {
 		}
 
 		/** @return True . */
-		private boolean innerRun(int packetNo) {
+		private boolean innerRun(int packetNo, BitArray copied) {
 			try {
-				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets.copy(), _prb.getPacket(packetNo), realTime), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
 				synchronized(itemsPending) {
 					itemsPending.add(item);
 				}
