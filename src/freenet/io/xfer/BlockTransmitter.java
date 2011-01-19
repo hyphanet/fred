@@ -718,7 +718,7 @@ public class BlockTransmitter {
 	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	
 	/** LOCKING: Must be called with _senderThread held. */
-	public int getNumSent() {
+	private int getNumSent() {
 		int ret = 0;
 		for (int x=0; x<_sentPackets.getSize(); x++) {
 			if (_sentPackets.bitAt(x)) {
