@@ -808,7 +808,7 @@ loadWaiterLoop:
 	                		// Received data
 	               			p.transferSuccess();
 	                		if(logMINOR) Logger.minor(this, "Received data");
-                			verifyAndCommit(data);
+                			verifyAndCommit(headers, data);
 	                		finish(SUCCESS, p, true);
 	                		node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
                 		} catch (KeyVerifyException e1) {
@@ -1128,31 +1128,62 @@ loadWaiterLoop:
 		}
 	}
 
-	private void handleCHKDataFound(Message msg, final boolean wasFork, PeerNode next) {
+	private void handleCHKDataFound(Message msg, final boolean wasFork, final PeerNode next) {
     	// Found data
     	
     	// First get headers
     	
-    	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
+    	final byte[] headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
     	
     	// FIXME: Validate headers
     	
-    	node.addTransferringSender((NodeCHK)key, this);
+    	if(!wasFork)
+    		node.addTransferringSender((NodeCHK)key, this);
     	
-    	prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
+    	final PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
+    	
+    	boolean failNow = false;
     	
     	synchronized(this) {
+    		if(!wasFork)
+    			this.headers = headers;
+    		if(!wasFork)
+    			this.prb = prb;
+    		if(wasFork && (this.status == SUCCESS || this.prb != null && transferringFrom != null))
+    			failNow = true;
     		notifyAll();
     	}
-    	fireCHKTransferBegins();
+    	if(!wasFork)
+    		// Don't fire transfer begins on a fork since we have not set headers or prb.
+    		// If we find the data we will offer it to the requester.
+    		fireCHKTransferBegins();
     	
     	final long tStart = System.currentTimeMillis();
     	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
     	
+    	if(failNow) {
+    		if(logMINOR) Logger.minor(this, "Terminating forked transfer on "+this+" from "+next);
+    		prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cancelling fork");
+    		br.receive(new BlockReceiverCompletion() {
+
+				public void blockReceived(byte[] buf) {
+					next.noLongerRoutingTo(origTag, false);
+				}
+
+				public void blockReceiveFailed(RetrievalException e) {
+					next.noLongerRoutingTo(origTag, false);
+				}
+    			
+    		});
+    		return;
+    	}
+    	
     	if(logMINOR) Logger.minor(this, "Receiving data");
     	final PeerNode from = next;
-    	synchronized(this) {
-    		transferringFrom = next;
+    	if(!wasFork) {
+    		synchronized(this) {
+    			transferringFrom = next;
+    		}
     	}
     	node.getTicker().queueTimedJob(new Runnable() {
     		
@@ -1180,7 +1211,8 @@ loadWaiterLoop:
     					sentBackoffTurtle = true;
     					transferringFrom = null;
     				}
-    				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
+    				if(!wasFork)
+    					node.removeTransferringSender((NodeCHK)key, RequestSender.this);
     				if(!turtle)
     					sentTo.transferSuccess();
     				else {
@@ -1198,7 +1230,7 @@ loadWaiterLoop:
     				if(logMINOR) Logger.minor(this, "Received data");
     				// Received data
     				try {
-    					verifyAndCommit(data);
+    					verifyAndCommit(headers, data);
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
     					if(!wasFork)
@@ -1213,6 +1245,9 @@ loadWaiterLoop:
         			Logger.error(this, "Failed on "+this, t);
         			if(!wasFork)
         				finish(INTERNAL_ERROR, sentTo, true);
+    			} finally {
+    				if(wasFork)
+    					next.noLongerRoutingTo(origTag, false);
     			}
     		}
     		
@@ -1268,6 +1303,9 @@ loadWaiterLoop:
         			Logger.error(this, "Failed on "+this, t);
         			if(!wasFork)
         				finish(INTERNAL_ERROR, sentTo, true);
+    			} finally {
+    				if(wasFork)
+    					next.noLongerRoutingTo(origTag, false);
     			}
     		}
     		
@@ -1440,7 +1478,7 @@ loadWaiterLoop:
     	return req;
 	}
 
-	private void verifyAndCommit(byte[] data) throws KeyVerifyException {
+	private void verifyAndCommit(byte[] headers, byte[] data) throws KeyVerifyException {
     	if(!isSSK) {
     		CHKBlock block = new CHKBlock(data, headers, (NodeCHK)key);
     		// Cache only in the cache, not the store. The reason for this is that
@@ -1915,6 +1953,7 @@ loadWaiterLoop:
 	
 	private void fireCHKTransferBegins() {
 		synchronized (listeners) {
+			if(sentCHKTransferBegins) return;
 			sentCHKTransferBegins = true;
 			for (Listener l : listeners) {
 				try {
