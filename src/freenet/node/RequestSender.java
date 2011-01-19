@@ -1153,7 +1153,10 @@ loadWaiterLoop:
     			failNow = true;
     		notifyAll();
     	}
-    	fireCHKTransferBegins();
+    	if(!wasFork)
+    		// Don't fire transfer begins on a fork since we have not set headers or prb.
+    		// If we find the data we will offer it to the requester.
+    		fireCHKTransferBegins();
     	
     	final long tStart = System.currentTimeMillis();
     	final BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true, realTimeFlag, myTimeoutHandler);
