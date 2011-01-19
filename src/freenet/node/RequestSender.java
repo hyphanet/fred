@@ -1726,6 +1726,7 @@ loadWaiterLoop:
 				opennetFinished = true;
 				notifyAll();
 			}
+			ackOpennet(next);
 		} finally {
     		synchronized(this) {
     			opennetFinished = true;
