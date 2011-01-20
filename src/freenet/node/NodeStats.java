@@ -947,8 +947,6 @@ public class NodeStats implements Persistable {
 			return new RejectReason(">threadLimit ("+threadCount+'/'+threadLimit+')', false);
 		}
 
-		double bwlimitDelayTime = realTimeFlag ? throttledPacketSendAverageRT.currentValue() : throttledPacketSendAverageBulk.currentValue();
-
 		long[] total = node.collector.getTotalIO();
 		long totalSent = total[0];
 		long totalOverhead = getSentOverhead();
@@ -976,26 +974,6 @@ public class NodeStats implements Persistable {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">SUB_MAX_PING_TIME", isLocal);
 					return new RejectReason(">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
-				}
-			}
-
-			// Bandwidth limited packets
-			long MAX_THROTTLE_DELAY = realTimeFlag ? MAX_THROTTLE_DELAY_RT : MAX_THROTTLE_DELAY_BULK;
-			long SUB_MAX_THROTTLE_DELAY = realTimeFlag ? SUB_MAX_THROTTLE_DELAY_RT : SUB_MAX_THROTTLE_DELAY_BULK;
-			if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
-				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
-					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-				} else {
-					pInstantRejectIncoming.report(1.0);
-					rejected(">MAX_THROTTLE_DELAY", isLocal);
-					return new RejectReason(">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')', false);
-				}
-			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
-				double x = ((bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
-				if(randomLessThan(x, preferInsert)) {
-					pInstantRejectIncoming.report(1.0);
-					rejected(">SUB_MAX_THROTTLE_DELAY", isLocal);
-					return new RejectReason(">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')', false);
 				}
 			}
 
