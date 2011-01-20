@@ -62,12 +62,14 @@ public class NodeStats implements Persistable {
 	public static final long DEFAULT_MAX_PING_TIME = 1500;
 	/** Maximum throttled packet delay. If the throttled packet delay is greater
 	 * than this, reject all packets. */
-	public static final long MAX_THROTTLE_DELAY = 3000;
+	public static final long MAX_THROTTLE_DELAY_RT = 2000;
+	public static final long MAX_THROTTLE_DELAY_BULK = 10000;
 	/** If the throttled packet delay is less than this, reject no packets; if it's
 	 * between the two, reject some packets. */
-	public static final long SUB_MAX_THROTTLE_DELAY = 2000;
+	public static final long SUB_MAX_THROTTLE_DELAY_RT = 1000;
+	public static final long SUB_MAX_THROTTLE_DELAY_BULK = 5000;
 	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
-	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY*2;
+	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY_BULK;
 	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
 	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD = DEFAULT_MAX_PING_TIME;
 	/** How long we're over the bwlimitDelayTime threshold before we alert (in milliseconds)*/
@@ -945,8 +947,6 @@ public class NodeStats implements Persistable {
 			return new RejectReason(">threadLimit ("+threadCount+'/'+threadLimit+')', false);
 		}
 
-		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
-
 		long[] total = node.collector.getTotalIO();
 		long totalSent = total[0];
 		long totalOverhead = getSentOverhead();
@@ -974,24 +974,6 @@ public class NodeStats implements Persistable {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">SUB_MAX_PING_TIME", isLocal);
 					return new RejectReason(">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
-				}
-			}
-
-			// Bandwidth limited packets
-			if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
-				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
-					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-				} else {
-					pInstantRejectIncoming.report(1.0);
-					rejected(">MAX_THROTTLE_DELAY", isLocal);
-					return new RejectReason(">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')', false);
-				}
-			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
-				double x = ((bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
-				if(randomLessThan(x, preferInsert)) {
-					pInstantRejectIncoming.report(1.0);
-					rejected(">SUB_MAX_THROTTLE_DELAY", isLocal);
-					return new RejectReason(">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')', false);
 				}
 			}
 

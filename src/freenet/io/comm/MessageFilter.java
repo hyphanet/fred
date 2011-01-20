@@ -35,6 +35,12 @@ import freenet.support.Logger;
  */
 public final class MessageFilter {
 
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerClass(MessageFilter.class);
+	}
+
     public static final String VERSION = "$Id: MessageFilter.java,v 1.7 2005/08/25 17:28:19 amphibian Exp $";
 
     private boolean _matched;
@@ -199,7 +205,10 @@ public final class MessageFilter {
 				}
 			}
 		}
-		if(reallyTimedOut(System.currentTimeMillis())) return false;
+		if(reallyTimedOut(System.currentTimeMillis())) {
+			if(logMINOR) Logger.minor(this, "Matched but timed out: "+this);
+			return false;
+		}
 		return true;
 	}
 
