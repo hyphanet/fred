@@ -487,30 +487,10 @@ loadWaiterLoop:
 
 		public boolean shouldTimeout() {
 			if(noReroute) return false;
-			synchronized(RequestSender.this) {
-				if(lastNode != waitingFor) return true;
-				if(status != -1) return true;
-			}
 			return false;
 		}
 
 		public void onTimeout() {
-			boolean hasFinished = false;
-			synchronized(RequestSender.this) {
-				if(!noReroute) {
-					if(lastNode != waitingFor) {
-						if(logMINOR) Logger.minor(this, "Timeout but has moved on: waiting for "+waitingFor+" but moved on to "+lastNode+" on "+uid);
-						hasFinished = true;
-					} else if(status != -1) {
-						if(logMINOR) Logger.minor(this, "Timed out but already set status to "+status+" on "+this);
-						hasFinished = true;
-					}
-				}
-			}
-			if(hasFinished) {
-				waitingFor.noLongerRoutingTo(origTag, false);
-				return;
-			}
 			// This is probably a downstream timeout.
 			// It's not a serious problem until we have a second (fatal) timeout.
 			Logger.warning(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
