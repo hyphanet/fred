@@ -495,17 +495,21 @@ loadWaiterLoop:
 		}
 
 		public void onTimeout() {
+			boolean hasFinished = false;
 			synchronized(RequestSender.this) {
 				if(!noReroute) {
 					if(lastNode != waitingFor) {
 						if(logMINOR) Logger.minor(this, "Timeout but has moved on: waiting for "+waitingFor+" but moved on to "+lastNode+" on "+uid);
-						return;
-					}
-					if(status != -1) {
+						hasFinished = true;
+					} else if(status != -1) {
 						if(logMINOR) Logger.minor(this, "Timed out but already set status to "+status+" on "+this);
-						return;
+						hasFinished = true;
 					}
 				}
+			}
+			if(hasFinished) {
+				waitingFor.noLongerRoutingTo(origTag, false);
+				return;
 			}
 			// This is probably a downstream timeout.
 			// It's not a serious problem until we have a second (fatal) timeout.
