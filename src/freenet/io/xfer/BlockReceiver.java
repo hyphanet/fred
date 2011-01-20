@@ -186,7 +186,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				String desc=m1.getString(DMT.DESCRIPTION);
 				if (desc.indexOf("Upstream")<0)
 					desc="Upstream transmit error: "+desc;
-				_prb.abort(m1.getInt(DMT.REASON), desc);
+				_prb.abort(m1.getInt(DMT.REASON), desc, false);
 				synchronized(BlockReceiver.this) {
 					senderAborted = true;
 				}
@@ -286,7 +286,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			try {
 				if(_prb.allReceived()) return;
-				_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests");
+				_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests", false);
 				complete(RetrievalException.SENDER_DIED,
 						"Sender unresponsive to resend requests");
 				
@@ -366,7 +366,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		if(logMINOR)
 			Logger.minor(this, "Transfer failed: ("+(_realTime?"realtime":"bulk")+") "+reason+" : "+description);
 		_prb.removeListener(myListener);
-		_prb.abort(reason, description);
+		_prb.abort(reason, description, false);
 		// Send the abort whether we have received one or not.
 		// If we are cancelling due to failing to turtle, we need to tell the sender
 		// this otherwise he will keep sending, wasting a lot of bandwidth on packets
@@ -450,7 +450,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			waitNotification(false);
 		} catch (DisconnectedException e) {
 			RetrievalException retrievalException = new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
-			_prb.abort(retrievalException.getReason(), retrievalException.toString());
+			_prb.abort(retrievalException.getReason(), retrievalException.toString(), true /* kind of, it shouldn't count towards the stats anyway */);
 			callback.blockReceiveFailed(retrievalException);
 			decRunningBlockReceives();
 		} catch(RuntimeException e) {

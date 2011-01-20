@@ -837,7 +837,8 @@ loadWaiterLoop:
 							// Backoff here anyway - the node really ought to have it!
 							p.transferFailed("RequestSenderGetOfferedTransferFailed");
 							offers.deleteLastOffer();
-							node.nodeStats.failedBlockReceive(false, false, false, realTimeFlag, source == null);
+		    				if(!prb.abortedLocally())
+		    					node.nodeStats.failedBlockReceive(false, false, false, realTimeFlag, source == null);
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
                 			finish(INTERNAL_ERROR, p, true);
@@ -1163,7 +1164,7 @@ loadWaiterLoop:
     	
     	if(failNow) {
     		if(logMINOR) Logger.minor(this, "Terminating forked transfer on "+this+" from "+next);
-    		prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cancelling fork");
+    		prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cancelling fork", true);
     		br.receive(new BlockReceiverCompletion() {
 
 				public void blockReceived(byte[] buf) {
@@ -1226,7 +1227,7 @@ loadWaiterLoop:
     					sentTo.unregisterTurtleTransfer(RequestSender.this);
     					node.unregisterTurtleTransfer(RequestSender.this);
     				}
-    				node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
+   					node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
     				if(logMINOR) Logger.minor(this, "Received data");
     				// Received data
     				try {
@@ -1279,7 +1280,8 @@ loadWaiterLoop:
     					Logger.normal(this, "Local transfer failed: "+e.getReason()+" : "+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+sentTo, e);
     				// We do an ordinary backoff in all cases.
     				// This includes the case where we decide not to turtle the request. This is reasonable as if it had completely quickly we wouldn't have needed to make that choice.
-    				sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason());
+    				if(!prb.abortedLocally())
+    					sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason());
     				if(!wasFork)
     					finish(TRANSFER_FAILED, sentTo, false);
     				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
@@ -1298,7 +1300,8 @@ loadWaiterLoop:
     					// If it was turtled, and then failed, still treat it as a DNF.
     					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     				}
-    				node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE, realTimeFlag, source == null);
+    				if(!prb.abortedLocally())
+    					node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE, realTimeFlag, source == null);
     			} catch (Throwable t) {
         			Logger.error(this, "Failed on "+this, t);
         			if(!wasFork)
@@ -2048,7 +2051,7 @@ loadWaiterLoop:
 
 	public void killTurtle(String description) {
 		if(logMINOR) Logger.minor(this, "Killing turtle "+this+" : "+description);
-		prb.abort(RetrievalException.TURTLE_KILLED, description);
+		prb.abort(RetrievalException.TURTLE_KILLED, description, true);
 		node.failureTable.onFinalFailure(key, transferringFrom(), htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 
