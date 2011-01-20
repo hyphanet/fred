@@ -800,7 +800,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					
 					// Send it forward to the data source, if it is valid.
 					
-					if(om.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null)
+					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null)
 						try {
 							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this);
 						} catch(NotConnectedException e) {
