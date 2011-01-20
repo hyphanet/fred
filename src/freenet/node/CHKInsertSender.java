@@ -464,6 +464,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				   don't respond in ten seconds (ACCEPTED_TIMEOUT). Or, if the length of the send queue to them is greater than
 				   ACCEPTED_TIMEOUT, using sendAsync() will skip them before they get the request. This would be a need for retuning
 				   ACCEPTED_TIMEOUT.
+				 Note also that we won't fork here, unlike in RequestSender, because the data won't be sent after a timeout, and the
+				 insert will not be routed any further without the DataInsert.
 				 */
 				next.sendAsync(req, null, this);
 			} catch (NotConnectedException e1) {
