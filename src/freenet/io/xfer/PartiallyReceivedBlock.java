@@ -52,6 +52,7 @@ public class PartiallyReceivedBlock {
 	int _receivedCount;
 	public final int _packets, _packetSize;
 	boolean _aborted;
+	boolean _abortedLocally;
 	int _abortReason;
 	String _abortDescription;
 	ArrayList<PacketReceivedListener> _packetReceivedListeners = new ArrayList<PacketReceivedListener>();
@@ -172,7 +173,14 @@ public class PartiallyReceivedBlock {
 		_packetReceivedListeners.remove(listener);
 	}
 
-	public void abort(int reason, String description) {
+	/**
+	 * Abort the transfer.
+	 * @param reason
+	 * @param description
+	 * @param cancelledLocally If true, the transfer was deliberately aborted by *this node*,
+	 * not as the result of a timeout.
+	 */
+	public void abort(int reason, String description, boolean cancelledLocally) {
 		PacketReceivedListener[] listeners;
 		synchronized(this) {
 			if(_aborted) {
@@ -185,6 +193,7 @@ public class PartiallyReceivedBlock {
 			}
 			Logger.normal(this, "Aborting PRB: "+reason+" : "+description+" on "+this, new Exception("debug"));
 			_aborted = true;
+			_abortedLocally = cancelledLocally;
 			_abortReason = reason;
 			_abortDescription = description;
 			listeners = _packetReceivedListeners.toArray(new PacketReceivedListener[_packetReceivedListeners.size()]);
@@ -212,5 +221,9 @@ public class PartiallyReceivedBlock {
 		public void packetReceived(int packetNo);
 		
 		public void receiveAborted(int reason, String description);
+	}
+
+	public boolean abortedLocally() {
+		return _abortedLocally;
 	}
 }
