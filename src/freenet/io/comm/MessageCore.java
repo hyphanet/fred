@@ -135,7 +135,7 @@ public class MessageCore {
 							Message m = it.next();
 							MATCHED status = f.match(m, true, tStart);
 							if (status == MATCHED.MATCHED) {
-								it.remove();
+								// Don't match it, we timed out; two-level timeouts etc may want it for the next filter.
 								Logger.error(this, "Timed out but should have matched in _unclaimed: "+m+" for "+f);
 								break;
 							}
