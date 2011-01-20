@@ -543,7 +543,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			}
 		}, "Starting NodePinger");
 		persister.start();
-		node.getTicker().queueTimedJob(throttledPacketSendAverageIdleUpdater, CHECK_THROTTLE_TIME);
 	}
 
 	/** Every 60 seconds, check whether we need to adjust the bandwidth delay time because of idleness.
@@ -575,41 +574,6 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private long lastAcceptedRequest = -1;
 
 	final int estimatedSizeOfOneThrottledPacket;
-
-	final Runnable throttledPacketSendAverageIdleUpdater =
-		new Runnable() {
-			public void run() {
-				long now = System.currentTimeMillis();
-				try {
-					if(throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
-						// shouldn't take long
-						node.outputThrottle.blockingGrab(estimatedSizeOfOneThrottledPacket);
-						node.outputThrottle.recycle(estimatedSizeOfOneThrottledPacket);
-						long after = System.currentTimeMillis();
-						// Report time it takes to grab the bytes.
-						// FIXME: This can be really stubborn sometimes, I'm not sure why, e.g. RT getting set to 1546ms and then not changing for 5min+, even though the maths says it should change significantly each time. Added some logging.
-						if(logMINOR)
-							Logger.minor(this, "Reporting guesstimated packet send time "+(after - now)+" average is "+throttledPacketSendAverage.currentValue()+" rt "+throttledPacketSendAverageRT.currentValue()+" bulk "+throttledPacketSendAverage.currentValue());
-						throttledPacketSendAverage.report(after - now);
-						throttledPacketSendAverageRT.report(after - now);
-						throttledPacketSendAverageBulk.report(after - now);
-						if(logMINOR)
-							Logger.minor(this, "After reported guesstimated send time "+(after - now)+" average is "+throttledPacketSendAverage.currentValue()+" rt "+throttledPacketSendAverageRT.currentValue()+" bulk "+throttledPacketSendAverage.currentValue());
-					}
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-				} finally {
-					node.getTicker().queueTimedJob(this, CHECK_THROTTLE_TIME);
-					long end = System.currentTimeMillis();
-					if(logMINOR)
-						Logger.minor(this, "Throttle check took "+TimeUtil.formatTime(end-now,2,true));
-
-					// Doesn't belong here... but anyway, should do the job.
-					activeThreadsByPriorities = node.executor.runningThreads();
-					waitingThreadsByPriorities = node.executor.waitingThreads();
-				}
-			}
-	};
 
 	static final double DEFAULT_OVERHEAD = 0.7;
 	static final long DEFAULT_ONLY_PERIOD = 60*1000;
