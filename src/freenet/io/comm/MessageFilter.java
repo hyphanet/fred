@@ -204,17 +204,26 @@ public final class MessageFilter {
 		}
 		
 		if ((_type != null) && (!_type.equals(m.getSpec()))) {
+			// Timeout immediately, but don't check the callback, so we still need the periodic check.
+			if(_timeout < System.currentTimeMillis())
+				return MATCHED.TIMED_OUT;
 			return MATCHED.NONE;
 		}
 		if ((_source != null) && (!_source.equals(m.getSource()))) {
+			if(_timeout < System.currentTimeMillis())
+				return MATCHED.TIMED_OUT;
 			return MATCHED.NONE;
 		}
 		synchronized (_fields) {
 			for (String fieldName : _fieldList) {
 				if (!m.isSet(fieldName)) {
+					if(_timeout < System.currentTimeMillis())
+						return MATCHED.TIMED_OUT;
 					return MATCHED.NONE;
 				}
 				if (!_fields.get(fieldName).equals(m.getFromPayload(fieldName))) {
+					if(_timeout < System.currentTimeMillis())
+						return MATCHED.TIMED_OUT;
 					return MATCHED.NONE;
 				}
 			}
