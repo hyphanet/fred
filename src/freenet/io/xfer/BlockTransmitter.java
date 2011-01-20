@@ -87,6 +87,12 @@ public class BlockTransmitter {
 	private final Ticker _ticker;
 	private final Executor _executor;
 	private final BlockTransmitterCompletion _callback;
+	
+	public interface BlockTimeCallback {
+		public void blockTime(long interval, boolean realtime);
+	}
+	
+	private final BlockTimeCallback blockTimeCallback;
 
 	/** Have we received a completion acknowledgement from the other side - either a 
 	 * sendAborted or allReceived? */
@@ -112,6 +118,7 @@ public class BlockTransmitter {
 			try {
 				while(true) {
 					int packetNo = -1;
+					BitArray copy;
 					synchronized(_senderThread) {
 						if(_failed || _receivedSendCompletion || _completed) return;
 						if(_unsent.size() == 0) {
@@ -125,8 +132,10 @@ public class BlockTransmitter {
 								continue;
 							}
 						}
+						copy = _sentPackets.copy();
+						_sentPackets.setBit(packetNo, true);
 					}
-					if(!innerRun(packetNo)) return;
+					if(!innerRun(packetNo, copy)) return;
 				}
 			} finally {
 				synchronized(this) {
@@ -141,9 +150,9 @@ public class BlockTransmitter {
 		}
 
 		/** @return True . */
-		private boolean innerRun(int packetNo) {
+		private boolean innerRun(int packetNo, BitArray copied) {
 			try {
-				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets.copy(), _prb.getPacket(packetNo), realTime), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
 				synchronized(itemsPending) {
 					itemsPending.add(item);
 				}
@@ -179,7 +188,6 @@ public class BlockTransmitter {
 			boolean success = false;
 			boolean complete = false;
 			synchronized (_senderThread) {
-				_sentPackets.setBit(packetNo, true);
 				if(_unsent.size() == 0 && getNumSent() == _prb._packets) {
 					//No unsent packets, no unreceived packets
 					sendAllSentNotification();
@@ -206,7 +214,7 @@ public class BlockTransmitter {
 		
 	}
 	
-	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, BlockTransmitterCompletion callback, boolean realTime) {
+	public BlockTransmitter(MessageCore usm, Ticker ticker, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr, ReceiverAbortHandler abortHandler, BlockTransmitterCompletion callback, boolean realTime, BlockTimeCallback blockTimes) {
 		this.realTime = realTime;
 		_ticker = ticker;
 		_executor = _ticker.getExecutor();
@@ -227,6 +235,7 @@ public class BlockTransmitter {
 			// Will throw on running
 		}
 		throttle = _destination.getThrottle();
+		this.blockTimeCallback = blockTimes;
 		if(logMINOR) Logger.minor(this, "Starting block transmit for "+uid+" to "+destination.shortToString()+" realtime="+realTime+" throttle="+throttle);
 	}
 
@@ -516,7 +525,7 @@ public class BlockTransmitter {
 
 		public void onMatched(Message msg) {
 			if((!_prb.isAborted()) && abortHandler.onAbort())
-				_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
+				_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver", true);
 			Future fail;
 			synchronized(_senderThread) {
 				_receivedSendCompletion = true;
@@ -606,7 +615,6 @@ public class BlockTransmitter {
 							}
 							_unsent.addLast(packetNo);
 							timeAllSent = -1;
-							_sentPackets.setBit(packetNo, false);
 							_senderThread.schedule();
 						}
 					}
@@ -697,26 +705,45 @@ public class BlockTransmitter {
 		
 		private void complete() {
 			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this);
-			boolean success;
+			boolean success = false;
+			long now = System.currentTimeMillis();
+			boolean callCallback = false;
+			long delta = -1;
 			synchronized(_senderThread) {
 				if(completed) return;
 				completed = true;
+				if(lastSentPacket > 0) {
+					delta = now - lastSentPacket;
+					if(logMINOR) Logger.minor(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
+				}
+				lastSentPacket = now;
 				blockSendsPending--;
 				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
-				if(!maybeAllSent()) return;
-				if(!maybeComplete()) return;
-				success = _receivedSendSuccess;
+				if(maybeAllSent()) {
+					if(maybeComplete()) {
+						callCallback = true;
+						success = _receivedSendSuccess;
+					}
+				}
 			}
-			callCallback(success);
+			if(callCallback) {
+				callCallback(success);
+			}
+			if(delta > 0 && blockTimeCallback != null) {
+				blockTimeCallback.blockTime(delta, realTime);
+			}
 		}
 
 	};
 	
 	private int blockSendsPending = 0;
 	
+	private long lastSentPacket = -1;
+	
 	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	
-	public int getNumSent() {
+	/** LOCKING: Must be called with _senderThread held. */
+	private int getNumSent() {
 		int ret = 0;
 		for (int x=0; x<_sentPackets.getSize(); x++) {
 			if (_sentPackets.bitAt(x)) {
