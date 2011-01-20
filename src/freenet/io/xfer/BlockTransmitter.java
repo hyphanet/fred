@@ -699,9 +699,14 @@ public class BlockTransmitter {
 		private void complete() {
 			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this);
 			boolean success;
+			long now = System.currentTimeMillis();
 			synchronized(_senderThread) {
 				if(completed) return;
 				completed = true;
+				if(lastSentPacket > 0) {
+					long delta = now - lastSentPacket;
+					if(logMINOR) Logger.minor(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
+				}
 				blockSendsPending--;
 				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
 				if(!maybeAllSent()) return;
@@ -714,6 +719,8 @@ public class BlockTransmitter {
 	};
 	
 	private int blockSendsPending = 0;
+	
+	private long lastSentPacket = -1;
 	
 	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	
