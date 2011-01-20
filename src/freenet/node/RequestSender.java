@@ -85,9 +85,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
     private PartiallyReceivedBlock prb;
+    private byte[] finalHeaders;
+    private byte[] finalSskData;
     private DSAPublicKey pubKey;
-    private byte[] headers;
-    private byte[] sskData;
     private SSKBlock block;
     private boolean hasForwarded;
     private PeerNode transferringFrom;
@@ -444,6 +444,8 @@ loadWaiterLoop:
     	private final PeerNode waitingFor;
     	private final boolean noReroute;
     	private final long deadline;
+		public byte[] sskData;
+		public byte[] headers;
 
 		public MainLoopCallback(PeerNode source, boolean noReroute) {
 			waitingFor = source;
@@ -455,7 +457,7 @@ loadWaiterLoop:
 			
 			assert(waitingFor == msg.getSource());
 			
-        	DO action = handleMessage(msg, noReroute, waitingFor);
+        	DO action = handleMessage(msg, noReroute, waitingFor, this);
         	
         	if(action == DO.FINISHED)
         		return;
@@ -528,7 +530,7 @@ loadWaiterLoop:
 					return;
 				}
 				
-				DO action = handleMessage(msg, noReroute, waitingFor);
+				DO action = handleMessage(msg, noReroute, waitingFor, this);
 				
 				if(action == DO.FINISHED)
 					return;
@@ -673,7 +675,7 @@ loadWaiterLoop:
         	origTag.removeFetchingOfferedKeyFrom(pn);
 			return false;
 		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
-			headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
+			byte[] headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Wait for the data
 			MessageFilter mfData = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
 			Message dataMessage;
@@ -692,7 +694,7 @@ loadWaiterLoop:
 	        	origTag.removeFetchingOfferedKeyFrom(pn);
 				return false;
 			}
-			sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
+			byte[] sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
 			if(pubKey == null) {
 				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKPubKey);
 				Message pk;
@@ -730,7 +732,7 @@ loadWaiterLoop:
 				}
 			}
 			
-			if(finishSSKFromGetOffer(pn)) {
+			if(finishSSKFromGetOffer(pn, headers, sskData)) {
 				if(logMINOR) Logger.minor(this, "Successfully fetched SSK from offer from "+pn+" for "+key);
 				return true;
 			} else {
@@ -762,7 +764,7 @@ loadWaiterLoop:
         	origTag.removeFetchingOfferedKeyFrom(pn);
         	return false;
 		} else if(reply.getSpec() == DMT.FNPCHKDataFound) {
-			headers = ((ShortBuffer)reply.getObject(DMT.BLOCK_HEADERS)).getData();
+			finalHeaders = ((ShortBuffer)reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Receive the data
 			
         	// FIXME: Validate headers
@@ -794,7 +796,7 @@ loadWaiterLoop:
 	                		// Received data
 	               			p.transferSuccess();
 	                		if(logMINOR) Logger.minor(this, "Received data");
-                			verifyAndCommit(headers, data);
+                			verifyAndCommit(finalHeaders, data);
 	                		finish(SUCCESS, p, true);
 	                		node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
                 		} catch (KeyVerifyException e1) {
@@ -1002,7 +1004,7 @@ loadWaiterLoop:
 		return mf;
 	}
 
-	private DO handleMessage(Message msg, boolean wasFork, PeerNode source) {
+	private DO handleMessage(Message msg, boolean wasFork, PeerNode source, MainLoopCallback waiter) {
 		//For debugging purposes, remember the number of responses AFTER the insert, and the last message type we received.
 		gotMessages++;
 		lastMessage=msg.getSpec().getName();
@@ -1028,15 +1030,15 @@ loadWaiterLoop:
     	}
 
     	if((!isSSK) && msg.getSpec() == DMT.FNPCHKDataFound) {
-    		handleCHKDataFound(msg, wasFork, source);
+    		handleCHKDataFound(msg, wasFork, source, waiter);
     		return DO.FINISHED;
     	}
     	
     	if(isSSK && msg.getSpec() == DMT.FNPSSKPubKey) {
     		
     		if(!handleSSKPubKey(msg, source)) return DO.NEXT_PEER;
-			if(sskData != null && headers != null) {
-				finishSSK(source, wasFork);
+			if(waiter.sskData != null && waiter.headers != null) {
+				finishSSK(source, wasFork, waiter.headers, waiter.sskData);
 				return DO.FINISHED;
 			}
 			return DO.WAIT;
@@ -1046,10 +1048,10 @@ loadWaiterLoop:
     		
     		if(logMINOR) Logger.minor(this, "Got data on "+uid);
     		
-        	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
+        	waiter.sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
         	
-        	if(pubKey != null && headers != null) {
-        		finishSSK(source, wasFork);
+        	if(pubKey != null && waiter.headers != null) {
+        		finishSSK(source, wasFork, waiter.headers, waiter.sskData);
         		return DO.FINISHED;
         	}
         	return DO.WAIT;
@@ -1060,10 +1062,10 @@ loadWaiterLoop:
     		
     		if(logMINOR) Logger.minor(this, "Got headers on "+uid);
     		
-        	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
+        	waiter.headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
     		
-        	if(pubKey != null && sskData != null) {
-        		finishSSK(source, wasFork);
+        	if(pubKey != null && waiter.sskData != null) {
+        		finishSSK(source, wasFork, waiter.headers, waiter.sskData);
         		return DO.FINISHED;
         	}
         	return DO.WAIT;
@@ -1115,12 +1117,12 @@ loadWaiterLoop:
 		}
 	}
 
-	private void handleCHKDataFound(Message msg, final boolean wasFork, final PeerNode next) {
+	private void handleCHKDataFound(Message msg, final boolean wasFork, final PeerNode next, final MainLoopCallback waiter) {
     	// Found data
     	
     	// First get headers
     	
-    	final byte[] headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
+    	waiter.headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
     	
     	// FIXME: Validate headers
     	
@@ -1132,8 +1134,7 @@ loadWaiterLoop:
     	boolean failNow = false;
     	
     	synchronized(this) {
-    		if(!wasFork)
-    			this.headers = headers;
+        	finalHeaders = waiter.headers;
     		if(!wasFork)
     			this.prb = prb;
     		if(this.status == SUCCESS || this.prb != null && transferringFrom != null)
@@ -1217,7 +1218,7 @@ loadWaiterLoop:
     				if(logMINOR) Logger.minor(this, "Received data");
     				// Received data
     				try {
-    					verifyAndCommit(headers, data);
+    					verifyAndCommit(waiter.headers, data);
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
     					if(!wasFork)
@@ -1414,12 +1415,16 @@ loadWaiterLoop:
      * @param next The node we received the data from.
 	 * @param wasFork 
      */
-	private void finishSSK(PeerNode next, boolean wasFork) {
+	private void finishSSK(PeerNode next, boolean wasFork, byte[] headers, byte[] sskData) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
 			node.storeShallow(block, canWriteClientCache, canWriteDatastore, false);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
+			synchronized(this) {
+				finalHeaders = headers;
+				finalSskData = sskData;
+			}
 			finish(SUCCESS, next, false);
 		} catch (SSKVerifyException e) {
 			Logger.error(this, "Failed to verify: "+e+" from "+next, e);
@@ -1439,9 +1444,13 @@ loadWaiterLoop:
      * @param next The node we received the data from.
      * @return True if the request has completed. False if we need to look elsewhere.
      */
-	private boolean finishSSKFromGetOffer(PeerNode next) {
+	private boolean finishSSKFromGetOffer(PeerNode next, byte[] headers, byte[] sskData) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
+			synchronized(this) {
+				finalHeaders = headers;
+				finalSskData = sskData;
+			}
 			node.storeShallow(block, canWriteClientCache, canWriteDatastore, tryOffersOnly);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
@@ -1470,6 +1479,9 @@ loadWaiterLoop:
 	private void verifyAndCommit(byte[] headers, byte[] data) throws KeyVerifyException {
     	if(!isSSK) {
     		CHKBlock block = new CHKBlock(data, headers, (NodeCHK)key);
+    		synchronized(this) {
+    			finalHeaders = headers;
+    		}
     		// Cache only in the cache, not the store. The reason for this is that
     		// requests don't go to the full distance, and therefore pollute the 
     		// store; simulations it is best to only include data from requests
@@ -1478,6 +1490,10 @@ loadWaiterLoop:
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
     	} else /*if (key instanceof NodeSSK)*/ {
+    		synchronized(this) {
+    			finalHeaders = headers;
+    			finalSskData = data;
+    		}
     		try {
 				node.storeShallow(new SSKBlock(data, headers, (NodeSSK)key, false), canWriteClientCache, canWriteDatastore, tryOffersOnly);
 			} catch (KeyCollisionException e) {
@@ -1806,8 +1822,8 @@ loadWaiterLoop:
     	return lastNode;
     }
     
-	public byte[] getHeaders() {
-        return headers;
+	public synchronized byte[] getHeaders() {
+        return finalHeaders;
     }
 
     public int getStatus() {
@@ -1818,8 +1834,8 @@ loadWaiterLoop:
         return htl;
     }
     
-    final byte[] getSSKData() {
-    	return sskData;
+    final synchronized byte[] getSSKData() {
+    	return finalSskData;
     }
     
     public SSKBlock getSSKBlock() {
