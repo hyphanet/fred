@@ -112,6 +112,7 @@ public class BlockTransmitter {
 			try {
 				while(true) {
 					int packetNo = -1;
+					BitArray copy;
 					synchronized(_senderThread) {
 						if(_failed || _receivedSendCompletion || _completed) return;
 						if(_unsent.size() == 0) {
@@ -125,8 +126,10 @@ public class BlockTransmitter {
 								continue;
 							}
 						}
+						copy = _sentPackets.copy();
+						_sentPackets.setBit(packetNo, true);
 					}
-					if(!innerRun(packetNo)) return;
+					if(!innerRun(packetNo, copy)) return;
 				}
 			} finally {
 				synchronized(this) {
@@ -141,9 +144,9 @@ public class BlockTransmitter {
 		}
 
 		/** @return True . */
-		private boolean innerRun(int packetNo) {
+		private boolean innerRun(int packetNo, BitArray copied) {
 			try {
-				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets.copy(), _prb.getPacket(packetNo), realTime), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
 				synchronized(itemsPending) {
 					itemsPending.add(item);
 				}
@@ -179,7 +182,6 @@ public class BlockTransmitter {
 			boolean success = false;
 			boolean complete = false;
 			synchronized (_senderThread) {
-				_sentPackets.setBit(packetNo, true);
 				if(_unsent.size() == 0 && getNumSent() == _prb._packets) {
 					//No unsent packets, no unreceived packets
 					sendAllSentNotification();
@@ -516,7 +518,7 @@ public class BlockTransmitter {
 
 		public void onMatched(Message msg) {
 			if((!_prb.isAborted()) && abortHandler.onAbort())
-				_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
+				_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver", true);
 			Future fail;
 			synchronized(_senderThread) {
 				_receivedSendCompletion = true;
@@ -606,7 +608,6 @@ public class BlockTransmitter {
 							}
 							_unsent.addLast(packetNo);
 							timeAllSent = -1;
-							_sentPackets.setBit(packetNo, false);
 							_senderThread.schedule();
 						}
 					}
@@ -716,7 +717,8 @@ public class BlockTransmitter {
 	
 	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	
-	public int getNumSent() {
+	/** LOCKING: Must be called with _senderThread held. */
+	private int getNumSent() {
 		int ret = 0;
 		for (int x=0; x<_sentPackets.getSize(); x++) {
 			if (_sentPackets.bitAt(x)) {
