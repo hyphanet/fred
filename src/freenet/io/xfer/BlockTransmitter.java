@@ -716,6 +716,7 @@ public class BlockTransmitter {
 					delta = now - lastSentPacket;
 					if(logMINOR) Logger.minor(this, "Time between packets on "+BlockTransmitter.this+" : "+TimeUtil.formatTime(delta, 2, true)+" ( "+delta+"ms) realtime="+realTime);
 				}
+				lastSentPacket = now;
 				blockSendsPending--;
 				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
 				if(maybeAllSent()) {
