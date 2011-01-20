@@ -38,6 +38,7 @@ import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.io.NativeThread;
+import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -125,9 +126,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private boolean ignoreLocalVsRemoteBandwidthLiability;
 
 	/** Average delay caused by throttling for sending a packet */
-	private final TimeDecayingRunningAverage throttledPacketSendAverage;
-	private final TimeDecayingRunningAverage throttledPacketSendAverageRT;
-	private final TimeDecayingRunningAverage throttledPacketSendAverageBulk;
+	private final RunningAverage throttledPacketSendAverage;
+	private final RunningAverage throttledPacketSendAverageRT;
+	private final RunningAverage throttledPacketSendAverageBulk;
 
 	// Bytes used by each different type of local/remote chk/ssk request/insert
 	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
@@ -286,11 +287,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		this.activeThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		this.waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		throttledPacketSendAverage =
-			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
+			new BootstrappingDecayingRunningAverage(0, 0, Long.MAX_VALUE, 100, null);
 		throttledPacketSendAverageRT =
-			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
+			new BootstrappingDecayingRunningAverage(0, 0, Long.MAX_VALUE, 100, null);
 		throttledPacketSendAverageBulk =
-			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
+			new BootstrappingDecayingRunningAverage(0, 0, Long.MAX_VALUE, 100, null);
 		nodePinger = new NodePinger(node);
 
 		previous_input_stat = 0;
