@@ -192,43 +192,43 @@ public final class MessageFilter {
 		NONE
 	}
 	
-	public MATCHED match(Message m) {
-		return match(m, false);
+	public MATCHED match(Message m, long now) {
+		return match(m, false, now);
 	}
 	
-	public MATCHED match(Message m, boolean noTimeout) {
+	public MATCHED match(Message m, boolean noTimeout, long now) {
 		if(_or != null) {
-			MATCHED matched = _or.match(m, noTimeout);
+			MATCHED matched = _or.match(m, noTimeout, now);
 			if(matched != MATCHED.NONE)
 				return matched; // Filter is matched once only. That includes timeouts.
 		}
 		
 		if ((_type != null) && (!_type.equals(m.getSpec()))) {
 			// Timeout immediately, but don't check the callback, so we still need the periodic check.
-			if(_timeout < System.currentTimeMillis())
+			if(_timeout < now)
 				return MATCHED.TIMED_OUT;
 			return MATCHED.NONE;
 		}
 		if ((_source != null) && (!_source.equals(m.getSource()))) {
-			if(_timeout < System.currentTimeMillis())
+			if(_timeout < now)
 				return MATCHED.TIMED_OUT;
 			return MATCHED.NONE;
 		}
 		synchronized (_fields) {
 			for (String fieldName : _fieldList) {
 				if (!m.isSet(fieldName)) {
-					if(_timeout < System.currentTimeMillis())
+					if(_timeout < now)
 						return MATCHED.TIMED_OUT;
 					return MATCHED.NONE;
 				}
 				if (!_fields.get(fieldName).equals(m.getFromPayload(fieldName))) {
-					if(_timeout < System.currentTimeMillis())
+					if(_timeout < now)
 						return MATCHED.TIMED_OUT;
 					return MATCHED.NONE;
 				}
 			}
 		}
-		if((!noTimeout) && reallyTimedOut(System.currentTimeMillis())) {
+		if((!noTimeout) && reallyTimedOut(now)) {
 			if(logMINOR) Logger.minor(this, "Matched but timed out: "+this);
 			return MATCHED.TIMED_OUT_AND_MATCHED;
 		}
