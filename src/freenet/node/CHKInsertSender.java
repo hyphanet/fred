@@ -80,7 +80,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					}
 				}
 				
-			}, realTimeFlag);
+			}, realTimeFlag, node.nodeStats);
 		}
 		
 		void start() {

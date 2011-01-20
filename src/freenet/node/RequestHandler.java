@@ -251,7 +251,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						transferFinished(success);
 					}
 					
-				}, realTimeFlag);
+				}, realTimeFlag, node.nodeStats);
 			node.addTransferringRequestHandler(uid);
 			bt.sendAsync();
 		} catch(NotConnectedException e) {
@@ -547,7 +547,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						node.nodeStats.remoteRequest(false, success, true, htl, key.toNormalizedDouble());
 					}
 					
-				}, realTimeFlag);
+				}, realTimeFlag, node.nodeStats);
 			node.addTransferringRequestHandler(uid);
 			source.sendAsync(df, null, this);
 			bt.sendAsync();

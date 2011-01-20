@@ -16,6 +16,7 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
+import freenet.io.xfer.BlockTransmitter.BlockTimeCallback;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node.CountedRequests;
@@ -44,7 +45,7 @@ import freenet.support.math.TrivialRunningAverage;
 
 /** Node (as opposed to NodeClientCore) level statistics. Includes shouldRejectRequest(), but not limited
  * to stuff required to implement that. */
-public class NodeStats implements Persistable {
+public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public static enum RequestType {
 		CHK_REQUEST,
@@ -124,9 +125,9 @@ public class NodeStats implements Persistable {
 	private boolean ignoreLocalVsRemoteBandwidthLiability;
 
 	/** Average delay caused by throttling for sending a packet */
-	final TimeDecayingRunningAverage throttledPacketSendAverage;
-	final TimeDecayingRunningAverage throttledPacketSendAverageRT;
-	final TimeDecayingRunningAverage throttledPacketSendAverageBulk;
+	private final TimeDecayingRunningAverage throttledPacketSendAverage;
+	private final TimeDecayingRunningAverage throttledPacketSendAverageRT;
+	private final TimeDecayingRunningAverage throttledPacketSendAverageBulk;
 
 	// Bytes used by each different type of local/remote chk/ssk request/insert
 	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
@@ -2938,6 +2939,14 @@ public class NodeStats implements Persistable {
 	
 	public synchronized void endAnnouncement(long uid) {
 		runningAnnouncements.remove(uid);
+	}
+
+	public void blockTime(long interval, boolean realtime) {
+		throttledPacketSendAverage.report(interval);
+		if(realtime)
+			throttledPacketSendAverageRT.report(interval);
+		else
+			throttledPacketSendAverageBulk.report(interval);
 	}
 	
 }
