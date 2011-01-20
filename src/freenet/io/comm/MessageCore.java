@@ -133,7 +133,7 @@ public class MessageCore {
 						for (ListIterator<Message> it = _unclaimed.listIterator(); it.hasNext();) {
 							Message m = it.next();
 							if (f.match(m, true)) {
-								i.remove();
+								it.remove();
 								Logger.error(this, "Timed out but should have matched in _unclaimed: "+m+" for "+f);
 								break;
 							}
