@@ -1136,7 +1136,7 @@ loadWaiterLoop:
     			this.headers = headers;
     		if(!wasFork)
     			this.prb = prb;
-    		if(wasFork && (this.status == SUCCESS || this.prb != null && transferringFrom != null))
+    		if(this.status == SUCCESS || this.prb != null && transferringFrom != null)
     			failNow = true;
     		notifyAll();
     	}
