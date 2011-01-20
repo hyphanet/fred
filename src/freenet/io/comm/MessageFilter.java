@@ -185,35 +185,45 @@ public final class MessageFilter {
 		return this;
 	}
 	
-	public boolean match(Message m) {
+	enum MATCHED {
+		MATCHED,
+		TIMED_OUT,
+		TIMED_OUT_AND_MATCHED,
+		NONE
+	}
+	
+	public MATCHED match(Message m) {
 		return match(m, false);
 	}
 	
-	public boolean match(Message m, boolean noTimeout) {
-		if ((_or != null) && (_or.match(m, noTimeout))) {
-			return true;
+	public MATCHED match(Message m, boolean noTimeout) {
+		if(_or != null) {
+			MATCHED matched = _or.match(m, noTimeout);
+			if(matched != MATCHED.NONE)
+				return matched; // Filter is matched once only. That includes timeouts.
 		}
+		
 		if ((_type != null) && (!_type.equals(m.getSpec()))) {
-			return false;
+			return MATCHED.NONE;
 		}
 		if ((_source != null) && (!_source.equals(m.getSource()))) {
-			return false;
+			return MATCHED.NONE;
 		}
 		synchronized (_fields) {
 			for (String fieldName : _fieldList) {
 				if (!m.isSet(fieldName)) {
-					return false;
+					return MATCHED.NONE;
 				}
 				if (!_fields.get(fieldName).equals(m.getFromPayload(fieldName))) {
-					return false;
+					return MATCHED.NONE;
 				}
 			}
 		}
 		if((!noTimeout) && reallyTimedOut(System.currentTimeMillis())) {
 			if(logMINOR) Logger.minor(this, "Matched but timed out: "+this);
-			return false;
+			return MATCHED.TIMED_OUT_AND_MATCHED;
 		}
-		return true;
+		return MATCHED.MATCHED;
 	}
 
 	public boolean matched() {
