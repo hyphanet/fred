@@ -502,7 +502,7 @@ loadWaiterLoop:
 						return;
 					}
 					if(status != -1) {
-						if(logMINOR) Logger.minor(this, "Timed out but already set status to "+status);
+						if(logMINOR) Logger.minor(this, "Timed out but already set status to "+status+" on "+this);
 						return;
 					}
 				}
