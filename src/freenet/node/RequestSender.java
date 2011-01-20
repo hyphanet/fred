@@ -507,7 +507,9 @@ loadWaiterLoop:
 					}
 				}
 			}
-			Logger.error(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
+			// This is probably a downstream timeout.
+			// It's not a serious problem until we have a second (fatal) timeout.
+			Logger.warning(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
 			if(noReroute) {
 				waitingFor.localRejectedOverload("FatalTimeoutForked");
 			} else {
