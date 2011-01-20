@@ -698,8 +698,9 @@ public class BlockTransmitter {
 		
 		private void complete() {
 			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this);
-			boolean success;
+			boolean success = false;
 			long now = System.currentTimeMillis();
+			boolean callCallback = false;
 			synchronized(_senderThread) {
 				if(completed) return;
 				completed = true;
@@ -709,11 +710,16 @@ public class BlockTransmitter {
 				}
 				blockSendsPending--;
 				if(logMINOR) Logger.minor(this, "Pending: "+blockSendsPending);
-				if(!maybeAllSent()) return;
-				if(!maybeComplete()) return;
-				success = _receivedSendSuccess;
+				if(maybeAllSent()) {
+					if(maybeComplete()) {
+						callCallback = true;
+						success = _receivedSendSuccess;
+					}
+				}
 			}
-			callCallback(success);
+			if(callCallback) {
+				callCallback(success);
+			}
 		}
 
 	};
