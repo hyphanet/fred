@@ -525,7 +525,7 @@ public class BlockTransmitter {
 
 		public void onMatched(Message msg) {
 			if((!_prb.isAborted()) && abortHandler.onAbort())
-				_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver");
+				_prb.abort(RetrievalException.CANCELLED_BY_RECEIVER, "Cascading cancel from receiver", true);
 			Future fail;
 			synchronized(_senderThread) {
 				_receivedSendCompletion = true;
