@@ -129,6 +129,17 @@ public class MessageCore {
 						_timedOutFilters.add(f);
 					else
 						Logger.error(this, "Filter "+f+" is in filter list twice!");
+					if(logMINOR) {
+						for (ListIterator<Message> it = _unclaimed.listIterator(); it.hasNext();) {
+							Message m = it.next();
+							if (f.match(m, true)) {
+								i.remove();
+								Logger.error(this, "Timed out but should have matched in _unclaimed: "+m+" for "+f);
+								break;
+							}
+						}
+					}
+
 				}
 				// Do not break after finding a non-timed-out filter because some filters may 
 				// be timed out because their client callbacks say they should be.

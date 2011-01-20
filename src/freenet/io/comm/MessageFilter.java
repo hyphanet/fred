@@ -186,7 +186,11 @@ public final class MessageFilter {
 	}
 	
 	public boolean match(Message m) {
-		if ((_or != null) && (_or.match(m))) {
+		return match(m, false);
+	}
+	
+	public boolean match(Message m, boolean noTimeout) {
+		if ((_or != null) && (_or.match(m, noTimeout))) {
 			return true;
 		}
 		if ((_type != null) && (!_type.equals(m.getSpec()))) {
@@ -205,7 +209,7 @@ public final class MessageFilter {
 				}
 			}
 		}
-		if(reallyTimedOut(System.currentTimeMillis())) {
+		if((!noTimeout) && reallyTimedOut(System.currentTimeMillis())) {
 			if(logMINOR) Logger.minor(this, "Matched but timed out: "+this);
 			return false;
 		}
