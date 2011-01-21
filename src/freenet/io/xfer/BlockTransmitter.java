@@ -52,6 +52,14 @@ import freenet.support.math.MedianMeanRunningAverage;
  *
  * Given a PartiallyReceivedBlock retransmit to another node (to be received by BlockReceiver).
  * Since a PRB can be concurrently transmitted to many peers NOWHERE in this class is prb.abort() to be called.
+ * 
+ * SECURITY: We must keep sending the data even if the inter-block interval becomes too
+ * large for the receiver to be able to accept the data. Otherwise a malicious node can
+ * use much more bandwidth on our input and upstream nodes than he expends himself, simply
+ * by doing lots of requests and only accepting a few bytes per second worth of packets. 
+ * Obviously if such situations arise naturally they should be handled via load limiting -
+ * either the originator itself with an accurate bandwidth limit, or the packets-in-flight
+ * limit.
  */
 public class BlockTransmitter {
 
