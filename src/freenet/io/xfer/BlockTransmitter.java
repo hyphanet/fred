@@ -585,6 +585,9 @@ public class BlockTransmitter {
 			fail = maybeFail(RetrievalException.SENDER_DISCONNECTED, "Sender disconnected");
 		}
 		fail.execute();
+		// Sometimes disconnect doesn't clear the message queue.
+		// Since we are cancelling the transfer, we need to unqueue the messages.
+		cancelItemsPending();
 	}
 	
 	private void onAborted(int reason, String description) {
