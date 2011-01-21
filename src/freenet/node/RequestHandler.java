@@ -265,6 +265,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							 * With onion routing or other such schemes obviously we would be
 							 * initiating requests at a distance so everything calling these
 							 * methods would need to be reconsidered.
+							 * 
+							 * SECURITY: Also, always keeping transferring the data would open
+							 * up DoS opportunities, unless we disallow receiver cancels of 
+							 * transfers, which would require getting rid of turtles. See the 
+							 * discussion in BlockReceiver's top comments.
 							 */
 							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for ourselves on "+RequestHandler.this);
 							node.reassignTagToSelf(tag);
