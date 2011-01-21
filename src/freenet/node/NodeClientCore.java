@@ -929,7 +929,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				// Ignore
 			}
 
-			/** The RequestSender finished, or it turtled.
+			/** The RequestSender finished.
 			 * @param status The completion status.
 			 * @param uidTransferred If this is set, the RequestSender has taken on 
 			 * responsibility for unlocking the UID specified. We should not unlock it.

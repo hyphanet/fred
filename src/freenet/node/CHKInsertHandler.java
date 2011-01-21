@@ -475,7 +475,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
         			
         			if(!prb.abortedLocally())
-        				node.nodeStats.failedBlockReceive(false, false, false, realTimeFlag, false);
+        				node.nodeStats.failedBlockReceive(false, false, realTimeFlag, false);
         			return;
         		}
         		
