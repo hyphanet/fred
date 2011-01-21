@@ -229,7 +229,19 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, this, new ReceiverAbortHandler() {
 
 					public boolean onAbort() {
+						RequestSender rs = RequestHandler.this.rs;
+						if(rs != null && rs.uid != RequestHandler.this.uid) {
+							if(logMINOR) Logger.minor(this, "Not cancelling transfer because was coalesced on "+RequestHandler.this);
+							// No need to reassign tag since this UID will end immediately; the RequestSender is on a different one.
+							return false;
+						}
 						if(node.hasKey(key, false, false)) return true; // Don't want it
+						if(rs != null && rs.isTransferCoalesced()) {
+							if(logMINOR) Logger.minor(this, "Not cancelling transfer because others want the data on "+RequestHandler.this);
+							// We do need to reassign the tag because the RS has the same UID.
+							node.reassignTagToSelf(tag);
+							return false;
+						}
 						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
 							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for ourselves on "+RequestHandler.this);

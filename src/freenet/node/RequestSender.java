@@ -2086,4 +2086,24 @@ loadWaiterLoop:
 		
 	};
 	
+	// FIXME this should not be necessary, we should be able to ask our listeners.
+	// However at the moment NodeClientCore's realGetCHK and realGetSSK (the blocking fetches)
+	// do not register a Listener. Eventually they will be replaced with something that does.
+	
+	// Also we should consider whether a local Listener added *after* the request starts should
+	// impact on the decision or whether that leaks too much information. It's probably safe
+	// given the amount leaked anyway! (Note that if we start the request locally we will want
+	// to finish it even if incoming RequestHandler's are coalesced with it and they fail their 
+	// onward transfers).
+	
+	private boolean transferCoalesced;
+
+	public synchronized void setTransferCoalesced() {
+		transferCoalesced = true;
+	}
+
+	public synchronized boolean isTransferCoalesced() {
+		return transferCoalesced;
+	}
+	
 }

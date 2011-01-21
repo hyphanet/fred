@@ -4090,6 +4090,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(sender != null) {
 			if(logMINOR) Logger.minor(this, "Data already being transferred: "+sender);
+			sender.setTransferCoalesced();
 			tag.setSender(sender, true);
 			return sender;
 		}
