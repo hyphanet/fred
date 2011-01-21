@@ -1122,10 +1122,10 @@ loadWaiterLoop:
     	
     	synchronized(this) {
         	finalHeaders = waiter.headers;
-    		if(!wasFork)
-    			this.prb = prb;
     		if(this.status == SUCCESS || this.prb != null && transferringFrom != null)
     			failNow = true;
+    		if(!wasFork)
+    			this.prb = prb;
     		notifyAll();
     	}
     	if(!wasFork)
