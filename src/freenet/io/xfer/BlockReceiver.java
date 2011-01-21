@@ -62,7 +62,8 @@ import freenet.support.math.MedianMeanRunningAverage;
  * way.
  * 
  * But if we did get rid of receiver cancels, it *would* mean we could get rid of a lot of
- * code - e.g. the ReceiverAbortHandler, which in some cases is quite complex.
+ * code - e.g. the ReceiverAbortHandler, which in some cases is quite complex. It would
+ * also make transfers significantly more reliable.
  * 
  * @author ian
  */
