@@ -53,6 +53,17 @@ import freenet.support.math.MedianMeanRunningAverage;
  * don't allow receiver cancels, we have to get rid of turtles, and massively tighten up
  * transfer timeouts.
  * 
+ * However, if we do that, we have to consider that a node might be able to connect, max
+ * out the bandwidth with transfers, and then disconnect, avoiding the need to spend
+ * bandwidth on receiving all the data; and then reconnect, after it's confident that the
+ * transfers to it will have been cancelled. Or not reconnect at all, on opennet - just 
+ * use a different identity. Downstream bandwidth is very cheap for small-scale attackers,
+ * but if this is a usable force multiplier it could still be a good DoS if we went that
+ * way.
+ * 
+ * But if we did get rid of receiver cancels, it *would* mean we could get rid of a lot of
+ * code - e.g. the ReceiverAbortHandler, which in some cases is quite complex.
+ * 
  * @author ian
  */
 public class BlockReceiver implements AsyncMessageFilterCallback {
