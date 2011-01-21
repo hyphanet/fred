@@ -244,6 +244,28 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						}
 						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
+							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for peers on "+RequestHandler.this);
+							node.reassignTagToSelf(tag);
+							return false; // Want it
+						}
+						if(node.clientCore != null && node.clientCore.wantKey(key)) {
+							/** REDFLAG SECURITY JUSTIFICATION:
+							 * Theoretically if A routes to us and then we route to B,
+							 * and Mallory controls both A and B, and A cancels the transfer,
+							 * and we don't cancel the transfer from B, then Mallory knows
+							 * we want the key. However, to exploit this he would have to
+							 * rule out other nodes having asked for the key i.e. he would
+							 * have to surround the node, or he would have to rely on
+							 * probabilistic attacks (which will give us away much more quickly).
+							 * 
+							 * Plus, it is (almost?) always going to be safer to keep transferring
+							 * data than to start a new request which potentially exposes us
+							 * to distant attackers.
+							 * 
+							 * With onion routing or other such schemes obviously we would be
+							 * initiating requests at a distance so everything calling these
+							 * methods would need to be reconsidered.
+							 */
 							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for ourselves on "+RequestHandler.this);
 							node.reassignTagToSelf(tag);
 							return false; // Want it
