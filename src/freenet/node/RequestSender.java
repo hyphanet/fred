@@ -1928,8 +1928,13 @@ loadWaiterLoop:
 	private boolean receivingAsync;
 	
 	private void reassignToSelfOnTimeout() {
-		origTag.reassignToSelf();
 		synchronized(listeners) {
+			if(sentCHKTransferBegins) {
+				Logger.error(this, "Transfer started, not dumping listeners when reassigning to self on timeout (race condition?) on "+this);
+				return;
+			}
+			// Safe to call it here, tag is self-synched always last.
+			origTag.reassignToSelf();
 			for(Listener l : listeners) {
 				l.onRequestSenderFinished(TIMED_OUT);
 			}
