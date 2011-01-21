@@ -580,6 +580,8 @@ public class BlockTransmitter {
 		Future fail;
 		synchronized(_senderThread) {
 			_receivedSendCompletion = true; // effectively
+			blockSendsPending = 0; // effectively
+			_sentSendAborted = true; // effectively
 			fail = maybeFail(RetrievalException.SENDER_DISCONNECTED, "Sender disconnected");
 		}
 		fail.execute();
