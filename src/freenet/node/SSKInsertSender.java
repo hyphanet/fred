@@ -454,7 +454,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 	private void handleAcceptedRejectedTimeout(final PeerNode next, final InsertTag tag) {
 		// It could still be running. So the timeout is fatal to the node.
-		Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+		// This is a WARNING not an ERROR because it's possible that the problem is we simply haven't been able to send the message yet, because we don't use sendSync().
+		// FIXME use a callback to rule this out and log an ERROR.
+		Logger.warning(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
 		// The node didn't accept the request. So we don't need to send them the data.
 		// However, we do need to wait a bit longer to try to postpone the fatalTimeout().
 		// Somewhat intricate logic to try to avoid fatalTimeout() if at all possible.

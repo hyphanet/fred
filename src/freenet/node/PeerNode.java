@@ -3166,11 +3166,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public void reportThrottledPacketSendTime(long timeDiff, boolean realTime) {
-		node.nodeStats.throttledPacketSendAverage.report(timeDiff);
-		if(realTime)
-			node.nodeStats.throttledPacketSendAverageRT.report(timeDiff);
-		else
-			node.nodeStats.throttledPacketSendAverageBulk.report(timeDiff);
+		// FIXME do we need this?
 		if(logMINOR)
 			Logger.minor(this, "Reporting throttled packet send time: " + timeDiff + " to " + getPeer()+" ("+(realTime?"realtime":"bulk")+")");
 	}
