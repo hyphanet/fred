@@ -370,7 +370,7 @@ loopOverLines:
 						int inserted = 0;
 						for(int j=0;j<INSERTED_BLOCKS;j++) {
 							if(insertedURIs[j] == null) {
-								csvLine.add("");
+								csvLine.add("INSERT FAILED");
 								continue;
 							}
 							inserted++;
