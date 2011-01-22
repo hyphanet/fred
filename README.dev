@@ -1,0 +1,17 @@
+# Edit restrictions
+
+[1] src/freenet/support/CPUInformation
+[1] src/net/i2p/util
+[2] src/org/bitpedia
+[1] test/net/i2p/util
+
+[1]	will be moved to a new package, java-native-utils; it will be removed from
+	this repo eventually.
+	
+	DO NOT EDIT THIS CODE in a way that introduces dependencies on the rest of
+	the fred source code.
+	
+[2]	has been moved to freenet-ext; it will be removed from this repo after the
+	next release.
+	
+	DO NOT EDIT THIS CODE AT ALL.
