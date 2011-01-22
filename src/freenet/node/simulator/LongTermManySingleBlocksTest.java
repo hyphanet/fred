@@ -321,6 +321,7 @@ public class LongTermManySingleBlocksTest {
 			int[] totalSuccessfulFetchesByDelta = new int[MAX_N+1];
 			long[] totalFetchTimeByDelta = new long[MAX_N+1];
 			
+loopOverLines:
 			while((line = br.readLine()) != null) {
 				
 				singleURI = null;
@@ -396,14 +397,15 @@ public class LongTermManySingleBlocksTest {
 				}
 				
 				while(split.length > token + INSERTED_BLOCKS) {
-					if(split[token].length() == 0) {
-						System.err.println("Trying to parse "+token+" but is empty");
-						if(token > 0)
-							System.err.println("Prev token is "+split[token-1]);
-						if(token > 1)
-							System.err.println("Prev-prev token is "+split[token-2]);
+					int delta;
+					try {
+						delta = Integer.parseInt(split[token]);
+					} catch (NumberFormatException e) {
+						System.err.println("Unable to parse token "+token+" = \""+token+"\"");
+						System.err.println("This is supposed to be a delta");
+						System.err.println("Skipping the rest of the line for date "+dateFormat.format(calendar.getTime()));
+						continue loopOverLines;
 					}
-					int delta = Integer.parseInt(split[token]);
 					System.out.println("Delta: "+((1<<delta)-1)+" days");
 					token++;
 					int totalFetchTime = 0;
