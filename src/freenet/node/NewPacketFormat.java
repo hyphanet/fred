@@ -119,9 +119,11 @@ public class NewPacketFormat implements PacketFormat {
 		pn.reportIncomingPacket(buf, offset, length, now);
 
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
+		DecodingMessageGroup group = pn.startProcessingDecryptedMessages(finished.size());
 		for(byte[] buffer : finished) {
-			pn.processDecryptedMessage(buffer, 0, buffer.length, 0);
+			group.processDecryptedMessage(buffer, 0, buffer.length, 0);
 		}
+		group.complete();
 
 		return true;
 	}

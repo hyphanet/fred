@@ -234,4 +234,5 @@ public class OpennetPeerNode extends PeerNode {
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
 		return node.shallWeRouteAccordingToOurPeersLocation();
 	}
+
 }
