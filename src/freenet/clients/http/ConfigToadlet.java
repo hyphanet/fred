@@ -313,7 +313,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			}
 
 			if(displayedConfigElements>0) {
-				formNode.addChild("div", "class", "configprefix", l10n(subConfig.getPrefix()));
+				formNode.addChild("div", "class", "configprefix", (plugin == null) ? l10n(subConfig.getPrefix()) : plugin.getString(subConfig.getPrefix()));
 				formNode.addChild("a", "id", subConfig.getPrefix());
 				formNode.addChild(configGroupUlNode);
 			}
