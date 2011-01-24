@@ -30,8 +30,8 @@ interface BasePeerNode extends PeerContext {
 
 	void reportOutgoingPacket(byte[] data, int offset, int length, long now);
 	
-	void processDecryptedMessage(byte[] data, int offset, int length, int overhead);
-
+	DecodingMessageGroup startProcessingDecryptedMessages(int count);
+	
 	void reportPing(long rt);
 
 	double averagePingTime();

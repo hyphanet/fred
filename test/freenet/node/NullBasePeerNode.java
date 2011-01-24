@@ -125,7 +125,7 @@ public class NullBasePeerNode implements BasePeerNode {
 		// Ignore
 	}
 
-	public void processDecryptedMessage(byte[] data, int offset, int length,
+	protected void processDecryptedMessage(byte[] data, int offset, int length,
 			int overhead) {
 		throw new UnsupportedOperationException();
 	}
@@ -201,6 +201,21 @@ public class NullBasePeerNode implements BasePeerNode {
 
 	public void reportThrottledPacketSendTime(long time, boolean realTime) {
 		// Ignore.
+	}
+
+	public DecodingMessageGroup startProcessingDecryptedMessages(int count) {
+		return new DecodingMessageGroup() {
+
+			public void processDecryptedMessage(byte[] data, int offset,
+					int length, int overhead) {
+				NullBasePeerNode.this.processDecryptedMessage(data, offset, length, overhead);
+			}
+
+			public void complete() {
+				// Do nothing.
+			}
+			
+		};
 	}
 
 }

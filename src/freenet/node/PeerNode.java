@@ -5009,13 +5009,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 	
-	public void processDecryptedMessage(byte[] data, int offset, int length, int overhead) {
-		Message m = node.usm.decodeSingleMessage(data, offset, length, this, overhead);
-		if(m != null) {
-			handleMessage(m);
-		}
-	}
-	
 	public void handleMessage(Message m) {
 		node.usm.checkFilters(m, crypto.socket);
 	}
@@ -5085,6 +5078,33 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public boolean isOldFNP() {
 		return packetFormat instanceof FNPWrapper;
+	}
+	
+	public DecodingMessageGroup startProcessingDecryptedMessages(int size) {
+		return new MyDecodingMessageGroup(size);
+	}
+	
+	class MyDecodingMessageGroup implements DecodingMessageGroup {
+
+		private final ArrayList<Message> messages;
+		
+		public MyDecodingMessageGroup(int size) {
+			messages = new ArrayList<Message>(size);
+		}
+
+		public void processDecryptedMessage(byte[] data, int offset,
+				int length, int overhead) {
+			Message m = node.usm.decodeSingleMessage(data, offset, length, PeerNode.this, overhead);
+			if(m == null) return;
+			messages.add(m);
+		}
+
+		public void complete() {
+			for(Message msg : messages) {
+				handleMessage(msg);
+			}
+		}
+		
 	}
 
 }

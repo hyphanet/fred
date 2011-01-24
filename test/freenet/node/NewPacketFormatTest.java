@@ -201,6 +201,7 @@ public class NewPacketFormatTest extends TestCase {
 				}
 			}
 			
+			@Override
 			public void processDecryptedMessage(byte[] data, int offset, int length, int overhead) {
 				Message m = Message.decodeMessageFromPacket(data, offset, length, this, overhead);
 				if(m != null) {
@@ -223,9 +224,11 @@ public class NewPacketFormatTest extends TestCase {
 		}
 		LinkedList<byte[]> finished = receiver.handleDecryptedPacket(packet1, receiverKey);
 		assertEquals(2, finished.size());
+		DecodingMessageGroup decoder = receiverNode.startProcessingDecryptedMessages(finished.size());
 		for(byte[] buffer : finished) {
-			receiverNode.processDecryptedMessage(buffer, 0, buffer.length, 0);
+			decoder.processDecryptedMessage(buffer, 0, buffer.length, 0);
 		}
+		decoder.complete();
 		
 		synchronized(gotMessage) {
 			assert(gotMessage.value);
