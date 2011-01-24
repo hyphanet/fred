@@ -1548,22 +1548,26 @@ loadWaiterLoop:
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ") on "+this+" from "+next);
         
-    	if(next != null) {
-    		if(fromOfferedKey)
-    			origTag.removeFetchingOfferedKeyFrom(next);
-    		else
-    			origTag.removeRoutingTo(next);
-    	}
-		
+    	boolean doOpennet;
+    	
         synchronized(this) {
         	if(status != NOT_FINISHED) {
         		if(logMINOR) Logger.minor(this, "Status already set to "+status+" - returning on "+this+" would be setting "+code+" from "+next);
+            	if(next != null) {
+            		if(fromOfferedKey)
+            			next.noLongerRoutingTo(origTag, true);
+            		else
+            			next.noLongerRoutingTo(origTag, false);
+            	}
         		return;
         	}
+            doOpennet = code == SUCCESS && !(fromOfferedKey || isSSK);
+       		if(doOpennet)
+       			origTag.waitingForOpennet(next);
             status = code;
-            notifyAll();
             if(status == SUCCESS)
             	successFrom = next;
+            notifyAll();
         }
         
         if(status == SUCCESS) {
@@ -1583,11 +1587,6 @@ loadWaiterLoop:
         	// FIXME should this be called when fromOfferedKey??
        		node.nodeStats.requestCompleted(true, source != null, isSSK);
         	
-       		boolean doOpennet = !(fromOfferedKey || isSSK);
-       		
-       		if(doOpennet)
-       			origTag.waitingForOpennet(next);
-       		
        		try {
        			
        			//NOTE: because of the requesthandler implementation, this will block and wait
@@ -1607,6 +1606,13 @@ loadWaiterLoop:
 			fireRequestSenderFinished(code);
 		}
         
+    	if(next != null) {
+    		if(fromOfferedKey)
+    			next.noLongerRoutingTo(origTag, true);
+    		else
+    			next.noLongerRoutingTo(origTag, false);
+    	}
+		
 		synchronized(this) {
 			opennetFinished = true;
 			notifyAll();
