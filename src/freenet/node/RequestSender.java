@@ -1284,27 +1284,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	
     	if(logMINOR) Logger.minor(this, "Receiving data");
     	final PeerNode from = next;
-<<<<<<< HEAD:src/freenet/node/RequestSender.java
-    	synchronized(this) {
-    		transferringFrom = next;
-    	}
-    	if(realTimeFlag) {
-    		node.getTicker().queueTimedJob(new Runnable() {
-    			
-    			public void run() {
-    				synchronized(RequestSender.this) {
-    					if(transferringFrom != from) return;
-    				}
-    				makeTurtle();
-    			}
-    			
-    		}, 60*1000);
-=======
     	if(!wasFork) {
     		synchronized(this) {
     			transferringFrom = next;
     		}
->>>>>>> build01336:src/freenet/node/RequestSender.java
     	}
     	final PeerNode sentTo = next;
 			receivingAsync = true;
