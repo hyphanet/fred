@@ -5096,6 +5096,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				int length, int overhead) {
 			Message m = node.usm.decodeSingleMessage(data, offset, length, PeerNode.this, overhead);
 			if(m == null) return;
+			if(DMT.isPeerLoadStatusMessage(m)) {
+				handleMessage(m);
+				return;
+			}
 			messages.add(m);
 		}
 

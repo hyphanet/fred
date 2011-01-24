@@ -1715,5 +1715,11 @@ public class DMT {
 		if(bulk == null) return false;
 		return bulk.getBoolean(REAL_TIME_FLAG);
 	}
+
+	public static boolean isPeerLoadStatusMessage(Message m) {
+		MessageType spec = m.getSpec();
+		return (spec == FNPPeerLoadStatusByte || spec == FNPPeerLoadStatusShort ||
+				spec == FNPPeerLoadStatusInt);
+	}
 	
 }
