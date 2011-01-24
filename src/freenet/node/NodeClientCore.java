@@ -955,7 +955,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				// Ignore
 			}
 
-			/** The RequestSender finished, or it turtled.
+			/** The RequestSender finished.
 			 * @param status The completion status.
 			 * @param uidTransferred If this is set, the RequestSender has taken on 
 			 * responsibility for unlocking the UID specified. We should not unlock it.
@@ -1941,6 +1941,16 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public static int getMaxBackgroundUSKFetchers() {
 		return maxBackgroundUSKFetchers;
+	}
+
+	/* FIXME SECURITY When/if introduce tunneling or similar mechanism for starting requests
+	 * at a distance this will need to be reconsidered. See the comments on the caller in 
+	 * RequestHandler (onAbort() handler). */
+	public boolean wantKey(Key key) {
+		boolean isSSK = key instanceof NodeSSK;
+		if(this.clientContext.getFetchScheduler(isSSK, true).wantKey(key)) return true;
+		if(this.clientContext.getFetchScheduler(isSSK, false).wantKey(key)) return true;
+		return false;
 	}
 
 }

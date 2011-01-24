@@ -1126,6 +1126,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 	
 	public void wakeUpSender() {
+		if(logMINOR) Logger.minor(this, "Waking up PacketSender");
 		node.ps.wakeUp();
 	}
 
@@ -3071,6 +3072,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
 				int x = node.random.nextInt(routingBackoffLength);
 				routingBackedOffUntil = now + x;
+				node.nodeStats.reportRoutingBackoff(reason, x);
 				String reasonWrapper = "";
 				if(0 <= reason.length())
 					reasonWrapper = " because of '" + reason + '\'';
@@ -3135,6 +3137,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					transferBackoffLength = MAX_TRANSFER_BACKOFF_LENGTH;
 				int x = node.random.nextInt(transferBackoffLength);
 				transferBackedOffUntil = now + x;
+				node.nodeStats.reportTransferBackoff(reason, x);
 				String reasonWrapper = "";
 				if(0 <= reason.length())
 					reasonWrapper = " because of '" + reason + '\'';
@@ -3198,11 +3201,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public void reportThrottledPacketSendTime(long timeDiff, boolean realTime) {
-		node.nodeStats.throttledPacketSendAverage.report(timeDiff);
-		if(realTime)
-			node.nodeStats.throttledPacketSendAverageRT.report(timeDiff);
-		else
-			node.nodeStats.throttledPacketSendAverageBulk.report(timeDiff);
+		// FIXME do we need this?
 		if(logMINOR)
 			Logger.minor(this, "Reporting throttled packet send time: " + timeDiff + " to " + getPeer()+" ("+(realTime?"realtime":"bulk")+")");
 	}
@@ -4367,49 +4366,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.packets.trackerID+" on "+this);
 		return cur.packets.trackerID;
-	}
-
-	static final int MAX_TURTLES_PER_PEER = 3;
-
-	private HashMap<Key,RequestSender> turtlingTransfers = new HashMap<Key,RequestSender>();
-
-	public String registerTurtleTransfer(RequestSender sender) {
-		Key key = sender.key;
-		synchronized(turtlingTransfers) {
-			if(turtlingTransfers.size() >= MAX_TURTLES_PER_PEER) {
-				Logger.warning(this, "Too many turtles for peer");
-				return "Too many turtles for peer";
-			}
-			if(turtlingTransfers.containsKey(key)) {
-				Logger.error(this, "Already fetching key from peer");
-				return "Already fetching key from peer";
-			}
-			turtlingTransfers.put(key, sender);
-			Logger.normal(this, "Turtles for "+getPeer()+" : "+turtlingTransfers.size());
-			return null;
-		}
-	}
-
-	public void unregisterTurtleTransfer(RequestSender sender) {
-		Key key = sender.key;
-		synchronized(turtlingTransfers) {
-			if(!turtlingTransfers.containsKey(key)) {
-				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : DOES NOT EXIST", new Exception("debug"));
-				return;
-			}
-			RequestSender oldSender = turtlingTransfers.remove(key);
-			if(oldSender != sender) {
-				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : WRONG SENDER: "+oldSender, new Exception("error"));
-				turtlingTransfers.put(key, oldSender);
-				return;
-			}
-		}
-	}
-
-	public boolean isTurtling(Key key) {
-		synchronized(turtlingTransfers) {
-			return turtlingTransfers.containsKey(key);
-		}
 	}
 
 	private long lastFailedRevocationTransfer;

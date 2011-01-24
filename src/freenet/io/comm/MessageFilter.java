@@ -35,6 +35,12 @@ import freenet.support.Logger;
  */
 public final class MessageFilter {
 
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerClass(MessageFilter.class);
+	}
+
     public static final String VERSION = "$Id: MessageFilter.java,v 1.7 2005/08/25 17:28:19 amphibian Exp $";
 
     private boolean _matched;
@@ -179,28 +185,54 @@ public final class MessageFilter {
 		return this;
 	}
 	
-	public boolean match(Message m) {
-		if ((_or != null) && (_or.match(m))) {
-			return true;
+	enum MATCHED {
+		MATCHED,
+		TIMED_OUT,
+		TIMED_OUT_AND_MATCHED,
+		NONE
+	}
+	
+	public MATCHED match(Message m, long now) {
+		return match(m, false, now);
+	}
+	
+	public MATCHED match(Message m, boolean noTimeout, long now) {
+		if(_or != null) {
+			MATCHED matched = _or.match(m, noTimeout, now);
+			if(matched != MATCHED.NONE)
+				return matched; // Filter is matched once only. That includes timeouts.
 		}
+		
 		if ((_type != null) && (!_type.equals(m.getSpec()))) {
-			return false;
+			// Timeout immediately, but don't check the callback, so we still need the periodic check.
+			if(_timeout < now)
+				return MATCHED.TIMED_OUT;
+			return MATCHED.NONE;
 		}
 		if ((_source != null) && (!_source.equals(m.getSource()))) {
-			return false;
+			if(_timeout < now)
+				return MATCHED.TIMED_OUT;
+			return MATCHED.NONE;
 		}
 		synchronized (_fields) {
 			for (String fieldName : _fieldList) {
 				if (!m.isSet(fieldName)) {
-					return false;
+					if(_timeout < now)
+						return MATCHED.TIMED_OUT;
+					return MATCHED.NONE;
 				}
 				if (!_fields.get(fieldName).equals(m.getFromPayload(fieldName))) {
-					return false;
+					if(_timeout < now)
+						return MATCHED.TIMED_OUT;
+					return MATCHED.NONE;
 				}
 			}
 		}
-		if(reallyTimedOut(System.currentTimeMillis())) return false;
-		return true;
+		if((!noTimeout) && reallyTimedOut(now)) {
+			if(logMINOR) Logger.minor(this, "Matched but timed out: "+this);
+			return MATCHED.TIMED_OUT_AND_MATCHED;
+		}
+		return MATCHED.MATCHED;
 	}
 
 	public boolean matched() {
@@ -430,5 +462,9 @@ public final class MessageFilter {
 		if(_or != null)
 			return _or.anyConnectionsDropped();
 		return false;
+	}
+
+	public synchronized boolean hasCallback() {
+		return _callback != null;
 	}
 }

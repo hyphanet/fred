@@ -16,6 +16,7 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
+import freenet.io.xfer.BlockTransmitter.BlockTimeCallback;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node.CountedRequests;
@@ -37,6 +38,7 @@ import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.io.NativeThread;
+import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -44,7 +46,7 @@ import freenet.support.math.TrivialRunningAverage;
 
 /** Node (as opposed to NodeClientCore) level statistics. Includes shouldRejectRequest(), but not limited
  * to stuff required to implement that. */
-public class NodeStats implements Persistable {
+public class NodeStats implements Persistable, BlockTimeCallback {
 
 	public static enum RequestType {
 		CHK_REQUEST,
@@ -62,12 +64,14 @@ public class NodeStats implements Persistable {
 	public static final long DEFAULT_MAX_PING_TIME = 1500;
 	/** Maximum throttled packet delay. If the throttled packet delay is greater
 	 * than this, reject all packets. */
-	public static final long MAX_THROTTLE_DELAY = 3000;
+	public static final long MAX_THROTTLE_DELAY_RT = 2000;
+	public static final long MAX_THROTTLE_DELAY_BULK = 10000;
 	/** If the throttled packet delay is less than this, reject no packets; if it's
 	 * between the two, reject some packets. */
-	public static final long SUB_MAX_THROTTLE_DELAY = 2000;
+	public static final long SUB_MAX_THROTTLE_DELAY_RT = 1000;
+	public static final long SUB_MAX_THROTTLE_DELAY_BULK = 5000;
 	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
-	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY*2;
+	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY_BULK;
 	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
 	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD = DEFAULT_MAX_PING_TIME;
 	/** How long we're over the bwlimitDelayTime threshold before we alert (in milliseconds)*/
@@ -122,9 +126,9 @@ public class NodeStats implements Persistable {
 	private boolean ignoreLocalVsRemoteBandwidthLiability;
 
 	/** Average delay caused by throttling for sending a packet */
-	final TimeDecayingRunningAverage throttledPacketSendAverage;
-	final TimeDecayingRunningAverage throttledPacketSendAverageRT;
-	final TimeDecayingRunningAverage throttledPacketSendAverageBulk;
+	private final RunningAverage throttledPacketSendAverage;
+	private final RunningAverage throttledPacketSendAverageRT;
+	private final RunningAverage throttledPacketSendAverageBulk;
 
 	// Bytes used by each different type of local/remote chk/ssk request/insert
 	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
@@ -176,7 +180,6 @@ public class NodeStats implements Persistable {
 	final TrivialRunningAverage blockTransferPSuccessRT;
 	final TrivialRunningAverage blockTransferPSuccessBulk;
 	final TrivialRunningAverage blockTransferPSuccessLocal;
-	final TrivialRunningAverage blockTransferFailTurtled;
 	final TrivialRunningAverage blockTransferFailTimeout;
 
 	final TrivialRunningAverage successfulLocalCHKFetchTimeAverage;
@@ -248,6 +251,10 @@ public class NodeStats implements Persistable {
 	/** PeerManagerUserAlert stats update interval (milliseconds) */
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 
+	// Backoff stats
+	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimes;
+	final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimes;
+
 	// Database stats
 	final Hashtable<String, TrivialRunningAverage> avgDatabaseJobExecutionTimes;
 	public final DecayingKeyspaceAverage avgClientCacheCHKLocation;
@@ -283,11 +290,11 @@ public class NodeStats implements Persistable {
 		this.activeThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		this.waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		throttledPacketSendAverage =
-			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
+			new BootstrappingDecayingRunningAverage(0, 0, Long.MAX_VALUE, 100, null);
 		throttledPacketSendAverageRT =
-			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
+			new BootstrappingDecayingRunningAverage(0, 0, Long.MAX_VALUE, 100, null);
 		throttledPacketSendAverageBulk =
-			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
+			new BootstrappingDecayingRunningAverage(0, 0, Long.MAX_VALUE, 100, null);
 		nodePinger = new NodePinger(node);
 
 		previous_input_stat = 0;
@@ -482,7 +489,6 @@ public class NodeStats implements Persistable {
 		blockTransferPSuccessRT = new TrivialRunningAverage();
 		blockTransferPSuccessBulk = new TrivialRunningAverage();
 		blockTransferPSuccessLocal = new TrivialRunningAverage();
-		blockTransferFailTurtled = new TrivialRunningAverage();
 		blockTransferFailTimeout = new TrivialRunningAverage();
 
 		successfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
@@ -521,10 +527,10 @@ public class NodeStats implements Persistable {
 		this.avgClientCacheSSKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageClientCacheSSKSuccessLocation"));
 		this.avgStoreSSKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreSSKSuccessLocation"));
 
-
-
-
 		hourlyStats = new HourlyStats(node);
+
+		avgRoutingBackoffTimes = new Hashtable<String, TrivialRunningAverage>();
+		avgTransferBackoffTimes = new Hashtable<String, TrivialRunningAverage>();
 
 		avgDatabaseJobExecutionTimes = new Hashtable<String, TrivialRunningAverage>();
 	}
@@ -540,7 +546,6 @@ public class NodeStats implements Persistable {
 			}
 		}, "Starting NodePinger");
 		persister.start();
-		node.getTicker().queueTimedJob(throttledPacketSendAverageIdleUpdater, CHECK_THROTTLE_TIME);
 	}
 
 	/** Every 60 seconds, check whether we need to adjust the bandwidth delay time because of idleness.
@@ -572,36 +577,6 @@ public class NodeStats implements Persistable {
 	private long lastAcceptedRequest = -1;
 
 	final int estimatedSizeOfOneThrottledPacket;
-
-	final Runnable throttledPacketSendAverageIdleUpdater =
-		new Runnable() {
-			public void run() {
-				long now = System.currentTimeMillis();
-				try {
-					if(throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
-						// shouldn't take long
-						node.outputThrottle.blockingGrab(estimatedSizeOfOneThrottledPacket);
-						node.outputThrottle.recycle(estimatedSizeOfOneThrottledPacket);
-						long after = System.currentTimeMillis();
-						// Report time it takes to grab the bytes.
-						throttledPacketSendAverage.report(after - now);
-						throttledPacketSendAverageRT.report(after - now);
-						throttledPacketSendAverageBulk.report(after - now);
-					}
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-				} finally {
-					node.getTicker().queueTimedJob(this, CHECK_THROTTLE_TIME);
-					long end = System.currentTimeMillis();
-					if(logMINOR)
-						Logger.minor(this, "Throttle check took "+TimeUtil.formatTime(end-now,2,true));
-
-					// Doesn't belong here... but anyway, should do the job.
-					activeThreadsByPriorities = node.executor.runningThreads();
-					waitingThreadsByPriorities = node.executor.waitingThreads();
-				}
-			}
-	};
 
 	static final double DEFAULT_OVERHEAD = 0.7;
 	static final long DEFAULT_ONLY_PERIOD = 60*1000;
@@ -959,8 +934,6 @@ public class NodeStats implements Persistable {
 			return new RejectReason(">threadLimit ("+threadCount+'/'+threadLimit+')', false);
 		}
 
-		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
-
 		long[] total = node.collector.getTotalIO();
 		long totalSent = total[0];
 		long totalOverhead = getSentOverhead();
@@ -988,24 +961,6 @@ public class NodeStats implements Persistable {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">SUB_MAX_PING_TIME", isLocal);
 					return new RejectReason(">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')', false);
-				}
-			}
-
-			// Bandwidth limited packets
-			if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
-				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
-					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-				} else {
-					pInstantRejectIncoming.report(1.0);
-					rejected(">MAX_THROTTLE_DELAY", isLocal);
-					return new RejectReason(">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')', false);
-				}
-			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
-				double x = ((bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
-				if(randomLessThan(x, preferInsert)) {
-					pInstantRejectIncoming.report(1.0);
-					rejected(">SUB_MAX_THROTTLE_DELAY", isLocal);
-					return new RejectReason(">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')', false);
 				}
 			}
 
@@ -1775,7 +1730,6 @@ public class NodeStats implements Persistable {
 		fs.put("sskRemoteFetchPSuccess", sskRemoteFetchPSuccess.currentValue());
 		fs.put("blockTransferPSuccessRT", blockTransferPSuccessRT.currentValue());
 		fs.put("blockTransferPSuccessBulk", blockTransferPSuccessBulk.currentValue());
-		fs.put("blockTransferFailTurtled", blockTransferFailTurtled.currentValue());
 		fs.put("blockTransferFailTimeout", blockTransferFailTimeout.currentValue());
 
 		return fs;
@@ -1835,7 +1789,6 @@ public class NodeStats implements Persistable {
 				blockTransferPSuccessRT,
 				blockTransferPSuccessBulk,
 				blockTransferPSuccessLocal,
-				blockTransferFailTurtled,
 				blockTransferFailTimeout
 		};
 		final String[] names = new String[] {
@@ -1847,7 +1800,6 @@ public class NodeStats implements Persistable {
 				l10n("blockTransfersRT"),
 				l10n("blockTransfersBulk"),
 				l10n("blockTransfersLocal"),
-				l10n("turtledDownstream"),
 				l10n("transfersTimedOut")
 		};
 		HTMLNode row = list.addChild("tr");
@@ -1868,21 +1820,6 @@ public class NodeStats implements Persistable {
 		}
 
 		row = list.addChild("tr");
-		row.addChild("td", l10n("turtleRequests"));
-		long total;
-		long succeeded;
-		synchronized(this) {
-			total = turtleTransfersCompleted;
-			succeeded = turtleSuccesses;
-		}
-		if(total == 0) {
-			row.addChild("td", "-");
-			row.addChild("td", "0");
-		} else {
-			row.addChild("td", fix3p3pct.format((double)succeeded / total));
-			row.addChild("td", thousandPoint.format(total));
-		}
-		
 		long[] bulkSuccess = BulkTransmitter.transferSuccess();
 		row = list.addChild("tr");
 		row.addChild("td", l10n("bulkSends"));
@@ -2458,9 +2395,8 @@ public class NodeStats implements Persistable {
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports()+" realtime="+realTimeFlag);
 	}
 
-	public synchronized void failedBlockReceive(boolean normalFetch, boolean timeout, boolean turtle, boolean realTimeFlag, boolean isLocal) {
+	public synchronized void failedBlockReceive(boolean normalFetch, boolean timeout, boolean realTimeFlag, boolean isLocal) {
 		if(normalFetch) {
-			blockTransferFailTurtled.report(turtle ? 1.0 : 0.0);
 			blockTransferFailTimeout.report(timeout ? 1.0 : 0.0);
 		}
 		RunningAverage blockTransferPSuccess = realTimeFlag ? blockTransferPSuccessRT : blockTransferPSuccessBulk;
@@ -2551,18 +2487,6 @@ public class NodeStats implements Persistable {
 		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverage.currentValue(), 2, true));
 	}
 
-	private long turtleTransfersCompleted;
-	private long turtleSuccesses;
-
-	synchronized void turtleSucceeded() {
-		turtleSuccesses++;
-		turtleTransfersCompleted++;
-	}
-
-	synchronized void turtleFailed() {
-		turtleTransfersCompleted++;
-	}
-
 	private HourlyStats hourlyStats;
 
 	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location) {
@@ -2607,6 +2531,36 @@ public class NodeStats implements Persistable {
 		}
 
 		avg.report(executionTimeMiliSeconds);
+	}
+
+	public void reportRoutingBackoff(String backoffType, long backoffTimeMilliSeconds) {
+		TrivialRunningAverage avg;
+
+		synchronized (avgRoutingBackoffTimes) {
+			avg = avgRoutingBackoffTimes.get(backoffType);
+
+			if (avg == null) {
+				avg = new TrivialRunningAverage();
+				avgRoutingBackoffTimes.put(backoffType, avg);
+			}
+		}
+
+		avg.report(backoffTimeMilliSeconds);
+	}
+
+	public void reportTransferBackoff(String backoffType, long backoffTimeMilliSeconds) {
+		TrivialRunningAverage avg;
+
+		synchronized (avgTransferBackoffTimes) {
+			avg = avgTransferBackoffTimes.get(backoffType);
+
+			if (avg == null) {
+				avg = new TrivialRunningAverage();
+				avgTransferBackoffTimes.put(backoffType, avg);
+			}
+		}
+
+		avg.report(backoffTimeMilliSeconds);
 	}
 
 	/**
@@ -2842,8 +2796,6 @@ public class NodeStats implements Persistable {
 	}
 
 
-
-
 	private double cappedDistance(DecayingKeyspaceAverage avgLocation, CHKStore store) {
 		double cachePercent = 1.0 * avgLocation.countReports() / store.keyCount();
 		//Cap the reported value at 100%, as the decaying average does not account beyond that anyway.
@@ -2854,20 +2806,20 @@ public class NodeStats implements Persistable {
 	}
 
 
-	public static class DatabaseJobStats implements Comparable<DatabaseJobStats> {
-		public final String jobType;
+	public static class TimedStats implements Comparable<TimedStats> {
+		public final String keyStr;
 		public final long count;
 		public final long avgTime;
 		public final long totalTime;
 
-		public DatabaseJobStats(String myJobType, long myCount, long myAvgTime, long myTotalTime) {
-			jobType = myJobType;
+		public TimedStats(String myKeyStr, long myCount, long myAvgTime, long myTotalTime) {
+			keyStr = myKeyStr;
 			count = myCount;
 			avgTime = myAvgTime;
 			totalTime = myTotalTime;
 		}
 
-		public int compareTo(DatabaseJobStats o) {
+		public int compareTo(TimedStats o) {
 			if(avgTime < o.avgTime)
 				return 1;
 			else if(avgTime == o.avgTime)
@@ -2877,14 +2829,44 @@ public class NodeStats implements Persistable {
 		}
 	}
 
-	public DatabaseJobStats[] getDatabaseJobExecutionStatistics() {
-		DatabaseJobStats[] entries = new DatabaseJobStats[avgDatabaseJobExecutionTimes.size()];
+	public TimedStats[] getRoutingBackoffStatistics() {
+		TimedStats[] entries = new TimedStats[avgRoutingBackoffTimes.size()];
+		int i = 0;
+
+		synchronized (avgRoutingBackoffTimes) {
+			for (Map.Entry<String, TrivialRunningAverage> entry : avgRoutingBackoffTimes.entrySet()) {
+				TrivialRunningAverage avg = entry.getValue();
+				entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+			}
+		}
+
+		Arrays.sort(entries);
+		return entries;
+	}
+
+	public TimedStats[] getTransferBackoffStatistics() {
+		TimedStats[] entries = new TimedStats[avgTransferBackoffTimes.size()];
+		int i = 0;
+
+		synchronized (avgTransferBackoffTimes) {
+			for (Map.Entry<String, TrivialRunningAverage> entry : avgTransferBackoffTimes.entrySet()) {
+				TrivialRunningAverage avg = entry.getValue();
+				entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+			}
+		}
+
+		Arrays.sort(entries);
+		return entries;
+	}
+
+	public TimedStats[] getDatabaseJobExecutionStatistics() {
+		TimedStats[] entries = new TimedStats[avgDatabaseJobExecutionTimes.size()];
 		int i = 0;
 
 		synchronized(avgDatabaseJobExecutionTimes) {
 			for(Map.Entry<String, TrivialRunningAverage> entry : avgDatabaseJobExecutionTimes.entrySet()) {
 				TrivialRunningAverage avg = entry.getValue();
-				entries[i++] = new DatabaseJobStats(entry.getKey(), avg.countReports(), (long)avg.currentValue(), (long)avg.totalValue());
+				entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
 			}
 		}
 
@@ -2971,6 +2953,14 @@ public class NodeStats implements Persistable {
 	
 	public synchronized void endAnnouncement(long uid) {
 		runningAnnouncements.remove(uid);
+	}
+
+	public void blockTime(long interval, boolean realtime) {
+		throttledPacketSendAverage.report(interval);
+		if(realtime)
+			throttledPacketSendAverageRT.report(interval);
+		else
+			throttledPacketSendAverageBulk.report(interval);
 	}
 	
 }

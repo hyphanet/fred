@@ -146,7 +146,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		source.sendAsync(m, null, this);
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null);
-        		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
+        		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert", true);
         		source.localRejectedOverload("TimedOutAwaitingDataInsert");
         		source.fatalTimeout();
         		return;
@@ -447,7 +447,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				receiveCompleted = true;
         				CHKInsertHandler.this.notifyAll();
         			}
-        			node.nodeStats.successfulBlockReceive(realTimeFlag, false);
+   					node.nodeStats.successfulBlockReceive(realTimeFlag, false);
         		}
 
         		public void blockReceiveFailed(RetrievalException e) {
@@ -473,7 +473,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			else
         				// Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
         				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
-        			node.nodeStats.failedBlockReceive(false, false, false, realTimeFlag, false);
+        			
+        			if(!prb.abortedLocally())
+        				node.nodeStats.failedBlockReceive(false, false, realTimeFlag, false);
         			return;
         		}
         		

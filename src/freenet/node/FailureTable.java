@@ -496,7 +496,7 @@ public class FailureTable implements OOMHook {
 						tag.unlockHandler();
 					}
 					
-				}, realTimeFlag);
+				}, realTimeFlag, node.nodeStats);
         	node.executor.execute(new PrioRunnable() {
 
 				public int getPriority() {

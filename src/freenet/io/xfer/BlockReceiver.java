@@ -53,6 +53,19 @@ import freenet.support.math.MedianMeanRunningAverage;
  * don't allow receiver cancels, we have to get rid of turtles, and massively tighten up
  * transfer timeouts.
  * 
+ * However, if we do that, we have to consider that a node might be able to connect, max
+ * out the bandwidth with transfers, and then disconnect, avoiding the need to spend
+ * bandwidth on receiving all the data; and then reconnect, after it's confident that the
+ * transfers to it will have been cancelled. Or not reconnect at all, on opennet - just 
+ * use a different identity. Downstream bandwidth is very cheap for small-scale attackers,
+ * but if this is a usable force multiplier it could still be a good DoS if we went that
+ * way.
+ * 
+ * But if we did get rid of receiver cancels, it *would* mean we could get rid of a lot of
+ * code - e.g. the ReceiverAbortHandler, which in some cases (e.g RequestHandler) is 
+ * complex and involves complex security tradeoffs. It would also make transfers 
+ * significantly more reliable.
+ * 
  * @author ian
  */
 public class BlockReceiver implements AsyncMessageFilterCallback {
@@ -186,7 +199,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				String desc=m1.getString(DMT.DESCRIPTION);
 				if (desc.indexOf("Upstream")<0)
 					desc="Upstream transmit error: "+desc;
-				_prb.abort(m1.getInt(DMT.REASON), desc);
+				_prb.abort(m1.getInt(DMT.REASON), desc, false);
 				synchronized(BlockReceiver.this) {
 					senderAborted = true;
 				}
@@ -286,7 +299,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			try {
 				if(_prb.allReceived()) return;
-				_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests");
+				_prb.abort(RetrievalException.SENDER_DIED, "Sender unresponsive to resend requests", false);
 				complete(RetrievalException.SENDER_DIED,
 						"Sender unresponsive to resend requests");
 				
@@ -366,7 +379,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		if(logMINOR)
 			Logger.minor(this, "Transfer failed: ("+(_realTime?"realtime":"bulk")+") "+reason+" : "+description);
 		_prb.removeListener(myListener);
-		_prb.abort(reason, description);
+		_prb.abort(reason, description, false);
 		// Send the abort whether we have received one or not.
 		// If we are cancelling due to failing to turtle, we need to tell the sender
 		// this otherwise he will keep sending, wasting a lot of bandwidth on packets
@@ -450,7 +463,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			waitNotification(false);
 		} catch (DisconnectedException e) {
 			RetrievalException retrievalException = new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
-			_prb.abort(retrievalException.getReason(), retrievalException.toString());
+			_prb.abort(retrievalException.getReason(), retrievalException.toString(), true /* kind of, it shouldn't count towards the stats anyway */);
 			callback.blockReceiveFailed(retrievalException);
 			decRunningBlockReceives();
 		} catch(RuntimeException e) {

@@ -149,7 +149,7 @@ public class DSAGroupGenerator {
     		g = (NativeBigInteger) h.modPow(e, p);
     	} while (g.equals(BigInteger.ONE));
     	DSAGroup group = new DSAGroup(p, q, g);
-    	System.out.println("g: "+g.toHexString()+" ("+g.bitLength()+ ')');
+    	System.out.println("g: "+HexUtil.toHexString(g)+" ("+g.bitLength()+ ')');
     	System.out.println("Group: "+group.verboseToString());
     	long totalSigTime = 0;
     	long totalVerifyTime = 0;

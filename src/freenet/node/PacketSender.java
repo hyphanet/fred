@@ -185,7 +185,8 @@ public class PacketSender implements Runnable {
 				// Is the node dead?
 				if(now - lastReceivedPacketTime > pn.maxTimeBetweenReceivedPackets()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
-					pn.disconnected(false, false /* hopefully will recover, transient network glitch */);
+					// Hopefully this is a transient network glitch, but stuff will have already started to timeout, so lets dump the pending messages.
+					pn.disconnected(true, false);
 					continue;
 				} else if(pn.isRoutable() && pn.noLongerRoutable()) {
 					/*
