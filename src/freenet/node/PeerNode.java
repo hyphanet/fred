@@ -5097,9 +5097,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	class MyDecodingMessageGroup implements DecodingMessageGroup {
 
 		private final ArrayList<Message> messages;
+		private final ArrayList<Message> messagesWantSomething;
 		
 		public MyDecodingMessageGroup(int size) {
 			messages = new ArrayList<Message>(size);
+			messagesWantSomething = new ArrayList<Message>(size);
 		}
 
 		public void processDecryptedMessage(byte[] data, int offset,
@@ -5110,11 +5112,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				handleMessage(m);
 				return;
 			}
-			messages.add(m);
+			if(DMT.isLoadLimitedRequest(m)) {
+				messagesWantSomething.add(m);
+			} else {
+				messages.add(m);
+			}
 		}
 
 		public void complete() {
 			for(Message msg : messages) {
+				handleMessage(msg);
+			}
+			for(Message msg : messagesWantSomething) {
 				handleMessage(msg);
 			}
 		}

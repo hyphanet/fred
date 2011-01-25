@@ -1721,5 +1721,10 @@ public class DMT {
 		return (spec == FNPPeerLoadStatusByte || spec == FNPPeerLoadStatusShort ||
 				spec == FNPPeerLoadStatusInt);
 	}
+
+	public static boolean isLoadLimitedRequest(Message m) {
+		MessageType spec = m.getSpec();
+		return (spec == FNPCHKDataRequest || spec == FNPSSKDataRequest || spec == FNPSSKInsertRequest || spec == FNPInsertRequest || spec == FNPSSKInsertRequestNew || spec == FNPGetOfferedKey);
+	}
 	
 }
