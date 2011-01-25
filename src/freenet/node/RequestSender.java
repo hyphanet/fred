@@ -1003,7 +1003,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     						// Need to recalculate to be sure this is an error.
     						Logger.normal(this, "Rejected overload yet expected state was "+expectedAcceptState);
     					nodesRoutedTo.remove(next);
-    					origTag.removeRoutingTo(next);
+    					next.noLongerRoutingTo(origTag, false);
     					if(softRejectCount == null) softRejectCount = new HashMap<PeerNode, Integer>();
     					Integer i = softRejectCount.get(next);
     					if(i == null) softRejectCount.put(next, 1);
