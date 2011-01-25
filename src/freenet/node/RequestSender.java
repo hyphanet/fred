@@ -1001,7 +1001,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     				if(msg.getSubMessage(DMT.FNPRejectIsSoft) != null) {
     					if(logMINOR) Logger.minor(this, "Soft rejection, waiting to resend");
     					if(expectedAcceptState == RequestLikelyAcceptedState.GUARANTEED)
-    						Logger.error(this, "Rejected overload yet expected state was "+expectedAcceptState);
+    						// Need to recalculate to be sure this is an error.
+    						Logger.normal(this, "Rejected overload yet expected state was "+expectedAcceptState);
     					nodesRoutedTo.remove(next);
     					origTag.removeRoutingTo(next);
     					if(softRejectCount == null) softRejectCount = new HashMap<PeerNode, Integer>();
