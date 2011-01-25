@@ -388,8 +388,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			triedAll = true;
         			if(logMINOR) Logger.minor(this, "No load stats for "+next);
         		} else {
-        			lastNext = next;
-        			
         			expectedAcceptState = 
         				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
         			
@@ -451,6 +449,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				
         			}
         			lastExpectedAcceptState = expectedAcceptState;
+        			lastNext = next;
     				if(logMINOR)
     					Logger.minor(this, "Leaving new load management big block: Predicted accept state for "+this+" : "+expectedAcceptState+" realtime="+realTimeFlag);
         			// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
