@@ -4674,7 +4674,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		
 		public String toString() {
-			return super.toString()+":"+counter;
+			return super.toString()+":"+counter+":"+requestType+":"+realTime;
 		}
 
 	}
