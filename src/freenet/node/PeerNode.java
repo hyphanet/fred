@@ -4823,10 +4823,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						list = slotWaiters.get(type);
 						if(list == null) {
 							if(logMINOR) Logger.minor(this, "No list");
+							typeNum++;
+							if(typeNum == RequestType.values().length)
+								typeNum = 0;
 							continue;
 						}
 						if(list.isEmpty()) {
 							if(logMINOR) Logger.minor(this, "List empty");
+							if(typeNum == RequestType.values().length)
+								typeNum = 0;
 							continue;
 						}
 					}
