@@ -1074,11 +1074,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
 		synchronized(this) {
 			if(isRoutable && !disableRouting) {
-				if(mandatoryBackoffUntil > -1 && now < mandatoryBackoffUntil)
+				if(mandatoryBackoffUntil > -1 && now < mandatoryBackoffUntil) {
+					if(logMINOR) Logger.minor(this, "In mandatory backoff");
 					return false;
+				}
 				timeLastRoutable = now;
 				return true;
 			}
+			if(logMINOR) Logger.minor(this, "Not routing compatible");
 			return false;
 		}
 	}
