@@ -945,6 +945,7 @@ public class OpennetManager {
 	 */
 	public static byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr, Node node) throws WaitedTooLongForOpennetNoderefException {
 		SyncNoderefCallback cb = new SyncNoderefCallback();
+		if(logMINOR) Logger.minor(OpennetManager.class, "Waiting for opennet noderef on "+uid+" from "+source+" reply="+isReply);
 		waitForOpennetNoderef(isReply, source, uid, ctr, cb, node);
 		return cb.waitForResult();
 	}
