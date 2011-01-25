@@ -4833,6 +4833,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						}
 						if(list.isEmpty()) {
 							if(logMINOR) Logger.minor(this, "List empty");
+							typeNum++;
 							if(typeNum == RequestType.values().length)
 								typeNum = 0;
 							continue;
