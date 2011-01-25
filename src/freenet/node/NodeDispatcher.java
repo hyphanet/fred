@@ -195,8 +195,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
 		
-		if(!source.isRoutable()) return false;
-		if(logDEBUG) Logger.debug(this, "Not routable");
+		if(!source.isRoutable()) {
+			if(logDEBUG) Logger.debug(this, "Not routable");
+			return false;
+		}
 
 		if(spec == DMT.FNPNetworkID) {
 			source.handleFNPNetworkID(m);
