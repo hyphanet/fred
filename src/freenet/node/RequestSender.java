@@ -1553,23 +1553,13 @@ loadWaiterLoop:
         synchronized(this) {
         	if(status != NOT_FINISHED) {
         		if(logMINOR) Logger.minor(this, "Status already set to "+status+" - returning on "+this+" would be setting "+code+" from "+next);
-            	if(next != null) {
-            		if(fromOfferedKey)
-            			next.noLongerRoutingTo(origTag, true);
-            		else
-            			next.noLongerRoutingTo(origTag, false);
-            	}
+            	if(next != null) next.noLongerRoutingTo(origTag, fromOfferedKey);
         		return;
         	}
             doOpennet = code == SUCCESS && !(fromOfferedKey || isSSK);
        		if(doOpennet)
        			origTag.waitingForOpennet(next);
-       		else if(next != null) {
-        		if(fromOfferedKey)
-        			next.noLongerRoutingTo(origTag, true);
-        		else
-        			next.noLongerRoutingTo(origTag, false);
-       		}
+       		else if(next != null) next.noLongerRoutingTo(origTag, fromOfferedKey);
             status = code;
             if(status == SUCCESS)
             	successFrom = next;
@@ -1612,12 +1602,7 @@ loadWaiterLoop:
 			fireRequestSenderFinished(code);
 		}
         
-    	if(doOpennet && next != null) {
-    		if(fromOfferedKey)
-    			next.noLongerRoutingTo(origTag, true);
-    		else
-    			next.noLongerRoutingTo(origTag, false);
-    	}
+    	if(doOpennet && next != null) next.noLongerRoutingTo(origTag, fromOfferedKey);
 		
 		synchronized(this) {
 			opennetFinished = true;
