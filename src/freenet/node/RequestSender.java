@@ -1564,7 +1564,7 @@ loadWaiterLoop:
             doOpennet = code == SUCCESS && !(fromOfferedKey || isSSK);
        		if(doOpennet)
        			origTag.waitingForOpennet(next);
-       		else {
+       		else if(next != null) {
         		if(fromOfferedKey)
         			next.noLongerRoutingTo(origTag, true);
         		else
