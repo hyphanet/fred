@@ -308,7 +308,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				// and will tell us. So wait for a timeout.
 				// It is important for load management that the two sides agree on the number of transfers happening.
 				// Therefore we need to not complete until the other side has acknowledged that the transfer has been cancelled.
-				MessageFilter mfSendAborted = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
+				MessageFilter mfSendAborted = MessageFilter.create().setTimeout(_realTime ? RECEIPT_TIMEOUT*2 : RECEIPT_TIMEOUT).setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
 				try {
 					_usm.addAsyncFilter(mfSendAborted, new SlowAsyncMessageFilterCallback() {
 
