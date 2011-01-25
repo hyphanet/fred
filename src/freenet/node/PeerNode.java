@@ -4611,6 +4611,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		 * other nodes, but still allow this one.
 		 */
 		void onFailed(PeerNode peer, boolean reallyFailed) {
+			if(logMINOR) Logger.minor(this, "onFailed() on "+this+" reallyFailed="+reallyFailed);
 			synchronized(this) {
 				if(acceptedBy != null) return;
 				if(reallyFailed) {
@@ -4657,7 +4658,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						// Ignore
 					}
 				}
-				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
+				if(logMINOR) Logger.minor(this, "Returning after waiting: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed+" on "+this);
 				failed = false;
 				PeerNode got = acceptedBy;
 				acceptedBy = null; // Allow for it to wait again if necessary
@@ -4667,6 +4668,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		public synchronized RequestLikelyAcceptedState getAcceptedState() {
 			return acceptedState;
+		}
+		
+		public String toString() {
+			return super.toString()+":"+counter;
 		}
 
 	}
