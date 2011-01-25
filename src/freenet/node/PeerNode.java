@@ -2319,6 +2319,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* Send any high level messages that need to be sent on connect.
 	*/
 	protected void sendInitialMessages() {
+		loadSender(true).setSendASAP();
+		loadSender(false).setSendASAP();
 		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
