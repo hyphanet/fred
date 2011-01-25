@@ -1564,6 +1564,12 @@ loadWaiterLoop:
             doOpennet = code == SUCCESS && !(fromOfferedKey || isSSK);
        		if(doOpennet)
        			origTag.waitingForOpennet(next);
+       		else {
+        		if(fromOfferedKey)
+        			next.noLongerRoutingTo(origTag, true);
+        		else
+        			next.noLongerRoutingTo(origTag, false);
+       		}
             status = code;
             if(status == SUCCESS)
             	successFrom = next;
@@ -1606,7 +1612,7 @@ loadWaiterLoop:
 			fireRequestSenderFinished(code);
 		}
         
-    	if(next != null) {
+    	if(doOpennet && next != null) {
     		if(fromOfferedKey)
     			next.noLongerRoutingTo(origTag, true);
     		else
