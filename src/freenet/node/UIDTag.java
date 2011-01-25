@@ -277,8 +277,15 @@ public abstract class UIDTag {
 			sb.append(" (unlocked)");
 		if(noRecordUnlock)
 			sb.append(" (don't record unlock)");
-		if(currentlyRoutingTo != null)
-			sb.append(" (routing to ").append(currentlyRoutingTo.size()).append(")");
+		if(currentlyRoutingTo != null) {
+			sb.append(" (routing to ");
+			for(PeerNode pn : currentlyRoutingTo) {
+				sb.append(pn.shortToString());
+				sb.append(",");
+			}
+			sb.setLength(sb.length()-1);
+			sb.append(")");
+		}
 		if(fetchingOfferedKeyFrom != null)
 			sb.append(" (fetch offered keys from ").append(fetchingOfferedKeyFrom.size()).append(")");
 		return sb.toString();
