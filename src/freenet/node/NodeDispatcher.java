@@ -197,6 +197,19 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		
 		if(!source.isRoutable()) {
 			if(logDEBUG) Logger.debug(this, "Not routable");
+			if(spec == DMT.FNPCHKDataRequest) {
+				rejectRequest(m);
+			} else if(spec == DMT.FNPSSKDataRequest) {
+				rejectRequest(m);
+			} else if(spec == DMT.FNPInsertRequest) {
+				rejectRequest(m);
+			} else if(spec == DMT.FNPSSKInsertRequest) {
+				rejectRequest(m);
+			} else if(spec == DMT.FNPSSKInsertRequestNew) {
+				rejectRequest(m);
+			} else if(spec == DMT.FNPGetOfferedKey) {
+				rejectRequest(m);
+			}
 			return false;
 		}
 
@@ -251,6 +264,16 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handlePeerLoadStatus(m, source);
 		}
 		return false;
+	}
+
+	private void rejectRequest(Message m) {
+		long uid = m.getLong(DMT.UID);
+		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+		try {
+			m.getSource().sendAsync(msg, null, null);
+		} catch (NotConnectedException e) {
+			// Ignore
+		}
 	}
 
 	private boolean handlePeerLoadStatus(Message m, PeerNode source) {
