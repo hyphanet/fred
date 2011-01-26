@@ -185,4 +185,10 @@ public class RequestTag extends UIDTag {
 		innerUnlock(noRecordUnlock);
 	}
 	
+	public synchronized boolean currentlyRoutingTo(PeerNode peer) {
+		if(waitingForOpennet != null && waitingForOpennet == peer.myRef)
+			return true;
+		return super.currentlyFetchingOfferedKeyFrom(peer);
+	}
+	
 }
