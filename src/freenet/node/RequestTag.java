@@ -188,7 +188,7 @@ public class RequestTag extends UIDTag {
 	public synchronized boolean currentlyRoutingTo(PeerNode peer) {
 		if(waitingForOpennet != null && waitingForOpennet == peer.myRef)
 			return true;
-		return super.currentRoutingTo(peer);
+		return super.currentlyRoutingTo(peer);
 	}
 	
 }
