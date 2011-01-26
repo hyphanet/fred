@@ -123,6 +123,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		 * @return True unless we had already received a notice. */
 		private boolean receivedNotice(boolean success, boolean timeout) {
 			if(logMINOR) Logger.minor(this, "Received notice: "+success+(timeout ? " (timeout)" : "")+" on "+this);
+			boolean noUnlockPeer = false;
+			boolean noNotifyOriginator = false;
 			synchronized(this) {
 				if(finishedWaiting) {
 					Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+")", new Exception("error"));
@@ -130,24 +132,34 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 				if (receivedCompletionNotice) {
 					if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
-					if(timeout) // Fatal timeout.
+					if(timeout) {
+						// Fatal timeout.
 						finishedWaiting = true;
-					return false;
+						noNotifyOriginator = true;
+					}
 				} else {
 					completionSucceeded = success;
 					receivedCompletionNotice = true;
 					if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
 						finishedWaiting = true;
+					else
+						noUnlockPeer = true;
 					notifyAll();
 				}
 			}
-			synchronized(backgroundTransfers) {
-				backgroundTransfers.notifyAll();
+			if(!noNotifyOriginator) {
+				synchronized(backgroundTransfers) {
+					backgroundTransfers.notifyAll();
+				}
+				if(!success) {
+					setTransferTimedOut();
+				}
 			}
-			if(!success) {
-				setTransferTimedOut();
-			}
-			pn.noLongerRoutingTo(thisTag, false);
+			if(!noUnlockPeer)
+				// Downstream (away from originator), we need to stay locked on the peer until the fatal timeout / the delayed notice.
+				// Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished.
+				pn.noLongerRoutingTo(thisTag, false);
+			if(!noNotifyOriginator) return false;
 			return true;
 		}
 		
