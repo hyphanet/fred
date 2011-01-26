@@ -470,6 +470,12 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						// Ok.
 						tag.removeRoutingTo(next);
 					} else {
+						if(m.getSpec() != DMT.FNPAccepted) {
+							Logger.error(this, "Matched bogus message waiting for accepted/rejected: "+m);
+							next.noLongerRoutingTo(tag, false);
+							next.fatalTimeout();
+							return;
+						}
 						assert(m.getSpec() == DMT.FNPAccepted);
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.
