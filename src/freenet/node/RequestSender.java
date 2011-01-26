@@ -1558,8 +1558,9 @@ loadWaiterLoop:
         	}
             doOpennet = code == SUCCESS && !(fromOfferedKey || isSSK);
        		if(doOpennet)
-       			origTag.waitingForOpennet(next);
-       		else if(next != null) next.noLongerRoutingTo(origTag, fromOfferedKey);
+       			origTag.waitingForOpennet(next); // Call this first so we don't unlock.
+       		if(next != null) next.noLongerRoutingTo(origTag, fromOfferedKey);
+       		// After calling both, THEN tell handler.
             status = code;
             if(status == SUCCESS)
             	successFrom = next;
