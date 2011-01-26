@@ -134,11 +134,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						finishedWaiting = true;
 					return false;
 				} else {
-				completionSucceeded = success;
-				receivedCompletionNotice = true;
-				if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
-					finishedWaiting = true;
-				notifyAll();
+					completionSucceeded = success;
+					receivedCompletionNotice = true;
+					if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
+						finishedWaiting = true;
+					notifyAll();
 				}
 			}
 			synchronized(backgroundTransfers) {
