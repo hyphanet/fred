@@ -122,7 +122,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		/** @param timeout Whether this completion is the result of a timeout.
 		 * @return True unless we had already received a notice. */
 		private boolean receivedNotice(boolean success, boolean timeout) {
-			if(logMINOR) Logger.minor(this, "Received notice: "+success+" on "+this);
+			if(logMINOR) Logger.minor(this, "Received notice: "+success+(timeout ? " (timeout)" : "")+" on "+this);
 			synchronized(this) {
 				if(finishedWaiting) {
 					Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+")", new Exception("error"));
