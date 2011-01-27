@@ -124,7 +124,7 @@ public class NodePinger implements Runnable {
 				firstQuartile = allPeers[x / 4];
 				lastQuartile = allPeers[(x * 3) / 4];
 				max = allPeers[x - 1];
-				if(logMINOR) Logger.minor(this, "Quartiles for "+(isInput?"input ":"output ")+(isRealtime?"realtime: ":"bulk: ")+Arrays.toString(getQuartiles()));
+				if(logMINOR) Logger.minor(this, "Quartiles for peer capacities: "+(isInput?"input ":"output ")+(isRealtime?"realtime: ":"bulk: ")+Arrays.toString(getQuartiles()));
 			}
 		}
 		
