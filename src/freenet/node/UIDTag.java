@@ -68,6 +68,8 @@ public abstract class UIDTag {
 	}
 	
 	public synchronized void addRoutedTo(PeerNode peer, boolean offeredKey) {
+		if(logMINOR)
+			Logger.minor(this, "Routing to "+peer+" on "+this+(offeredKey ? " (offered)" : ""), new Exception("debug"));
 		if(routedTo == null) routedTo = new HashSet<PeerNode>();
 		routedTo.add(peer);
 		if(offeredKey) {
