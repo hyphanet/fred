@@ -1103,7 +1103,6 @@ public class PeerManager {
 				if(closestNotBackedOff != null && closestBackedOff != null)
 					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
 					
-			incrementSelectionSamples(now, best);
 		}
 		
 		return best;
@@ -1986,7 +1985,7 @@ public class PeerManager {
 		return null;
 	}
 	
-	private void incrementSelectionSamples(long now, PeerNode pn) {
+	void incrementSelectionSamples(long now, PeerNode pn) {
 		// TODO: reimplement with a bit field to spare memory
 		pn.incrementNumberOfSelections(now);
 	}
