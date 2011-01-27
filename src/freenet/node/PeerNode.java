@@ -4686,11 +4686,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(accept != null) {
 					if(logMINOR) Logger.minor(this, "tryRouteTo() pre-wait check returned "+accept);
 					PeerNode[] unreg;
+					PeerNode other = null;
 					synchronized(this) {
 						unreg = innerOnWaited(p, accept);
 						if(unreg == null) {
-							if(shouldGrab()) return grab();
+							if(shouldGrab()) other = grab();
 						}
+					}
+					if(other != null) {
+						// Recover from race condition.
+						Logger.normal(this, "Race condition: tryRouteTo() succeeded on "+p.shortToString()+" but already matched on "+other.shortToString());
+						tag.removeRoutingTo(p);
+						return other;
 					}
 					unregister(p, unreg);
 					return p;
@@ -4800,6 +4807,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, true));
 		}
 		
+		/** Can we route the tag to this peer? If so, and we haven't already, addRoutedTo() 
+		 * and return the accepted state. */
 		public RequestLikelyAcceptedState tryRouteTo(UIDTag tag,
 				RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 			PeerLoadStats loadStats;
@@ -4810,9 +4819,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			synchronized(routedToLock) {
 				if(loadStats == null) {
 					Logger.error(this, "Accepting because no load stats from "+this);
-					tag.addRoutedTo(PeerNode.this, offeredKey);
-					// FIXME maybe wait a bit, check the other side's version first???
-					return RequestLikelyAcceptedState.UNKNOWN;
+					if(tag.addRoutedTo(PeerNode.this, offeredKey)) {
+						// FIXME maybe wait a bit, check the other side's version first???
+						return RequestLikelyAcceptedState.UNKNOWN;
+					} else return null;
 				}
 				if(dontSendUnlessGuaranteed)
 					worstAcceptable = RequestLikelyAcceptedState.GUARANTEED;
@@ -4824,8 +4834,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
 				if(logMINOR) Logger.minor(this, "Predicted acceptance state for request: "+acceptState);
 				if(acceptState.ordinal() > worstAcceptable.ordinal()) return null;
-				tag.addRoutedTo(PeerNode.this, offeredKey);
-				return acceptState;
+				if(tag.addRoutedTo(PeerNode.this, offeredKey))
+					return acceptState;
+				else
+					return null;
 			}
 		}
 		
