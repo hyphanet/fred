@@ -4899,6 +4899,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					TreeMap<Long,SlotWaiter> list;
 					type = RequestType.values()[typeNum];
 					if(logMINOR) Logger.minor(this, "Checking slot waiter list for "+type);
+					SlotWaiter slot;
+					RequestLikelyAcceptedState acceptState;
 					synchronized(routedToLock) {
 						list = slotWaiters.get(type);
 						if(list == null) {
@@ -4915,22 +4917,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 								typeNum = 0;
 							continue;
 						}
-					}
-					if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
-					foundNone = false;
-					foundNever = false;
-					// Requests already running to this node
-					RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
-					runningRequests.log(PeerNode.this);
-					// Requests running from its other peers
-					RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
-					RequestLikelyAcceptedState acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
-					if(acceptState == null || acceptState == RequestLikelyAcceptedState.UNLIKELY) {
-						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" - not waking up - type is "+type);
-						return;
-					}
-					SlotWaiter slot;
-					synchronized(routedToLock) {
+						if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
+						foundNone = false;
+						foundNever = false;
+						// Requests already running to this node
+						RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
+						runningRequests.log(PeerNode.this);
+						// Requests running from its other peers
+						RunningRequestsSnapshot otherRunningRequests = loadStats.getOtherRunningRequests();
+						acceptState = getRequestLikelyAcceptedState(runningRequests, otherRunningRequests, ignoreLocalVsRemote, loadStats);
+						if(acceptState == null || acceptState == RequestLikelyAcceptedState.UNLIKELY) {
+							if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" - not waking up - type is "+type);
+							return;
+						}
 						if(dontSendUnlessGuaranteed && acceptState != RequestLikelyAcceptedState.GUARANTEED) {
 							if(logMINOR) Logger.minor(this, "Not accepting until guaranteed for "+PeerNode.this+" realtime="+realTime);
 							return;
