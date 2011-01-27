@@ -482,6 +482,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         						node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
         						oldNext.noLongerRoutingTo(origTag, false);
         						return;
+        					} else if(next == null) {
+        						next = oldNext;
+        						if(logMINOR) Logger.minor(this, "Waiting the full timeout after failing to reroute");
+        						continue loadWaiterLoop;
         					} else {
         						if(logMINOR) Logger.minor(this, "Rerouted after failure in wait to "+next);
         						// Wait for the old and the new too.
