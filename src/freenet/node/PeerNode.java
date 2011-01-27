@@ -4878,10 +4878,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		void unqueueSlotWaiter(SlotWaiter waiter) {
 			synchronized(routedToLock) {
 				TreeMap<Long, SlotWaiter> map = slotWaiters.get(waiter.requestType);
-				if(map == null) {
-					Logger.error(this, "No map for "+waiter.requestType+" on "+this+" removing "+waiter);
-					return;
-				}
+				if(map == null) return;
 				map.remove(waiter.counter);
 			}
 		}
