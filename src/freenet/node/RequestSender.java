@@ -400,8 +400,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					// Yet last time it was rejected. Why?
         					Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState+" from "+next);
         					next.enterMandatoryBackoff("Mandatory:RejectedGUARANTEED");
+        					expectedAcceptState = null;
         				}
-        			} else {
+        			}
+        			if(expectedAcceptState == null) {
         				if(logMINOR)
         					Logger.minor(this, "Cannot send to "+next+" realtime="+realTimeFlag);
         				waitedForLoadManagement = true;
