@@ -4879,6 +4879,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime);
 			boolean foundNever = true;
 			while(true) {
+				PeerLoadStats loadStats;
+				synchronized(this) {
+					loadStats = lastIncomingLoadStats;
+				}
 				synchronized(routedToLock) {
 					if(slotWaiters.isEmpty()) {
 						if(logMINOR) Logger.minor(this, "No slot waiters for "+this);
@@ -4915,8 +4919,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					if(logMINOR) Logger.minor(this, "Checking slot waiters for "+type);
 					foundNone = false;
 					foundNever = false;
-					// Should be safe to collect these here, just a little expensive.
-					PeerLoadStats loadStats = lastIncomingLoadStats;
 					// Requests already running to this node
 					RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
 					runningRequests.log(PeerNode.this);
