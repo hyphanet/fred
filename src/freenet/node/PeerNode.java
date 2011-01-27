@@ -4807,8 +4807,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					otherRunningRequests.calculate(ignoreLocalVsRemoteBandwidthLiability, true));
 		}
 		
-		/** Can we route the tag to this peer? If so, and we haven't already, addRoutedTo() 
-		 * and return the accepted state. */
+		/** Can we route the tag to this peer? If so (including if we are accepting because
+		 * we don't have any load stats), and we haven't already, addRoutedTo() and return 
+		 * the accepted state. Otherwise return null. */
 		public RequestLikelyAcceptedState tryRouteTo(UIDTag tag,
 				RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 			PeerLoadStats loadStats;
