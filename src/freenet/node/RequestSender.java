@@ -517,8 +517,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             } // loadWaiterLoop
             
             long now = System.currentTimeMillis();
-            if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
-            	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(now-startedTryingPeer)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement);
+            long delta = now-startedTryingPeer;
+            if((delta > 1000 && realTimeFlag) || (delta > 5000 && !realTimeFlag))
+            	Logger.error(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement);            	
+            else if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
+            	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement);
             
             if(logMINOR) Logger.minor(this, "Got Accepted");
             
