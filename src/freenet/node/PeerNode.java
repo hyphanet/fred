@@ -4643,7 +4643,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return waitingFor.toArray(new PeerNode[waitingFor.size()]);
 		}
 		
-		/** Caller should not hold locks while calling this */
+		/** Caller should not hold locks while calling this.
+		 * @param exclude Only set this if you have already removed the slot waiter. */
 		void unregister(PeerNode exclude, PeerNode[] all) {
 			for(PeerNode p : all)
 				if(p != exclude) p.outputLoadTracker(realTime).unqueueSlotWaiter(this);
@@ -4699,7 +4700,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						tag.removeRoutingTo(p);
 						return other;
 					}
-					unregister(p, unreg);
+					unregister(null, unreg);
 					return p;
 				}
 			}
@@ -4862,7 +4863,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				all = waiter.innerOnWaited(PeerNode.this, RequestLikelyAcceptedState.UNKNOWN);
 			}
 			if(all != null)
-				waiter.unregister(PeerNode.this, all);
+				waiter.unregister(null, all);
 		}
 		
 		private TreeMap<Long,SlotWaiter> makeSlotWaiters(RequestType requestType) {
