@@ -3451,6 +3451,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		}
 		if(peerNodeStatus!=oldPeerNodeStatus){
+			outputLoadTrackerRealTime.maybeNotifySlotWaiter();
+			outputLoadTrackerBulk.maybeNotifySlotWaiter();
 			notifyPeerNodeStatusChangeListeners();
 		}
 		if(peerNodeStatus == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
