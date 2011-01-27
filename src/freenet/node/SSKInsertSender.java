@@ -470,7 +470,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						// Ok.
 						tag.removeRoutingTo(next);
 					} else {
-						if(m.getSpec() != DMT.FNPAccepted) {
+						if(m.getSpec() != DMT.FNPSSKAccepted) {
 							Logger.error(this, "Matched bogus message waiting for accepted/rejected: "+m);
 							next.noLongerRoutingTo(tag, false);
 							next.fatalTimeout();
