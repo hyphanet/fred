@@ -4621,21 +4621,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			peer.outputLoadTracker(realTime).queueSlotWaiter(this);
 		}
 		
-		void onWaited(PeerNode peer, RequestLikelyAcceptedState state) {
+		boolean onWaited(PeerNode peer, RequestLikelyAcceptedState state) {
 			if(logMINOR) Logger.minor(this, "Waking slot waiter "+this);
 			PeerNode[] all;
 			synchronized(this) {
-				if(acceptedBy != null) return;
-				if(!waitingFor.contains(peer)) return;
+				if(acceptedBy != null) return false;
+				if(!waitingFor.contains(peer)) return false;
 				acceptedBy = peer;
 				acceptedState = state;
 				tag.addRoutedTo(peer, offeredKey);
 				notifyAll();
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 			}
-			if(all.length == 1) return;
+			if(all.length == 1) return true;
 			for(PeerNode p : all)
 				if(p != peer) p.outputLoadTracker(realTime).unqueueSlotWaiter(this);
+			return true;
 		}
 		
 		/** Some sort of failure.
@@ -4924,10 +4925,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						it.remove();
 					}
 					if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up");
-					slot.onWaited(PeerNode.this, acceptState);
-					typeNum++;
-					if(typeNum == RequestType.values().length)
-						typeNum = 0;
+					if(slot.onWaited(PeerNode.this, acceptState)) {
+						typeNum++;
+						if(typeNum == RequestType.values().length)
+							typeNum = 0;
+					}
 				}
 				if(foundNone) {
 					if(!foundNever) {
