@@ -120,7 +120,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 		
 		/** @param timeout Whether this completion is the result of a timeout.
-		 * @return True unless we had already received a notice. */
+		 * @return True if we should wait again, false if we have already received a notice or timed out. */
 		private boolean receivedNotice(boolean success, boolean timeout) {
 			if(logMINOR) Logger.minor(this, "Received notice: "+success+(timeout ? " (timeout)" : "")+" on "+this);
 			boolean noUnlockPeer = false;
@@ -159,7 +159,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				// Downstream (away from originator), we need to stay locked on the peer until the fatal timeout / the delayed notice.
 				// Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished.
 				pn.noLongerRoutingTo(thisTag, false);
-			if(!noNotifyOriginator) return false;
+			if(noNotifyOriginator) return false;
 			return true;
 		}
 		
