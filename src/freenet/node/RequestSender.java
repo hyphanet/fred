@@ -520,7 +520,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
             long now = System.currentTimeMillis();
             long delta = now-startedTryingPeer;
-            if((delta > 1000 && realTimeFlag) || (delta > 5000 && !realTimeFlag))
+            if((delta > 1000 && realTimeFlag) || (delta > 10000 && !realTimeFlag))
             	Logger.error(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)"));            	
             else if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
             	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)"));
