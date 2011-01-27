@@ -4840,7 +4840,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					Logger.error(this, "No map for "+waiter.requestType+" on "+this+" removing "+waiter);
 					return;
 				}
-				map.remove(waiter);
+				map.remove(waiter.counter);
 			}
 		}
 		
