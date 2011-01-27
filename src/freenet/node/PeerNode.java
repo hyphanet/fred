@@ -4875,7 +4875,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		private void maybeNotifySlotWaiter() {
 			if(!isRoutable()) return;
-			boolean ignoreLocalVsRemote = false;
+			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime);
 			boolean foundNever = true;
 			while(true) {
@@ -4916,7 +4916,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					foundNone = false;
 					foundNever = false;
 					// Should be safe to collect these here, just a little expensive.
-					ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 					PeerLoadStats loadStats = lastIncomingLoadStats;
 					// Requests already running to this node
 					RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
