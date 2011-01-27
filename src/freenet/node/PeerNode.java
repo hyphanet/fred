@@ -4688,6 +4688,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return super.toString()+":"+counter+":"+requestType+":"+realTime;
 		}
 
+		public synchronized int waitingForCount() {
+			return waitingFor.size();
+		}
+
 	}
 	
 	/** Uses the information we receive on the load on the target node to determine whether
@@ -5145,6 +5149,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
+	}
+
+	public boolean isLowCapacity(boolean isRealtime) {
+		PeerLoadStats stats = outputLoadTracker(isRealtime).getLastIncomingLoadStats(isRealtime);
+		if(stats == null) return false;
+		NodePinger pinger = node.nodeStats.nodePinger;
+		if(pinger == null) return false; // FIXME possible?
+		if(pinger.capacityThreshold(isRealtime, true) > stats.peerLimit(true)) return true;
+		if(pinger.capacityThreshold(isRealtime, false) > stats.peerLimit(false)) return true;
+		return false;
 	}
 
 }

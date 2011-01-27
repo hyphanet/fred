@@ -403,13 +403,27 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					expectedAcceptState = null;
         				}
         			}
+        			
+    				if(logMINOR)
+    					Logger.minor(this, "Cannot send to "+next+" realtime="+realTimeFlag);
+    				waitedForLoadManagement = true;
+    				if(waiter == null)
+    					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag);
+    				waiter.addWaitingFor(next);
+    				
         			if(expectedAcceptState == null) {
-        				if(logMINOR)
-        					Logger.minor(this, "Cannot send to "+next+" realtime="+realTimeFlag);
-        				waitedForLoadManagement = true;
-        				if(waiter == null)
-        					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag);
-        				waiter.addWaitingFor(next);
+        	            if(next.isLowCapacity(realTimeFlag)) {
+        	            	if(waiter.waitingForCount() == 1) {
+        	            		// Wait for another one.
+        	            		PeerNode alsoWaitFor =
+        	            			node.peers.closerPeer(source, waiter.waitingForList(), target, true, node.isAdvancedModeEnabled(), -1, null,
+        	            					key, htl, 0, source == null);
+        	            		if(alsoWaitFor != null)
+        	            			waiter.addWaitingFor(alsoWaitFor);
+        	            		if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because first is low capacity");
+        	            	}
+        	            }
+        	            
         				PeerNode oldNext = next;
         				PeerNode waited = waiter.waitForAny();
         				if(waited == null) {
