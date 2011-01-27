@@ -425,10 +425,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	            		if(alsoWaitFor != null) {
         	            			waiter.addWaitingFor(alsoWaitFor);
         	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because first is low capacity");
-        	            			expectedAcceptState =
-        	            				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
-        	            			if(expectedAcceptState != null)
-        	            				next = alsoWaitFor;
+        	            			PeerNode matched = waiter.waitForAny(0);
+        	            			if(matched != null) {
+        	            				expectedAcceptState = waiter.getAcceptedState();
+        	            				next = matched;
+        	            			}
         	            		}
         	            	}
         	            }
@@ -443,10 +444,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	            		if(alsoWaitFor != null) {
 	            			waiter.addWaitingFor(alsoWaitFor);
 	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because realtime");
-	            			expectedAcceptState =
-	            				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
-	            			if(expectedAcceptState != null)
-	            				next = alsoWaitFor;
+	            			PeerNode matched = waiter.waitForAny(0);
+	            			if(matched != null) {
+	            				expectedAcceptState = waiter.getAcceptedState();
+	            				next = matched;
+	            			}
 	            		}
         			}
         			
