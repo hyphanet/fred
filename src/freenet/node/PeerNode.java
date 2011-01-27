@@ -1052,6 +1052,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return unroutableNewerVersion;
 	}
 
+	public final boolean isRoutable() {
+		return isRoutable(false);
+	}
+	
 	/**
 	* Returns true if requests can be routed through this peer. True if the peer's location is known, presently
 	* connected, and routing-compatible. That is, ignoring backoff, the peer's location is known, build number
@@ -1060,13 +1064,21 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* Note possible deadlocks! PeerManager calls this, we call
 	* PeerManager in e.g. verified.
 	*/
-	public boolean isRoutable() {
-		return isConnected() && isRoutingCompatible() &&
+	public boolean isRoutable(boolean ignoreMandatoryBackoff) {
+		return isConnected() && isRoutingCompatible(ignoreMandatoryBackoff) &&
 			!(currentLocation < 0.0 || currentLocation > 1.0);
 	}
 
 	public final boolean isRoutingCompatible() {
 		return isRoutingCompatible(false);
+	}
+	
+	synchronized boolean isInMandatoryBackoff(long now) {
+		if((mandatoryBackoffUntil > -1 && now < mandatoryBackoffUntil)) {
+			if(logMINOR) Logger.minor(this, "In mandatory backoff");
+			return true;
+		}
+		return false;
 	}
 	
 	/**
@@ -3397,7 +3409,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		checkConnectionsAndTrackers();
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
-		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
+		if(isRoutable(true)) {  // Function use also updates timeLastConnected and timeLastRoutable
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
 			if(now < routingBackedOffUntil) {
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
@@ -3409,6 +3421,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					previousRoutingBackoffReason = lastRoutingBackoffReason;
 				}
 			} else {
+				if(isInMandatoryBackoff(now)) {
+					peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
+				}
 				if(previousRoutingBackoffReason != null) {
 					peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
 					previousRoutingBackoffReason = null;
