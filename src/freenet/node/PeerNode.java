@@ -4661,7 +4661,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
-		public PeerNode waitForAny() {
+		public PeerNode waitForAny(long maxWait) {
 			PeerNode[] all;
 			synchronized(this) {
 				if(!(acceptedBy == null && (!waitingFor.isEmpty()) && !failed)) {
@@ -4684,9 +4684,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			synchronized(this) {
 				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this);
 				long waitStart = System.currentTimeMillis();
+				long deadline = waitStart + maxWait;
 				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
 					try {
-						wait();
+						if(maxWait == Long.MAX_VALUE)
+							wait();
+						else {
+							wait(Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis()));
+						}
 					} catch (InterruptedException e) {
 						// Ignore
 					}

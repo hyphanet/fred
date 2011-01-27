@@ -450,7 +450,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			
         			if(expectedAcceptState == null) {
         				PeerNode oldNext = next;
-        				PeerNode waited = waiter.waitForAny();
+        				long maxWait = Long.MAX_VALUE;
+        				if(waiter.waitingForCount() <= canWaitFor) {
+        					// Can add another one if it's taking ages.
+        					// However after adding it once, we will wait for as long as it takes.
+        					maxWait = fetchTimeout / 10;
+        				}
+        				PeerNode waited = waiter.waitForAny(maxWait);
         				if(waited == null) {
         					if(logMINOR) Logger.minor(this, "Failed in wait - backoff, disconnection etc? Rerouting...");
         					// Disconnected, low capacity, or backed off.
@@ -464,7 +470,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					next = node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
         							key, htl, 0, source == null);
         					
-        					if(next == null) {
+        					if(next == null && maxWait == Long.MAX_VALUE) {
         						if (logMINOR && rejectOverloads>0)
         							Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
         						// Backtrack
