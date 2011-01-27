@@ -4749,6 +4749,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					// FIXME maybe wait a bit, check the other side's version first???
 					return RequestLikelyAcceptedState.UNKNOWN;
 				}
+				if(dontSendUnlessGuaranteed)
+					worstAcceptable = RequestLikelyAcceptedState.GUARANTEED;
 				// Requests already running to this node
 				RunningRequestsSnapshot runningRequests = node.nodeStats.getRunningRequestsTo(PeerNode.this, loadStats.averageTransfersOutPerInsert, realTime);
 				runningRequests.log(PeerNode.this);
