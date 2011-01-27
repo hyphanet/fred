@@ -497,7 +497,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			lastExpectedAcceptState = expectedAcceptState;
         			lastNext = next;
     				if(logMINOR)
-    					Logger.minor(this, "Leaving new load management big block: Predicted accept state for "+this+" : "+expectedAcceptState+" realtime="+realTimeFlag);
+    					Logger.minor(this, "Leaving new load management big block: Predicted accept state for "+this+" : "+expectedAcceptState+" realtime="+realTimeFlag+" for "+next);
         			// FIXME only report for routing accuracy purposes at this point, not in closerPeer().
         			// In fact, we should report only after Accepted.
         		}
