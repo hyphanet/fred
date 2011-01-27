@@ -599,6 +599,16 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         }
 	}
     
+    private synchronized int timeSinceSentForTimeout() {
+    	int time = timeSinceSent();
+    	if(time > FailureTable.REJECT_TIME) {
+    		if(time < fetchTimeout + 10*1000) return time;
+    		Logger.error(this, "Very long time since sent: "+time+" ("+TimeUtil.formatTime(time, 2, true)+")");
+    		return FailureTable.REJECT_TIME;
+    	}
+    	return time;
+    }
+    
     private synchronized int timeSinceSent() {
     	return (int) (System.currentTimeMillis() - timeSentRequest);
     }
@@ -1448,7 +1458,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
 			//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 			//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
-    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+    		node.failureTable.onFailed(key, next, htl, timeSinceSentForTimeout());
 			next.localRejectedOverload("ForwardRejectedOverload2");
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
