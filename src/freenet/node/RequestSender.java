@@ -411,10 +411,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag);
     				waiter.addWaitingFor(next);
     				
+    				int canWaitFor = 1;
         			if(expectedAcceptState == null) {
         	            if(next.isLowCapacity(realTimeFlag)) {
         	            	if(waiter.waitingForCount() == 1) {
-        	            		// Wait for another one.
+        	            		canWaitFor++;
+        	            		// Wait for another one if the first is low capacity.
         	            		PeerNode alsoWaitFor =
         	            			node.peers.closerPeer(source, waiter.waitingForList(), target, true, node.isAdvancedModeEnabled(), -1, null,
         	            					key, htl, 0, source == null);
@@ -428,6 +430,22 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	            		}
         	            	}
         	            }
+        			}
+        			
+        			if(realTimeFlag) canWaitFor++;
+        			if(expectedAcceptState == null && waiter.waitingForCount() <= canWaitFor) {
+	            		// Wait for another one if realtime.
+	            		PeerNode alsoWaitFor =
+	            			node.peers.closerPeer(source, waiter.waitingForList(), target, true, node.isAdvancedModeEnabled(), -1, null,
+	            					key, htl, 0, source == null);
+	            		if(alsoWaitFor != null) {
+	            			waiter.addWaitingFor(alsoWaitFor);
+	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because first is low capacity");
+	            			expectedAcceptState =
+	            				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
+	            			if(expectedAcceptState != null)
+	            				next = alsoWaitFor;
+	            		}
         			}
         			
         			if(expectedAcceptState == null) {
