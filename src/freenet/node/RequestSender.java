@@ -405,15 +405,16 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				}
         			}
         			
-    				if(logMINOR)
-    					Logger.minor(this, "Cannot send to "+next+" realtime="+realTimeFlag);
-    				waitedForLoadManagement = true;
-    				if(waiter == null)
-    					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag);
-    				waiter.addWaitingFor(next);
-    				
     				int canWaitFor = 1;
+    				
         			if(expectedAcceptState == null) {
+        				if(logMINOR)
+        					Logger.minor(this, "Cannot send to "+next+" realtime="+realTimeFlag);
+        				waitedForLoadManagement = true;
+        				if(waiter == null)
+        					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag);
+        				waiter.addWaitingFor(next);
+    				
         	            if(next.isLowCapacity(realTimeFlag)) {
         	            	if(waiter.waitingForCount() == 1) {
         	            		canWaitFor++;
