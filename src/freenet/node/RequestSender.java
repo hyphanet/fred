@@ -428,7 +428,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	            		}
         	            	}
         	            }
-        	            
+        			}
+        			
+        			if(expectedAcceptState == null) {
         				PeerNode oldNext = next;
         				PeerNode waited = waiter.waitForAny();
         				if(waited == null) {
