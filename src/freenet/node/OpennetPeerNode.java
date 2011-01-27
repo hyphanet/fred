@@ -30,9 +30,9 @@ public class OpennetPeerNode extends PeerNode {
 	}
 
 	@Override
-	public boolean isRoutingCompatible() {
+	public boolean isRoutingCompatible(boolean ignoreMandatoryBackoff) {
 		if(!node.isOpennetEnabled()) return false;
-		return super.isRoutingCompatible();
+		return super.isRoutingCompatible(ignoreMandatoryBackoff);
 	}
 
 	@Override

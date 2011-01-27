@@ -5158,7 +5158,7 @@ public class Node implements TimeSkewDetectorCallback {
 			completedBuffer.clear();
 		}
 		for(PeerNode pn : peers.myPeers) {
-			if(!pn.isRoutingCompatible()) continue;
+			if(!pn.isRoutingCompatible(true)) continue;
 			pn.removeUIDsFromMessageQueues(list);
 		}
 	}

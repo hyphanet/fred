@@ -1065,16 +1065,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			!(currentLocation < 0.0 || currentLocation > 1.0);
 	}
 
+	public final boolean isRoutingCompatible() {
+		return isRoutingCompatible(false);
+	}
+	
 	/**
 	 * Returns true if (apart from actually knowing the peer's location), it is presumed that this peer could route requests.
 	 * True if this peer's build number is not 'too-old' or 'too-new', actively connected, and not marked as explicity disabled.
 	 * Does not reflect any 'backoff' logic, except the mandatory backoff logic.
 	 */
-	public boolean isRoutingCompatible() {
+	public boolean isRoutingCompatible(boolean ignoreMandatoryBackoff) {
 		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
 		synchronized(this) {
 			if(isRoutable && !disableRouting) {
-				if(mandatoryBackoffUntil > -1 && now < mandatoryBackoffUntil) {
+				if((!ignoreMandatoryBackoff) && (mandatoryBackoffUntil > -1 && now < mandatoryBackoffUntil)) {
 					if(logMINOR) Logger.minor(this, "In mandatory backoff");
 					return false;
 				}
