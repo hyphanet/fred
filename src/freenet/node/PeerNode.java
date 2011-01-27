@@ -4629,7 +4629,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(!waitingFor.contains(peer)) return false;
 				acceptedBy = peer;
 				acceptedState = state;
-				tag.addRoutedTo(peer, offeredKey);
+				if(tag.addRoutedTo(peer, offeredKey)) {
+					Logger.normal(this, "onWaited for "+this+" added on "+tag+" but already added - race condition?");
+				}
 				notifyAll();
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 			}
