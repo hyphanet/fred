@@ -418,9 +418,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	            		PeerNode alsoWaitFor =
         	            			node.peers.closerPeer(source, waiter.waitingForList(), target, true, node.isAdvancedModeEnabled(), -1, null,
         	            					key, htl, 0, source == null);
-        	            		if(alsoWaitFor != null)
+        	            		if(alsoWaitFor != null) {
         	            			waiter.addWaitingFor(alsoWaitFor);
-        	            		if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because first is low capacity");
+        	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because first is low capacity");
+        	            		}
         	            	}
         	            }
         	            
