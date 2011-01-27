@@ -4669,8 +4669,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public PeerNode waitForAny(long maxWait) {
 			PeerNode[] all;
 			synchronized(this) {
-				if(!(acceptedBy == null && (!waitingFor.isEmpty()) && !failed))
-					return grab();
+				if(shouldGrab()) return grab();
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 			}
 			// Double-check before blocking, prevent race condition.
@@ -4680,8 +4679,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					if(logMINOR) Logger.minor(this, "tryRouteTo() pre-wait check returned "+accept);
 					if(!onWaited(p, accept)) {
 						synchronized(this) {
-							if(!(acceptedBy == null && (!waitingFor.isEmpty()) && !failed))
-								return grab();
+							if(shouldGrab()) return grab();
 						}						
 					}
 					return p;
@@ -4720,6 +4718,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
+		private boolean shouldGrab() {
+			return !(acceptedBy == null && (!waitingFor.isEmpty()) && !failed)
+		}
+
 		private synchronized PeerNode grab() {
 			if(logMINOR) Logger.minor(this, "Returning in first check: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
 			failed = false;
