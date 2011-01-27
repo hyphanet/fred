@@ -4669,13 +4669,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public PeerNode waitForAny(long maxWait) {
 			PeerNode[] all;
 			synchronized(this) {
-				if(!(acceptedBy == null && (!waitingFor.isEmpty()) && !failed)) {
-					if(logMINOR) Logger.minor(this, "Returning in first check: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
-					failed = false;
-					PeerNode got = acceptedBy;
-					acceptedBy = null; // Allow for it to wait again if necessary
-					return got;
-				}
+				if(!(acceptedBy == null && (!waitingFor.isEmpty()) && !failed))
+					return grab();
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 			}
 			// Double-check before blocking, prevent race condition.
@@ -4685,13 +4680,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					if(logMINOR) Logger.minor(this, "tryRouteTo() pre-wait check returned "+accept);
 					if(!onWaited(p, accept)) {
 						synchronized(this) {
-							if(!(acceptedBy == null && (!waitingFor.isEmpty()) && !failed)) {
-								if(logMINOR) Logger.minor(this, "Returning in first check: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
-								failed = false;
-								PeerNode got = acceptedBy;
-								acceptedBy = null; // Allow for it to wait again if necessary
-								return got;
-							}
+							if(!(acceptedBy == null && (!waitingFor.isEmpty()) && !failed))
+								return grab();
 						}						
 					}
 					return p;
@@ -4730,6 +4720,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 		}
 		
+		private synchronized PeerNode grab() {
+			if(logMINOR) Logger.minor(this, "Returning in first check: accepted by "+acceptedBy+" waiting for "+waitingFor.size()+" failed "+failed);
+			failed = false;
+			PeerNode got = acceptedBy;
+			acceptedBy = null; // Allow for it to wait again if necessary
+			return got;
+		}
+
 		public synchronized RequestLikelyAcceptedState getAcceptedState() {
 			return acceptedState;
 		}
