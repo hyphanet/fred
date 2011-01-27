@@ -421,6 +421,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	            		if(alsoWaitFor != null) {
         	            			waiter.addWaitingFor(alsoWaitFor);
         	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because first is low capacity");
+        	            			expectedAcceptState =
+        	            				next.outputLoadTracker(realTimeFlag).tryRouteTo(origTag, RequestLikelyAcceptedState.LIKELY, false);
+        	            			if(expectedAcceptState != null)
+        	            				next = alsoWaitFor;
         	            		}
         	            	}
         	            }
