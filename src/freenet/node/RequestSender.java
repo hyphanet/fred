@@ -574,8 +574,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
             long now = System.currentTimeMillis();
             long delta = now-startedTryingPeer;
-            if((delta > 1000 && realTimeFlag) || (delta > 10000 && !realTimeFlag))
-            	Logger.error(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)"));            	
+            // This includes the time for the Accepted to come back, so it can take a while sometimes.
+            // So log it at error only if it's really bad.
+            if((delta > 10000 && realTimeFlag) || (delta > 20000 && !realTimeFlag) || tryCount > 2)
+            	Logger.error(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)"));
+            else if((delta > 1000 && realTimeFlag) || (delta > 10000 && !realTimeFlag) || tryCount > 1)
+            	Logger.warning(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)"));            	
             else if(logMINOR && (waitedForLoadManagement || retriedForLoadManagement))
             	Logger.minor(this, "Took "+tryCount+" tries in "+TimeUtil.formatTime(delta, 2, true)+" waited="+waitedForLoadManagement+" retried="+retriedForLoadManagement+(realTimeFlag ? " (realtime)" : " (bulk)"));
             
