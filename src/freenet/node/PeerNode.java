@@ -4621,19 +4621,24 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			peer.outputLoadTracker(realTime).queueSlotWaiter(this);
 		}
 		
+		synchronized PeerNode[] innerOnWaited(PeerNode peer, RequestLikelyAcceptedState state) {
+			if(acceptedBy != null) return null;
+			if(!waitingFor.contains(peer)) return null;
+			acceptedBy = peer;
+			acceptedState = state;
+			if(!tag.addRoutedTo(peer, offeredKey)) {
+				Logger.normal(this, "onWaited for "+this+" added on "+tag+" but already added - race condition?");
+			}
+			notifyAll();
+			return waitingFor.toArray(new PeerNode[waitingFor.size()]);
+		}
+		
 		boolean onWaited(PeerNode peer, RequestLikelyAcceptedState state) {
 			if(logMINOR) Logger.minor(this, "Waking slot waiter "+this);
 			PeerNode[] all;
 			synchronized(this) {
-				if(acceptedBy != null) return false;
-				if(!waitingFor.contains(peer)) return false;
-				acceptedBy = peer;
-				acceptedState = state;
-				if(!tag.addRoutedTo(peer, offeredKey)) {
-					Logger.normal(this, "onWaited for "+this+" added on "+tag+" but already added - race condition?");
-				}
-				notifyAll();
-				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
+				all = innerOnWaited(peer, state);
+				if(all == null) return false;
 			}
 			if(all.length == 1) return true;
 			for(PeerNode p : all)
