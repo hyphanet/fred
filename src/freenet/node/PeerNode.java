@@ -3036,13 +3036,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	/** When load management predicts that a peer will definitely accept the request, both
 	 * before it was sent and after we got the rejected, we go into mandatory backoff. */
-	public synchronized void enterMandatoryBackoff(String reason) {
+	public void enterMandatoryBackoff(String reason) {
 		long now = System.currentTimeMillis();
-		if(mandatoryBackoffUntil > -1 && mandatoryBackoffUntil > now) return;
-		Logger.error(this, "Entering mandatory backoff for "+this);
-		mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt(mandatoryBackoffLength/2);
-		mandatoryBackoffLength *= MANDATORY_BACKOFF_MULTIPLIER;
-		this.setLastBackoffReason(reason);
+		synchronized(this) {
+			if(mandatoryBackoffUntil > -1 && mandatoryBackoffUntil > now) return;
+			Logger.error(this, "Entering mandatory backoff for "+this);
+			mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt(mandatoryBackoffLength/2);
+			mandatoryBackoffLength *= MANDATORY_BACKOFF_MULTIPLIER;
+			this.setLastBackoffReason(reason);
+		}
 		outputLoadTrackerRealTime.failSlotWaiters(true);
 		outputLoadTrackerBulk.failSlotWaiters(true);
 	}
