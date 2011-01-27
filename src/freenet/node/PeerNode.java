@@ -4918,6 +4918,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							if(logMINOR) Logger.minor(this, "Not accepting until guaranteed for "+PeerNode.this+" realtime="+realTime);
 							return;
 						}
+						if(list.isEmpty()) continue;
 						Iterator<SlotWaiter> it = list.values().iterator();
 						slot = it.next();
 						it.remove();
