@@ -4694,7 +4694,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						if(maxWait == Long.MAX_VALUE)
 							wait();
 						else {
-							wait(Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis()));
+							int wait = (int)Math.min(Integer.MAX_VALUE, deadline - System.currentTimeMillis());
+							if(wait > 0) wait(wait);
 						}
 					} catch (InterruptedException e) {
 						// Ignore
