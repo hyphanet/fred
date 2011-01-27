@@ -3027,6 +3027,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt(mandatoryBackoffLength/2);
 		mandatoryBackoffLength *= MANDATORY_BACKOFF_MULTIPLIER;
 		this.setLastBackoffReason(reason);
+		outputLoadTrackerRealTime.failSlotWaiters(true);
+		outputLoadTrackerBulk.failSlotWaiters(true);
 	}
 
 	/** Called when a request is accepted. We don't wait for completion, unlike 
@@ -3155,6 +3157,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			setLastBackoffReason(reason);
 		}
+		outputLoadTrackerRealTime.failSlotWaiters(true);
+		outputLoadTrackerBulk.failSlotWaiters(true);
 		setPeerNodeStatus(now);
 	}
 
