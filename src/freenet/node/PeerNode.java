@@ -4536,13 +4536,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(!mustSend) return;
 		}
 		
-		Message makeLoadStats(long now, int transfersPerInsert) {
+		Message makeLoadStats(long now, int transfersPerInsert, boolean noRemember) {
 			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, transfersPerInsert, realTimeFlag);
 			synchronized(this) {
 				lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
 				lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
-				if(lastFullStats != null && lastFullStats.equals(stats)) return null;
-				lastFullStats = stats;
+				if(!noRemember) {
+					if(lastFullStats != null && lastFullStats.equals(stats)) return null;
+					lastFullStats = stats;
+				}
 				timeLastSentAllocationNotice = now;
 				countAllocationNotices++;
 				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+lastSentAllocationInput+" input "+lastSentAllocationOutput+" output.");
@@ -4933,8 +4935,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return false;
 	}
 	
-	public MessageItem makeLoadStats(boolean realtime, boolean boostPriority) {
-		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert());
+	public MessageItem makeLoadStats(boolean realtime, boolean boostPriority, boolean noRemember) {
+		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert(), noRemember);
 		if(msg == null) return null;
 		return new MessageItem(msg, null, node.nodeStats.allocationNoticesCounter, boostPriority ? DMT.PRIORITY_NOW : (short)-1);
 	}

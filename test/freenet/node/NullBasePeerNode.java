@@ -186,7 +186,7 @@ public class NullBasePeerNode implements BasePeerNode {
 		throw new UnsupportedOperationException();
 	}
 
-	public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
+	public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean lossy) {
 		// Don't send load stats.
 		return null;
 	}
