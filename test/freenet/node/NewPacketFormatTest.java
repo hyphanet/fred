@@ -170,7 +170,8 @@ public class NewPacketFormatTest extends TestCase {
 			
 			boolean shouldSend = true;
 			
-			public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
+			@Override
+			public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember) {
 				return new MessageItem(loadMessage, null, null, (short)0);
 			}
 
@@ -239,7 +240,8 @@ public class NewPacketFormatTest extends TestCase {
 		final SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		NullBasePeerNode senderNode = new NullBasePeerNode() {
 			
-			public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
+			@Override
+			public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember) {
 				return new MessageItem(loadMessage, null, false, null, (short) 0, false, false);
 			}
 
@@ -272,7 +274,8 @@ public class NewPacketFormatTest extends TestCase {
 		final MutableBoolean gotMessage = new MutableBoolean();
 		NullBasePeerNode senderNode = new NullBasePeerNode() {
 			
-			public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
+			@Override
+			public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember) {
 				return new MessageItem(loadMessage, null, null, (short)0);
 			}
 
