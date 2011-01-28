@@ -4820,7 +4820,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			synchronized(routedToLock) {
 				if(loadStats == null) {
-					Logger.error(this, "Accepting because no load stats from "+this);
+					Logger.error(this, "Accepting because no load stats from "+PeerNode.this.shortToString()+" ("+PeerNode.this.getVersionNumber()+")");
 					if(tag.addRoutedTo(PeerNode.this, offeredKey)) {
 						// FIXME maybe wait a bit, check the other side's version first???
 						return RequestLikelyAcceptedState.UNKNOWN;

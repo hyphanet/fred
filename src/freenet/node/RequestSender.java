@@ -398,7 +398,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					// This time it's GUARANTEED.
         					// Last time it was also GUARANTEED.
         					// Yet last time it was rejected. Why?
-        					Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState+" from "+next);
+        					Logger.error(this, "Rejected overload (last time) yet expected state was "+lastExpectedAcceptState+" is now "+expectedAcceptState+" from "+next.shortToString()+" ("+next.getVersionNumber()+")");
         					next.enterMandatoryBackoff("Mandatory:RejectedGUARANTEED");
         					next.noLongerRoutingTo(origTag, false);
         					expectedAcceptState = null;
