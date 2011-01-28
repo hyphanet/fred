@@ -4615,7 +4615,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 		public void addWaitingFor(PeerNode peer) {
 			synchronized(this) {
-				if(acceptedBy != null) return;
+				if(acceptedBy != null) {
+					if(logMINOR) Logger.minor(this, "Not adding "+peer.shortToString+" because already matched on "+this);
+					return;
+				}
 				waitingFor.add(peer);
 			}
 			peer.outputLoadTracker(realTime).queueSlotWaiter(this);
