@@ -906,7 +906,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * RequestHandler (onAbort() handler). */
 	public boolean wantKey(Key key) {
 		if(schedTransient.anyProbablyWantKey(key, clientContext)) return true;
-		if(schedCore.anyProbablyWantKey(key, clientContext)) return true;
+		if(schedCore != null && schedCore.anyProbablyWantKey(key, clientContext)) return true;
 		return false;
 	}
 
