@@ -4657,6 +4657,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		/** Caller should not hold locks while calling this.
 		 * @param exclude Only set this if you have already removed the slot waiter. */
 		void unregister(PeerNode exclude, PeerNode[] all) {
+			if(all == null) return;
 			for(PeerNode p : all)
 				if(p != exclude) p.outputLoadTracker(realTime).unqueueSlotWaiter(this);
 		}
