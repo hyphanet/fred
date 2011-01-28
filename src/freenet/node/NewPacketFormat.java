@@ -748,7 +748,7 @@ outer:
 								break fragments;
 							}
 							
-							if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item+" for "+this);
+							if(logDEBUG) Logger.debug(this, "Allocated "+messageID+" for "+item+" for "+this+" for "+pn.shortToString());
 							
 							MessageWrapper wrapper = new MessageWrapper(item, messageID);
 							MessageFragment frag = wrapper.getMessageFragment(maxPacketSize - packet.getLength());

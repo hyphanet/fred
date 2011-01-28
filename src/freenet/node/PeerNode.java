@@ -4632,8 +4632,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		 * can be unlocked. */
 		synchronized PeerNode[] innerOnWaited(PeerNode peer, RequestLikelyAcceptedState state) {
 			if(logMINOR) Logger.minor(this, "Waking slot waiter "+this);
-			if(acceptedBy != null) return null;
-			if(!waitingFor.contains(peer)) return null;
+			if(acceptedBy != null) {
+				if(logMINOR) Logger.minor(this, "Already accepted on "+this);
+				return null;
+			}
+			if(!waitingFor.contains(peer)) {
+				if(logMINOR) Logger.minor(this, "Not waiting for peer "+peer+" on "+this);
+				return null;
+			}
 			acceptedBy = peer;
 			acceptedState = state;
 			if(!tag.addRoutedTo(peer, offeredKey)) {
