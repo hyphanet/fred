@@ -527,7 +527,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		this.avgClientCacheSSKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageClientCacheSSKSuccessLocation"));
 		this.avgStoreSSKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreSSKSuccessLocation"));
 
-		hourlyStats = new HourlyStats(node);
+		hourlyStatsRT = new HourlyStats(node);
+		hourlyStatsBulk = new HourlyStats(node);
 
 		avgRoutingBackoffTimes = new Hashtable<String, TrivialRunningAverage>();
 		avgTransferBackoffTimes = new Hashtable<String, TrivialRunningAverage>();
@@ -2474,15 +2475,22 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverage.currentValue(), 2, true));
 	}
 
-	private HourlyStats hourlyStats;
+	private HourlyStats hourlyStatsRT;
+	private HourlyStats hourlyStatsBulk;
 
-	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location) {
+	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location, boolean realTime) {
 		if(logMINOR) Logger.minor(this, "Remote request: sucess="+success+" htl="+htl+" locally answered="+local+" location of key="+location);
-		hourlyStats.remoteRequest(ssk, success, local, htl, location);
+		if(realTime)
+			hourlyStatsRT.remoteRequest(ssk, success, local, htl, location);
+		else
+			hourlyStatsBulk.remoteRequest(ssk, success, local, htl, location);
 	}
 
-	public void fillRemoteRequestHTLsBox(HTMLNode html) {
-		hourlyStats.fillRemoteRequestHTLsBox(html);
+	public void fillRemoteRequestHTLsBox(HTMLNode html, boolean realTime) {
+		if(realTime)
+			hourlyStatsRT.fillRemoteRequestHTLsBox(html);
+		else
+			hourlyStatsBulk.fillRemoteRequestHTLsBox(html);
 	}
 
 	private String sanitizeDBJobType(String jobType) {

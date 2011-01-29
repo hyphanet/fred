@@ -311,7 +311,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				// Peer routing backoff reason box
 				if(mode >= PageMaker.MODE_ADVANCED) {
 					HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
-					backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (realtime)");
+					HTMLNode title = backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (realtime)");
 					HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
 					String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
 					int total = 0;
@@ -328,9 +328,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						}
 					}
 					if(total > 0)
-						backoffReasonInfobox.addChild("#", ": "+total);
+						title.addChild("#", ": "+total);
 					backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
-					backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (bulk)");
+					title = backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (bulk)");
 					backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
 					routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
 					total = 0;
@@ -347,7 +347,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						}
 					}
 					if(total > 0)
-						backoffReasonInfobox.addChild("#", ": "+total);
+						title.addChild("#", ": "+total);
 				}
 				// END OVERVIEW TABLE
 			}
