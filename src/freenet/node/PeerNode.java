@@ -4801,7 +4801,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public PeerNode waitForAny(long maxWait) {
 			PeerNode[] all;
 			synchronized(this) {
-				if(shouldGrab()) return grab();
+				if(shouldGrab()) {
+					if(logMINOR) Logger.minor(this, "Already matched on "+this);
+					return grab();
+				}
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
 			}
 			// Double-check before blocking, prevent race condition.
@@ -4812,16 +4815,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					PeerNode[] unreg;
 					PeerNode other = null;
 					synchronized(this) {
+						if(logMINOR) Logger.minor(this, "tryRouteTo() succeeded to "+p+" on "+this+" with "+accept+" - checking whether we have already accepted.");
 						unreg = innerOnWaited(p, accept);
 						if(unreg == null) {
+							// Recover from race condition.
 							if(shouldGrab()) other = grab();
-						} else {
+						}
+						if(other == null) {
+							if(logMINOR) Logger.minor(this, "Trying the original tryRouteTo() on "+this);
 							// Having set the acceptedBy etc, clear it now.
 							grab();
 						}
 					}
 					if(other != null) {
-						// Recover from race condition.
 						Logger.normal(this, "Race condition: tryRouteTo() succeeded on "+p.shortToString()+" but already matched on "+other.shortToString()+" on "+this);
 						tag.removeRoutingTo(p);
 						return other;
