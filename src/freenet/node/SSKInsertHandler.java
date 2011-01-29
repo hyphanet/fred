@@ -166,7 +166,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 					Logger.error(this, "Invalid pubkey from "+source+" on "+uid);
 					Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_SSK_ERROR);
 					try {
-						source.sendSync(msg, this);
+						source.sendSync(msg, this, realTimeFlag);
 					} catch (NotConnectedException ee) {
 						// Ignore
 					}
@@ -185,7 +185,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 			Logger.error(this, "Invalid SSK from "+source, e1);
 			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_SSK_ERROR);
 			try {
-				source.sendSync(msg, this);
+				source.sendSync(msg, this, realTimeFlag);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
@@ -232,7 +232,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             	// Forward it
             	Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
             	try {
-					source.sendSync(m, this);
+					source.sendSync(m, this, realTimeFlag);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -278,7 +278,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             		(status == SSKInsertSender.INTERNAL_ERROR)) {
                 Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
                 try {
-					source.sendSync(msg, this);
+					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -294,7 +294,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             if((status == SSKInsertSender.ROUTE_NOT_FOUND) || (status == SSKInsertSender.ROUTE_REALLY_NOT_FOUND)) {
                 Message msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 try {
-					source.sendSync(msg, this);
+					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -307,7 +307,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             if(status == SSKInsertSender.SUCCESS) {
             	Message msg = DMT.createFNPInsertReply(uid);
             	try {
-					source.sendSync(msg, this);
+					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -321,7 +321,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
             Message msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
             try {
-				source.sendSync(msg, this);
+				source.sendSync(msg, this, realTimeFlag);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}

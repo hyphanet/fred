@@ -86,8 +86,10 @@ public class PeerManager {
 	private final HashMap<Integer, HashSet<PeerNode>> peerNodeStatuses;
 	/** DarknetPeerNode statuses, by status */
 	private final HashMap<Integer, HashSet<PeerNode>> peerNodeStatusesDarknet;
-	/** PeerNode routing backoff reasons, by reason */
-	private final HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasons;
+	/** PeerNode routing backoff reasons, by reason (realtime) */
+	private final HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasonsRT;
+	/** PeerNode routing backoff reasons, by reason (bulk) */
+	private final HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasonsBulk;
 	/** Next time to update routableConnectionStats */
 	private long nextRoutableConnectionStatsUpdateTime = -1;
 	/** routableConnectionStats update interval (milliseconds) */
@@ -138,7 +140,8 @@ public class PeerManager {
 		Logger.normal(this, "Creating PeerManager");
 		peerNodeStatuses = new HashMap<Integer, HashSet<PeerNode>>();
 		peerNodeStatusesDarknet = new HashMap<Integer, HashSet<PeerNode>>();
-		peerNodeRoutingBackoffReasons = new HashMap<String, HashSet<PeerNode>>();
+		peerNodeRoutingBackoffReasonsRT = new HashMap<String, HashSet<PeerNode>>();
+		peerNodeRoutingBackoffReasonsBulk = new HashMap<String, HashSet<PeerNode>>();
 		System.out.println("Creating PeerManager");
 		myPeers = new PeerNode[0];
 		connectedPeers = new PeerNode[0];
@@ -324,9 +327,12 @@ public class PeerManager {
 				int peerNodeStatus = pn.getPeerNodeStatus();
 				if(pn.recordStatus())
 					removePeerNodeStatus(peerNodeStatus, pn, !isInPeers);
-				String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
+				String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason(true);
 				if(peerNodePreviousRoutingBackoffReason != null)
-					removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
+					removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn, true);
+				peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason(false);
+				if(peerNodePreviousRoutingBackoffReason != null)
+					removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn, false);
 
 				// removing from connectedPeers
 				ArrayList<PeerNode> a = new ArrayList<PeerNode>();
@@ -785,7 +791,7 @@ public class PeerManager {
 			PeerNode p = peers[i];
 			if(!p.isRoutable())
 				continue;
-			if(p.isRoutingBackedOff()) {
+			if(p.isRoutingBackedOffEither()) {
 				if(logMINOR) Logger.minor(this, "Skipping (backoff): "+p+" loc "+p.getLocation());
 				continue;
 			}
@@ -839,8 +845,8 @@ public class PeerManager {
 	}
 
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
-	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal) {
-		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal);
+	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime) {
+		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime);
 	}
 
 	/**
@@ -859,7 +865,7 @@ public class PeerManager {
 	 * accurately whether this was originated remotely.
 	 */
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
-	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal) {
+	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = connectedPeers;
@@ -1008,7 +1014,7 @@ public class PeerManager {
 				if(logMINOR)
 					Logger.minor(this, "New best: " + diff + " (" + loc + " for " + p.getPeer());
 			}
-			boolean backedOff = p.isRoutingBackedOff(ignoreBackoffUnder);
+			boolean backedOff = p.isRoutingBackedOff(ignoreBackoffUnder, realTime);
 			if(backedOff && (diff < closestBackedOffDistance || (Math.abs(diff - closestBackedOffDistance) < Double.MIN_VALUE*2 && (direct || realDiff < closestRealBackedOffDistance))) && !timedOut) {
 				closestBackedOffDistance = diff;
 				closestBackedOff = p;
@@ -1386,7 +1392,7 @@ public class PeerManager {
 		node.getTicker().queueTimedJob(writePeersRunnable, 0);
 	}
 
-	public int countNonBackedOffPeers() {
+	public int countNonBackedOffPeers(boolean realTime) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = connectedPeers; // even if myPeers peers are connected they won't be routed to
@@ -1394,7 +1400,7 @@ public class PeerManager {
 		int countNoBackoff = 0;
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i].isRoutable())
-				if(!peers[i].isRoutingBackedOff())
+				if(!peers[i].isRoutingBackedOff(realTime))
 					countNoBackoff++;
 		}
 		return countNoBackoff;
@@ -1592,7 +1598,9 @@ public class PeerManager {
 	/**
 	 * Add a PeerNode routing backoff reason to the map
 	 */
-	public void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
+	public void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode, boolean realTime) {
+		HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasons =
+			realTime ? peerNodeRoutingBackoffReasonsRT : peerNodeRoutingBackoffReasonsBulk;
 		synchronized(peerNodeRoutingBackoffReasons) {
 			HashSet<PeerNode> reasonSet = null;
 			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
@@ -1614,7 +1622,9 @@ public class PeerManager {
 	/**
 	 * What are the currently tracked PeerNode routing backoff reasons?
 	 */
-	public String[] getPeerNodeRoutingBackoffReasons() {
+	public String[] getPeerNodeRoutingBackoffReasons(boolean realTime) {
+		HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasons =
+			realTime ? peerNodeRoutingBackoffReasonsRT : peerNodeRoutingBackoffReasonsBulk;
 		String[] reasonStrings;
 		synchronized(peerNodeRoutingBackoffReasons) {
 			reasonStrings = peerNodeRoutingBackoffReasons.keySet().toArray(new String[peerNodeRoutingBackoffReasons.size()]);
@@ -1626,7 +1636,9 @@ public class PeerManager {
 	/**
 	 * How many PeerNodes have a particular routing backoff reason?
 	 */
-	public int getPeerNodeRoutingBackoffReasonSize(String peerNodeRoutingBackoffReason) {
+	public int getPeerNodeRoutingBackoffReasonSize(String peerNodeRoutingBackoffReason, boolean realTime) {
+		HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasons =
+			realTime ? peerNodeRoutingBackoffReasonsRT : peerNodeRoutingBackoffReasonsBulk;
 		HashSet<PeerNode> reasonSet = null;
 		synchronized(peerNodeRoutingBackoffReasons) {
 			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
@@ -1640,8 +1652,10 @@ public class PeerManager {
 	/**
 	 * Remove a PeerNode routing backoff reason from the map
 	 */
-	public void removePeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
+	public void removePeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode, boolean realTime) {
 		HashSet<PeerNode> reasonSet = null;
+		HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasons =
+			realTime ? peerNodeRoutingBackoffReasonsRT : peerNodeRoutingBackoffReasonsBulk;
 		synchronized(peerNodeRoutingBackoffReasons) {
 			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
 				reasonSet = peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
@@ -1961,8 +1975,8 @@ public class PeerManager {
 		}
 		return count;
 	}
-
-	public int countBackedOffPeers() {
+	
+	public int countBackedOffPeersEither() {
 		PeerNode[] peers = myPeers;
 		int count = 0;
 		for(int i = 0; i < peers.length; i++) {
@@ -1970,7 +1984,21 @@ public class PeerManager {
 				continue;
 			if(peers[i].isDisabled())
 				continue;
-			if(peers[i].isRoutingBackedOff())
+			if(peers[i].isRoutingBackedOffEither())
+				count++;
+		}
+		return count;
+	}
+
+	public int countBackedOffPeers(boolean realTime) {
+		PeerNode[] peers = myPeers;
+		int count = 0;
+		for(int i = 0; i < peers.length; i++) {
+			if(!peers[i].isRealConnection())
+				continue;
+			if(peers[i].isDisabled())
+				continue;
+			if(peers[i].isRoutingBackedOff(realTime))
 				count++;
 		}
 		return count;

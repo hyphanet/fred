@@ -225,16 +225,19 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				// node will get impatient. So we need to reassign to self when this happens,
 				// so that we don't ourselves get blamed.
 				
+    			boolean fromOfferedKey;
+    			
 				synchronized(this) {
 					if(status != NOT_FINISHED) return;
 					if(transferringFrom != null) return;
 					reassignedToSelfDueToMultipleTimeouts = true;
+					fromOfferedKey = (routeAttempts > 0);
 				}
 				
 				// We are still routing, yet we have exceeded the per-peer timeout, probably due to routing to multiple nodes e.g. RNFs and accepted timeouts.
 				Logger.normal(this, "Reassigning to self on timeout: "+RequestSender.this);
 				
-				reassignToSelfOnTimeout();
+				reassignToSelfOnTimeout(fromOfferedKey);
 			}
     		
     	}, fetchTimeout);
@@ -281,9 +284,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         routeRequests();
     }
     
-    private int routeAttempts;
+    private int routeAttempts = 0;
     private boolean starting;
-    private int highHTLFailureCount;
+    private int highHTLFailureCount = 0;
     
     private void routeRequests() {
     	
@@ -339,17 +342,16 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             boolean failed;
             synchronized(this) {
             	failed = reassignedToSelfDueToMultipleTimeouts;
+            	if(!failed) routeAttempts++;
             }
             if(failed) {
             	finish(TIMED_OUT, null, false);
             	return;
             }
 
-			routeAttempts++;
-            
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        key, htl, 0, source == null);
+			        key, htl, 0, source == null, realTimeFlag);
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
@@ -421,7 +423,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	            		// Wait for another one if the first is low capacity.
         	            		PeerNode alsoWaitFor =
         	            			node.peers.closerPeer(source, waiter.waitingForList(), target, true, node.isAdvancedModeEnabled(), -1, null,
-        	            					key, htl, 0, source == null);
+        	            					key, htl, 0, source == null, realTimeFlag);
         	            		if(alsoWaitFor != null) {
         	            			waiter.addWaitingFor(alsoWaitFor);
         	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because first is low capacity");
@@ -440,7 +442,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	            		// Wait for another one if realtime.
 	            		PeerNode alsoWaitFor =
 	            			node.peers.closerPeer(source, waiter.waitingForList(), target, true, node.isAdvancedModeEnabled(), -1, null,
-	            					key, htl, 0, source == null);
+	            					key, htl, 0, source == null, realTimeFlag);
 	            		if(alsoWaitFor != null) {
 	            			waiter.addWaitingFor(alsoWaitFor);
 	            			if(logMINOR) Logger.minor(this, "Waiting for "+next+" and "+alsoWaitFor+" on "+waiter+" because realtime");
@@ -472,7 +474,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					exclude.addAll(nodesRoutedTo);
         					// will have been removed from the list.
         					next = node.peers.closerPeer(source, exclude, target, true, node.isAdvancedModeEnabled(), -1, null,
-        							key, htl, 0, source == null);
+        							key, htl, 0, source == null, realTimeFlag);
         					
         					if(next == null && maxWait == Long.MAX_VALUE) {
         						if (logMINOR && rejectOverloads>0)
@@ -545,7 +547,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			 */
         			if(logMINOR) Logger.minor(this, "Sending "+req+" to "+next);
         			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
-        			next.sendSync(req, this);
+        			next.sendSync(req, this, realTimeFlag);
         		} catch (NotConnectedException e) {
         			Logger.minor(this, "Not connected");
         			next.noLongerRoutingTo(origTag, false);
@@ -674,10 +676,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			// It's not a serious problem until we have a second (fatal) timeout.
 			Logger.warning(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
 			if(noReroute) {
-				waitingFor.localRejectedOverload("FatalTimeoutForked");
+				waitingFor.localRejectedOverload("FatalTimeoutForked", realTimeFlag);
 			} else {
 				// Fatal timeout
-				waitingFor.localRejectedOverload("FatalTimeout");
+				waitingFor.localRejectedOverload("FatalTimeout", realTimeFlag);
 				forwardRejectedOverload();
 				finish(TIMED_OUT, waitingFor, false);
 				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.REJECT_TIME, source);
@@ -972,7 +974,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 		try {
 	                		// Received data
-	               			p.transferSuccess();
+	               			p.transferSuccess(realTimeFlag);
 	                		if(logMINOR) Logger.minor(this, "Received data");
                 			verifyAndCommit(finalHeaders, data);
 	                		finish(SUCCESS, p, true);
@@ -1001,7 +1003,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+p, e);
 							finish(GET_OFFER_TRANSFER_FAILED, p, true);
 							// Backoff here anyway - the node really ought to have it!
-							p.transferFailed("RequestSenderGetOfferedTransferFailed");
+							p.transferFailed("RequestSenderGetOfferedTransferFailed", realTimeFlag);
 							offers.deleteLastOffer();
 		    				if(!prb.abortedLocally())
 		    					node.nodeStats.failedBlockReceive(false, false, realTimeFlag, source == null);
@@ -1039,7 +1041,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     		if(msg == null) {
     			if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
     			// Timeout waiting for Accepted
-    			next.localRejectedOverload("AcceptedTimeout");
+    			next.localRejectedOverload("AcceptedTimeout", realTimeFlag);
     			forwardRejectedOverload();
     			node.failureTable.onFailed(key, next, htl, timeSinceSent());
     			// Try next node
@@ -1049,7 +1051,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     		
     		if(msg.getSpec() == DMT.FNPRejectedLoop) {
     			if(logMINOR) Logger.minor(this, "Rejected loop");
-    			next.successNotOverload();
+    			next.successNotOverload(realTimeFlag);
     			node.failureTable.onFailed(key, next, htl, timeSinceSent());
     			// Find another node to route to
     			next.noLongerRoutingTo(origTag, false);
@@ -1086,7 +1088,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     					}
     					return DO.WAIT;
     				} else {
-    					next.localRejectedOverload("ForwardRejectedOverload");
+    					next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
     					node.failureTable.onFailed(key, next, htl, timeSinceSent());
     					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
     					// Give up on this one, try another
@@ -1372,8 +1374,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     				}
     				if(!wasFork)
     					node.removeTransferringSender((NodeCHK)key, RequestSender.this);
-   					sentTo.transferSuccess();
-    				sentTo.successNotOverload();
+   					sentTo.transferSuccess(realTimeFlag);
+    				sentTo.successNotOverload(realTimeFlag);
    					node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
     				if(logMINOR) Logger.minor(this, "Received data");
     				// Received data
@@ -1415,7 +1417,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     					Logger.normal(this, "Local transfer failed: "+e.getReason()+" : "+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+sentTo, e);
     				// We do an ordinary backoff in all cases.
     				if(!prb.abortedLocally())
-    					sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason());
+    					sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason(), realTimeFlag);
     				if(!wasFork)
     					finish(TRANSFER_FAILED, sentTo, false);
     				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
@@ -1427,7 +1429,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     				if(timeout) {
     					// Looks like a timeout. Backoff.
     					if(logMINOR) Logger.minor(this, "Timeout transferring data : "+e, e);
-    					sentTo.transferFailed(e.getErrString());
+    					sentTo.transferFailed(e.getErrString(), realTimeFlag);
     				} else {
     					// Quick failure (in that we didn't have to timeout). Don't backoff.
     					// Treat as a DNF.
@@ -1459,7 +1461,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 			//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
     		node.failureTable.onFailed(key, next, htl, timeSinceSentForTimeout());
-			next.localRejectedOverload("ForwardRejectedOverload2");
+			next.localRejectedOverload("ForwardRejectedOverload2", realTimeFlag);
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
 			// Give up on this one, try another
@@ -1474,13 +1476,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		// Backtrack within available hops
 		short newHtl = msg.getShort(DMT.HTL);
 		if(newHtl < htl) htl = newHtl;
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		node.failureTable.onFailed(key, next, htl, timeSinceSent());
 		next.noLongerRoutingTo(origTag, false);
 	}
 
 	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		if(!wasFork)
 			finish(DATA_NOT_FOUND, next, false);
 		else
@@ -1489,7 +1491,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	}
 
 	private void handleRecentlyFailed(Message msg, boolean wasFork, PeerNode next) {
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		/*
 		 * Must set a correct recentlyFailedTimeLeft before calling this finish(), because it will be
 		 * passed to the handler.
@@ -1788,7 +1790,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
        			//NOTE: because of the requesthandler implementation, this will block and wait
        			//      for downstream transfers on a CHK. The opennet stuff introduces
        			//      a delay of it's own if we don't get the expected message.
-       			fireRequestSenderFinished(code);
+       			fireRequestSenderFinished(code, fromOfferedKey);
        			
        			if(doOpennet) {
        				finishOpennet(next);
@@ -1799,7 +1801,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
        		}
         } else {
         	node.nodeStats.requestCompleted(false, source != null, isSSK);
-			fireRequestSenderFinished(code);
+			fireRequestSenderFinished(code, fromOfferedKey);
 		}
         
     	if(doOpennet && next != null) next.noLongerRoutingTo(origTag, fromOfferedKey);
@@ -2032,7 +2034,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onCHKTransferBegins();
 		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onRequestSenderFinished(int status);
+		void onRequestSenderFinished(int status, boolean fromOfferedKey);
 		/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
 		 * Should return quickly, allocate a thread if it needs to block etc. */
 		void onAbortDownstreamTransfers(int reason, String desc);
@@ -2045,6 +2047,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		boolean transfer=false;
 		boolean sentFinished;
 		boolean sentTransferCancel = false;
+		boolean sentFinishedFromOfferedKey = false;
 		int status;
 		synchronized (this) {
 			synchronized (listeners) {
@@ -2056,6 +2059,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				reject = sentReceivedRejectOverload;
 				transfer = sentCHKTransferBegins;
 				sentFinished = sentRequestSenderFinished;
+				sentFinishedFromOfferedKey = completedFromOfferedKey;
 			}
 			reject=reject && hasForwardedRejectedOverload;
 			transfer=transfer && transferStarted();
@@ -2068,7 +2072,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		if(sentTransferCancel)
 			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
 		if (status!=NOT_FINISHED && sentFinished)
-			l.onRequestSenderFinished(status);
+			l.onRequestSenderFinished(status, sentFinishedFromOfferedKey);
 	}
 	
 	private boolean sentReceivedRejectOverload;
@@ -2104,15 +2108,21 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	}
 	
 	private boolean sentRequestSenderFinished;
+	private boolean completedFromOfferedKey;
 	
-	private void fireRequestSenderFinished(int status) {
+	private void fireRequestSenderFinished(int status, boolean fromOfferedKey) {
 		origTag.setRequestSenderFinished(status);
 		synchronized (listeners) {
+			if(sentRequestSenderFinished) {
+				Logger.error(this, "Request sender finished twice: "+status+", "+fromOfferedKey+" on "+this);
+				return;
+			}
 			sentRequestSenderFinished = true;
+			completedFromOfferedKey = fromOfferedKey;
 			if(logMINOR) Logger.minor(this, "Notifying "+listeners.size()+" listeners of status "+status);
 			for (Listener l : listeners) {
 				try {
-					l.onRequestSenderFinished(status);
+					l.onRequestSenderFinished(status, fromOfferedKey);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
@@ -2125,7 +2135,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private String abortDownstreamTransfersDesc;
 	private boolean receivingAsync;
 	
-	private void reassignToSelfOnTimeout() {
+	private void reassignToSelfOnTimeout(boolean fromOfferedKey) {
 		synchronized(listeners) {
 			if(sentCHKTransferBegins) {
 				Logger.error(this, "Transfer started, not dumping listeners when reassigning to self on timeout (race condition?) on "+this);
@@ -2134,29 +2144,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			// Safe to call it here, tag is self-synched always last.
 			origTag.reassignToSelf();
 			for(Listener l : listeners) {
-				l.onRequestSenderFinished(TIMED_OUT);
+				l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
 			}
 			listeners.clear();
-		}
-	}
-	
-	private void sendAbortDownstreamTransfers(int reason, String desc) {
-		synchronized (listeners) {
-			abortDownstreamTransfersReason = reason;
-			abortDownstreamTransfersDesc = desc;
-			sentAbortDownstreamTransfers = true;
-			for (Listener l : listeners) {
-				try {
-					l.onAbortDownstreamTransfers(reason, desc);
-					l.onRequestSenderFinished(TRANSFER_FAILED);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught: "+t, t);
-				}
-			}
-			listeners.clear();
-		}
-		synchronized(this) {
-			notifyAll();
 		}
 	}
 	

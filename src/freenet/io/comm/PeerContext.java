@@ -67,7 +67,7 @@ public interface PeerContext {
 	String shortToString();
 
 	/** Report a transfer failure */
-	void transferFailed(String reason);
+	void transferFailed(String reason, boolean realTime);
 
 	boolean unqueueMessage(MessageItem item);
 

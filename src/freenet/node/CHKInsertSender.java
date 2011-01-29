@@ -76,7 +76,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						}
 					} else {
 						BackgroundTransfer.this.receivedNotice(false, false);
-						pn.localRejectedOverload("TransferFailedInsert");
+						pn.localRejectedOverload("TransferFailedInsert", realTimeFlag);
 					}
 				}
 				
@@ -164,7 +164,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 		
 		public void onMatched(Message m) {
-			pn.successNotOverload();
+			pn.successNotOverload(realTimeFlag);
 			PeerNode pn = (PeerNode) m.getSource();
 			// pn cannot be null, because the filters will prevent garbage collection of the nodes
 			
@@ -195,7 +195,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
 			Logger.normal(this, "Timed out waiting for a final ack from: "+pn+" on "+this, new Exception("debug"));
 			if(receivedNotice(false, true)) {
-				pn.localRejectedOverload("InsertTimeoutNoFinalAck");
+				pn.localRejectedOverload("InsertTimeoutNoFinalAck", realTimeFlag);
 				// First timeout. Wait for second timeout.
 				try {
 					node.usm.addAsyncFilter(getNotificationMessageFilter(), this, CHKInsertSender.this);
@@ -429,7 +429,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             // Route it
             // Can backtrack, so only route to nodes closer than we are to target.
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag);
 			
             if(next == null) {
                 // Backtrack
@@ -527,7 +527,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             if(logMINOR) Logger.minor(this, "Sending DataInsert");
 			if(failIfReceiveFailed(thisTag, next)) return;
             try {
-				next.sendSync(dataInsert, this);
+				next.sendSync(dataInsert, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
 				next.noLongerRoutingTo(thisTag, false);
@@ -558,7 +558,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					
 					// First timeout.
 					// Could be caused by the next node, or could be caused downstream.
-					next.localRejectedOverload("AfterInsertAcceptedTimeout2");
+					next.localRejectedOverload("AfterInsertAcceptedTimeout2", realTimeFlag);
 					forwardRejectedOverload();
 
 					synchronized(this) {
@@ -702,7 +702,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				+ ") after Accepted in insert - treating as fatal timeout");
 		// Terminal overload
 		// Try to propagate back to source
-		next.localRejectedOverload("AfterInsertAcceptedRejectedTimeout");
+		next.localRejectedOverload("AfterInsertAcceptedRejectedTimeout", realTimeFlag);
 		
 		// Since we definitely sent the DataInsert, this is definitely the fault of the next node.
 		// However, we have always started the transfer by the time this is called, so we do NOT need to removeRoutingTo().
@@ -715,7 +715,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	private boolean handleRejectedOverload(Message msg, PeerNode next, InsertTag thisTag) {
 		// Probably non-fatal, if so, we have time left, can try next one
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
-			next.localRejectedOverload("ForwardRejectedOverload6");
+			next.localRejectedOverload("ForwardRejectedOverload6", realTimeFlag);
 			if(logMINOR) Logger.minor(this,
 					"Local RejectedOverload, moving on to next peer");
 			// Give up on this one, try another
@@ -734,11 +734,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				htl = newHtl;						
 		}
 		// Finished as far as this node is concerned - except for the data transfer, which will continue until it finishes.
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 	}
 
 	private void handleDataInsertRejected(Message msg, PeerNode next, InsertTag thisTag) {
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		short reason = msg
 				.getShort(DMT.DATA_INSERT_REJECTED_REASON);
 		if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
@@ -826,7 +826,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				// Terminal overload
 				// Try to propagate back to source
 				if(logMINOR) Logger.minor(this, "Timeout");
-				next.localRejectedOverload("Timeout3");
+				next.localRejectedOverload("Timeout3", realTimeFlag);
 				// Try another node.
 				forwardRejectedOverload();
     			handleAcceptedRejectedTimeout(next, thisTag);
@@ -836,7 +836,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			if (msg.getSpec() == DMT.FNPRejectedOverload) {
 				// Non-fatal - probably still have time left
 				if (msg.getBoolean(DMT.IS_LOCAL)) {
-					next.localRejectedOverload("ForwardRejectedOverload5");
+					next.localRejectedOverload("ForwardRejectedOverload5", realTimeFlag);
 					if(logMINOR) Logger.minor(this,
 									"Local RejectedOverload, moving on to next peer");
 					// Give up on this one, try another
@@ -849,7 +849,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 			
 			if (msg.getSpec() == DMT.FNPRejectedLoop) {
-				next.successNotOverload();
+				next.successNotOverload(realTimeFlag);
 				// Loop - we don't want to send the data to this one
 				next.noLongerRoutingTo(thisTag, false);
 				break;

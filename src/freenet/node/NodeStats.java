@@ -527,7 +527,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		this.avgClientCacheSSKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageClientCacheSSKSuccessLocation"));
 		this.avgStoreSSKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreSSKSuccessLocation"));
 
-		hourlyStats = new HourlyStats(node);
+		hourlyStatsRT = new HourlyStats(node);
+		hourlyStatsBulk = new HourlyStats(node);
 
 		avgRoutingBackoffTimes = new Hashtable<String, TrivialRunningAverage>();
 		avgTransferBackoffTimes = new Hashtable<String, TrivialRunningAverage>();
@@ -1606,10 +1607,17 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("recentOutputRate", recent_output_rate);
 		fs.put("recentInputRate", recent_input_rate);
 
-		String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
+		String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
 		if(routingBackoffReasons.length != 0) {
 			for(int i=0;i<routingBackoffReasons.length;i++) {
-				fs.put("numberWithRoutingBackoffReasons." + routingBackoffReasons[i], peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]));
+				fs.put("numberWithRoutingBackoffReasonsRT." + routingBackoffReasons[i], peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], true));
+			}
+		}
+
+		routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
+		if(routingBackoffReasons.length != 0) {
+			for(int i=0;i<routingBackoffReasons.length;i++) {
+				fs.put("numberWithRoutingBackoffReasonsBulk." + routingBackoffReasons[i], peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], false));
 			}
 		}
 
@@ -2487,15 +2495,24 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverage.currentValue(), 2, true));
 	}
 
-	private HourlyStats hourlyStats;
+	private HourlyStats hourlyStatsRT;
+	private HourlyStats hourlyStatsBulk;
 
-	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location) {
-		if(logMINOR) Logger.minor(this, "Remote request: sucess="+success+" htl="+htl+" locally answered="+local+" location of key="+location);
-		hourlyStats.remoteRequest(ssk, success, local, htl, location);
+	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location, boolean realTime, boolean fromOfferedKey) {
+		if(logMINOR) Logger.minor(this, "Remote request: sucess="+success+" htl="+htl+" locally answered="+local+" location of key="+location+" from offered key = "+fromOfferedKey);
+		if(!fromOfferedKey) {
+			if(realTime)
+				hourlyStatsRT.remoteRequest(ssk, success, local, htl, location);
+			else
+				hourlyStatsBulk.remoteRequest(ssk, success, local, htl, location);
+		}
 	}
 
-	public void fillRemoteRequestHTLsBox(HTMLNode html) {
-		hourlyStats.fillRemoteRequestHTLsBox(html);
+	public void fillRemoteRequestHTLsBox(HTMLNode html, boolean realTime) {
+		if(realTime)
+			hourlyStatsRT.fillRemoteRequestHTLsBox(html);
+		else
+			hourlyStatsBulk.fillRemoteRequestHTLsBox(html);
 	}
 
 	private String sanitizeDBJobType(String jobType) {
