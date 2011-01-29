@@ -2862,9 +2862,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 
 		public int compareTo(TimedStats o) {
-			if(avgTime < o.avgTime)
+			if(totalTime < o.totalTime)
 				return 1;
-			else if(avgTime == o.avgTime)
+			else if(totalTime == o.totalTime)
 				return 0;
 			else
 				return -1;
