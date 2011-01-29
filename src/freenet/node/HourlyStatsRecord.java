@@ -70,9 +70,9 @@ public class HourlyStatsRecord {
 		if (distBucket >= byDist.length) distBucket = byDist.length - 1;
 		
 		if(ssk) {
-			byHTL[htl].locDiffCHK.report(logDist);
-		} else {
 			byHTL[htl].locDiffSSK.report(logDist);
+		} else {
+			byHTL[htl].locDiffCHK.report(logDist);
 		}
 
 		if (success) {
