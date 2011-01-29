@@ -227,14 +227,14 @@ public class StatisticsToadlet extends Toadlet {
 				stats.fillDetailedTimingsBox(timingsContent);
 				
 				HTMLNode byHTLBox = nextTableCell.addChild("div", "class", "infobox");
-				byHTLBox.addChild("div", "class", "infobox-header", l10n("successByHTLRT"));
+				byHTLBox.addChild("div", "class", "infobox-header", l10n("successByHTLBulk"));
 				HTMLNode byHTLContent = byHTLBox.addChild("div", "class", "infobox-content");
-				stats.fillRemoteRequestHTLsBox(byHTLContent, true);
+				stats.fillRemoteRequestHTLsBox(byHTLContent, false);
 				
 				byHTLBox = nextTableCell.addChild("div", "class", "infobox");
-				byHTLBox.addChild("div", "class", "infobox-header", l10n("successByHTLBulk"));
+				byHTLBox.addChild("div", "class", "infobox-header", l10n("successByHTLRT"));
 				byHTLContent = byHTLBox.addChild("div", "class", "infobox-content");
-				stats.fillRemoteRequestHTLsBox(byHTLContent, false);
+				stats.fillRemoteRequestHTLsBox(byHTLContent, true);
 			}
 		}
 
