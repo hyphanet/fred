@@ -202,7 +202,7 @@ public class RequestStarterGroup {
 		public synchronized long getDelay() {
 			double rtt = roundTripTime.currentValue();
 			double winSizeForMinPacketDelay = rtt / MIN_DELAY;
-			double _simulatedWindowSize = getThrottleWindow().currentValue();
+			double _simulatedWindowSize = getThrottleWindow().currentValue(realTime);
 			if (_simulatedWindowSize > winSizeForMinPacketDelay) {
 				_simulatedWindowSize = winSizeForMinPacketDelay;
 			}
@@ -225,7 +225,7 @@ public class RequestStarterGroup {
 		
 		@Override
 		public String toString() {
-			return "rtt: "+roundTripTime.currentValue()+" _s="+getThrottleWindow().currentValue()+" RT="+realTime;
+			return "rtt: "+roundTripTime.currentValue()+" _s="+getThrottleWindow().currentValue(realTime)+" RT="+realTime;
 		}
 
 		public SimpleFieldSet exportFieldSet() {
@@ -321,7 +321,7 @@ public class RequestStarterGroup {
 	}
 	
 	public double getWindow(boolean realTime) {
-		return getThrottleWindow(realTime).currentValue();
+		return getThrottleWindow(realTime).currentValue(realTime);
 	}
 
 	public double getRTT(boolean isSSK, boolean isInsert, boolean realTime) {

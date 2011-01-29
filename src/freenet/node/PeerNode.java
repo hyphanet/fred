@@ -443,6 +443,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.crypto = crypto;
 		this.peers = peers;
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.backedOffPercentBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		version = fs.get("version");
 		Version.seenVersion(version);
 		try {
@@ -1013,7 +1015,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized(this) {
 			if(BLACK_MAGIC_BACKOFF_PRUNING_PERCENTAGE < backedOffPercent.currentValue())
 				return true;
-			else if(BLACK_MAGIC_BACKOFF_PRUNING_TIME + now < getRoutingBackedOffUntil())
+			else if(BLACK_MAGIC_BACKOFF_PRUNING_TIME + now < getRoutingBackedOffUntilMax())
 				return true;
 			else
 				return false;
@@ -1633,13 +1635,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* Enqueue a message to be sent to this node and wait up to a minute for it to be transmitted.
 	*/
-	public void sendSync(Message req, ByteCounter ctr) throws NotConnectedException {
+	public void sendSync(Message req, ByteCounter ctr, boolean realTime) throws NotConnectedException {
 		SyncMessageCallback cb = new SyncMessageCallback();
 		sendAsync(req, cb, ctr);
 		cb.waitForSend(60 * 1000);
 		if (!cb.done) {
 			Logger.error(this, "Waited too long for a blocking send for " + req + " to " + PeerNode.this, new Exception("error"));
-			this.localRejectedOverload("SendSyncTimeout");
+			this.localRejectedOverload("SendSyncTimeout", realTime);
 			// Other side will normally timeout so no need for fatalTimeout().
 		}
 	}
@@ -2836,10 +2838,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				fs.putSingle("idle", Long.toString(idle));
 			if(peerAddedTime > 1)
 				fs.putSingle("peerAddedTime", Long.toString(peerAddedTime));
-			fs.putSingle("lastRoutingBackoffReason", lastRoutingBackoffReason);
+			fs.putSingle("lastRoutingBackoffReasonRT", lastRoutingBackoffReasonRT);
+			fs.putSingle("lastRoutingBackoffReasonBulk", lastRoutingBackoffReasonBulk);
 			fs.putSingle("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
-			fs.putSingle("routingBackoff", Long.toString((Math.max(Math.max(routingBackedOffUntil, transferBackedOffUntil) - now, 0))));
-			fs.putSingle("routingBackoffLength", Integer.toString(routingBackoffLength));
+			fs.putSingle("routingBackoffRT", Long.toString((Math.max(Math.max(routingBackedOffUntilRT, transferBackedOffUntilRT) - now, 0))));
+			fs.putSingle("routingBackoffBulk", Long.toString((Math.max(Math.max(routingBackedOffUntilBulk, transferBackedOffUntilBulk) - now, 0))));
+			fs.putSingle("routingBackoffLengthRT", Integer.toString(routingBackoffLengthRT));
+			fs.putSingle("routingBackoffLengthBulk", Integer.toString(routingBackoffLengthBulk));
 			fs.putSingle("overloadProbability", Double.toString(getPRejected() * 100));
 			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
 		}
@@ -2948,12 +2953,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return hashCode;
 	}
 
-	public boolean isRoutingBackedOff(int ignoreBackoffUnder) {
+	public boolean isRoutingBackedOff(int ignoreBackoffUnder, boolean realTime) {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
+			long routingBackedOffUntil = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
 			if(now < routingBackedOffUntil) {
 				if(routingBackedOffUntil - now >= ignoreBackoffUnder) return true;
 			}
+			long transferBackedOffUntil = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk;
 			if(now < transferBackedOffUntil) {
 				if(transferBackedOffUntil - now >= ignoreBackoffUnder) return true;
 			}
@@ -2961,14 +2968,26 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 	
-	public boolean isRoutingBackedOff() {
+	public boolean isRoutingBackedOff(boolean realTime) {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
+			long routingBackedOffUntil = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
+			long transferBackedOffUntil = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk;
 			return now < routingBackedOffUntil || now < transferBackedOffUntil;
 		}
 	}
 	
-	long routingBackedOffUntil = -1;
+	public boolean isRoutingBackedOffEither() {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			long routingBackedOffUntil = Math.max(routingBackedOffUntilRT, routingBackedOffUntilBulk);
+			long transferBackedOffUntil = Math.max(transferBackedOffUntilRT, transferBackedOffUntilBulk);
+			return now < routingBackedOffUntil || now < transferBackedOffUntil;
+		}
+	}
+	
+	long routingBackedOffUntilRT = -1;
+	long routingBackedOffUntilBulk = -1;
 	/** Initial nominal routing backoff length */
 	static final int INITIAL_ROUTING_BACKOFF_LENGTH = 1000;  // 1 second
 	/** How much to multiply by during fast routing backoff */
@@ -2980,20 +2999,27 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	// Transfer Backoff
 
-	long transferBackedOffUntil = -1;
+	long transferBackedOffUntilRT = -1;
+	long transferBackedOffUntilBulk = -1;
 	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = 30*1000; // 60 seconds, but it starts at twice this.
 	static final int TRANSFER_BACKOFF_MULTIPLIER = 2;
 	static final int MAX_TRANSFER_BACKOFF_LENGTH = 3 * 60 * 60 * 1000; // 3 hours
 
-	int transferBackoffLength = INITIAL_TRANSFER_BACKOFF_LENGTH;
+	int transferBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
+	int transferBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
 
-	int routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
+	int routingBackoffLengthRT = INITIAL_ROUTING_BACKOFF_LENGTH;
+	int routingBackoffLengthBulk = INITIAL_ROUTING_BACKOFF_LENGTH;
 	/** Last backoff reason */
-	String lastRoutingBackoffReason;
+	String lastRoutingBackoffReasonRT;
+	String lastRoutingBackoffReasonBulk;
 	/** Previous backoff reason (used by setPeerNodeStatus)*/
-	String previousRoutingBackoffReason;
+	String previousRoutingBackoffReasonRT;
+	String previousRoutingBackoffReasonBulk;
 	/* percent of time this peer is backed off */
 	public final RunningAverage backedOffPercent;
+	public final RunningAverage backedOffPercentRT;
+	public final RunningAverage backedOffPercentBulk;
 	/* time of last sample */
 	private long lastSampleTime = Long.MAX_VALUE;
 
@@ -3003,16 +3029,37 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private void reportBackoffStatus(long now) {
 		synchronized(this) {
 			if(now > lastSampleTime) { // don't report twice in the same millisecond
-				if(now > routingBackedOffUntil) { // not backed off
-					if(lastSampleTime > routingBackedOffUntil) { // last sample after last backoff
-						backedOffPercent.report(0.0);
+				double report = 0.0;
+				if(now > routingBackedOffUntilRT) { // not backed off
+					if(lastSampleTime > routingBackedOffUntilRT) { // last sample after last backoff
+						backedOffPercentRT.report(0.0);
+						report = 0.0;
 					}else {
-						if(routingBackedOffUntil > 0)
-							backedOffPercent.report((double) (routingBackedOffUntil - lastSampleTime) / (double) (now - lastSampleTime));
+						if(routingBackedOffUntilRT > 0) {
+							report = (double) (routingBackedOffUntilRT - lastSampleTime) / (double) (now - lastSampleTime);
+							backedOffPercentRT.report(report);
+						}
 					}
 				} else {
-					backedOffPercent.report(1.0);
+					report = 0.0;
+					backedOffPercentRT.report(1.0);
 				}
+				
+				if(now > routingBackedOffUntilBulk) { // not backed off
+					if(lastSampleTime > routingBackedOffUntilBulk) { // last sample after last backoff
+						report = 0.0;
+						backedOffPercentBulk.report(0.0);
+					}else {
+						if(routingBackedOffUntilBulk > 0) {
+							double myReport = (double) (routingBackedOffUntilBulk - lastSampleTime) / (double) (now - lastSampleTime);
+							backedOffPercentBulk.report(myReport);
+							if(myReport > report) report = myReport;
+						}
+					}
+				} else {
+					backedOffPercentBulk.report(1.0);
+				}
+				backedOffPercent.report(report);
 			}
 			lastSampleTime = now;
 		}
@@ -3022,7 +3069,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Got a local RejectedOverload.
 	 * Back off this node for a while.
 	 */
-	public void localRejectedOverload(String reason) {
+	public void localRejectedOverload(String reason, boolean realTime) {
 		assert reason.indexOf(" ") == -1;
 		pRejected.report(1.0);
 		if(logMINOR)
@@ -3033,6 +3080,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		// We need it because of nested locking on getStatus()
 		synchronized(this) {
 			// Don't back off any further if we are already backed off
+			long routingBackedOffUntil = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
+			int routingBackoffLength = realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
 				if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
@@ -3045,23 +3094,32 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					reasonWrapper = " because of '" + reason + '\'';
 				if(logMINOR)
 					Logger.minor(this, "Backing off" + reasonWrapper + ": routingBackoffLength=" + routingBackoffLength + ", until " + x + "ms on " + peer);
+				if(realTime) {
+					routingBackedOffUntilRT = routingBackedOffUntil;
+					routingBackoffLengthRT = routingBackoffLength;
+				} else {
+					routingBackedOffUntilBulk = routingBackedOffUntil;
+					routingBackoffLengthBulk = routingBackoffLength;
+				}
 			} else {
 				if(logMINOR)
 					Logger.minor(this, "Ignoring localRejectedOverload: " + (routingBackedOffUntil - now) + "ms remaining on routing backoff on " + peer);
 				return;
 			}
-			setLastBackoffReason(reason);
+			setLastBackoffReason(reason, realTime);
 		}
 		setPeerNodeStatus(now);
-		outputLoadTrackerRealTime.failSlotWaiters(true);
-		outputLoadTrackerBulk.failSlotWaiters(true);
+		if(realTime)
+			outputLoadTrackerRealTime.failSlotWaiters(true);
+		else
+			outputLoadTrackerBulk.failSlotWaiters(true);
 	}
 
 	/**
 	 * Didn't get RejectedOverload.
 	 * Reset routing backoff.
 	 */
-	public void successNotOverload() {
+	public void successNotOverload(boolean realTime) {
 		pRejected.report(0.0);
 		if(logMINOR)
 			Logger.minor(this, "Success not overload on " + this + " : pRejected=" + pRejected.currentValue());
@@ -3070,13 +3128,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		reportBackoffStatus(now);
 		synchronized(this) {
 			// Don't un-backoff if still backed off
-			if(now > routingBackedOffUntil) {
-				routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
+			long until;
+			if(now > (until = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk)) {
+				if(realTime)
+					routingBackoffLengthRT = INITIAL_ROUTING_BACKOFF_LENGTH;
+				else
+					routingBackoffLengthBulk = INITIAL_ROUTING_BACKOFF_LENGTH;
 				if(logMINOR)
 					Logger.minor(this, "Resetting routing backoff on " + peer);
 			} else {
 				if(logMINOR)
-					Logger.minor(this, "Ignoring successNotOverload: " + (routingBackedOffUntil - now) + "ms remaining on routing backoff on " + peer);
+					Logger.minor(this, "Ignoring successNotOverload: " + (until - now) + "ms remaining on routing backoff on " + peer);
 				return;
 			}
 		}
@@ -3087,7 +3149,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * A transfer failed.
 	 * Back off this node for a while.
 	 */
-	public void transferFailed(String reason) {
+	public void transferFailed(String reason, boolean realTime) {
 		assert reason.indexOf(" ") == -1;
 		pRejected.report(1.0);
 		if(logMINOR)
@@ -3098,6 +3160,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		// We need it because of nested locking on getStatus()
 		synchronized(this) {
 			// Don't back off any further if we are already backed off
+			long transferBackedOffUntil = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk;
+			int transferBackoffLength = realTime ? transferBackoffLengthRT : transferBackoffLengthBulk;
 			if(now > transferBackedOffUntil) {
 				transferBackoffLength = transferBackoffLength * TRANSFER_BACKOFF_MULTIPLIER;
 				if(transferBackoffLength > MAX_TRANSFER_BACKOFF_LENGTH)
@@ -3110,12 +3174,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					reasonWrapper = " because of '" + reason + '\'';
 				if(logMINOR)
 					Logger.minor(this, "Backing off (transfer)" + reasonWrapper + ": transferBackoffLength=" + transferBackoffLength + ", until " + x + "ms on " + peer);
+				if(realTime) {
+					transferBackedOffUntilRT = transferBackedOffUntil;
+					transferBackoffLengthRT = transferBackoffLength;
+				} else {
+					transferBackedOffUntilBulk = transferBackedOffUntil;
+					transferBackoffLengthBulk = transferBackoffLength;
+				}
 			} else {
 				if(logMINOR)
 					Logger.minor(this, "Ignoring transfer failure: " + (transferBackedOffUntil - now) + "ms remaining on transfer backoff on " + peer);
 				return;
 			}
-			setLastBackoffReason(reason);
+			setLastBackoffReason(reason, realTime);
 		}
 		setPeerNodeStatus(now);
 	}
@@ -3124,7 +3195,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * A transfer succeeded.
 	 * Reset backoff.
 	 */
-	public void transferSuccess() {
+	public void transferSuccess(boolean realTime) {
 		pRejected.report(0.0);
 		if(logMINOR)
 			Logger.minor(this, "Transfer success on " + this + " : pRejected=" + pRejected.currentValue());
@@ -3133,13 +3204,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		reportBackoffStatus(now);
 		synchronized(this) {
 			// Don't un-backoff if still backed off
-			if(now > transferBackedOffUntil) {
-				routingBackoffLength = INITIAL_TRANSFER_BACKOFF_LENGTH;
+			long until;
+			if(now > (until = realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk)) {
+				if(realTime)
+					routingBackoffLengthRT = INITIAL_TRANSFER_BACKOFF_LENGTH;
+				else
+					routingBackoffLengthBulk = INITIAL_TRANSFER_BACKOFF_LENGTH;
 				if(logMINOR)
 					Logger.minor(this, "Resetting transfer backoff on " + peer);
 			} else {
 				if(logMINOR)
-					Logger.minor(this, "Ignoring transfer success: " + (transferBackedOffUntil - now) + "ms remaining on transfer backoff on " + peer);
+					Logger.minor(this, "Ignoring transfer success: " + (until - now) + "ms remaining on transfer backoff on " + peer);
 				return;
 			}
 		}
@@ -3181,24 +3256,34 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return remoteDetectedPeer;
 	}
 
-	public synchronized int getRoutingBackoffLength() {
-		return routingBackoffLength;
+	public synchronized int getRoutingBackoffLength(boolean realTime) {
+		return realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
 	}
 
-	public synchronized long getRoutingBackedOffUntil() {
-		return Math.max(routingBackedOffUntil, transferBackedOffUntil);
+	public synchronized long getRoutingBackedOffUntil(boolean realTime) {
+		return Math.max(realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk, 
+				realTime ? transferBackedOffUntilRT : transferBackedOffUntilBulk);
+	}
+	
+	public synchronized long getRoutingBackedOffUntilMax() {
+		return Math.max(
+				Math.max(routingBackedOffUntilRT, routingBackedOffUntilBulk),
+				Math.max(transferBackedOffUntilRT, transferBackedOffUntilBulk));
 	}
 
-	public synchronized String getLastBackoffReason() {
-		return lastRoutingBackoffReason;
+	public synchronized String getLastBackoffReason(boolean realTime) {
+		return realTime ? lastRoutingBackoffReasonRT : lastRoutingBackoffReasonBulk;
 	}
 
-	public synchronized String getPreviousBackoffReason() {
-		return previousRoutingBackoffReason;
+	public synchronized String getPreviousBackoffReason(boolean realTime) {
+		return realTime ? previousRoutingBackoffReasonRT : previousRoutingBackoffReasonBulk;
 	}
 
-	public synchronized void setLastBackoffReason(String s) {
-		lastRoutingBackoffReason = s;
+	public synchronized void setLastBackoffReason(String s, boolean realTime) {
+		if(realTime)
+			lastRoutingBackoffReasonRT = s;
+		else
+			lastRoutingBackoffReasonBulk = s;
 	}
 
 	public void addToLocalNodeSentMessagesToStatistic(Message m) {
@@ -3347,27 +3432,44 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return "peer_unknown_status";
 	}
 
-	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntil) {
+	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk) {
 		checkConnectionsAndTrackers();
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
-			if(now < routingBackedOffUntil) {
+			if(now < routingBackedOffUntilRT) {
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
-				if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || (previousRoutingBackoffReason == null)) {
-					if(previousRoutingBackoffReason != null) {
-						peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+				if(!lastRoutingBackoffReasonRT.equals(previousRoutingBackoffReasonRT) || (previousRoutingBackoffReasonRT == null)) {
+					if(previousRoutingBackoffReasonRT != null) {
+						peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonRT, this, true);
 					}
-					peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReason, this);
-					previousRoutingBackoffReason = lastRoutingBackoffReason;
+					peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReasonRT, this, true);
+					previousRoutingBackoffReasonRT = lastRoutingBackoffReasonRT;
 				}
 			} else {
-				if(previousRoutingBackoffReason != null) {
-					peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
-					previousRoutingBackoffReason = null;
+				if(previousRoutingBackoffReasonRT != null) {
+					peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonRT, this, true);
+					previousRoutingBackoffReasonRT = null;
 				}
 			}
+			
+			if(now < routingBackedOffUntilBulk) {
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
+				if(!lastRoutingBackoffReasonBulk.equals(previousRoutingBackoffReasonBulk) || (previousRoutingBackoffReasonBulk == null)) {
+					if(previousRoutingBackoffReasonBulk != null) {
+						peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonBulk, this, false);
+					}
+					peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReasonBulk, this, false);
+					previousRoutingBackoffReasonBulk = lastRoutingBackoffReasonBulk;
+				}
+			} else {
+				if(previousRoutingBackoffReasonBulk != null) {
+					peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonBulk, this, false);
+					previousRoutingBackoffReasonBulk = null;
+				}
+			}
+
 		} else if(isConnected() && bogusNoderef)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONN_ERROR;
 		else if(isConnected() && unroutableNewerVersion)
@@ -3384,9 +3486,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return PeerManager.PEER_NODE_STATUS_BURSTING;
 		else
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
-		if(!isConnected && (previousRoutingBackoffReason != null)) {
-			peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
-			previousRoutingBackoffReason = null;
+		if(!isConnected && (previousRoutingBackoffReasonRT != null)) {
+			peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonRT, this, true);
+			previousRoutingBackoffReasonRT = null;
+		}
+		if(!isConnected && (previousRoutingBackoffReasonBulk != null)) {
+			peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonBulk, this, false);
+			previousRoutingBackoffReasonBulk = null;
 		}
 		return peerNodeStatus;
 	}
@@ -3396,11 +3502,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public int setPeerNodeStatus(long now, boolean noLog) {
-		long localRoutingBackedOffUntil = getRoutingBackedOffUntil();
+		long localRoutingBackedOffUntilRT = getRoutingBackedOffUntil(true);
+		long localRoutingBackedOffUntilBulk = getRoutingBackedOffUntil(true);
 		int oldPeerNodeStatus;
 		synchronized(this) {
 			oldPeerNodeStatus = peerNodeStatus;
-			peerNodeStatus = getPeerNodeStatus(now, localRoutingBackedOffUntil);
+			peerNodeStatus = getPeerNodeStatus(now, localRoutingBackedOffUntilRT, localRoutingBackedOffUntilBulk);
 
 			if(peerNodeStatus != oldPeerNodeStatus && recordStatus()) {
 				peers.removePeerNodeStatus(oldPeerNodeStatus, this, noLog);
@@ -3412,7 +3519,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			notifyPeerNodeStatusChangeListeners();
 		}
 		if(peerNodeStatus == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-			long delta = localRoutingBackedOffUntil - now + 1;
+			long delta = Math.max(localRoutingBackedOffUntilRT, localRoutingBackedOffUntilBulk) - now + 1;
 			if(delta > 0)
 				node.ticker.queueTimedJob(checkStatusAfterBackoff, "Update status for "+this, delta, true, true);
 		}

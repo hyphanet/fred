@@ -211,7 +211,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             // Route it
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag);
             
             if(next == null) {
                 // Backtrack
@@ -311,7 +311,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	if(newAck == null) {
 					// Try to propagate back to source
             		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
-					next.localRejectedOverload("Timeout2");
+					next.localRejectedOverload("Timeout2", realTimeFlag);
             		// This is a local timeout, they should send it immediately.
             		next.fatalTimeout();
 					forwardRejectedOverload();
@@ -340,7 +340,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					
 					// First timeout.
 					Logger.error(this, "Timeout waiting for reply after Accepted in "+this+" from "+next);
-					next.localRejectedOverload("AfterInsertAcceptedTimeout");
+					next.localRejectedOverload("AfterInsertAcceptedTimeout", realTimeFlag);
 					forwardRejectedOverload();
 					finish(TIMED_OUT, next);
 					
@@ -438,7 +438,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 		}
 				
 		// Our task is complete
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		finish(SUCCESS, next);
 		return DO.FINISHED;
 
@@ -545,7 +545,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private boolean handleRejectedOverload(Message msg, PeerNode next, InsertTag thisTag) {
 		// Probably non-fatal, if so, we have time left, can try next one
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
-			next.localRejectedOverload("ForwardRejectedOverload4");
+			next.localRejectedOverload("ForwardRejectedOverload4", realTimeFlag);
 			if(logMINOR) Logger.minor(this,
 					"Local RejectedOverload, moving on to next peer");
 			// Give up on this one, try another
@@ -562,12 +562,12 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 		short newHtl = msg.getShort(DMT.HTL);
 		if (htl > newHtl)
 			htl = newHtl;
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
     	next.noLongerRoutingTo(thisTag, false);
 	}
 
 	private void handleDataInsertRejected(Message msg, PeerNode next, InsertTag thisTag) {
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		short reason = msg.getShort(DMT.DATA_INSERT_REJECTED_REASON);
 		if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
 		if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
@@ -667,7 +667,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				// Terminal overload
 				// Try to propagate back to source
 				if(logMINOR) Logger.minor(this, "Timeout");
-				next.localRejectedOverload("Timeout");
+				next.localRejectedOverload("Timeout", realTimeFlag);
 				forwardRejectedOverload();
 				// It could still be running. So the timeout is fatal to the node.
 				handleAcceptedRejectedTimeout(next, thisTag);
@@ -677,7 +677,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 			if (msg.getSpec() == DMT.FNPRejectedOverload) {
 				// Non-fatal - probably still have time left
 				if (msg.getBoolean(DMT.IS_LOCAL)) {
-					next.localRejectedOverload("ForwardRejectedOverload3");
+					next.localRejectedOverload("ForwardRejectedOverload3", realTimeFlag);
 					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 					// Give up on this one, try another
 	            	next.noLongerRoutingTo(thisTag, false);
@@ -689,7 +689,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 			}
 			
 			if (msg.getSpec() == DMT.FNPRejectedLoop) {
-				next.successNotOverload();
+				next.successNotOverload(realTimeFlag);
 				// Loop - we don't want to send the data to this one
             	next.noLongerRoutingTo(thisTag, false);
 				return null;

@@ -75,7 +75,7 @@ public class NullBasePeerNode implements BasePeerNode {
 		return toString();
 	}
 
-	public void transferFailed(String reason) {
+	public void transferFailed(String reason, boolean realTime) {
 		// Awww
 	}
 
