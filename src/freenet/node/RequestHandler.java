@@ -188,7 +188,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			status = RequestSender.DATA_NOT_FOUND; // for byte logging
 			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.REJECT_TIME, source);
 			sendTerminal(dnf);
-			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble(), realTimeFlag);
+			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble(), realTimeFlag, false);
 			return;
 		} else {
 			long queueTime = source.getProbableSendQueueTime();
@@ -361,7 +361,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		return true;
 	}
 
-	public void onRequestSenderFinished(int status) {
+	public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
 		if(logMINOR) Logger.minor(this, "onRequestSenderFinished("+status+") on "+this);
 		long now = System.currentTimeMillis();
 
@@ -376,7 +376,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			tooLate = responseDeadline > 0 && now > responseDeadline;
 		}
 		
-		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble(), realTimeFlag);
+		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble(), realTimeFlag, fromOfferedKey);
 
 		if(tooLate) {
 			// Offer the data if there is any.
@@ -554,7 +554,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			sendSSK(block.getRawHeaders(), block.getRawData(), needsPubKey, ((SSKBlock) block).getPubKey());
 			status = RequestSender.SUCCESS; // for byte logging
 			// Assume local SSK sending will succeed?
-			node.nodeStats.remoteRequest(true, true, true, htl, key.toNormalizedDouble(), realTimeFlag);
+			node.nodeStats.remoteRequest(true, true, true, htl, key.toNormalizedDouble(), realTimeFlag, false);
 		} else if(block instanceof CHKBlock) {
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
 			PartiallyReceivedBlock prb =
@@ -583,7 +583,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							applyByteCounts();
 							unregisterRequestHandlerWithNode();
 						}
-						node.nodeStats.remoteRequest(false, success, true, htl, key.toNormalizedDouble(), realTimeFlag);
+						node.nodeStats.remoteRequest(false, success, true, htl, key.toNormalizedDouble(), realTimeFlag, false);
 					}
 					
 				}, realTimeFlag, node.nodeStats);

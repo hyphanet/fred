@@ -2478,12 +2478,14 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private HourlyStats hourlyStatsRT;
 	private HourlyStats hourlyStatsBulk;
 
-	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location, boolean realTime) {
-		if(logMINOR) Logger.minor(this, "Remote request: sucess="+success+" htl="+htl+" locally answered="+local+" location of key="+location);
-		if(realTime)
-			hourlyStatsRT.remoteRequest(ssk, success, local, htl, location);
-		else
-			hourlyStatsBulk.remoteRequest(ssk, success, local, htl, location);
+	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location, boolean realTime, boolean fromOfferedKey) {
+		if(logMINOR) Logger.minor(this, "Remote request: sucess="+success+" htl="+htl+" locally answered="+local+" location of key="+location+" from offered key = "+fromOfferedKey);
+		if(!fromOfferedKey) {
+			if(realTime)
+				hourlyStatsRT.remoteRequest(ssk, success, local, htl, location);
+			else
+				hourlyStatsBulk.remoteRequest(ssk, success, local, htl, location);
+		}
 	}
 
 	public void fillRemoteRequestHTLsBox(HTMLNode html, boolean realTime) {

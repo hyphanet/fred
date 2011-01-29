@@ -222,16 +222,19 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				// node will get impatient. So we need to reassign to self when this happens,
 				// so that we don't ourselves get blamed.
 				
+    			boolean fromOfferedKey;
+    			
 				synchronized(this) {
 					if(status != NOT_FINISHED) return;
 					if(transferringFrom != null) return;
 					reassignedToSelfDueToMultipleTimeouts = true;
+					fromOfferedKey = (routeAttempts > 0);
 				}
 				
 				// We are still routing, yet we have exceeded the per-peer timeout, probably due to routing to multiple nodes e.g. RNFs and accepted timeouts.
 				Logger.normal(this, "Reassigning to self on timeout: "+RequestSender.this);
 				
-				reassignToSelfOnTimeout();
+				reassignToSelfOnTimeout(fromOfferedKey);
 			}
     		
     	}, fetchTimeout);
@@ -1599,7 +1602,7 @@ loadWaiterLoop:
        			//NOTE: because of the requesthandler implementation, this will block and wait
        			//      for downstream transfers on a CHK. The opennet stuff introduces
        			//      a delay of it's own if we don't get the expected message.
-       			fireRequestSenderFinished(code);
+       			fireRequestSenderFinished(code, fromOfferedKey);
        			
        			if(doOpennet) {
        				finishOpennet(next);
@@ -1610,7 +1613,7 @@ loadWaiterLoop:
        		}
         } else {
         	node.nodeStats.requestCompleted(false, source != null, isSSK);
-			fireRequestSenderFinished(code);
+			fireRequestSenderFinished(code, fromOfferedKey);
 		}
         
     	if(doOpennet && next != null) next.noLongerRoutingTo(origTag, fromOfferedKey);
@@ -1843,7 +1846,7 @@ loadWaiterLoop:
 		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onCHKTransferBegins();
 		/** Should return quickly, allocate a thread if it needs to block etc */
-		void onRequestSenderFinished(int status);
+		void onRequestSenderFinished(int status, boolean fromOfferedKey);
 		/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
 		 * Should return quickly, allocate a thread if it needs to block etc. */
 		void onAbortDownstreamTransfers(int reason, String desc);
@@ -1856,6 +1859,7 @@ loadWaiterLoop:
 		boolean transfer=false;
 		boolean sentFinished;
 		boolean sentTransferCancel = false;
+		boolean sentFinishedFromOfferedKey = false;
 		int status;
 		synchronized (this) {
 			synchronized (listeners) {
@@ -1867,6 +1871,7 @@ loadWaiterLoop:
 				reject = sentReceivedRejectOverload;
 				transfer = sentCHKTransferBegins;
 				sentFinished = sentRequestSenderFinished;
+				sentFinishedFromOfferedKey = completedFromOfferedKey;
 			}
 			reject=reject && hasForwardedRejectedOverload;
 			transfer=transfer && transferStarted();
@@ -1879,7 +1884,7 @@ loadWaiterLoop:
 		if(sentTransferCancel)
 			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
 		if (status!=NOT_FINISHED && sentFinished)
-			l.onRequestSenderFinished(status);
+			l.onRequestSenderFinished(status, sentFinishedFromOfferedKey);
 	}
 	
 	private boolean sentReceivedRejectOverload;
@@ -1915,15 +1920,17 @@ loadWaiterLoop:
 	}
 	
 	private boolean sentRequestSenderFinished;
+	private boolean completedFromOfferedKey;
 	
-	private void fireRequestSenderFinished(int status) {
+	private void fireRequestSenderFinished(int status, boolean fromOfferedKey) {
 		origTag.setRequestSenderFinished(status);
 		synchronized (listeners) {
 			sentRequestSenderFinished = true;
+			completedFromOfferedKey = fromOfferedKey;
 			if(logMINOR) Logger.minor(this, "Notifying "+listeners.size()+" listeners of status "+status);
 			for (Listener l : listeners) {
 				try {
-					l.onRequestSenderFinished(status);
+					l.onRequestSenderFinished(status, fromOfferedKey);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught: "+t, t);
 				}
@@ -1936,7 +1943,7 @@ loadWaiterLoop:
 	private String abortDownstreamTransfersDesc;
 	private boolean receivingAsync;
 	
-	private void reassignToSelfOnTimeout() {
+	private void reassignToSelfOnTimeout(boolean fromOfferedKey) {
 		synchronized(listeners) {
 			if(sentCHKTransferBegins) {
 				Logger.error(this, "Transfer started, not dumping listeners when reassigning to self on timeout (race condition?) on "+this);
@@ -1945,29 +1952,9 @@ loadWaiterLoop:
 			// Safe to call it here, tag is self-synched always last.
 			origTag.reassignToSelf();
 			for(Listener l : listeners) {
-				l.onRequestSenderFinished(TIMED_OUT);
+				l.onRequestSenderFinished(TIMED_OUT, fromOfferedKey);
 			}
 			listeners.clear();
-		}
-	}
-	
-	private void sendAbortDownstreamTransfers(int reason, String desc) {
-		synchronized (listeners) {
-			abortDownstreamTransfersReason = reason;
-			abortDownstreamTransfersDesc = desc;
-			sentAbortDownstreamTransfers = true;
-			for (Listener l : listeners) {
-				try {
-					l.onAbortDownstreamTransfers(reason, desc);
-					l.onRequestSenderFinished(TRANSFER_FAILED);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught: "+t, t);
-				}
-			}
-			listeners.clear();
-		}
-		synchronized(this) {
-			notifyAll();
 		}
 	}
 	
