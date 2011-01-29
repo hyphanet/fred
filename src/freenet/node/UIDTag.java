@@ -279,7 +279,7 @@ public abstract class UIDTag {
 			sb.append(" (unlocked)");
 		if(noRecordUnlock)
 			sb.append(" (don't record unlock)");
-		if(currentlyRoutingTo != null) {
+		if(currentlyRoutingTo != null && !currentlyRoutingTo.isEmpty()) {
 			sb.append(" (routing to ");
 			for(PeerNode pn : currentlyRoutingTo) {
 				sb.append(pn.shortToString());
