@@ -1924,6 +1924,10 @@ loadWaiterLoop:
 	private void fireRequestSenderFinished(int status, boolean fromOfferedKey) {
 		origTag.setRequestSenderFinished(status);
 		synchronized (listeners) {
+			if(sentRequestSenderFinished) {
+				Logger.error(this, "Request sender finished twice: "+status+", "+fromOfferedKey+" on "+this);
+				return;
+			}
 			sentRequestSenderFinished = true;
 			completedFromOfferedKey = fromOfferedKey;
 			if(logMINOR) Logger.minor(this, "Notifying "+listeners.size()+" listeners of status "+status);
