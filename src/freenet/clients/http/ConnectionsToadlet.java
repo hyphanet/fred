@@ -314,6 +314,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (realtime)");
 					HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
 					String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
+					int total = 0;
 					if(routingBackoffReasons.length == 0) {
 						backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
 					} else {
@@ -321,14 +322,18 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						for(int i=0;i<routingBackoffReasons.length;i++) {
 							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], true);
 							if(reasonCount > 0) {
+								total += reasonCount;
 								reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
 							}
 						}
 					}
+					if(total > 0)
+						backoffReasonInfobox.addChild("#", ": "+total);
 					backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
 					backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (bulk)");
 					backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
 					routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
+					total = 0;
 					if(routingBackoffReasons.length == 0) {
 						backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
 					} else {
@@ -336,10 +341,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						for(int i=0;i<routingBackoffReasons.length;i++) {
 							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], false);
 							if(reasonCount > 0) {
+								total += reasonCount;
 								reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
 							}
 						}
 					}
+					if(total > 0)
+						backoffReasonInfobox.addChild("#", ": "+total);
 				}
 				// END OVERVIEW TABLE
 			}
