@@ -252,8 +252,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 
 	// Backoff stats
-	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimes;
-	final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimes;
+	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesRT;
+	final Hashtable<String, TrivialRunningAverage> avgRoutingBackoffTimesBulk;
+	final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimesRT;
+	final Hashtable<String, TrivialRunningAverage> avgTransferBackoffTimesBulk;
 
 	// Database stats
 	final Hashtable<String, TrivialRunningAverage> avgDatabaseJobExecutionTimes;
@@ -530,8 +532,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		hourlyStatsRT = new HourlyStats(node);
 		hourlyStatsBulk = new HourlyStats(node);
 
-		avgRoutingBackoffTimes = new Hashtable<String, TrivialRunningAverage>();
-		avgTransferBackoffTimes = new Hashtable<String, TrivialRunningAverage>();
+		avgRoutingBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
+		avgRoutingBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
+		avgTransferBackoffTimesRT = new Hashtable<String, TrivialRunningAverage>();
+		avgTransferBackoffTimesBulk = new Hashtable<String, TrivialRunningAverage>();
 
 		avgDatabaseJobExecutionTimes = new Hashtable<String, TrivialRunningAverage>();
 	}
@@ -1722,8 +1726,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("chkRemoteFetchPSuccess", chkRemoteFetchPSuccess.currentValue());
 		fs.put("sskLocalFetchPSuccess", sskLocalFetchPSuccess.currentValue());
 		fs.put("sskRemoteFetchPSuccess", sskRemoteFetchPSuccess.currentValue());
-		fs.put("blockTransferPSuccessRT", blockTransferPSuccessRT.currentValue());
 		fs.put("blockTransferPSuccessBulk", blockTransferPSuccessBulk.currentValue());
+		fs.put("blockTransferPSuccessRT", blockTransferPSuccessRT.currentValue());
 		fs.put("blockTransferFailTimeout", blockTransferFailTimeout.currentValue());
 
 		return fs;
@@ -1780,8 +1784,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				chkRemoteFetchPSuccess,
 				sskLocalFetchPSuccess,
 				sskRemoteFetchPSuccess,
-				blockTransferPSuccessRT,
 				blockTransferPSuccessBulk,
+				blockTransferPSuccessRT,
 				blockTransferPSuccessLocal,
 				blockTransferFailTimeout
 		};
@@ -1791,8 +1795,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				l10n("remoteCHKs"),
 				l10n("localSSKs"),
 				l10n("remoteSSKs"),
-				l10n("blockTransfersRT"),
 				l10n("blockTransfersBulk"),
+				l10n("blockTransfersRT"),
 				l10n("blockTransfersLocal"),
 				l10n("transfersTimedOut")
 		};
@@ -2530,33 +2534,54 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		avg.report(executionTimeMiliSeconds);
 	}
 
-	public void reportRoutingBackoff(String backoffType, long backoffTimeMilliSeconds) {
+	public void reportRoutingBackoff(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
 		TrivialRunningAverage avg;
 
-		synchronized (avgRoutingBackoffTimes) {
-			avg = avgRoutingBackoffTimes.get(backoffType);
+		if(realtime) {
+			synchronized (avgRoutingBackoffTimesRT) {
+				avg = avgRoutingBackoffTimesRT.get(backoffType);
 
-			if (avg == null) {
-				avg = new TrivialRunningAverage();
-				avgRoutingBackoffTimes.put(backoffType, avg);
+				if (avg == null) {
+					avg = new TrivialRunningAverage();
+					avgRoutingBackoffTimesRT.put(backoffType, avg);
+				}
+			}
+		} else {
+			synchronized (avgRoutingBackoffTimesBulk) {
+				avg = avgRoutingBackoffTimesBulk.get(backoffType);
+
+				if (avg == null) {
+					avg = new TrivialRunningAverage();
+					avgRoutingBackoffTimesBulk.put(backoffType, avg);
+				}
 			}
 		}
 
 		avg.report(backoffTimeMilliSeconds);
 	}
 
-	public void reportTransferBackoff(String backoffType, long backoffTimeMilliSeconds) {
+	public void reportTransferBackoff(String backoffType, long backoffTimeMilliSeconds, boolean realtime) {
 		TrivialRunningAverage avg;
 
-		synchronized (avgTransferBackoffTimes) {
-			avg = avgTransferBackoffTimes.get(backoffType);
+		if (realtime) {
+			synchronized (avgTransferBackoffTimesRT) {
+				avg = avgTransferBackoffTimesRT.get(backoffType);
 
-			if (avg == null) {
-				avg = new TrivialRunningAverage();
-				avgTransferBackoffTimes.put(backoffType, avg);
+				if (avg == null) {
+					avg = new TrivialRunningAverage();
+					avgTransferBackoffTimesRT.put(backoffType, avg);
+				}
+			}
+		} else {
+			synchronized (avgTransferBackoffTimesBulk) {
+				avg = avgTransferBackoffTimesBulk.get(backoffType);
+
+				if (avg == null) {
+					avg = new TrivialRunningAverage();
+					avgTransferBackoffTimesBulk.put(backoffType, avg);
+				}
 			}
 		}
-
 		avg.report(backoffTimeMilliSeconds);
 	}
 
@@ -2826,34 +2851,64 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 	}
 
-	public TimedStats[] getRoutingBackoffStatistics() {
-		TimedStats[] entries = new TimedStats[avgRoutingBackoffTimes.size()];
-		int i = 0;
+	public TimedStats[] getRoutingBackoffStatistics(boolean realtime) {
+		if (realtime) {
+			TimedStats[] entries = new TimedStats[avgRoutingBackoffTimesRT.size()];
+			int i = 0;
 
-		synchronized (avgRoutingBackoffTimes) {
-			for (Map.Entry<String, TrivialRunningAverage> entry : avgRoutingBackoffTimes.entrySet()) {
-				TrivialRunningAverage avg = entry.getValue();
-				entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+			synchronized (avgRoutingBackoffTimesRT) {
+				for (Map.Entry<String, TrivialRunningAverage> entry : avgRoutingBackoffTimesRT.entrySet()) {
+					TrivialRunningAverage avg = entry.getValue();
+					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+				}
 			}
-		}
 
-		Arrays.sort(entries);
-		return entries;
+			Arrays.sort(entries);
+			return entries;
+		} else {
+			TimedStats[] entries = new TimedStats[avgRoutingBackoffTimesBulk.size()];
+			int i = 0;
+
+			synchronized (avgRoutingBackoffTimesBulk) {
+				for (Map.Entry<String, TrivialRunningAverage> entry : avgRoutingBackoffTimesBulk.entrySet()) {
+					TrivialRunningAverage avg = entry.getValue();
+					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+				}
+			}
+
+			Arrays.sort(entries);
+			return entries;
+		}
 	}
 
-	public TimedStats[] getTransferBackoffStatistics() {
-		TimedStats[] entries = new TimedStats[avgTransferBackoffTimes.size()];
-		int i = 0;
+	public TimedStats[] getTransferBackoffStatistics(boolean realtime) {
+		if (realtime) {
+			TimedStats[] entries = new TimedStats[avgTransferBackoffTimesRT.size()];
+			int i = 0;
 
-		synchronized (avgTransferBackoffTimes) {
-			for (Map.Entry<String, TrivialRunningAverage> entry : avgTransferBackoffTimes.entrySet()) {
-				TrivialRunningAverage avg = entry.getValue();
-				entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+			synchronized (avgTransferBackoffTimesRT) {
+				for (Map.Entry<String, TrivialRunningAverage> entry : avgTransferBackoffTimesRT.entrySet()) {
+					TrivialRunningAverage avg = entry.getValue();
+					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+				}
 			}
-		}
 
-		Arrays.sort(entries);
-		return entries;
+			Arrays.sort(entries);
+			return entries;
+		} else {
+			TimedStats[] entries = new TimedStats[avgTransferBackoffTimesBulk.size()];
+			int i = 0;
+
+			synchronized (avgTransferBackoffTimesBulk) {
+				for (Map.Entry<String, TrivialRunningAverage> entry : avgTransferBackoffTimesBulk.entrySet()) {
+					TrivialRunningAverage avg = entry.getValue();
+					entries[i++] = new TimedStats(entry.getKey(), avg.countReports(), (long) avg.currentValue(), (long) avg.totalValue());
+				}
+			}
+
+			Arrays.sort(entries);
+			return entries;
+		}
 	}
 
 	public TimedStats[] getDatabaseJobExecutionStatistics() {

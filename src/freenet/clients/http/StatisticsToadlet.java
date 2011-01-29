@@ -274,27 +274,10 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
 
 			HTMLNode curBackoffReasonInfobox = backoffReasonContent.addChild("div", "class", "infobox");
-			curBackoffReasonInfobox.addChild("div", "class", "infobox-header", "Current backoff reasons (realtime)");
+			curBackoffReasonInfobox.addChild("div", "class", "infobox-header", "Current backoff reasons (bulk)");
 			HTMLNode curBackoffReasonContent = curBackoffReasonInfobox.addChild("div", "class", "infobox-content");
 
-			String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
-			if(routingBackoffReasons.length == 0) {
-				curBackoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
-			} else {
-				HTMLNode reasonList = curBackoffReasonContent.addChild("ul");
-				for(int i=0;i<routingBackoffReasons.length;i++) {
-					int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], true);
-					if(reasonCount > 0) {
-						reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
-					}
-				}
-			}
-
-			curBackoffReasonInfobox = backoffReasonContent.addChild("div", "class", "infobox");
-			curBackoffReasonInfobox.addChild("div", "class", "infobox-header", "Current backoff reasons (bulk)");
-			curBackoffReasonContent = curBackoffReasonInfobox.addChild("div", "class", "infobox-content");
-
-			routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
+			String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
 			if(routingBackoffReasons.length == 0) {
 				curBackoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
 			} else {
@@ -307,34 +290,82 @@ public class StatisticsToadlet extends Toadlet {
 				}
 			}
 
+			curBackoffReasonInfobox = backoffReasonContent.addChild("div", "class", "infobox");
+			curBackoffReasonInfobox.addChild("div", "class", "infobox-header", "Current backoff reasons (realtime)");
+			curBackoffReasonContent = curBackoffReasonInfobox.addChild("div", "class", "infobox-content");
+
+			routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
+			if(routingBackoffReasons.length == 0) {
+				curBackoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+			} else {
+				HTMLNode reasonList = curBackoffReasonContent.addChild("ul");
+				for(int i=0;i<routingBackoffReasons.length;i++) {
+					int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], true);
+					if(reasonCount > 0) {
+						reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+					}
+				}
+			}
+
 			// Per backoff-type count and avg backoff lengths
 
-			// Routing Backoff
-			HTMLNode routingBackoffStatisticsTable = backoffReasonInfobox.addChild("table", "border", "0");
-			HTMLNode row = routingBackoffStatisticsTable.addChild("tr");
-			row.addChild("th", l10n("routingBackoffReason"));
+			// Routing Backoff bulk
+			HTMLNode routingBackoffStatisticsTableBulk = backoffReasonInfobox.addChild("table", "border", "0");
+			HTMLNode row = routingBackoffStatisticsTableBulk.addChild("tr");
+			row.addChild("th", l10n("routingBackoffReason") + " (bulk)");
 			row.addChild("th", l10n("count"));
 			row.addChild("th", l10n("avgTime"));
 			row.addChild("th", l10n("totalTime"));
 
-			for(NodeStats.TimedStats entry : stats.getRoutingBackoffStatistics()) {
-				row = routingBackoffStatisticsTable.addChild("tr");
+			for(NodeStats.TimedStats entry : stats.getRoutingBackoffStatistics(false)) {
+				row = routingBackoffStatisticsTableBulk.addChild("tr");
 				row.addChild("td", entry.keyStr);
 				row.addChild("td", Long.toString(entry.count));
 				row.addChild("td", TimeUtil.formatTime(entry.avgTime, 2, true));
 				row.addChild("td", TimeUtil.formatTime(entry.totalTime, 2, true));
 			}
 
-			// Transfer Backoff
-			HTMLNode transferBackoffStatisticsTable = backoffReasonInfobox.addChild("table", "border", "0");
-			row = transferBackoffStatisticsTable.addChild("tr");
-			row.addChild("th", l10n("transferBackoffReason"));
+			// Routing Backoff realtime
+			HTMLNode routingBackoffStatisticsTableRT = backoffReasonInfobox.addChild("table", "border", "0");
+			row = routingBackoffStatisticsTableRT.addChild("tr");
+			row.addChild("th", l10n("routingBackoffReason") + " (realtime)");
 			row.addChild("th", l10n("count"));
 			row.addChild("th", l10n("avgTime"));
 			row.addChild("th", l10n("totalTime"));
 
-			for(NodeStats.TimedStats entry : stats.getTransferBackoffStatistics()) {
-				row = transferBackoffStatisticsTable.addChild("tr");
+			for(NodeStats.TimedStats entry : stats.getRoutingBackoffStatistics(true)) {
+				row = routingBackoffStatisticsTableRT.addChild("tr");
+				row.addChild("td", entry.keyStr);
+				row.addChild("td", Long.toString(entry.count));
+				row.addChild("td", TimeUtil.formatTime(entry.avgTime, 2, true));
+				row.addChild("td", TimeUtil.formatTime(entry.totalTime, 2, true));
+			}
+
+			// Transfer Backoff bulk
+			HTMLNode transferBackoffStatisticsTableBulk = backoffReasonInfobox.addChild("table", "border", "0");
+			row = transferBackoffStatisticsTableBulk.addChild("tr");
+			row.addChild("th", l10n("transferBackoffReason") + " (bulk)");
+			row.addChild("th", l10n("count"));
+			row.addChild("th", l10n("avgTime"));
+			row.addChild("th", l10n("totalTime"));
+
+			for(NodeStats.TimedStats entry : stats.getTransferBackoffStatistics(false)) {
+				row = transferBackoffStatisticsTableBulk.addChild("tr");
+				row.addChild("td", entry.keyStr);
+				row.addChild("td", Long.toString(entry.count));
+				row.addChild("td", TimeUtil.formatTime(entry.avgTime, 2, true));
+				row.addChild("td", TimeUtil.formatTime(entry.totalTime, 2, true));
+			}
+			// Transfer Backoff realtime
+			HTMLNode transferBackoffStatisticsTableRT = backoffReasonInfobox.addChild("table", "border", "0");
+			row = transferBackoffStatisticsTableRT.addChild("tr");
+			row.addChild("th", l10n("transferBackoffReason") + " (realtime)");
+			row.addChild("th", l10n("count"));
+			row.addChild("th", l10n("avgTime"));
+			row.addChild("th", l10n("totalTime"));
+
+			for(NodeStats.TimedStats entry : stats.getTransferBackoffStatistics(true)) {
+				row = transferBackoffStatisticsTableRT.addChild("tr");
 				row.addChild("td", entry.keyStr);
 				row.addChild("td", Long.toString(entry.count));
 				row.addChild("td", TimeUtil.formatTime(entry.avgTime, 2, true));
@@ -1087,8 +1118,8 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode overviewList = overviewInfoboxContent.addChild("ul");
 		/* node status values */
 		int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
-		int bwlimitDelayTimeRT = (int) stats.getBwlimitDelayTimeRT();
 		int bwlimitDelayTimeBulk = (int) stats.getBwlimitDelayTimeBulk();
+		int bwlimitDelayTimeRT = (int) stats.getBwlimitDelayTimeRT();
 		int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
 		double numberOfRemotePeerLocationsSeenInSwaps = node.getNumberOfRemotePeerLocationsSeenInSwaps();
 
@@ -1118,8 +1149,8 @@ public class StatisticsToadlet extends Toadlet {
 		double routingMissDistanceOverall =  stats.routingMissDistanceOverall.currentValue();
 		double backedOffPercent =  stats.backedOffPercent.currentValue();
 		overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
-		overviewList.addChild("li", "bwlimitDelayTimeRT:\u00a0" + bwlimitDelayTimeRT + "ms");
 		overviewList.addChild("li", "bwlimitDelayTimeBulk:\u00a0" + bwlimitDelayTimeBulk + "ms");
+		overviewList.addChild("li", "bwlimitDelayTimeRT:\u00a0" + bwlimitDelayTimeRT + "ms");
 		overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
 		overviewList.addChild("li", "darknetSizeEstimateSession:\u00a0" + darknetSizeEstimateSession + "\u00a0nodes");
 		if(nodeUptimeSeconds > (24*60*60)) {  // 24 hours

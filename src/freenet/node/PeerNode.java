@@ -3088,7 +3088,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
 				int x = node.random.nextInt(routingBackoffLength);
 				routingBackedOffUntil = now + x;
-				node.nodeStats.reportRoutingBackoff(reason, x);
+				node.nodeStats.reportRoutingBackoff(reason, x, realTime);
 				String reasonWrapper = "";
 				if(0 <= reason.length())
 					reasonWrapper = " because of '" + reason + '\'';
@@ -3168,7 +3168,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					transferBackoffLength = MAX_TRANSFER_BACKOFF_LENGTH;
 				int x = node.random.nextInt(transferBackoffLength);
 				transferBackedOffUntil = now + x;
-				node.nodeStats.reportTransferBackoff(reason, x);
+				node.nodeStats.reportTransferBackoff(reason, x, realTime);
 				String reasonWrapper = "";
 				if(0 <= reason.length())
 					reasonWrapper = " because of '" + reason + '\'';
