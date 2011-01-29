@@ -38,9 +38,11 @@ public class PeerNodeStatus {
 
 	private final int simpleVersion;
 
-	private final int routingBackoffLength;
+	private final int routingBackoffLengthRT;
+	private final int routingBackoffLengthBulk;
 
-	private final long routingBackedOffUntil;
+	private final long routingBackedOffUntilRT;
+	private final long routingBackedOffUntilBulk;
 
 	private final boolean connected;
 
@@ -57,8 +59,11 @@ public class PeerNodeStatus {
 	private final boolean publicReverseInvalidVersion;
 	
 	private final double backedOffPercent;
+	private final double backedOffPercentRT;
+	private final double backedOffPercentBulk;
 
-	private String lastBackoffReason;
+	private String lastBackoffReasonRT;
+	private String lastBackoffReasonBulk;
 
 	private long timeLastRoutable;
 
@@ -128,8 +133,10 @@ public class PeerNodeStatus {
 		this.peersLocation = peerNode.getPeersLocation();
 		this.version = peerNode.getVersion();
 		this.simpleVersion = peerNode.getSimpleVersion();
-		this.routingBackoffLength = peerNode.getRoutingBackoffLength();
-		this.routingBackedOffUntil = peerNode.getRoutingBackedOffUntil();
+		this.routingBackoffLengthRT = peerNode.getRoutingBackoffLength(true);
+		this.routingBackoffLengthBulk = peerNode.getRoutingBackoffLength(false);
+		this.routingBackedOffUntilRT = peerNode.getRoutingBackedOffUntil(true);
+		this.routingBackedOffUntilBulk = peerNode.getRoutingBackedOffUntil(false);
 		this.connected = peerNode.isConnected();
 		this.routable = peerNode.isRoutable();
 		this.isFetchingARK = peerNode.isFetchingARK();
@@ -138,7 +145,10 @@ public class PeerNodeStatus {
 		this.publicInvalidVersion = peerNode.publicInvalidVersion();
 		this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
 		this.backedOffPercent = peerNode.backedOffPercent.currentValue();
-		this.lastBackoffReason = peerNode.getLastBackoffReason();
+		this.backedOffPercentRT = peerNode.backedOffPercentRT.currentValue();
+		this.backedOffPercentBulk = peerNode.backedOffPercentBulk.currentValue();
+		this.lastBackoffReasonRT = peerNode.getLastBackoffReason(true);
+		this.lastBackoffReasonBulk = peerNode.getLastBackoffReason(false);
 		this.timeLastRoutable = peerNode.timeLastRoutable();
 		this.timeLastConnectionCompleted = peerNode.timeLastConnectionCompleted();
 		this.peerAddedTime = peerNode.getPeerAddedTime();
@@ -226,15 +236,15 @@ public class PeerNodeStatus {
 	/**
 	 * @return the backedOffPercent
 	 */
-	public double getBackedOffPercent() {
-		return backedOffPercent;
+	public double getBackedOffPercent(boolean realTime) {
+		return realTime ? backedOffPercentRT : backedOffPercentBulk;
 	}
 
 	/**
 	 * @return the lastBackoffReason
 	 */
-	public String getLastBackoffReason() {
-		return lastBackoffReason;
+	public String getLastBackoffReason(boolean realTime) {
+		return realTime ? lastBackoffReasonRT : lastBackoffReasonBulk;
 	}
 
 	/**
@@ -268,8 +278,8 @@ public class PeerNodeStatus {
 	/**
 	 * @return the getRoutingBackedOffUntil
 	 */
-	public long getRoutingBackedOffUntil() {
-		return routingBackedOffUntil;
+	public long getRoutingBackedOffUntil(boolean realTime) {
+		return realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
 	}
 
 	/**
@@ -300,8 +310,8 @@ public class PeerNodeStatus {
 	/**
 	 * @return the routingBackoffLength
 	 */
-	public int getRoutingBackoffLength() {
-		return routingBackoffLength;
+	public int getRoutingBackoffLength(boolean realTime) {
+		return realTime ? routingBackoffLengthRT : routingBackoffLengthBulk;
 	}
 
 	/**
@@ -369,7 +379,7 @@ public class PeerNodeStatus {
 
 	@Override
 	public String toString() {
-		return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + location + ' ' + version + " backoff: " + routingBackoffLength + " (" + (Math.max(routingBackedOffUntil - System.currentTimeMillis(), 0)) + ')';
+		return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + location + ' ' + version + " RT backoff: " + routingBackoffLengthRT + " (" + (Math.max(routingBackedOffUntilRT - System.currentTimeMillis(), 0)) + " ) bulk backoff: " + routingBackoffLengthBulk + " (" + (Math.max(routingBackedOffUntilBulk - System.currentTimeMillis(), 0)) + ')';
 	}
 
 	@Override

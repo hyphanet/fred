@@ -143,7 +143,7 @@ public class RealNodeTest {
 				int countConnected = nodes[i].peers.countConnectedDarknetPeers();
 				int countAlmostConnected = nodes[i].peers.countAlmostConnectedDarknetPeers();
 				int countTotal = nodes[i].peers.countValidPeers();
-				int countBackedOff = nodes[i].peers.countBackedOffPeers();
+				int countBackedOff = nodes[i].peers.countBackedOffPeers(false);
 				int countCompatible = nodes[i].peers.countCompatibleDarknetPeers();
 				totalPeers += countTotal;
 				totalConnections += countConnected;

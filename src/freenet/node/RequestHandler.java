@@ -188,7 +188,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			status = RequestSender.DATA_NOT_FOUND; // for byte logging
 			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.REJECT_TIME, source);
 			sendTerminal(dnf);
-			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble());
+			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble(), realTimeFlag);
 			return;
 		} else {
 			long queueTime = source.getProbableSendQueueTime();
@@ -376,7 +376,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			tooLate = responseDeadline > 0 && now > responseDeadline;
 		}
 		
-		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble());
+		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble(), realTimeFlag);
 
 		if(tooLate) {
 			// Offer the data if there is any.
@@ -554,7 +554,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			sendSSK(block.getRawHeaders(), block.getRawData(), needsPubKey, ((SSKBlock) block).getPubKey());
 			status = RequestSender.SUCCESS; // for byte logging
 			// Assume local SSK sending will succeed?
-			node.nodeStats.remoteRequest(true, true, true, htl, key.toNormalizedDouble());
+			node.nodeStats.remoteRequest(true, true, true, htl, key.toNormalizedDouble(), realTimeFlag);
 		} else if(block instanceof CHKBlock) {
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
 			PartiallyReceivedBlock prb =
@@ -583,7 +583,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							applyByteCounts();
 							unregisterRequestHandlerWithNode();
 						}
-						node.nodeStats.remoteRequest(false, success, true, htl, key.toNormalizedDouble());
+						node.nodeStats.remoteRequest(false, success, true, htl, key.toNormalizedDouble(), realTimeFlag);
 					}
 					
 				}, realTimeFlag, node.nodeStats);

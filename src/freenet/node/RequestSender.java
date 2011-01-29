@@ -343,7 +343,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        key, htl, 0, source == null);
+			        key, htl, 0, source == null, realTimeFlag);
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
@@ -386,7 +386,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				 * 
 				 * Don't use sendAsync().
 				 */
-            	next.sendSync(req, this);
+            	next.sendSync(req, this, realTimeFlag);
             } catch (NotConnectedException e) {
             	Logger.minor(this, "Not connected");
 	        	origTag.removeRoutingTo(next);
@@ -503,10 +503,10 @@ loadWaiterLoop:
 			// It's not a serious problem until we have a second (fatal) timeout.
 			Logger.warning(this, "Timed out after waiting "+fetchTimeout+" on "+uid+" from "+waitingFor+" ("+gotMessages+" messages; last="+lastMessage+") for "+uid+" noReroute="+noReroute);
 			if(noReroute) {
-				waitingFor.localRejectedOverload("FatalTimeoutForked");
+				waitingFor.localRejectedOverload("FatalTimeoutForked", realTimeFlag);
 			} else {
 				// Fatal timeout
-				waitingFor.localRejectedOverload("FatalTimeout");
+				waitingFor.localRejectedOverload("FatalTimeout", realTimeFlag);
 				forwardRejectedOverload();
 				finish(TIMED_OUT, waitingFor, false);
 				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.REJECT_TIME, source);
@@ -800,7 +800,7 @@ loadWaiterLoop:
         				node.removeTransferringSender((NodeCHK)key, RequestSender.this);
                 		try {
 	                		// Received data
-	               			p.transferSuccess();
+	               			p.transferSuccess(realTimeFlag);
 	                		if(logMINOR) Logger.minor(this, "Received data");
                 			verifyAndCommit(finalHeaders, data);
 	                		finish(SUCCESS, p, true);
@@ -829,7 +829,7 @@ loadWaiterLoop:
 								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+p, e);
 							finish(GET_OFFER_TRANSFER_FAILED, p, true);
 							// Backoff here anyway - the node really ought to have it!
-							p.transferFailed("RequestSenderGetOfferedTransferFailed");
+							p.transferFailed("RequestSenderGetOfferedTransferFailed", realTimeFlag);
 							offers.deleteLastOffer();
 		    				if(!prb.abortedLocally())
 		    					node.nodeStats.failedBlockReceive(false, false, realTimeFlag, source == null);
@@ -867,7 +867,7 @@ loadWaiterLoop:
     		if(msg == null) {
     			if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
     			// Timeout waiting for Accepted
-    			next.localRejectedOverload("AcceptedTimeout");
+    			next.localRejectedOverload("AcceptedTimeout", realTimeFlag);
     			forwardRejectedOverload();
     			node.failureTable.onFailed(key, next, htl, timeSinceSent());
     			// Try next node
@@ -877,7 +877,7 @@ loadWaiterLoop:
     		
     		if(msg.getSpec() == DMT.FNPRejectedLoop) {
     			if(logMINOR) Logger.minor(this, "Rejected loop");
-    			next.successNotOverload();
+    			next.successNotOverload(realTimeFlag);
     			node.failureTable.onFailed(key, next, htl, timeSinceSent());
     			// Find another node to route to
     			next.noLongerRoutingTo(origTag, false);
@@ -899,7 +899,7 @@ loadWaiterLoop:
 //    					origTag.removeRoutingTo(next);
 //    					return DO.WAIT;
 //    				} else {
-    					next.localRejectedOverload("ForwardRejectedOverload");
+    					next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
     					node.failureTable.onFailed(key, next, htl, timeSinceSent());
     					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
     					// Give up on this one, try another
@@ -1183,8 +1183,8 @@ loadWaiterLoop:
     				}
     				if(!wasFork)
     					node.removeTransferringSender((NodeCHK)key, RequestSender.this);
-   					sentTo.transferSuccess();
-    				sentTo.successNotOverload();
+   					sentTo.transferSuccess(realTimeFlag);
+    				sentTo.successNotOverload(realTimeFlag);
    					node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
     				if(logMINOR) Logger.minor(this, "Received data");
     				// Received data
@@ -1226,7 +1226,7 @@ loadWaiterLoop:
     					Logger.normal(this, "Local transfer failed: "+e.getReason()+" : "+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+sentTo, e);
     				// We do an ordinary backoff in all cases.
     				if(!prb.abortedLocally())
-    					sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason());
+    					sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason(), realTimeFlag);
     				if(!wasFork)
     					finish(TRANSFER_FAILED, sentTo, false);
     				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
@@ -1238,7 +1238,7 @@ loadWaiterLoop:
     				if(timeout) {
     					// Looks like a timeout. Backoff.
     					if(logMINOR) Logger.minor(this, "Timeout transferring data : "+e, e);
-    					sentTo.transferFailed(e.getErrString());
+    					sentTo.transferFailed(e.getErrString(), realTimeFlag);
     				} else {
     					// Quick failure (in that we didn't have to timeout). Don't backoff.
     					// Treat as a DNF.
@@ -1270,7 +1270,7 @@ loadWaiterLoop:
 			//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 			//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
     		node.failureTable.onFailed(key, next, htl, timeSinceSentForTimeout());
-			next.localRejectedOverload("ForwardRejectedOverload2");
+			next.localRejectedOverload("ForwardRejectedOverload2", realTimeFlag);
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
 			// Give up on this one, try another
@@ -1285,13 +1285,13 @@ loadWaiterLoop:
 		// Backtrack within available hops
 		short newHtl = msg.getShort(DMT.HTL);
 		if(newHtl < htl) htl = newHtl;
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		node.failureTable.onFailed(key, next, htl, timeSinceSent());
 		origTag.removeRoutingTo(next);
 	}
 
 	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		if(!wasFork)
 			finish(DATA_NOT_FOUND, next, false);
 		else
@@ -1300,7 +1300,7 @@ loadWaiterLoop:
 	}
 
 	private void handleRecentlyFailed(Message msg, boolean wasFork, PeerNode next) {
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		/*
 		 * Must set a correct recentlyFailedTimeLeft before calling this finish(), because it will be
 		 * passed to the handler.

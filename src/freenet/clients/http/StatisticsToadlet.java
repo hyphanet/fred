@@ -227,9 +227,14 @@ public class StatisticsToadlet extends Toadlet {
 				stats.fillDetailedTimingsBox(timingsContent);
 				
 				HTMLNode byHTLBox = nextTableCell.addChild("div", "class", "infobox");
-				byHTLBox.addChild("div", "class", "infobox-header", l10n("successByHTL"));
+				byHTLBox.addChild("div", "class", "infobox-header", l10n("successByHTLBulk"));
 				HTMLNode byHTLContent = byHTLBox.addChild("div", "class", "infobox-content");
-				stats.fillRemoteRequestHTLsBox(byHTLContent);
+				stats.fillRemoteRequestHTLsBox(byHTLContent, false);
+				
+				byHTLBox = nextTableCell.addChild("div", "class", "infobox");
+				byHTLBox.addChild("div", "class", "infobox-header", l10n("successByHTLRT"));
+				byHTLContent = byHTLBox.addChild("div", "class", "infobox-content");
+				stats.fillRemoteRequestHTLsBox(byHTLContent, true);
 			}
 		}
 
@@ -269,16 +274,33 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
 
 			HTMLNode curBackoffReasonInfobox = backoffReasonContent.addChild("div", "class", "infobox");
-			curBackoffReasonInfobox.addChild("div", "class", "infobox-header", "Current backoff reasons");
+			curBackoffReasonInfobox.addChild("div", "class", "infobox-header", "Current backoff reasons (realtime)");
 			HTMLNode curBackoffReasonContent = curBackoffReasonInfobox.addChild("div", "class", "infobox-content");
 
-			String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
+			String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
 			if(routingBackoffReasons.length == 0) {
 				curBackoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
 			} else {
 				HTMLNode reasonList = curBackoffReasonContent.addChild("ul");
 				for(int i=0;i<routingBackoffReasons.length;i++) {
-					int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
+					int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], true);
+					if(reasonCount > 0) {
+						reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+					}
+				}
+			}
+
+			curBackoffReasonInfobox = backoffReasonContent.addChild("div", "class", "infobox");
+			curBackoffReasonInfobox.addChild("div", "class", "infobox-header", "Current backoff reasons (bulk)");
+			curBackoffReasonContent = curBackoffReasonInfobox.addChild("div", "class", "infobox-content");
+
+			routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
+			if(routingBackoffReasons.length == 0) {
+				curBackoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+			} else {
+				HTMLNode reasonList = curBackoffReasonContent.addChild("ul");
+				for(int i=0;i<routingBackoffReasons.length;i++) {
+					int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], false);
 					if(reasonCount > 0) {
 						reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
 					}
