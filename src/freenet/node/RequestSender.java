@@ -281,9 +281,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         routeRequests();
     }
     
-    private int routeAttempts;
+    private int routeAttempts = 0;
     private boolean starting;
-    private int highHTLFailureCount;
+    private int highHTLFailureCount = 0;
     
     private void routeRequests() {
     	
@@ -336,14 +336,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             boolean failed;
             synchronized(this) {
             	failed = reassignedToSelfDueToMultipleTimeouts;
+            	if(!failed) routeAttempts++;
             }
             if(failed) {
             	finish(TIMED_OUT, null, false);
             	return;
             }
 
-			routeAttempts++;
-            
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
 			        key, htl, 0, source == null, realTimeFlag);
