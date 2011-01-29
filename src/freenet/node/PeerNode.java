@@ -3053,7 +3053,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						if(routingBackedOffUntilBulk > 0) {
 							double myReport = (double) (routingBackedOffUntilBulk - lastSampleTime) / (double) (now - lastSampleTime);
 							backedOffPercentBulk.report(myReport);
-							if(myReport > report) report = myReport;
+							if(report > myReport) report = myReport;
 						}
 					}
 				} else {
