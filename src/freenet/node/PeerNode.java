@@ -4815,11 +4815,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						unreg = innerOnWaited(p, accept);
 						if(unreg == null) {
 							if(shouldGrab()) other = grab();
+						} else {
+							// Having set the acceptedBy etc, clear it now.
+							grab();
 						}
 					}
 					if(other != null) {
 						// Recover from race condition.
-						Logger.normal(this, "Race condition: tryRouteTo() succeeded on "+p.shortToString()+" but already matched on "+other.shortToString());
+						Logger.normal(this, "Race condition: tryRouteTo() succeeded on "+p.shortToString()+" but already matched on "+other.shortToString()+" on "+this);
 						tag.removeRoutingTo(p);
 						return other;
 					}
