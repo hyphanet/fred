@@ -490,15 +490,15 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				// Okay, just route it.
 			}
 		} catch (FSParseException e) {
-			if(logMINOR) Logger.minor(this, "Rejecting noderef: "+e, e);
+			Logger.warning(this, "Rejecting noderef: "+e, e);
 			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		} catch (PeerParseException e) {
-			if(logMINOR) Logger.minor(this, "Rejecting noderef: "+e, e);
+			Logger.warning(this, "Rejecting noderef: "+e, e);
 			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		} catch (ReferenceSignatureVerificationException e) {
-			if(logMINOR) Logger.minor(this, "Rejecting noderef: "+e, e);
+			Logger.warning(this, "Rejecting noderef: "+e, e);
 			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		} catch (NotConnectedException e) {
