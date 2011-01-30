@@ -546,7 +546,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         			 * Don't use sendAsync().
         			 */
         			if(logMINOR) Logger.minor(this, "Sending "+req+" to "+next);
-        			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
+        			next.reportRoutedTo(key.toNormalizedDouble(), source == null, realTimeFlag);
         			next.sendSync(req, this, realTimeFlag);
         		} catch (NotConnectedException e) {
         			Logger.minor(this, "Not connected");

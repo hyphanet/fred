@@ -464,7 +464,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             // Send to next node
             
             try {
-    			node.peers.incrementSelectionSamples(System.currentTimeMillis(), next);
+    			next.reportRoutedTo(myKey.toNormalizedDouble(), source == null, realTimeFlag);
 				/*
 				 When using sendSync(), this send can often timeout (it is the first request we are sending to this node).
 				 -If sendSync blocks here (message queue is full, node down, etc.) it can take up to 10 minutes,

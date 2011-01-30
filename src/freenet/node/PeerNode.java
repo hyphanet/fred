@@ -5377,4 +5377,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return false;
 	}
 
+	public void reportRoutedTo(double target, boolean isLocal, boolean realTime) {
+		double distance = Location.distance(target, getLocation());
+		node.nodeStats.routingMissDistanceOverall.report(distance);
+		(isLocal ? node.nodeStats.routingMissDistanceLocal : node.nodeStats.routingMissDistanceRemote).report(distance);
+		(realTime ? node.nodeStats.routingMissDistanceRT : node.nodeStats.routingMissDistanceBulk).report(distance);
+		node.peers.incrementSelectionSamples(System.currentTimeMillis(), this);
+	}
+
 }
