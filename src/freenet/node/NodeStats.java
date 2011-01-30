@@ -209,6 +209,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public final RunningAverage routingMissDistanceLocal;
 	public final RunningAverage routingMissDistanceRemote;
 	public final RunningAverage routingMissDistanceOverall;
+	public final RunningAverage routingMissDistanceBulk;
+	public final RunningAverage routingMissDistanceRT;
 	public final RunningAverage backedOffPercent;
 	public final DecayingKeyspaceAverage avgCacheCHKLocation;
 	public final DecayingKeyspaceAverage avgSlashdotCacheCHKLocation;
@@ -282,6 +284,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		this.routingMissDistanceLocal = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceRemote = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.routingMissDistanceOverall = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.routingMissDistanceBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.routingMissDistanceRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		preemptiveRejectReasons = new StringCounter();
 		localPreemptiveRejectReasons = new StringCounter();
@@ -1541,6 +1545,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		fs.put("routingMissDistanceLocal", routingMissDistanceLocal.currentValue());
 		fs.put("routingMissDistanceRemote", routingMissDistanceRemote.currentValue());
 		fs.put("routingMissDistanceOverall", routingMissDistanceOverall.currentValue());
+		fs.put("routingMissDistanceBulk", routingMissDistanceBulk.currentValue());
+		fs.put("routingMissDistanceRT", routingMissDistanceRT.currentValue());
+		
 		fs.put("backedOffPercent", backedOffPercent.currentValue());
 		fs.put("pInstantReject", pRejectIncomingInstantly());
 		fs.put("unclaimedFIFOSize", node.usm.getUnclaimedFIFOSize());

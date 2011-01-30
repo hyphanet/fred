@@ -1097,6 +1097,7 @@ public class PeerManager {
 			if(calculateMisrouting) {
 				node.nodeStats.routingMissDistanceOverall.report(Location.distance(best, closest.getLocation()));
 				(isLocal ? node.nodeStats.routingMissDistanceLocal : node.nodeStats.routingMissDistanceRemote).report(Location.distance(best, closest.getLocation()));
+				(realTime ? node.nodeStats.routingMissDistanceRT : node.nodeStats.routingMissDistanceBulk).report(Location.distance(best, closest.getLocation()));
 				int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
 				int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
 				if(numberOfRoutingBackedOff + numberOfConnected > 0)
