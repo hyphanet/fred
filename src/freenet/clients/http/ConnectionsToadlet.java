@@ -263,6 +263,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				double routingMissDistanceLocal =  stats.routingMissDistanceLocal.currentValue();
 				double routingMissDistanceRemote =  stats.routingMissDistanceRemote.currentValue();
 				double routingMissDistanceOverall =  stats.routingMissDistanceOverall.currentValue();
+				double routingMissDistanceBulk =  stats.routingMissDistanceBulk.currentValue();
+				double routingMissDistanceRT =  stats.routingMissDistanceRT.currentValue();
 				double backedOffPercent =  stats.backedOffPercent.currentValue();
 				String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 				
@@ -285,6 +287,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				overviewList.addChild("li", "routingMissDistanceLocal:\u00a0" + fix4.format(routingMissDistanceLocal));
 				overviewList.addChild("li", "routingMissDistanceRemote:\u00a0" + fix4.format(routingMissDistanceRemote));
 				overviewList.addChild("li", "routingMissDistanceOverall:\u00a0" + fix4.format(routingMissDistanceOverall));
+				overviewList.addChild("li", "routingMissDistanceBulk:\u00a0" + fix4.format(routingMissDistanceBulk));
+				overviewList.addChild("li", "routingMissDistanceRT:\u00a0" + fix4.format(routingMissDistanceRT));
 				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix1.format(backedOffPercent));
 				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(stats.pRejectIncomingInstantly()));
 				nextTableCell = overviewTableRow.addChild("td");
