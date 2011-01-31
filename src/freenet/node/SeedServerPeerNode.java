@@ -64,7 +64,7 @@ public class SeedServerPeerNode extends PeerNode {
 	}
 
 	@Override
-	public boolean isRoutingCompatible(boolean ignoreMandatoryBackoff) {
+	public boolean isRoutingCompatible() {
 		return false;
 	}
 

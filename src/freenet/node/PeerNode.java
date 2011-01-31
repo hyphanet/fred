@@ -1054,10 +1054,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return unroutableNewerVersion;
 	}
 
-	public final boolean isRoutable() {
-		return isRoutable(false);
-	}
-	
 	/**
 	* Returns true if requests can be routed through this peer. True if the peer's location is known, presently
 	* connected, and routing-compatible. That is, ignoring backoff, the peer's location is known, build number
@@ -1066,15 +1062,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* Note possible deadlocks! PeerManager calls this, we call
 	* PeerManager in e.g. verified.
 	*/
-	public boolean isRoutable(boolean ignoreMandatoryBackoff) {
-		return isConnected() && isRoutingCompatible(ignoreMandatoryBackoff) &&
+	public boolean isRoutable() {
+		return isConnected() && isRoutingCompatible() &&
 			!(currentLocation < 0.0 || currentLocation > 1.0);
 	}
 
-	public final boolean isRoutingCompatible() {
-		return isRoutingCompatible(false);
-	}
-	
 	synchronized boolean isInMandatoryBackoff(long now) {
 		if((mandatoryBackoffUntil > -1 && now < mandatoryBackoffUntil)) {
 			if(logMINOR) Logger.minor(this, "In mandatory backoff");
@@ -1088,14 +1080,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * True if this peer's build number is not 'too-old' or 'too-new', actively connected, and not marked as explicity disabled.
 	 * Does not reflect any 'backoff' logic, except the mandatory backoff logic.
 	 */
-	public boolean isRoutingCompatible(boolean ignoreMandatoryBackoff) {
+	public boolean isRoutingCompatible() {
 		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
 		synchronized(this) {
 			if(isRoutable && !disableRouting) {
-				if((!ignoreMandatoryBackoff) && (mandatoryBackoffUntil > -1 && now < mandatoryBackoffUntil)) {
-					if(logMINOR) Logger.minor(this, "In mandatory backoff");
-					return false;
-				}
 				timeLastRoutable = now;
 				return true;
 			}
@@ -2988,7 +2976,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(now < transferBackedOffUntil) {
 				if(transferBackedOffUntil - now >= ignoreBackoffUnder) return true;
 			}
-			return false;
+			return isInMandatoryBackoff(now);
 		}
 	}
 	
@@ -3500,7 +3488,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		checkConnectionsAndTrackers();
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
-		if(isRoutable(true)) {  // Function use also updates timeLastConnected and timeLastRoutable
+		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
 			if(now < routingBackedOffUntilRT) {
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
