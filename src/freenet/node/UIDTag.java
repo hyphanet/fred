@@ -313,7 +313,7 @@ public abstract class UIDTag {
 				if(now - loggedStillPresent < LOGGED_STILL_PRESENT_INTERVAL) return;
 				loggedStillPresent = now;
 			}
-		}
+		} else return;
 		logStillPresent(uid);
 	}
 
