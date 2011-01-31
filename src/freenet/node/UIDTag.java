@@ -295,4 +295,17 @@ public abstract class UIDTag {
 		handlingTimeouts.add(next);
 	}
 
+	private long loggedStillPresent;
+	private int LOGGED_STILL_PRESENT_INTERVAL = 60*1000;
+	
+	public void maybeLogStillPresent(long now, Long uid) {
+		if(now - createdTime > Node.TIMEOUT) {
+			synchronized(this) {
+				if(now - loggedStillPresent < LOGGED_STILL_PRESENT_INTERVAL) return;
+				loggedStillPresent = now;
+			}
+		}
+		logStillPresent(uid);
+	}
+
 }
