@@ -955,6 +955,7 @@ public class PeerManager {
 			if(p.outputLoadTracker(realTime).getLastIncomingLoadStats(realTime) == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats): "+p.getPeer());
+				continue;
 			}
 			if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion(), -1) < minVersion) {
 				if(logMINOR)
