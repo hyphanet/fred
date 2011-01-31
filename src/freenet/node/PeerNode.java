@@ -4920,8 +4920,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			maybeNotifySlotWaiter();
 		}
 		
-		public synchronized PeerLoadStats getLastIncomingLoadStats(boolean realTime) {
-			return lastIncomingLoadStats;
+		public PeerLoadStats getLastIncomingLoadStats(boolean realTime) {
+			synchronized(routedToLock) {
+				return lastIncomingLoadStats;
+			}
 		}
 		
 		OutputLoadTracker(boolean realTime) {
@@ -4952,11 +4954,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public RequestLikelyAcceptedState tryRouteTo(UIDTag tag,
 				RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 			PeerLoadStats loadStats;
-			synchronized(this) {
-				loadStats = lastIncomingLoadStats;
-			}
 			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
 			synchronized(routedToLock) {
+				loadStats = lastIncomingLoadStats;
 				if(loadStats == null) {
 					Logger.error(this, "Accepting because no load stats from "+PeerNode.this.shortToString()+" ("+PeerNode.this.getVersionNumber()+")");
 					if(tag.addRoutedTo(PeerNode.this, offeredKey)) {
@@ -5042,20 +5042,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime+" for "+PeerNode.this.shortToString());
 			boolean foundNever = true;
 			while(true) {
+				boolean foundNone = true;
+				RequestType type;
+				int typeNum;
 				PeerLoadStats loadStats;
-				synchronized(this) {
-					loadStats = lastIncomingLoadStats;
-				}
 				synchronized(routedToLock) {
+					loadStats = lastIncomingLoadStats;
 					if(slotWaiters.isEmpty()) {
 						if(logMINOR) Logger.minor(this, "No slot waiters for "+this);
 						return;
 					}
-				}
-				boolean foundNone = true;
-				RequestType type;
-				int typeNum;
-				synchronized(this) {
 					typeNum = slotWaiterTypeCounter;
 				}
 				typeNum++;
@@ -5118,7 +5114,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 				if(foundNone) {
 					if(!foundNever) {
-						synchronized(this) {
+						synchronized(routedToLock) {
 							slotWaiterTypeCounter = typeNumFound;
 						}
 					}
