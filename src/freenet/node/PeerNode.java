@@ -5039,7 +5039,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		private void maybeNotifySlotWaiter() {
 			if(!isRoutable()) return;
 			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
-			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime);
+			if(logMINOR) Logger.minor(this, "Maybe waking up slot waiters for "+this+" realtime="+realTime+" for "+PeerNode.this.shortToString());
 			boolean foundNever = true;
 			while(true) {
 				PeerLoadStats loadStats;
