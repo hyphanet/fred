@@ -4844,12 +4844,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							grab();
 						}
 					}
+					unregister(null, unreg);
 					if(other != null) {
 						Logger.normal(this, "Race condition: tryRouteTo() succeeded on "+p.shortToString()+" but already matched on "+other.shortToString()+" on "+this);
 						tag.removeRoutingTo(p);
 						return other;
 					}
-					unregister(null, unreg);
 					return p;
 				}
 			}
