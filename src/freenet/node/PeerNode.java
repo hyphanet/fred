@@ -3059,7 +3059,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			long mandatoryBackoffUntil = realTime ? mandatoryBackoffUntilRT : mandatoryBackoffUntilBulk;
 			int mandatoryBackoffLength = realTime ? mandatoryBackoffLengthRT : mandatoryBackoffLengthBulk;
 			if(mandatoryBackoffUntil > -1 && mandatoryBackoffUntil > now) return;
-			Logger.error(this, "Entering mandatory backoff for "+this);
+			Logger.error(this, "Entering mandatory backoff for "+this + (realTime ? " (realtime)" : " (bulk)"));
 			mandatoryBackoffUntil = now + (mandatoryBackoffLength/2) + node.fastWeakRandom.nextInt(mandatoryBackoffLength/2);
 			mandatoryBackoffLength *= MANDATORY_BACKOFF_MULTIPLIER;
 			if(realTime) {
