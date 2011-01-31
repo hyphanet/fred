@@ -4994,7 +4994,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(!noLoadStats) {
 					TreeMap<Long,SlotWaiter> list = makeSlotWaiters(waiter.requestType);
 					list.put(waiter.counter, waiter);
-					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size());
+					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size()+" on "+PeerNode.this);
 					return;
 				}
 				if(logMINOR) Logger.minor(this, "Not waiting for "+this+" as no load stats");
