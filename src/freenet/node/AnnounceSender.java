@@ -150,7 +150,8 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				return;
 			}
 			if(logMINOR) Logger.minor(this, "Routing request to "+next);
-			next.reportRoutedTo(target, source == null, false);
+			if(onlyNode == null)
+				next.reportRoutedTo(target, source == null, false);
 			nodesRoutedTo.add(next);
 
 			long xferUID = sendTo(next);
