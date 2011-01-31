@@ -269,6 +269,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private void rejectRequest(Message m) {
 		long uid = m.getLong(DMT.UID);
 		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+		// Send the load status anyway, hopefully this is a temporary problem.
+		msg.setNeedsLoadBulk();
+		msg.setNeedsLoadRT();
 		try {
 			m.getSource().sendAsync(msg, null, null);
 		} catch (NotConnectedException e) {
