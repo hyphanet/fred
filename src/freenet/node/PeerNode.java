@@ -4968,6 +4968,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				RequestLikelyAcceptedState worstAcceptable, boolean offeredKey) {
 			PeerLoadStats loadStats;
 			boolean ignoreLocalVsRemote = node.nodeStats.ignoreLocalVsRemoteBandwidthLiability();
+			if(!isRoutable()) return null;
+			if(!isInMandatoryBackoff(System.currentTimeMillis(), realTime)) return null;
 			synchronized(routedToLock) {
 				loadStats = lastIncomingLoadStats;
 				if(loadStats == null) {
