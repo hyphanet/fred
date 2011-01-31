@@ -4819,6 +4819,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					return grab();
 				}
 				all = waitingFor.toArray(new PeerNode[waitingFor.size()]);
+				if(all.length == 0) {
+					if(logMINOR) Logger.minor(this, "None to wait for on "+this);
+					return null;
+				}
 			}
 			// Double-check before blocking, prevent race condition.
 			for(PeerNode p : all) {

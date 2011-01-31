@@ -403,6 +403,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         					next.enterMandatoryBackoff("Mandatory:RejectedGUARANTEED", realTimeFlag);
         					next.noLongerRoutingTo(origTag, false);
         					expectedAcceptState = null;
+        					next = null;
+        					// Will reroute after waitForAny().
         				}
         			}
         			
@@ -414,9 +416,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				waitedForLoadManagement = true;
         				if(waiter == null)
         					waiter = PeerNode.createSlotWaiter(origTag, type, false, realTimeFlag);
-        				waiter.addWaitingFor(next);
+        				if(next != null)
+        					waiter.addWaitingFor(next);
     				
-        	            if(next.isLowCapacity(realTimeFlag)) {
+        	            if(next != null && next.isLowCapacity(realTimeFlag)) {
         	            	if(waiter.waitingForCount() == 1) {
         	            		canWaitFor++;
         	            		// Wait for another one if the first is low capacity.
