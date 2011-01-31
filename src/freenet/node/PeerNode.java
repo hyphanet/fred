@@ -4786,10 +4786,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		void onFailed(PeerNode peer, boolean reallyFailed) {
 			if(logMINOR) Logger.minor(this, "onFailed() on "+this+" reallyFailed="+reallyFailed);
 			synchronized(this) {
-				if(acceptedBy != null) return;
+				if(acceptedBy != null) {
+					if(logMINOR) Logger.minor(this, "Already matched on "+this);
+					return;
+				}
 				if(reallyFailed) {
 					waitingFor.remove(peer);
-					if(!waitingFor.isEmpty()) return;
+					if(!waitingFor.isEmpty()) {
+						if(logMINOR) Logger.minor(this, "Still waiting for other nodes "+Arrays.toString(waitingFor.toArray())+" on "+this);
+						return;
+					}
 				}
 				failed = true;
 				notifyAll();
@@ -4994,7 +5000,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(!noLoadStats) {
 					TreeMap<Long,SlotWaiter> list = makeSlotWaiters(waiter.requestType);
 					list.put(waiter.counter, waiter);
-					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size()+" on "+PeerNode.this);
+					if(logMINOR) Logger.minor(this, "Queued slot "+waiter+" waiter for "+waiter.requestType+" size is now "+list.size()+" on "+this+" for "+PeerNode.this);
 					return;
 				}
 				if(logMINOR) Logger.minor(this, "Not waiting for "+this+" as no load stats");
