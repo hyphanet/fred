@@ -5102,7 +5102,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						Iterator<SlotWaiter> it = list.values().iterator();
 						slot = it.next();
 						it.remove();
-						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up");
+						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up on "+this);
 						peersForSuccessfulSlot = slot.innerOnWaited(PeerNode.this, acceptState);
 						if(peersForSuccessfulSlot == null) continue;
 					}
