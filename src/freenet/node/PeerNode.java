@@ -4760,6 +4760,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(logMINOR) Logger.minor(this, "Not waiting for peer "+peer+" on "+this);
 				return null;
 			}
+			// Because we are no longer in the slot queue we must remove it.
+			// If we want to wait for it again it must be re-queued.
+			waitingFor.remove(peer);
 			acceptedBy = peer;
 			acceptedState = state;
 			if(!tag.addRoutedTo(peer, offeredKey)) {
