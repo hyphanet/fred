@@ -5058,6 +5058,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				synchronized(this) {
 					typeNum = slotWaiterTypeCounter;
 				}
+				typeNum++;
+				if(typeNum == RequestType.values().length)
+					typeNum = 0;
+				int typeNumFound = typeNum;
 				for(int i=0;i<RequestType.values().length;i++) {
 					TreeMap<Long,SlotWaiter> list;
 					type = RequestType.values()[typeNum];
@@ -5105,6 +5109,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 						if(logMINOR) Logger.minor(this, "Accept state is "+acceptState+" for "+slot+" - waking up on "+this);
 						peersForSuccessfulSlot = slot.innerOnWaited(PeerNode.this, acceptState);
 						if(peersForSuccessfulSlot == null) continue;
+						typeNumFound = typeNum;
 					}
 					slot.unregister(PeerNode.this, peersForSuccessfulSlot);
 					typeNum++;
@@ -5114,7 +5119,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(foundNone) {
 					if(!foundNever) {
 						synchronized(this) {
-							slotWaiterTypeCounter = typeNum;
+							slotWaiterTypeCounter = typeNumFound;
 						}
 					}
 					return;
