@@ -324,9 +324,41 @@ public class StatisticsToadlet extends Toadlet {
 
 			// Per backoff-type count and avg backoff lengths
 
+			// Mandatory backoff - bulk
+			HTMLNode mandatoryBackoffStatisticsTableBulk = backoffReasonInfobox.addChild("table", "border", "0");
+			HTMLNode row = mandatoryBackoffStatisticsTableBulk.addChild("tr");
+			row.addChild("th", l10n("mandatoryBackoffReason") + " (bulk)");
+			row.addChild("th", l10n("count"));
+			row.addChild("th", l10n("avgTime"));
+			row.addChild("th", l10n("totalTime"));
+
+			for(NodeStats.TimedStats entry : stats.getMandatoryBackoffStatistics(false)) {
+				row = mandatoryBackoffStatisticsTableBulk.addChild("tr");
+				row.addChild("td", entry.keyStr);
+				row.addChild("td", Long.toString(entry.count));
+				row.addChild("td", TimeUtil.formatTime(entry.avgTime, 2, true));
+				row.addChild("td", TimeUtil.formatTime(entry.totalTime, 2, true));
+			}
+
+			// Mandatory backoff - realtime
+			HTMLNode mandatoryBackoffStatisticsTableRT = backoffReasonInfobox.addChild("table", "border", "0");
+			row = mandatoryBackoffStatisticsTableRT.addChild("tr");
+			row.addChild("th", l10n("mandatoryBackoffReason") + " (realtime)");
+			row.addChild("th", l10n("count"));
+			row.addChild("th", l10n("avgTime"));
+			row.addChild("th", l10n("totalTime"));
+
+			for(NodeStats.TimedStats entry : stats.getMandatoryBackoffStatistics(true)) {
+				row = mandatoryBackoffStatisticsTableRT.addChild("tr");
+				row.addChild("td", entry.keyStr);
+				row.addChild("td", Long.toString(entry.count));
+				row.addChild("td", TimeUtil.formatTime(entry.avgTime, 2, true));
+				row.addChild("td", TimeUtil.formatTime(entry.totalTime, 2, true));
+			}
+
 			// Routing Backoff bulk
 			HTMLNode routingBackoffStatisticsTableBulk = backoffReasonInfobox.addChild("table", "border", "0");
-			HTMLNode row = routingBackoffStatisticsTableBulk.addChild("tr");
+			row = routingBackoffStatisticsTableBulk.addChild("tr");
 			row.addChild("th", l10n("routingBackoffReason") + " (bulk)");
 			row.addChild("th", l10n("count"));
 			row.addChild("th", l10n("avgTime"));
