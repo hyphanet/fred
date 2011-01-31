@@ -4842,7 +4842,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			if(maxWait == 0) return null;
 			synchronized(this) {
-				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this);
+				if(logMINOR) Logger.minor(this, "Waiting for any node to wake up "+this+" : "+Arrays.toString(waitingFor.toArray()));
 				long waitStart = System.currentTimeMillis();
 				long deadline = waitStart + maxWait;
 				while(acceptedBy == null && (!waitingFor.isEmpty()) && !failed) {
