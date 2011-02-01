@@ -3612,7 +3612,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * load management. */
 	private boolean noLoadStats() {
 		if(outputLoadTrackerRealTime.getLastIncomingLoadStats() == null) return true;
-		if(outputLoadTrackerRealTime.getLastIncomingLoadStats() == null) return true;
+		if(outputLoadTrackerBulk.getLastIncomingLoadStats() == null) return true;
 		return false;
 	}
 	
