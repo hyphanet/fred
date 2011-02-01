@@ -224,12 +224,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		int numberOfConnError = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONN_ERROR);
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 		int numberOfRoutingDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_DISABLED);
+		int numberOfNoLoadStats = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS);
 		
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
-		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly + numberOfClockProblem + numberOfConnError;
+		int numberOfNotConnected = numberOfTooNew + numberOfTooOld +  numberOfNoLoadStats + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly + numberOfClockProblem + numberOfConnError;
 		String titleCountString = null;
 		if(node.isAdvancedModeEnabled()) {
-			titleCountString = "(" + numberOfConnected + '/' + numberOfRoutingBackedOff + '/' + numberOfTooNew + '/' + numberOfTooOld + '/' + numberOfRoutingDisabled + '/' + numberOfNotConnected + ')';
+			titleCountString = "(" + numberOfConnected + '/' + numberOfRoutingBackedOff + '/' + numberOfTooNew + '/' + numberOfTooOld + '/' + numberOfNoLoadStats + '/' + numberOfRoutingDisabled + '/' + numberOfNotConnected + ')';
 		} else {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
@@ -311,7 +312,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				
 				// Peer statistics box
 				HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-				StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting, node);
+				StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting, numberOfNoLoadStats, node);
 				
 				// Peer routing backoff reason box
 				if(mode >= PageMaker.MODE_ADVANCED) {
