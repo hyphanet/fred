@@ -792,11 +792,11 @@ public class PeerManager {
 			PeerNode p = peers[i];
 			if(!p.isRoutable())
 				continue;
-			if(p.outputLoadTracker(true).getLastIncomingLoadStats(true) == null) {
+			if(p.outputLoadTracker(true).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats RT): "+p.getPeer());
 			}
-			if(p.outputLoadTracker(false).getLastIncomingLoadStats(false) == null) {
+			if(p.outputLoadTracker(false).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats bulk): "+p.getPeer());
 			}
@@ -953,7 +953,7 @@ public class PeerManager {
 					Logger.minor(this, "Skipping (not connected): " + p.getPeer());
 				continue;
 			}
-			if(p.outputLoadTracker(realTime).getLastIncomingLoadStats(realTime) == null) {
+			if(p.outputLoadTracker(realTime).getLastIncomingLoadStats() == null) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping (no load stats): "+p.getPeer());
 				continue;

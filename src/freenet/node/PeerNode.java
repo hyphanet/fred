@@ -3611,8 +3611,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * stats message. If so, we will not be able to route requests to the node under new 
 	 * load management. */
 	private boolean noLoadStats() {
-		if(outputLoadTrackerRealTime.getLastIncomingLoadStats(true) == null) return true;
-		if(outputLoadTrackerRealTime.getLastIncomingLoadStats(false) == null) return true;
+		if(outputLoadTrackerRealTime.getLastIncomingLoadStats() == null) return true;
+		if(outputLoadTrackerRealTime.getLastIncomingLoadStats() == null) return true;
 		return false;
 	}
 	
@@ -4950,7 +4950,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			maybeNotifySlotWaiter();
 		}
 		
-		public PeerLoadStats getLastIncomingLoadStats(boolean realTime) {
+		public PeerLoadStats getLastIncomingLoadStats() {
 			synchronized(routedToLock) {
 				return lastIncomingLoadStats;
 			}
@@ -5406,7 +5406,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public boolean isLowCapacity(boolean isRealtime) {
-		PeerLoadStats stats = outputLoadTracker(isRealtime).getLastIncomingLoadStats(isRealtime);
+		PeerLoadStats stats = outputLoadTracker(isRealtime).getLastIncomingLoadStats();
 		if(stats == null) return false;
 		NodePinger pinger = node.nodeStats.nodePinger;
 		if(pinger == null) return false; // FIXME possible?
