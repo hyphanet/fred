@@ -3507,7 +3507,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
-			if(now < routingBackedOffUntilRT) {
+			if(now < routingBackedOffUntilRT || isInMandatoryBackoff(now, true)) {
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
 				if(!lastRoutingBackoffReasonRT.equals(previousRoutingBackoffReasonRT) || (previousRoutingBackoffReasonRT == null)) {
 					if(previousRoutingBackoffReasonRT != null) {
@@ -3523,7 +3523,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 			}
 			
-			if(now < routingBackedOffUntilBulk) {
+			if(now < routingBackedOffUntilBulk || isInMandatoryBackoff(now, false)) {
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
 				if(!lastRoutingBackoffReasonBulk.equals(previousRoutingBackoffReasonBulk) || (previousRoutingBackoffReasonBulk == null)) {
 					if(previousRoutingBackoffReasonBulk != null) {
@@ -3539,9 +3539,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 			}
 			
-			if(isInMandatoryBackoff(now, true) || isInMandatoryBackoff(now, false)) {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
-			}
 		} else if(isConnected() && bogusNoderef)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONN_ERROR;
 		else if(isConnected() && unroutableNewerVersion)
