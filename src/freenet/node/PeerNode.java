@@ -3462,6 +3462,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return "BURSTING";
 		if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
 			return "DISCONNECTING";
+		if(status == PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS)
+			return "NO LOAD STATS";
 		return "UNKNOWN STATUS";
 	}
 
@@ -3497,6 +3499,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return "peer_listen_only";
 		else if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
 			return "peer_disconnecting";
+		else if(status == PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS)
+			return "peer_no_load_stats";
 		else
 			return "peer_unknown_status";
 	}

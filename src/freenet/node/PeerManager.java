@@ -126,6 +126,7 @@ public class PeerManager {
 	public static final int PEER_NODE_STATUS_CONN_ERROR = 12;
 	public static final int PEER_NODE_STATUS_DISCONNECTING = 13;
 	public static final int PEER_NODE_STATUS_ROUTING_DISABLED = 14;
+	public static final int PEER_NODE_STATUS_NO_LOAD_STATS = 15;
 	
 	/** The list of listeners that needs to be notified when peers' statuses changed*/
 	private List<PeerStatusChangeListener> listeners=new CopyOnWriteArrayList<PeerStatusChangeListener>();
