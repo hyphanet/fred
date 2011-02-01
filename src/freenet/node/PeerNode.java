@@ -3505,44 +3505,47 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return "peer_unknown_status";
 	}
 
-	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk) {
+	protected synchronized int getPeerNodeStatus(long now, long routingBackedOffUntilRT, long localRoutingBackedOffUntilBulk, boolean noLoadStats) {
 		checkConnectionsAndTrackers();
 		if(disconnecting)
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
-			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
-			if(now < routingBackedOffUntilRT || isInMandatoryBackoff(now, true)) {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
-				if(!lastRoutingBackoffReasonRT.equals(previousRoutingBackoffReasonRT) || (previousRoutingBackoffReasonRT == null)) {
+			if(noLoadStats)
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_NO_LOAD_STATS;
+			else {
+				peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
+				if(now < routingBackedOffUntilRT || isInMandatoryBackoff(now, true)) {
+					peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
+					if(!lastRoutingBackoffReasonRT.equals(previousRoutingBackoffReasonRT) || (previousRoutingBackoffReasonRT == null)) {
+						if(previousRoutingBackoffReasonRT != null) {
+							peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonRT, this, true);
+						}
+						peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReasonRT, this, true);
+						previousRoutingBackoffReasonRT = lastRoutingBackoffReasonRT;
+					}
+				} else {
 					if(previousRoutingBackoffReasonRT != null) {
 						peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonRT, this, true);
+						previousRoutingBackoffReasonRT = null;
 					}
-					peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReasonRT, this, true);
-					previousRoutingBackoffReasonRT = lastRoutingBackoffReasonRT;
 				}
-			} else {
-				if(previousRoutingBackoffReasonRT != null) {
-					peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonRT, this, true);
-					previousRoutingBackoffReasonRT = null;
-				}
-			}
-			
-			if(now < routingBackedOffUntilBulk || isInMandatoryBackoff(now, false)) {
-				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
-				if(!lastRoutingBackoffReasonBulk.equals(previousRoutingBackoffReasonBulk) || (previousRoutingBackoffReasonBulk == null)) {
+				
+				if(now < routingBackedOffUntilBulk || isInMandatoryBackoff(now, false)) {
+					peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
+					if(!lastRoutingBackoffReasonBulk.equals(previousRoutingBackoffReasonBulk) || (previousRoutingBackoffReasonBulk == null)) {
+						if(previousRoutingBackoffReasonBulk != null) {
+							peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonBulk, this, false);
+						}
+						peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReasonBulk, this, false);
+						previousRoutingBackoffReasonBulk = lastRoutingBackoffReasonBulk;
+					}
+				} else {
 					if(previousRoutingBackoffReasonBulk != null) {
 						peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonBulk, this, false);
+						previousRoutingBackoffReasonBulk = null;
 					}
-					peers.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReasonBulk, this, false);
-					previousRoutingBackoffReasonBulk = lastRoutingBackoffReasonBulk;
-				}
-			} else {
-				if(previousRoutingBackoffReasonBulk != null) {
-					peers.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReasonBulk, this, false);
-					previousRoutingBackoffReasonBulk = null;
 				}
 			}
-			
 		} else if(isConnected() && bogusNoderef)
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONN_ERROR;
 		else if(isConnected() && unroutableNewerVersion)
@@ -3578,9 +3581,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		long localRoutingBackedOffUntilRT = getRoutingBackedOffUntil(true);
 		long localRoutingBackedOffUntilBulk = getRoutingBackedOffUntil(true);
 		int oldPeerNodeStatus;
+		boolean noLoadStats = noLoadStats();
 		synchronized(this) {
 			oldPeerNodeStatus = peerNodeStatus;
-			peerNodeStatus = getPeerNodeStatus(now, localRoutingBackedOffUntilRT, localRoutingBackedOffUntilBulk);
+			peerNodeStatus = getPeerNodeStatus(now, localRoutingBackedOffUntilRT, localRoutingBackedOffUntilBulk, noLoadStats);
 
 			if(peerNodeStatus != oldPeerNodeStatus && recordStatus()) {
 				peers.removePeerNodeStatus(oldPeerNodeStatus, this, noLog);
@@ -3601,6 +3605,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				node.ticker.queueTimedJob(checkStatusAfterBackoff, "Update status for "+this, delta, true, true);
 		}
 		return peerNodeStatus;
+	}
+	
+	/** @return True if either bulk or realtime has not yet received a valid peer load 
+	 * stats message. If so, we will not be able to route requests to the node under new 
+	 * load management. */
+	private boolean noLoadStats() {
+		if(outputLoadTrackerRealTime.getLastIncomingLoadStats(true) == null) return true;
+		if(outputLoadTrackerRealTime.getLastIncomingLoadStats(false) == null) return true;
+		return false;
 	}
 	
 	private final Runnable checkStatusAfterBackoff;
