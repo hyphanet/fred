@@ -228,7 +228,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 					if(status != NOT_FINISHED) return;
 					if(transferringFrom != null) return;
 					reassignedToSelfDueToMultipleTimeouts = true;
-					fromOfferedKey = (routeAttempts > 0);
+					fromOfferedKey = (routeAttempts == 0);
 				}
 				
 				// We are still routing, yet we have exceeded the per-peer timeout, probably due to routing to multiple nodes e.g. RNFs and accepted timeouts.
