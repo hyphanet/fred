@@ -30,6 +30,11 @@ public class NewPacketFormatKeyContext {
 	
 	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
+	private final TreeMap<Integer, Long> sentTimes = new TreeMap<Integer, Long>();
+	
+	/** Keep this many sent times even if the packets are not acked, so we can compute an
+	 * accurate round trip time if they are acked after we had decided they were lost. */
+	private static final int MAX_SENT_TIMES = 4096;
 	
 	private final Object sequenceNumberLock = new Object();
 	
@@ -102,18 +107,26 @@ public class NewPacketFormatKeyContext {
 	 * @return False if we have already acked the packet */
 	public void ack(int ack, BasePeerNode pn) {
 		long rtt;
-		int packetLength = 0;
 		int maxSize;
+		boolean lostBeforeAcked = false;
 		synchronized(sentPackets) {
 			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack);
 			SentPacket sent = sentPackets.remove(ack);
 			if(sent != null) {
 				rtt = sent.acked();
-				packetLength = sent.packetLength;
 				maxSize = (maxSeenInFlight * 2) + 10;
+				sentTimes.remove(ack);
 			} else {
 				if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
-				return;
+				lostBeforeAcked = true;
+				Long l = sentTimes.remove(ack);
+				if(l == null) {
+					if(logDEBUG) Logger.debug(this, "No time for "+ack+" - maybe acked twice?");
+					return;
+				} else {
+					rtt = System.currentTimeMillis() - l;
+					maxSize = (maxSeenInFlight * 2) + 10;
+				}
 			}
 		}
 		
@@ -125,7 +138,8 @@ public class NewPacketFormatKeyContext {
 		}
 		if(throttle != null) {
 			throttle.setRoundTripTime(rt);
-			throttle.notifyOfPacketAcknowledged(maxSize);
+			if(!lostBeforeAcked)
+				throttle.notifyOfPacketAcknowledged(maxSize);
 		}
 	}
 
@@ -207,6 +221,12 @@ public class NewPacketFormatKeyContext {
 
 	public void sent(SentPacket sentPacket, int seqNum, int length) {
 		synchronized(sentPackets) {
+			if(!sentPacket.messages.isEmpty()) {
+				sentTimes.put(seqNum, System.currentTimeMillis());
+			}
+			int toRemove = seqNum - MAX_SENT_TIMES;
+			if(toRemove < 0) toRemove += NewPacketFormat.NUM_SEQNUMS;
+			sentTimes.remove(toRemove);
 			sentPacket.sent(length);
 			sentPackets.put(seqNum, sentPacket);
 			int inFlight = sentPackets.size();
