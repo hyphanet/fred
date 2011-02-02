@@ -4347,6 +4347,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					RTO = 1000;
 				if(RTO > 60000)
 					RTO = 60000;
+				reportedRTT = true;
 			} else {
 				// Update
 				RTTVAR = 0.75 * RTTVAR + 0.25 * Math.abs(SRTT - t);
