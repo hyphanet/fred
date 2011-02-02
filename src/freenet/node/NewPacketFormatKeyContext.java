@@ -111,8 +111,10 @@ public class NewPacketFormatKeyContext {
 				rtt = sent.acked();
 				packetLength = sent.packetLength;
 				maxSize = (maxSeenInFlight * 2) + 10;
-			} else
+			} else {
+				if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
 				return;
+			}
 		}
 		
 		int rt = (int) Math.min(rtt, Integer.MAX_VALUE);
