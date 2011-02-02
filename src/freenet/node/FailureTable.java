@@ -455,7 +455,11 @@ public class FailureTable implements OOMHook {
 
 				public void run() {
 					try {
-						source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000, false, null);
+						if(source.isOldFNP()) {
+							source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000, false, null);
+						} else {
+							source.sendSync(data, senderCounter, realTimeFlag);
+						}
 					} catch (NotConnectedException e) {
 						// :(
 					} catch (WaitedTooLongException e) {

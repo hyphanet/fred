@@ -502,7 +502,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 			public void run() {
 				try {
-					source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60 * 1000, true, null);
+					if(source.isOldFNP())
+						source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60 * 1000, true, null);
+					else
+						source.sendSync(dataMsg, RequestHandler.this, realTimeFlag);
 					applyByteCounts();
 				} catch(NotConnectedException e) {
 					// Okay
@@ -525,17 +528,21 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
-	static void sendSSK(byte[] headers, byte[] data, boolean needsPubKey, DSAPublicKey pubKey, final PeerNode source, long uid, ByteCounter ctr) throws NotConnectedException, WaitedTooLongException, PeerRestartedException {
+	static void sendSSK(byte[] headers, byte[] data, boolean needsPubKey, DSAPublicKey pubKey, final PeerNode source, long uid, ByteCounter ctr, boolean realTimeFlag) throws NotConnectedException, WaitedTooLongException, PeerRestartedException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
 		source.sendAsync(headersMsg, null, ctr);
 		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data);
-		try {
-			source.sendThrottledMessage(dataMsg, data.length, ctr, 60 * 1000, false, null);
-		} catch(SyncSendWaitedTooLongException e) {
-			// Impossible
-			throw new Error(e);
+		if(source.isOldFNP()) {
+			try {
+				source.sendThrottledMessage(dataMsg, data.length, ctr, 60 * 1000, false, null);
+			} catch(SyncSendWaitedTooLongException e) {
+				// Impossible
+				throw new Error(e);
+			}
+		} else {
+			source.sendSync(dataMsg, ctr, realTimeFlag);
 		}
 
 		if(needsPubKey) {
