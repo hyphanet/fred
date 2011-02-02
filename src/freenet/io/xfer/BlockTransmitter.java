@@ -159,8 +159,17 @@ public class BlockTransmitter {
 
 		/** @return True . */
 		private boolean innerRun(int packetNo, BitArray copied) {
+			boolean isOldFNP = _destination.isOldFNP();
 			try {
-				MessageItem item = _destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime), _prb._packetSize, _ctr, SEND_TIMEOUT, false, new MyAsyncMessageCallback());
+				Message msg = DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime);
+				MyAsyncMessageCallback cb = new MyAsyncMessageCallback(isOldFNP);
+				MessageItem item;
+				if(!_destination.isOldFNP()) {
+					// Everything is throttled.
+					item = _destination.sendAsync(msg, cb, _ctr);
+				} else {
+					item = _destination.sendThrottledMessage(msg, _prb._packetSize, _ctr, SEND_TIMEOUT, false, cb);
+				}
 				synchronized(itemsPending) {
 					itemsPending.add(item);
 				}
@@ -696,7 +705,10 @@ public class BlockTransmitter {
 
 	private class MyAsyncMessageCallback implements AsyncMessageCallback {
 
-		MyAsyncMessageCallback() {
+		final boolean isOldFNP;
+		
+		MyAsyncMessageCallback(boolean isOldFNP) {
+			this.isOldFNP = isOldFNP;
 			synchronized(_senderThread) {
 				blockSendsPending++;
 			}
@@ -751,6 +763,9 @@ public class BlockTransmitter {
 					}
 				}
 			}
+			if(!isOldFNP)
+				// Everything is throttled, but payload is not reported.
+				_ctr.sentPayload(PACKET_SIZE);
 			if(callCallback) {
 				callCallback(success);
 			}
