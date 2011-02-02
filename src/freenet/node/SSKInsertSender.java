@@ -271,6 +271,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					next.sendThrottledMessage(dataMsg, data.length, this, SSKInsertHandler.DATA_INSERT_TIMEOUT, false, null);
 				} else {
 					next.sendSync(dataMsg, this, realTimeFlag);
+					sentPayload(data.length);
 				}
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
