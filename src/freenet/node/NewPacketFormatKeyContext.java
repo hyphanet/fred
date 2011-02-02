@@ -31,11 +31,12 @@ public class NewPacketFormatKeyContext {
 	
 	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
-	private final SentTimes sentTimes = new SentTimes(MAX_SENT_TIMES);
-	
 	/** Keep this many sent times even if the packets are not acked, so we can compute an
 	 * accurate round trip time if they are acked after we had decided they were lost. */
 	private static final int MAX_SENT_TIMES = 16384;
+	/** This must be memory efficient. Given we have one per peer, a TreeMap would be way
+	 * too big. */
+	private final SentTimes sentTimes = new SentTimes(MAX_SENT_TIMES);
 	
 	private final Object sequenceNumberLock = new Object();
 	
