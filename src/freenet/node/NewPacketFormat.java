@@ -18,6 +18,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
+import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
 import freenet.support.ByteBufferInputStream;
 import freenet.support.LogThresholdCallback;
@@ -834,11 +835,16 @@ outer:
 		if(pn == null)
 			return MAX_RECEIVE_BUFFER_SIZE;
 		else {
-			int size = (int)Math.min(MAX_RECEIVE_BUFFER_SIZE, pn.getThrottle().getWindowSize() * Node.PACKET_SIZE);
-			// Impose a minimum so that we don't lose the ability to send anything.
-			// FIXME improve this.
-			if(size < 2048) return 2048;
-			return size;
+			PacketThrottle throttle = pn.getThrottle();
+			if(throttle == null)
+				return MAX_RECEIVE_BUFFER_SIZE;
+			else {
+				int size = (int)Math.min(MAX_RECEIVE_BUFFER_SIZE, pn.getThrottle().getWindowSize() * Node.PACKET_SIZE);
+				// Impose a minimum so that we don't lose the ability to send anything.
+				// FIXME improve this.
+				if(size < 2048) return 2048;
+				return size;
+			}
 		}
 	}
 
