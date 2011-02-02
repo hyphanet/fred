@@ -142,8 +142,14 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					receivedCompletionNotice = true;
 					if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
 						finishedWaiting = true;
-					else
+					else {
+						// First timeout but not had second timeout yet.
+						// Unlock downstream (below), but will wait here for the peer to fatally timeout.
+						// UIDTag will automatically reassign to self when the time comes if we call handlingTimeout() here, and will avoid unnecessarily logging errors.
+						// LOCKING: Note that it is safe to call the tag within the lock since we always take the UIDTag lock last.
+						thisTag.handlingTimeout(pn);
 						noUnlockPeer = true;
+					}
 					notifyAll();
 				}
 			}
@@ -158,9 +164,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			if(!noUnlockPeer)
 				// Downstream (away from originator), we need to stay locked on the peer until the fatal timeout / the delayed notice.
 				// Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished.
+				// LOCKING: Do this outside the lock as pn can do heavy stuff in response (new load management).
 				pn.noLongerRoutingTo(thisTag, false);
-			else if(timeout)
-				thisTag.handlingTimeout(pn);
 			if(noNotifyOriginator) return false;
 			return true;
 		}
