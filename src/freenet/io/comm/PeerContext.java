@@ -72,4 +72,7 @@ public interface PeerContext {
 	boolean unqueueMessage(MessageItem item);
 
 	void reportThrottledPacketSendTime(long time, boolean realTime);
+
+	/** Using old FNP format??? */
+	boolean isOldFNP();
 }

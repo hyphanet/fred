@@ -218,4 +218,8 @@ public class NullBasePeerNode implements BasePeerNode {
 		};
 	}
 
+	public boolean isOldFNP() {
+		return false;
+	}
+
 }
