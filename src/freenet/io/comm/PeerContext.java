@@ -41,6 +41,8 @@ public interface PeerContext {
 	/** Send a throttled message to the node (may block for a long time).
 	 * @deprecated New packet format throttled everything anyway, so we should get rid of this.
 	 * You should call sendAsync or sendSync, and make sure you call sentPayload if appropriate.
+	 * Sending asynchronously saves threads and allows unqueueing of messages, preventing
+	 * a build up of queued messages, as well as allowing us to get rid of sendThrottledMessage().
 	 * @return 
 	 * @throws SyncSendWaitedTooLongException
 	 * @throws NotConnectedException If the peer is disconnected at the time of sending or becomes so later.
