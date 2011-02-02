@@ -123,12 +123,7 @@ public class NewPacketFormatKeyContext {
 		}
 		if(throttle != null) {
 			throttle.setRoundTripTime(rt);
-			// FIXME should we apply this to all packets?
-			// FIXME sub-packetsize MTUs may be a problem
-			// The throttle only applies to big blocks.
-			if(packetLength > Node.PACKET_SIZE) {
-				throttle.notifyOfPacketAcknowledged(maxSize);
-			}
+			throttle.notifyOfPacketAcknowledged(maxSize);
 		}
 	}
 
@@ -255,11 +250,7 @@ public class NewPacketFormatKeyContext {
 					}
 					s.lost();
 					it.remove();
-					// FIXME should we apply this to all packets?
-					// FIXME sub-packetsize MTUs may be a problem
-					// The throttle only applies to big blocks.
-					if(s.packetLength > Node.PACKET_SIZE)
-						bigLostCount++;
+					bigLostCount++;
 				}
 			}
 		}
