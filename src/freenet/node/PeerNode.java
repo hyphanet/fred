@@ -1639,11 +1639,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	*/
 	public void sendSync(Message req, ByteCounter ctr, boolean realTime) throws NotConnectedException {
 		SyncMessageCallback cb = new SyncMessageCallback();
-		sendAsync(req, cb, ctr);
+		MessageItem item = sendAsync(req, cb, ctr);
 		cb.waitForSend(60 * 1000);
 		if (!cb.done) {
 			Logger.error(this, "Waited too long for a blocking send for " + req + " to " + PeerNode.this, new Exception("error"));
 			this.localRejectedOverload("SendSyncTimeout", realTime);
+			// Try to unqueue it, since it presumably won't be of any use now.
+			if(!messageQueue.removeMessage(item)) {
+				cb.waitForSend(10 * 1000);
+				if(!cb.done) {
+					Logger.error(this, "Waited too long for blocking send and then could not unqueue for "+req+" to "+PeerNode.this, new Exception("error"));
+				}
+			}
+			
 			// Other side will normally timeout so no need for fatalTimeout().
 		}
 	}
