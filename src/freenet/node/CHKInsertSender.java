@@ -159,6 +159,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				// Downstream (away from originator), we need to stay locked on the peer until the fatal timeout / the delayed notice.
 				// Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished.
 				pn.noLongerRoutingTo(thisTag, false);
+			else if(timeout)
+				thisTag.handlingTimeout(pn);
 			if(noNotifyOriginator) return false;
 			return true;
 		}
