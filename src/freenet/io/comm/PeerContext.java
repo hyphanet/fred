@@ -39,6 +39,8 @@ public interface PeerContext {
 	public MessageItem sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
 
 	/** Send a throttled message to the node (may block for a long time).
+	 * @deprecated New packet format throttled everything anyway, so we should get rid of this.
+	 * You should call sendAsync or sendSync, and make sure you call sentPayload if appropriate.
 	 * @return 
 	 * @throws SyncSendWaitedTooLongException
 	 * @throws NotConnectedException If the peer is disconnected at the time of sending or becomes so later.
