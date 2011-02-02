@@ -1136,7 +1136,7 @@ loadWaiterLoop:
         	finalHeaders = waiter.headers;
     		if(this.status == SUCCESS || this.prb != null && transferringFrom != null)
     			failNow = true;
-    		if(!wasFork)
+    		if((!wasFork) && (this.prb == null || !prb.allReceivedAndNotAborted())) 
     			this.prb = prb;
     		notifyAll();
     	}
@@ -1182,6 +1182,8 @@ loadWaiterLoop:
     				transferTime = tEnd - tStart;
     				synchronized(RequestSender.this) {
     					transferringFrom = null;
+    					if(RequestSender.this.prb == null || !RequestSender.this.prb.allReceivedAndNotAborted())
+    						RequestSender.this.prb = prb;
     				}
     				if(!wasFork)
     					node.removeTransferringSender((NodeCHK)key, RequestSender.this);
