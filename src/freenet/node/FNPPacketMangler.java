@@ -2323,6 +2323,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 
 		overhead += ptr;
 
+		DecodingMessageGroup group = tracker.pn.startProcessingDecryptedMessages(messages);
 		for(int i=0;i<messages;i++) {
 			if(ptr+1 >= decrypted.length) {
 				Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
@@ -2331,12 +2332,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			(decrypted[ptr++] & 0xff);
 			if(length > decrypted.length - ptr) {
 				Logger.error(this, "Message longer than remaining space: "+length);
+				group.complete();
 				return;
 			}
 			if(logMINOR) Logger.minor(this, "Message "+i+" length "+length+", hash code: "+Fields.hashCode(decrypted, ptr, length));
-			tracker.pn.processDecryptedMessage(decrypted, ptr, length, 1 + (overhead / messages));
+			group.processDecryptedMessage(decrypted, ptr, length, 1 + (overhead / messages));
 			ptr+=length;
 		}
+		group.complete();
 
 		tracker.pn.maybeRekey();
 		if(logMINOR) Logger.minor(this, "Done");

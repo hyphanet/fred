@@ -1322,6 +1322,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			om.onDisconnect(this);
 		outputLoadTrackerRealTime.failSlotWaiters(true);
 		outputLoadTrackerBulk.failSlotWaiters(true);
+		loadSenderBulk.onDisconnect();
+		loadSenderRealTime.onDisconnect();
 		return ret;
 	}
 
@@ -4534,13 +4536,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(!mustSend) return;
 		}
 		
-		Message makeLoadStats(long now, int transfersPerInsert) {
+		Message makeLoadStats(long now, int transfersPerInsert, boolean noRemember) {
 			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, transfersPerInsert, realTimeFlag);
 			synchronized(this) {
 				lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
 				lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
-				if(lastFullStats != null && lastFullStats.equals(stats)) return null;
-				lastFullStats = stats;
+				if(!noRemember) {
+					if(lastFullStats != null && lastFullStats.equals(stats)) return null;
+					lastFullStats = stats;
+				}
 				timeLastSentAllocationNotice = now;
 				countAllocationNotices++;
 				if(logMINOR) Logger.minor(this, "Sending allocation notice to "+this+" allocation is "+lastSentAllocationInput+" input "+lastSentAllocationOutput+" output.");
@@ -4871,13 +4875,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 	
-	public void processDecryptedMessage(byte[] data, int offset, int length, int overhead) {
-		Message m = node.usm.decodeSingleMessage(data, offset, length, this, overhead);
-		if(m != null) {
-			handleMessage(m);
-		}
-	}
-	
 	public void handleMessage(Message m) {
 		node.usm.checkFilters(m, crypto.socket);
 	}
@@ -4931,8 +4928,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return false;
 	}
 	
-	public MessageItem makeLoadStats(boolean realtime, boolean boostPriority) {
-		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert());
+	public MessageItem makeLoadStats(boolean realtime, boolean boostPriority, boolean noRemember) {
+		Message msg = loadSender(realtime).makeLoadStats(System.currentTimeMillis(), node.nodeStats.outwardTransfersPerInsert(), noRemember);
 		if(msg == null) return null;
 		return new MessageItem(msg, null, node.nodeStats.allocationNoticesCounter, boostPriority ? DMT.PRIORITY_NOW : (short)-1);
 	}
@@ -4947,6 +4944,46 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public boolean isOldFNP() {
 		return packetFormat instanceof FNPWrapper;
+	}
+	
+	public DecodingMessageGroup startProcessingDecryptedMessages(int size) {
+		return new MyDecodingMessageGroup(size);
+	}
+	
+	class MyDecodingMessageGroup implements DecodingMessageGroup {
+
+		private final ArrayList<Message> messages;
+		private final ArrayList<Message> messagesWantSomething;
+		
+		public MyDecodingMessageGroup(int size) {
+			messages = new ArrayList<Message>(size);
+			messagesWantSomething = new ArrayList<Message>(size);
+		}
+
+		public void processDecryptedMessage(byte[] data, int offset,
+				int length, int overhead) {
+			Message m = node.usm.decodeSingleMessage(data, offset, length, PeerNode.this, overhead);
+			if(m == null) return;
+			if(DMT.isPeerLoadStatusMessage(m)) {
+				handleMessage(m);
+				return;
+			}
+			if(DMT.isLoadLimitedRequest(m)) {
+				messagesWantSomething.add(m);
+			} else {
+				messages.add(m);
+			}
+		}
+
+		public void complete() {
+			for(Message msg : messages) {
+				handleMessage(msg);
+			}
+			for(Message msg : messagesWantSomething) {
+				handleMessage(msg);
+			}
+		}
+		
 	}
 
 }

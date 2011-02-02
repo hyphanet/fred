@@ -30,8 +30,8 @@ interface BasePeerNode extends PeerContext {
 
 	void reportOutgoingPacket(byte[] data, int offset, int length, long now);
 	
-	void processDecryptedMessage(byte[] data, int offset, int length, int overhead);
-
+	DecodingMessageGroup startProcessingDecryptedMessages(int count);
+	
 	void reportPing(long rt);
 
 	double averagePingTime();
@@ -63,8 +63,10 @@ interface BasePeerNode extends PeerContext {
 	/** Make a load stats message.
 	 * @param realtime True for the realtime load stats, false for the bulk load stats.
 	 * @param highPriority If true, boost the priority so it gets sent fast.
-	 */
-	MessageItem makeLoadStats(boolean realtime, boolean highPriority);
+	 * @param noRemember If true, generating it for a lossy message in a packet; don't 
+	 * remember that we sent it, since it might be lost, and generate it even if the last 
+	 * one was the same, since the last one might be delayed. */
+	MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean noRemember);
 	
 	boolean grabSendLoadStatsASAP(boolean realtime);
 

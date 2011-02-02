@@ -119,9 +119,11 @@ public class NewPacketFormat implements PacketFormat {
 		pn.reportIncomingPacket(buf, offset, length, now);
 
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
+		DecodingMessageGroup group = pn.startProcessingDecryptedMessages(finished.size());
 		for(byte[] buffer : finished) {
-			pn.processDecryptedMessage(buffer, 0, buffer.length, 0);
+			group.processDecryptedMessage(buffer, 0, buffer.length, 0);
 		}
+		group.complete();
 
 		return true;
 	}
@@ -612,7 +614,7 @@ outer:
 				if(!(addStatsBulk || addStatsRT)) break;
 				
 				if(addStatsBulk) {
-					MessageItem item = pn.makeLoadStats(false, false);
+					MessageItem item = pn.makeLoadStats(false, false, true);
 					if(item != null) {
 						byte[] buf = item.getData();
 						haveAddedStatsBulk = buf;
@@ -622,7 +624,7 @@ outer:
 				}
 				
 				if(addStatsRT) {
-					MessageItem item = pn.makeLoadStats(true, false);
+					MessageItem item = pn.makeLoadStats(true, false, true);
 					if(item != null) {
 						byte[] buf = item.getData();
 						haveAddedStatsRT = buf;
@@ -693,7 +695,7 @@ outer:
 		if((!ackOnly) && (!cantSend)) {
 			
 			if(sendStatsBulk) {
-				MessageItem item = pn.makeLoadStats(false, true);
+				MessageItem item = pn.makeLoadStats(false, true, false);
 				if(item != null) {
 					if(haveAddedStatsBulk != null) {
 						packet.removeLossyMessage(haveAddedStatsBulk);
@@ -704,7 +706,7 @@ outer:
 			}
 			
 			if(sendStatsRT) {
-				MessageItem item = pn.makeLoadStats(true, true);
+				MessageItem item = pn.makeLoadStats(true, true, false);
 				if(item != null) {
 					if(haveAddedStatsRT != null) {
 						packet.removeLossyMessage(haveAddedStatsRT);
@@ -784,7 +786,7 @@ outer:
 						if(!(addStatsBulk || addStatsRT)) break;
 						
 						if(addStatsBulk) {
-							MessageItem item = pn.makeLoadStats(false, false);
+							MessageItem item = pn.makeLoadStats(false, false, true);
 							if(item != null) {
 								byte[] buf = item.getData();
 								haveAddedStatsBulk = item.buf;
@@ -794,7 +796,7 @@ outer:
 						}
 						
 						if(addStatsRT) {
-							MessageItem item = pn.makeLoadStats(true, false);
+							MessageItem item = pn.makeLoadStats(true, false, true);
 							if(item != null) {
 								byte[] buf = item.getData();
 								haveAddedStatsRT = item.buf;
