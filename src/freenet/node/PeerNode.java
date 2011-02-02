@@ -1642,7 +1642,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		MessageItem item = sendAsync(req, cb, ctr);
 		cb.waitForSend(60 * 1000);
 		if (!cb.done) {
-			Logger.error(this, "Waited too long for a blocking send for " + req + " to " + PeerNode.this, new Exception("error"));
+			Logger.warning(this, "Waited too long for a blocking send for " + req + " to " + PeerNode.this, new Exception("error"));
 			this.localRejectedOverload("SendSyncTimeout", realTime);
 			// Try to unqueue it, since it presumably won't be of any use now.
 			if(!messageQueue.removeMessage(item)) {
