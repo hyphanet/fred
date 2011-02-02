@@ -3015,4 +3015,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			throttledPacketSendAverageBulk.report(interval);
 	}
 	
+	public synchronized long maxPingTime() {
+		return maxPingTime;
+	}
+	
 }

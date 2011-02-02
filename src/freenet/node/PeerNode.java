@@ -2965,6 +2965,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public boolean isRoutingBackedOff(int ignoreBackoffUnder, boolean realTime) {
 		long now = System.currentTimeMillis();
+		double pingTime;
 		synchronized(this) {
 			long routingBackedOffUntil = realTime ? routingBackedOffUntilRT : routingBackedOffUntilBulk;
 			if(now < routingBackedOffUntil) {
@@ -2974,8 +2975,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(now < transferBackedOffUntil) {
 				if(transferBackedOffUntil - now >= ignoreBackoffUnder) return true;
 			}
-			return false;
+			pingTime = averagePingTime();
 		}
+		if(pingTime > (2 * node.nodeStats.maxPingTime())) return true;
+		return false;
 	}
 	
 	public boolean isRoutingBackedOff(boolean realTime) {
