@@ -715,20 +715,20 @@ public class BlockTransmitter {
 		}
 
 		public void acknowledged() {
-			complete();
+			complete(false);
 		}
 
 		public void disconnected() {
 			// FIXME kill transfer
-			complete();
+			complete(true);
 		}
 
 		public void fatalError() {
 			// FIXME kill transfer
-			complete();
+			complete(true);
 		}
 		
-		private void complete() {
+		private void complete(boolean failed) {
 			if(logMINOR) Logger.minor(this, "Completed send on a block for "+BlockTransmitter.this);
 			boolean success = false;
 			long now = System.currentTimeMillis();
@@ -751,7 +751,7 @@ public class BlockTransmitter {
 					}
 				}
 			}
-			if(!isOldFNP)
+			if((!isOldFNP) && (!failed))
 				// Everything is throttled, but payload is not reported.
 				_ctr.sentPayload(PACKET_SIZE);
 			if(callCallback) {
