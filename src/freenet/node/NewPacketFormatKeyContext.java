@@ -9,6 +9,7 @@ import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormat.SentPacket;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.SentTimes;
 import freenet.support.Logger.LogLevel;
 
 /** NewPacketFormat's context for each SessionKey. Specifically, packet numbers are unique
@@ -30,11 +31,11 @@ public class NewPacketFormatKeyContext {
 	
 	private final TreeMap<Integer, Long> acks = new TreeMap<Integer, Long>();
 	private final HashMap<Integer, SentPacket> sentPackets = new HashMap<Integer, SentPacket>();
-	private final TreeMap<Integer, Long> sentTimes = new TreeMap<Integer, Long>();
+	private final SentTimes sentTimes = new SentTimes(MAX_SENT_TIMES);
 	
 	/** Keep this many sent times even if the packets are not acked, so we can compute an
 	 * accurate round trip time if they are acked after we had decided they were lost. */
-	private static final int MAX_SENT_TIMES = 4096;
+	private static final int MAX_SENT_TIMES = 16384;
 	
 	private final Object sequenceNumberLock = new Object();
 	
@@ -115,12 +116,12 @@ public class NewPacketFormatKeyContext {
 			if(sent != null) {
 				rtt = sent.acked();
 				maxSize = (maxSeenInFlight * 2) + 10;
-				sentTimes.remove(ack);
+				sentTimes.removeTime(ack);
 			} else {
 				if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
 				lostBeforeAcked = true;
-				Long l = sentTimes.remove(ack);
-				if(l == null) {
+				long l = sentTimes.removeTime(ack);
+				if(l < 0) {
 					if(logDEBUG) Logger.debug(this, "No time for "+ack+" - maybe acked twice?");
 					return;
 				} else {
@@ -222,11 +223,8 @@ public class NewPacketFormatKeyContext {
 	public void sent(SentPacket sentPacket, int seqNum, int length) {
 		synchronized(sentPackets) {
 			if(!sentPacket.messages.isEmpty()) {
-				sentTimes.put(seqNum, System.currentTimeMillis());
+				sentTimes.add(seqNum, System.currentTimeMillis());
 			}
-			int toRemove = seqNum - MAX_SENT_TIMES;
-			if(toRemove < 0) toRemove += NewPacketFormat.NUM_SEQNUMS;
-			sentTimes.remove(toRemove);
 			sentPacket.sent(length);
 			sentPackets.put(seqNum, sentPacket);
 			int inFlight = sentPackets.size();
