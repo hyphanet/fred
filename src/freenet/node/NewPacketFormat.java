@@ -1007,7 +1007,7 @@ outer:
 			// but given that Freenet is mostly used on very slow upstream links, it 
 			// probably makes sense for us too for now, to avoid excessive retransmits.
 			// FIXME !!!
-			return Math.max(1000, pn.averagePingTime());
+			return Math.max(1000, pn.averagePingTimeCorrected());
 		}
 		return 1000;
 	}

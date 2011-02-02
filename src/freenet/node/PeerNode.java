@@ -3243,6 +3243,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public double averagePingTime() {
 		return pingAverage.currentValue();
 	}
+	
+	private boolean reportedRTT;
+	private double SRTT = 1000;
+	private double RTTVAR = 0;
+	private double RTO = 1000;
+	
+	/** Calculated as per RFC 2988 */
+	public synchronized double averagePingTimeCorrected() {
+		return RTO; 
+	}
 
 	public void reportThrottledPacketSendTime(long timeDiff, boolean realTime) {
 		// FIXME do we need this?
@@ -4322,6 +4332,42 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
+		synchronized(this) {
+			// Update RTT according to RFC 2988.
+			if(!reportedRTT) {
+				// Initialize
+				SRTT = t;
+				RTTVAR = t / 2;
+				RTO = SRTT + RTTVAR * 4;
+				// RFC 2988 specifies a 1 second minimum RTT, mostly due to legacy issues,
+				// but given that Freenet is mostly used on very slow upstream links, it 
+				// probably makes sense for us too for now, to avoid excessive retransmits.
+				// FIXME !!!
+				if(RTO < 1000)
+					RTO = 1000;
+				if(RTO > 60000)
+					RTO = 60000;
+			} else {
+				// Update
+				RTTVAR = 0.75 * RTTVAR + 0.25 * Math.abs(SRTT - t);
+				SRTT = 0.875 * SRTT + 0.125 * t;
+				RTO = SRTT + RTTVAR * 4;
+				// RFC 2988 specifies a 1 second minimum RTT, mostly due to legacy issues,
+				// but given that Freenet is mostly used on very slow upstream links, it 
+				// probably makes sense for us too for now, to avoid excessive retransmits.
+				// FIXME !!!
+				if(RTO < 1000)
+					RTO = 1000;
+				if(RTO > 60000)
+					RTO = 60000;
+			}
+		}
+	}
+	
+	public synchronized void backoffOnResend() {
+		RTO = RTO * 2;
+		if(RTO > 60000)
+			RTO = 60000;
 	}
 
 	private long resendBytesSent;

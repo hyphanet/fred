@@ -282,6 +282,7 @@ public class NewPacketFormatKeyContext {
 					throttle.notifyOfPacketLost();
 				}
 			}
+			pn.backoffOnResend();
 		}
 	}
 
