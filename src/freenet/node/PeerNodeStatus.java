@@ -53,6 +53,7 @@ public class PeerNodeStatus {
 	private final boolean isOpennet;
 
 	private final double averagePingTime;
+	private final double averagePingTimeCorrected;
 
 	private final boolean publicInvalidVersion;
 
@@ -142,6 +143,7 @@ public class PeerNodeStatus {
 		this.isFetchingARK = peerNode.isFetchingARK();
 		this.isOpennet = peerNode.isOpennet();
 		this.averagePingTime = peerNode.averagePingTime();
+		this.averagePingTimeCorrected = peerNode.averagePingTimeCorrected();
 		this.publicInvalidVersion = peerNode.publicInvalidVersion();
 		this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
 		this.backedOffPercent = peerNode.backedOffPercent.currentValue();
@@ -273,6 +275,13 @@ public class PeerNodeStatus {
 	 */
 	public double getAveragePingTime() {
 		return averagePingTime;
+	}
+	
+	/**
+	 * @return The ping time for purposes of retransmissions.
+	 */
+	public double getAveragePingTimeCorrected() {
+		return averagePingTimeCorrected;
 	}
 
 	/**

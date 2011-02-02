@@ -805,7 +805,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		if (advancedModeEnabled) {
 			String pingTime = "";
 			if (peerNodeStatus.isConnected()) {
-				pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms)";
+				pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms / " +
+				(int) peerNodeStatus.getAveragePingTimeCorrected()+"ms)";
 			}
 			peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
 		}
