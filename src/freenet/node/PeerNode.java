@@ -4711,6 +4711,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	public void reportLoadStatus(PeerLoadStats stat) {
 		outputLoadTracker(stat.realTime).reportLoadStatus(stat);
+		node.executor.execute(checkStatusAfterBackoff);
 	}
 	
 	public static class SlotWaiter {
