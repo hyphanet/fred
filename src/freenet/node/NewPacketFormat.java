@@ -32,7 +32,7 @@ public class NewPacketFormat implements PacketFormat {
 	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
 	// FIXME increase this significantly to let it ride over network interruptions.
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
-	static final int MAX_BUFFER_SIZE = 256 * 1024;
+	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
 	static final long NUM_SEQNUMS = 2147483648l;
@@ -197,7 +197,7 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				} else {
 					synchronized(bufferUsageLock) {
-						if((usedBuffer + fragment.fragmentLength) > MAX_BUFFER_SIZE) {
+						if((usedBuffer + fragment.fragmentLength) > MAX_RECEIVE_BUFFER_SIZE) {
 							if(logMINOR) Logger.minor(this, "Could not create buffer, would excede max size");
 							dontAck = true;
 							continue;
@@ -270,7 +270,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(addedAck) {
 				if(!wakeUp) {
 					synchronized(bufferUsageLock) {
-						if(usedBuffer > MAX_BUFFER_SIZE / 2)
+						if(usedBuffer > MAX_RECEIVE_BUFFER_SIZE / 2)
 							wakeUp = true;
 					}
 				}
@@ -654,8 +654,9 @@ outer:
 		}
 		
 		if((!mustSend) && numAcks > 0) {
+			int maxSendBufferSize = maxSendBufferSize();
 			synchronized(bufferUsageLock) {
-				if(usedBufferOtherSide > MAX_BUFFER_SIZE / 2) {
+				if(usedBufferOtherSide > maxSendBufferSize / 2) {
 					if(logDEBUG) Logger.debug(this, "Must send because other side buffer size is "+usedBufferOtherSide);
 					mustSend = true;
 				}
@@ -735,7 +736,8 @@ outer:
 							synchronized(bufferUsageLock) {
 								bufferUsage = usedBufferOtherSide;
 							}
-							if((bufferUsage + item.buf.length) > MAX_BUFFER_SIZE) {
+							int maxSendBufferSize = maxSendBufferSize();
+							if((bufferUsage + item.buf.length) > maxSendBufferSize) {
 								if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
 								messageQueue.pushfrontPrioritizedMessageItem(item);
 								break fragments;
@@ -828,6 +830,18 @@ outer:
 		return packet;
 	}
 	
+	private int maxSendBufferSize() {
+		if(pn == null)
+			return MAX_RECEIVE_BUFFER_SIZE;
+		else {
+			int size = (int)Math.min(MAX_RECEIVE_BUFFER_SIZE, pn.getThrottle().getWindowSize() * Node.PACKET_SIZE);
+			// Impose a minimum so that we don't lose the ability to send anything.
+			// FIXME improve this.
+			if(size < 2048) return 2048;
+			return size;
+		}
+	}
+
 	/** For unit tests */
 	int countSentPackets(SessionKey key) {
 		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) key.packetContext;
@@ -951,7 +965,8 @@ outer:
 			synchronized(bufferUsageLock) {
 				bufferUsage = usedBufferOtherSide;
 			}
-			if((bufferUsage + 200 /* bigger than most messages */ ) > MAX_BUFFER_SIZE) {
+			int maxSendBufferSize = maxSendBufferSize();
+			if((bufferUsage + 200 /* bigger than most messages */ ) > maxSendBufferSize()) {
 				if(logDEBUG) Logger.debug(this, "Cannot send: Would exceed remote buffer size. Remote at " + bufferUsage);
 				return false;
 			}
@@ -1131,7 +1146,7 @@ outer:
 			if(logDEBUG) Logger.debug(this, "Resizing from " + buffer.length + " to " + length);
 
 			synchronized(npf.bufferUsageLock) {
-				if((npf.usedBuffer + (length - buffer.length)) > MAX_BUFFER_SIZE) {
+				if((npf.usedBuffer + (length - buffer.length)) > MAX_RECEIVE_BUFFER_SIZE) {
 					if(logMINOR) Logger.minor(this, "Could not resize buffer, would excede max size");
 					return false;
 				}
