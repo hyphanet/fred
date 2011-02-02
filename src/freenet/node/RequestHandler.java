@@ -504,8 +504,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				try {
 					if(source.isOldFNP())
 						source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60 * 1000, true, null);
-					else
+					else {
 						source.sendSync(dataMsg, RequestHandler.this, realTimeFlag);
+						sentPayload(data.length);
+					}
 					applyByteCounts();
 				} catch(NotConnectedException e) {
 					// Okay
@@ -543,6 +545,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			}
 		} else {
 			source.sendSync(dataMsg, ctr, realTimeFlag);
+			ctr.sentPayload(data.length);
 		}
 
 		if(needsPubKey) {

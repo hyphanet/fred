@@ -294,8 +294,9 @@ outer:	while(true) {
 			try {
 				if(logMINOR) Logger.minor(this, "Sending packet "+blockNo);
 				Message msg = DMT.createFNPBulkPacketSend(uid, blockNo, buf);
-				UnsentPacketTag tag = new UnsentPacketTag();
-				if(peer.isOldFNP()) {
+				boolean isOldFNP = peer.isOldFNP();
+				UnsentPacketTag tag = new UnsentPacketTag(isOldFNP);
+				if(isOldFNP) {
 					peer.sendThrottledMessage(msg, buf.length, ctr, BulkReceiver.TIMEOUT, false, tag);
 				} else {
 					peer.sendAsync(msg, tag, ctr);
@@ -335,8 +336,10 @@ outer:	while(true) {
 	private class UnsentPacketTag implements AsyncMessageCallback {
 
 		private boolean finished;
+		private final boolean isOldFNP;
 		
-		private UnsentPacketTag() {
+		private UnsentPacketTag(boolean isOldFNP) {
+			this.isOldFNP = isOldFNP;
 			synchronized(BulkTransmitter.this) {
 				inFlightPackets++;
 			}
@@ -362,6 +365,7 @@ outer:	while(true) {
 				finished = true;
 				notifyAll();
 			}
+			ctr.sentPayload(prb.blockSize);
 			synchronized(BulkTransmitter.this) {
 				if(failed) {
 					failedPacket = true;
