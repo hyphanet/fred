@@ -164,7 +164,7 @@ public class BlockTransmitter {
 				Message msg = DMT.createPacketTransmit(_uid, packetNo, copied, _prb.getPacket(packetNo), realTime);
 				MyAsyncMessageCallback cb = new MyAsyncMessageCallback(isOldFNP);
 				MessageItem item;
-				if(!_destination.isOldFNP()) {
+				if(!isOldFNP) {
 					// Everything is throttled.
 					item = _destination.sendAsync(msg, cb, _ctr);
 				} else {
