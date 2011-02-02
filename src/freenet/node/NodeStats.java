@@ -3015,8 +3015,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			throttledPacketSendAverageBulk.report(interval);
 	}
 	
-	public synchronized long maxPingTime() {
-		return maxPingTime;
+	/** If a peer is over this threshold it is considered to be backed off. */
+	public synchronized long maxPeerPingTime() {
+		return 2 * maxPingTime;
 	}
 	
 }
