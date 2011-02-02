@@ -196,7 +196,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		
 		if((storedBlock != null) && !storedBlock.equals(block)) {
 			try {
-				RequestHandler.sendSSK(storedBlock.getRawHeaders(), storedBlock.getRawData(), false, pubKey, source, uid, this);
+				RequestHandler.sendSSK(storedBlock.getRawHeaders(), storedBlock.getRawData(), false, pubKey, source, uid, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 				return;
@@ -251,7 +251,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 					throw new Error("Impossible: " + e1, e1);
 				}
 				try {
-					RequestHandler.sendSSK(headers, data, false, pubKey, source, uid, this);
+					RequestHandler.sendSSK(headers, data, false, pubKey, source, uid, this, realTimeFlag);
 				} catch (NotConnectedException e1) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 					return;
