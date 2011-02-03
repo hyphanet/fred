@@ -154,13 +154,14 @@ public class TimeUtil {
 
 	
 	/**
-	 * @return Returns the passed date with the same year/month/day but with the time set to 00:00:00
+	 * @return Returns the passed date with the same year/month/day but with the time set to 00:00:00.000
 	 */
 	public static Date setTimeToZero(final Date date) {
 		// We need to cut off the hour/minutes/seconds
 		final GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 		calendar.setTimeInMillis(date.getTime()); // We must not use setTime(date) in case the date is not UTC.
 		calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH), 0, 0, 0);
+		calendar.set(Calendar.MILLISECOND, 0);
 		return calendar.getTime();
 	}
 }
