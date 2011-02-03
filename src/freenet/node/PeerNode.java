@@ -2977,7 +2977,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			pingTime = averagePingTime();
 		}
-		if(pingTime > node.nodeStats.maxPeerPingTime()) return true;
+		if(pingTime > maxPeerPingTime()) return true;
 		return false;
 	}
 	
@@ -2990,7 +2990,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(now < routingBackedOffUntil || now < transferBackedOffUntil) return true;
 			pingTime = averagePingTime();
 		}
-		if(pingTime > node.nodeStats.maxPeerPingTime()) return true;
+		if(pingTime > maxPeerPingTime()) return true;
 		return false;
 	}
 	
@@ -3003,7 +3003,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(now < routingBackedOffUntil || now < transferBackedOffUntil) return true;
 			pingTime = averagePingTime();
 		}
-		if(pingTime > node.nodeStats.maxPeerPingTime()) return true;
+		if(pingTime > maxPeerPingTime()) return true;
 		return false;
 	}
 	
@@ -3543,7 +3543,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		long localRoutingBackedOffUntilBulk = getRoutingBackedOffUntil(true);
 		int oldPeerNodeStatus;
 		
-		long threshold = node.nodeStats.maxPeerPingTime();
+		long threshold = maxPeerPingTime();
 		
 		synchronized(this) {
 			oldPeerNodeStatus = peerNodeStatus;
@@ -5061,4 +5061,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		
 	}
 
+	private long maxPeerPingTime() {
+		if(node == null || node.nodeStats == null)
+			return Long.MAX_VALUE;
+		else
+			return node.nodeStats.maxPeerPingTime();
+	}
+	
 }
