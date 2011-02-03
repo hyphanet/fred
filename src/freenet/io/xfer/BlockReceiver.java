@@ -126,8 +126,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	 * at most MAX_CONSECUTIVE_MISSING_PACKET_REPORTS every RECEIPT_TIMEOUT to recover.
 	 */
 	public final int RECEIPT_TIMEOUT;
-	// FIXME something is seriously borked, so lets reset it to a ridiculously long timeout for now.
-	public static final int RECEIPT_TIMEOUT_REALTIME = 30000;
+	public static final int RECEIPT_TIMEOUT_REALTIME = 5000;
 	public static final int RECEIPT_TIMEOUT_BULK = 30000;
 	// TODO: This should be proportional to the calculated round-trip-time, not a constant
 	public final int MAX_ROUND_TRIP_TIME;
