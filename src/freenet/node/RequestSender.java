@@ -1136,7 +1136,7 @@ loadWaiterLoop:
         	finalHeaders = waiter.headers;
     		if(this.status == SUCCESS || this.prb != null && transferringFrom != null)
     			failNow = true;
-    		if((!wasFork) && (this.prb == null || !prb.allReceivedAndNotAborted())) 
+    		if((!wasFork) && (this.prb == null || !this.prb.allReceivedAndNotAborted())) 
     			this.prb = prb;
     		notifyAll();
     	}
