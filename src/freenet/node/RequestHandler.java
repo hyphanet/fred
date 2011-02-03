@@ -188,7 +188,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			status = RequestSender.DATA_NOT_FOUND; // for byte logging
 			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.REJECT_TIME, source);
 			sendTerminal(dnf);
-			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble());
+			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble(), realTimeFlag, false);
 			return;
 		} else {
 			long queueTime = source.getProbableSendQueueTime();
@@ -229,9 +229,48 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				new BlockTransmitter(node.usm, node.getTicker(), source, uid, prb, this, new ReceiverAbortHandler() {
 
 					public boolean onAbort() {
+						RequestSender rs = RequestHandler.this.rs;
+						if(rs != null && rs.uid != RequestHandler.this.uid) {
+							if(logMINOR) Logger.minor(this, "Not cancelling transfer because was coalesced on "+RequestHandler.this);
+							// No need to reassign tag since this UID will end immediately; the RequestSender is on a different one.
+							return false;
+						}
 						if(node.hasKey(key, false, false)) return true; // Don't want it
+						if(rs != null && rs.isTransferCoalesced()) {
+							if(logMINOR) Logger.minor(this, "Not cancelling transfer because others want the data on "+RequestHandler.this);
+							// We do need to reassign the tag because the RS has the same UID.
+							node.reassignTagToSelf(tag);
+							return false;
+						}
 						if(node.failureTable.peersWantKey(key, source)) {
 							// This may indicate downstream is having trouble communicating with us.
+							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for peers on "+RequestHandler.this);
+							node.reassignTagToSelf(tag);
+							return false; // Want it
+						}
+						if(node.clientCore != null && node.clientCore.wantKey(key)) {
+							/** REDFLAG SECURITY JUSTIFICATION:
+							 * Theoretically if A routes to us and then we route to B,
+							 * and Mallory controls both A and B, and A cancels the transfer,
+							 * and we don't cancel the transfer from B, then Mallory knows
+							 * we want the key. However, to exploit this he would have to
+							 * rule out other nodes having asked for the key i.e. he would
+							 * have to surround the node, or he would have to rely on
+							 * probabilistic attacks (which will give us away much more quickly).
+							 * 
+							 * Plus, it is (almost?) always going to be safer to keep transferring
+							 * data than to start a new request which potentially exposes us
+							 * to distant attackers.
+							 * 
+							 * With onion routing or other such schemes obviously we would be
+							 * initiating requests at a distance so everything calling these
+							 * methods would need to be reconsidered.
+							 * 
+							 * SECURITY: Also, always keeping transferring the data would open
+							 * up DoS opportunities, unless we disallow receiver cancels of 
+							 * transfers, which would require getting rid of turtles. See the 
+							 * discussion in BlockReceiver's top comments.
+							 */
 							Logger.error(this, "Downstream transfer successful but upstream transfer to "+source.shortToString()+" failed. Reassigning tag to self because want the data for ourselves on "+RequestHandler.this);
 							node.reassignTagToSelf(tag);
 							return false; // Want it
@@ -251,7 +290,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						transferFinished(success);
 					}
 					
-				}, realTimeFlag);
+				}, realTimeFlag, node.nodeStats);
 			node.addTransferringRequestHandler(uid);
 			bt.sendAsync();
 		} catch(NotConnectedException e) {
@@ -322,7 +361,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		return true;
 	}
 
-	public void onRequestSenderFinished(int status) {
+	public void onRequestSenderFinished(int status, boolean fromOfferedKey) {
 		if(logMINOR) Logger.minor(this, "onRequestSenderFinished("+status+") on "+this);
 		long now = System.currentTimeMillis();
 
@@ -337,7 +376,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			tooLate = responseDeadline > 0 && now > responseDeadline;
 		}
 		
-		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble());
+		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble(), realTimeFlag, fromOfferedKey);
 
 		if(tooLate) {
 			// Offer the data if there is any.
@@ -463,7 +502,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 			public void run() {
 				try {
-					source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60 * 1000, true, null);
+					if(source.isOldFNP())
+						source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60 * 1000, true, null);
+					else {
+						source.sendSync(dataMsg, RequestHandler.this, realTimeFlag);
+						sentPayload(data.length);
+					}
 					applyByteCounts();
 				} catch(NotConnectedException e) {
 					// Okay
@@ -486,17 +530,22 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
-	static void sendSSK(byte[] headers, byte[] data, boolean needsPubKey, DSAPublicKey pubKey, final PeerNode source, long uid, ByteCounter ctr) throws NotConnectedException, WaitedTooLongException, PeerRestartedException {
+	static void sendSSK(byte[] headers, byte[] data, boolean needsPubKey, DSAPublicKey pubKey, final PeerNode source, long uid, ByteCounter ctr, boolean realTimeFlag) throws NotConnectedException, WaitedTooLongException, PeerRestartedException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
 		source.sendAsync(headersMsg, null, ctr);
 		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data);
-		try {
-			source.sendThrottledMessage(dataMsg, data.length, ctr, 60 * 1000, false, null);
-		} catch(SyncSendWaitedTooLongException e) {
-			// Impossible
-			throw new Error(e);
+		if(source.isOldFNP()) {
+			try {
+				source.sendThrottledMessage(dataMsg, data.length, ctr, 60 * 1000, false, null);
+			} catch(SyncSendWaitedTooLongException e) {
+				// Impossible
+				throw new Error(e);
+			}
+		} else {
+			source.sendSync(dataMsg, ctr, realTimeFlag);
+			ctr.sentPayload(data.length);
 		}
 
 		if(needsPubKey) {
@@ -515,7 +564,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			sendSSK(block.getRawHeaders(), block.getRawData(), needsPubKey, ((SSKBlock) block).getPubKey());
 			status = RequestSender.SUCCESS; // for byte logging
 			// Assume local SSK sending will succeed?
-			node.nodeStats.remoteRequest(true, true, true, htl, key.toNormalizedDouble());
+			node.nodeStats.remoteRequest(true, true, true, htl, key.toNormalizedDouble(), realTimeFlag, false);
 		} else if(block instanceof CHKBlock) {
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
 			PartiallyReceivedBlock prb =
@@ -544,10 +593,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							applyByteCounts();
 							unregisterRequestHandlerWithNode();
 						}
-						node.nodeStats.remoteRequest(false, success, true, htl, key.toNormalizedDouble());
+						node.nodeStats.remoteRequest(false, success, true, htl, key.toNormalizedDouble(), realTimeFlag, false);
 					}
 					
-				}, realTimeFlag);
+				}, realTimeFlag, node.nodeStats);
 			node.addTransferringRequestHandler(uid);
 			source.sendAsync(df, null, this);
 			bt.sendAsync();
@@ -800,7 +849,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					
 					// Send it forward to the data source, if it is valid.
 					
-					if(om.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null)
+					if(OpennetManager.validateNoderef(newNoderef, 0, newNoderef.length, source, false) != null)
 						try {
 							om.sendOpennetRef(true, uid, dataSource, newNoderef, RequestHandler.this);
 						} catch(NotConnectedException e) {

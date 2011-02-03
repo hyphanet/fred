@@ -22,7 +22,10 @@ public class CurrentTimeUTC {
 	private static final GregorianCalendar mCalendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 
 	public static Date get() {
-		return new Date();
+		synchronized(mCalendar) {
+			mCalendar.setTimeInMillis(System.currentTimeMillis());
+			return mCalendar.getTime();
+		}
 	}
 
 	/**

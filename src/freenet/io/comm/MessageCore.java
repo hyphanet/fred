@@ -25,6 +25,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Vector;
 
+import freenet.io.comm.MessageFilter.MATCHED;
 import freenet.node.PeerNode;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
@@ -56,8 +57,10 @@ public class MessageCore {
 	private final LinkedList<Message> _unclaimed = new LinkedList<Message>();
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
 	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = 10*60*1000;  // 10 minutes; maybe this should be per message type??
-	// Every second, remove all timed out filters
-	private static final int FILTER_REMOVE_TIME = 1000;
+	// FIXME do we need MIN_FILTER_REMOVE_TIME? Can we make this more efficient?
+	// FIXME may not work well for newly added filters with timeouts close to the minimum, or filters with timeouts close to the minimum in general.
+	private static final int MAX_FILTER_REMOVE_TIME = 1000;
+	private static final int MIN_FILTER_REMOVE_TIME = 100;
 	private long startedTime;
 	
 	public synchronized long getStartedTime() {
@@ -97,22 +100,24 @@ public class MessageCore {
     	ticker.queueTimedJob(new Runnable() {
 
 			public void run() {
+				long now = System.currentTimeMillis();
+				long nextRun = now + MAX_FILTER_REMOVE_TIME;
 				try {
-					removeTimedOutFilters();
+					nextRun = removeTimedOutFilters(nextRun);
 				} catch (Throwable t) {
 					Logger.error(this, "Failed to remove timed out filters: "+t, t);
 				} finally {
-					ticker.queueTimedJob(this, FILTER_REMOVE_TIME);
+					ticker.queueTimedJob(this, Math.max(MIN_FILTER_REMOVE_TIME, System.currentTimeMillis() - nextRun));
 				}
 			}
     		
-    	}, FILTER_REMOVE_TIME);
+    	}, MIN_FILTER_REMOVE_TIME);
     }
     
     /**
      * Remove timed out filters.
      */
-	void removeTimedOutFilters() {
+	long removeTimedOutFilters(long nextTimeout) {
 		long tStart = System.currentTimeMillis() + 1;
 		// Extra millisecond to give waitFor() a chance to remove the filter.
 		// Avoids exhaustive and unsuccessful search in waitFor() removal of a timed out filter.
@@ -129,6 +134,20 @@ public class MessageCore {
 						_timedOutFilters.add(f);
 					else
 						Logger.error(this, "Filter "+f+" is in filter list twice!");
+					if(logMINOR) {
+						for (ListIterator<Message> it = _unclaimed.listIterator(); it.hasNext();) {
+							Message m = it.next();
+							MATCHED status = f.match(m, true, tStart);
+							if (status == MATCHED.MATCHED) {
+								// Don't match it, we timed out; two-level timeouts etc may want it for the next filter.
+								Logger.error(this, "Timed out but should have matched in _unclaimed: "+m+" for "+f);
+								break;
+							}
+						}
+					}
+				} else {
+					if(f.hasCallback() && nextTimeout > f.getTimeout())
+						nextTimeout = f.getTimeout();
 				}
 				// Do not break after finding a non-timed-out filter because some filters may 
 				// be timed out because their client callbacks say they should be.
@@ -151,6 +170,7 @@ public class MessageCore {
 			else
 				if(logMINOR) Logger.minor(this, "removeTimedOutFilters took "+(tEnd-tStart)+"ms");
 		}
+		return nextTimeout;
 	}
 
 	/**
@@ -171,6 +191,7 @@ public class MessageCore {
 					+ m.getSource() + " : " + m);
 		}
 		MessageFilter match = null;
+		ArrayList<MessageFilter> timedOut = null;
 		synchronized (_filters) {
 			for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = i.next();
@@ -179,13 +200,26 @@ public class MessageCore {
 					i.remove();
 					continue;
 				}
-				if (f.match(m)) {
+				MATCHED status = f.match(m, tStart);
+				if(status == MATCHED.TIMED_OUT || status == MATCHED.TIMED_OUT_AND_MATCHED) {
+					if(timedOut == null)
+						timedOut = new ArrayList<MessageFilter>();
+					timedOut.add(f);
+					i.remove();
+					continue;
+				} else if(status == MATCHED.MATCHED) {
 					matched = true;
 					i.remove();
 					match = f;
 					if(logMINOR) Logger.minor(this, "Matched: "+f);
 					break; // Only one match permitted per message
 				}
+			}
+		}
+		if(timedOut != null) {
+			for(MessageFilter f : timedOut) {
+				f.setMessage(null);
+				f.onTimedOut(_executor);
 			}
 		}
 		if(match != null) {
@@ -201,6 +235,7 @@ public class MessageCore {
 		        Logger.error(this, "Dispatcher threw "+t, t);
 		    }
 		}
+		if(timedOut != null) timedOut.clear();
 		// Keep the last few _unclaimed messages around in case the intended receiver isn't receiving yet
 		if (!matched) {
 			if(logMINOR) Logger.minor(this, "Unclaimed: "+m);
@@ -229,12 +264,19 @@ public class MessageCore {
 				if(logMINOR) Logger.minor(this, "Rechecking filters and adding message");
 				for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
 					MessageFilter f = i.next();
-					if (f.match(m)) {
+					MATCHED status = f.match(m, tStart);
+					if(status == MATCHED.MATCHED) {
 						matched = true;
 						match = f;
 						i.remove();
 						if(logMINOR) Logger.minor(this, "Matched: "+f);
 						break; // Only one match permitted per message
+					} else if(status == MATCHED.TIMED_OUT || status == MATCHED.TIMED_OUT_AND_MATCHED) {
+						if(timedOut == null)
+							timedOut = new ArrayList<MessageFilter>();
+						timedOut.add(f);
+						i.remove();
+						continue;
 					}
 				}
 				if(!matched) {
@@ -254,6 +296,12 @@ public class MessageCore {
 			if(match != null) {
 				match.setMessage(m);
 				match.onMatched(_executor);
+			}
+			if(timedOut != null) {
+				for(MessageFilter f : timedOut) {
+					f.setMessage(null);
+					f.onTimedOut(_executor);
+				}
 			}
 		}
 		long tEnd = System.currentTimeMillis();
@@ -340,7 +388,9 @@ public class MessageCore {
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator<Message> i = _unclaimed.listIterator(); i.hasNext();) {
 				Message m = i.next();
-				if (filter.match(m)) {
+				// These messages have already arrived, so we can match against them even if we are timed out.
+				MATCHED status = filter.match(m, true, now);
+				if (status == MATCHED.MATCHED) {
 					i.remove();
 					ret = m;
 					if(logMINOR) Logger.minor(this, "Matching from _unclaimed");
@@ -414,7 +464,8 @@ public class MessageCore {
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator<Message> i = _unclaimed.listIterator(); i.hasNext();) {
 				Message m = i.next();
-				if (filter.match(m)) {
+				MATCHED status = filter.match(m, true, startTime);
+				if(status == MATCHED.MATCHED) {
 					i.remove();
 					ret = m;
 					if(logMINOR) Logger.minor(this, "Matching from _unclaimed");

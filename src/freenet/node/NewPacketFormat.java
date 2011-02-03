@@ -18,6 +18,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
+import freenet.io.xfer.PacketThrottle;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
 import freenet.support.ByteBufferInputStream;
 import freenet.support.LogThresholdCallback;
@@ -32,7 +33,7 @@ public class NewPacketFormat implements PacketFormat {
 	// FIXME Use a more efficient structure - int[] or maybe just a big byte[].
 	// FIXME increase this significantly to let it ride over network interruptions.
 	private static final int NUM_SEQNUMS_TO_WATCH_FOR = 1024;
-	static final int MAX_BUFFER_SIZE = 256 * 1024;
+	static final int MAX_RECEIVE_BUFFER_SIZE = 256 * 1024;
 	private static final int MSG_WINDOW_SIZE = 65536;
 	private static final int NUM_MESSAGE_IDS = 268435456;
 	static final long NUM_SEQNUMS = 2147483648l;
@@ -119,9 +120,11 @@ public class NewPacketFormat implements PacketFormat {
 		pn.reportIncomingPacket(buf, offset, length, now);
 
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
+		DecodingMessageGroup group = pn.startProcessingDecryptedMessages(finished.size());
 		for(byte[] buffer : finished) {
-			pn.processDecryptedMessage(buffer, 0, buffer.length, 0);
+			group.processDecryptedMessage(buffer, 0, buffer.length, 0);
 		}
+		group.complete();
 
 		return true;
 	}
@@ -168,13 +171,13 @@ public class NewPacketFormat implements PacketFormat {
 			if(messageWindowPtrReceived + MSG_WINDOW_SIZE > NUM_MESSAGE_IDS) {
 				int upperBound = (messageWindowPtrReceived + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS;
 				if((fragment.messageID > upperBound) && (fragment.messageID < messageWindowPtrReceived)) {
-					if(logMINOR) Logger.minor(this, "Received message outside window, acking");
+					if(logMINOR) Logger.minor(this, "Received message "+fragment.messageID+" outside window, acking");
 					continue;
 				}
 			} else {
 				int upperBound = messageWindowPtrReceived + MSG_WINDOW_SIZE;
 				if(!((fragment.messageID >= messageWindowPtrReceived) && (fragment.messageID < upperBound))) {
-					if(logMINOR) Logger.minor(this, "Received message outside window, acking");
+					if(logMINOR) Logger.minor(this, "Received message "+fragment.messageID+" outside window, acking");
 					continue;
 				}
 			}
@@ -195,7 +198,7 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				} else {
 					synchronized(bufferUsageLock) {
-						if((usedBuffer + fragment.fragmentLength) > MAX_BUFFER_SIZE) {
+						if((usedBuffer + fragment.fragmentLength) > MAX_RECEIVE_BUFFER_SIZE) {
 							if(logMINOR) Logger.minor(this, "Could not create buffer, would excede max size");
 							dontAck = true;
 							continue;
@@ -268,7 +271,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(addedAck) {
 				if(!wakeUp) {
 					synchronized(bufferUsageLock) {
-						if(usedBuffer > MAX_BUFFER_SIZE / 2)
+						if(usedBuffer > MAX_RECEIVE_BUFFER_SIZE / 2)
 							wakeUp = true;
 					}
 				}
@@ -612,7 +615,7 @@ outer:
 				if(!(addStatsBulk || addStatsRT)) break;
 				
 				if(addStatsBulk) {
-					MessageItem item = pn.makeLoadStats(false, false);
+					MessageItem item = pn.makeLoadStats(false, false, true);
 					if(item != null) {
 						byte[] buf = item.getData();
 						haveAddedStatsBulk = buf;
@@ -622,7 +625,7 @@ outer:
 				}
 				
 				if(addStatsRT) {
-					MessageItem item = pn.makeLoadStats(true, false);
+					MessageItem item = pn.makeLoadStats(true, false, true);
 					if(item != null) {
 						byte[] buf = item.getData();
 						haveAddedStatsRT = buf;
@@ -652,8 +655,9 @@ outer:
 		}
 		
 		if((!mustSend) && numAcks > 0) {
+			int maxSendBufferSize = maxSendBufferSize();
 			synchronized(bufferUsageLock) {
-				if(usedBufferOtherSide > MAX_BUFFER_SIZE / 2) {
+				if(usedBufferOtherSide > maxSendBufferSize / 2) {
 					if(logDEBUG) Logger.debug(this, "Must send because other side buffer size is "+usedBufferOtherSide);
 					mustSend = true;
 				}
@@ -693,7 +697,7 @@ outer:
 		if((!ackOnly) && (!cantSend)) {
 			
 			if(sendStatsBulk) {
-				MessageItem item = pn.makeLoadStats(false, true);
+				MessageItem item = pn.makeLoadStats(false, true, false);
 				if(item != null) {
 					if(haveAddedStatsBulk != null) {
 						packet.removeLossyMessage(haveAddedStatsBulk);
@@ -704,7 +708,7 @@ outer:
 			}
 			
 			if(sendStatsRT) {
-				MessageItem item = pn.makeLoadStats(true, true);
+				MessageItem item = pn.makeLoadStats(true, true, false);
 				if(item != null) {
 					if(haveAddedStatsRT != null) {
 						packet.removeLossyMessage(haveAddedStatsRT);
@@ -733,7 +737,8 @@ outer:
 							synchronized(bufferUsageLock) {
 								bufferUsage = usedBufferOtherSide;
 							}
-							if((bufferUsage + item.buf.length) > MAX_BUFFER_SIZE) {
+							int maxSendBufferSize = maxSendBufferSize();
+							if((bufferUsage + item.buf.length) > maxSendBufferSize) {
 								if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
 								messageQueue.pushfrontPrioritizedMessageItem(item);
 								break fragments;
@@ -784,7 +789,7 @@ outer:
 						if(!(addStatsBulk || addStatsRT)) break;
 						
 						if(addStatsBulk) {
-							MessageItem item = pn.makeLoadStats(false, false);
+							MessageItem item = pn.makeLoadStats(false, false, true);
 							if(item != null) {
 								byte[] buf = item.getData();
 								haveAddedStatsBulk = item.buf;
@@ -794,7 +799,7 @@ outer:
 						}
 						
 						if(addStatsRT) {
-							MessageItem item = pn.makeLoadStats(true, false);
+							MessageItem item = pn.makeLoadStats(true, false, true);
 							if(item != null) {
 								byte[] buf = item.getData();
 								haveAddedStatsRT = item.buf;
@@ -826,6 +831,23 @@ outer:
 		return packet;
 	}
 	
+	private int maxSendBufferSize() {
+		if(pn == null)
+			return MAX_RECEIVE_BUFFER_SIZE;
+		else {
+			PacketThrottle throttle = pn.getThrottle();
+			if(throttle == null)
+				return MAX_RECEIVE_BUFFER_SIZE;
+			else {
+				int size = (int)Math.min(MAX_RECEIVE_BUFFER_SIZE, pn.getThrottle().getWindowSize() * Node.PACKET_SIZE);
+				// Impose a minimum so that we don't lose the ability to send anything.
+				// FIXME improve this.
+				if(size < 2048) return 2048;
+				return size;
+			}
+		}
+	}
+
 	/** For unit tests */
 	int countSentPackets(SessionKey key) {
 		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) key.packetContext;
@@ -949,7 +971,8 @@ outer:
 			synchronized(bufferUsageLock) {
 				bufferUsage = usedBufferOtherSide;
 			}
-			if((bufferUsage + 200 /* bigger than most messages */ ) > MAX_BUFFER_SIZE) {
+			int maxSendBufferSize = maxSendBufferSize();
+			if((bufferUsage + 200 /* bigger than most messages */ ) > maxSendBufferSize()) {
 				if(logDEBUG) Logger.debug(this, "Cannot send: Would exceed remote buffer size. Remote at " + bufferUsage);
 				return false;
 			}
@@ -980,9 +1003,13 @@ outer:
 
 	private double averageRTT() {
 		if(pn != null) {
-			return pn.averagePingTime();
+			// RFC 2988 specifies a 1 second minimum RTT, mostly due to legacy issues,
+			// but given that Freenet is mostly used on very slow upstream links, it 
+			// probably makes sense for us too for now, to avoid excessive retransmits.
+			// FIXME !!!
+			return Math.max(1000, pn.averagePingTimeCorrected());
 		}
-		return 250;
+		return 1000;
 	}
 
 	static class SentPacket {
@@ -1129,7 +1156,7 @@ outer:
 			if(logDEBUG) Logger.debug(this, "Resizing from " + buffer.length + " to " + length);
 
 			synchronized(npf.bufferUsageLock) {
-				if((npf.usedBuffer + (length - buffer.length)) > MAX_BUFFER_SIZE) {
+				if((npf.usedBuffer + (length - buffer.length)) > MAX_RECEIVE_BUFFER_SIZE) {
 					if(logMINOR) Logger.minor(this, "Could not resize buffer, would excede max size");
 					return false;
 				}

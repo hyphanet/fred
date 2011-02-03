@@ -293,7 +293,17 @@ outer:	while(true) {
 			// Congestion control and bandwidth limiting
 			try {
 				if(logMINOR) Logger.minor(this, "Sending packet "+blockNo);
-				peer.sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), buf.length, ctr, BulkReceiver.TIMEOUT, false, new UnsentPacketTag());
+				Message msg = DMT.createFNPBulkPacketSend(uid, blockNo, buf);
+				boolean isOldFNP = peer.isOldFNP();
+				UnsentPacketTag tag = new UnsentPacketTag(isOldFNP);
+				if(isOldFNP) {
+					peer.sendThrottledMessage(msg, buf.length, ctr, BulkReceiver.TIMEOUT, false, tag);
+				} else {
+					peer.sendAsync(msg, tag, ctr);
+					// FIXME make this whole function asynchronous somehow.
+					// Will need some means to ensure there aren't too many packets in flight.
+					tag.waitForCompletion();
+				}
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
 				}
@@ -326,13 +336,25 @@ outer:	while(true) {
 	private class UnsentPacketTag implements AsyncMessageCallback {
 
 		private boolean finished;
+		private final boolean isOldFNP;
 		
-		private UnsentPacketTag() {
+		private UnsentPacketTag(boolean isOldFNP) {
+			this.isOldFNP = isOldFNP;
 			synchronized(BulkTransmitter.this) {
 				inFlightPackets++;
 			}
 		}
 		
+		public synchronized void waitForCompletion() {
+			while(!finished) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+		}
+
 		public void acknowledged() {
 			complete(false);
 		}
@@ -341,7 +363,9 @@ outer:	while(true) {
 			synchronized(this) {
 				if(finished) return;
 				finished = true;
+				notifyAll();
 			}
+			ctr.sentPayload(prb.blockSize);
 			synchronized(BulkTransmitter.this) {
 				if(failed) {
 					failedPacket = true;

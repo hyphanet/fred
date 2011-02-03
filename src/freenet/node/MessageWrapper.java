@@ -207,8 +207,16 @@ public class MessageWrapper {
 				report = 0;
 				resent = end - start + 1 + overhead;
 			} else {
-				report = everSent.notOverlapping(start, end) + overhead;
-				resent = end - start + 1 + overhead - report;
+				report = everSent.notOverlapping(start, end);
+				resent = end - start + 1 - report;
+				if(report > 0 && resent == 0)
+					report += overhead;
+				else if(resent > 0 && report == 0)
+					resent += overhead;
+				else {
+					report += (overhead / 2);
+					resent += (overhead - (overhead / 2));
+				}
 			}
 			everSent.add(start, end);
 			if(everSent.contains(0, item.buf.length-1)) {

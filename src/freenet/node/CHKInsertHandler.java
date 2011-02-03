@@ -114,7 +114,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         Message accepted = DMT.createFNPAccepted(uid);
         try {
 			//Using sendSync here will help the next message filter not timeout... wait here or at the message filter.
-			source.sendSync(accepted, this);
+			source.sendSync(accepted, this, realTimeFlag);
 		} catch (NotConnectedException e1) {
 			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
@@ -147,7 +147,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null);
         		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert", true);
-        		source.localRejectedOverload("TimedOutAwaitingDataInsert");
+        		source.localRejectedOverload("TimedOutAwaitingDataInsert", realTimeFlag);
         		source.fatalTimeout();
         		return;
         	} catch (NotConnectedException e) {
@@ -214,7 +214,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             	// Forward it
             	Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
             	try {
-					source.sendSync(m, this);
+					source.sendSync(m, this, realTimeFlag);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -234,7 +234,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             		(status == CHKInsertSender.INTERNAL_ERROR)) {
                 msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
                 try {
-					source.sendSync(msg, this);
+					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -250,7 +250,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             if((status == CHKInsertSender.ROUTE_NOT_FOUND) || (status == CHKInsertSender.ROUTE_REALLY_NOT_FOUND)) {
                 msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 try {
-					source.sendSync(msg, this);
+					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
@@ -269,7 +269,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             if(status == CHKInsertSender.SUCCESS) {
             	msg = DMT.createFNPInsertReply(uid);
             	try {
-					source.sendSync(msg, this);
+					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
 					Logger.minor(this, "Lost connection to source");
 					return;
@@ -283,7 +283,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
             msg = DMT.createFNPRejectedOverload(uid, true, true, realTimeFlag);
             try {
-				source.sendSync(msg, this);
+				source.sendSync(msg, this, realTimeFlag);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
@@ -357,7 +357,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		}
         
         	try {
-        		source.sendSync(m, this);
+        		source.sendSync(m, this, realTimeFlag);
         		if(logMINOR) Logger.minor(this, "Sent completion: "+m+" for "+this);
         	} catch (NotConnectedException e1) {
         		if(logMINOR) Logger.minor(this, "Not connected: "+source+" for "+this);
@@ -463,7 +463,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			tag.reassignToSelf(); // sender is finished, or will be very soon; we may however be waiting for the sendAborted downstream.
         			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
         			try {
-        				source.sendSync(msg, CHKInsertHandler.this);
+        				source.sendSync(msg, CHKInsertHandler.this, realTimeFlag);
         			} catch (NotConnectedException ex) {
         				//If they are not connected, that's probably why the receive failed!
         				if (logMINOR) Logger.minor(this, "Can't send "+msg+" to "+source+": "+ex);
@@ -475,7 +475,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
         			
         			if(!prb.abortedLocally())
-        				node.nodeStats.failedBlockReceive(false, false, false, realTimeFlag, false);
+        				node.nodeStats.failedBlockReceive(false, false, realTimeFlag, false);
         			return;
         		}
         		

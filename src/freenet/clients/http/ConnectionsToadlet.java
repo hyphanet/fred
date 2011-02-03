@@ -111,8 +111,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return compareLocations(firstNode, secondNode);
 			}else if(sortBy.equals("version")){
 				return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
-			}else if(sortBy.equals("backoff")){
-				return Double.compare(firstNode.getBackedOffPercent(), secondNode.getBackedOffPercent());
+			}else if(sortBy.equals("backoffRT")){
+				return Double.compare(firstNode.getBackedOffPercent(true), secondNode.getBackedOffPercent(true));
+			}else if(sortBy.equals("backoffBulk")){
+				return Double.compare(firstNode.getBackedOffPercent(false), secondNode.getBackedOffPercent(false));
 			}else if(sortBy.equals(("overload_p"))){
 				return Double.compare(firstNode.getPReject(), secondNode.getPReject());
 			}else if(sortBy.equals(("idle"))){
@@ -310,20 +312,43 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				// Peer routing backoff reason box
 				if(mode >= PageMaker.MODE_ADVANCED) {
 					HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
-					backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
+					HTMLNode title = backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (realtime)");
 					HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
-					String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
+					String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(true);
+					int total = 0;
 					if(routingBackoffReasons.length == 0) {
 						backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
 					} else {
 						HTMLNode reasonList = backoffReasonContent.addChild("ul");
 						for(int i=0;i<routingBackoffReasons.length;i++) {
-							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
+							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], true);
 							if(reasonCount > 0) {
+								total += reasonCount;
 								reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
 							}
 						}
 					}
+					if(total > 0)
+						title.addChild("#", ": "+total);
+					backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
+					title = backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons (bulk)");
+					backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
+					routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons(false);
+					total = 0;
+					if(routingBackoffReasons.length == 0) {
+						backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+					} else {
+						HTMLNode reasonList = backoffReasonContent.addChild("ul");
+						for(int i=0;i<routingBackoffReasons.length;i++) {
+							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i], false);
+							if(reasonCount > 0) {
+								total += reasonCount;
+								reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+							}
+						}
+					}
+					if(total > 0)
+						title.addChild("#", ": "+total);
 				}
 				// END OVERVIEW TABLE
 			}
@@ -401,7 +426,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "version")).addChild("#", l10n("versionTitle"));
 				if (mode >= PageMaker.MODE_ADVANCED) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "location")).addChild("#", "Location");
-					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "backoff")).addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "backoffRT")).addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy (realtime)? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff (realtime)");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "backoffBulk")).addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy (bulk)? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff (bulk)");
 
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "overload_p")).addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
 				}
@@ -801,7 +827,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		if (advancedModeEnabled) {
 			String pingTime = "";
 			if (peerNodeStatus.isConnected()) {
-				pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms)";
+				pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms / " +
+				(int) peerNodeStatus.getAveragePingTimeCorrected()+"ms)";
 			}
 			peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ':' + peerNodeStatus.getPeerPort()) : (l10n("unknownAddress"))) + pingTime);
 		}
@@ -828,14 +855,25 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		if (advancedModeEnabled) {
 			// backoff column
 			HTMLNode backoffCell = peerRow.addChild("td", "class", "peer-backoff");
-			backoffCell.addChild("#", fix1.format(peerNodeStatus.getBackedOffPercent()));
-			int backoff = (int) (Math.max(peerNodeStatus.getRoutingBackedOffUntil() - now, 0));
+			backoffCell.addChild("#", fix1.format(peerNodeStatus.getBackedOffPercent(true)));
+			int backoff = (int) (Math.max(peerNodeStatus.getRoutingBackedOffUntil(true) - now, 0));
 			// Don't list the backoff as zero before it's actually zero
 			if ((backoff > 0) && (backoff < 1000)) {
 				backoff = 1000;
 			}
-			backoffCell.addChild("#", ' ' + String.valueOf(backoff / 1000) + '/' + String.valueOf(peerNodeStatus.getRoutingBackoffLength() / 1000));
-			backoffCell.addChild("#", (peerNodeStatus.getLastBackoffReason() == null) ? "" : ('/' + (peerNodeStatus.getLastBackoffReason())));
+			backoffCell.addChild("#", ' ' + String.valueOf(backoff / 1000) + '/' + String.valueOf(peerNodeStatus.getRoutingBackoffLength(true) / 1000));
+			backoffCell.addChild("#", (peerNodeStatus.getLastBackoffReason(true) == null) ? "" : ('/' + (peerNodeStatus.getLastBackoffReason(true))));
+
+			// backoff column
+			backoffCell = peerRow.addChild("td", "class", "peer-backoff");
+			backoffCell.addChild("#", fix1.format(peerNodeStatus.getBackedOffPercent(false)));
+			backoff = (int) (Math.max(peerNodeStatus.getRoutingBackedOffUntil(false) - now, 0));
+			// Don't list the backoff as zero before it's actually zero
+			if ((backoff > 0) && (backoff < 1000)) {
+				backoff = 1000;
+			}
+			backoffCell.addChild("#", ' ' + String.valueOf(backoff / 1000) + '/' + String.valueOf(peerNodeStatus.getRoutingBackoffLength(false) / 1000));
+			backoffCell.addChild("#", (peerNodeStatus.getLastBackoffReason(false) == null) ? "" : ('/' + (peerNodeStatus.getLastBackoffReason(false))));
 
 			// overload probability column
 			HTMLNode pRejectCell = peerRow.addChild("td", "class", "peer-backoff"); // FIXME

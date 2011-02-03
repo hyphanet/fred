@@ -23,9 +23,9 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append(": myExponent=");
-		sb.append(myExponent.toHexString());
+		sb.append(HexUtil.toHexString(myExponent));
 		sb.append(", myExponential=");
-		sb.append(myExponential.toHexString());
+		sb.append(HexUtil.toHexString(myExponential));
 		
 		return sb.toString();
 	}
@@ -52,10 +52,10 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 
 		if(logMINOR) {
 			Logger.minor(this, "P: "+HexUtil.biToHex(P));
-			Logger.minor(this, "My exponent: "+myExponent.toHexString());
-			Logger.minor(this, "My exponential: "+myExponential.toHexString());
-			Logger.minor(this, "Peer's exponential: "+peerExponential.toHexString());
-			Logger.minor(this, "g^ir mod p = " + sharedSecret.toHexString());
+			Logger.minor(this, "My exponent: "+HexUtil.toHexString(myExponent));
+			Logger.minor(this, "My exponential: "+HexUtil.toHexString(myExponential));
+			Logger.minor(this, "Peer's exponential: "+HexUtil.toHexString(peerExponential));
+			Logger.minor(this, "g^ir mod p = " + HexUtil.toHexString(sharedSecret));
 		}
 		
 		return sharedSecret;

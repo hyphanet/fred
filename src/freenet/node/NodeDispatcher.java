@@ -198,8 +198,23 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
 		
-		if(!source.isRoutable()) return false;
-		if(logDEBUG) Logger.debug(this, "Not routable");
+		if(!source.isRoutable()) {
+			if(logDEBUG) Logger.debug(this, "Not routable");
+			if(spec == DMT.FNPCHKDataRequest) {
+				rejectRequest(m);
+			} else if(spec == DMT.FNPSSKDataRequest) {
+				rejectRequest(m);
+			} else if(spec == DMT.FNPInsertRequest) {
+				rejectRequest(m);
+			} else if(spec == DMT.FNPSSKInsertRequest) {
+				rejectRequest(m);
+			} else if(spec == DMT.FNPSSKInsertRequestNew) {
+				rejectRequest(m);
+			} else if(spec == DMT.FNPGetOfferedKey) {
+				rejectRequest(m);
+			}
+			return false;
+		}
 
 		if(spec == DMT.FNPNetworkID) {
 			source.handleFNPNetworkID(m);
@@ -252,6 +267,19 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handlePeerLoadStatus(m, source);
 		}
 		return false;
+	}
+
+	private void rejectRequest(Message m) {
+		long uid = m.getLong(DMT.UID);
+		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+		// Send the load status anyway, hopefully this is a temporary problem.
+		msg.setNeedsLoadBulk();
+		msg.setNeedsLoadRT();
+		try {
+			m.getSource().sendAsync(msg, null, null);
+		} catch (NotConnectedException e) {
+			// Ignore
+		}
 	}
 
 	private boolean handlePeerLoadStatus(Message m, PeerNode source) {
@@ -763,7 +791,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			if(next == null)
 			next = node.peers.closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-				        null, htl, 0, pn == null);
+				        null, htl, 0, pn == null, false);
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {
 				// next is connected, or at least has been => next.getPeer() CANNOT be null.

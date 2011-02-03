@@ -119,7 +119,7 @@ public class RealNodeSecretPingTest {
 			
 			try {
 				//Send the FNPStoreSecret message to the 'verify' node
-				verify.sendSync(DMT.createFNPStoreSecret(uid, secret), null);
+				verify.sendSync(DMT.createFNPStoreSecret(uid, secret), null, false);
 				
 				if (!getAck(source, verify, uid)) {
 					Logger.error(source, "did not get storesecret ack for "+uid);
@@ -128,7 +128,7 @@ public class RealNodeSecretPingTest {
 				}
 				
 				//Send the request for the secret through the 'pathway' node.
-				pathway.sendSync(DMT.createFNPSecretPing(uid, verify.getLocation(), PING_HTL, DAWN_HTL, 0, verify.getIdentity()), null);
+				pathway.sendSync(DMT.createFNPSecretPing(uid, verify.getLocation(), PING_HTL, DAWN_HTL, 0, verify.getIdentity()), null, false);
 				
 				long result=getSecretPingResponse(source, pathway, uid);
 				if (result!=secret) {

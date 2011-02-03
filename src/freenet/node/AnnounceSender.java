@@ -135,7 +135,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			if(onlyNode == null) {
 				// Route it
 				next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1,
-				        null, null, htl, 0, source == null);
+				        null, null, htl, 0, source == null, false);
 			} else {
 				next = onlyNode;
 				if(nodesRoutedTo.contains(onlyNode)) {
@@ -361,11 +361,11 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		long xferUID = msg.getLong(DMT.TRANSFER_UID);
 		int noderefLength = msg.getInt(DMT.NODEREF_LENGTH);
 		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
-		byte[] noderefBuf = om.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, next, false, uid, true, this, node);
+		byte[] noderefBuf = OpennetManager.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, next, false, uid, true, this, node);
 		if(noderefBuf == null) {
 			return true; // Don't relay
 		}
-		SimpleFieldSet fs = om.validateNoderef(noderefBuf, 0, noderefLength, next, false);
+		SimpleFieldSet fs = OpennetManager.validateNoderef(noderefBuf, 0, noderefLength, next, false);
 		if(fs == null) {
 			if(cb != null) cb.bogusNoderef("invalid noderef");
 			return true; // Don't relay
@@ -470,13 +470,13 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		long xferUID = msg.getLong(DMT.TRANSFER_UID);
 		noderefLength = msg.getInt(DMT.NODEREF_LENGTH);
 		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
-		noderefBuf = om.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, source, false, uid, true, this, node);
+		noderefBuf = OpennetManager.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, source, false, uid, true, this, node);
 		if(noderefBuf == null) {
 			return false;
 		}
-		SimpleFieldSet fs = om.validateNoderef(noderefBuf, 0, noderefLength, source, false);
+		SimpleFieldSet fs = OpennetManager.validateNoderef(noderefBuf, 0, noderefLength, source, false);
 		if(fs == null) {
-			om.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
+			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		}
 		// If we want it, add it and send it.
@@ -490,16 +490,16 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				// Okay, just route it.
 			}
 		} catch (FSParseException e) {
-			if(logMINOR) Logger.minor(this, "Rejecting noderef: "+e, e);
-			om.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
+			Logger.warning(this, "Rejecting noderef: "+e, e);
+			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		} catch (PeerParseException e) {
-			if(logMINOR) Logger.minor(this, "Rejecting noderef: "+e, e);
-			om.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
+			Logger.warning(this, "Rejecting noderef: "+e, e);
+			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		} catch (ReferenceSignatureVerificationException e) {
-			if(logMINOR) Logger.minor(this, "Rejecting noderef: "+e, e);
-			om.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
+			Logger.warning(this, "Rejecting noderef: "+e, e);
+			OpennetManager.rejectRef(uid, source, DMT.NODEREF_REJECTED_INVALID, this);
 			return false;
 		} catch (NotConnectedException e) {
 			Logger.normal(this, "Could not receive noderef, disconnected");

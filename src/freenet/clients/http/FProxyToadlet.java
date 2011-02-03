@@ -840,7 +840,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					// first look for the newest version
 					if ((keyUtil = core.node.pluginManager.getPluginInfo("plugins.KeyUtils.KeyUtilsPlugin")) != null) {
 						option = optionList.addChild("li");
-						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/KeyUtils/?automf=true&key=" + key.toString()) });
+						if (keyUtil.getPluginLongVersion() < 5010) 
+							NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/KeyUtils/?automf=true&key=" + key.toString()) });
+						else {
+							NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/KeyUtils/?key=" + key.toString()) });
+							option = optionList.addChild("li");
+							NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithSiteExplorer", new String[] { "link" }, new HTMLNode[] { HTMLNode.link("/KeyUtils/Site?key=" + key.toString()) });
+						}
 					} else if ((keyUtil = core.node.pluginManager.getPluginInfo("plugins.KeyExplorer.KeyExplorer")) != null) {
 						option = optionList.addChild("li");
 						if (keyUtil.getPluginLongVersion() > 4999)

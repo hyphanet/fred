@@ -86,4 +86,9 @@ public interface RequestScheduler {
 
 	public void wakeStarter();
 
+	/* FIXME SECURITY When/if introduce tunneling or similar mechanism for starting requests
+	 * at a distance this will need to be reconsidered. See the comments on the caller in 
+	 * RequestHandler (onAbort() handler). */
+	public boolean wantKey(Key key);
+
 }

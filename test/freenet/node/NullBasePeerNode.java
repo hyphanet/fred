@@ -75,7 +75,7 @@ public class NullBasePeerNode implements BasePeerNode {
 		return toString();
 	}
 
-	public void transferFailed(String reason) {
+	public void transferFailed(String reason, boolean realTime) {
 		// Awww
 	}
 
@@ -125,7 +125,7 @@ public class NullBasePeerNode implements BasePeerNode {
 		// Ignore
 	}
 
-	public void processDecryptedMessage(byte[] data, int offset, int length,
+	protected void processDecryptedMessage(byte[] data, int offset, int length,
 			int overhead) {
 		throw new UnsupportedOperationException();
 	}
@@ -186,7 +186,7 @@ public class NullBasePeerNode implements BasePeerNode {
 		throw new UnsupportedOperationException();
 	}
 
-	public MessageItem makeLoadStats(boolean realtime, boolean highPriority) {
+	public MessageItem makeLoadStats(boolean realtime, boolean highPriority, boolean lossy) {
 		// Don't send load stats.
 		return null;
 	}
@@ -201,6 +201,34 @@ public class NullBasePeerNode implements BasePeerNode {
 
 	public void reportThrottledPacketSendTime(long time, boolean realTime) {
 		// Ignore.
+	}
+
+	public DecodingMessageGroup startProcessingDecryptedMessages(int count) {
+		return new DecodingMessageGroup() {
+
+			public void processDecryptedMessage(byte[] data, int offset,
+					int length, int overhead) {
+				NullBasePeerNode.this.processDecryptedMessage(data, offset, length, overhead);
+			}
+
+			public void complete() {
+				// Do nothing.
+			}
+			
+		};
+	}
+
+	public boolean isOldFNP() {
+		return false;
+	}
+
+	public double averagePingTimeCorrected() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public void backoffOnResend() {
+		// Ignore
 	}
 
 }

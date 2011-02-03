@@ -1027,7 +1027,7 @@ public class PeerMessageQueue {
 	}
 	
 	private void addLoadStats(long now, ArrayList<MessageItem> messages, boolean realtime) {
-		MessageItem load = pn.makeLoadStats(realtime, false);
+		MessageItem load = pn.makeLoadStats(realtime, false, false);
 		if(load != null) {
 			if(logMINOR && load != null)
 				Logger.minor(this, "Adding load message (realtime) to packet for "+pn);

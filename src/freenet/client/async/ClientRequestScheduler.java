@@ -900,6 +900,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		} else schedCore.countNegative();
 	}
+	
+	/* FIXME SECURITY When/if introduce tunneling or similar mechanism for starting requests
+	 * at a distance this will need to be reconsidered. See the comments on the caller in 
+	 * RequestHandler (onAbort() handler). */
+	public boolean wantKey(Key key) {
+		if(schedTransient.anyProbablyWantKey(key, clientContext)) return true;
+		if(schedCore != null && schedCore.anyProbablyWantKey(key, clientContext)) return true;
+		return false;
+	}
 
 	/** Queue the offered key */
 	public void queueOfferedKey(final Key key, boolean realTime) {

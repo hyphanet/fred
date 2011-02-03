@@ -340,7 +340,7 @@ public class FetchException extends Exception {
 	/** Get the (localised) short name of this failure mode. */
 	public static String getShortMessage(int mode) {
 		String ret = NodeL10n.getBase().getString("FetchException.shortError."+mode);
-		if(ret == null)
+		if(ret == null || ret.equals(""))
 			return "Unknown code "+mode;
 		else return ret;
 	}

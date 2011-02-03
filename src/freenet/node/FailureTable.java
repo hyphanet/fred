@@ -455,7 +455,12 @@ public class FailureTable implements OOMHook {
 
 				public void run() {
 					try {
-						source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000, false, null);
+						if(source.isOldFNP()) {
+							source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000, false, null);
+						} else {
+							source.sendSync(data, senderCounter, realTimeFlag);
+							senderCounter.sentPayload(dataLength);
+						}
 					} catch (NotConnectedException e) {
 						// :(
 					} catch (WaitedTooLongException e) {
@@ -496,7 +501,7 @@ public class FailureTable implements OOMHook {
 						tag.unlockHandler();
 					}
 					
-				}, realTimeFlag);
+				}, realTimeFlag, node.nodeStats);
         	node.executor.execute(new PrioRunnable() {
 
 				public int getPriority() {

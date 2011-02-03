@@ -17,14 +17,11 @@ import java.math.BigInteger;
 import java.net.URL;
 import java.util.Random;
 
-import freenet.support.HexUtil;
-import freenet.support.Logger;
 import freenet.support.CPUInformation.AMDCPUInfo;
 import freenet.support.CPUInformation.CPUID;
 import freenet.support.CPUInformation.CPUInfo;
 import freenet.support.CPUInformation.IntelCPUInfo;
 import freenet.support.CPUInformation.UnknownCPUException;
-import freenet.support.io.Closer;
 
 /**
  * <p>BigInteger that takes advantage of the jbigi library for the modPow operation,
@@ -274,23 +271,8 @@ public class NativeBigInteger extends BigInteger {
 	}
 
 	@Override
-	public String toString(int radix) {
-		if(radix == 16)
-			return toHexString();
-		return super.toString(radix);
-	}
-
-        /**
-         *
-         * @return
-         */
-        public String toHexString() {
-		byte[] buf = toByteArray();
-		return HexUtil.bytesToHex(buf);
-	}
-
-	@Override
 	public double doubleValue() {
+		// TODO Recent tests show that Java version is quicker. Maybe drop?
 		if(_nativeOk)
 			return nativeDoubleValue(toByteArray());
 		else
@@ -409,7 +391,7 @@ public class NativeBigInteger extends BigInteger {
 			if(ule.toString().toLowerCase().indexOf("not permitted") == -1)
 				throw ule;
 		} finally {
-			Closer.close(fos);
+			if (fos != null) { try { fos.close(); } catch (IOException e) { /* ignore */ } }
 			f.delete();
 		}
 
@@ -453,17 +435,14 @@ public class NativeBigInteger extends BigInteger {
 			} finally {
 				if(temp != null) temp.delete();
 			}
-			Logger.error(NativeBigInteger.class, "Can't load from " + System.getProperty("java.io.tmpdir"));
-			System.err.println("Can't load from " + System.getProperty("java.io.tmpdir"));
+			System.err.println("net.i2p.util.NativeBigInteger: Can't load from " + System.getProperty("java.io.tmpdir"));
 			temp = new File("jbigi-lib.tmp");
 			if(tryLoadResource(temp, resource))
 				return true;
 		} catch(Exception fnf) {
-			Logger.error(NativeBigInteger.class, "Error reading jbigi resource", fnf);
-			System.err.println("Error reading jbigi resource");
+			System.err.println("net.i2p.util.NativeBigInteger: Error reading jbigi resource");
 		} catch(UnsatisfiedLinkError ule) {
-			Logger.error(NativeBigInteger.class, "Library " + resourceName + " is not appropriate for this system.");
-			System.err.println("Library " + resourceName + " is not appropriate for this system.");
+			System.err.println("net.i2p.util.NativeBigInteger: Library " + resourceName + " is not appropriate for this system.");
 		} finally {
 			if(temp != null) temp.delete();
 		}

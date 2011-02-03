@@ -39,11 +39,11 @@ public class ThrottleWindowManager {
 		}
 	}
 
-	public synchronized double currentValue() {
+	public synchronized double currentValue(boolean realTime) {
 		if (_simulatedWindowSize < 1.0) {
 			_simulatedWindowSize = 1.0F;
 		}
-		return _simulatedWindowSize * Math.max(1, node.peers.countNonBackedOffPeers());
+		return _simulatedWindowSize * Math.max(1, node.peers.countNonBackedOffPeers(realTime));
 	}
 
 	public synchronized void rejectedOverload() {

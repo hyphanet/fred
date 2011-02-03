@@ -147,6 +147,10 @@ public class HexUtil {
 		return bytesToHex(bitsToBytes(ba, size));
 	}
 
+	public final static String toHexString(BigInteger i) {
+		return bytesToHex(i.toByteArray());
+	}
+
 
 	/**
 	 * @return the number of bytes required to represent the

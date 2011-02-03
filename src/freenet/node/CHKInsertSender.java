@@ -76,11 +76,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						}
 					} else {
 						BackgroundTransfer.this.receivedNotice(false, false);
-						pn.localRejectedOverload("TransferFailedInsert");
+						pn.localRejectedOverload("TransferFailedInsert", realTimeFlag);
 					}
 				}
 				
-			}, realTimeFlag);
+			}, realTimeFlag, node.nodeStats);
 		}
 		
 		void start() {
@@ -120,9 +120,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 		
 		/** @param timeout Whether this completion is the result of a timeout.
-		 * @return True unless we had already received a notice. */
+		 * @return True if we should wait again, false if we have already received a notice or timed out. */
 		private boolean receivedNotice(boolean success, boolean timeout) {
-			if(logMINOR) Logger.minor(this, "Received notice: "+success+" on "+this);
+			if(logMINOR) Logger.minor(this, "Received notice: "+success+(timeout ? " (timeout)" : "")+" on "+this);
+			boolean noUnlockPeer = false;
+			boolean noNotifyOriginator = false;
 			synchronized(this) {
 				if(finishedWaiting) {
 					Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+")", new Exception("error"));
@@ -130,29 +132,46 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 				if (receivedCompletionNotice) {
 					if(logMINOR) Logger.minor(this, "receivedNotice("+success+"), already had receivedNotice("+completionSucceeded+")");
-					if(timeout) // Fatal timeout.
+					if(timeout) {
+						// Fatal timeout.
 						finishedWaiting = true;
-					return false;
+						noNotifyOriginator = true;
+					}
 				} else {
-				completionSucceeded = success;
-				receivedCompletionNotice = true;
-				if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
-					finishedWaiting = true;
-				notifyAll();
+					completionSucceeded = success;
+					receivedCompletionNotice = true;
+					if(!timeout) // Any completion mode other than a timeout immediately sets finishedWaiting, because we won't wait any longer.
+						finishedWaiting = true;
+					else {
+						// First timeout but not had second timeout yet.
+						// Unlock downstream (below), but will wait here for the peer to fatally timeout.
+						// UIDTag will automatically reassign to self when the time comes if we call handlingTimeout() here, and will avoid unnecessarily logging errors.
+						// LOCKING: Note that it is safe to call the tag within the lock since we always take the UIDTag lock last.
+						thisTag.handlingTimeout(pn);
+						noUnlockPeer = true;
+					}
+					notifyAll();
 				}
 			}
-			synchronized(backgroundTransfers) {
-				backgroundTransfers.notifyAll();
+			if(!noNotifyOriginator) {
+				synchronized(backgroundTransfers) {
+					backgroundTransfers.notifyAll();
+				}
+				if(!success) {
+					setTransferTimedOut();
+				}
 			}
-			if(!success) {
-				setTransferTimedOut();
-			}
-			thisTag.removeRoutingTo(pn);
+			if(!noUnlockPeer)
+				// Downstream (away from originator), we need to stay locked on the peer until the fatal timeout / the delayed notice.
+				// Upstream (towards originator), of course, we can unlockHandler() as soon as all the transfers are finished.
+				// LOCKING: Do this outside the lock as pn can do heavy stuff in response (new load management).
+				pn.noLongerRoutingTo(thisTag, false);
+			if(noNotifyOriginator) return false;
 			return true;
 		}
 		
 		public void onMatched(Message m) {
-			pn.successNotOverload();
+			pn.successNotOverload(realTimeFlag);
 			PeerNode pn = (PeerNode) m.getSource();
 			// pn cannot be null, because the filters will prevent garbage collection of the nodes
 			
@@ -183,7 +202,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
 			Logger.normal(this, "Timed out waiting for a final ack from: "+pn+" on "+this, new Exception("debug"));
 			if(receivedNotice(false, true)) {
-				pn.localRejectedOverload("InsertTimeoutNoFinalAck");
+				pn.localRejectedOverload("InsertTimeoutNoFinalAck", realTimeFlag);
 				// First timeout. Wait for second timeout.
 				try {
 					node.usm.addAsyncFilter(getNotificationMessageFilter(), this, CHKInsertSender.this);
@@ -417,7 +436,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             // Route it
             // Can backtrack, so only route to nodes closer than we are to target.
             next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null);
+			        null, htl, ignoreLowBackoff ? Node.LOW_BACKOFF : 0, source == null, realTimeFlag);
 			
             if(next == null) {
                 // Backtrack
@@ -464,6 +483,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				   don't respond in ten seconds (ACCEPTED_TIMEOUT). Or, if the length of the send queue to them is greater than
 				   ACCEPTED_TIMEOUT, using sendAsync() will skip them before they get the request. This would be a need for retuning
 				   ACCEPTED_TIMEOUT.
+				 Note also that we won't fork here, unlike in RequestSender, because the data won't be sent after a timeout, and the
+				 insert will not be routed any further without the DataInsert.
 				 */
 				next.sendAsync(req, null, this);
 			} catch (NotConnectedException e1) {
@@ -512,7 +533,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             if(logMINOR) Logger.minor(this, "Sending DataInsert");
 			if(failIfReceiveFailed(thisTag, next)) return;
             try {
-				next.sendSync(dataInsert, this);
+				next.sendSync(dataInsert, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
 				thisTag.removeRoutingTo(next);
@@ -543,7 +564,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					
 					// First timeout.
 					// Could be caused by the next node, or could be caused downstream.
-					next.localRejectedOverload("AfterInsertAcceptedTimeout2");
+					next.localRejectedOverload("AfterInsertAcceptedTimeout2", realTimeFlag);
 					forwardRejectedOverload();
 
 					synchronized(this) {
@@ -687,7 +708,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				+ ") after Accepted in insert - treating as fatal timeout");
 		// Terminal overload
 		// Try to propagate back to source
-		next.localRejectedOverload("AfterInsertAcceptedRejectedTimeout");
+		next.localRejectedOverload("AfterInsertAcceptedRejectedTimeout", realTimeFlag);
 		
 		// Since we definitely sent the DataInsert, this is definitely the fault of the next node.
 		// However, we have always started the transfer by the time this is called, so we do NOT need to removeRoutingTo().
@@ -700,7 +721,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	private boolean handleRejectedOverload(Message msg, PeerNode next, InsertTag thisTag) {
 		// Probably non-fatal, if so, we have time left, can try next one
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
-			next.localRejectedOverload("ForwardRejectedOverload6");
+			next.localRejectedOverload("ForwardRejectedOverload6", realTimeFlag);
 			if(logMINOR) Logger.minor(this,
 					"Local RejectedOverload, moving on to next peer");
 			// Give up on this one, try another
@@ -719,11 +740,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				htl = newHtl;						
 		}
 		// Finished as far as this node is concerned - except for the data transfer, which will continue until it finishes.
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 	}
 
 	private void handleDataInsertRejected(Message msg, PeerNode next, InsertTag thisTag) {
-		next.successNotOverload();
+		next.successNotOverload(realTimeFlag);
 		short reason = msg
 				.getShort(DMT.DATA_INSERT_REJECTED_REASON);
 		if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
@@ -811,7 +832,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				// Terminal overload
 				// Try to propagate back to source
 				if(logMINOR) Logger.minor(this, "Timeout");
-				next.localRejectedOverload("Timeout3");
+				next.localRejectedOverload("Timeout3", realTimeFlag);
 				// Try another node.
 				forwardRejectedOverload();
     			handleAcceptedRejectedTimeout(next, thisTag);
@@ -821,7 +842,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			if (msg.getSpec() == DMT.FNPRejectedOverload) {
 				// Non-fatal - probably still have time left
 				if (msg.getBoolean(DMT.IS_LOCAL)) {
-					next.localRejectedOverload("ForwardRejectedOverload5");
+					next.localRejectedOverload("ForwardRejectedOverload5", realTimeFlag);
 					if(logMINOR) Logger.minor(this,
 									"Local RejectedOverload, moving on to next peer");
 					// Give up on this one, try another
@@ -834,7 +855,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 			
 			if (msg.getSpec() == DMT.FNPRejectedLoop) {
-				next.successNotOverload();
+				next.successNotOverload(realTimeFlag);
 				// Loop - we don't want to send the data to this one
 				next.noLongerRoutingTo(thisTag, false);
 				break;
@@ -871,7 +892,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 
 	private void handleAcceptedRejectedTimeout(final PeerNode next, final InsertTag tag) {
 		// It could still be running. So the timeout is fatal to the node.
-		Logger.error(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
+		// This is a WARNING not an ERROR because it's possible that the problem is we simply haven't been able to send the message yet, because we don't use sendSync().
+		// FIXME use a callback to rule this out and log an ERROR.
+		Logger.warning(this, "Timeout awaiting Accepted/Rejected "+this+" to "+next);
 		tag.handlingTimeout(next);
 		// The node didn't accept the request. So we don't need to send them the data.
 		// However, we do need to wait a bit longer to try to postpone the fatalTimeout().
