@@ -5062,10 +5062,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	private long maxPeerPingTime() {
-		if(node == null || node.nodeStats == null)
+		if(node == null)
+			return NodeStats.DEFAULT_MAX_PING_TIME * 2;
+		NodeStats stats = node.nodeStats;
+		if(node.nodeStats == null)
 			return NodeStats.DEFAULT_MAX_PING_TIME * 2;
 		else
-			return node.nodeStats.maxPeerPingTime();
+			return stats.maxPeerPingTime();
 	}
 	
 }
