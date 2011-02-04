@@ -52,7 +52,7 @@ public class NewPacketFormatTest extends TestCase {
 		senderNode.currentKey = senderKey;
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false), 1024);
 
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue, senderKey, false);
 		assertEquals(1, fragment1.getFragments().size());
@@ -100,7 +100,7 @@ public class NewPacketFormatTest extends TestCase {
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false), 1024);
 
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue, senderKey, false);
 		assertEquals(1, fragment1.getFragments().size());
@@ -125,7 +125,7 @@ public class NewPacketFormatTest extends TestCase {
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[1024], null, false, null, (short) 0, false, false), 1024);
 
 		NPFPacket fragment1 = sender.createPacket(512, senderQueue, senderKey, false);
 		assertEquals(1, fragment1.getFragments().size());
@@ -148,7 +148,7 @@ public class NewPacketFormatTest extends TestCase {
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, false), 1024);
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);
@@ -214,7 +214,7 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, false));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, false), 1024);
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);
@@ -260,7 +260,7 @@ public class NewPacketFormatTest extends TestCase {
 		NewPacketFormat receiver = new NewPacketFormat(receiverNode, 0, 0);
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true), 1024);
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);
@@ -306,7 +306,7 @@ public class NewPacketFormatTest extends TestCase {
 		SessionKey senderKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 		SessionKey receiverKey = new SessionKey(null, null, null, null, null, null, null, null, null, new NewPacketFormatKeyContext(0, 0));
 
-		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true));
+		senderQueue.queueAndEstimateSize(new MessageItem(new byte[128], null, false, null, (short) 0, false, true), 1024);
 
 		Thread.sleep(PacketSender.MAX_COALESCING_DELAY*2);
 		NPFPacket packet1 = sender.createPacket(512, senderQueue, senderKey, false);

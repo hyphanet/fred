@@ -723,14 +723,14 @@ public class PeerMessageQueue {
 	 * @param item the <code>MessageItem</code> to queue
 	 * @return an estimate of the size of this queue
 	 */
-	public synchronized int queueAndEstimateSize(MessageItem item) {
+	public synchronized int queueAndEstimateSize(MessageItem item, int maxSize) {
 		enqueuePrioritizedMessageItem(item);
 		int x = 0;
 		for(PrioQueue pq : queuesByPriority) {
 			if(pq.itemsNonUrgent != null) {
 				for(MessageItem it : pq.itemsNonUrgent) {
 					x += it.getLength() + 2;
-					if(x > 1024)
+					if(x > maxSize)
 						break;
 				}
 			}
@@ -738,7 +738,7 @@ public class PeerMessageQueue {
 				for(PrioQueue.Items q : pq.nonEmptyItemsWithID)
 					for(MessageItem it : q.items) {
 						x += it.getLength() + 2;
-						if(x > 1024)
+						if(x > maxSize)
 							break;
 					}
 			}
