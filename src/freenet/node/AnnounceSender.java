@@ -356,54 +356,79 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			}
 		}
 	}
+	
+	private int waitingForTransfers = 0;
 
 	/**
 	 * Validate a reply, and relay it back to the source.
 	 * @param msg2 The AnnouncementReply message.
 	 * @return True unless we lost the connection to our request source.
 	 */
-	private boolean validateForwardReply(Message msg, PeerNode next) {
-		long xferUID = msg.getLong(DMT.TRANSFER_UID);
-		int noderefLength = msg.getInt(DMT.NODEREF_LENGTH);
-		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
-		byte[] noderefBuf = OpennetManager.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, next, false, uid, true, this, node);
-		if(noderefBuf == null) {
-			return true; // Don't relay
+	private void validateForwardReply(Message msg, final PeerNode next) {
+		final long xferUID = msg.getLong(DMT.TRANSFER_UID);
+		final int noderefLength = msg.getInt(DMT.NODEREF_LENGTH);
+		final int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
+		synchronized(this) {
+			waitingForTransfers++;
 		}
-		SimpleFieldSet fs = OpennetManager.validateNoderef(noderefBuf, 0, noderefLength, next, false);
-		if(fs == null) {
-			if(cb != null) cb.bogusNoderef("invalid noderef");
-			return true; // Don't relay
-		}
-		if(source != null) {
-			// Now relay it
-			try {
-				forwardedRefs++;
-				om.sendAnnouncementReply(uid, source, noderefBuf, this);
-			} catch (NotConnectedException e) {
-				// Hmmm...!
-				return false;
+		Runnable r = new Runnable() {
+
+			public void run() {
+				try {
+					byte[] noderefBuf = OpennetManager.innerWaitForOpennetNoderef(xferUID, paddedLength, noderefLength, next, false, uid, true, AnnounceSender.this, node);
+					if(noderefBuf == null) {
+						return; // Don't relay
+					}
+					SimpleFieldSet fs = OpennetManager.validateNoderef(noderefBuf, 0, noderefLength, next, false);
+					if(fs == null) {
+						if(cb != null) cb.bogusNoderef("invalid noderef");
+						return; // Don't relay
+					}
+					if(source != null) {
+						// Now relay it
+						try {
+							forwardedRefs++;
+							om.sendAnnouncementReply(uid, source, noderefBuf, AnnounceSender.this);
+						} catch (NotConnectedException e) {
+							// Hmmm...!
+							return;
+						}
+					} else {
+						// Add it
+						try {
+							OpennetPeerNode pn = node.addNewOpennetNode(fs, ConnectionType.ANNOUNCE);
+							if(pn != null)
+								cb.addedNode(pn);
+							else
+								cb.nodeNotAdded();
+						} catch (FSParseException e) {
+							Logger.normal(this, "Failed to parse reply: "+e, e);
+							if(cb != null) cb.bogusNoderef("parse failed: "+e);
+						} catch (PeerParseException e) {
+							Logger.normal(this, "Failed to parse reply: "+e, e);
+							if(cb != null) cb.bogusNoderef("parse failed: "+e);
+						} catch (ReferenceSignatureVerificationException e) {
+							Logger.normal(this, "Failed to parse reply: "+e, e);
+							if(cb != null) cb.bogusNoderef("parse failed: "+e);
+						}
+					}
+					return;
+				} finally {
+					synchronized(AnnounceSender.this) {
+						waitingForTransfers--;
+						AnnounceSender.this.notifyAll();
+					}
+				}
 			}
-		} else {
-			// Add it
-			try {
-				OpennetPeerNode pn = node.addNewOpennetNode(fs, ConnectionType.ANNOUNCE);
-				if(pn != null)
-					cb.addedNode(pn);
-				else
-					cb.nodeNotAdded();
-			} catch (FSParseException e) {
-				Logger.normal(this, "Failed to parse reply: "+e, e);
-				if(cb != null) cb.bogusNoderef("parse failed: "+e);
-			} catch (PeerParseException e) {
-				Logger.normal(this, "Failed to parse reply: "+e, e);
-				if(cb != null) cb.bogusNoderef("parse failed: "+e);
-			} catch (ReferenceSignatureVerificationException e) {
-				Logger.normal(this, "Failed to parse reply: "+e, e);
-				if(cb != null) cb.bogusNoderef("parse failed: "+e);
+			
+		};
+		try {
+			node.executor.execute(r);
+		} catch (Throwable t) {
+			synchronized(this) {
+				waitingForTransfers--;
 			}
 		}
-		return true;
 	}
 
 	/**
@@ -458,6 +483,20 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	}
 
 	private void complete() {
+		synchronized(this) {
+			long deadline = System.currentTimeMillis() + 120*1000;
+			while(true) {
+				if(waitingForTransfers == 0) break;
+				if(logMINOR) Logger.minor(this, "Waiting for "+waitingForTransfers+" transfers");
+				int waitTime = (int) (deadline - System.currentTimeMillis());
+				if(waitTime <= 0) break;
+				try {
+					wait(waitTime);
+				} catch (InterruptedException e) {
+					// Ignore.
+				}
+			}
+		}
 		Message msg = DMT.createFNPOpennetAnnounceCompleted(uid);
 		if(source != null) {
 			try {
