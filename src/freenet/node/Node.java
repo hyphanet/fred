@@ -6162,8 +6162,10 @@ public class Node implements TimeSkewDetectorCallback {
 		synchronized(this) {
 			mtu = maxPacketSize;
 		}
-		int detected = ipDetector.getMinimumDetectedMTU();
-		if(detected < mtu) return detected;
+		if(ipDetector != null) {
+			int detected = ipDetector.getMinimumDetectedMTU();
+			if(detected < mtu) return detected;
+		}
 		return mtu;
 	}
 }
