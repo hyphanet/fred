@@ -57,7 +57,7 @@ public class NodeCrypto {
 	final boolean isOpennet;
 	final RandomSource random;
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
-	UdpSocketHandler socket;
+	final UdpSocketHandler socket;
 	public FNPPacketMangler packetMangler;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
