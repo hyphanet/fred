@@ -928,21 +928,27 @@ public class PeerMessageQueue {
 		// However, we do not want to starve the bulk data.
 		// So we should send realtime if there is realtime, unless the bulk data is older than 5000ms.
 		
-		if((!queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) &&
-				(!queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty())) {
-			// There is realtime data, and there is bulk data.
-			if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now) <= now) {
-				// The bulk data is urgent.
-				// The realtime data is assumed to be urgent because it is realtime.
-				// So alternate.
-				synchronized(this) {
+		// LOCKING: Must lock while calling getNextUrgentTime, and also while accessing lastSentRealTime.
+		// However, we need to be (or needed to be in the FNP era anyway) flexible with addPriorityMessages,
+		// and we definitely need to not be locked when calling addLoadStats().
+		// FIXME: All this can go away when FNP goes away and we can just lock the whole function.
+		
+		synchronized(this) {
+		
+			if((!queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) &&
+					(!queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty())) {
+				// There is realtime data, and there is bulk data.
+				if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now) <= now) {
+					// The bulk data is urgent.
+					// The realtime data is assumed to be urgent because it is realtime.
+					// So alternate.
 					tryRealtimeFirst = !lastSentRealTime;
+				} else {
+					// The bulk data is not urgent.
+					// So we should send the realtime data.
+					// This should not prejudice future decisions.
+					tryRealtimeFirst = true;
 				}
-			} else {
-				// The bulk data is not urgent.
-				// So we should send the realtime data.
-				// This should not prejudice future decisions.
-				tryRealtimeFirst = true;
 			}
 		}
 		
