@@ -283,6 +283,7 @@ public class NodeCrypto {
 	}
 
 	public void start() {
+		socket.calculateMaxPacketSize();
 		socket.setLowLevelFilter(new IncomingPacketFilterImpl(packetMangler, node, this));
 		packetMangler.start();
 		socket.start();

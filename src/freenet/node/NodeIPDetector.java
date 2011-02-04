@@ -365,6 +365,7 @@ public class NodeIPDetector {
 					node.onTooLowMTU(minimumMTU, UdpSocketHandler.MIN_MTU);
 			}
 		}
+		node.updateMTU();
 		redetectAddress();
 	}
 

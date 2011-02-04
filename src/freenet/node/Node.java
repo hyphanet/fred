@@ -2545,11 +2545,13 @@ public class Node implements TimeSkewDetectorCallback {
 					if(val > 1492) throw new InvalidConfigValueException("Larger than ethernet frame size unlikely to work!");
 					maxPacketSize = val;
 				}
+				updateMTU();
 			}
 			
 		}, true);
 		
 		maxPacketSize = nodeConfig.getInt("maxPacketSize");
+		updateMTU();
 
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
@@ -6165,5 +6167,14 @@ public class Node implements TimeSkewDetectorCallback {
 		int detected = ipDetector.getMinimumDetectedMTU();
 		if(detected < mtu) return detected;
 		return mtu;
+	}
+
+
+	public void updateMTU() {
+		this.darknetCrypto.socket.calculateMaxPacketSize();
+		OpennetManager om = opennet;
+		if(om != null) {
+			om.crypto.socket.calculateMaxPacketSize();
+		}
 	}
 }
