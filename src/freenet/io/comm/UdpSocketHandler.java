@@ -282,8 +282,17 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		return maxPacketSize;
 	}
 
+	public int calculateMaxPacketSize() {
+		int oldSize = maxPacketSize;
+		int newSize = innerCalculateMaxPacketSize();
+		maxPacketSize = newSize;
+		if(oldSize != newSize)
+			System.out.println("Max packet size: "+newSize);
+		return maxPacketSize;
+	}
+	
 	/** Recalculate the maximum packet size */
-	public int calculateMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis? How? PMTU would require JNI, although it might be worth it...
+	int innerCalculateMaxPacketSize() { //FIXME: what about passing a peerNode though and doing it on a per-peer basis? How? PMTU would require JNI, although it might be worth it...
 		final int minAdvertisedMTU = node.getMinimumMTU();
 
 		// We don't want the MTU detection thingy to prevent us to send PacketTransmits!
