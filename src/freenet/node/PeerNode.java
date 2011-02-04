@@ -1113,7 +1113,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, ctr);
 		long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
-		int maxSize = 1024;
+		int maxSize = getMaxPacketSize();
 		int x = messageQueue.queueAndEstimateSize(item, maxSize);
 		if(x > maxSize || !node.enablePacketCoalescing) {
 			// If there is a packet's worth to send, wake up the packetsender.
