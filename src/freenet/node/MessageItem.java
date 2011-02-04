@@ -51,8 +51,8 @@ public class MessageItem {
 		this.ctrCallback = ctr;
 		this.submitted = System.currentTimeMillis();
 		priority = msg2.getPriority();
-		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
-		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
+		this.sendLoadRT = msg2.needsLoadRT();
+		this.sendLoadBulk = msg2.needsLoadBulk();
 		buf = msg.encodeToPacket();
 	}
 
