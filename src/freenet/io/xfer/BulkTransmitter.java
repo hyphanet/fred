@@ -52,6 +52,7 @@ public class BulkTransmitter {
 	private long finishTime=-1;
 	private String cancelReason;
 	private final ByteCounter ctr;
+	private final boolean realTime;
 	
 	private static long transfersCompleted;
 	private static long transfersSucceeded;
@@ -74,12 +75,13 @@ public class BulkTransmitter {
 	 * @param noWait If true, don't wait for an FNPBulkReceivedAll, return as soon as we've sent everything.
 	 * @throws DisconnectedException If the peer we are trying to send to becomes disconnected.
 	 */
-	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, boolean noWait, ByteCounter ctr) throws DisconnectedException {
+	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, boolean noWait, ByteCounter ctr, boolean realTime) throws DisconnectedException {
 		this.prb = prb;
 		this.peer = peer;
 		this.uid = uid;
 		this.noWait = noWait;
 		this.ctr = ctr;
+		this.realTime = realTime;
 		if(ctr == null) throw new NullPointerException();
 		peerBootID = peer.getBootID();
 		// Need to sync on prb while doing both operations, to avoid race condition.
@@ -294,6 +296,8 @@ outer:	while(true) {
 			try {
 				if(logMINOR) Logger.minor(this, "Sending packet "+blockNo);
 				Message msg = DMT.createFNPBulkPacketSend(uid, blockNo, buf);
+				if(realTime)
+					msg.boostPriority();
 				boolean isOldFNP = peer.isOldFNP();
 				UnsentPacketTag tag = new UnsentPacketTag(isOldFNP);
 				if(isOldFNP) {

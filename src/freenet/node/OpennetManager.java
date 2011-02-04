@@ -790,7 +790,7 @@ public class OpennetManager {
 			new PartiallyReceivedBulk(node.usm, padded.length, Node.PACKET_SIZE, raf, true);
 		try {
 			BulkTransmitter bt =
-				new BulkTransmitter(prb, peer, xferUID, true, ctr);
+				new BulkTransmitter(prb, peer, xferUID, true, ctr, true);
 			bt.send();
 		} catch (DisconnectedException e) {
 			throw new NotConnectedException(e);

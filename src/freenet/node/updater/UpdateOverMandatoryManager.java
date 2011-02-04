@@ -776,7 +776,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final BulkTransmitter bt;
 		try {
-			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr);
+			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
 		} catch(DisconnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, then disconnected: " + e, e);
 			raf.close();
@@ -1232,7 +1232,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final BulkTransmitter bt;
 		try {
-			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr);
+			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
 		} catch(DisconnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected: " + e, e);
 			raf.close();
