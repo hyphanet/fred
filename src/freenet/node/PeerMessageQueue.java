@@ -849,7 +849,7 @@ public class PeerMessageQueue {
 					pushfrontPrioritizedMessageItem(messages.get(i));
 			}
 		}
-		if(logMINOR) Logger.minor(this, "Grabbed message "+messages.get(0));
+		if(logMINOR) Logger.minor(this, "Grabbed message "+messages.get(0)+" on "+this);
 		return messages.get(0);
 	}
 
