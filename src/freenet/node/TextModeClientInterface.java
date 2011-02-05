@@ -1048,6 +1048,9 @@ public class TextModeClientInterface implements Runnable {
 				public void nodeNotAdded() {
 					write("Node not added as we don't want it for some reason.");
 				}
+				public void acceptedSomewhere() {
+					write("Announcement accepted by some node.");
+				}
         		
         	});
         } else {

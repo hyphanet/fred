@@ -525,6 +525,10 @@ public class Announcer {
 		AnnounceSender sender = new AnnounceSender(node.getLocation(), om, node, new AnnouncementCallback() {
 			private int totalAdded;
 			private int totalNotWanted;
+			private boolean acceptedSomewhere;
+			public synchronized void acceptedSomewhere() {
+				acceptedSomewhere = true;
+			}
 			public void addedNode(PeerNode pn) {
 				synchronized(Announcer.this) {
 					announcementAddedNodes++;
@@ -564,7 +568,10 @@ public class Announcer {
 				// be more than that period in the future.
 				node.peers.disconnect(seed, true, false, false);
 				int shallow=node.maxHTL()-(totalAdded+totalNotWanted);
-				System.out.println("Announcement to "+seed.userToString()+" completed ("+totalAdded+" added, "+totalNotWanted+" not wanted, "+shallow+" shallow)");
+				if(acceptedSomewhere)
+					System.out.println("Announcement to "+seed.userToString()+" completed ("+totalAdded+" added, "+totalNotWanted+" not wanted, "+shallow+" shallow)");
+				else
+					System.out.println("Announcement to "+seed.userToString()+" not accepted.");
 				if(announceNow)
 					maybeSendAnnouncement();
 			}
