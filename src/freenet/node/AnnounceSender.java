@@ -482,14 +482,9 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 	private void complete() {
 		synchronized(this) {
-			long deadline = System.currentTimeMillis() + 120*1000;
-			while(true) {
-				if(waitingForTransfers <= 0) break;
-				if(logMINOR) Logger.minor(this, "Waiting for "+waitingForTransfers+" transfers");
-				int waitTime = (int) (deadline - System.currentTimeMillis());
-				if(waitTime <= 0) break;
+			while(waitingForTransfers > 0) {
 				try {
-					wait(waitTime);
+					wait();
 				} catch (InterruptedException e) {
 					// Ignore.
 				}
