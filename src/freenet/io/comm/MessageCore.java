@@ -213,11 +213,12 @@ public class MessageCore {
 					match = f;
 					if(logMINOR) Logger.minor(this, "Matched: "+f);
 					break; // Only one match permitted per message
-				}
+				} else if(logMINOR) Logger.minor(this, "Did not match "+f);
 			}
 		}
 		if(timedOut != null) {
 			for(MessageFilter f : timedOut) {
+				if(logMINOR) Logger.minor(this, "Timed out "+f);
 				f.setMessage(null);
 				f.onTimedOut(_executor);
 			}
@@ -487,14 +488,14 @@ public class MessageCore {
 				while (true) {
 					if (!i.hasNext()) {
 						i.add(filter);
-						if(logMINOR) Logger.minor(this, "Added at end");
+						if(logMINOR) Logger.minor(this, "Added at end "+filter);
 						break;
 					}
 					MessageFilter mf = i.next();
 					if (mf.getTimeout() > filter.getTimeout()) {
 						i.previous();
 						i.add(filter);
-						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
+						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout()+" filter "+filter);
 						break;
 					}
 				}
