@@ -227,6 +227,9 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			}
 
 			if(logMINOR) Logger.minor(this, "Got Accepted");
+			
+			if(cb != null)
+				cb.acceptedSomewhere();
 
 			// Send the rest
 
