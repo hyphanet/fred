@@ -272,7 +272,8 @@ public final class MessageFilter {
     public synchronized void setMessage(Message message) {
         //Logger.debug(this, "setMessage("+message+") on "+this, new Exception("debug"));
         _message = message;
-        _matched = _message != null;
+        // Avoid race conditions where it is removed from the filter list because of a timeout but not woken up.
+        _matched = true;
         notifyAll();
     }
 
