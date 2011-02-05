@@ -571,7 +571,7 @@ public class Announcer {
 				if(acceptedSomewhere)
 					System.out.println("Announcement to "+seed.userToString()+" completed ("+totalAdded+" added, "+totalNotWanted+" not wanted, "+shallow+" shallow)");
 				else
-					System.out.println("Announcement to "+seed.userToString()+" not accepted.");
+					System.out.println("Announcement to "+seed.userToString()+" not accepted (version "+seed.getVersionNumber()+") .");
 				if(announceNow)
 					maybeSendAnnouncement();
 			}
