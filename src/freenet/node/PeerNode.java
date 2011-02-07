@@ -3489,7 +3489,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 			
 			if(now >= routingBackedOffUntilBulk && overPingTime) {
-				lastRoutingBackoffReasonRT = "TooHighPing";
+				lastRoutingBackoffReasonBulk = "TooHighPing";
 			}
 			if(now < routingBackedOffUntilBulk || overPingTime) {
 				peerNodeStatus = PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
