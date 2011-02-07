@@ -1600,6 +1600,10 @@ public class PeerManager {
 	 * Add a PeerNode routing backoff reason to the map
 	 */
 	public void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode, boolean realTime) {
+		if(peerNodeRoutingBackoffReason == null) {
+			Logger.error(this, "Impossible backoff reason null on "+peerNode+" realtime="+realTime, new Exception("error"));
+			return;
+		}
 		HashMap<String, HashSet<PeerNode>> peerNodeRoutingBackoffReasons =
 			realTime ? peerNodeRoutingBackoffReasonsRT : peerNodeRoutingBackoffReasonsBulk;
 		synchronized(peerNodeRoutingBackoffReasons) {
