@@ -3469,7 +3469,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			return PeerManager.PEER_NODE_STATUS_DISCONNECTING;
 		if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 			peerNodeStatus = PeerManager.PEER_NODE_STATUS_CONNECTED;
-			if(now >= routingBackedOffUntilRT && overPingTime) {
+			if(overPingTime && (lastRoutingBackoffReasonRT == null || now >= routingBackedOffUntilRT)) {
 				lastRoutingBackoffReasonRT = "TooHighPing";
 			}
 			if(now < routingBackedOffUntilRT || overPingTime) {
@@ -3488,7 +3488,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 			}
 			
-			if(now >= routingBackedOffUntilBulk && overPingTime) {
+			if(overPingTime && (lastRoutingBackoffReasonBulk == null || now >= routingBackedOffUntilBulk)) {
 				lastRoutingBackoffReasonBulk = "TooHighPing";
 			}
 			if(now < routingBackedOffUntilBulk || overPingTime) {
