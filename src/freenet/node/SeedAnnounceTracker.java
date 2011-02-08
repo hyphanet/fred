@@ -28,6 +28,7 @@ public class SeedAnnounceTracker {
 		private int totalSeedConnects;
 		private int totalAnnounceRequests;
 		private int totalAcceptedAnnounceRequests;
+		private int lastVersion;
 		
 		public void acceptedAnnounce() {
 			totalAnnounceRequests++;
@@ -41,16 +42,23 @@ public class SeedAnnounceTracker {
 		public void connected() {
 			totalSeedConnects++;
 		}
+
+		public void setVersion(int ver) {
+			if(ver <= 0) return;
+			lastVersion = ver;
+		}
 		
 	}
 
 	public void acceptedAnnounce(SeedClientPeerNode source) {
 		InetAddress addr = source.getPeer().getAddress();
+		int ver = source.getVersionNumber();
 		synchronized(this) {
 			TrackerItem item = itemsByIP.get(addr);
 			if(item == null)
 				item = new TrackerItem(addr);
 			item.acceptedAnnounce();
+			item.setVersion(ver);
 			itemsByIP.push(addr, item);
 			while(itemsByIP.size() > MAX_SIZE)
 				itemsByIP.popKey();
@@ -59,11 +67,13 @@ public class SeedAnnounceTracker {
 	
 	public void rejectedAnnounce(SeedClientPeerNode source) {
 		InetAddress addr = source.getPeer().getAddress();
+		int ver = source.getVersionNumber();
 		synchronized(this) {
 			TrackerItem item = itemsByIP.get(addr);
 			if(item == null)
 				item = new TrackerItem(addr);
 			item.rejectedAnnounce();
+			item.setVersion(ver);
 			itemsByIP.push(addr, item);
 			while(itemsByIP.size() > MAX_SIZE)
 				itemsByIP.popKey();
@@ -72,11 +82,13 @@ public class SeedAnnounceTracker {
 
 	public void onConnectSeed(SeedClientPeerNode source) {
 		InetAddress addr = source.getPeer().getAddress();
+		int ver = source.getVersionNumber();
 		synchronized(this) {
 			TrackerItem item = itemsByIP.get(addr);
 			if(item == null)
 				item = new TrackerItem(addr);
 			item.connected();
+			item.setVersion(ver);
 			itemsByIP.push(addr, item);
 			while(itemsByIP.size() > MAX_SIZE)
 				itemsByIP.popKey();
@@ -92,12 +104,14 @@ public class SeedAnnounceTracker {
 		row.addChild("th", l10nStats("seedTableConnections"));
 		row.addChild("th", l10nStats("seedTableAnnouncements"));
 		row.addChild("th", l10nStats("seedTableAccepted"));
+		row.addChild("th", l10nStats("seedTableVersion"));
 		for(TrackerItem item : topItems) {
 			row = table.addChild("tr");
 			row.addChild("td", item.addr.getHostAddress());
 			row.addChild("td", Integer.toString(item.totalSeedConnects));
 			row.addChild("td", Integer.toString(item.totalAnnounceRequests));
 			row.addChild("td", Integer.toString(item.totalAcceptedAnnounceRequests));
+			row.addChild("td", Integer.toString(item.lastVersion));
 		}
 	}
 
