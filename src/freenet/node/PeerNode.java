@@ -1488,6 +1488,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
 			if(delay < 3000) delay = 3000;
 			sendHandshakeTime = now + delay;
+			if(logMINOR) Logger.minor(this, "Next handshake in "+delay);
 
 			if(successfulHandshakeSend)
 				firstHandshake = false;
