@@ -96,7 +96,7 @@ public class SeedAnnounceTracker {
 	}
 
 	public void drawSeedStats(HTMLNode content) {
-		TrackerItem[] topItems = getTopTrackerItems();
+		TrackerItem[] topItems = getTopTrackerItems(20);
 		if(topItems.length == 0) return;
 		HTMLNode table = content.addChild("table", "border", "0");
 		HTMLNode row = table.addChild("tr");
@@ -115,7 +115,7 @@ public class SeedAnnounceTracker {
 		}
 	}
 
-	private synchronized TrackerItem[] getTopTrackerItems() {
+	private synchronized TrackerItem[] getTopTrackerItems(int count) {
 		TrackerItem[] items = new TrackerItem[itemsByIP.size()];
 		itemsByIP.valuesToArray(items);
 		Arrays.sort(items, new Comparator<TrackerItem>() {
@@ -133,7 +133,7 @@ public class SeedAnnounceTracker {
 			}
 			
 		});
-		TrackerItem[] top = new TrackerItem[Math.min(5, items.length)];
+		TrackerItem[] top = new TrackerItem[Math.min(count, items.length)];
 		System.arraycopy(items, items.length - top.length, top, 0, top.length);
 		return top;
 	}
