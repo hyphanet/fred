@@ -1490,7 +1490,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
 			if(delay < 3000) delay = 3000;
 			sendHandshakeTime = now + delay;
-			if(logMINOR) Logger.minor(this, "Next handshake in "+delay);
+			if(logMINOR) Logger.minor(this, "Next handshake in "+delay+" on "+this);
 
 			if(successfulHandshakeSend)
 				firstHandshake = false;
@@ -1524,7 +1524,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(delay < 3000) delay = 3000;
 
 		sendHandshakeTime = now + delay;
-		if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')', new Exception("double-called debug"));
+		if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ") on "+this, new Exception("double-called debug"));
 		return fetchARKFlag;
 	}
 
