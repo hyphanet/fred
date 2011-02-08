@@ -580,6 +580,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		long uid = m.getLong(DMT.UID);
 		OpennetManager om = node.getOpennet();
 		if(om == null || !source.canAcceptAnnouncements()) {
+			if(om != null && source instanceof SeedClientPeerNode)
+				om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
 			Message msg = DMT.createFNPOpennetDisabled(uid);
 			try {
 				source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
@@ -589,6 +591,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
 		if(node.recentlyCompleted(uid)) {
+			if(om != null && source instanceof SeedClientPeerNode)
+				om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
 			Message msg = DMT.createFNPRejectedLoop(uid);
 			try {
 				source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
@@ -603,6 +607,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		node.completed(uid);
 		try {
 			if(!node.nodeStats.shouldAcceptAnnouncement(uid)) {
+				if(om != null && source instanceof SeedClientPeerNode)
+					om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
 				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
 				try {
 					source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
@@ -612,6 +618,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				return true;
 			}
 			if(!source.shouldAcceptAnnounce(uid)) {
+				if(om != null && source instanceof SeedClientPeerNode)
+					om.seedTracker.rejectedAnnounce((SeedClientPeerNode)source);
 				node.nodeStats.endAnnouncement(uid);
 				Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
 				try {
@@ -621,6 +629,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				}
 				return true;
 			}
+			if(om != null && source instanceof SeedClientPeerNode)
+				om.seedTracker.acceptedAnnounce((SeedClientPeerNode)source);
 			AnnounceSender sender = new AnnounceSender(m, uid, source, om, node);
 			node.executor.execute(sender, "Announcement sender for "+uid);
 			success = true;

@@ -406,6 +406,9 @@ public class StatisticsToadlet extends Toadlet {
 			if(om != null) {
 				// opennet stats box
 				drawOpennetStatsBox(nextTableCell.addChild("div", "class", "infobox"), om);
+				
+				if(node.isSeednode())
+					drawSeedStatsBox(nextTableCell.addChild("div", "class", "infobox"), om);
 			}
 
 			// peer distribution box
@@ -624,7 +627,12 @@ public class StatisticsToadlet extends Toadlet {
 		box.addChild("div", "class", "infobox-header", l10n("opennetStats"));
 		HTMLNode opennetStatsContent = box.addChild("div", "class", "infobox-content");
 		om.drawOpennetStatsBox(opennetStatsContent);
-		
+	}
+	
+	private void drawSeedStatsBox(HTMLNode box, OpennetManager om) {
+		box.addChild("div", "class", "infobox-header", l10n("seedStats"));
+		HTMLNode opennetStatsContent = box.addChild("div", "class", "infobox-content");
+		om.drawSeedStatsBox(opennetStatsContent);
 	}
 
 	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, double loc, long nodeUptimeSeconds) {

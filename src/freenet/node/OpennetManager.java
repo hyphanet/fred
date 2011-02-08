@@ -60,6 +60,7 @@ public class OpennetManager {
 	final Node node;
 	final NodeCrypto crypto;
 	final Announcer announcer;
+	final SeedAnnounceTracker seedTracker = new SeedAnnounceTracker();
 
 	/** Our peers. PeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
@@ -1143,6 +1144,10 @@ public class OpennetManager {
 	
 	public void reannounce() {
 		announcer.reannounce();
+	}
+
+	public void drawSeedStatsBox(HTMLNode content) {
+		seedTracker.drawSeedStats(content);
 	}
 
 }
