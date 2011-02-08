@@ -524,7 +524,7 @@ public class Node implements TimeSkewDetectorCallback {
 	// If the packet is dropped, we will send ack requests etc, so this should be fine.
 	public static final int KEEPALIVE_INTERVAL = 14000;
 	// If no activity for 30 seconds, node is dead
-	public static final int MAX_PEER_INACTIVITY = 60000;
+	public static final int MAX_PEER_INACTIVITY = 30000;
 	/** Time after which a handshake is assumed to have failed. */
 	public static final int HANDSHAKE_TIMEOUT = 4800; // Keep the below within the 30 second assumed timeout.
 	// Inter-handshake time must be at least 2x handshake timeout
