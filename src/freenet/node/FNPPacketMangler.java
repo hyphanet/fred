@@ -340,7 +340,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		
 		if(wantAnonAuth && !wantAnonAuthChangeIP) {
 			if(checkAnonAuthChangeIP(opn, buf, offset, length, peer, now)) {
-				Logger.error(this, "Last resort match anon-auth against all anon setup peernodes succeeded - this should not happen! (It can happen if they change address)");
+				// This can happen when a node is upgraded from a SeedClientPeerNode to an OpennetPeerNode.
+				//Logger.error(this, "Last resort match anon-auth against all anon setup peernodes succeeded - this should not happen! (It can happen if they change address)");
 				return DECODED.DECODED;
 			}
 		}
