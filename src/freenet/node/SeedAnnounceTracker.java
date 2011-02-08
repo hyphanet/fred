@@ -57,6 +57,12 @@ public class SeedAnnounceTracker {
 		}
 		
 	}
+	
+	// Reset every 2 hours.
+	// FIXME implement something smoother.
+	static final long RESET_TIME = 2*60*60*1000;
+	
+	private long lastReset;
 
 	/** If the IP has had at least 5 noderefs, and is out of date, 80% chance of rejection.
 	 * If the IP has had 10 noderefs, 75% chance of rejection. */
@@ -64,7 +70,12 @@ public class SeedAnnounceTracker {
 		InetAddress addr = source.getPeer().getAddress();
 		int ver = source.getVersionNumber();
 		boolean badVersion = source.isUnroutableOlderVersion();
+		long now = System.currentTimeMillis();
 		synchronized(this) {
+			if(lastReset - now > RESET_TIME) {
+				itemsByIP.clear();
+				lastReset = now;
+			}
 			TrackerItem item = itemsByIP.get(addr);
 			if(item == null) {
 				item = new TrackerItem(addr);
