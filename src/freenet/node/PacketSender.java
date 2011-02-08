@@ -169,9 +169,11 @@ public class PacketSender implements Runnable {
 			if(logMINOR)
 				Logger.minor(this, "Trying index "+idx+" of "+nodes.length+" canSend="+canSendThrottled);
 			PeerNode pn = nodes[idx];
-                        final long lastReceivedPacketTime = pn.lastReceivedPacketTime();
+			// For purposes of detecting not having received anything, which indicates a 
+			// serious connectivity problem, we want to look for *any* packets received, 
+			// including auth packets.
 			lastReceivedPacketFromAnyNode =
-				Math.max(lastReceivedPacketTime, lastReceivedPacketFromAnyNode);
+				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
 				// Might as well do it properly.
@@ -183,7 +185,8 @@ public class PacketSender implements Runnable {
 				boolean shouldThrottle = pn.shouldThrottle();
 
 				// Is the node dead?
-				if(now - lastReceivedPacketTime > pn.maxTimeBetweenReceivedPackets()) {
+				// It might be disconnected in terms of FNP but trying to reconnect via JFK's, so we need to use the time when we last got a *data* packet.
+				if(now - pn.lastReceivedDataPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
 					// Hopefully this is a transient network glitch, but stuff will have already started to timeout, so lets dump the pending messages.
 					pn.disconnected(true, false);
