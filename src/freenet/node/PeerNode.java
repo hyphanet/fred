@@ -2197,8 +2197,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		Logger.normal(this, "Completed handshake with " + this + " on " + replyTo + " - current: " + currentTracker +
 			" old: " + previousTracker + " unverified: " + unverifiedTracker + " bootID: " + thisBootID + (bootIDChanged ? "(changed) " : "") + " for " + shortToString());
 
-		// Received a packet
-		receivedPacket(unverified, false);
+		// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
+		receivedPacket(unverified, true);
 
 		setPeerNodeStatus(now);
 
