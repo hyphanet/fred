@@ -28,6 +28,8 @@ public class SeedAnnounceTracker {
 		private int totalSeedConnects;
 		private int totalAnnounceRequests;
 		private int totalAcceptedAnnounceRequests;
+		private int totalCompletedAnnounceRequests;
+		private int totalSentRefs;
 		private int lastVersion;
 		
 		public void acceptedAnnounce() {
@@ -46,6 +48,11 @@ public class SeedAnnounceTracker {
 		public void setVersion(int ver) {
 			if(ver <= 0) return;
 			lastVersion = ver;
+		}
+
+		public void completed(int forwardedRefs) {
+			totalCompletedAnnounceRequests++;
+			totalSentRefs += forwardedRefs;
 		}
 		
 	}
@@ -94,7 +101,22 @@ public class SeedAnnounceTracker {
 				itemsByIP.popKey();
 		}
 	}
-
+	
+	public void completedAnnounce(SeedClientPeerNode source, int forwardedRefs) {
+		InetAddress addr = source.getPeer().getAddress();
+		int ver = source.getVersionNumber();
+		synchronized(this) {
+			TrackerItem item = itemsByIP.get(addr);
+			if(item == null)
+				item = new TrackerItem(addr);
+			item.completed(forwardedRefs);
+			item.setVersion(ver);
+			itemsByIP.push(addr, item);
+			while(itemsByIP.size() > MAX_SIZE)
+				itemsByIP.popKey();
+		}
+	}
+	
 	public void drawSeedStats(HTMLNode content) {
 		TrackerItem[] topItems = getTopTrackerItems(20);
 		if(topItems.length == 0) return;
@@ -104,6 +126,8 @@ public class SeedAnnounceTracker {
 		row.addChild("th", l10nStats("seedTableConnections"));
 		row.addChild("th", l10nStats("seedTableAnnouncements"));
 		row.addChild("th", l10nStats("seedTableAccepted"));
+		row.addChild("th", l10nStats("seedTableCompleted"));
+		row.addChild("th", l10nStats("seedTableForwarded"));
 		row.addChild("th", l10nStats("seedTableVersion"));
 		for(TrackerItem item : topItems) {
 			row = table.addChild("tr");
@@ -111,6 +135,8 @@ public class SeedAnnounceTracker {
 			row.addChild("td", Integer.toString(item.totalSeedConnects));
 			row.addChild("td", Integer.toString(item.totalAnnounceRequests));
 			row.addChild("td", Integer.toString(item.totalAcceptedAnnounceRequests));
+			row.addChild("td", Integer.toString(item.totalCompletedAnnounceRequests));
+			row.addChild("td", Integer.toString(item.totalSentRefs));
 			row.addChild("td", Integer.toString(item.lastVersion));
 		}
 	}
@@ -141,5 +167,5 @@ public class SeedAnnounceTracker {
 	private String l10nStats(String key) {
 		return NodeL10n.getBase().getString("StatisticsToadlet."+key);
 	}
-	
+
 }

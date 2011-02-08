@@ -499,6 +499,9 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			} catch (NotConnectedException e) {
 				// Oh well.
 			}
+			if(source instanceof SeedClientPeerNode) {
+				om.seedTracker.completedAnnounce((SeedClientPeerNode)source, forwardedRefs);
+			}
 		}
 	}
 
