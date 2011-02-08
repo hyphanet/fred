@@ -81,7 +81,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	public void run() {
 		try {
 			realRun();
-			node.nodeStats.reportAnnounceForwarded(forwardedRefs);
+			node.nodeStats.reportAnnounceForwarded(forwardedRefs, source);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" announcing "+uid+" from "+source, t);
 		} finally {
@@ -498,9 +498,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 				source.sendAsync(msg, null, this);
 			} catch (NotConnectedException e) {
 				// Oh well.
-			}
-			if(source instanceof SeedClientPeerNode) {
-				om.seedTracker.completedAnnounce((SeedClientPeerNode)source, forwardedRefs);
 			}
 		}
 	}

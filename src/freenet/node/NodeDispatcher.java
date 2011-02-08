@@ -629,8 +629,18 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				}
 				return true;
 			}
-			if(om != null && source instanceof SeedClientPeerNode)
-				om.seedTracker.acceptedAnnounce((SeedClientPeerNode)source);
+			if(om != null && source instanceof SeedClientPeerNode) {
+				if(!om.seedTracker.acceptAnnounce((SeedClientPeerNode)source, node.fastWeakRandom)) {
+					node.nodeStats.endAnnouncement(uid);
+					Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
+					try {
+						source.sendAsync(msg, null, node.nodeStats.announceByteCounter);
+					} catch (NotConnectedException e) {
+						// Ok
+					}
+					return true;
+				}
+			}
 			AnnounceSender sender = new AnnounceSender(m, uid, source, om, node);
 			node.executor.execute(sender, "Announcement sender for "+uid);
 			success = true;

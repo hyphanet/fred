@@ -3,6 +3,7 @@ package freenet.node;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Random;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
@@ -57,18 +58,31 @@ public class SeedAnnounceTracker {
 		
 	}
 
-	public void acceptedAnnounce(SeedClientPeerNode source) {
+	/** If the IP has had at least 5 noderefs, and is out of date, 80% chance of rejection.
+	 * If the IP has had 10 noderefs, 75% chance of rejection. */
+	public boolean acceptAnnounce(SeedClientPeerNode source, Random fastRandom) {
 		InetAddress addr = source.getPeer().getAddress();
 		int ver = source.getVersionNumber();
+		boolean badVersion = source.isUnroutableOlderVersion();
 		synchronized(this) {
 			TrackerItem item = itemsByIP.get(addr);
-			if(item == null)
+			if(item == null) {
 				item = new TrackerItem(addr);
+			} else {
+				if(item.totalSentRefs > 5 && badVersion) {
+					if(fastRandom.nextInt(5) != 0)
+						return false;
+				} else if(item.totalSentRefs > 10) {
+					if(fastRandom.nextInt(4) != 0)
+						return false;
+				}
+			}
 			item.acceptedAnnounce();
 			item.setVersion(ver);
 			itemsByIP.push(addr, item);
 			while(itemsByIP.size() > MAX_SIZE)
 				itemsByIP.popKey();
+			return true;
 		}
 	}
 	

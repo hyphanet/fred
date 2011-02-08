@@ -2959,11 +2959,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	private int totalAnnouncements;
 	private int totalAnnounceForwards;
 	
-	public synchronized void reportAnnounceForwarded(int forwardedRefs) {
-		totalAnnouncements++;
-		totalAnnounceForwards += forwardedRefs;
-		if(logMINOR) Logger.minor(this, "Announcements: "+totalAnnouncements+" average "+((totalAnnounceForwards*1.0)/totalAnnouncements));
-		// FIXME add to stats page
+	public void reportAnnounceForwarded(int forwardedRefs, PeerNode source) {
+		synchronized(this) {
+			totalAnnouncements++;
+			totalAnnounceForwards += forwardedRefs;
+			if(logMINOR) Logger.minor(this, "Announcements: "+totalAnnouncements+" average "+((totalAnnounceForwards*1.0)/totalAnnouncements));
+			// FIXME add to stats page
+		}
+		OpennetManager om = node.getOpennet();
+		if(om != null && source instanceof SeedClientPeerNode)
+			om.seedTracker.completedAnnounce((SeedClientPeerNode)source, forwardedRefs);
 	}
 	
 	public synchronized int getTransfersPerAnnounce() {
