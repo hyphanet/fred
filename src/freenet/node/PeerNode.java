@@ -4983,7 +4983,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return paddingGen;
 	}
 
-	public boolean matchesPeerAndPort(Peer peer) {
+	public synchronized boolean matchesPeerAndPort(Peer peer) {
 		if(detectedPeer != null && detectedPeer.laxEquals(peer)) return true;
 		if(nominalPeer != null) { // FIXME condition necessary???
 			for(Peer p : nominalPeer) {
@@ -4993,7 +4993,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return false;
 	}
 
-	public boolean matchesIP(FreenetInetAddress addr) {
+	public synchronized boolean matchesIP(FreenetInetAddress addr) {
 		if(detectedPeer != null && detectedPeer.getFreenetAddress().laxEquals(addr)) return true;
 		if(nominalPeer != null) { // FIXME condition necessary???
 			for(Peer p : nominalPeer) {
