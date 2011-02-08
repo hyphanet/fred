@@ -522,7 +522,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final double DECREMENT_AT_MAX_PROB = 0.5;
 	// Send keepalives every 14-28 seconds. Comfortably fits within 30 second timeout.
 	// If the packet is dropped, we will send ack requests etc, so this should be fine.
-	public static final int KEEPALIVE_INTERVAL = 14000;
+	public static final int KEEPALIVE_INTERVAL = 7000;
 	// If no activity for 30 seconds, node is dead
 	public static final int MAX_PEER_INACTIVITY = 30000;
 	/** Time after which a handshake is assumed to have failed. */
