@@ -1210,6 +1210,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		final long uid = m.getLong(DMT.UID);
 
+		if(!source.sendingUOMJar(isExt)) {
+			Logger.error(this, "Peer "+source+" asked for UOM "+(isExt?"ext":"main")+" jar twice");
+			return;
+		}
+		
 		final RandomAccessFileWrapper raf;
 		try {
 			raf = new RandomAccessFileWrapper(data, "r");
@@ -1242,7 +1247,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final Runnable r = new Runnable() {
 
 			public void run() {
-				source.sendingUOMJar(isExt);
 				try {
 					if(!bt.send())
 						Logger.error(this, "Failed to send "+name+" jar blob to " + source.userToString() + " : " + bt.getCancelReason());
