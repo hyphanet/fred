@@ -379,14 +379,21 @@ public class NodeUpdateManager {
 
 	public void maybeSendUOMAnnounce(PeerNode peer) {
 		synchronized(broadcastUOMAnnouncesSync) {
-			if(!broadcastUOMAnnounces) return; // nothing worth announcing yet
+			if(!broadcastUOMAnnounces) {
+				if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Nothing worth announcing yet");
+				return; // nothing worth announcing yet
+			}
 		}
-		boolean hasUpdate;
+		boolean dontHaveUpdate;
 		synchronized(this) {
-			hasUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
-			if((!hasBeenBlown) && hasUpdate) return;
+			dontHaveUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
+			if((!hasBeenBlown) && dontHaveUpdate) {
+				if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Don't have the update");
+				return;
+			}
 		}
-		if((!hasUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
+		if((!dontHaveUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
+			if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Local problem causing blown key");
 			// Local problem, don't broadcast.
 			return;
 		}

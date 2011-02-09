@@ -1190,6 +1190,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	public void handleRequestJar(Message m, final PeerNode source, final boolean isExt) {
 		final String name = isExt ? "ext" : "main";
+		
+		Message msg;
+		final BulkTransmitter bt;
+		final RandomAccessFileWrapper raf;
 
 		if (source.isOpennet() && updateManager.isSeednode()) {
 			Logger.normal(this, "Peer " + source
@@ -1215,35 +1219,47 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return;
 		}
 		
-		final RandomAccessFileWrapper raf;
 		try {
-			raf = new RandomAccessFileWrapper(data, "r");
-		} catch(FileNotFoundException e) {
-			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
-			return;
+			
+			try {
+				raf = new RandomAccessFileWrapper(data, "r");
+			} catch(FileNotFoundException e) {
+				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
+				return;
+			}
+			
+			final PartiallyReceivedBulk prb;
+			long length;
+			try {
+				length = raf.size();
+				prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
+						Node.PACKET_SIZE, raf, true);
+			} catch(IOException e) {
+				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but we can't determine the file size: " + e, e);
+				raf.close();
+				return;
+			}
+			
+			try {
+				bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
+			} catch(DisconnectedException e) {
+				Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected: " + e, e);
+				raf.close();
+				return;
+			}
+			
+			msg =
+				isExt ? DMT.createUOMSendingExtra(uid, length, updateManager.extURI.toString(), version) :
+					DMT.createUOMSendingMain(uid, length, updateManager.updateURI.toString(), version);
+			
+		} catch (RuntimeException e) {
+			source.finishedSendingUOMJar(isExt);
+			throw e;
+		} catch (Error e) {
+			source.finishedSendingUOMJar(isExt);
+			throw e;
 		}
-
-		final PartiallyReceivedBulk prb;
-		long length;
-		try {
-			length = raf.size();
-			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
-				Node.PACKET_SIZE, raf, true);
-		} catch(IOException e) {
-			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, we have downloaded it but we can't determine the file size: " + e, e);
-			raf.close();
-			return;
-		}
-
-		final BulkTransmitter bt;
-		try {
-			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr, true);
-		} catch(DisconnectedException e) {
-			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected: " + e, e);
-			raf.close();
-			return;
-		}
-
+		
 		final Runnable r = new Runnable() {
 
 			public void run() {
@@ -1259,10 +1275,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 		};
 
-		Message msg =
-			isExt ? DMT.createUOMSendingExtra(uid, length, updateManager.extURI.toString(), version) :
-				DMT.createUOMSendingMain(uid, length, updateManager.updateURI.toString(), version);
-
 		try {
 			source.sendAsync(msg, new AsyncMessageCallback() {
 
@@ -1277,11 +1289,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				public void disconnected() {
 					// Argh
 					Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingMain");
+					source.finishedSendingUOMJar(isExt);
 				}
 
 				public void fatalError() {
 					// Argh
 					Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then got a fatal error when we tried to send the UOMSendingMain");
+					source.finishedSendingUOMJar(isExt);
 				}
 
 				public void sent() {
@@ -1297,6 +1311,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(NotConnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingExt: " + e, e);
 			return;
+		} catch (RuntimeException e) {
+			source.finishedSendingUOMJar(isExt);
+			throw e;
+		} catch (Error e) {
+			source.finishedSendingUOMJar(isExt);
+			throw e;
 		}
 
 	}

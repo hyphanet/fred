@@ -537,7 +537,7 @@ public class OpennetManager {
 		for(OpennetPeerNode pn : peers) {
 			if(pn.isUnroutableOlderVersion()) {
 				count++;
-				if(count > maxTooOldPeers)
+				if(count >= maxTooOldPeers)
 					return true;
 			}
 		}

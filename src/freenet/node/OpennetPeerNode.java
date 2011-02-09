@@ -167,6 +167,9 @@ public class OpennetPeerNode extends PeerNode {
 			if(uptime < 30*1000)
 				// Allow 30 seconds to send the UOM request.
 				return true;
+			// FIXME remove, paranoia
+			if(uptime < 60*60*1000)
+				return true;
 			NodeUpdateManager updater = node.nodeUpdater;
 			if(updater == null) return false; // Not going to UOM.
 			UpdateOverMandatoryManager uom = updater.uom;
