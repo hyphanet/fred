@@ -1311,6 +1311,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(NotConnectedException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the "+name+" jar, then disconnected when we tried to send the UOMSendingExt: " + e, e);
 			return;
+		} catch (RuntimeException e) {
+			source.finishedSendingUOMJar(isExt);
+			throw e;
+		} catch (Error e) {
+			source.finishedSendingUOMJar(isExt);
+			throw e;
 		}
 
 	}
