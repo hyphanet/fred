@@ -391,13 +391,13 @@ public class OpennetManager {
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+","+connectionType+")");
 		boolean outdated = nodeToAddNow == null ? false : nodeToAddNow.isUnroutableOlderVersion();
-		synchronized(this) {
-			if(outdated) {
-				if(!tooManyOutdatedPeers()) {
-					if(logMINOR) Logger.minor(this, "Rejecting TOO OLD peer from "+connectionType+" (too many already): "+nodeToAddNow);
-					return false;
-				}
+		if(outdated) {
+			if(!tooManyOutdatedPeers()) {
+				if(logMINOR) Logger.minor(this, "Rejecting TOO OLD peer from "+connectionType+" (too many already): "+nodeToAddNow);
+				return false;
 			}
+		}
+		synchronized(this) {
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
 				if(logMINOR)
