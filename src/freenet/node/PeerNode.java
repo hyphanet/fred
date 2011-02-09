@@ -29,7 +29,7 @@ import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
+import freenet.support.math.MersenneTwister;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.client.FetchResult;
