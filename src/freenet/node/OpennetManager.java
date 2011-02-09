@@ -334,6 +334,11 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return null;
 		}
+		if(node.isSeednode() && pn.isUnroutableOlderVersion()) {
+			// We can't send the UOM to it, so we should not accept it.
+			// Plus, some versions around 1320 had big problems with being connected both as a seednode and as an opennet peer.
+			return null;
+		}
 		if(wantPeer(pn, true, false, false, connectionType)) return pn;
 		else return null;
 		// Start at bottom. Node must prove itself.
