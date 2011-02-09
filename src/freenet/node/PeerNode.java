@@ -5074,5 +5074,22 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		else
 			return stats.maxPeerPingTime();
 	}
+
+	protected boolean sendingUOMMainJar;
+	protected boolean sendingUOMExtJar;
+	
+	public synchronized void sendingUOMJar(boolean isExt) {
+		if(isExt)
+			sendingUOMExtJar = true;
+		else
+			sendingUOMMainJar = true;
+	}
+	
+	public synchronized void finishedSendingUOMJar(boolean isExt) {
+		if(isExt)
+			sendingUOMExtJar = false;
+		else
+			sendingUOMMainJar = false;
+	}
 	
 }

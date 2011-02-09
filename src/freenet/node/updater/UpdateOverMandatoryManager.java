@@ -1188,7 +1188,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		updateManager.node.clientCore.alerts.unregister(alert);
 	}
 
-	public void handleRequestJar(Message m, final PeerNode source, boolean isExt) {
+	public void handleRequestJar(Message m, final PeerNode source, final boolean isExt) {
 		final String name = isExt ? "ext" : "main";
 
 		if (source.isOpennet() && updateManager.isSeednode()) {
@@ -1242,11 +1242,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final Runnable r = new Runnable() {
 
 			public void run() {
-				if(!bt.send())
-					Logger.error(this, "Failed to send "+name+" jar blob to " + source.userToString() + " : " + bt.getCancelReason());
-				else
-					Logger.normal(this, "Sent "+name+" jar blob to " + source.userToString());
-				raf.close();
+				source.sendingUOMJar(isExt);
+				try {
+					if(!bt.send())
+						Logger.error(this, "Failed to send "+name+" jar blob to " + source.userToString() + " : " + bt.getCancelReason());
+					else
+						Logger.normal(this, "Sent "+name+" jar blob to " + source.userToString());
+					raf.close();
+				} finally {
+					source.finishedSendingUOMJar(isExt);
+				}
 			}
 		};
 

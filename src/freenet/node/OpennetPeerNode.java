@@ -3,6 +3,8 @@ package freenet.node;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.updater.NodeUpdateManager;
+import freenet.node.updater.UpdateOverMandatoryManager;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -160,11 +162,25 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	public final boolean shouldDisconnectAndRemoveNow() {
 		// Allow announced peers 15 minutes to download the auto-update.
-		if(isConnected() && isUnroutableOlderVersion() && System.currentTimeMillis() - timeLastConnectionCompleted() > 2*60*60*1000)
-			return true;
+		if(isConnected() && isUnroutableOlderVersion()) {
+			long uptime = System.currentTimeMillis() - timeLastConnectionCompleted();
+			if(uptime < 30*1000)
+				// Allow 30 seconds to send the UOM request.
+				return true;
+			NodeUpdateManager updater = node.nodeUpdater;
+			if(updater == null) return false; // Not going to UOM.
+			UpdateOverMandatoryManager uom = updater.uom;
+			if(uom == null) return false; // Not going to UOM
+			synchronized(this) {
+				if(sendingUOMMainJar || sendingUOMExtJar) {
+					// Let it finish.
+					return true;
+				}
+			}
+		}
 		return false;
 	}
-
+	
 	@Override
 	protected void onConnect() {
 		super.onConnect();
