@@ -3657,6 +3657,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * A method to be called once at the beginning of every time isConnected() is true
 	 */
 	protected void onConnect() {
+		synchronized(this) {
+			sendingUOMMainJar = false;
+			sendingUOMExtJar = false;
+		}
 		OpennetManager om = node.getOpennet();
 		if(om != null)
 			om.dropExcessPeers();
