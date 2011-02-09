@@ -5078,11 +5078,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	protected boolean sendingUOMMainJar;
 	protected boolean sendingUOMExtJar;
 	
-	public synchronized void sendingUOMJar(boolean isExt) {
-		if(isExt)
+	public synchronized boolean sendingUOMJar(boolean isExt) {
+		if(isExt) {
+			if(sendingUOMExtJar) return false;
 			sendingUOMExtJar = true;
-		else
+		} else {
+			if(sendingUOMMainJar) return false;
 			sendingUOMMainJar = true;
+		}
+		return true;
 	}
 	
 	public synchronized void finishedSendingUOMJar(boolean isExt) {
