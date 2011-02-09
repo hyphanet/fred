@@ -522,8 +522,12 @@ public class OpennetManager {
 		return canAdd;
 	}
 	
+	private int maxOutdatedPeers() {
+		return Math.max(5, getNumberOfConnectedPeersToAimIncludingDarknet() / 4);
+	}
+	
 	private boolean tooManyOutdatedPeers() {
-		int maxTooOldPeers = 10;
+		int maxTooOldPeers = maxOutdatedPeers();
 		int count = 0;
 		OpennetPeerNode[] peers = node.peers.getOpennetPeers();
 		for(OpennetPeerNode pn : peers) {
