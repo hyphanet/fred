@@ -520,11 +520,15 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final int PACKET_SIZE = 1024;
 	public static final double DECREMENT_AT_MIN_PROB = 0.25;
 	public static final double DECREMENT_AT_MAX_PROB = 0.5;
-	// Send keepalives every 14-28 seconds. Comfortably fits within 30 second timeout.
-	// If the packet is dropped, we will send ack requests etc, so this should be fine.
+	// Send keepalives every 7-14 seconds. Will be acked and if necessary resent.
+	// Old behaviour was keepalives every 14-28. Even that was adequate for a 30 second
+	// timeout. Most nodes don't need to send keepalives because they are constantly busy,
+	// this is only an issue for disabled darknet connections, very quiet private networks
+	// etc.
 	public static final int KEEPALIVE_INTERVAL = 7000;
 	// If no activity for 30 seconds, node is dead
-	public static final int MAX_PEER_INACTIVITY = 30000;
+	// 35 seconds allows plenty of time for resends etc even if above is 14 sec as it is on older nodes.
+	public static final int MAX_PEER_INACTIVITY = 35000;
 	/** Time after which a handshake is assumed to have failed. */
 	public static final int HANDSHAKE_TIMEOUT = 4800; // Keep the below within the 30 second assumed timeout.
 	// Inter-handshake time must be at least 2x handshake timeout
