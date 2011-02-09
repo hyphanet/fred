@@ -393,7 +393,10 @@ public class OpennetManager {
 		boolean outdated = nodeToAddNow == null ? false : nodeToAddNow.isUnroutableOlderVersion();
 		synchronized(this) {
 			if(outdated) {
-				return !tooManyOutdatedPeers();
+				if(!tooManyOutdatedPeers()) {
+					if(logMINOR) Logger.minor(this, "Rejecting TOO OLD peer from "+connectionType+" (too many already): "+nodeToAddNow);
+					return false;
+				}
 			}
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
