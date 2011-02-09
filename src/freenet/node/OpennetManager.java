@@ -390,7 +390,11 @@ public class OpennetManager {
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+","+connectionType+")");
+		boolean outdated = nodeToAddNow == null ? false : nodeToAddNow.isUnroutableOlderVersion();
 		synchronized(this) {
+			if(outdated) {
+				return !tooManyOutdatedPeers();
+			}
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
 				if(logMINOR)
@@ -517,6 +521,20 @@ public class OpennetManager {
 			node.peers.disconnect(pn, true, true, true);
 		}
 		return canAdd;
+	}
+	
+	private boolean tooManyOutdatedPeers() {
+		int maxTooOldPeers = 10;
+		int count = 0;
+		OpennetPeerNode[] peers = node.peers.getOpennetPeers();
+		for(OpennetPeerNode pn : peers) {
+			if(pn.isUnroutableOlderVersion()) {
+				count++;
+				if(count > maxTooOldPeers)
+					return true;
+			}
+		}
+		return false;
 	}
 
 	private synchronized boolean enforcePerTypeGracePeriodLimits(int maxPeers, ConnectionType type, boolean addingPeer) {
