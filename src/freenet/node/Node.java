@@ -5775,6 +5775,10 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 	}
+	
+	public boolean isSeednode() {
+		return acceptSeedConnections;
+	}
 
 	/**
 	 * Returns true if the packet receiver should try to decode/process packets that are not from a peer (i.e. from a seed connection)
