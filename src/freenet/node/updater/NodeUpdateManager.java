@@ -384,15 +384,15 @@ public class NodeUpdateManager {
 				return; // nothing worth announcing yet
 			}
 		}
-		boolean hasUpdate;
+		boolean dontHaveUpdate;
 		synchronized(this) {
-			hasUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
-			if((!hasBeenBlown) && hasUpdate) {
+			dontHaveUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
+			if((!hasBeenBlown) && dontHaveUpdate) {
 				if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Don't have the update");
 				return;
 			}
 		}
-		if((!hasUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
+		if((!dontHaveUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
 			if(logMINOR) Logger.minor(this, "Not sending UOM on connect: Local problem causing blown key");
 			// Local problem, don't broadcast.
 			return;
