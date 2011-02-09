@@ -534,7 +534,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			
 			String trustS = request.getPartAsStringFailsafe("trust", 10);
 			FRIEND_TRUST trust = null;
-			if(trustS != null)
+			if(trustS != null && !trustS.equals(""))
 				trust = FRIEND_TRUST.valueOf(trustS);
 			
 			StringBuilder ref = new StringBuilder(1024);
