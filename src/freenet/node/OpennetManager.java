@@ -614,7 +614,7 @@ public class OpennetManager {
 		int x = 0;
 		for (Enumeration<PeerNode> e = peersLRU.elements(); e.hasMoreElements();) {
 			PeerNode pn = e.nextElement();
-			if(!(pn.isConnected() && pn.isUnroutableOlderVersion())) x++;
+			if(!pn.isUnroutableOlderVersion()) x++;
 		}
 		return x;
 	}
