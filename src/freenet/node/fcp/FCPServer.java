@@ -78,9 +78,10 @@ public class FCPServer implements Runnable, DownloadCache {
 	private boolean assumeDownloadDDAIsAllowed;
 	private boolean assumeUploadDDAIsAllowed;
 	private boolean neverDropAMessage;
+	private int maxMessageQueueLength;
 	private final Whiteboard whiteboard=new Whiteboard();;
 	
-	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, boolean neverDropAMessage, ObjectContainer container) throws IOException, InvalidConfigValueException {
+	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, boolean neverDropAMessage, int maxMessageQueueLength, ObjectContainer container) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
 		this.allowedHosts=allowedHosts;
 		this.allowedHostsFullAccess = new AllowedHosts(allowedHostsFullAccess);
@@ -91,6 +92,7 @@ public class FCPServer implements Runnable, DownloadCache {
 		this.assumeDownloadDDAIsAllowed = assumeDDADownloadAllowed;
 		this.assumeUploadDDAIsAllowed = assumeDDAUploadAllowed;
 		this.neverDropAMessage = neverDropAMessage;
+		this.maxMessageQueueLength = maxMessageQueueLength;
 		rebootClientsByName = new WeakHashMap<String, FCPClient>();
 		
 		// This one is only used to get the default settings. Individual FCP conns
@@ -382,6 +384,22 @@ public class FCPServer implements Runnable, DownloadCache {
 			server.neverDropAMessage = val;
 		}
 	}
+	
+	static class MaxMessageQueueLengthCallback extends IntCallback {
+		FCPServer server;
+		
+		@Override
+		public Integer get() {
+			return server.maxMessageQueueLength;
+		}
+		
+		@Override
+		public void set(Integer val) throws InvalidConfigValueException {
+			if(get().equals(val))
+				return;
+			server.maxMessageQueueLength = val;
+		}
+	}
 
 	
 	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config, ObjectContainer container) throws IOException, InvalidConfigValueException {
@@ -397,20 +415,23 @@ public class FCPServer implements Runnable, DownloadCache {
 		AssumeDDADownloadIsAllowedCallback cb4;
 		AssumeDDAUploadIsAllowedCallback cb5;
 		NeverDropAMessageCallback cb6;
+		MaxMessageQueueLengthCallback cb7;
 		fcpConfig.register("assumeDownloadDDAIsAllowed", false, sortOrder++, true, false, "FcpServer.assumeDownloadDDAIsAllowed", "FcpServer.assumeDownloadDDAIsAllowedLong", cb4 = new AssumeDDADownloadIsAllowedCallback());
 		fcpConfig.register("assumeUploadDDAIsAllowed", false, sortOrder++, true, false, "FcpServer.assumeUploadDDAIsAllowed", "FcpServer.assumeUploadDDAIsAllowedLong", cb5 = new AssumeDDAUploadIsAllowedCallback());
+		fcpConfig.register("maxMessageQueueLength", 1024, sortOrder++, true, false, "FcpServer.maxMessageQueueLength", "FcpServer.maxMessageQueueLengthLong", cb7 = new MaxMessageQueueLengthCallback(), false);
 		fcpConfig.register("neverDropAMessage", false, sortOrder++, true, false, "FcpServer.neverDropAMessage", "FcpServer.neverDropAMessageLong", cb6 = new NeverDropAMessageCallback());
 
 		if(SSL.available()) {
 			ssl = fcpConfig.getBoolean("ssl");
 		}
 		
-		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"), fcpConfig.getBoolean("neverDropAMessage"), container);
+		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"), fcpConfig.getBoolean("neverDropAMessage"), fcpConfig.getInt("maxMessageQueueLength"), container);
 		
 		if(fcp != null) {
 			cb4.server = fcp;
 			cb5.server = fcp;
 			cb6.server = fcp;
+			cb7.server = fcp;
 		}
 		
 		fcpConfig.finishedInitialization();
@@ -419,6 +440,10 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	public boolean neverDropAMessage() {
 		return neverDropAMessage;
+	}
+	
+	public int maxMessageQueueLength() {
+		return maxMessageQueueLength;
 	}
 	
 	private static String l10n(String key) {
