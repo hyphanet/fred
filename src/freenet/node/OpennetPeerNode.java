@@ -64,7 +64,8 @@ public class OpennetPeerNode extends PeerNode {
 	}
 		
 	/** Is the peer droppable? 
-	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason. */ 
+	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason. 
+	 * Note that the caller must check separately whether the node is TOO OLD and connected. */ 
 	public NOT_DROP_REASON isDroppableWithReason(boolean ignoreDisconnect) {
 		long now = System.currentTimeMillis();
 		int status = getPeerNodeStatus();
