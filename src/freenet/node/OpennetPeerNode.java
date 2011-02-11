@@ -164,28 +164,35 @@ public class OpennetPeerNode extends PeerNode {
 	public final boolean shouldDisconnectAndRemoveNow() {
 		// Allow announced peers 15 minutes to download the auto-update.
 		if(isConnected() && isUnroutableOlderVersion()) {
-			long uptime = System.currentTimeMillis() - timeLastConnectionCompleted();
-			if(uptime < 30*1000)
-				// Allow 30 seconds to send the UOM request.
-				return false;
-			// FIXME remove, paranoia
-			if(uptime < 60*60*1000)
-				return false;
-			NodeUpdateManager updater = node.nodeUpdater;
-			if(updater == null) return true; // Not going to UOM.
-			UpdateOverMandatoryManager uom = updater.uom;
-			if(uom == null) return true; // Not going to UOM
-			synchronized(this) {
-				if(sendingUOMMainJar || sendingUOMExtJar) {
-					// Let it finish.
-					return false;
-				}
-			}
-			return true;
+			return shouldDisconnectTooOld(); 
 		}
 		return false;
 	}
-	
+
+	/** If a node is TOO OLD, we should keep it connected for a brief period for it to
+	 * allow it to issue a UOM request, we should keep it connected while the UOM transfer 
+	 * is in progress, but otherwise we should disconnect. */
+	private boolean shouldDisconnectTooOld() {
+		long uptime = System.currentTimeMillis() - timeLastConnectionCompleted();
+		if(uptime < 30*1000)
+			// Allow 30 seconds to send the UOM request.
+			return false;
+		// FIXME remove, paranoia
+		if(uptime < 60*60*1000)
+			return false;
+		NodeUpdateManager updater = node.nodeUpdater;
+		if(updater == null) return true; // Not going to UOM.
+		UpdateOverMandatoryManager uom = updater.uom;
+		if(uom == null) return true; // Not going to UOM
+		synchronized(this) {
+			if(sendingUOMMainJar || sendingUOMExtJar) {
+				// Let it finish.
+				return false;
+			}
+		}
+		return true;
+	}
+
 	@Override
 	protected void onConnect() {
 		super.onConnect();
