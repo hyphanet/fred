@@ -481,7 +481,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 							next.fatalTimeout();
 							return;
 						}
-						assert(m.getSpec() == DMT.FNPAccepted);
+						assert(m.getSpec() == DMT.FNPSSKAccepted);
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.
 			            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
