@@ -638,7 +638,8 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
-				if(pn.isConnected() && pn.isUnroutableOlderVersion()) {
+				boolean tooOld = pn.isUnroutableOlderVersion();
+				if(pn.isConnected() && tooOld) {
 					// Doesn't count towards the opennet peers limit, so no point dropping it.
 					continue;
 				}
@@ -650,7 +651,8 @@ public class OpennetManager {
 					else
 						map.put(reason, x+1);
 				}
-				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
+				// Over the limit does not force us to drop TOO OLD peers since they don't count towards the limit.
+				if((reason != NOT_DROP_REASON.DROPPABLE) && ((!force) || tooOld)) {
 					continue;
 				}
 				// LOCKING: Always take the OpennetManager lock first
@@ -675,7 +677,8 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
-				if(pn.isConnected() && pn.isUnroutableOlderVersion()) {
+				boolean tooOld = pn.isUnroutableOlderVersion();
+				if(pn.isConnected() && tooOld) {
 					// Doesn't count anyway.
 					continue;
 				}
@@ -687,7 +690,8 @@ public class OpennetManager {
 					else
 						map.put(reason, x+1);
 				}
-				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
+				// Over the limit does not force us to drop TOO OLD peers since they don't count towards the limit.
+				if((reason != NOT_DROP_REASON.DROPPABLE) && ((!force) || tooOld)) {
 					continue;
 				}
 				if(logMINOR)
