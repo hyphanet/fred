@@ -167,20 +167,21 @@ public class OpennetPeerNode extends PeerNode {
 			long uptime = System.currentTimeMillis() - timeLastConnectionCompleted();
 			if(uptime < 30*1000)
 				// Allow 30 seconds to send the UOM request.
-				return true;
+				return false;
 			// FIXME remove, paranoia
 			if(uptime < 60*60*1000)
-				return true;
+				return false;
 			NodeUpdateManager updater = node.nodeUpdater;
-			if(updater == null) return false; // Not going to UOM.
+			if(updater == null) return true; // Not going to UOM.
 			UpdateOverMandatoryManager uom = updater.uom;
-			if(uom == null) return false; // Not going to UOM
+			if(uom == null) return true; // Not going to UOM
 			synchronized(this) {
 				if(sendingUOMMainJar || sendingUOMExtJar) {
 					// Let it finish.
-					return true;
+					return false;
 				}
 			}
+			return true;
 		}
 		return false;
 	}
