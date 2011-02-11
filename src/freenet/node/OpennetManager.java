@@ -391,6 +391,7 @@ public class OpennetManager {
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+","+connectionType+")");
 		boolean outdated = nodeToAddNow == null ? false : nodeToAddNow.isUnroutableOlderVersion();
+		if(outdated && logMINOR) Logger.minor(this, "Peer is outdated: "+nodeToAddNow.getVersionNumber()+" for "+connectionType);
 		if(outdated) {
 			if(tooManyOutdatedPeers()) {
 				if(logMINOR) Logger.minor(this, "Rejecting TOO OLD peer from "+connectionType+" (too many already): "+nodeToAddNow);
@@ -406,7 +407,7 @@ public class OpennetManager {
 			}
 			if(nodeToAddNow != null)
 				connectionAttempts.put(connectionType, connectionAttempts.get(connectionType)+1);
-			if(getSize() < getNumberOfConnectedPeersToAim()) {
+			if(getSize() < getNumberOfConnectedPeersToAim() || outdated) {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
 					if(addAtLRU)
@@ -461,7 +462,7 @@ public class OpennetManager {
 						return false;
 					}
 				}
-			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
+			} else while(canAdd && (size = getSize()) > maxPeers - ((nodeToAddNow == null || outdated) ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
 				toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null, connectionType);
