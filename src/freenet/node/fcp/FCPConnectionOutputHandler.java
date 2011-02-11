@@ -126,6 +126,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 		if(logDEBUG)
 			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
 		if(msg == null) throw new NullPointerException();
+		boolean neverDropAMessage = handler.server.neverDropAMessage();
 		synchronized(outQueue) {
 			if(closedOutputQueue) {
 				Logger.error(this, "Closed already: "+this+" queueing message "+msg);
@@ -133,11 +134,15 @@ public class FCPConnectionOutputHandler implements Runnable {
 				return;
 			}
 			if(outQueue.size() >= MAX_QUEUE_LENGTH) {
-				Logger.error(this, "Dropping FCP message to "+handler+" : "+outQueue.size()+" messages queued - maybe client died?", new Exception("debug"));
-			} else {
-				outQueue.add(msg);
-				outQueue.notifyAll();
+				if(neverDropAMessage) {
+					Logger.error(this, "FCP message queue length is "+outQueue.size()+" for "+handler+" - not dropping message as configured...");
+				} else {
+					Logger.error(this, "Dropping FCP message to "+handler+" : "+outQueue.size()+" messages queued - maybe client died?", new Exception("debug"));
+					return;
+				}
 			}
+			outQueue.add(msg);
+			outQueue.notifyAll();
 		}
 	}
 
