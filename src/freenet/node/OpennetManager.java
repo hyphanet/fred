@@ -607,6 +607,10 @@ public class OpennetManager {
 		}
 	}
 
+	// A TOO OLD peer does not count towards the limit, even if it is not connected.
+	// It can however be dumped if it doesn't connect in a reasonable time, and if
+	// it upgrades, it may not have the usual grace period.
+	
 	/**
 	 * How many opennet peers do we have?
 	 * Connected but out of date nodes don't count towards the connection limit. Let them connect for
