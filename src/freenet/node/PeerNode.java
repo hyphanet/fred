@@ -4398,6 +4398,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(RTO > 60000)
 					RTO = 60000;
 			}
+			if(logMINOR) Logger.minor(this, "Reported ping "+t+" avg is now "+pingAverage.currentValue()+" RTO is "+RTO);
 		}
 	}
 	
@@ -4405,6 +4406,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		RTO = RTO * 2;
 		if(RTO > 60000)
 			RTO = 60000;
+		if(logMINOR) Logger.minor(this, "Backed off on resend, RTO is now "+RTO);
 	}
 
 	private long resendBytesSent;
