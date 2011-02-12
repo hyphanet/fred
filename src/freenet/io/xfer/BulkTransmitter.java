@@ -218,6 +218,13 @@ public class BulkTransmitter {
 	public boolean send() {
 		long lastSentPacket = System.currentTimeMillis();
 outer:	while(true) {
+			int max = Math.min(Integer.MAX_VALUE, prb.blocks);
+			PacketThrottle throttle = peer.getThrottle();
+			if(throttle != null)
+				max = Math.min(max, (int)Math.min(Integer.MAX_VALUE, throttle.getWindowSize()));
+			max = Math.min(max, 100);
+			if(max < 1) max = 1;
+			
 			if(prb.isAborted()) {
 				if(logMINOR)
 					Logger.minor(this, "Aborted "+this);
@@ -304,9 +311,14 @@ outer:	while(true) {
 					peer.sendThrottledMessage(msg, buf.length, ctr, BulkReceiver.TIMEOUT, false, tag);
 				} else {
 					peer.sendAsync(msg, tag, ctr);
-					// FIXME make this whole function asynchronous somehow.
-					// Will need some means to ensure there aren't too many packets in flight.
-					tag.waitForCompletion();
+					synchronized(this) {
+						while(inFlightPackets >= max && !failedPacket)
+							try {
+								wait();
+							} catch (InterruptedException e) {
+								// Ignore
+							}
+					}
 				}
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
