@@ -46,6 +46,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		UNAME = 7;
 
 	private volatile boolean closed = false;
+	private boolean closedFinished = false;
 
 	protected int INTERVAL = Calendar.MINUTE;
 	protected int INTERVAL_MULTIPLIER = 5;
@@ -332,6 +333,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							}
 							try {
 								if(thisTime < maxWait) {
+									// Wait no more than 500ms since the CloserThread might be waiting for closedFinished.
 									list.wait(Math.min(500, (int)(Math.min(maxWait-thisTime, Integer.MAX_VALUE))));
 									thisTime = System.currentTimeMillis();
 									if(listBytes < LIST_WRITE_THRESHOLD) {
@@ -369,7 +371,13 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				        if(altLogStream != null)
 				        	myWrite(altLogStream, null);
 					}
-					if(died) return;
+					if(died) {
+						synchronized(list) {
+							closedFinished = true;
+							list.notifyAll();
+						}
+						return;
+					}
 					if(o == null) continue;
 					myWrite(logStream,  o);
 			        if(altLogStream != null)
@@ -1028,7 +1036,20 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	class CloserThread extends Thread {
 		@Override
 		public void run() {
-			closed = true;
+			synchronized(list) {
+				closed = true;
+				long deadline = System.currentTimeMillis() + 10*1000;
+				while(!closedFinished) {
+					int wait = (int) (deadline - System.currentTimeMillis());
+					if(wait <= 0) return;
+					try {
+						list.wait(wait);
+					} catch (InterruptedException e) {
+						// Ok.
+					}
+				}
+				System.out.println("Completed writing logs to disk.");
+			}
 		}
 	}
 
