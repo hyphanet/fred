@@ -389,8 +389,7 @@ outer:	while(true) {
 					if(logMINOR) Logger.minor(this, "Packet failed for "+BulkTransmitter.this);
 				} else {
 					inFlightPackets--;
-					if(inFlightPackets <= 0)
-						BulkTransmitter.this.notifyAll();
+					BulkTransmitter.this.notifyAll();
 					if(logMINOR) Logger.minor(this, "Packet sent "+BulkTransmitter.this+" remaining in flight: "+inFlightPackets);
 				}
 			}
