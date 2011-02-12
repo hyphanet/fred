@@ -314,7 +314,7 @@ outer:	while(true) {
 					synchronized(this) {
 						while(inFlightPackets >= max && !failedPacket)
 							try {
-								wait();
+								wait(1000);
 							} catch (InterruptedException e) {
 								// Ignore
 							}
