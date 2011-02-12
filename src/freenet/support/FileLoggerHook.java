@@ -372,6 +372,18 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				        	myWrite(altLogStream, null);
 					}
 					if(died) {
+						try {
+							logStream.close();
+						} catch (IOException e) {
+							System.err.println("Failed to close log stream: "+e);
+						}
+						if(altLogStream != null) {
+							try {
+								altLogStream.close();
+							} catch (IOException e) {
+								System.err.println("Failed to close compressed log stream: "+e);
+							}
+						}
 						synchronized(list) {
 							closedFinished = true;
 							list.notifyAll();
