@@ -222,6 +222,7 @@ outer:	while(true) {
 			PacketThrottle throttle = peer.getThrottle();
 			if(throttle != null)
 				max = Math.min(max, (int)Math.min(Integer.MAX_VALUE, throttle.getWindowSize()));
+			// FIXME hardcoded limit for memory usage. We can probably get away with more for now but if we start doing lots of bulk transfers we'll need to limit this globally...
 			max = Math.min(max, 100);
 			if(max < 1) max = 1;
 			
