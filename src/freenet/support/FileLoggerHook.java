@@ -341,6 +341,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 										assert((listBytes == 0) == (list.peek() == null));
 										if(listBytes != 0 && maxWait == Long.MAX_VALUE)
 											maxWait = thisTime + flush;
+										if(closed) // If closing, write stuff ASAP.
+											o = list.poll();
 										continue;
 									}
 									// Do NOT use list.poll(timeout) because it uses a separate lock.
