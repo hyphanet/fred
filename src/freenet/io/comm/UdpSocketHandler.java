@@ -273,7 +273,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	public static final int MIN_MTU = 576;
 	private volatile boolean disableMTUDetection = false;
 
-	private volatile int maxPacketSize;
+	private volatile int maxPacketSize = MAX_ALLOWED_MTU;
 	
 	/**
 	 * @return The maximum packet size supported by this SocketManager, not including transport (UDP/IP) headers.
