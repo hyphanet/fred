@@ -70,7 +70,11 @@ public class NewPacketFormat implements PacketFormat {
 	private int usedBuffer = 0;
 	/** How much of the other side's buffer have we used? Protected by bufferUsageLock */
 	private int usedBufferOtherSide = 0;
-	/** Lock protects buffer usage */
+	/** Are we connected? Protected by bufferUsageLock. 
+	 * Packets must not be sent if we are not connected! In particular, when 
+	 * onDisconnect() is called, we use connected to avoid a race condition. */
+	private boolean connected = false;
+	/** Lock protects buffer usage and connected status. MUST BE TAKEN LAST. */
 	private final Object bufferUsageLock = new Object();
 	
 	private long timeLastCalledMaybeSendPacketIncAckOnly;
@@ -92,6 +96,7 @@ public class NewPacketFormat implements PacketFormat {
 		messageWindowPtrAcked = ourInitialMsgID;
 		messageWindowPtrReceived = theirInitialMsgID;
 		hmacLength = HMAC_LENGTH;
+		connected = true;
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
@@ -904,6 +909,11 @@ outer:
 	public List<MessageItem> onDisconnect() {
 		int messageSize = 0;
 		List<MessageItem> items = null;
+		// LOCKING: No packet may be sent while connected = false.
+		// So we guarantee that no more packets are sent by setting this here.
+		synchronized(bufferUsageLock) {
+			connected = false;
+		}
 		for(HashMap<Integer, MessageWrapper> queue : startedByPrio) {
 			synchronized(queue) {
 				if(items == null)
@@ -918,8 +928,19 @@ outer:
 		synchronized(bufferUsageLock) {
 			usedBufferOtherSide -= messageSize;
 			if(logDEBUG) Logger.debug(this, "Removed " + messageSize + " from remote buffer. Total is now " + usedBufferOtherSide);
+			connected = false;
 		}
 		return items;
+	}
+	
+	public void onReconnect(boolean wasARekey) {
+		synchronized(bufferUsageLock) {
+			if((!connected) && wasARekey)
+				Logger.error(this, "Not connected yet was a rekey?!", new Exception("debug"));
+			else if(connected && !wasARekey)
+				Logger.warning(this, "Connected but not a rekey - parallel setup completions???", new Exception("debug"));
+			connected = true;
+		}
 	}
 	
 	/** When do we need to send a packet?

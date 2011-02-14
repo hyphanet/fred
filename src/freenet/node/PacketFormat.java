@@ -45,4 +45,9 @@ public interface PacketFormat {
 	void checkForLostPackets();
 
 	long timeCheckForLostPackets();
+
+	/** Called when the peer reconnects.
+	 * @param wasARekey True if we were already connected and this was a rekey; false if
+	 * we were disconnected. */
+	void onReconnect(boolean wasARekey);
 }

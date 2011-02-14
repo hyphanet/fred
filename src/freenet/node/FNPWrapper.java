@@ -207,4 +207,8 @@ public class FNPWrapper implements PacketFormat {
 	public long timeCheckForLostPackets() {
 		return Long.MAX_VALUE;
 	}
+
+	public void onReconnect(boolean wasARekey) {
+		// Do nothing.
+	}
 }
