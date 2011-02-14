@@ -77,7 +77,7 @@ public class NewPacketFormat implements PacketFormat {
 	/** How much of our receive buffer have we used? Equal to how much is used of the
 	 * sender's send buffer. The receive buffer is actually implemented in receiveBuffers.
 	 * LOCKING: Protected by bufferUsageLock. */
-	private int receiveBufferSize = 0;
+	private int receiveBufferUsed = 0;
 	/** How much of the other side's buffer have we used? Or alternatively, how much space
 	 * have we used in our send buffer, namely startedByPrio? 
 	 * LOCKING: Protected by bufferUsageLock */
@@ -227,7 +227,7 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				} else {
 					synchronized(bufferLock) {
-						if((receiveBufferSize + fragment.fragmentLength) > MAX_RECEIVE_BUFFER_SIZE) {
+						if((receiveBufferUsed + fragment.fragmentLength) > MAX_RECEIVE_BUFFER_SIZE) {
 							if(logMINOR) Logger.minor(this, "Could not create buffer, would excede max size");
 							dontAck = true;
 							continue;
@@ -279,8 +279,8 @@ public class NewPacketFormat implements PacketFormat {
 				}
 
 				synchronized(bufferLock) {
-					receiveBufferSize -= recvBuffer.messageLength;
-					if(logDEBUG) Logger.debug(this, "Removed " + recvBuffer.messageLength + " from buffer. Total is now " + receiveBufferSize);
+					receiveBufferUsed -= recvBuffer.messageLength;
+					if(logDEBUG) Logger.debug(this, "Removed " + recvBuffer.messageLength + " from buffer. Total is now " + receiveBufferUsed);
 				}
 
 				fullyReceived.add(recvBuffer.buffer);
@@ -300,7 +300,7 @@ public class NewPacketFormat implements PacketFormat {
 			if(addedAck) {
 				if(!wakeUp) {
 					synchronized(bufferLock) {
-						if(receiveBufferSize > MAX_RECEIVE_BUFFER_SIZE / 2)
+						if(receiveBufferUsed > MAX_RECEIVE_BUFFER_SIZE / 2)
 							wakeUp = true;
 					}
 				}
@@ -1216,13 +1216,13 @@ outer:
 			if(logDEBUG) Logger.debug(this, "Resizing from " + buffer.length + " to " + length);
 
 			synchronized(npf.bufferLock) {
-				if((npf.receiveBufferSize + (length - buffer.length)) > MAX_RECEIVE_BUFFER_SIZE) {
+				if((npf.receiveBufferUsed + (length - buffer.length)) > MAX_RECEIVE_BUFFER_SIZE) {
 					if(logMINOR) Logger.minor(this, "Could not resize buffer, would excede max size");
 					return false;
 				}
 
-				npf.receiveBufferSize += (length - buffer.length);
-				if(logDEBUG) Logger.debug(this, "Added " + (length - buffer.length) + " to buffer. Total is now " + npf.receiveBufferSize);
+				npf.receiveBufferUsed += (length - buffer.length);
+				if(logDEBUG) Logger.debug(this, "Added " + (length - buffer.length) + " to buffer. Total is now " + npf.receiveBufferUsed);
 			}
 
 			byte[] newBuffer = new byte[length];
