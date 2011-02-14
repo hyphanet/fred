@@ -305,6 +305,7 @@ public class NewPacketFormatKeyContext {
 				SentPacket s = e.getValue();
 				s.lost();
 			}
+			sentPackets.clear();
 		}
 	}
 
