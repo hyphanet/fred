@@ -76,7 +76,7 @@ public class NewPacketFormat implements PacketFormat {
 
 	/** How much of our receive buffer have we used? Equal to how much is used of the
 	 * sender's send buffer. The receive buffer is actually implemented in receiveBuffers.
-	 * LOCKING: Protected by sendBufferLock. */
+	 * LOCKING: Protected by receiveBufferSizeLock. */
 	private int receiveBufferUsed = 0;
 	/** How much of the other side's buffer have we used? Or alternatively, how much space
 	 * have we used in our send buffer, namely startedByPrio? 
@@ -97,6 +97,8 @@ public class NewPacketFormat implements PacketFormat {
 	 * and get race conditions in onDisconnect(). The incoming buffer estimate could be
 	 * separated in theory. */
 	private final Object sendBufferLock = new Object();
+	/** Lock protecting the size of the receive buffer. */
+	private final Object receiveBufferSizeLock = new Object();
 	
 	private long timeLastCalledMaybeSendPacketIncAckOnly;
 	private long timeLastCalledMaybeSendPacketNotAckOnly;
@@ -226,7 +228,7 @@ public class NewPacketFormat implements PacketFormat {
 						continue;
 					}
 				} else {
-					synchronized(sendBufferLock) {
+					synchronized(receiveBufferSizeLock) {
 						if((receiveBufferUsed + fragment.fragmentLength) > MAX_RECEIVE_BUFFER_SIZE) {
 							if(logMINOR) Logger.minor(this, "Could not create buffer, would excede max size");
 							dontAck = true;
@@ -1215,7 +1217,7 @@ outer:
 		private boolean resize(int length) {
 			if(logDEBUG) Logger.debug(this, "Resizing from " + buffer.length + " to " + length);
 
-			synchronized(npf.sendBufferLock) {
+			synchronized(npf.receiveBufferSizeLock) {
 				if((npf.receiveBufferUsed + (length - buffer.length)) > MAX_RECEIVE_BUFFER_SIZE) {
 					if(logMINOR) Logger.minor(this, "Could not resize buffer, would excede max size");
 					return false;
