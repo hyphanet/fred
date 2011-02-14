@@ -72,11 +72,14 @@ public class NewPacketFormat implements PacketFormat {
 	private int messageWindowPtrReceived;
 	private final SparseBitmap receivedMessages= new SparseBitmap();
 
-	/** How much of our buffer have we used? Protected by bufferUsageLock. */
+	/** How much of our buffer have we used? 
+	 * LOCKING: Protected by bufferUsageLock. */
 	private int usedBuffer = 0;
-	/** How much of the other side's buffer have we used? Protected by bufferUsageLock */
+	/** How much of the other side's buffer have we used? 
+	 * LOCKING: Protected by bufferUsageLock */
 	private int usedBufferOtherSide = 0;
-	/** Are we connected? Protected by bufferUsageLock. 
+	/** Are we connected? 
+	 * LOCKING: Protected by bufferUsageLock. 
 	 * Packets must not be sent if we are not connected! In particular, when 
 	 * onDisconnect() is called, we use connected to avoid a race condition. Which means
 	 * we MUST NOT send a packet resulting in increasing usedBufferOtherSide if 
