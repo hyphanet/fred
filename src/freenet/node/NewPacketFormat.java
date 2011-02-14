@@ -951,7 +951,7 @@ outer:
 				usedBufferOtherSide = 0;
 			}
 		}
-		synchronized(ackedMessages) {
+		synchronized(this) {
 			// If it's not been acked by now, it's not going to be acked, even if we 
 			// reconnect, because we are not going to resend it - see above.
 			// This means that we cannot expect it to be acked and should not block as a
@@ -960,8 +960,6 @@ outer:
 			if(messageWindowPtrAcked == -1)
 				messageWindowPtrAcked = MSG_WINDOW_SIZE - 1;
 			
-		}
-		synchronized(this) {
 			blockedSince = -1;
 		}
 		return items;
@@ -1118,7 +1116,6 @@ outer:
 						boolean couldSend = npf.canSend();
 						int id = wrapper.getMessageID();
 						synchronized(npf) {
-						synchronized(npf.ackedMessages) {
 							npf.ackedMessages.add(id, id);
 
 							int oldWindow = npf.messageWindowPtrAcked;
@@ -1133,7 +1130,6 @@ outer:
 							} else {
 								npf.ackedMessages.remove(oldWindow, npf.messageWindowPtrAcked);
 							}
-						}
 						}
 						if(!couldSend && npf.canSend()) {
 							//We aren't blocked anymore, notify packet sender
