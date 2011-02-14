@@ -990,12 +990,10 @@ outer:
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
 	public long timeNextUrgent() {
 		// Is there anything in flight?
-		synchronized(startedByPrio) {
-			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
-				synchronized(started) {
-					for(MessageWrapper wrapper : started.values()) {
-						if(wrapper.canSend()) return 0;
-					}
+		for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+			synchronized(started) {
+				for(MessageWrapper wrapper : started.values()) {
+					if(wrapper.canSend()) return 0;
 				}
 			}
 		}
