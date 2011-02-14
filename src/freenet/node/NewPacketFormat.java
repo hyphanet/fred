@@ -55,7 +55,7 @@ public class NewPacketFormat implements PacketFormat {
 	private final BasePeerNode pn;
 
 	/** The actual buffer of outgoing messages that have not yet been acked.
-	 * LOCKING: Protected by bufferUsageLock. */
+	 * LOCKING: Protected by sendBufferLock. */
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	/** The next message ID for outgoing messages.
 	 * LOCKING: Protected by (this). */
@@ -76,14 +76,14 @@ public class NewPacketFormat implements PacketFormat {
 
 	/** How much of our receive buffer have we used? Equal to how much is used of the
 	 * sender's send buffer. The receive buffer is actually implemented in receiveBuffers.
-	 * LOCKING: Protected by bufferUsageLock. */
+	 * LOCKING: Protected by sendBufferLock. */
 	private int receiveBufferUsed = 0;
 	/** How much of the other side's buffer have we used? Or alternatively, how much space
 	 * have we used in our send buffer, namely startedByPrio? 
-	 * LOCKING: Protected by bufferUsageLock */
+	 * LOCKING: Protected by sendBufferLock */
 	private int sendBufferUsed = 0;
 	/** Are we connected? 
-	 * LOCKING: Protected by bufferUsageLock. 
+	 * LOCKING: Protected by sendBufferLock. 
 	 * Packets must not be sent if we are not connected! In particular, when 
 	 * onDisconnect() is called, we use connected to avoid a race condition. Which means
 	 * we MUST NOT send a packet resulting in increasing usedBufferOtherSide if 
