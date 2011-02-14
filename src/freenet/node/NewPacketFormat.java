@@ -1116,9 +1116,10 @@ outer:
 						completedMessagesSize += wrapper.getLength();
 
 						boolean couldSend = npf.canSend();
+						int id = wrapper.getMessageID();
 						synchronized(npf) {
 						synchronized(npf.ackedMessages) {
-							npf.ackedMessages.add(wrapper.getMessageID(), wrapper.getMessageID());
+							npf.ackedMessages.add(id, id);
 
 							int oldWindow = npf.messageWindowPtrAcked;
 							while(npf.ackedMessages.contains(npf.messageWindowPtrAcked, npf.messageWindowPtrAcked)) {
