@@ -1457,14 +1457,15 @@ public class PeerManager {
 			int numberOfDisconnecting = 0;
 			int numberOfRoutingDisabled = 0;
 
-			PeerNodeStatus[] pns = getPeerNodeStatuses(true);
-
-			for(int i = 0; i < pns.length; i++) {
-				if(pns[i] == null) {
+			PeerNode[] peers = this.myPeers;
+			
+			for(int i = 0; i < peers.length; i++) {
+				if(peers[i] == null) {
 					Logger.error(this, "getPeerNodeStatuses(true)[" + i + "] == null!");
 					continue;
 				}
-				switch(pns[i].getStatusValue()) {
+				int status = peers[i].getPeerNodeStatus();
+				switch(status) {
 					case PEER_NODE_STATUS_CONNECTED:
 						numberOfConnected++;
 						break;
@@ -1508,7 +1509,7 @@ public class PeerManager {
 						numberOfRoutingDisabled++;
 						break;
 					default:
-						Logger.error(this, "Unknown peer status value : " + pns[i].getStatusValue());
+						Logger.error(this, "Unknown peer status value : " + status);
 						break;
 				}
 			}
