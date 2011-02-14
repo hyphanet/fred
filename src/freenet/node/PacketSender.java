@@ -223,7 +223,7 @@ public class PacketSender implements Runnable {
 						}
 					}
 				} catch (BlockedTooLongException e) {
-					Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+this+" on "+e.tracker+" - DISCONNECTING!");
+					Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+pn+" on "+e.tracker+" : "+(pn.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+pn.getVersionNumber()+") - DISCONNECTING!");
 					pn.forceDisconnect(true);
 					onForceDisconnectBlockTooLong(pn, e);
 				}
