@@ -94,7 +94,7 @@ public class NewPacketFormat implements PacketFormat {
 	 * be protected by the same lock, so we don't send packets when we are disconnected 
 	 * and get race conditions in onDisconnect(). The incoming buffer estimate could be
 	 * separated in theory. */
-	private final Object bufferUsageLock = new Object();
+	private final Object bufferLock = new Object();
 	
 	private long timeLastCalledMaybeSendPacketIncAckOnly;
 	private long timeLastCalledMaybeSendPacketNotAckOnly;
@@ -224,7 +224,7 @@ public class NewPacketFormat implements PacketFormat {
 						continue;
 					}
 				} else {
-					synchronized(bufferUsageLock) {
+					synchronized(bufferLock) {
 						if((usedBuffer + fragment.fragmentLength) > MAX_RECEIVE_BUFFER_SIZE) {
 							if(logMINOR) Logger.minor(this, "Could not create buffer, would excede max size");
 							dontAck = true;
@@ -276,7 +276,7 @@ public class NewPacketFormat implements PacketFormat {
 					}
 				}
 
-				synchronized(bufferUsageLock) {
+				synchronized(bufferLock) {
 					usedBuffer -= recvBuffer.messageLength;
 					if(logDEBUG) Logger.debug(this, "Removed " + recvBuffer.messageLength + " from buffer. Total is now " + usedBuffer);
 				}
@@ -297,7 +297,7 @@ public class NewPacketFormat implements PacketFormat {
 				wakeUp = true;
 			if(addedAck) {
 				if(!wakeUp) {
-					synchronized(bufferUsageLock) {
+					synchronized(bufferLock) {
 						if(usedBuffer > MAX_RECEIVE_BUFFER_SIZE / 2)
 							wakeUp = true;
 					}
@@ -607,7 +607,7 @@ outer:
 				boolean addStatsBulk = false;
 				boolean addStatsRT = false;
 				
-				synchronized(bufferUsageLock) {
+				synchronized(bufferLock) {
 					// Always finish what we have started before considering sending more packets.
 					// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
 					for(int i = 0; i < startedByPrio.size(); i++) {
@@ -683,7 +683,7 @@ outer:
 		
 		if((!mustSend) && numAcks > 0) {
 			int maxSendBufferSize = maxSendBufferSize();
-			synchronized(bufferUsageLock) {
+			synchronized(bufferLock) {
 				if(usedBufferOtherSide > maxSendBufferSize / 2) {
 					if(logDEBUG) Logger.debug(this, "Must send because other side buffer size is "+usedBufferOtherSide);
 					mustSend = true;
@@ -762,7 +762,7 @@ outer:
 							
 							int bufferUsage;
 							boolean failNotConnected = false;
-							synchronized(bufferUsageLock) {
+							synchronized(bufferLock) {
 								if(!connected) failNotConnected = true;
 								bufferUsage = usedBufferOtherSide;
 							}
@@ -798,7 +798,7 @@ outer:
 							
 							//Priority of the one we grabbed might be higher than i
 							HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
-							synchronized(bufferUsageLock) {
+							synchronized(bufferLock) {
 								if(!connected) failNotConnected = true;
 								else {
 									usedBufferOtherSide += item.buf.length;
@@ -943,7 +943,7 @@ outer:
 		List<MessageItem> items = null;
 		// LOCKING: No packet may be sent while connected = false.
 		// So we guarantee that no more packets are sent by setting this here.
-		synchronized(bufferUsageLock) {
+		synchronized(bufferLock) {
 			connected = false;
 			for(HashMap<Integer, MessageWrapper> queue : startedByPrio) {
 				if(items == null)
@@ -976,7 +976,7 @@ outer:
 	}
 	
 	public void onReconnect(boolean wasARekey) {
-		synchronized(bufferUsageLock) {
+		synchronized(bufferLock) {
 			if((!connected) && wasARekey)
 				Logger.error(this, "Not connected yet was a rekey?!", new Exception("debug"));
 			else if(connected && !wasARekey)
@@ -991,7 +991,7 @@ outer:
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
 	public long timeNextUrgent() {
 		// Is there anything in flight?
-		synchronized(bufferUsageLock) {
+		synchronized(bufferLock) {
 			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
 				for(MessageWrapper wrapper : started.values()) {
 					if(wrapper.canSend()) return 0;
@@ -1031,7 +1031,7 @@ outer:
 		
 		if(canAllocateID) {
 			int bufferUsage;
-			synchronized(bufferUsageLock) {
+			synchronized(bufferLock) {
 				bufferUsage = usedBufferOtherSide;
 			}
 			int maxSendBufferSize = maxSendBufferSize();
@@ -1109,7 +1109,7 @@ outer:
 				if(wrapper.ack(range[0], range[1], npf.pn)) {
 					HashMap<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
 					MessageWrapper removed = null;
-					synchronized(npf.bufferUsageLock) {
+					synchronized(npf.bufferLock) {
 						removed = started.remove(wrapper.getMessageID());
 						if(removed != null) {
 							npf.usedBufferOtherSide -= completedMessagesSize;
@@ -1213,7 +1213,7 @@ outer:
 		private boolean resize(int length) {
 			if(logDEBUG) Logger.debug(this, "Resizing from " + buffer.length + " to " + length);
 
-			synchronized(npf.bufferUsageLock) {
+			synchronized(npf.bufferLock) {
 				if((npf.usedBuffer + (length - buffer.length)) > MAX_RECEIVE_BUFFER_SIZE) {
 					if(logMINOR) Logger.minor(this, "Could not resize buffer, would excede max size");
 					return false;
@@ -1233,7 +1233,7 @@ outer:
 
 	public int countSendableMessages() {
 		int x = 0;
-		synchronized(bufferUsageLock) {
+		synchronized(bufferLock) {
 			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
 				for(MessageWrapper wrapper : started.values()) {
 					if(wrapper.canSend()) x++;
