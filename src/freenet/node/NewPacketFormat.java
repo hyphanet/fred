@@ -907,8 +907,7 @@ outer:
 					items = new ArrayList<MessageItem>();
 				for(MessageWrapper wrapper : queue.values()) {
 					items.add(wrapper.getItem());
-					if(logDEBUG)
-						messageSize += wrapper.getLength();
+					messageSize += wrapper.getLength();
 				}
 				queue.clear();
 			}
