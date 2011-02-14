@@ -945,8 +945,11 @@ outer:
 		}
 		synchronized(bufferUsageLock) {
 			usedBufferOtherSide -= messageSize;
-			if(logDEBUG) Logger.debug(this, "Removed " + messageSize + " from remote buffer. Total is now " + usedBufferOtherSide);
 			connected = false;
+			if(usedBufferOtherSide != 0) {
+				Logger.warning(this, "Possible leak in transport code: Buffer size not empty after disconnecting on "+this+" for "+pn+" after removing "+messageSize+" total was "+usedBufferOtherSide);
+				usedBufferOtherSide = 0;
+			}
 		}
 		return items;
 	}
