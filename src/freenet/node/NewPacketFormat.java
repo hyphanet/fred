@@ -744,8 +744,15 @@ outer:
 							if(item == null) break prio;
 							
 							int bufferUsage;
+							boolean failNotConnected = false;
 							synchronized(bufferUsageLock) {
+								if(!connected) failNotConnected = true;
 								bufferUsage = usedBufferOtherSide;
+							}
+							if(failNotConnected) {
+								Logger.error(this, "Not connected - race condition?");
+								messageQueue.pushfrontPrioritizedMessageItem(item);
+								break fragments;
 							}
 							int maxSendBufferSize = maxSendBufferSize();
 							if((bufferUsage + item.buf.length) > maxSendBufferSize) {
@@ -774,13 +781,22 @@ outer:
 							
 							//Priority of the one we grabbed might be higher than i
 							HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
-							synchronized(queue) {
-								queue.put(messageID, wrapper);
+							synchronized(bufferUsageLock) {
+								if(!connected) failNotConnected = true;
+								else {
+									usedBufferOtherSide += item.buf.length;
+									if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide + " for "+pn.shortToString());
+								}
 							}
 							
-							synchronized(bufferUsageLock) {
-								usedBufferOtherSide += item.buf.length;
-								if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide + " for "+pn.shortToString());
+							if(failNotConnected) {
+								Logger.error(this, "Not connected - race condition?");
+								messageQueue.pushfrontPrioritizedMessageItem(item);
+								break fragments;
+							}
+							
+							synchronized(queue) {
+								queue.put(messageID, wrapper);
 							}
 							
 							if(!wrapper.canSend()) {
