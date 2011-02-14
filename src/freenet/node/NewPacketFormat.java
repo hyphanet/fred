@@ -77,9 +77,10 @@ public class NewPacketFormat implements PacketFormat {
 	/** How much of our buffer have we used? 
 	 * LOCKING: Protected by bufferUsageLock. */
 	private int usedBuffer = 0;
-	/** How much of the other side's buffer have we used? 
+	/** How much of the other side's buffer have we used? Or alternatively, how much space
+	 * have we used in our send buffer, namely startedByPrio? 
 	 * LOCKING: Protected by bufferUsageLock */
-	private int usedBufferOtherSide = 0;
+	private int sendBufferSize = 0;
 	/** Are we connected? 
 	 * LOCKING: Protected by bufferUsageLock. 
 	 * Packets must not be sent if we are not connected! In particular, when 
@@ -684,8 +685,8 @@ outer:
 		if((!mustSend) && numAcks > 0) {
 			int maxSendBufferSize = maxSendBufferSize();
 			synchronized(bufferLock) {
-				if(usedBufferOtherSide > maxSendBufferSize / 2) {
-					if(logDEBUG) Logger.debug(this, "Must send because other side buffer size is "+usedBufferOtherSide);
+				if(sendBufferSize > maxSendBufferSize / 2) {
+					if(logDEBUG) Logger.debug(this, "Must send because other side buffer size is "+sendBufferSize);
 					mustSend = true;
 				}
 			}
@@ -764,7 +765,7 @@ outer:
 							boolean failNotConnected = false;
 							synchronized(bufferLock) {
 								if(!connected) failNotConnected = true;
-								bufferUsage = usedBufferOtherSide;
+								bufferUsage = sendBufferSize;
 							}
 							if(failNotConnected) {
 								Logger.error(this, "Not connected - race condition?");
@@ -801,8 +802,8 @@ outer:
 							synchronized(bufferLock) {
 								if(!connected) failNotConnected = true;
 								else {
-									usedBufferOtherSide += item.buf.length;
-									if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide + " for "+pn.shortToString());
+									sendBufferSize += item.buf.length;
+									if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + sendBufferSize + " for "+pn.shortToString());
 									queue.put(messageID, wrapper);
 								}
 							}
@@ -954,11 +955,11 @@ outer:
 				}
 				queue.clear();
 			}
-			usedBufferOtherSide -= messageSize;
+			sendBufferSize -= messageSize;
 			connected = false;
-			if(usedBufferOtherSide != 0) {
-				Logger.warning(this, "Possible leak in transport code: Buffer size not empty after disconnecting on "+this+" for "+pn+" after removing "+messageSize+" total was "+usedBufferOtherSide);
-				usedBufferOtherSide = 0;
+			if(sendBufferSize != 0) {
+				Logger.warning(this, "Possible leak in transport code: Buffer size not empty after disconnecting on "+this+" for "+pn+" after removing "+messageSize+" total was "+sendBufferSize);
+				sendBufferSize = 0;
 			}
 		}
 		synchronized(this) {
@@ -1032,7 +1033,7 @@ outer:
 		if(canAllocateID) {
 			int bufferUsage;
 			synchronized(bufferLock) {
-				bufferUsage = usedBufferOtherSide;
+				bufferUsage = sendBufferSize;
 			}
 			int maxSendBufferSize = maxSendBufferSize();
 			if((bufferUsage + 200 /* bigger than most messages */ ) > maxSendBufferSize()) {
@@ -1112,8 +1113,8 @@ outer:
 					synchronized(npf.bufferLock) {
 						removed = started.remove(wrapper.getMessageID());
 						if(removed != null) {
-							npf.usedBufferOtherSide -= completedMessagesSize;
-							if(logDEBUG) Logger.debug(this, "Removed " + completedMessagesSize + " from remote buffer. Total is now " + npf.usedBufferOtherSide);
+							npf.sendBufferSize -= completedMessagesSize;
+							if(logDEBUG) Logger.debug(this, "Removed " + completedMessagesSize + " from remote buffer. Total is now " + npf.sendBufferSize);
 						}
 					}
 					if(removed == null && logMINOR) {
