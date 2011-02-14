@@ -66,8 +66,11 @@ public class NewPacketFormat implements PacketFormat {
 	private int messageWindowPtrReceived;
 	private final SparseBitmap receivedMessages= new SparseBitmap();
 
+	/** How much of our buffer have we used? Protected by bufferUsageLock. */
 	private int usedBuffer = 0;
+	/** How much of the other side's buffer have we used? Protected by bufferUsageLock */
 	private int usedBufferOtherSide = 0;
+	/** Lock protects buffer usage */
 	private final Object bufferUsageLock = new Object();
 	
 	private long timeLastCalledMaybeSendPacketIncAckOnly;
