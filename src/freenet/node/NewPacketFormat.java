@@ -54,6 +54,8 @@ public class NewPacketFormat implements PacketFormat {
 
 	private final BasePeerNode pn;
 
+	/** The actual buffer of outgoing messages that have not yet been acked.
+	 * LOCKING: Protected by bufferUsageLock. */
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
 	/** The next message ID for outgoing messages.
 	 * LOCKING: Protected by (this). */
@@ -85,7 +87,13 @@ public class NewPacketFormat implements PacketFormat {
 	 * we MUST NOT send a packet resulting in increasing usedBufferOtherSide if 
 	 * connected == false. Acks etc are fine however. */
 	private boolean connected = false;
-	/** Lock protects buffer usage and connected status. MUST BE TAKEN LAST. */
+	/** Lock protecting buffer usage counters, the buffer itself (startedByPrio), and 
+	 * connected status. MUST BE TAKEN LAST. 
+	 * Justification: The outgoing buffer and the buffer usage should be protected by 
+	 * the same lock, for consistency. The buffer usage and the connection status must
+	 * be protected by the same lock, so we don't send packets when we are disconnected 
+	 * and get race conditions in onDisconnect(). The incoming buffer estimate could be
+	 * separated in theory. */
 	private final Object bufferUsageLock = new Object();
 	
 	private long timeLastCalledMaybeSendPacketIncAckOnly;
@@ -599,13 +607,13 @@ outer:
 				boolean addStatsBulk = false;
 				boolean addStatsRT = false;
 				
-				// Always finish what we have started before considering sending more packets.
-				// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
-				for(int i = 0; i < startedByPrio.size(); i++) {
-					HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
-					
-					//Try to finish messages that have been started
-					synchronized(started) {
+				synchronized(bufferUsageLock) {
+					// Always finish what we have started before considering sending more packets.
+					// Anything beyond this is beyond the scope of NPF and is PeerMessageQueue's job.
+					for(int i = 0; i < startedByPrio.size(); i++) {
+						HashMap<Integer, MessageWrapper> started = startedByPrio.get(i);
+						
+						//Try to finish messages that have been started
 						Iterator<MessageWrapper> it = started.values().iterator();
 						while(it.hasNext() && packet.getLength() < maxPacketSize) {
 							MessageWrapper wrapper = it.next();
@@ -795,6 +803,7 @@ outer:
 								else {
 									usedBufferOtherSide += item.buf.length;
 									if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + usedBufferOtherSide + " for "+pn.shortToString());
+									queue.put(messageID, wrapper);
 								}
 							}
 							
@@ -802,10 +811,6 @@ outer:
 								Logger.error(this, "Not connected - race condition?");
 								messageQueue.pushfrontPrioritizedMessageItem(item);
 								break fragments;
-							}
-							
-							synchronized(queue) {
-								queue.put(messageID, wrapper);
 							}
 							
 							if(!wrapper.canSend()) {
@@ -940,9 +945,7 @@ outer:
 		// So we guarantee that no more packets are sent by setting this here.
 		synchronized(bufferUsageLock) {
 			connected = false;
-		}
-		for(HashMap<Integer, MessageWrapper> queue : startedByPrio) {
-			synchronized(queue) {
+			for(HashMap<Integer, MessageWrapper> queue : startedByPrio) {
 				if(items == null)
 					items = new ArrayList<MessageItem>();
 				for(MessageWrapper wrapper : queue.values()) {
@@ -951,8 +954,6 @@ outer:
 				}
 				queue.clear();
 			}
-		}
-		synchronized(bufferUsageLock) {
 			usedBufferOtherSide -= messageSize;
 			connected = false;
 			if(usedBufferOtherSide != 0) {
@@ -990,8 +991,8 @@ outer:
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
 	public long timeNextUrgent() {
 		// Is there anything in flight?
-		for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
-			synchronized(started) {
+		synchronized(bufferUsageLock) {
+			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
 				for(MessageWrapper wrapper : started.values()) {
 					if(wrapper.canSend()) return 0;
 				}
@@ -1108,8 +1109,12 @@ outer:
 				if(wrapper.ack(range[0], range[1], npf.pn)) {
 					HashMap<Integer, MessageWrapper> started = npf.startedByPrio.get(wrapper.getPriority());
 					MessageWrapper removed = null;
-					synchronized(started) {
+					synchronized(npf.bufferUsageLock) {
 						removed = started.remove(wrapper.getMessageID());
+						if(removed != null) {
+							npf.usedBufferOtherSide -= completedMessagesSize;
+							if(logDEBUG) Logger.debug(this, "Removed " + completedMessagesSize + " from remote buffer. Total is now " + npf.usedBufferOtherSide);
+						}
 					}
 					if(removed == null && logMINOR) {
 						// ack() can return true more than once, it just only calls the callbacks once.
@@ -1118,7 +1123,6 @@ outer:
 
 					if(removed != null) {
 						if(logDEBUG) Logger.debug(this, "Completed message "+wrapper.getMessageID()+" from "+wrapper);
-						completedMessagesSize += wrapper.getLength();
 
 						boolean couldSend = npf.canSend();
 						int id = wrapper.getMessageID();
@@ -1143,13 +1147,6 @@ outer:
 							npf.pn.wakeUpSender();
 						}
 					}
-				}
-			}
-
-			if(completedMessagesSize > 0) {
-				synchronized(npf.bufferUsageLock) {
-					npf.usedBufferOtherSide -= completedMessagesSize;
-					if(logDEBUG) Logger.debug(this, "Removed " + completedMessagesSize + " from remote buffer. Total is now " + npf.usedBufferOtherSide);
 				}
 			}
 
@@ -1236,12 +1233,10 @@ outer:
 
 	public int countSendableMessages() {
 		int x = 0;
-		synchronized(startedByPrio) {
+		synchronized(bufferUsageLock) {
 			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
-				synchronized(started) {
-					for(MessageWrapper wrapper : started.values()) {
-						if(wrapper.canSend()) x++;
-					}
+				for(MessageWrapper wrapper : started.values()) {
+					if(wrapper.canSend()) x++;
 				}
 			}
 		}
