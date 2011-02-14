@@ -55,9 +55,15 @@ public class NewPacketFormat implements PacketFormat {
 	private final BasePeerNode pn;
 
 	private final ArrayList<HashMap<Integer, MessageWrapper>> startedByPrio;
+	/** The next message ID for outgoing messages.
+	 * LOCKING: Protected by (this). */
 	private int nextMessageID;
-	/** The first message id that hasn't been acked by the receiver */
+	/** The first message id that hasn't been acked by the receiver.
+	 * LOCKING: Protected by (this). */
 	private int messageWindowPtrAcked;
+	/** All messages that have been acked (we remove those which are out of window to
+	 * limit space usage).
+	 * LOCKING: Protected by (this). */
 	private final SparseBitmap ackedMessages = new SparseBitmap();
 
 	private final HashMap<Integer, PartiallyReceivedBuffer> receiveBuffers = new HashMap<Integer, PartiallyReceivedBuffer>();
