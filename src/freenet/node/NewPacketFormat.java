@@ -72,7 +72,9 @@ public class NewPacketFormat implements PacketFormat {
 	private int usedBufferOtherSide = 0;
 	/** Are we connected? Protected by bufferUsageLock. 
 	 * Packets must not be sent if we are not connected! In particular, when 
-	 * onDisconnect() is called, we use connected to avoid a race condition. */
+	 * onDisconnect() is called, we use connected to avoid a race condition. Which means
+	 * we MUST NOT send a packet resulting in increasing usedBufferOtherSide if 
+	 * connected == false. Acks etc are fine however. */
 	private boolean connected = false;
 	/** Lock protects buffer usage and connected status. MUST BE TAKEN LAST. */
 	private final Object bufferUsageLock = new Object();
