@@ -177,7 +177,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private long timeLastRoutable;
 	/** Time added or restarted (reset on startup unlike peerAddedTime) */
 	private long timeAddedOrRestarted;
-
+	
 	private long countSelectionsSinceConnected = 0;
 	// 5mins; yes it's alchemy!
 	public static final int SELECTION_SAMPLING_PERIOD = 5 * 60 * 1000;
@@ -301,6 +301,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	* at startup.
 	*/
 	private long bootID;
+	/** Our boot ID. This is set to a random number on startup, and then reset whenever
+	 * we dump the in-flight messages and call disconnected() on their clients, i.e.
+	 * whenever we call disconnected(true, ...) */
+	private long myBootID;
+	/** myBootID at the time of the last successful completed handshake. */
+	private long myLastSuccessfulBootID;
 
 	/** If true, this means last time we tried, we got a bogus noderef */
 	private boolean bogusNoderef;
@@ -445,6 +451,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		this.backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentRT = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
 		this.backedOffPercentBulk = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0, node);
+		this.myBootID = node2.bootID;
 		version = fs.get("version");
 		Version.seenVersion(version);
 		try {
@@ -1244,6 +1251,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		SessionKey cur, prev, unv;
 		MessageItem[] messagesTellDisconnected = null;
 		List<MessageItem> moreMessagesTellDisconnected = null;
+		PacketFormat oldPacketFormat = null;
 		synchronized(this) {
 			ret = isConnected;
 			// Force renegotiation.
@@ -1265,11 +1273,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			timePrevDisconnect = timeLastDisconnect;
 			timeLastDisconnect = now;
 			if(dumpMessageQueue) {
+				// Reset the boot ID so that we get different trackers next time.
+				myBootID = node.fastWeakRandom.nextLong();
 				messagesTellDisconnected = grabQueuedMessageItems();
+				oldPacketFormat = packetFormat;
+				packetFormat = null;
 			}
 		}
-		if(dumpMessageQueue) {
-			moreMessagesTellDisconnected = packetFormat.onDisconnect();
+		if(oldPacketFormat != null) {
+			moreMessagesTellDisconnected = oldPacketFormat.onDisconnect();
 		}
 		if(messagesTellDisconnected != null) {
 			if(logMINOR)
@@ -1297,6 +1309,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				public void run() {
 					if((!PeerNode.this.isConnected()) &&
 							timeLastDisconnect == now) {
+						PacketFormat oldPacketFormat = null;
+						synchronized(this) {
+							if(!isConnected) return;
+							// Reset the boot ID so that we get different trackers next time.
+							myBootID = node.fastWeakRandom.nextLong();
+							oldPacketFormat = packetFormat;
+							packetFormat = null;
+						}
 						MessageItem[] messagesTellDisconnected = grabQueuedMessageItems();
 						if(messagesTellDisconnected != null) {
 							for(MessageItem mi : messagesTellDisconnected) {
@@ -1304,7 +1324,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 							}
 						}
 						List<MessageItem> moreMessagesTellDisconnected = 
-							packetFormat.onDisconnect();
+							oldPacketFormat.onDisconnect();
 						if(moreMessagesTellDisconnected != null) {
 							if(logMINOR)
 								Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
@@ -2044,6 +2064,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			unroutableOlderVersion = older;
 			boolean notReusingTracker = false;
 			bootIDChanged = (thisBootID != this.bootID);
+			if(myLastSuccessfulBootID != this.myBootID) {
+				// If our own boot ID changed, because we forcibly disconnected, 
+				// we need to use a new tracker. This is equivalent to us having restarted,
+				// from the point of view of the other side, but since we haven't we need
+				// to track it here.
+				bootIDChanged = true;
+				myLastSuccessfulBootID = myBootID;
+			}
 			if(bootIDChanged && wasARekey) {
 				Logger.error(this, "Changed boot ID while rekeying! from " + bootID + " to " + thisBootID + " for " + getPeer());
 				wasARekey = false;
@@ -5103,6 +5131,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			sendingUOMExtJar = false;
 		else
 			sendingUOMMainJar = false;
+	}
+
+	/** Get the boot ID for purposes of the other node. This is set to a random number on
+	 * startup, but also whenever we disconnected(true,...) i.e. whenever we dump the 
+	 * message queues and PacketFormat's. */
+	public synchronized long getOutgoingBootID() {
+		return this.myBootID;
 	}
 	
 }

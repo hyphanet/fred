@@ -1667,7 +1667,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			ptr += 8;
 			if(logMINOR) Logger.minor(this, "Sending tracker ID "+trackerID+" in JFK(3)");
 		}
-		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, ptr, 8);
+		System.arraycopy(Fields.longToBytes(pn.getOutgoingBootID()), 0, data, ptr, 8);
 		ptr += 8;
 		System.arraycopy(pn.jfkMyRef, 0, data, ptr, pn.jfkMyRef.length);
 		final byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
@@ -1877,7 +1877,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 			data[ptr++] = (byte) (sameAsOldTrackerID ? 1 : 0);
 		}
 
-		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, ptr, 8);
+		System.arraycopy(Fields.longToBytes(pn.getOutgoingBootID()), 0, data, ptr, 8);
 		ptr += 8;
 		System.arraycopy(myRef, 0, data, ptr, myRef.length);
 		ptr += myRef.length;
