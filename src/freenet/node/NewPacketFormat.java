@@ -82,15 +82,8 @@ public class NewPacketFormat implements PacketFormat {
 	 * have we used in our send buffer, namely startedByPrio? 
 	 * LOCKING: Protected by sendBufferLock */
 	private int sendBufferUsed = 0;
-	/** Are we connected? 
-	 * LOCKING: Protected by sendBufferLock. 
-	 * Packets must not be sent if we are not connected! In particular, when 
-	 * onDisconnect() is called, we use connected to avoid a race condition. Which means
-	 * we MUST NOT send a packet resulting in increasing usedBufferOtherSide if 
-	 * connected == false. Acks etc are fine however. */
-	private boolean connected = false;
-	/** Lock protecting buffer usage counters, the buffer itself (startedByPrio), and 
-	 * connected status. MUST BE TAKEN LAST. 
+	/** Lock protecting buffer usage counters, and the buffer itself (startedByPrio). 
+	 * MUST BE TAKEN LAST. 
 	 * Justification: The outgoing buffer and the buffer usage should be protected by 
 	 * the same lock, for consistency. The buffer usage and the connection status must
 	 * be protected by the same lock, so we don't send packets when we are disconnected 
@@ -119,7 +112,6 @@ public class NewPacketFormat implements PacketFormat {
 		messageWindowPtrAcked = ourInitialMsgID;
 		messageWindowPtrReceived = theirInitialMsgID;
 		hmacLength = HMAC_LENGTH;
-		connected = true;
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
@@ -765,15 +757,8 @@ outer:
 							if(item == null) break prio;
 							
 							int bufferUsage;
-							boolean failNotConnected = false;
 							synchronized(sendBufferLock) {
-								if(!connected) failNotConnected = true;
 								bufferUsage = sendBufferUsed;
-							}
-							if(failNotConnected) {
-								Logger.error(this, "Not connected - race condition?");
-								messageQueue.pushfrontPrioritizedMessageItem(item);
-								break fragments;
 							}
 							int maxSendBufferSize = maxSendBufferSize();
 							if((bufferUsage + item.buf.length) > maxSendBufferSize) {
@@ -803,18 +788,9 @@ outer:
 							//Priority of the one we grabbed might be higher than i
 							HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
 							synchronized(sendBufferLock) {
-								if(!connected) failNotConnected = true;
-								else {
-									sendBufferUsed += item.buf.length;
-									if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + sendBufferUsed + " for "+pn.shortToString());
-									queue.put(messageID, wrapper);
-								}
-							}
-							
-							if(failNotConnected) {
-								Logger.error(this, "Not connected - race condition?");
-								messageQueue.pushfrontPrioritizedMessageItem(item);
-								break fragments;
+								sendBufferUsed += item.buf.length;
+								if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + sendBufferUsed + " for "+pn.shortToString());
+								queue.put(messageID, wrapper);
 							}
 							
 							if(!wrapper.canSend()) {
@@ -948,7 +924,6 @@ outer:
 		// LOCKING: No packet may be sent while connected = false.
 		// So we guarantee that no more packets are sent by setting this here.
 		synchronized(sendBufferLock) {
-			connected = false;
 			for(HashMap<Integer, MessageWrapper> queue : startedByPrio) {
 				if(items == null)
 					items = new ArrayList<MessageItem>();
@@ -959,34 +934,17 @@ outer:
 				queue.clear();
 			}
 			sendBufferUsed -= messageSize;
-			connected = false;
+			// This is just a check for logging/debugging purposes.
 			if(sendBufferUsed != 0) {
 				Logger.warning(this, "Possible leak in transport code: Buffer size not empty after disconnecting on "+this+" for "+pn+" after removing "+messageSize+" total was "+sendBufferUsed);
 				sendBufferUsed = 0;
 			}
 		}
-		synchronized(this) {
-			// If it's not been acked by now, it's not going to be acked, even if we 
-			// reconnect, because we are not going to resend it - see above.
-			// This means that we cannot expect it to be acked and should not block as a
-			// result.
-			messageWindowPtrAcked = nextMessageID - 1;
-			if(messageWindowPtrAcked == -1)
-				messageWindowPtrAcked = MSG_WINDOW_SIZE - 1;
-			
-			blockedSince = -1;
-		}
 		return items;
 	}
 	
 	public void onReconnect(boolean wasARekey) {
-		synchronized(sendBufferLock) {
-			if((!connected) && wasARekey)
-				Logger.error(this, "Not connected yet was a rekey?!", new Exception("debug"));
-			else if(connected && !wasARekey)
-				Logger.warning(this, "Connected but not a rekey - parallel setup completions???", new Exception("debug"));
-			connected = true;
-		}
+		// Do nothing.
 	}
 	
 	/** When do we need to send a packet?
