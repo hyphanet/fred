@@ -1055,8 +1055,6 @@ outer:
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
 
-			int completedMessagesSize = 0;
-
 			while(msgIt.hasNext()) {
 				MessageWrapper wrapper = msgIt.next();
 				int[] range = rangeIt.next();
@@ -1070,8 +1068,9 @@ outer:
 					synchronized(npf.sendBufferLock) {
 						removed = started.remove(wrapper.getMessageID());
 						if(removed != null) {
-							npf.sendBufferUsed -= completedMessagesSize;
-							if(logDEBUG) Logger.debug(this, "Removed " + completedMessagesSize + " from remote buffer. Total is now " + npf.sendBufferUsed);
+							int size = wrapper.getLength();
+							npf.sendBufferUsed -= size;
+							if(logDEBUG) Logger.debug(this, "Removed " + size + " from remote buffer. Total is now " + npf.sendBufferUsed);
 						}
 					}
 					if(removed == null && logMINOR) {
