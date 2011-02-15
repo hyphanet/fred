@@ -1322,13 +1322,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 								mi.onDisconnect();
 							}
 						}
-						List<MessageItem> moreMessagesTellDisconnected = 
-							oldPacketFormat.onDisconnect();
-						if(moreMessagesTellDisconnected != null) {
-							if(logMINOR)
-								Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
-							for(MessageItem mi : moreMessagesTellDisconnected) {
-								mi.onDisconnect();
+						if(oldPacketFormat != null) {
+							List<MessageItem> moreMessagesTellDisconnected = 
+								oldPacketFormat.onDisconnect();
+							if(moreMessagesTellDisconnected != null) {
+								if(logMINOR)
+									Logger.minor(this, "Messages to dump: "+moreMessagesTellDisconnected.size());
+								for(MessageItem mi : moreMessagesTellDisconnected) {
+									mi.onDisconnect();
+								}
 							}
 						}
 					}
