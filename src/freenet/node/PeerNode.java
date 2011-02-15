@@ -2190,9 +2190,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				} else {
 					packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
 				}
-			} else {
-				// Reconnected.
-				packetFormat.onReconnect(wasARekey);
 			}
 		}
 		if(messagesTellDisconnected != null) {

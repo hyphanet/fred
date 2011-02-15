@@ -943,10 +943,6 @@ outer:
 		return items;
 	}
 	
-	public void onReconnect(boolean wasARekey) {
-		// Do nothing.
-	}
-	
 	/** When do we need to send a packet?
 	 * @return 0 if there is anything already in flight. The time that the oldest ack was
 	 * queued at plus the lesser of half the RTT or 100ms if there are acks queued. 
