@@ -192,7 +192,7 @@ public class MessageWrapper {
 		return item;
 	}
 
-	public boolean allSent() {
+	public boolean notAllSent() {
 		synchronized(sent) {
 			return !sent.contains(0, item.buf.length-1);
 		}
