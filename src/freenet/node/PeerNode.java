@@ -1409,9 +1409,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		long t = Long.MAX_VALUE;
 		SessionKey cur;
 		SessionKey prev;
+		PacketFormat pf;
 		synchronized(this) {
 			cur = currentTracker;
 			prev = previousTracker;
+			pf = packetFormat;
 		}
 		SessionKey kt = cur;
 		if(kt != null) {
@@ -1429,16 +1431,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				Logger.minor(this, "Next urgent time from prevTracker less than now");
 			if(kt.packets.hasPacketsToResend()) return now;
 		}
-		if(packetFormat.canSend()) {
-			long l = messageQueue.getNextUrgentTime(t, now);
-			if(t >= now && l < now && logMINOR)
-				Logger.minor(this, "Next urgent time from message queue less than now");
-			t = l;
-		} else {
-			long l = packetFormat.timeNextUrgent();
-			if(l < now && logMINOR)
-				Logger.minor(this, "Next urgent time from packet format less than now");
-			t = Math.min(t, l);
+		if(pf != null) {
+			if(pf.canSend()) {
+				long l = messageQueue.getNextUrgentTime(t, now);
+				if(t >= now && l < now && logMINOR)
+					Logger.minor(this, "Next urgent time from message queue less than now");
+				t = l;
+			} else {
+				long l = pf.timeNextUrgent();
+				if(l < now && logMINOR)
+					Logger.minor(this, "Next urgent time from packet format less than now");
+				t = Math.min(t, l);
+			}
 		}
 		return t;
 	}
