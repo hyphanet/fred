@@ -793,7 +793,7 @@ outer:
 								queue.put(messageID, wrapper);
 							}
 							
-							if(!wrapper.allSent()) {
+							if(wrapper.allSent()) {
 								if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
 									addStatsBulk = true;
 									break;
