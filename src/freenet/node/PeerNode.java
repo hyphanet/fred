@@ -1411,9 +1411,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		SessionKey prev;
 		PacketFormat pf;
 		synchronized(this) {
+			if(!isConnected) return Long.MAX_VALUE;
 			cur = currentTracker;
 			prev = previousTracker;
 			pf = packetFormat;
+			if(cur == null && prev == null) return Long.MAX_VALUE;
 		}
 		SessionKey kt = cur;
 		if(kt != null) {
