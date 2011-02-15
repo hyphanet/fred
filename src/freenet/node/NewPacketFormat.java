@@ -620,7 +620,7 @@ outer:
 								addedFragments = true;
 								packet.addMessageFragment(frag);
 								sentPacket.addFragment(frag);
-								if(!wrapper.canSend()) {
+								if(!wrapper.allSent()) {
 									if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
 										addStatsBulk = true;
 										break;
@@ -793,7 +793,7 @@ outer:
 								queue.put(messageID, wrapper);
 							}
 							
-							if(!wrapper.canSend()) {
+							if(!wrapper.allSent()) {
 								if((haveAddedStatsBulk == null) && wrapper.getItem().sendLoadBulk) {
 									addStatsBulk = true;
 									break;
@@ -952,7 +952,7 @@ outer:
 		synchronized(sendBufferLock) {
 			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
 				for(MessageWrapper wrapper : started.values()) {
-					if(wrapper.canSend()) return 0;
+					if(wrapper.allSent()) return 0;
 				}
 			}
 		}
@@ -1194,7 +1194,7 @@ outer:
 		synchronized(sendBufferLock) {
 			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
 				for(MessageWrapper wrapper : started.values()) {
-					if(wrapper.canSend()) x++;
+					if(wrapper.allSent()) x++;
 				}
 			}
 		}
