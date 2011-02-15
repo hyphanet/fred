@@ -24,6 +24,7 @@ public interface PacketFormat {
 
 	/**
 	 * Called when the peer has been disconnected.
+	 * THE CALLER SHOULD STOP USING THE PACKET FORMAT OBJECT AFTER CALLING THIS FUNCTION!
 	 */
 	List<MessageItem> onDisconnect();
 
