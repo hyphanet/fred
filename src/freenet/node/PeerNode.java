@@ -778,12 +778,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		int lastNegType = negTypes[negTypes.length - 1];
 		
-		if(lastNegType < 5) {
-			packetFormat = new FNPWrapper(this);
-		} else {
-			packetFormat = new NewPacketFormat(this, 0, 0);
-		}
-
 		byte buffer[] = new byte[16];
 		node.random.nextBytes(buffer);
 		paddingGen = new MersenneTwister(buffer);
@@ -4530,7 +4524,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * @throws BlockedTooLongException
 	 */
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly) throws BlockedTooLongException {
-		return packetFormat.maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly);
+		PacketFormat pf;
+		synchronized(this) {
+			if(packetFormat == null) return false;
+			pf = packetFormat;
+		}
+		return pf.maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly);
 	}
 
 	/**
@@ -4957,15 +4956,30 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public boolean handleReceivedPacket(byte[] buf, int offset, int length, long now, Peer replyTo) {
-		return packetFormat.handleReceivedPacket(buf, offset, length, now, replyTo);
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return false;
+		}
+		return pf.handleReceivedPacket(buf, offset, length, now, replyTo);
 	}
 
 	public void checkForLostPackets() {
-		packetFormat.checkForLostPackets();
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return;
+		}
+		pf.checkForLostPackets();
 	}
 
 	public long timeCheckForLostPackets() {
-		return packetFormat.timeCheckForLostPackets();
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return Long.MAX_VALUE;
+		}
+		return pf.timeCheckForLostPackets();
 	}
 
 	/** Only called for new format connections, for which we don't care about PacketTracker */
@@ -5052,7 +5066,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	public boolean isOldFNP() {
-		return packetFormat instanceof FNPWrapper;
+		synchronized(this) {
+			if(packetFormat == null) return false;
+			return packetFormat instanceof FNPWrapper;
+		}
 	}
 	
 	public DecodingMessageGroup startProcessingDecryptedMessages(int size) {
