@@ -113,6 +113,8 @@ public class PeerMessageQueue {
 						it.addLast(item);
 						if(it.getParent() == emptyItemsWithID)
 							moveFromEmptyToNonEmptyBackward(it);
+						else
+							assert(it.getParent() == nonEmptyItemsWithID);
 						return;
 					}
 				}
