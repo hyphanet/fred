@@ -1582,11 +1582,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 						return key == null ? -1 : innerMatch(key, ehDocnames, WATCH_KEYS - size, size, firstSlot);
 					}
 				} else if(firstSlot > curBaseEdition) {
-					// It has regressed???
-					Logger.error(this, "First slot was "+firstSlot+" now is "+curBaseEdition+" on "+USKFetcher.this+" "+this, new Exception("debug"));
-					firstSlot = curBaseEdition;
-					ehDocnames.clear();
-					generate(curBaseEdition, WATCH_KEYS, ehDocnames);
+					// Normal due to race conditions. We don't always report the new edition to the USKManager immediately.
+					// So ignore it.
+					if(logMINOR) Logger.minor(this, "Ignoring regression in match() from "+curBaseEdition+" to "+firstSlot);
 					return key == null ? -1 : innerMatch(key, ehDocnames, 0, ehDocnames.size(), firstSlot);
 				}
 				return -1;
