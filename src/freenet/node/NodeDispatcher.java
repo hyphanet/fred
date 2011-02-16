@@ -197,18 +197,19 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		
 		if(!source.isRoutable()) {
 			if(logDEBUG) Logger.debug(this, "Not routable");
+
 			if(spec == DMT.FNPCHKDataRequest) {
-				rejectRequest(m);
+				rejectRequest(m, node.nodeStats.chkRequestCtr);
 			} else if(spec == DMT.FNPSSKDataRequest) {
-				rejectRequest(m);
+				rejectRequest(m, node.nodeStats.sskRequestCtr);
 			} else if(spec == DMT.FNPInsertRequest) {
-				rejectRequest(m);
+				rejectRequest(m, node.nodeStats.chkInsertCtr);
 			} else if(spec == DMT.FNPSSKInsertRequest) {
-				rejectRequest(m);
+				rejectRequest(m, node.nodeStats.sskInsertCtr);
 			} else if(spec == DMT.FNPSSKInsertRequestNew) {
-				rejectRequest(m);
+				rejectRequest(m, node.nodeStats.sskInsertCtr);
 			} else if(spec == DMT.FNPGetOfferedKey) {
-				rejectRequest(m);
+				rejectRequest(m, node.failureTable.senderCounter);
 			}
 			return false;
 		}
@@ -266,14 +267,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		return false;
 	}
 
-	private void rejectRequest(Message m) {
+	private void rejectRequest(Message m, ByteCounter ctr) {
 		long uid = m.getLong(DMT.UID);
 		Message msg = DMT.createFNPRejectedOverload(uid, true, false, false);
 		// Send the load status anyway, hopefully this is a temporary problem.
 		msg.setNeedsLoadBulk();
 		msg.setNeedsLoadRT();
 		try {
-			m.getSource().sendAsync(msg, null, null);
+			m.getSource().sendAsync(msg, null, ctr);
 		} catch (NotConnectedException e) {
 			// Ignore
 		}
