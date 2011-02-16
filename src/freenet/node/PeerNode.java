@@ -4449,6 +4449,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 	
 	public synchronized void backoffOnResend() {
+		if(RTO >= MAX_RTO) {
+			Logger.error(this, "Major packet loss on "+this+" - RTO is already at limit and still losing packets!");
+		}
 		RTO = RTO * 2;
 		if(RTO > MAX_RTO)
 			RTO = MAX_RTO;
