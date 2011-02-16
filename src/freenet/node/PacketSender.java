@@ -273,7 +273,7 @@ public class PacketSender implements Runnable {
 				// Will be removed by next line.
 				if(now - pn.timeLastConnected() > OpennetManager.MAX_TIME_ON_OLD_OPENNET_PEERS) {
 					om.purgeOldOpennetPeer(pn);
-					if(logMINOR) Logger.minor(this, "Removing old opennet peer (too old): "+pn);
+					if(logMINOR) Logger.minor(this, "Removing old opennet peer (too old): "+pn+" age is "+TimeUtil.formatTime(now - pn.timeLastConnected()));
 					continue;
 				}
 				if(pn.isConnected()) continue; // Race condition??
