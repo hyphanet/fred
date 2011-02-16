@@ -4410,6 +4410,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized(this) {
 			// Update RTT according to RFC 2988.
 			if(!reportedRTT) {
+				double oldRTO = RTO;
 				// Initialize
 				SRTT = t;
 				RTTVAR = t / 2;
@@ -4423,6 +4424,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(RTO > MAX_RTO)
 					RTO = MAX_RTO;
 				reportedRTT = true;
+				if(logMINOR) Logger.minor(this, "Received first packet on "+shortToString()+" setting RTO to "+RTO);
+				if(oldRTO > RTO) {
+					// We have backed off
+					if(logMINOR) Logger.minor(this, "Received first packet after backing off on resend. RTO is "+RTO+" but was "+oldRTO);
+					// FIXME: do something???
+				}
 			} else {
 				// Update
 				RTTVAR = 0.75 * RTTVAR + 0.25 * Math.abs(SRTT - t);
