@@ -594,8 +594,13 @@ public class PeerManager {
                             node.getTicker().queueTimedJob(new Runnable() {
 
                                 public void run() {
-                                    if (pn.isDisconnecting() && removePeer(pn) && !pn.isSeed()) {
-                                        writePeers();
+                                    if(pn.isDisconnecting()) {
+                                    	if(removePeer(pn)) {
+                                    		if(!pn.isSeed()) {
+                                    			writePeers();
+                                    		}
+                                    	}
+                                    	pn.forceDisconnect(true);
                                     }
                                 }
                             }, Node.MAX_PEER_INACTIVITY);
