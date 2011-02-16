@@ -215,14 +215,12 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             if((!receivedRejectedOverload) && sender.receivedRejectedOverload()) {
             	receivedRejectedOverload = true;
             	// Forward it
+            	// Does not need to be sent synchronously since is non-terminal.
             	Message m = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
             	try {
-					source.sendSync(m, this, realTimeFlag);
+					source.sendAsync(m, null, this);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
-					return;
-				} catch (SyncSendWaitedTooLongException e) {
-					Logger.error(this, "Took too long to send "+m+" to "+source);
 					return;
 				}
             }
