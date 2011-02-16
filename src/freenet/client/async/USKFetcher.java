@@ -1561,7 +1561,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			 * @param curBaseEdition The edition to check from. If this is different to firstSlot, we will
 			 * update ehDocnames. */
 			private long match(NodeSSK key, long curBaseEdition, RemoveRangeArrayList<byte[]> ehDocnames) {
-				if(logMINOR) Logger.minor(this, "Matching "+key+" cur base edition "+curBaseEdition+" first slot was "+firstSlot);
+				if(logMINOR) Logger.minor(this, "Matching "+key+" cur base edition "+curBaseEdition+" first slot was "+firstSlot+" for "+origUSK+" on "+this);
 				if(firstSlot < curBaseEdition) {
 					if(firstSlot + ehDocnames.size() <= curBaseEdition) {
 						// No overlap. Clear it and start again.
@@ -1647,6 +1647,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		
 		public synchronized long match(NodeSSK key, long lastSlot) {
+			if(logMINOR) Logger.minor(this, "Trying to match "+key+" from slot "+lastSlot+" for "+origUSK);
 			long ret = fromLastKnownSlot.match(key, lastSlot);
 			if(ret != -1) return ret;
 			
