@@ -4402,6 +4402,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return IPUtil.isValidAddress(addr, false);
 	}
 
+	private static final double MAX_RTO = 60*1000;
+	private static final double MIN_RTO = 1000;
+	
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
 		synchronized(this) {
@@ -4415,10 +4418,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// but given that Freenet is mostly used on very slow upstream links, it 
 				// probably makes sense for us too for now, to avoid excessive retransmits.
 				// FIXME !!!
-				if(RTO < 1000)
-					RTO = 1000;
-				if(RTO > 60000)
-					RTO = 60000;
+				if(RTO < MIN_RTO)
+					RTO = MIN_RTO;
+				if(RTO > MAX_RTO)
+					RTO = MAX_RTO;
 				reportedRTT = true;
 			} else {
 				// Update
@@ -4429,10 +4432,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// but given that Freenet is mostly used on very slow upstream links, it 
 				// probably makes sense for us too for now, to avoid excessive retransmits.
 				// FIXME !!!
-				if(RTO < 1000)
-					RTO = 1000;
-				if(RTO > 60000)
-					RTO = 60000;
+				if(RTO < MIN_RTO)
+					RTO = MIN_RTO;
+				if(RTO > MAX_RTO)
+					RTO = MAX_RTO;
 			}
 			if(logMINOR) Logger.minor(this, "Reported ping "+t+" avg is now "+pingAverage.currentValue()+" RTO is "+RTO);
 		}
@@ -4440,8 +4443,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	
 	public synchronized void backoffOnResend() {
 		RTO = RTO * 2;
-		if(RTO > 60000)
-			RTO = 60000;
+		if(RTO > MAX_RTO)
+			RTO = MAX_RTO;
 		if(logMINOR) Logger.minor(this, "Backed off on resend, RTO is now "+RTO);
 	}
 
