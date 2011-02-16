@@ -191,6 +191,11 @@ public class PacketSender implements Runnable {
 					// Hopefully this is a transient network glitch, but stuff will have already started to timeout, so lets dump the pending messages.
 					pn.disconnected(true, false);
 					continue;
+				} else if(now - pn.lastReceivedAckTime() > pn.maxTimeBetweenReceivedAcks()) {
+					Logger.normal(this, "Disconnecting from " + pn + " - haven't received acks recently");
+					// Hopefully this is a transient network glitch, but stuff will have already started to timeout, so lets dump the pending messages.
+					pn.disconnected(true, false);
+					continue;
 				} else if(pn.isRoutable() && pn.noLongerRoutable()) {
 					/*
 					 NOTE: Whereas isRoutable() && noLongerRoutable() are generally mutually exclusive, this

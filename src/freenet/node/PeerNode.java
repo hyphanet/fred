@@ -1624,6 +1624,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	/**
+	* @return The maximum time between received packets.
+	*/
+	public int maxTimeBetweenReceivedAcks() {
+		return Node.MAX_PEER_INACTIVITY;
+	}
+
+	/**
 	* Low-level ping this node.
 	* @return True if we received a reply inside 2000ms.
 	* (If we have heavy packet loss, it can take that long to resend).
