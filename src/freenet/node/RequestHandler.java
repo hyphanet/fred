@@ -206,7 +206,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		try {
 			if(!sentRejectedOverload) {
 				// Forward RejectedOverload
-				//Note: This message is only decernable from the terminal messages by the IS_LOCAL flag being false. (!IS_LOCAL)->!Terminal
+				//Note: This message is only discernible from the terminal messages by the IS_LOCAL flag being false. (!IS_LOCAL)->!Terminal
 				Message msg = DMT.createFNPRejectedOverload(uid, false, true, realTimeFlag);
 				source.sendAsync(msg, null, this);
 				//If the status changes (e.g. to SUCCESS), there is little need to send yet another reject overload.
