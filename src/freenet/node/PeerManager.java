@@ -944,6 +944,11 @@ public class PeerManager {
 					Logger.minor(this, "Skipping (not connected): " + p.getPeer());
 				continue;
 			}
+			if(p.isDisconnecting()) {
+				if(logMINOR)
+					Logger.minor(this, "Skipping (disconnecting): "+p.getPeer());
+				continue;
+			}
 			if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion(), -1) < minVersion) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping old version: " + p.getPeer());

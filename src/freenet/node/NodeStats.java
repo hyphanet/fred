@@ -918,6 +918,11 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public RejectReason shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore, boolean preferInsert, boolean realTimeFlag) {
 		if(logMINOR) dumpByteCostAverages();
 
+		if(source != null) {
+			if(source.isDisconnecting())
+				return new RejectReason("disconnecting", false);
+		}
+		
 		int threadCount = getActiveThreadCount();
 		if(threadLimit < threadCount) {
 			pInstantRejectIncoming.report(1.0);
