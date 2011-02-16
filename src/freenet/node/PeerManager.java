@@ -531,18 +531,22 @@ public class PeerManager {
 		}
 		addPeer(pn);
 	}
+	
+	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge) {
+		disconnect(pn, sendDisconnectMessage, waitForAck, purge, false);
+	}
 
 	/**
 	 * Disconnect from a specified node
 	 */
-	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge) {
+	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge, boolean dumpMessagesNow) {
 		if(logMINOR)
 			Logger.minor(this, "Disconnecting " + pn.shortToString());
 		synchronized(this) {
 			if(!havePeer(pn))
 				return;
 		}
-		pn.notifyDisconnecting();
+		pn.notifyDisconnecting(dumpMessagesNow);
 		if(sendDisconnectMessage) {
 			Message msg = DMT.createFNPDisconnect(true, purge, -1, new ShortBuffer(new byte[0]));
 			try {

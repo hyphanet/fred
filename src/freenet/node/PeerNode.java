@@ -1230,7 +1230,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized long timeSinceAddedOrRestarted() {
 		return System.currentTimeMillis() - timeAddedOrRestarted;
 	}
-
+	
 	/**
 	* Disconnected e.g. due to not receiving a packet for ages.
 	* @param dumpMessageQueue If true, clear the messages-to-send queue.
@@ -3935,14 +3935,33 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Called when a request or insert succeeds. Used by opennet. */
 	public abstract void onSuccess(boolean insert, boolean ssk);
 
-	/** Called when a delayed disconnect is occurring. Tell the node that it is being disconnected, but
-	 * that the process may take a while. */
-	public void notifyDisconnecting() {
+	/** Called when a delayed disconnect is occurring. Tell the node that it is being 
+	 * disconnected, but that the process may take a while. After this point, requests
+	 * will not be accepted from the peer nor routed to it. 
+	 * @param dumpMessagesNow If true, immediately dump the message queue, since we are
+	 * closing the connection due to some low level trouble e.g. not acknowledging. 
+	 * We will continue to try to send anything already in flight, and it is possible to
+	 * send more messages after this point, for instance the message telling it we are
+	 * disconnecting, but see above - no requests will be routed across this connection. */
+	public void notifyDisconnecting(boolean dumpMessageQueue) {
+		MessageItem[] messagesTellDisconnected = null;
 		synchronized(this) {
 			disconnecting = true;
 			jfkNoncesSent.clear();
+			if(dumpMessageQueue) {
+				// Reset the boot ID so that we get different trackers next time.
+				myBootID = node.fastWeakRandom.nextLong();
+				messagesTellDisconnected = grabQueuedMessageItems();
+			}
 		}
 		setPeerNodeStatus(System.currentTimeMillis());
+		if(messagesTellDisconnected != null) {
+			if(logMINOR)
+				Logger.minor(this, "Messages to dump: "+messagesTellDisconnected.length);
+			for(MessageItem mi : messagesTellDisconnected) {
+				mi.onDisconnect();
+			}
+		}
 	}
 
 	/** Called to cancel a delayed disconnect. Always succeeds even if the node was not being

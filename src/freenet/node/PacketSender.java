@@ -193,8 +193,10 @@ public class PacketSender implements Runnable {
 					continue;
 				} else if(now - pn.lastReceivedAckTime() > pn.maxTimeBetweenReceivedAcks()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received acks recently");
-					// Hopefully this is a transient network glitch, but stuff will have already started to timeout, so lets dump the pending messages.
-					pn.disconnected(true, false);
+					// Do it properly.
+					// There appears to be connectivity from them to us but not from us to them.
+					// So it is helpful for them to know that we are disconnecting.
+					node.peers.disconnect(pn, true, true, false, true);
 					continue;
 				} else if(pn.isRoutable() && pn.noLongerRoutable()) {
 					/*
