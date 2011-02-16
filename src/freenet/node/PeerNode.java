@@ -2210,6 +2210,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					packetFormat = new NewPacketFormat(this, ourInitialMsgID, theirInitialMsgID);
 				}
 			}
+			// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
+			timeLastReceivedPacket = now;
+			timeLastReceivedDataPacket = now;
+			timeLastReceivedAck = now;
 		}
 		if(messagesTellDisconnected != null) {
 			for(int i=0;i<messagesTellDisconnected.length;i++) {
@@ -2243,10 +2247,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(throttle != null) throttle.maybeDisconnected();
 		Logger.normal(this, "Completed handshake with " + this + " on " + replyTo + " - current: " + currentTracker +
 			" old: " + previousTracker + " unverified: " + unverifiedTracker + " bootID: " + thisBootID + (bootIDChanged ? "(changed) " : "") + " for " + shortToString());
-
-		// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
-		receivedPacket(unverified, true);
-		receivedAck(now);
 
 		setPeerNodeStatus(now);
 
