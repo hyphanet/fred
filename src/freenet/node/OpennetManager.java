@@ -734,9 +734,12 @@ public class OpennetManager {
 			peersLRU.remove(pn);
 			if(pn.isDroppable(true) && !pn.grabWasDropped()) {
 				if(logMINOR) Logger.minor(this, "onRemove() for "+pn);
-				oldPeers.push(pn);
-				while (oldPeers.size() > MAX_OLD_PEERS)
-					oldPeers.pop();
+				if(pn.timeLastConnected() > 0) {
+					// Don't even add it if it never connected.
+					oldPeers.push(pn);
+					while (oldPeers.size() > MAX_OLD_PEERS)
+						oldPeers.pop();
+				}
 			}
 		}
 	}
