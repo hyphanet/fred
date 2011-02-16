@@ -2261,7 +2261,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		}
 
 		PacketTracker packets = tracker.packets;
-		packets.acknowledgedPackets(acks);
+		if(packets.acknowledgedPackets(acks))
+			tracker.pn.receivedAck(System.currentTimeMillis());
 
 		int retransmitCount = decrypted[ptr++] & 0xff;
 		if(logMINOR) Logger.minor(this, "Retransmit requests: "+retransmitCount);

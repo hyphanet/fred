@@ -171,6 +171,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private long timeLastReceivedPacket;
 	/** When did we last receive a non-auth packet? */
 	private long timeLastReceivedDataPacket;
+	/** When did we last receive an ack? */
+	private long timeLastReceivedAck;
 	/** When was isConnected() last true? */
 	private long timeLastConnected;
 	/** When was isRoutingCompatible() last true? */
@@ -1161,6 +1163,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized long lastReceivedDataPacketTime() {
 		return timeLastReceivedDataPacket;
 	}
+	
+	public synchronized long lastReceivedAckTime() {
+		return timeLastReceivedAck;
+	}
 
 	public synchronized long timeLastConnected() {
 		return timeLastConnected;
@@ -1919,6 +1925,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				timeLastReceivedDataPacket = now;
 		}
 	}
+	
+	public synchronized void receivedAck(long now) {
+		if(timeLastReceivedAck < now)
+			timeLastReceivedAck = now;
+	}
 
 	/**
 	* Update timeLastSentPacket
@@ -2235,6 +2246,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		// Completed setup counts as received data packet, for purposes of avoiding spurious disconnections.
 		receivedPacket(unverified, true);
+		receivedAck(now);
 
 		setPeerNodeStatus(now);
 
@@ -2854,6 +2866,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			fs.putSingle("detected.udp", detectedPeer.toStringPrefNumeric());
 		if(lastReceivedPacketTime() > 0)
 			fs.putSingle("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
+		if(lastReceivedAckTime() > 0)
+			fs.putSingle("timeLastReceivedAck", Long.toString(timeLastReceivedAck));
 		if(timeLastConnected() > 0)
 			fs.putSingle("timeLastConnected", Long.toString(timeLastConnected));
 		if(timeLastRoutable() > 0)

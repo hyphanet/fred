@@ -111,6 +111,7 @@ public class NewPacketFormatKeyContext {
 		long rtt;
 		int maxSize;
 		boolean lostBeforeAcked = false;
+		boolean validAck = false;
 		synchronized(sentPackets) {
 			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack);
 			SentPacket sent = sentPackets.remove(ack);
@@ -118,6 +119,7 @@ public class NewPacketFormatKeyContext {
 				rtt = sent.acked();
 				maxSize = (maxSeenInFlight * 2) + 10;
 				sentTimes.removeTime(ack);
+				validAck = true;
 			} else {
 				if(logDEBUG) Logger.debug(this, "Already acked or lost "+ack);
 				lostBeforeAcked = true;
@@ -137,6 +139,8 @@ public class NewPacketFormatKeyContext {
 		if(pn != null) {
 			pn.reportPing(rt);
 			throttle = pn.getThrottle();
+			if(validAck)
+				pn.receivedAck(System.currentTimeMillis());
 		}
 		if(throttle != null) {
 			throttle.setRoundTripTime(rt);
