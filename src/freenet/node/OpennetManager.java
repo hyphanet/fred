@@ -659,7 +659,7 @@ public class OpennetManager {
 				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
 					if(logMINOR)
-						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected");
+						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected (reason="+reason+" force="+force+" tooOld="+tooOld);
 					pn.setWasDropped();
 					return pn;
 				}
