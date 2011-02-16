@@ -5163,7 +5163,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public void processDecryptedMessage(byte[] data, int offset,
 				int length, int overhead) {
 			Message m = node.usm.decodeSingleMessage(data, offset, length, PeerNode.this, overhead);
-			if(m == null) return;
+			if(m == null) {
+				if(logMINOR) Logger.minor(this, "Message not decoded from "+PeerNode.this+" ("+PeerNode.this.getVersionNumber()+")");
+				return;
+			}
 			if(DMT.isPeerLoadStatusMessage(m)) {
 				handleMessage(m);
 				return;

@@ -91,11 +91,14 @@ public class Message {
 		}
 		if (mspec == null) {
 			if(logMINOR)
-				Logger.minor(this, "Bogus message type");
+				Logger.minor(Message.class, "Bogus message type");
 		    return null;
 		}
-		if(mspec.isInternalOnly())
+		if(mspec.isInternalOnly()) {
+			if(logMINOR)
+				Logger.minor(Message.class, "Internal only message");
 		    return null; // silently discard internal-only messages
+		}
 		Message m = new Message(mspec, peer, recvByteCount);
 		try {
 		    for (String name : mspec.getOrderedFields()) {
