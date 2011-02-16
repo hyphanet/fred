@@ -600,7 +600,7 @@ public class PeerManager {
                                     			writePeers();
                                     		}
                                     	}
-                                    	pn.forceDisconnect(true);
+                                    	pn.disconnected(true, true);
                                     }
                                 }
                             }, Node.MAX_PEER_INACTIVITY);
