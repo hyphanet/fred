@@ -1663,7 +1663,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/**
 	* Enqueue a message to be sent to this node and wait up to a minute for it to be transmitted.
 	*/
-	public void sendSync(Message req, ByteCounter ctr, boolean realTime) throws NotConnectedException {
+	public void sendSync(Message req, ByteCounter ctr, boolean realTime) throws NotConnectedException, SyncSendWaitedTooLongException {
 		SyncMessageCallback cb = new SyncMessageCallback();
 		MessageItem item = sendAsync(req, cb, ctr);
 		cb.waitForSend(60 * 1000);
@@ -1675,10 +1675,15 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				cb.waitForSend(10 * 1000);
 				if(!cb.done) {
 					Logger.error(this, "Waited too long for blocking send and then could not unqueue for "+req+" to "+PeerNode.this, new Exception("error"));
+					// Can't cancel yet can't send, something seriously wrong.
+					// Treat as fatal timeout as probably their fault.
+					// FIXME: We have already waited more than the no-messages timeout, but should we wait that period again???
+					fatalTimeout();
+				} else {
+					return;
 				}
 			}
-			
-			// Other side will normally timeout so no need for fatalTimeout().
+			throw new SyncSendWaitedTooLongException();
 		}
 	}
 

@@ -20,6 +20,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
 import freenet.node.DarknetPeerNode.FRIEND_TRUST;
+import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -141,6 +142,9 @@ public class RealNodeSecretPingTest {
 				avg2.report(0.0);
 			} catch (DisconnectedException e) {
 				Logger.error(source, "huh?",e);
+				avg2.report(0.0);
+			} catch (SyncSendWaitedTooLongException e) {
+				Logger.error(source, "eh?", e);
 				avg2.report(0.0);
 			}
         }

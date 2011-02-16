@@ -538,6 +538,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
 				thisTag.removeRoutingTo(next);
 				continue;
+			} catch (SyncSendWaitedTooLongException e) {
+				Logger.error(this, "Unable to send "+dataInsert+" to "+next+" in a reasonable time");
+				// Other side will fail. No need to do anything.
+				continue;
 			}
 
 			if(logMINOR) Logger.minor(this, "Sending data");

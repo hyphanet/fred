@@ -118,6 +118,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		} catch (NotConnectedException e1) {
 			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
+		} catch (SyncSendWaitedTooLongException e) {
+			Logger.error(this, "Unable to send "+accepted+" in a reasonable time to "+source);
+			return;
 		}
         
         // Source will send us a DataInsert
@@ -218,6 +221,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
+				} catch (SyncSendWaitedTooLongException e) {
+					Logger.error(this, "Took too long to send "+m+" to "+source);
+					return;
 				}
             }
             
@@ -238,6 +244,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
+				} catch (SyncSendWaitedTooLongException e) {
+					Logger.error(this, "Took too long to send "+msg+" to "+source);
+					return;
 				}
                 // Might as well store it anyway.
                 if((status == CHKInsertSender.TIMED_OUT) ||
@@ -253,6 +262,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 					source.sendSync(msg, this, realTimeFlag);
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
+					return;
+				} catch (SyncSendWaitedTooLongException e) {
+					Logger.error(this, "Took too long to send "+msg+" to "+source);
 					return;
 				}
                 canCommit = true;
@@ -273,6 +285,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 				} catch (NotConnectedException e) {
 					Logger.minor(this, "Lost connection to source");
 					return;
+				} catch (SyncSendWaitedTooLongException e) {
+					Logger.error(this, "Took too long to send "+msg+" to "+source);
+					return;
 				}
                 canCommit = true;
                 finish(status);
@@ -285,6 +300,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             try {
 				source.sendSync(msg, this, realTimeFlag);
 			} catch (NotConnectedException e) {
+				// Ignore
+			} catch (SyncSendWaitedTooLongException e) {
 				// Ignore
 			}
             finish(CHKInsertSender.INTERNAL_ERROR);
@@ -362,7 +379,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         	} catch (NotConnectedException e1) {
         		if(logMINOR) Logger.minor(this, "Not connected: "+source+" for "+this);
         		// May need to commit anyway...
-        	}
+        	} catch (SyncSendWaitedTooLongException e) {
+        		Logger.error(this, "Took too long to send "+m+" to "+source);
+        		// May need to commit anyway...
+			}
 		        
         if(code != CHKInsertSender.TIMED_OUT && code != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && 
         		code != CHKInsertSender.INTERNAL_ERROR && code != CHKInsertSender.ROUTE_REALLY_NOT_FOUND &&
@@ -467,7 +487,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         			} catch (NotConnectedException ex) {
         				//If they are not connected, that's probably why the receive failed!
         				if (logMINOR) Logger.minor(this, "Can't send "+msg+" to "+source+": "+ex);
-        			}
+        			} catch (SyncSendWaitedTooLongException ex) {
+        				Logger.error(this, "Took too long to send "+msg+" to "+source);
+					}
         			if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
         				Logger.normal(this, "Failed to retrieve (disconnect): "+e, e);
         			else

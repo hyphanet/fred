@@ -169,6 +169,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 						source.sendSync(msg, this, realTimeFlag);
 					} catch (NotConnectedException ee) {
 						// Ignore
+					} catch (SyncSendWaitedTooLongException ee) {
+						// Ignore
 					}
 					return;
 				}
@@ -188,6 +190,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				source.sendSync(msg, this, realTimeFlag);
 			} catch (NotConnectedException e) {
 				// Ignore
+			} catch (SyncSendWaitedTooLongException e) {
+				// Ignore
 			}
 			return;
 		}
@@ -205,6 +209,9 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				return;
 			} catch (PeerRestartedException e) {
 				if(logMINOR) Logger.minor(this, "Source restarted on "+uid);
+				return;
+			} catch (SyncSendWaitedTooLongException e) {
+				Logger.error(this, "Took too long to send ssk datareply to "+uid);
 				return;
 			}
 			block = storedBlock;
@@ -236,6 +243,9 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
+				} catch (SyncSendWaitedTooLongException e) {
+					Logger.error(this, "Took too long to forward RejectedOverload to "+source);
+					return;
 				}
             }
             
@@ -261,6 +271,9 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				} catch (PeerRestartedException e) {
 					Logger.error(this, "Peer restarted on "+uid);
 					return;
+				} catch (SyncSendWaitedTooLongException e) {
+					Logger.error(this, "Took too long to send ssk datareply to "+uid);
+					return;
 				}
             }
             
@@ -282,6 +295,9 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
+				} catch (SyncSendWaitedTooLongException e) {
+					Logger.error(this, "Took too long to send "+msg+" to "+source);
+					return;
 				}
                 // Might as well store it anyway.
                 if((status == SSKInsertSender.TIMED_OUT) ||
@@ -298,6 +314,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
+				} catch (SyncSendWaitedTooLongException e) {
+					Logger.error(this, "Took too long to send "+msg+" to source");
 				}
                 canCommit = true;
                 finish(status);
@@ -311,6 +329,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				} catch (NotConnectedException e) {
 					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
+				} catch (SyncSendWaitedTooLongException e) {
+					Logger.error(this, "Took too long to send "+msg+" to "+source);
 				}
                 canCommit = true;
                 finish(status);
@@ -324,6 +344,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				source.sendSync(msg, this, realTimeFlag);
 			} catch (NotConnectedException e) {
 				// Ignore
+			} catch (SyncSendWaitedTooLongException e) {
+				Logger.error(this, "Took too long to send "+msg+" to "+source);
 			}
             finish(status);
             return;
