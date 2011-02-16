@@ -52,6 +52,7 @@ public class MessageWrapper {
 	 * @param start the first byte to be marked
 	 * @param end the last byte to be marked
 	 * @param pn just for logging
+	 * @return True if the whole packet has now been acked. False otherwise.
 	 */
 	public boolean ack(int start, int end, BasePeerNode pn) {
 		synchronized(acks) {
