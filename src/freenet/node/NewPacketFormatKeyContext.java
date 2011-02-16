@@ -255,6 +255,7 @@ public class NewPacketFormatKeyContext {
 	public void checkForLostPackets(double averageRTT, long curTime, BasePeerNode pn) {
 		//Mark packets as lost
 		int bigLostCount = 0;
+		int count = 0;
 		synchronized(sentPackets) {
 			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
 			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
@@ -272,8 +273,11 @@ public class NewPacketFormatKeyContext {
 					s.lost();
 					it.remove();
 					bigLostCount++;
-				}
+				} else
+					count++;
 			}
+			if(count > 0 && logMINOR)
+				Logger.minor(this, ""+count+" messages in flight with threshold "+(NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 		}
 		if(bigLostCount != 0 && pn != null) {
 			PacketThrottle throttle = pn.getThrottle();
