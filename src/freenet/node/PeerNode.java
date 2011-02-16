@@ -1679,6 +1679,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					// Treat as fatal timeout as probably their fault.
 					// FIXME: We have already waited more than the no-messages timeout, but should we wait that period again???
 					fatalTimeout();
+					// Then throw the error.
 				} else {
 					return;
 				}
