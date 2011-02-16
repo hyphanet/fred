@@ -437,7 +437,7 @@ loadWaiterLoop:
     private synchronized int timeSinceSentForTimeout() {
     	int time = timeSinceSent();
     	if(time > FailureTable.REJECT_TIME) {
-    		if(time < fetchTimeout + 10*1000) return time;
+    		if(time < fetchTimeout + 10*1000) return FailureTable.REJECT_TIME;
     		Logger.error(this, "Very long time since sent: "+time+" ("+TimeUtil.formatTime(time, 2, true)+")");
     		return FailureTable.REJECT_TIME;
     	}
