@@ -186,7 +186,7 @@ public class NewPacketFormat implements PacketFormat {
 		}
 		if(lossyMessages != null) {
 			// Handle them *before* the rest.
-			if(logDEBUG) Logger.debug(this, "Successfully parsed "+lossyMessages.size()+" lossy packet messages");
+			if(logMINOR && lossyMessages.size() > 0) Logger.minor(this, "Successfully parsed "+lossyMessages.size()+" lossy packet messages");
 			for(Message msg : lossyMessages)
 				pn.handleMessage(msg);
 		}
