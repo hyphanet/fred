@@ -281,7 +281,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				thisTag.removeRoutingTo(next);
 				continue;
 			} catch (SyncSendWaitedTooLongException e) {
-				// Impossible
+				Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
+				thisTag.removeRoutingTo(next);
+				continue;
 			} catch (PeerRestartedException e) {
 				if(logMINOR) Logger.minor(this, "Peer restarted: "+next);
 				thisTag.removeRoutingTo(next);

@@ -541,6 +541,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			} catch (SyncSendWaitedTooLongException e) {
 				Logger.error(this, "Unable to send "+dataInsert+" to "+next+" in a reasonable time");
 				// Other side will fail. No need to do anything.
+				thisTag.removeRoutingTo(next);
 				continue;
 			}
 

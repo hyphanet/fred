@@ -395,6 +395,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	continue;
             } catch (SyncSendWaitedTooLongException e) {
             	Logger.error(this, "Failed to send "+req+" to "+next+" in a reasonable time.");
+	        	origTag.removeRoutingTo(next);
             	// Try another node.
             	continue;
 			}
