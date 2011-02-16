@@ -565,11 +565,7 @@ outer:
 
 	NPFPacket createPacket(int maxPacketSize, PeerMessageQueue messageQueue, SessionKey sessionKey, boolean ackOnly) throws BlockedTooLongException {
 		
-		if(checkForLostPackets()) {
-			if(pn != null)
-				pn.forceDisconnect(true);
-			return null;
-		}
+		checkForLostPackets();
 		
 		NPFPacket packet = new NPFPacket();
 		SentPacket sentPacket = new SentPacket(this, sessionKey);
@@ -907,27 +903,19 @@ outer:
 		return timeCheck;
 	}
 
-	public boolean checkForLostPackets() {
-		if(pn == null) return false;
+	public void checkForLostPackets() {
+		if(pn == null) return;
 		double averageRTT = averageRTT();
 		long curTime = System.currentTimeMillis();
 		SessionKey key = pn.getCurrentKeyTracker();
-		if(key != null) {
-			if(((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn))
-				return true;
-			
-		}
+		if(key != null)
+			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 		key = pn.getPreviousKeyTracker();
-		if(key != null) {
-			if(((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn))
-				return true;
-		}
+		if(key != null)
+			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 		key = pn.getUnverifiedKeyTracker();
-		if(key != null) {
-			if(((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn))
-				return true;
-		}
-		return false;
+		if(key != null)
+			((NewPacketFormatKeyContext)(key.packetContext)).checkForLostPackets(averageRTT, curTime, pn);
 	}
 
 	public List<MessageItem> onDisconnect() {

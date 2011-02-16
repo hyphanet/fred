@@ -43,9 +43,7 @@ public interface PacketFormat {
 	 * there is nothing to ack and nothing in flight. */
 	long timeNextUrgent();
 
-	/** @return True if we should disconnect due to repeatedly losing too many packets 
-	 * when we won't be able to send stuff quickly enough for the node timeouts. */
-	boolean checkForLostPackets();
+	void checkForLostPackets();
 
 	long timeCheckForLostPackets();
 
