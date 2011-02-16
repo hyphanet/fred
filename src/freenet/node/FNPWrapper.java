@@ -200,8 +200,9 @@ public class FNPWrapper implements PacketFormat {
 		return Long.MAX_VALUE;
 	}
 
-	public void checkForLostPackets() {
+	public boolean checkForLostPackets() {
 		// Do nothing.
+		return false;
 	}
 
 	public long timeCheckForLostPackets() {

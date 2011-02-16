@@ -252,13 +252,16 @@ public class NewPacketFormatKeyContext {
 		return timeCheck;
 	}
 
-	public void checkForLostPackets(double averageRTT, long curTime, BasePeerNode pn) {
+	public boolean checkForLostPackets(double averageRTT, long curTime, BasePeerNode pn) {
 		//Mark packets as lost
 		int bigLostCount = 0;
 		int count = 0;
+		boolean atMaxRTT;
 		synchronized(sentPackets) {
 			// Because MIN_RTT_FOR_RETRANSMIT > MAX_ACK_DELAY, and because averageRTT() includes the actual ack delay, we don't need to add it on here.
 			double avgRtt = Math.max(MIN_RTT_FOR_RETRANSMIT, averageRTT);
+			
+			atMaxRTT = (avgRtt == PeerNode.MAX_RTO);
 
 			Iterator<Map.Entry<Integer, SentPacket>> it = sentPackets.entrySet().iterator();
 			while(it.hasNext()) {
@@ -280,6 +283,10 @@ public class NewPacketFormatKeyContext {
 				Logger.minor(this, ""+count+" messages in flight with threshold "+(NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 		}
 		if(bigLostCount != 0 && pn != null) {
+			if(atMaxRTT) {
+				Logger.error(this, "Packets lost and already at maximum RTO. Disconnecting on "+this);
+				return true;
+			}
 			PacketThrottle throttle = pn.getThrottle();
 			if(throttle != null) {
 				for(int i=0;i<bigLostCount;i++) {
@@ -288,6 +295,7 @@ public class NewPacketFormatKeyContext {
 			}
 			pn.backoffOnResend();
 		}
+		return false;
 	}
 
 	public long timeCheckForAcks() {
