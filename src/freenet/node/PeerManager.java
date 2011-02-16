@@ -546,7 +546,11 @@ public class PeerManager {
 			if(!havePeer(pn))
 				return;
 		}
-		pn.notifyDisconnecting(dumpMessagesNow);
+		if(pn.notifyDisconnecting(dumpMessagesNow)) {
+			if(logMINOR)
+				Logger.minor(this, "Already disconnecting "+pn.shortToString());
+			return;
+		}
 		if(sendDisconnectMessage) {
 			Message msg = DMT.createFNPDisconnect(true, purge, -1, new ShortBuffer(new byte[0]));
 			try {

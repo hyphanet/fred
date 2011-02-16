@@ -3942,10 +3942,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * closing the connection due to some low level trouble e.g. not acknowledging. 
 	 * We will continue to try to send anything already in flight, and it is possible to
 	 * send more messages after this point, for instance the message telling it we are
-	 * disconnecting, but see above - no requests will be routed across this connection. */
-	public void notifyDisconnecting(boolean dumpMessageQueue) {
+	 * disconnecting, but see above - no requests will be routed across this connection. 
+	 * @return True if we have already started disconnecting, false otherwise. */
+	public boolean notifyDisconnecting(boolean dumpMessageQueue) {
 		MessageItem[] messagesTellDisconnected = null;
 		synchronized(this) {
+			if(disconnecting) return true;
 			disconnecting = true;
 			jfkNoncesSent.clear();
 			if(dumpMessageQueue) {
@@ -3962,6 +3964,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				mi.onDisconnect();
 			}
 		}
+		return false;
 	}
 
 	/** Called to cancel a delayed disconnect. Always succeeds even if the node was not being
