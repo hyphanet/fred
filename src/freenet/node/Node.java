@@ -549,9 +549,6 @@ public class Node implements TimeSkewDetectorCallback {
 	static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
 	static final int MIN_INTERVAL_BETWEEN_INCOMING_PROBE_REQUESTS = 1000;
 	public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
-	/** Minimum space for zipped logfiles on testnet */
-	static final long TESTNET_MIN_MAX_ZIPPED_LOGFILES = 512*1024*1024;
-	static final String TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING = "512M";
 
 	/** Datastore directory */
 	private final File storeDir;
@@ -736,8 +733,6 @@ public class Node implements TimeSkewDetectorCallback {
 	final DNSRequester dnsr;
 	final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
-	final boolean testnetEnabled;
-	final TestnetHandler testnetHandler;
 	public final TokenBucket outputThrottle;
 	public boolean throttleLocalData;
 	private int outputBandwidthLimit;
@@ -818,8 +813,6 @@ public class Node implements TimeSkewDetectorCallback {
 	public final InetAddress localhostAddress;
 	public final FreenetInetAddress fLocalhostAddress;
 
-	private boolean wasTestnet;
-
 	// The node starter
 	private static NodeStarter nodeStarter;
 
@@ -893,8 +886,6 @@ public class Node implements TimeSkewDetectorCallback {
 		} else {
 			lastVersion = Version.getArbitraryBuildNumber(verString, -1);
 		}
-
-		wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
 	}
 
 	public void makeStore(String val) throws InvalidConfigValueException {
@@ -1651,46 +1642,11 @@ public class Node implements TimeSkewDetectorCallback {
 
 		throttleLocalData = nodeConfig.getBoolean("throttleLocalTraffic");
 
-		// Testnet.
-		// Cannot be enabled/disabled on the fly.
-		// If enabled, forces certain other config options.
-
-		if((testnetHandler = TestnetHandler.maybeCreate(this, config)) != null) {
-			String msg = "WARNING: ENABLING TESTNET CODE! This WILL seriously jeopardize your anonymity!";
-			Logger.error(this, msg);
-			System.err.println(msg);
-			testnetEnabled = true;
-			if(logConfigHandler.getFileLoggerHook() == null) {
-				System.err.println("Forcing logging enabled (essential for testnet)");
-				logConfigHandler.forceEnableLogging();
-			}
-			LogLevel x = Logger.globalGetThresholdNew();
-			if(!((x == LogLevel.MINOR) || (x == LogLevel.DEBUG))) {
-				System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
-				Logger.globalSetThreshold(LogLevel.MINOR);
-			}
-			if(logConfigHandler.getMaxZippedLogFiles() < TESTNET_MIN_MAX_ZIPPED_LOGFILES) {
-				System.err.println("Forcing max zipped logfiles space to 256MB for testnet");
-				try {
-					logConfigHandler.setMaxZippedLogFiles(TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING);
-				} catch (InvalidConfigValueException e) {
-					throw new Error("Impossible: " + e, e);
-				} catch (NodeNeedRestartException e) {
-					throw new Error("Impossible: " + e, e);
-				}
-			}
-		} else {
-			String s = "Testnet mode DISABLED. You may have some level of anonymity. :)\n"+
-				"Note that this version of Freenet is still a very early alpha, and may well have numerous bugs and design flaws.\n"+
-				"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
-			Logger.normal(this, s);
-			System.err.println(s);
-			testnetEnabled = false;
-			if(wasTestnet) {
-				FileLoggerHook flh = logConfigHandler.getFileLoggerHook();
-				if(flh != null) flh.deleteAllOldLogFiles();
-			}
-		}
+		String s = "Testnet mode DISABLED. You may have some level of anonymity. :)\n"+
+		"Note that this version of Freenet is still a very early alpha, and may well have numerous bugs and design flaws.\n"+
+		"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
+		Logger.normal(this, s);
+		System.err.println(s);
 
 		File nodeFile = nodeDir.file("node-"+getDarknetPortNumber());
 		File nodeFileBackup = nodeDir.file("node-"+getDarknetPortNumber()+".bak");
@@ -1715,12 +1671,6 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				initNodeFileSettings();
 			}
-		}
-
-		if(wasTestnet != testnetEnabled) {
-			Logger.error(this, "Switched from testnet mode to non-testnet mode or vice versa! Regenerating pubkey, privkey, and deleting logs.");
-			// FIXME do we delete logs?
-			darknetCrypto.initCrypto();
 		}
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
@@ -3775,10 +3725,6 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
 
-		// Start testnet handler
-		if(testnetHandler != null)
-			testnetHandler.start();
-
 		/* TODO: Make sure that this is called BEFORE any instances of HTTPFilter are created.
 		 * HTTPFilter uses checkForGCJCharConversionBug() which returns the value of the static
 		 * variable jvmHasGCJCharConversionBug - and this is initialized in the following function.
@@ -5169,10 +5115,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public boolean isTestnetEnabled() {
-		return testnetEnabled;
-	}
-
 	public ClientKeyBlock fetchKey(ClientKey key, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyVerifyException {
 		if(key instanceof ClientCHK)
 			return fetch((ClientCHK)key, canReadClientCache, canWriteClientCache, canWriteDatastore);
@@ -6186,5 +6128,10 @@ public class Node implements TimeSkewDetectorCallback {
 		if(om != null) {
 			om.crypto.socket.calculateMaxPacketSize();
 		}
+	}
+
+
+	public boolean isTestnetEnabled() {
+		return false;
 	}
 }
