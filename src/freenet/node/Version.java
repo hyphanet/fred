@@ -40,21 +40,21 @@ public class Version {
 	/** The current tree version.
 	 * FIXME: This is part of the node compatibility computations, so cannot be
 	 * safely changed!!! Hence publicVersion ... */
-	public static final String nodeVersion = "0.7";
+	public static final String nodeVersion = "TESTNET 0.7";
 
 	/** The version for publicity purposes i.e. the version of the node that has
 	 * been released. */
-	public static final String publicVersion = "0.7.5";
+	public static final String publicVersion = "TESTNET 0.7.5";
 
 	/** The protocol version supported */
-	public static final String protocolVersion = "1.0";
+	public static final String protocolVersion = "TESTNET 1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 1355;
+	private static final int buildNumber = 1;
 
 	/** Oldest build of Fred we will talk to */
-	private static final int oldLastGoodBuild = 1348;
-	private static final int newLastGoodBuild = 1354;
+	private static final int oldLastGoodBuild = 1;
+	private static final int newLastGoodBuild = 1;
 	static final long transitionTime;
 
 	static {
