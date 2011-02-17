@@ -37,10 +37,10 @@ public class TestnetController implements Runnable {
 	
 	TestnetController() throws IOException {
 		baseDir = new File("testnet");
-		if(!baseDir.mkdirs())
+		if(!(baseDir.mkdirs() || baseDir.exists()))
 			throw new IllegalStateException("Unable to start up: cannot make "+baseDir);
 		nodesDir = new File(baseDir, "nodes");
-		if(!nodesDir.mkdirs())
+		if(!(nodesDir.mkdirs() || nodesDir.exists()))
 			throw new IllegalStateException("Unable to start up: cannot make "+nodesDir);
 		initCounter();
 		executor = new PooledExecutor();
