@@ -480,8 +480,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		updateVersionRoutablity();
 
 		testnetEnabled = fs.getBoolean("testnet", false);
-		if(testnetEnabled) {
-			String err = "Ignoring incompatible testnet node " + detectedPeer;
+		if(node.testnetEnabled != testnetEnabled) {
+			String err = "Ignoring incompatible node " + detectedPeer + " - peer.testnet=" + testnetEnabled + '(' + fs.get("testnet") + ") but node.testnet=" + node.testnetEnabled;
 			Logger.error(this, err);
 			throw new PeerParseException(err);
 		}
@@ -2606,8 +2606,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
 		// Anything may be omitted for a differential node reference
 		boolean changedAnything = false;
-		if(!forDiffNodeRef && (false != Fields.stringToBool(fs.get("testnet"), false))) {
-			String err = "Preventing connection to node " + detectedPeer +" - testnet is enabled!";
+		if(!forDiffNodeRef && (node.testnetEnabled != Fields.stringToBool(fs.get("testnet"), false))) {
+			String err = "Preventing connection to node " + detectedPeer + " - peer.testnet=" + !node.testnetEnabled + '(' + fs.get("testnet") + ") but node.testnet=" + node.testnetEnabled;
 			Logger.error(this, err);
 			throw new FSParseException(err);
 		}
