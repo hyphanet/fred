@@ -1,3 +1,21 @@
+Freenet 0.7.5 Test Network
+==========================
+
+This is NOT FREENET.
+
+This is a special testing network that PROVIDES NO ANONYMITY!
+
+All testnet nodes regularly report in to a central co-ordinator node.
+
+They keep detailed logs and allow developers - and at present anyone else who knows how - to remotely download them!
+
+The purpose of this is to enable us to debug Freenet more easily by being able to go from one node to another when a problem involves two or more nodes.
+
+
+
+Old README
+==========
+
 INTRODUCTION:
 
 The Freenet Project is very pleased to announce the release of Freenet 0.7.0.
