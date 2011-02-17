@@ -209,32 +209,6 @@ public class TestnetHandler implements Runnable {
 
 	}
 
-	private static class TestnetEnabledCallback extends BooleanCallback  {
-
-		final Node node;
-		
-		TestnetEnabledCallback(Node node) {
-			this.node = node;
-		}
-		
-		@Override
-		public Boolean get() {
-			return node.testnetEnabled;
-		}
-
-		@Override
-		public void set(Boolean val) throws InvalidConfigValueException {
-			if(node.testnetEnabled == val) return;
-			throw new InvalidConfigValueException(NodeL10n.getBase().getString("TestnetHandler.cannotEnableDisableOnTheFly"));
-		}
-
-		@Override
-		public boolean isReadOnly() {
-			return true;
-		}
-	}
-
-	
 	static class TestnetPortNumberCallback extends IntCallback  {
 		Node node;
 		
@@ -259,24 +233,15 @@ public class TestnetHandler implements Runnable {
 	public static TestnetHandler maybeCreate(Node node, Config config) throws NodeInitException {
         SubConfig testnetConfig = new SubConfig("node.testnet", config);
         
-        testnetConfig.register("enabled", false, 1, true /*Switch it to false if we want large-scale testing */, true, "TestnetHandler.enable", "TestnetHandler.enableLong", new TestnetEnabledCallback(node));
+        // Get the testnet port
         
-        boolean enabled = testnetConfig.getBoolean("enabled");
-
-        if(enabled) {
-        	// Get the testnet port
-
-        	testnetConfig.register("port", node.getDarknetPortNumber()+1000, 2, true, false, "TestnetHandler.port", "TestnetHandler.portLong",
-        			new TestnetPortNumberCallback(node), false);
-
-        	int port = testnetConfig.getInt("port");
-        	
-        	testnetConfig.finishedInitialization();
-        	return new TestnetHandler(node, port);
-        } else {
-        	testnetConfig.finishedInitialization();
-        	return null;
-        }
+        testnetConfig.register("port", node.getDarknetPortNumber()+1000, 2, true, false, "TestnetHandler.port", "TestnetHandler.portLong",
+        		new TestnetPortNumberCallback(node), false);
+        
+        int port = testnetConfig.getInt("port");
+        
+        testnetConfig.finishedInitialization();
+        return new TestnetHandler(node, port);
 	}
 
 }

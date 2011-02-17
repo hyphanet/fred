@@ -736,7 +736,6 @@ public class Node implements TimeSkewDetectorCallback {
 	final DNSRequester dnsr;
 	final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
-	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
 	public final TokenBucket outputThrottle;
 	public boolean throttleLocalData;
@@ -818,8 +817,6 @@ public class Node implements TimeSkewDetectorCallback {
 	public final InetAddress localhostAddress;
 	public final FreenetInetAddress fLocalhostAddress;
 
-	private boolean wasTestnet;
-
 	// The node starter
 	private static NodeStarter nodeStarter;
 
@@ -894,7 +891,9 @@ public class Node implements TimeSkewDetectorCallback {
 			lastVersion = Version.getArbitraryBuildNumber(verString, -1);
 		}
 
-		wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
+		boolean wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
+		if(!wasTestnet)
+			throw new IllegalStateException("Cannot switch from non-testnet to testnet!");
 	}
 
 	public void makeStore(String val) throws InvalidConfigValueException {
@@ -1652,43 +1651,29 @@ public class Node implements TimeSkewDetectorCallback {
 		throttleLocalData = nodeConfig.getBoolean("throttleLocalTraffic");
 
 		// Testnet.
-		// Cannot be enabled/disabled on the fly.
-		// If enabled, forces certain other config options.
-
-		if((testnetHandler = TestnetHandler.maybeCreate(this, config)) != null) {
-			String msg = "WARNING: ENABLING TESTNET CODE! This WILL seriously jeopardize your anonymity!";
-			Logger.error(this, msg);
-			System.err.println(msg);
-			testnetEnabled = true;
-			if(logConfigHandler.getFileLoggerHook() == null) {
-				System.err.println("Forcing logging enabled (essential for testnet)");
-				logConfigHandler.forceEnableLogging();
-			}
-			LogLevel x = Logger.globalGetThresholdNew();
-			if(!((x == LogLevel.MINOR) || (x == LogLevel.DEBUG))) {
-				System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
-				Logger.globalSetThreshold(LogLevel.MINOR);
-			}
-			if(logConfigHandler.getMaxZippedLogFiles() < TESTNET_MIN_MAX_ZIPPED_LOGFILES) {
-				System.err.println("Forcing max zipped logfiles space to 256MB for testnet");
-				try {
-					logConfigHandler.setMaxZippedLogFiles(TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING);
-				} catch (InvalidConfigValueException e) {
-					throw new Error("Impossible: " + e, e);
-				} catch (NodeNeedRestartException e) {
-					throw new Error("Impossible: " + e, e);
-				}
-			}
-		} else {
-			String s = "Testnet mode DISABLED. You may have some level of anonymity. :)\n"+
-				"Note that this version of Freenet is still a very early alpha, and may well have numerous bugs and design flaws.\n"+
-				"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
-			Logger.normal(this, s);
-			System.err.println(s);
-			testnetEnabled = false;
-			if(wasTestnet) {
-				FileLoggerHook flh = logConfigHandler.getFileLoggerHook();
-				if(flh != null) flh.deleteAllOldLogFiles();
+		testnetHandler = TestnetHandler.maybeCreate(this, config);
+		if(testnetHandler == null) throw new NullPointerException();
+		
+		String msg = "WARNING: ENABLING TESTNET CODE! This WILL seriously jeopardize your anonymity!";
+		Logger.error(this, msg);
+		System.err.println(msg);
+		if(logConfigHandler.getFileLoggerHook() == null) {
+			System.err.println("Forcing logging enabled (essential for testnet)");
+			logConfigHandler.forceEnableLogging();
+		}
+		LogLevel x = Logger.globalGetThresholdNew();
+		if(!((x == LogLevel.MINOR) || (x == LogLevel.DEBUG))) {
+			System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
+			Logger.globalSetThreshold(LogLevel.MINOR);
+		}
+		if(logConfigHandler.getMaxZippedLogFiles() < TESTNET_MIN_MAX_ZIPPED_LOGFILES) {
+			System.err.println("Forcing max zipped logfiles space to 256MB for testnet");
+			try {
+				logConfigHandler.setMaxZippedLogFiles(TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING);
+			} catch (InvalidConfigValueException e) {
+				throw new Error("Impossible: " + e, e);
+			} catch (NodeNeedRestartException e) {
+				throw new Error("Impossible: " + e, e);
 			}
 		}
 
@@ -1715,12 +1700,6 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				initNodeFileSettings();
 			}
-		}
-
-		if(wasTestnet != testnetEnabled) {
-			Logger.error(this, "Switched from testnet mode to non-testnet mode or vice versa! Regenerating pubkey, privkey, and deleting logs.");
-			// FIXME do we delete logs?
-			darknetCrypto.initCrypto();
 		}
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
@@ -1929,7 +1908,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		extraPeerDataDir = userDir.file("extra-peer-data-"+getDarknetPortNumber());
 		if (!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
-			String msg = "Could not find or create extra peer data directory";
+			msg = "Could not find or create extra peer data directory";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_DIR, msg);
 		}
 
@@ -2113,7 +2092,7 @@ public class Node implements TimeSkewDetectorCallback {
 		String datastoreDir = nodeConfig.getString("storeDir");
 		storeDir = new File(datastoreDir);
 		if(!((storeDir.exists() && storeDir.isDirectory()) || (storeDir.mkdir()))) {
-			String msg = "Could not find or create datastore directory";
+			msg = "Could not find or create datastore directory";
 			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, msg);
 		}
 
@@ -2195,7 +2174,7 @@ public class Node implements TimeSkewDetectorCallback {
 			try {
 				killMasterKeysFile();
 			} catch (IOException e) {
-				String msg = "Unable to securely delete old master.keys file when switching to MAXIMUM seclevel!!";
+				msg = "Unable to securely delete old master.keys file when switching to MAXIMUM seclevel!!";
 				System.err.println(msg);
 				throw new NodeInitException(NodeInitException.EXIT_CANT_WRITE_MASTER_KEYS, msg);
 			}
@@ -5170,7 +5149,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public boolean isTestnetEnabled() {
-		return testnetEnabled;
+		return true;
 	}
 
 	public ClientKeyBlock fetchKey(ClientKey key, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyVerifyException {
