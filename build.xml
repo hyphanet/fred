@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="freenet-autodep" default="all" basedir=".">
 	<description>
+FREENET TEST NETWORK
+WARNING: NOT ANONYMOUS!
+THIS VERSION OF FREENET ALLOWS THE DEVELOPERS TO ACCESS YOUR LOG FILES REMOTELY IN ORDER TO DEBUG BUGS THAT OCCUR BETWEEN DIFFERENT NODES, AND TO TEST DISRUPTIVE CHANGES.
+
 Freenet is free software that lets you publish and retrieve information without
 fear of censorship. To achieve this, the network is entirely decentralized, and
 all actions are anonymous. Without anonymity, there can never be true freedom
