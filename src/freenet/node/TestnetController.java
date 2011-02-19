@@ -121,6 +121,39 @@ public class TestnetController implements Runnable {
 						}
 						osw.write("GENERATEDID:"+id+"\n");
 						osw.flush();
+					} else if(line.startsWith("VERIFY:")) {
+						String[] split = line.split(":");
+						if(split.length < 3) continue;
+						long testnetNodeID;
+						int port;
+						try {
+							testnetNodeID = Long.parseLong(split[1]);
+						} catch (NumberFormatException e) {
+							osw.write("FAILED:VERIFY:No valid node ID\n");
+							osw.flush();
+							continue;
+						}
+						try {
+							port = Integer.parseInt(split[2]);
+						} catch (NumberFormatException e) {
+							osw.write("FAILED:VERIFY:No valid port number\n");
+							osw.flush();
+							continue;
+						}
+						System.out.println("Verifying connectivity to node ID "+testnetNodeID+" on port "+port+" from "+sock.getInetAddress());
+						Socket testSocket = null;
+						try {
+							testSocket = new Socket(sock.getInetAddress(), port);
+							osw.write("OK\n");
+							osw.flush();
+						} catch (IOException e) {
+							// Grrrr
+							osw.write("FAILED:VERIFY:Failed to connect to testnet port\n");
+							osw.flush();
+							continue;
+						} finally {
+							testSocket.close();
+						}
 					} else {
 						// Do nothing. Read the next line.
 					}
