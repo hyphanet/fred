@@ -1085,7 +1085,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	public void sendLogByContainedDate(long time, OutputStream os) throws IOException {
-		OldLogFile toReturn = null;
+		ArrayList<OldLogFile> toReturn = new ArrayList<OldLogFile>();
 		synchronized(logFiles) {
 			Iterator<OldLogFile> i = logFiles.iterator();
 			while(i.hasNext()) {
@@ -1093,38 +1093,39 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		    	if(logMINOR)
 		    		Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
 				if((time >= olf.start) && (time < olf.end)) {
-					toReturn = olf;
+					toReturn.add(olf);
 					if(logMINOR) Logger.minor(this, "Found "+olf);
-					break;
 				}
 			}
-			if(toReturn == null) {
+			if(toReturn.isEmpty()) {
 				System.out.println("Could not find log file");
 				return; // couldn't find it
 			}
 		}
-		System.out.println("Writing data from log "+toReturn.filename);
-		FileInputStream fis = new FileInputStream(toReturn.filename);
-		DataInputStream dis = new DataInputStream(fis);
-		long written = 0;
-		long size = toReturn.size;
-		OutputStreamWriter osw = new OutputStreamWriter(os, "UTF-8");
-		osw.write("LENGTH: "+size+"\n");
-		osw.flush();
-		byte[] buf = new byte[4096];
-		while(written < size) {
-			int toRead = (int) Math.min(buf.length, (size - written));
-			try {
-				dis.readFully(buf, 0, toRead);
-			} catch (IOException e) {
-				Logger.error(this, "Could not read bytes "+written+" to "+(written + toRead)+" from file "+toReturn.filename+" which is supposed to be "+size+" bytes ("+toReturn.filename.length()+ ')');
-				return;
+		for(OldLogFile olf : toReturn) {
+			System.out.println("Writing data from log "+olf.filename);
+			FileInputStream fis = new FileInputStream(olf.filename);
+			DataInputStream dis = new DataInputStream(fis);
+			long written = 0;
+			long size = olf.size;
+			OutputStreamWriter osw = new OutputStreamWriter(os, "UTF-8");
+			osw.write("LENGTH: "+size+"\n");
+			osw.flush();
+			byte[] buf = new byte[4096];
+			while(written < size) {
+				int toRead = (int) Math.min(buf.length, (size - written));
+				try {
+					dis.readFully(buf, 0, toRead);
+				} catch (IOException e) {
+					Logger.error(this, "Could not read bytes "+written+" to "+(written + toRead)+" from file "+olf.filename+" which is supposed to be "+size+" bytes ("+olf.filename.length()+ ')');
+					return;
+				}
+				os.write(buf, 0, toRead);
+				written += toRead;
 			}
-			os.write(buf, 0, toRead);
-			written += toRead;
+			dis.close();
+			fis.close();
 		}
-		dis.close();
-		fis.close();
 	}
 
 	/** Set the maximum size of old (gzipped) log files to keep.
