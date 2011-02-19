@@ -129,6 +129,15 @@ public class TestnetStatusUploader implements Runnable {
 		    
 			while(true){
 				
+				try{
+					Thread.sleep(updateInterval);
+						
+				//how i love java 
+				}catch (InterruptedException e){
+					return;
+					
+				}
+				
 				if(!verifyConnectivity(node.testnetHandler.getPort())) {
 					failed++;
 					if(failed >= 2) {
@@ -138,15 +147,6 @@ public class TestnetStatusUploader implements Runnable {
 					}
 				} else {
 					failed = 0;
-				}
-				
-				try{
-					Thread.sleep(updateInterval);
-						
-				//how i love java 
-				}catch (InterruptedException e){
-					return;
-					
 				}
 				
 			}
