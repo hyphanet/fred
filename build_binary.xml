@@ -10,7 +10,7 @@
 	<property name="build" location="build"/>
 	<property name="lib"	location="lib"/>
 	<property name="bin"	location="bin"/>
-	<property name="freenet-cvs-snapshot.location" location="${lib}/freenet-cvs-snapshot.jar"/>
+	<property name="freenet-cvs-snapshot.location" location="${lib}/freenet-testnet-snapshot.jar"/>
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
 	<property name="gnu-crypto.location" location="${lib}/gnu-crypto.jar"/>
 	<property name="javax-crypto.location" location="${lib}/javax-crypto.jar"/>
@@ -82,7 +82,7 @@
 		<arg value="${lib}/freenet-ext.jar"/>
 	</exec>
 	
-	<echo message="Compiling freenet-cvs-snapshot.jar"/>
+	<echo message="Compiling freenet-testnet-snapshot.jar"/>
 	<exec executable="gcj" failonerror="true">
 		<arg value="-c"/>
 		<arg value="-O3"/>
@@ -90,13 +90,13 @@
 		<arg value="-fno-store-check"/>
 		<arg value="-fjni"/>
 		<arg value="-o"/>
-		<arg value="${build}/freenet-cvs-snapshot.o"/>
-		<arg value="-I${lib}/freenet-cvs-snapshot.jar"/>
+		<arg value="${build}/freenet-testnet-snapshot.o"/>
+		<arg value="-I${lib}/freenet-testnet-snapshot.jar"/>
 		<arg value="-I${lib}/freenet-ext.jar"/>
 		<arg value="-I${gnu-crypto.location}"/>
 		<arg value="-I${javax-crypto.location}"/>
 		<arg value="-I${javax-security.location}"/>
-		<arg value="${lib}/freenet-cvs-snapshot.jar"/>
+		<arg value="${lib}/freenet-testnet-snapshot.jar"/>
 	</exec>
   </target>
 
