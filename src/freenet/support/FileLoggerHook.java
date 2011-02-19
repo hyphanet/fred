@@ -1076,7 +1076,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		synchronized(logFiles) {
 			oldLogFiles = logFiles.toArray(new OldLogFile[logFiles.size()]);
 		}
-		DateFormat tempDF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.ENGLISH);
+		DateFormat tempDF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
 		tempDF.setTimeZone(TimeZone.getTimeZone("GMT"));
 		for(int i=0;i<oldLogFiles.length;i++) {
 			OldLogFile olf = oldLogFiles[i];
