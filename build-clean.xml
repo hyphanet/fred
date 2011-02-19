@@ -222,7 +222,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	</target>
 
 	<target name="package" depends="build, unit" description="build standard binary packages (Freenet daemon)" >
-		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
+		<jar jarfile="${main.dst}/freenet-testnet.jar" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet/node/Node"/>
 				<attribute name="Built-By" value="${user.name}"/>
@@ -230,10 +230,10 @@ build-dependency on ant-optional, libbsf-java and rhino.
 				<attribute name="Recommended-Ext-Version" value="${contrib.version.rec}"/>
 				<attribute name="Class-Path" value="freenet-ext.jar" />
 				<section name="common">
-					<attribute name="Specification-Title" value="Freenet"/>
+					<attribute name="Specification-Title" value="Freenet Testnet"/>
 					<attribute name="Specification-Version" value="0.7.5"/>
 					<attribute name="Specification-Vendor" value="freenetproject.org"/>
-					<attribute name="Implementation-Title" value="Freenet"/>
+					<attribute name="Implementation-Title" value="Freenet Testnet"/>
 					<attribute name="Implementation-Version" value="0.7.5 ${TODAY} ${git.revision}"/>
 					<attribute name="Implementation-Vendor" value="Freenetproject.org"/>
 				</section>
