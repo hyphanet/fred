@@ -69,7 +69,7 @@ public class TestnetStatusUploader implements Runnable {
 			OutputStreamWriter osw = new OutputStreamWriter(new BufferedOutputStream(os));
 			
 			// Verify connectivity.
-			osw.write("VERIFY:"+node.testnetID+":"+testnetPort);
+			osw.write("VERIFY:"+node.testnetID+":"+testnetPort+"\n");
 			osw.flush();
 			
 			String reply = br.readLine();
