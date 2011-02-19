@@ -552,6 +552,9 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Minimum space for zipped logfiles on testnet */
 	static final long TESTNET_MIN_MAX_ZIPPED_LOGFILES = 5*1024*1024*1024;
 	static final String TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING = "5G";
+	
+	/** Globally unique testnet ID allocated by the tracker. */
+	public final long testnetID;
 
 	/** Datastore directory */
 	private final File storeDir;
@@ -840,7 +843,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @param filename The name of the file to read from.
 	 * @throws IOException throw when I/O error occur
 	 */
-	private void readNodeFile(String filename) throws IOException {
+	private SimpleFieldSet readNodeFile(String filename) throws IOException {
 		// REDFLAG: Any way to share this code with NodePeer?
 		FileInputStream fis = new FileInputStream(filename);
 		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
@@ -894,6 +897,7 @@ public class Node implements TimeSkewDetectorCallback {
 		boolean wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
 		if(!wasTestnet)
 			throw new IllegalStateException("Cannot switch from non-testnet to testnet!");
+		return fs;
 	}
 
 	public void makeStore(String val) throws InvalidConfigValueException {
@@ -1679,10 +1683,16 @@ public class Node implements TimeSkewDetectorCallback {
 
 		File nodeFile = nodeDir.file("node-"+getDarknetPortNumber());
 		File nodeFileBackup = nodeDir.file("node-"+getDarknetPortNumber()+".bak");
+		long tid = -1;
 		// After we have set up testnet and IP address, load the node file
 		try {
 			// FIXME should take file directly?
-			readNodeFile(nodeFile.getPath());
+			SimpleFieldSet fs = readNodeFile(nodeFile.getPath());
+			try {
+				tid = fs.getLong("testnetID");
+			} catch (FSParseException e) {
+				throw new IOException("No testnet ID in node file");
+			}
 		} catch (IOException e) {
 			try {
 				System.err.println("Trying to read node file backup ...");
@@ -1698,9 +1708,12 @@ public class Node implements TimeSkewDetectorCallback {
 				} else {
 					System.err.println("Creating new cryptographic keys...");
 				}
+				tid = TestnetStatusUploader.makeID();
 				initNodeFileSettings();
 			}
 		}
+		
+		testnetID = tid;
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 

@@ -330,6 +330,7 @@ public class NodeCrypto {
 		if(node.isTestnetEnabled()) {
 			fs.put("testnet", true);
 			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
+			fs.put("testnetID", node.testnetID);
 		}
 		if((!isOpennet) && (!forSetup) && (!forARK))
 			fs.putSingle("myName", node.getMyName());

@@ -3,9 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 import freenet.support.Logger;
 
@@ -41,6 +50,9 @@ public class TestnetStatusUploader implements Runnable {
 	private final int updateInterval;
 	private Socket client;
 	
+	static final String serverAddress = "amphibian.dyndns.org";
+	static final int serverPort = TestnetController.PORT;
+	
 	public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			//thread loop
@@ -50,7 +62,7 @@ public class TestnetStatusUploader implements Runnable {
 				// Set up client socket
 				try
 				{
-					client = new Socket("emu.freenetproject.org", 23415);
+					client = new Socket(serverAddress, serverPort);
 					PrintStream output = new PrintStream(client.getOutputStream());
 	            		
 					output.println(node.exportDarknetPublicFieldSet().toString());
@@ -77,6 +89,64 @@ public class TestnetStatusUploader implements Runnable {
 			}
 			
 
+	}
+
+	public static long makeID() {
+		boolean sleep = false;
+		long sleepTime = 1000;
+		long maxSleepTime = 60 * 60 * 1000;
+		while(true) {
+			if(sleep) {
+				try {
+					Thread.sleep(sleepTime);
+					sleepTime *= 2;
+					if(sleepTime > maxSleepTime)
+						sleepTime = maxSleepTime;
+				} catch (InterruptedException e1) {
+					// Ignore
+				}
+			}
+			System.err.println("Trying to contact testnet coordinator to get an ID");
+			sleep = true;
+			Socket client = null;
+			try {
+				client = new Socket(serverAddress, serverPort);
+				InputStream is = client.getInputStream();
+				OutputStream os = client.getOutputStream();
+				InputStreamReader isr = new InputStreamReader(new BufferedInputStream(is), "UTF-8");
+				BufferedReader br = new BufferedReader(isr);
+				OutputStreamWriter osw = new OutputStreamWriter(new BufferedOutputStream(os));
+				osw.write("GENERATE\n");
+				osw.flush();
+				String returned = br.readLine();
+				if(returned == null)
+					throw new EOFException();
+				final String chop = "GENERATEDID:";
+				if(!returned.startsWith(chop)) {
+					throw new IOException("Bogus return: \""+returned+"\" - expected GENERATEDID:");
+				}
+				returned = returned.substring(chop.length());
+				try {
+					return Long.parseLong(returned);
+				} catch (NumberFormatException e) {
+					throw new IOException("Bogus return wasn't a number: \""+returned+"\"");
+				}
+			} catch (UnknownHostException e) {
+				System.err.println("Unknown host, waiting...");
+				continue;
+			} catch (IOException e) {
+				System.err.println("Unable to connect: "+e+" , waiting...");
+				continue;
+			} finally {
+				try {
+					if(client != null)
+						client.close();
+				} catch (IOException e) {
+					// Ignore
+				}
+			}
+			
+		}
 	}
 	
 	
