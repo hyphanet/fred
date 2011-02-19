@@ -205,7 +205,8 @@ public class TestnetController implements Runnable {
 			fos = new FileOutputStream(f, true);
 			BufferedOutputStream bfos = new BufferedOutputStream(fos);
 			OutputStreamWriter osw = new OutputStreamWriter(bfos, "UTF-8");
-			osw.write(""+port+":"+System.currentTimeMillis());
+			osw.write(""+port+":"+System.currentTimeMillis()+"\n");
+			osw.flush();
 		} catch (IOException e) {
 			System.err.println("Failed to write verify log: "+e);
 			e.printStackTrace();
