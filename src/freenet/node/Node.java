@@ -1690,6 +1690,7 @@ public class Node implements TimeSkewDetectorCallback {
 			SimpleFieldSet fs = readNodeFile(nodeFile.getPath());
 			try {
 				tid = fs.getLong("testnetID");
+				System.out.println("Already got testnet ID: "+tid);
 			} catch (FSParseException e) {
 				throw new IOException("No testnet ID in node file");
 			}
@@ -1709,6 +1710,7 @@ public class Node implements TimeSkewDetectorCallback {
 					System.err.println("Creating new cryptographic keys...");
 				}
 				tid = TestnetStatusUploader.makeID();
+				System.out.println("Got testnet ID: "+tid);
 				initNodeFileSettings();
 			}
 		}
