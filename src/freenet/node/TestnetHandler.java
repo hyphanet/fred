@@ -163,10 +163,13 @@ public class TestnetHandler implements Runnable {
 					try {
 						d = df.parse(date);
 					} catch (ParseException e) {
+						System.out.println("Cannot parse: "+e+" for "+date);
 						if(logMINOR) Logger.minor(this, "Cannot parse: "+e+" for "+date);
 						return;
 					}
+					System.out.println(s.getInetAddress()+" asked for log at time "+d);
 					loggerHook.sendLogByContainedDate(d.getTime(), os);
+					os.close();
 				} else if(command.equalsIgnoreCase("STATUS")) {
 					if(logMINOR) Logger.minor(this, "Sending status");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");

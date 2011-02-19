@@ -1098,13 +1098,19 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					break;
 				}
 			}
-			if(toReturn == null)
+			if(toReturn == null) {
+				System.out.println("Could not find log file");
 				return; // couldn't find it
+			}
 		}
+		System.out.println("Writing data from log "+toReturn.filename);
 		FileInputStream fis = new FileInputStream(toReturn.filename);
 		DataInputStream dis = new DataInputStream(fis);
 		long written = 0;
 		long size = toReturn.size;
+		OutputStreamWriter osw = new OutputStreamWriter(os, "UTF-8");
+		osw.write("LENGTH: "+size+"\n");
+		osw.flush();
 		byte[] buf = new byte[4096];
 		while(written < size) {
 			int toRead = (int) Math.min(buf.length, (size - written));
