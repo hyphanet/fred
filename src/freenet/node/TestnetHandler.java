@@ -66,6 +66,7 @@ public class TestnetHandler implements Runnable {
 		node.executor.execute(this, "Testnet handler thread");
 		uploader.start();
 		System.err.println("Started testnet handler on port "+testnetPort);
+        uploader.waitForConnectivity(testnetPort);
 	}
 	
 	private final Node node;

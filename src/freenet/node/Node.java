@@ -3724,6 +3724,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void start(boolean noSwaps) throws NodeInitException {
 
+		ticker.start();
+		
+		// Start testnet handler
+		if(testnetHandler != null)
+			testnetHandler.start();
+
 		dispatcher.start(nodeStats); // must be before usm
 		dnsr.start();
 		peers.start(); // must be before usm
@@ -3735,7 +3741,6 @@ public class Node implements TimeSkewDetectorCallback {
 		if(opennet != null)
 			opennet.start();
 		ps.start(nodeStats);
-		ticker.start();
 		scheduleVersionTransition();
 		usm.start(ticker);
 
@@ -3768,10 +3773,6 @@ public class Node implements TimeSkewDetectorCallback {
 			e.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
-
-		// Start testnet handler
-		if(testnetHandler != null)
-			testnetHandler.start();
 
 		/* TODO: Make sure that this is called BEFORE any instances of HTTPFilter are created.
 		 * HTTPFilter uses checkForGCJCharConversionBug() which returns the value of the static

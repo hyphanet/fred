@@ -16,6 +16,8 @@ import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.support.Logger;
 
 /**
@@ -48,33 +50,92 @@ public class TestnetStatusUploader implements Runnable {
 	
 	private final Node node;
 	private final int updateInterval;
-	private Socket client;
 	
 	static final String serverAddress = "amphibian.dyndns.org";
 	static final int serverPort = TestnetController.PORT;
 	
+	public boolean verifyConnectivity(int testnetPort) {
+		Socket client = null;
+		
+		// Set up client socket
+		try
+		{
+			client = new Socket(serverAddress, serverPort);
+			
+			InputStream is = client.getInputStream();
+			OutputStream os = client.getOutputStream();
+			InputStreamReader isr = new InputStreamReader(new BufferedInputStream(is), "UTF-8");
+			BufferedReader br = new BufferedReader(isr);
+			OutputStreamWriter osw = new OutputStreamWriter(new BufferedOutputStream(os));
+			
+			// Verify connectivity.
+			osw.write("VERIFY:"+node.testnetID+":"+testnetPort);
+			osw.flush();
+			
+			String reply = br.readLine();
+			
+			if(reply == null) {
+				throw new IOException("Lost connection waiting for response");
+			}
+			
+			if(reply.equals("OK"))
+				return true;
+			System.err.println("Connectivity check failed: \""+reply+"\"");
+			return false;
+		} catch (IOException e){
+			Logger.error(this, "Could not verify connectivity to the uploadhost: "+e);
+			System.err.println("Could not verify connectivity to the uploadhost: "+e);
+			return false;
+		} finally {
+			try {
+				if(client != null)
+					client.close();
+			} catch (IOException e) {
+				// Ignore
+			}
+		}
+		
+	}
+	
+	public void waitForConnectivity(int testnetPort) {
+		boolean sleep = false;
+		long sleepTime = 1000;
+		long maxSleepTime = 60 * 60 * 1000;
+		while(true) {
+			if(sleep) {
+				try {
+					Thread.sleep(sleepTime);
+					sleepTime *= 2;
+					if(sleepTime > maxSleepTime)
+						sleepTime = maxSleepTime;
+				} catch (InterruptedException e1) {
+					// Ignore
+				}
+			}
+			sleep = true;
+			System.err.println("Trying to verify testnet connectivity with coordinator...");
+			if(verifyConnectivity(testnetPort))
+				return;
+		}
+	}
+	
 	public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			//thread loop
-			
+		    
+		    int failed = 0;
+		    
 			while(true){
-			
-				// Set up client socket
-				try
-				{
-					client = new Socket(serverAddress, serverPort);
-					PrintStream output = new PrintStream(client.getOutputStream());
-	            		
-					output.println(node.exportDarknetPublicFieldSet().toString());
-					output.println();
-					output.println(node.getFreevizOutput());
-					output.close();
-					
-					client.close();
-					
-				} catch (IOException e){
-					Logger.error(this, "Could not open connection to the uploadhost");
-					System.err.println("Could not open connection to the uploadhost");
+				
+				if(!verifyConnectivity(node.testnetHandler.getPort())) {
+					failed++;
+					if(failed >= 2) {
+						System.err.println("Failed to verify connectivity twice, restarting to wait for connection.");
+						WrapperManager.restart();
+						System.exit(NodeInitException.EXIT_TESTNET_FAILED);
+					}
+				} else {
+					failed = 0;
 				}
 				
 				try{
