@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.net.Socket;
 
 import freenet.io.NetworkInterface;
@@ -143,7 +144,11 @@ public class TestnetController implements Runnable {
 						System.out.println("Verifying connectivity to node ID "+testnetNodeID+" on port "+port+" from "+sock.getInetAddress());
 						Socket testSocket = null;
 						try {
-							testSocket = new Socket(sock.getInetAddress(), port);
+							InetAddress addr = sock.getInetAddress();
+							// FIXME ridiculous cheat for running controller and testnet node on same system.
+							if(addr.getHostAddress().startsWith("192.168."))
+								addr = InetAddress.getByName("amphibian.dyndns.org");
+							testSocket = new Socket(addr, port);
 							osw.write("OK\n");
 							osw.flush();
 						} catch (IOException e) {
