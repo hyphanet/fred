@@ -3,6 +3,7 @@ package freenet.node;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -90,6 +91,8 @@ public class TestnetController implements Runnable {
 			executor.execute(handler);
 		}
 	}
+	
+	final String VERIFYLOG = "verifylog";
 
 	public class SocketHandler implements Runnable {
 		
@@ -142,6 +145,11 @@ public class TestnetController implements Runnable {
 							continue;
 						}
 						System.out.println("Verifying connectivity to node ID "+testnetNodeID+" on port "+port+" from "+sock.getInetAddress());
+						if(!logVerify(testnetNodeID, port)) {
+							osw.write("FAILED:VERIFY:No such ID\n");
+							osw.flush();
+							continue;
+						}
 						Socket testSocket = null;
 						try {
 							InetAddress addr = sock.getInetAddress();
@@ -183,6 +191,35 @@ public class TestnetController implements Runnable {
 		if(!dir.exists())
 			throw new IOException();
 		return newID;
+	}
+
+	public boolean logVerify(long testnetNodeID, int port) {
+		// First, find the directory for the node.
+		File dir = getDir(testnetNodeID);
+		if(!dir.exists()) {
+			return false;
+		}
+		File f = new File(dir, VERIFYLOG);
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(f, true);
+			BufferedOutputStream bfos = new BufferedOutputStream(fos);
+			OutputStreamWriter osw = new OutputStreamWriter(bfos, "UTF-8");
+			osw.write(""+port+":"+System.currentTimeMillis());
+		} catch (IOException e) {
+			System.err.println("Failed to write verify log: "+e);
+			e.printStackTrace();
+		} finally {
+			if(fos != null) {
+				try {
+					fos.close();
+				} catch (IOException e) {
+					System.err.println("Failed to log verify attempt: "+e);
+					e.printStackTrace();
+				}
+			}
+		}
+		return true;
 	}
 
 	private File getDir(long newID) {
