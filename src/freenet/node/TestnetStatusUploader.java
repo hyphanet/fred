@@ -78,8 +78,10 @@ public class TestnetStatusUploader implements Runnable {
 				throw new IOException("Lost connection waiting for response");
 			}
 			
-			if(reply.equals("OK"))
+			if(reply.equals("OK")) {
+				System.out.println("Successfully verified connectivity with testnet controller.");
 				return true;
+			}
 			System.err.println("Connectivity check failed: \""+reply+"\"");
 			return false;
 		} catch (IOException e){
