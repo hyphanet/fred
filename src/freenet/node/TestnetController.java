@@ -145,7 +145,7 @@ public class TestnetController implements Runnable {
 							continue;
 						}
 						System.out.println("Verifying connectivity to node ID "+testnetNodeID+" on port "+port+" from "+sock.getInetAddress());
-						if(!logVerify(testnetNodeID, port)) {
+						if(!logVerify(testnetNodeID, port, sock.getInetAddress(), sock.getPort())) {
 							osw.write("FAILED:VERIFY:No such ID\n");
 							osw.flush();
 							continue;
@@ -202,7 +202,7 @@ public class TestnetController implements Runnable {
 		
 	}
 
-	public boolean logVerify(long testnetNodeID, int port) {
+	public boolean logVerify(long testnetNodeID, int port, InetAddress addr, int inPort) {
 		// First, find the directory for the node.
 		File dir = getDir(testnetNodeID);
 		if(!dir.exists()) {
@@ -214,7 +214,7 @@ public class TestnetController implements Runnable {
 			fos = new FileOutputStream(f, true);
 			BufferedOutputStream bfos = new BufferedOutputStream(fos);
 			OutputStreamWriter osw = new OutputStreamWriter(bfos, "UTF-8");
-			osw.write(""+port+":"+System.currentTimeMillis()+"\n");
+			osw.write(""+port+":"+System.currentTimeMillis()+":"+addr.getHostAddress()+":"+inPort+"\n");
 			osw.flush();
 		} catch (IOException e) {
 			System.err.println("Failed to write verify log: "+e);
