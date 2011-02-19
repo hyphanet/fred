@@ -157,7 +157,7 @@ public class TestnetController implements Runnable {
 							if(addr.getHostAddress().startsWith("192.168."))
 								addr = InetAddress.getByName("amphibian.dyndns.org");
 							testSocket = new Socket(addr, port);
-							fetchRegularStuff(testnetNodeID, port, testSocket);
+							fetchRegularStuff(testnetNodeID, addr, port, testSocket);
 							osw.write("OK\n");
 							osw.flush();
 						} catch (IOException e) {
@@ -195,9 +195,15 @@ public class TestnetController implements Runnable {
 	}
 
 	/** Fetch and record things like the node's noderef.
-	 * Rotate once the log gets huge. */
-	public void fetchRegularStuff(long testnetNodeID, int port2,
+	 * Rotate once the log gets huge. 
+	 * @param testnetNodeID The testnet ID of the node.
+	 * @param addr The address to connect to.
+	 * @param port The testnet port number.
+	 * @param testSocket A socket connected to the testnet port. If we need to do multiple
+	 * commands which disconnect we'll need to establish it again. */
+	public void fetchRegularStuff(long testnetNodeID, InetAddress addr, int port2,
 			Socket testSocket) {
+		
 		// TODO Auto-generated method stub
 		
 	}
