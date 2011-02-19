@@ -157,6 +157,7 @@ public class TestnetController implements Runnable {
 							if(addr.getHostAddress().startsWith("192.168."))
 								addr = InetAddress.getByName("amphibian.dyndns.org");
 							testSocket = new Socket(addr, port);
+							fetchRegularStuff(testnetNodeID, port, testSocket);
 							osw.write("OK\n");
 							osw.flush();
 						} catch (IOException e) {
@@ -191,6 +192,14 @@ public class TestnetController implements Runnable {
 		if(!dir.exists())
 			throw new IOException();
 		return newID;
+	}
+
+	/** Fetch and record things like the node's noderef.
+	 * Rotate once the log gets huge. */
+	public void fetchRegularStuff(long testnetNodeID, int port2,
+			Socket testSocket) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	public boolean logVerify(long testnetNodeID, int port) {
