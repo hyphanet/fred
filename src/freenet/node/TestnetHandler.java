@@ -171,6 +171,7 @@ public class TestnetHandler implements Runnable {
 					if(logMINOR) Logger.minor(this, "Sending status");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					osw.write(node.getStatus());
+					osw.flush();
 					osw.close();
 				} else if(command.equalsIgnoreCase("PEERS")) {
 					if(logMINOR) Logger.minor(this, "Sending references");
