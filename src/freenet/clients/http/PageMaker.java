@@ -368,87 +368,87 @@ public final class PageMaker {
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
 			synchronized (this) {
-			for (SubMenu menu : menuList) {
-				HTMLNode subnavlist = new HTMLNode("ul");
-				boolean isSelected = false;
-				boolean nonEmpty = false;
-				for (String navigationLink :  fullAccess ? menu.navigationLinkTexts : menu.navigationLinkTextsNonFull) {
-					LinkEnabledCallback cb = menu.navigationLinkCallbacks.get(navigationLink);
-					if(cb != null && !cb.isEnabled(ctx)) continue;
-					nonEmpty = true;
-					String navigationTitle = menu.navigationLinkTitles.get(navigationLink);
-					String navigationPath = menu.navigationLinks.get(navigationLink);
-					HTMLNode sublistItem;
-					if(activePath.equals(navigationPath)) {
-						sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
-						isSelected = true;
-					} else {
-						sublistItem = subnavlist.addChild("li");
+				for (SubMenu menu : menuList) {
+					HTMLNode subnavlist = new HTMLNode("ul");
+					boolean isSelected = false;
+					boolean nonEmpty = false;
+					for (String navigationLink :  fullAccess ? menu.navigationLinkTexts : menu.navigationLinkTextsNonFull) {
+						LinkEnabledCallback cb = menu.navigationLinkCallbacks.get(navigationLink);
+						if(cb != null && !cb.isEnabled(ctx)) continue;
+						nonEmpty = true;
+						String navigationTitle = menu.navigationLinkTitles.get(navigationLink);
+						String navigationPath = menu.navigationLinks.get(navigationLink);
+						HTMLNode sublistItem;
+						if(activePath.equals(navigationPath)) {
+							sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
+							isSelected = true;
+						} else {
+							sublistItem = subnavlist.addChild("li");
+						}
+						
+						FredPluginL10n l10n = menu.navigationLinkL10n.get(navigationLink);
+						if(l10n == null) l10n = menu.plugin;
+						if(l10n != null) {
+							if(navigationTitle != null) {
+								String newNavigationTitle = l10n.getString(navigationTitle);
+								if(newNavigationTitle == null) {
+									Logger.error(this, "Plugin '"+l10n+"' did return null in getString(key)!");
+								} else {
+									navigationTitle = newNavigationTitle;
+								}
+							}
+							if(navigationLink != null) {
+								String newNavigationLink = l10n.getString(navigationLink);
+								if(newNavigationLink == null) {
+									Logger.error(this, "Plugin '"+l10n+"' did return null in getString(key)!");
+								} else {
+									navigationLink = newNavigationLink;
+								}
+							}
+						} else {
+							if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
+							if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);
+						}
+						if(navigationTitle != null)
+							sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
+						else
+							sublistItem.addChild("a", "href", navigationPath, navigationLink);
 					}
-					
-					FredPluginL10n l10n = menu.navigationLinkL10n.get(navigationLink);
-					if(l10n == null) l10n = menu.plugin;
-					if(l10n != null) {
-						if(navigationTitle != null) {
-							String newNavigationTitle = l10n.getString(navigationTitle);
-							if(newNavigationTitle == null) {
-								Logger.error(this, "Plugin '"+l10n+"' did return null in getString(key)!");
+					if(nonEmpty) {
+						HTMLNode listItem;
+						if(isSelected) {
+							selected = menu;
+							subnavlist.addAttribute("class", "subnavlist-selected");
+							listItem = new HTMLNode("li", "id", "navlist-selected");
+						} else {
+							subnavlist.addAttribute("class", "subnavlist");
+							listItem = new HTMLNode("li");
+						}
+						String menuItemTitle = menu.defaultNavigationLinkTitle;
+						String text = menu.navigationLinkText;
+						if(menu.plugin == null) {
+							menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
+							text = NodeL10n.getBase().getString(text);
+						} else {
+							String newTitle = menu.plugin.getString(menuItemTitle);
+							if(newTitle == null) {
+								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
 							} else {
-								navigationTitle = newNavigationTitle;
+								menuItemTitle = newTitle;
+							}
+							String newText = menu.plugin.getString(text);
+							if(newText == null) {
+								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+							} else {
+								text = newText;
 							}
 						}
-						if(navigationLink != null) {
-							String newNavigationLink = l10n.getString(navigationLink);
-							if(newNavigationLink == null) {
-								Logger.error(this, "Plugin '"+l10n+"' did return null in getString(key)!");
-							} else {
-								navigationLink = newNavigationLink;
-							}
-						}
-					} else {
-						if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
-						if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);
+						
+						listItem.addChild("a", new String[] { "href", "title" }, new String[] { menu.defaultNavigationLink, menuItemTitle }, text);
+						listItem.addChild(subnavlist);
+						navbarUl.addChild(listItem);
 					}
-					if(navigationTitle != null)
-						sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
-					else
-						sublistItem.addChild("a", "href", navigationPath, navigationLink);
 				}
-				if(nonEmpty) {
-					HTMLNode listItem;
-					if(isSelected) {
-						selected = menu;
-						subnavlist.addAttribute("class", "subnavlist-selected");
-						listItem = new HTMLNode("li", "id", "navlist-selected");
-					} else {
-						subnavlist.addAttribute("class", "subnavlist");
-						listItem = new HTMLNode("li");
-					}
-					String menuItemTitle = menu.defaultNavigationLinkTitle;
-					String text = menu.navigationLinkText;
-					if(menu.plugin == null) {
-						menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
-						text = NodeL10n.getBase().getString(text);
-					} else {
-						String newTitle = menu.plugin.getString(menuItemTitle);
-						if(newTitle == null) {
-							Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
-						} else {
-							menuItemTitle = newTitle;
-						}
-						String newText = menu.plugin.getString(text);
-						if(newText == null) {
-							Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
-						} else {
-							text = newText;
-						}
-					}
-
-					listItem.addChild("a", new String[] { "href", "title" }, new String[] { menu.defaultNavigationLink, menuItemTitle }, text);
-					listItem.addChild(subnavlist);
-					navbarUl.addChild(listItem);
-				}
-			}
 			}
 			// Some themes want the selected submenu separately.
 			if(selected != null) {
