@@ -364,6 +364,7 @@ public final class PageMaker {
 		topBarDiv.addChild("h1", title);
 		if (renderNavigationLinks) {
 			SubMenu selected = null;
+			// Render the full menu.
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
 			synchronized (this) {
@@ -449,6 +450,7 @@ public final class PageMaker {
 				}
 			}
 			}
+			// Some themes want the selected submenu separately.
 			if(selected != null) {
 				HTMLNode div = new HTMLNode("div", "id", "selected-subnavbar");
 				HTMLNode subnavlist = div.addChild("ul", "id", "selected-subnavbar-list");
