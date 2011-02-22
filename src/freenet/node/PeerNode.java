@@ -1253,6 +1253,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		List<MessageItem> moreMessagesTellDisconnected = null;
 		PacketFormat oldPacketFormat = null;
 		synchronized(this) {
+			disconnecting = false;
 			ret = isConnected;
 			// Force renegotiation.
 			isConnected = false;
@@ -2052,6 +2053,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		PacketFormat oldPacketFormat = null;
 		PacketTracker packets = null;
 		synchronized(this) {
+			disconnecting = false;
 			// FIXME this shouldn't happen, does it?
 			if(currentTracker != null) {
 				if(Arrays.equals(outgoingKey, currentTracker.outgoingKey)
