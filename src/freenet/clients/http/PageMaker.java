@@ -383,7 +383,7 @@ public final class PageMaker {
 							sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
 							isSelected = true;
 						} else {
-							sublistItem = subnavlist.addChild("li");
+							sublistItem = subnavlist.addChild("li", "class", "submenuitem-not-selected");;
 						}
 						
 						FredPluginL10n l10n = menu.navigationLinkL10n.get(navigationLink);
@@ -422,7 +422,7 @@ public final class PageMaker {
 							listItem = new HTMLNode("li", "id", "navlist-selected");
 						} else {
 							subnavlist.addAttribute("class", "subnavlist");
-							listItem = new HTMLNode("li");
+							listItem = new HTMLNode("li", "class", "navlist-not-selected");
 						}
 						String menuItemTitle = menu.defaultNavigationLinkTitle;
 						String text = menu.navigationLinkText;
