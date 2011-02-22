@@ -1466,6 +1466,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		long now = System.currentTimeMillis();
 		boolean tempShouldSendHandshake = false;
 		synchronized(this) {
+			if(disconnecting) return false;
 			tempShouldSendHandshake = ((now > sendHandshakeTime) && (handshakeIPs != null) && (isRekeying || !isConnected()));
 		}
 		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): initial = "+tempShouldSendHandshake);
