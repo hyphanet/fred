@@ -196,7 +196,7 @@ public class PacketSender implements Runnable {
 					// Do it properly.
 					// There appears to be connectivity from them to us but not from us to them.
 					// So it is helpful for them to know that we are disconnecting.
-					node.peers.disconnect(pn, true, true, false, true);
+					node.peers.disconnect(pn, true, true, false, true, false);
 					continue;
 				} else if(pn.isRoutable() && pn.noLongerRoutable()) {
 					/*
