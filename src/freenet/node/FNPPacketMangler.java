@@ -847,6 +847,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				Logger.error(this, "Invalid unknown-initiator JFK(1), IDr' is "+HexUtil.bytesToHex(expectedIdentityHash)+" should be "+HexUtil.bytesToHex(crypto.identityHash));
 				return;
 			}
+		} else {
+			if(pn.throttleRekey()) return;
 		}
 
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);

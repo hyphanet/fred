@@ -5229,5 +5229,19 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public synchronized long getOutgoingBootID() {
 		return this.myBootID;
 	}
+
+	private long lastIncomingRekey;
+	
+	static final long THROTTLE_REKEY = 1000;
+	
+	public synchronized boolean throttleRekey() {
+		long now = System.currentTimeMillis();
+		if(now - lastIncomingRekey < THROTTLE_REKEY) {
+			Logger.error(this, "Two rekeys initiated by other side within "+THROTTLE_REKEY+"ms");
+			return true;
+		}
+		lastIncomingRekey = now;
+		return false;
+	}
 	
 }
