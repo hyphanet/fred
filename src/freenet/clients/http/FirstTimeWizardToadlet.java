@@ -98,8 +98,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 			
 	        if (core.node.isTestnetEnabled()) {
-	        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-	        		addChild("#", l10n("testnetWarning"));
+	        	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
+	        		addChild("#", l10nWelcome("testnetWarning"));
 	        }
 
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -127,8 +127,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 			
 	        if (core.node.isTestnetEnabled()) {
-	        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-	        		addChild("#", l10n("testnetWarning"));
+	        	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
+	        		addChild("#", l10nWelcome("testnetWarning"));
 	        }
 
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -172,8 +172,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 			
 	        if (core.node.isTestnetEnabled()) {
-	        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-	        		addChild("#", l10n("testnetWarning"));
+	        	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
+	        		addChild("#", l10nWelcome("testnetWarning"));
 	        }
 
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -228,8 +228,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 			
 	        if (core.node.isTestnetEnabled()) {
-	        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-	        		addChild("#", l10n("testnetWarning"));
+	        	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
+	        		addChild("#", l10nWelcome("testnetWarning"));
 	        }
 
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -276,8 +276,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 			
 	        if (core.node.isTestnetEnabled()) {
-	        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-	        		addChild("#", l10n("testnetWarning"));
+	        	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
+	        		addChild("#", l10nWelcome("testnetWarning"));
 	        }
 
 			HTMLNode nnameInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -301,8 +301,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 			
 	        if (core.node.isTestnetEnabled()) {
-	        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-	        		addChild("#", l10n("testnetWarning"));
+	        	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
+	        		addChild("#", l10nWelcome("testnetWarning"));
 	        }
 
 			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -347,8 +347,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 			
 	        if (core.node.isTestnetEnabled()) {
-	        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-	        		addChild("#", l10n("testnetWarning"));
+	        	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
+	        		addChild("#", l10nWelcome("testnetWarning"));
 	        }
 
 			HTMLNode bandwidthInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -394,8 +394,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 			
 	        if (core.node.isTestnetEnabled()) {
-	        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-	        		addChild("#", l10n("testnetWarning"));
+	        	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
+	        		addChild("#", l10nWelcome("testnetWarning"));
 	        }
 
 			HTMLNode form = ctx.addFormChild(contentNode, ".", "miscForm");
@@ -432,8 +432,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 
 	        if (core.node.isTestnetEnabled()) {
-	        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-	        		addChild("#", l10n("testnetWarning"));
+	        	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
+	        		addChild("#", l10nWelcome("testnetWarning"));
 	        }
 
 			HTMLNode congratzInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -468,8 +468,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		welcomeInfoboxHeader.addChild("#", l10n("welcomeInfoboxTitle"));
 		
         if (core.node.isTestnetEnabled()) {
-        	ctx.getPageMaker().getInfobox("infobox-alert", l10n("testnetWarningTitle"), contentNode, "testnet-enabled", true).
-        		addChild("#", l10n("testnetWarning"));
+        	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
+        		addChild("#", l10nWelcome("testnetWarning"));
         }
 
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
@@ -784,6 +784,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 	private String l10n(String key) {
 		return NodeL10n.getBase().getString("FirstTimeWizardToadlet."+key);
+	}
+	
+	private String l10nWelcome(String key) {
+		return NodeL10n.getBase().getString("WelcomeToadlet."+key);
 	}
 	
 	private String l10n(String key, String pattern, String value) {
