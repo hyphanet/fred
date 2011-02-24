@@ -533,13 +533,20 @@ public class PeerManager {
 	}
 	
 	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge) {
-		disconnect(pn, sendDisconnectMessage, waitForAck, purge, false);
+		disconnect(pn, sendDisconnectMessage, waitForAck, purge, false, true);
 	}
 
 	/**
 	 * Disconnect from a specified node
+	 * @param sendDisconnectMessage If false, don't send the FNPDisconnected message.
+	 * @param waitForAck If false, don't wait for the ack for the FNPDisconnected message.
+	 * @param purge If true, set the purge flag on the disconnect, causing the other peer
+	 * to purge this node from e.g. its old opennet peers list.
+	 * @param dumpMessagesNow If true, dump queued messages immediately, before the 
+	 * disconnect completes.
+	 * @param remove If true, remove the node from the routing table and tell the peer to do so.
 	 */
-	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge, boolean dumpMessagesNow) {
+	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge, boolean dumpMessagesNow, final boolean remove) {
 		if(logMINOR)
 			Logger.minor(this, "Disconnecting " + pn.shortToString());
 		synchronized(this) {
@@ -552,7 +559,7 @@ public class PeerManager {
 			return;
 		}
 		if(sendDisconnectMessage) {
-			Message msg = DMT.createFNPDisconnect(true, purge, -1, new ShortBuffer(new byte[0]));
+			Message msg = DMT.createFNPDisconnect(remove, purge, -1, new ShortBuffer(new byte[0]));
 			try {
 				pn.sendAsync(msg, new AsyncMessageCallback() {
 
@@ -581,13 +588,17 @@ public class PeerManager {
 								return;
 							done = true;
 						}
-						if(removePeer(pn) && !pn.isSeed())
-							writePeers();
+						if(remove) {
+							if(removePeer(pn) && !pn.isSeed())
+								writePeers();
+						}
 					}
 				}, ctrDisconn);
 			} catch(NotConnectedException e) {
-				if(pn.isDisconnecting() && removePeer(pn) && !pn.isSeed())
-					writePeers();
+				if(remove) {
+					if(pn.isDisconnecting() && removePeer(pn) && !pn.isSeed())
+						writePeers();
+				}
 				return;
 			}
                         if(!pn.isSeed()) {
@@ -595,9 +606,11 @@ public class PeerManager {
 
                                 public void run() {
                                     if(pn.isDisconnecting()) {
-                                    	if(removePeer(pn)) {
-                                    		if(!pn.isSeed()) {
-                                    			writePeers();
+                                    	if(remove) {
+                                    		if(removePeer(pn)) {
+                                    			if(!pn.isSeed()) {
+                                    				writePeers();
+                                    			}
                                     		}
                                     	}
                                     	pn.disconnected(true, true);
@@ -605,9 +618,12 @@ public class PeerManager {
                                 }
                             }, Node.MAX_PEER_INACTIVITY);
                         }
-		} else
-			if(removePeer(pn) && !pn.isSeed())
-				writePeers();
+		} else {
+			if(remove) {
+				if(removePeer(pn) && !pn.isSeed())
+					writePeers();
+			}
+		}
 	}
 	final ByteCounter ctrDisconn = new ByteCounter() {
 

@@ -5,6 +5,7 @@ package freenet.node;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -51,6 +52,7 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
+import freenet.support.LRUHashtable;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -848,6 +850,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 				return;
 			}
 		}
+		
+		if(throttleRekey(pn, replyTo)) return;
 
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		if(DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
@@ -860,6 +864,31 @@ public class FNPPacketMangler implements OutgoingPacketMangler {
 		if((t2-t1)>500) {
 			Logger.error(this,"Message1 timeout error:Processing packet for"+pn);
 		}
+	}
+	
+	private final LRUHashtable<InetAddress, Long> throttleRekeysByIP = new LRUHashtable<InetAddress, Long>();
+	
+	private final int REKEY_BY_IP_TABLE_SIZE = 1024;
+
+	private boolean throttleRekey(PeerNode pn, Peer replyTo) {
+		if(pn != null) {
+			return pn.throttleRekey();
+		}
+		long now = System.currentTimeMillis();
+		InetAddress addr = replyTo.getAddress();
+		synchronized(throttleRekeysByIP) {
+			Long l = throttleRekeysByIP.get(addr);
+			if(l == null || l != null && now > l)
+				throttleRekeysByIP.push(addr, now);
+			while(throttleRekeysByIP.size() > REKEY_BY_IP_TABLE_SIZE || 
+					((!throttleRekeysByIP.isEmpty()) && throttleRekeysByIP.peekValue() < now - PeerNode.THROTTLE_REKEY))
+				throttleRekeysByIP.popKey();
+			if(l != null && now - l < PeerNode.THROTTLE_REKEY) {
+				Logger.error(this, "Two JFK(1)'s initiated by same IP within "+PeerNode.THROTTLE_REKEY+"ms");
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private final int MAX_NONCES_PER_PEER = 10;

@@ -1080,7 +1080,17 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				checkRetries = tracker.checkRetries;
 			}
 			boolean allEncodedCorrectly = true;
-			boolean allFromStore = !parent.sentToNetwork;
+			boolean allFromStore = false;
+			synchronized(this) {
+				if(parent == null) {
+					allFromStore = false;
+					if(!fetcherFinished) {
+						Logger.error(this, "Parent is null on "+this+" but fetcher is not finished");
+					} else {
+						allFromStore = !parent.sentToNetwork;
+					}
+				}
+			}
 			for(int i=0;i<checkBuckets.length;i++) {
 				boolean heal = false;
 				// Check buckets will already be active because the FEC codec

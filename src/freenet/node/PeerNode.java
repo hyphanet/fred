@@ -1253,6 +1253,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		List<MessageItem> moreMessagesTellDisconnected = null;
 		PacketFormat oldPacketFormat = null;
 		synchronized(this) {
+			disconnecting = false;
 			ret = isConnected;
 			// Force renegotiation.
 			isConnected = false;
@@ -1465,6 +1466,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		long now = System.currentTimeMillis();
 		boolean tempShouldSendHandshake = false;
 		synchronized(this) {
+			if(disconnecting) return false;
 			tempShouldSendHandshake = ((now > sendHandshakeTime) && (handshakeIPs != null) && (isRekeying || !isConnected()));
 		}
 		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): initial = "+tempShouldSendHandshake);
@@ -2052,6 +2054,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		PacketFormat oldPacketFormat = null;
 		PacketTracker packets = null;
 		synchronized(this) {
+			disconnecting = false;
 			// FIXME this shouldn't happen, does it?
 			if(currentTracker != null) {
 				if(Arrays.equals(outgoingKey, currentTracker.outgoingKey)
@@ -5225,6 +5228,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * message queues and PacketFormat's. */
 	public synchronized long getOutgoingBootID() {
 		return this.myBootID;
+	}
+
+	private long lastIncomingRekey;
+	
+	static final long THROTTLE_REKEY = 1000;
+	
+	public synchronized boolean throttleRekey() {
+		long now = System.currentTimeMillis();
+		if(now - lastIncomingRekey < THROTTLE_REKEY) {
+			Logger.error(this, "Two rekeys initiated by other side within "+THROTTLE_REKEY+"ms");
+			return true;
+		}
+		lastIncomingRekey = now;
+		return false;
 	}
 	
 }
