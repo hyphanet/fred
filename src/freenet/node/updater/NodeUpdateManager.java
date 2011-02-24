@@ -56,9 +56,9 @@ import freenet.support.io.FileUtil;
  */
 public class NodeUpdateManager {
 
-	public final static String UPDATE_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/update/"+Version.buildNumber();
+	public final static String UPDATE_URI = "freenet:USK@IdgwkYbwzfASjOixSt2cFIYFQMApeV7fVWOzTkHBUPM,Dvc911~tWp2B1TjPakK2yYu1XkQJP-doOPOr2clcY4A,AQACAAE/update/"+Version.buildNumber();
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
-	public final static String EXT_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/ext/"+NodeStarter.extBuildNumber;
+	public final static String EXT_URI = "freenet:USK@IdgwkYbwzfASjOixSt2cFIYFQMApeV7fVWOzTkHBUPM,Dvc911~tWp2B1TjPakK2yYu1XkQJP-doOPOr2clcY4A,AQACAAE/ext/"+NodeStarter.extBuildNumber;
 
 	public static final long MAX_REVOCATION_KEY_LENGTH = 4*1024;
 	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 4*1024;
