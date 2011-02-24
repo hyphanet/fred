@@ -2592,15 +2592,6 @@ public class Node implements TimeSkewDetectorCallback {
 		registerNodeToNodeMessageListener(N2N_MESSAGE_TYPE_FPROXY, fproxyN2NMListener);
 		registerNodeToNodeMessageListener(Node.N2N_MESSAGE_TYPE_DIFFNODEREF, diffNoderefListener);
 
-		// FIXME this is a hack
-		// toadlet server should start after all initialized
-		// see NodeClientCore line 437
-		if (toadlets.isEnabled()) {
-			toadlets.finishStart();
-			toadlets.createFproxy();
-			toadlets.removeStartupToadlet();
-		}
-
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
@@ -3729,6 +3720,15 @@ public class Node implements TimeSkewDetectorCallback {
 		// Start testnet handler
 		if(testnetHandler != null)
 			testnetHandler.start();
+
+		// FIXME this is a hack
+		// toadlet server should start after all initialized
+		// see NodeClientCore line 437
+		if (toadlets.isEnabled()) {
+			toadlets.finishStart();
+			toadlets.createFproxy();
+			toadlets.removeStartupToadlet();
+		}
 
 		dispatcher.start(nodeStats); // must be before usm
 		dnsr.start();
