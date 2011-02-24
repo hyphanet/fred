@@ -113,6 +113,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
 	
+	private boolean finishedStartup;
+	
 	/** The PushDataManager handles all the pushing tasks*/
 	public PushDataManager pushDataManager; 
 	
@@ -735,6 +737,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 			
 		});
+		synchronized(this) {
+			finishedStartup = true;
+		}
 	}
 	
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullOnly) {
@@ -827,8 +832,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		} catch (SocketException e1) {
 			Logger.error(this, "Could not set so-timeout to 500ms; on-the-fly disabling of the interface will not work");
 		}
+		boolean finishedStartup = false;
 		while(true) {
 			synchronized(this) {
+				if((!finishedStartup) && this.finishedStartup)
+					finishedStartup = true;
 				if(myThread == null) return;
 			}
 			Socket conn = networkInterface.accept();
@@ -838,7 +846,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
                 continue; // timeout
             if(logMINOR)
                 Logger.minor(this, "Accepted connection");
-            SocketHandler sh = new SocketHandler(conn);
+            SocketHandler sh = new SocketHandler(conn, finishedStartup);
             sh.start();
 		}
 	}
@@ -846,13 +854,18 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	public class SocketHandler implements PrioRunnable {
 
 		Socket sock;
+		final boolean finishedStartup;
 		
-		public SocketHandler(Socket conn) {
+		public SocketHandler(Socket conn, boolean finishedStartup) {
 			this.sock = conn;
+			this.finishedStartup = finishedStartup;
 		}
 
 		void start() {
-			executor.execute(this, "HTTP socket handler@"+hashCode());
+			if(finishedStartup)
+				executor.execute(this, "HTTP socket handler@"+hashCode());
+			else
+				new Thread(this).start();
 		}
 		
 		public void run() {
