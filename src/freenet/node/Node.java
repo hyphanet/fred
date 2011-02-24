@@ -3715,8 +3715,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void start(boolean noSwaps) throws NodeInitException {
 
-		ticker.start();
-		
 		// Start testnet handler
 		if(testnetHandler != null)
 			testnetHandler.start();
@@ -3730,6 +3728,8 @@ public class Node implements TimeSkewDetectorCallback {
 			toadlets.removeStartupToadlet();
 		}
 
+		ticker.start();
+		
 		dispatcher.start(nodeStats); // must be before usm
 		dnsr.start();
 		peers.start(); // must be before usm
