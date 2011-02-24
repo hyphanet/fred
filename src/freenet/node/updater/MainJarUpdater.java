@@ -18,7 +18,7 @@ public class MainJarUpdater extends NodeUpdater {
 	
 	@Override
 	public String jarName() {
-		return "freenet.jar";
+		return "freenet-testnet.jar";
 	}
 
 	protected void parseManifestLine(String line) {

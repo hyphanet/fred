@@ -474,7 +474,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 	/**
 	** Called by NodeUpdateManager to re-set the min/max versions for ext when
-	** a new freenet.jar has been downloaded. This is to try to avoid the node
+	** a new freenet-testnet.jar has been downloaded. This is to try to avoid the node
 	** installing incompatible versions of main and ext.
 	*/
 	public void setMinMax(int requiredExt, int recommendedExt) {
