@@ -462,16 +462,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
-		HTMLNode welcomeInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode welcomeInfoboxHeader = welcomeInfobox.addChild("div", "class", "infobox-header");
-		HTMLNode welcomeInfoboxContent = welcomeInfobox.addChild("div", "class", "infobox-content");
-		welcomeInfoboxHeader.addChild("#", l10n("welcomeInfoboxTitle"));
-		
         if (core.node.isTestnetEnabled()) {
         	ctx.getPageMaker().getInfobox("infobox-alert", l10nWelcome("testnetWarningTitle"), contentNode, "testnet-enabled", true).
         		addChild("#", l10nWelcome("testnetWarning"));
         }
 
+		HTMLNode welcomeInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		HTMLNode welcomeInfoboxHeader = welcomeInfobox.addChild("div", "class", "infobox-header");
+		HTMLNode welcomeInfoboxContent = welcomeInfobox.addChild("div", "class", "infobox-content");
+		welcomeInfoboxHeader.addChild("#", l10n("welcomeInfoboxTitle"));
+		
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
