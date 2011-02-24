@@ -118,6 +118,7 @@ public class TestnetStatusUploader implements Runnable {
 			System.err.println("Trying to verify testnet connectivity with coordinator...");
 			if(verifyConnectivity(testnetPort))
 				return;
+			WrapperManager.signalStarting((int)sleepTime + 30*1000);
 		}
 	}
 	
