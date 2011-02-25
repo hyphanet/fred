@@ -187,9 +187,22 @@ public abstract class LoggerHook extends Logger {
 					if(cname.startsWith(dt.section))
 						thresh = dt.dThreshold;
 				}
+				
 		}
+		if(overrideThresholds.instanceShouldLog(priority, c))
+			return true;
 		return priority.matchesThreshold(thresh);
 	}
+	
+	public static final LoggerHook overrideThresholds = new LoggerHook(Logger.LogLevel.ERROR) {
+		
+		@Override
+		public void log(Object o, Class<?> source, String message, Throwable e,
+				LogLevel priority) {
+			// Do nothing. We are just used for thresholds.
+		}
+		
+	};
 
 	@Override
 	public final boolean instanceShouldLog(LogLevel prio, Object o) {
