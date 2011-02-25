@@ -8,12 +8,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import freenet.io.NetworkInterface;
 import freenet.support.Executor;
 import freenet.support.PooledExecutor;
+import freenet.support.Ticker;
+import freenet.support.TrivialTicker;
 import freenet.support.io.LineReadingInputStream;
 
 /** Testnet controller. This runs on one system and testnet nodes connect to it to get
@@ -33,7 +41,9 @@ public class TestnetController implements Runnable {
 	final File baseDir;
 	final File nodesDir;
 	final NetworkInterface networkInterface;
-	final Executor executor;
+	final PooledExecutor executor;
+	final TrivialTicker ticker;
+	final HashMap<Long, TestnetNode> connectedTestnetNodes = new HashMap<Long, TestnetNode>();
 	
 	static final int PORT = 19840;
 	
@@ -46,7 +56,12 @@ public class TestnetController implements Runnable {
 			throw new IllegalStateException("Unable to start up: cannot make "+nodesDir);
 		initCounter();
 		executor = new PooledExecutor();
+		ticker = new TrivialTicker(executor);
 		networkInterface = NetworkInterface.create(PORT, "0.0.0.0", "0.0.0.0/0", executor, true);
+	}
+	
+	public void start() {
+		executor.start();
 	}
 	
 	private void initCounter() {
@@ -81,6 +96,7 @@ public class TestnetController implements Runnable {
 	public static void main(String[] args) throws IOException {
 		System.err.println("Testnet controller starting up");
 		TestnetController controller = new TestnetController();
+		controller.start();
 		controller.run();
 	}
 
@@ -104,6 +120,7 @@ public class TestnetController implements Runnable {
 		}
 
 		public void run() {
+			boolean movedOn = false;
 			try {
 				InputStream is = sock.getInputStream();
 				BufferedInputStream bis = new BufferedInputStream(is);
@@ -126,6 +143,26 @@ public class TestnetController implements Runnable {
 						}
 						osw.write("GENERATEDID:"+id+"\n");
 						osw.flush();
+					} else if(line.startsWith("READY:")) {
+						long id;
+						try {
+							id = Long.parseLong(line.substring("READY:".length()));
+						} catch (NumberFormatException e) {
+							osw.write("ErrorCannotParseNodeID");
+							return;
+						}
+						TestnetNode connected = 
+							new TestnetNode(sock, lris, os, osw, id);
+						synchronized(connectedTestnetNodes) {
+							if(connectedTestnetNodes.containsKey(id)) {
+								System.err.println("Two connections from peer "+sock.getInetAddress()+" for testnet node "+id);
+								connectedTestnetNodes.get(id).disconnect();
+							}
+							connectedTestnetNodes.put(id, connected);
+						}
+						executor.execute(connected);
+						movedOn = true;
+						onConnectedTestnetNodesChanged();
 					} else {
 						// Do nothing. Read the next line.
 					}
@@ -133,16 +170,145 @@ public class TestnetController implements Runnable {
 			} catch (IOException e) {
 				// Grrrr.
 			} finally {
-				try {
-					sock.close();
-				} catch (IOException e) {
-					// Ignore.
+				if(!movedOn) {
+					try {
+						sock.close();
+					} catch (IOException e) {
+						// Ignore.
+					}
 				}
 			}
 		}
 
 	}
+	
+	abstract class TestnetCommand {
+		final TestnetCommandType type;
+		
+		private TestnetCommand(TestnetCommandType type) {
+			this.type = type;
+		}
+		
+		protected void writeCommand(Writer w) throws IOException {
+			w.write(type.name()+"\n");
+		}
+		
+		/** @return True to disconnect. */
+		public abstract boolean execute(LineReadingInputStream lris, OutputStream os, Writer w, TestnetNode client) throws IOException;
+	}
+	
+	class QuitCommand extends TestnetCommand {
+		QuitCommand() {
+			super(TestnetCommandType.Close);
+		}
 
+		@Override
+		public boolean execute(LineReadingInputStream lris, OutputStream os,
+				Writer w, TestnetNode client) {
+			return true;
+		}
+	}
+	
+	class PingCommand extends TestnetCommand {
+		PingCommand() {
+			super(TestnetCommandType.Ping);
+		}
+		
+		@Override
+		public boolean execute(LineReadingInputStream lris, OutputStream os,
+				Writer w, TestnetNode client) throws IOException {
+			writeCommand(w);
+			String response = lris.readLine(1024, 20, true);
+			if(response == null) {
+				System.err.println("Timed out waiting for ping response, disconnecting");
+				return true;
+			}
+			if(!response.equals("Pong")) {
+				System.err.println("Bogus return from ping, disconnecting");
+				return true;
+			}
+			client.queuePing();
+			System.out.println("Ping ok from "+client.id);
+			return false;
+		}
+	}
+	
+	class TestnetNode implements Runnable {
+		
+		public TestnetNode(Socket sock, LineReadingInputStream lris2,
+				OutputStream os2, OutputStreamWriter osw, long id) {
+			this.socket = sock;
+			this.lris = lris2;
+			this.os = os2;
+			this.w = osw;
+			this.id = id;
+		}
+		
+		public void disconnect() {
+			commandQueue.add(new QuitCommand());
+		}
+
+		final Socket socket;
+		final LineReadingInputStream lris;
+		final OutputStream os;
+		final Writer w;
+		
+		final long id;
+		
+		final BlockingQueue<TestnetCommand> commandQueue =
+			new LinkedBlockingQueue<TestnetCommand>();
+		
+		public void run() {
+			queuePing();
+			try {
+				while(true) {
+					TestnetCommand command;
+					try {
+						command = commandQueue.take();
+					} catch (InterruptedException e) {
+						continue;
+					}
+					if(command == null) return;
+					try {
+						if(command.execute(lris, os, w, this)) return;
+					} catch (IOException e) {
+						return;
+					}
+				}
+			} finally {
+				boolean removed = false;
+				synchronized(connectedTestnetNodes) {
+					if(connectedTestnetNodes.get(id) == this) {
+						removed = true;
+						connectedTestnetNodes.remove(id);
+					}
+				}
+				try {
+					socket.close();
+				} catch (IOException e) {
+					// Ignore
+				}
+				if(removed)
+					onConnectedTestnetNodesChanged();
+			}
+		}
+
+		private void queuePing() {
+			ticker.queueTimedJob(new Runnable() {
+
+				public void run() {
+					commandQueue.add(new PingCommand());
+				}
+				
+			}, PING_PERIOD);
+		}
+		
+		
+	}
+
+	// FIXME increase???
+	static final long PING_PERIOD = 30*1000;
+	
 	public synchronized long generateID() throws IOException {
 		if(counter == -1) counter++; // -1 not allowed
 		long newID = counter++;
@@ -151,6 +317,12 @@ public class TestnetController implements Runnable {
 		if(!dir.exists())
 			throw new IOException();
 		return newID;
+	}
+
+	public void onConnectedTestnetNodesChanged() {
+		synchronized(connectedTestnetNodes) {
+			System.out.println("Connected testnet nodes: "+connectedTestnetNodes.size());
+		}
 	}
 
 	/** Fetch and record things like the node's noderef.

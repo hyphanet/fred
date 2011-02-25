@@ -130,6 +130,7 @@ public class TestnetStatusUploader {
 		}
 		private void handleTestnetConnection() {
 			try {
+				w.write("READY:"+node.testnetID+"\n");
 				while(true) {
 					String command = br.readLine();
 					try {
@@ -296,7 +297,7 @@ public class TestnetStatusUploader {
 		return false;
 	}
 
-	public void waitForConnectivity(int testnetPort) {
+	public void waitForConnectivity() {
 		boolean sleep = false;
 		long sleepTime = 1000;
 		long maxSleepTime = 60 * 60 * 1000;

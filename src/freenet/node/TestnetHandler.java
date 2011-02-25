@@ -44,7 +44,7 @@ import freenet.support.api.IntCallback;
  * No headers are sent, so you can simply capture netcat's output.
  * The idea is that this should be as simple as possible...
  */
-public class TestnetHandler implements Runnable {
+public class TestnetHandler {
 	
 	private final TestnetStatusUploader uploader;
 	
@@ -62,8 +62,7 @@ public class TestnetHandler implements Runnable {
 	}
 
 	public void start() {
-		node.executor.execute(this, "Testnet handler thread");
-        uploader.waitForConnectivity(testnetPort);
+        uploader.waitForConnectivity();
 		uploader.start();
 	}
 	
@@ -196,7 +195,7 @@ public class TestnetHandler implements Runnable {
         // Get the testnet port
         
         testnetConfig.finishedInitialization();
-        return new TestnetHandler(node, port);
+        return new TestnetHandler(node);
 	}
 
 }
