@@ -1071,7 +1071,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	 * Print a human- and script- readable list of available log files.
 	 * @throws IOException 
 	 */
-	public void listAvailableLogs(OutputStreamWriter writer) throws IOException {
+	public SimpleFieldSet listAvailableLogs() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		OldLogFile[] oldLogFiles;
 		synchronized(logFiles) {
 			oldLogFiles = logFiles.toArray(new OldLogFile[logFiles.size()]);
@@ -1080,8 +1081,13 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		tempDF.setTimeZone(TimeZone.getTimeZone("GMT"));
 		for(int i=0;i<oldLogFiles.length;i++) {
 			OldLogFile olf = oldLogFiles[i];
-			writer.write(olf.filename.getName()+" : "+tempDF.format(new Date(olf.start))+" to "+tempDF.format(new Date(olf.end))+ " - "+olf.size+" bytes\n");
+			SimpleFieldSet subset = new SimpleFieldSet(true);
+			subset.putSingle("Filename", olf.filename.getName());
+			subset.putSingle("Date", tempDF.format(new Date(olf.start)));
+			subset.put("Size", olf.size);
+			fs.put(Integer.toString(i), subset);
 		}
+		return fs;
 	}
 
 	public void sendLogByContainedDate(long time, OutputStream os) throws IOException {
@@ -1102,13 +1108,16 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				return; // couldn't find it
 			}
 		}
+		OutputStreamWriter osw = new OutputStreamWriter(os, "UTF-8");
+		osw.write("LogCount:"+toReturn.size()+"\n");
+		osw.flush();
 		for(OldLogFile olf : toReturn) {
 			System.out.println("Writing data from log "+olf.filename);
 			FileInputStream fis = new FileInputStream(olf.filename);
 			DataInputStream dis = new DataInputStream(fis);
 			long written = 0;
 			long size = olf.size;
-			OutputStreamWriter osw = new OutputStreamWriter(os, "UTF-8");
+			osw.write("Log:"+olf.filename+"\n");
 			osw.write("LENGTH: "+size+"\n");
 			osw.flush();
 			byte[] buf = new byte[4096];

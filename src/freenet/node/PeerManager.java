@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -2087,5 +2088,22 @@ public class PeerManager {
 	public static interface PeerStatusChangeListener{
 		/** Peers status have changed*/
 		public void onPeerStatusChange();
+	}
+
+	public Map<Integer, Integer> getPeerCountsByStatus() {
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+		for(PeerNode pn : peers) {
+			int status = pn.getPeerNodeStatus();
+			Integer x = map.get(status);
+			if(x == null)
+				map.put(status, 1);
+			else
+				map.put(status, x+1);
+		}
+		return map;
 	}
 }

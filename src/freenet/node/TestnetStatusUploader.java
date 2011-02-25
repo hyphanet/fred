@@ -6,6 +6,7 @@ package freenet.node;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,12 +14,21 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.Writer;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TimeZone;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * Testnet StatusUploader.
@@ -30,7 +40,7 @@ import freenet.support.Logger;
  * 
  * 
  */
-public class TestnetStatusUploader implements Runnable {
+public class TestnetStatusUploader {
 
 	public TestnetStatusUploader(Node node2, int updateInterval) {
 		this.node = node2;
@@ -45,18 +55,112 @@ public class TestnetStatusUploader implements Runnable {
 	}
 
 	void start() {
-		node.executor.execute(this, "TestnetStatusUploader thread");
+		tryVerifyConnectivity();
 	}
 	
+	private void tryVerifyConnectivity() {
+	    freenet.support.Logger.OSThread.logPID(this);
+		//thread loop
+	    
+	    int failed = 0;
+	    
+		while(true){
+			
+			try{
+				Thread.sleep(updateInterval);
+					
+			//how i love java 
+			}catch (InterruptedException e){
+				return;
+				
+			}
+			
+			if(!verifyConnectivity()) {
+				failed++;
+				if(failed >= 2) {
+					System.err.println("Failed to verify connectivity twice, restarting to wait for connection.");
+					WrapperManager.restart();
+					System.exit(NodeInitException.EXIT_TESTNET_FAILED);
+				}
+			} else {
+				failed = 0;
+			}
+			
+		}
+	}
+
 	private final Node node;
 	private final int updateInterval;
 	
 	static final String serverAddress = "amphibian.dyndns.org";
 	static final int serverPort = TestnetController.PORT;
 	
+	/** Manages the persistent connection to the testnet controller. 
+	 * The testnet controller can ask for various things such as the contents of logs.
+	 * It usually returns a single line or a SimpleFieldSet. If data is returned the 
+	 * length must be returned first. */
+	class TestnetConnectionHandler implements Runnable {
+		final Socket client;
+		final BufferedReader br;
+		final Writer w;
+		final OutputStream os;
+		public TestnetConnectionHandler(Socket client, BufferedReader br,
+				Writer w, OutputStream os) {
+			this.client = client;
+			this.br = br;
+			this.w = w;
+			this.os = os;
+		}
+		public void run() {
+			try {
+				handleTestnetConnection();
+			} finally {
+				synchronized(TestnetStatusUploader.this) {
+					if(connectionHandler == this) {
+						connectionHandler = null;
+					}
+				}
+				try {
+					client.close();
+				} catch (IOException e) {
+					// Ignore
+				}
+				verifyConnectivity();
+			}
+		}
+		private void handleTestnetConnection() {
+			try {
+				while(true) {
+					String command = br.readLine();
+					try {
+						if(handleCommandFromTestnetController(command, br, w, os)) return;
+					} catch (IOException e) {
+						return;
+					} catch (Throwable t) {
+						Logger.error(this, "Failed to handle testnet command \""+command+"\"", t);
+						// Something wierd, maybe startup glitch???
+						// Try again.
+						w.write("ErrorOuter\n");
+					}
+				}
+			} catch (IOException e) {
+				return;
+			}
+		}
+	}
+	
+	private boolean verifyingConnectivity;
+	private TestnetConnectionHandler connectionHandler;
+	
 	public boolean verifyConnectivity() {
+		synchronized(this) {
+			if(verifyingConnectivity) return true;
+			if(connectionHandler != null) return true;
+			verifyingConnectivity = true;
+		}
 		Socket client = null;
 		
+		boolean success = false;
 		// Set up client socket
 		try
 		{
@@ -68,6 +172,13 @@ public class TestnetStatusUploader implements Runnable {
 			BufferedReader br = new BufferedReader(isr);
 			OutputStreamWriter osw = new OutputStreamWriter(new BufferedOutputStream(os));
 			
+			synchronized(this) {
+				verifyingConnectivity = false;
+				connectionHandler = new TestnetConnectionHandler(client, br, new BufferedWriter(osw), os);
+				client = null;
+				success = true;
+				node.executor.execute(connectionHandler);
+			}
 //			// Verify connectivity.
 //			osw.write("VERIFY:"+node.testnetID+":"+testnetPort+"\n");
 //			osw.flush();
@@ -90,6 +201,10 @@ public class TestnetStatusUploader implements Runnable {
 			System.err.println("Could not verify connectivity to the uploadhost: "+e);
 			return false;
 		} finally {
+			synchronized(this) {
+				if(!success)
+					verifyingConnectivity = false;
+			}
 			try {
 				if(client != null)
 					client.close();
@@ -100,6 +215,87 @@ public class TestnetStatusUploader implements Runnable {
 		
 	}
 	
+	/** 
+	 * @param OutputStream YOU MUST FLUSH THE WRITER BEFORE USING THIS!!!
+	 * @return True to close the connection.
+	 * @throws IOException */
+	public boolean handleCommandFromTestnetController(String command, BufferedReader br, Writer w, OutputStream os) throws IOException {
+		if(command.equals("Close")) {
+			return true;
+		} else if(command.equals("Ping")) {
+			w.write("Pong\n");
+		} else if(command.equals("GetMyReference")) {
+			w.write("MyReference\n");
+			SimpleFieldSet fs = node.exportDarknetPublicFieldSet();
+			fs.writeTo(w);
+		} else if(command.equals("GetConfig")) {
+			w.write("MyConfig\n");
+			SimpleFieldSet fs = node.config.exportFieldSet();
+			fs.writeTo(w);
+		} else if(command.equals("GetConnectionStatusCounts")) {
+			Map<Integer, Integer> countsByStatus = node.peers.getPeerCountsByStatus();
+			SimpleFieldSet fs = new SimpleFieldSet(true);
+			for(Map.Entry<Integer, Integer> entry : countsByStatus.entrySet()) {
+				fs.put(Integer.toString(entry.getKey()), entry.getValue());
+			}
+			w.write("ConnectionStatusCounts\n");
+			fs.writeTo(w);
+		} else if(command.equals("GetFCPStatsSummary")) {
+			SimpleFieldSet fs = node.nodeStats.exportVolatileFieldSet();
+			w.write("FCPStatsSummary\n");
+			fs.writeTo(w);
+		} else if(command.equals("GetConnections")) {
+			w.write("Connections\n");
+			PeerNode[] peers = node.peers.connectedPeers;
+			SimpleFieldSet fs = new SimpleFieldSet(true);
+			int x = 0;
+			for(PeerNode p : peers) {
+				SimpleFieldSet peerFS = new SimpleFieldSet(true);
+				peerFS.put("noderef", p.exportFieldSet());
+				peerFS.put("volatile", p.exportVolatileFieldSet());
+				peerFS.put("metadata", p.exportMetadataFieldSet());
+				peerFS.put("status", p.getPeerNodeStatus());
+				fs.put("peer" + x, peerFS);
+				x++;
+			}
+		} else if(command.equals("GetLogsList")) {
+			w.write("LogsList\n");
+			FileLoggerHook loggerHook;
+			loggerHook = Node.logConfigHandler.getFileLoggerHook();
+			if(loggerHook == null) {
+				w.write("ErrorNoLogger\n");
+				return false;
+			}
+			SimpleFieldSet fs = loggerHook.listAvailableLogs();
+			fs.writeTo(w);
+		} else if(command.startsWith("GetLog:")) {
+			String date = command.substring("GetLog:".length());
+			DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
+			df.setTimeZone(TimeZone.getTimeZone("GMT"));
+			Date d;
+			try {
+				d = df.parse(date);
+			} catch (ParseException e) {
+				System.err.println("Cannot parse date");
+				w.write("ErrorCannotParseDate\n");
+				return false;
+			}
+			System.out.println("Coordinator asked for log at time "+d);
+			w.flush();
+			FileLoggerHook loggerHook;
+			loggerHook = Node.logConfigHandler.getFileLoggerHook();
+			if(loggerHook == null) {
+				w.write("ErrorNoLogger\n");
+				return false;
+			}
+			w.write("Logs:\n");
+			loggerHook.sendLogByContainedDate(d.getTime(), os);
+		}
+		// FIXME fetch a log, grepping it
+		// FIXME fetch recent error messages
+		return false;
+	}
+
 	public void waitForConnectivity(int testnetPort) {
 		boolean sleep = false;
 		long sleepTime = 1000;
@@ -123,39 +319,6 @@ public class TestnetStatusUploader implements Runnable {
 		}
 	}
 	
-	public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
-			//thread loop
-		    
-		    int failed = 0;
-		    
-			while(true){
-				
-				try{
-					Thread.sleep(updateInterval);
-						
-				//how i love java 
-				}catch (InterruptedException e){
-					return;
-					
-				}
-				
-				if(!verifyConnectivity()) {
-					failed++;
-					if(failed >= 2) {
-						System.err.println("Failed to verify connectivity twice, restarting to wait for connection.");
-						WrapperManager.restart();
-						System.exit(NodeInitException.EXIT_TESTNET_FAILED);
-					}
-				} else {
-					failed = 0;
-				}
-				
-			}
-			
-
-	}
-
 	public static long makeID() {
 		boolean sleep = false;
 		long sleepTime = 1000;
