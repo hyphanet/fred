@@ -151,6 +151,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	private Peer remoteDetectedPeer;
 	/** Is this a testnet node? */
 	public final boolean testnetEnabled;
+	/** What is it's testnet ID if so? */
+	public final long testnetID;
 	/** Packets sent/received on the current preferred key */
 	private SessionKey currentTracker;
 	/** Previous key - has a separate packet number space */
@@ -484,6 +486,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			String err = "Ignoring incompatible node " + detectedPeer + " - peer.testnet=" + testnetEnabled + '(' + fs.get("testnet") + ") but node.testnet=" + node.isTestnetEnabled();
 			Logger.error(this, err);
 			throw new PeerParseException(err);
+		}
+		if(testnetEnabled) {
+			testnetID = fs.getLong("testnetID", -1);
+			if(testnetID == -1)
+				throw new PeerParseException("Testnet ID is -1 or not present");
+		} else {
+			testnetID = -1;
 		}
 
 		negTypes = fs.getIntArray("auth.negTypes");
@@ -1886,7 +1895,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	private String shortToString;
 	private void updateShortToString() {
-		shortToString = super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(identity);
+		shortToString = super.toString() + "@TESTNET:" + testnetID + '@' + detectedPeer + '@' + HexUtil.bytesToHex(identity);
 	}
 
 	/**
