@@ -194,7 +194,7 @@ public abstract class LoggerHook extends Logger {
 		return priority.matchesThreshold(thresh);
 	}
 	
-	public static final LoggerHook overrideThresholds = new LoggerHook(Logger.LogLevel.ERROR) {
+	public static final LoggerHook overrideThresholds = new LoggerHook(Logger.LogLevel.NONE) {
 		
 		@Override
 		public void log(Object o, Class<?> source, String message, Throwable e,
