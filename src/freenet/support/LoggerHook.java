@@ -189,7 +189,7 @@ public abstract class LoggerHook extends Logger {
 				}
 				
 		}
-		if(overrideThresholds.instanceShouldLog(priority, c))
+		if(this != overrideThresholds && overrideThresholds.instanceShouldLog(priority, c))
 			return true;
 		return priority.matchesThreshold(thresh);
 	}
