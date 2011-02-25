@@ -155,6 +155,8 @@ import freenet.support.HexUtil;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.LoggerHook;
+import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.PrioritizedTicker;
@@ -1665,11 +1667,6 @@ public class Node implements TimeSkewDetectorCallback {
 			System.err.println("Forcing logging enabled (essential for testnet)");
 			logConfigHandler.forceEnableLogging();
 		}
-		LogLevel x = Logger.globalGetThresholdNew();
-		if(!((x == LogLevel.MINOR) || (x == LogLevel.DEBUG))) {
-			System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
-			Logger.globalSetThreshold(LogLevel.MINOR);
-		}
 		if(logConfigHandler.getMaxZippedLogFiles() < TESTNET_MIN_MAX_ZIPPED_LOGFILES) {
 			System.err.println("Forcing max zipped logfiles space to 5GB for testnet");
 			try {
@@ -1679,6 +1676,12 @@ public class Node implements TimeSkewDetectorCallback {
 			} catch (NodeNeedRestartException e) {
 				throw new Error("Impossible: " + e, e);
 			}
+		}
+		LoggerHook.overrideThresholds.setThreshold(Logger.LogLevel.NORMAL);
+		try {
+			LoggerHook.overrideThresholds.setDetailedThresholds("freenet.node:MINOR,freenet.io.xfer:DEBUG,freenet.io.comm.IncomingPacketFilterImpl:MINOR,freenet.io.comm.Udp:DEBUG,freenet.node.MessageWrapper:DEBUG,freenet.node.NPF:DEBUG,freenet.node.NewPacketFormat:DEBUG,freenet.io.MessageCore:DEBUG");
+		} catch (InvalidThresholdException e3) {
+			throw new Error(e3);
 		}
 
 		File nodeFile = nodeDir.file("node-"+getDarknetPortNumber());
