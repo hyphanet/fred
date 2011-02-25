@@ -1671,7 +1671,7 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.globalSetThreshold(LogLevel.MINOR);
 		}
 		if(logConfigHandler.getMaxZippedLogFiles() < TESTNET_MIN_MAX_ZIPPED_LOGFILES) {
-			System.err.println("Forcing max zipped logfiles space to 256MB for testnet");
+			System.err.println("Forcing max zipped logfiles space to 5GB for testnet");
 			try {
 				logConfigHandler.setMaxZippedLogFiles(TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING);
 			} catch (InvalidConfigValueException e) {
