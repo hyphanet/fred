@@ -74,6 +74,7 @@ public class TestnetController implements Runnable {
 			}
 		}
 		counter++;
+		if(counter == -1) counter++; // -1 not allowed
 		System.err.println("Next counter is: "+counter);
 	}
 
@@ -186,6 +187,7 @@ public class TestnetController implements Runnable {
 	}
 
 	public synchronized long generateID() throws IOException {
+		if(counter == -1) counter++; // -1 not allowed
 		long newID = counter++;
 		File dir = getDir(newID);
 		dir.mkdirs();
