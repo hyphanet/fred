@@ -126,49 +126,6 @@ public class TestnetController implements Runnable {
 						}
 						osw.write("GENERATEDID:"+id+"\n");
 						osw.flush();
-					} else if(line.startsWith("VERIFY:")) {
-						String[] split = line.split(":");
-						if(split.length < 3) continue;
-						long testnetNodeID;
-						int port;
-						try {
-							testnetNodeID = Long.parseLong(split[1]);
-						} catch (NumberFormatException e) {
-							osw.write("FAILED:VERIFY:No valid node ID\n");
-							osw.flush();
-							continue;
-						}
-						try {
-							port = Integer.parseInt(split[2]);
-						} catch (NumberFormatException e) {
-							osw.write("FAILED:VERIFY:No valid port number\n");
-							osw.flush();
-							continue;
-						}
-						System.out.println("Verifying connectivity to node ID "+testnetNodeID+" on port "+port+" from "+sock.getInetAddress());
-						if(!logVerify(testnetNodeID, port, sock.getInetAddress(), sock.getPort())) {
-							osw.write("FAILED:VERIFY:No such ID\n");
-							osw.flush();
-							continue;
-						}
-						Socket testSocket = null;
-						try {
-							InetAddress addr = sock.getInetAddress();
-							// FIXME ridiculous cheat for running controller and testnet node on same system.
-							if(addr.getHostAddress().startsWith("192.168."))
-								addr = InetAddress.getByName("amphibian.dyndns.org");
-							testSocket = new Socket(addr, port);
-							fetchRegularStuff(testnetNodeID, addr, port, testSocket);
-							osw.write("OK\n");
-							osw.flush();
-						} catch (IOException e) {
-							// Grrrr
-							osw.write("FAILED:VERIFY:Failed to connect to testnet port\n");
-							osw.flush();
-							continue;
-						} finally {
-							testSocket.close();
-						}
 					} else {
 						// Do nothing. Read the next line.
 					}
