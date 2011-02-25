@@ -48,9 +48,8 @@ public class TestnetHandler implements Runnable {
 	
 	private final TestnetStatusUploader uploader;
 	
-	public TestnetHandler(Node node2, int testnetPort) {
+	public TestnetHandler(Node node2) {
 		this.node = node2;
-		this.testnetPort = testnetPort;
 		Logger.error(this, "STARTING TESTNET SERVER!");
 		Logger.error(this, "ANONYMITY MODE: OFF");
 		System.err.println("STARTING TESTNET SERVER!");
@@ -64,186 +63,137 @@ public class TestnetHandler implements Runnable {
 
 	public void start() {
 		node.executor.execute(this, "Testnet handler thread");
-		System.err.println("Started testnet handler on port "+testnetPort);
         uploader.waitForConnectivity(testnetPort);
 		uploader.start();
 	}
 	
 	private final Node node;
 	private ServerSocket server;
-	private int testnetPort;
 	
-	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
-		while(true){
-			// Set up server socket
-			try {
-				server = new ServerSocket(testnetPort);
-				Logger.normal(this,"Starting testnet server on port"+testnetPort);
-			} catch (IOException e) {
-				Logger.error(this, "Could not bind to testnet port: "+testnetPort);
-				node.exit(NodeInitException.EXIT_TESTNET_FAILED);
-				return;
-			}
-			while(!server.isClosed()) {
-				try {
-					Socket s = server.accept();
-					new TestnetSocketHandler(s).start();
-				} catch (IOException e) {
-					Logger.error(this, "Testnet failed to accept socket: "+e, e);
-				}	
-			}
-			Logger.normal(this, "Testnet handler has been stopped : restarting");
-		}
-	}
-	
-	public void rebind(int port){
-		synchronized(server) {
-			try{
-				if((!server.isClosed()) && server.isBound())
-					server.close();
-				this.testnetPort=port;
-			}catch( IOException e){
-				Logger.error(this, "Error while stopping the testnet handler.");
-				node.exit(NodeInitException.EXIT_TESTNET_FAILED);
-				return;
-			}
-		}
-	}
-	
-	public int getPort(){
-		return testnetPort;
-	}
-	
-	public class TestnetSocketHandler implements Runnable {
-
-		private Socket s;
-		
-		public TestnetSocketHandler(Socket s2) {
-			this.s = s2;
-		}
-
-		void start() {
-			node.executor.execute(this, "Testnet handler for "+s.getInetAddress()+" at "+System.currentTimeMillis());
-		}
-		
-		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
-			boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-			InputStream is = null;
-			OutputStream os = null;
-			try {
-				is = s.getInputStream();
-				os = s.getOutputStream();
-				// Read command
-				InputStreamReader isr = new InputStreamReader(is, "ISO-8859-1");
-				BufferedReader br = new BufferedReader(isr);
-				String command = br.readLine();
-				if(command == null) return;
-				if(logMINOR) Logger.minor(this, "Command: "+command);
-				FileLoggerHook loggerHook;
-				loggerHook = Node.logConfigHandler.getFileLoggerHook();
-				if(loggerHook == null) {
-					Logger.error(this, "Could not serve testnet command because no FileLoggerHook");
-					OutputStreamWriter osw = new OutputStreamWriter(os);
-					osw.write("ERROR: Could not serve testnet command because no FileLoggerHook");
-					return;
-				}
-				if(command.equalsIgnoreCase("LIST")) {
-					if(logMINOR) Logger.minor(this, "Listing available logs");
-					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
-					loggerHook.listAvailableLogs(osw);
-					osw.close();
-				} else if(command.startsWith("GET:")) {
-					if(logMINOR) Logger.minor(this, "Sending log: "+command);
-					String date = command.substring("GET:".length());
-					DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
-					df.setTimeZone(TimeZone.getTimeZone("GMT"));
-					Date d;
-					try {
-						d = df.parse(date);
-					} catch (ParseException e) {
-						System.out.println("Cannot parse: "+e+" for "+date);
-						if(logMINOR) Logger.minor(this, "Cannot parse: "+e+" for "+date);
-						return;
-					}
-					System.out.println(s.getInetAddress()+" asked for log at time "+d);
-					loggerHook.sendLogByContainedDate(d.getTime(), os);
-					os.close();
-				} else if(command.equalsIgnoreCase("STATUS")) {
-					if(logMINOR) Logger.minor(this, "Sending status");
-					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
-					osw.write(node.getStatus());
-					osw.flush();
-					osw.close();
-				} else if(command.equalsIgnoreCase("PEERS")) {
-					if(logMINOR) Logger.minor(this, "Sending references");
-					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
-					BufferedWriter bw = new BufferedWriter(osw);
-					bw.write("My darknet ref:\n\n");
-					SimpleFieldSet fs = node.exportDarknetPublicFieldSet();
-					fs.writeTo(bw);
-					if(node.isOpennetEnabled()) {
-						bw.write("My opennet ref:\n\n");
-						fs = node.exportOpennetPublicFieldSet();
-						fs.writeTo(bw);
-					}
-					bw.write("\n\nMy peers:\n");
-					bw.write(node.peers.getDarknetPeersString().toString());
-					bw.close();
-				}else {
-					Logger.error(this, "Unknown testnet command: "+command);
-				}
-			} catch (IOException e) {
-				Logger.normal(this, "Failure handling testnet connection: "+e);
-			} finally {
-				if(is != null)
-					try {
-						is.close();
-					} catch (IOException e) {
-						// Ignore
-					}
-				if(os != null)
-					try {
-						os.close();
-					} catch (IOException e) {
-						// Ignore
-					}
-			}
-		}
-
-	}
-
-	static class TestnetPortNumberCallback extends IntCallback  {
-		Node node;
-		
-		TestnetPortNumberCallback(Node n){
-			this.node = n;
-		}
-		
-		@Override
-		public Integer get() {
-			return node.testnetHandler.getPort();
-		}
-		
-		@Override
-		public void set(Integer val) throws InvalidConfigValueException {
-			if (get().equals(val))
-				return;
-			node.testnetHandler.rebind(val);
-		}
-	}	
-	
-	
+//	public class TestnetSocketHandler implements Runnable {
+//
+//		private Socket s;
+//		
+//		public TestnetSocketHandler(Socket s2) {
+//			this.s = s2;
+//		}
+//
+//		void start() {
+//			node.executor.execute(this, "Testnet handler for "+s.getInetAddress()+" at "+System.currentTimeMillis());
+//		}
+//		
+//		public void run() {
+//		    freenet.support.Logger.OSThread.logPID(this);
+//			boolean logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+//			InputStream is = null;
+//			OutputStream os = null;
+//			try {
+//				is = s.getInputStream();
+//				os = s.getOutputStream();
+//				// Read command
+//				InputStreamReader isr = new InputStreamReader(is, "ISO-8859-1");
+//				BufferedReader br = new BufferedReader(isr);
+//				String command = br.readLine();
+//				if(command == null) return;
+//				if(logMINOR) Logger.minor(this, "Command: "+command);
+//				FileLoggerHook loggerHook;
+//				loggerHook = Node.logConfigHandler.getFileLoggerHook();
+//				if(loggerHook == null) {
+//					Logger.error(this, "Could not serve testnet command because no FileLoggerHook");
+//					OutputStreamWriter osw = new OutputStreamWriter(os);
+//					osw.write("ERROR: Could not serve testnet command because no FileLoggerHook");
+//					return;
+//				}
+//				if(command.equalsIgnoreCase("LIST")) {
+//					if(logMINOR) Logger.minor(this, "Listing available logs");
+//					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
+//					loggerHook.listAvailableLogs(osw);
+//					osw.close();
+//				} else if(command.startsWith("GET:")) {
+//					if(logMINOR) Logger.minor(this, "Sending log: "+command);
+//					String date = command.substring("GET:".length());
+//					DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
+//					df.setTimeZone(TimeZone.getTimeZone("GMT"));
+//					Date d;
+//					try {
+//						d = df.parse(date);
+//					} catch (ParseException e) {
+//						System.out.println("Cannot parse: "+e+" for "+date);
+//						if(logMINOR) Logger.minor(this, "Cannot parse: "+e+" for "+date);
+//						return;
+//					}
+//					System.out.println(s.getInetAddress()+" asked for log at time "+d);
+//					loggerHook.sendLogByContainedDate(d.getTime(), os);
+//					os.close();
+//				} else if(command.equalsIgnoreCase("STATUS")) {
+//					if(logMINOR) Logger.minor(this, "Sending status");
+//					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
+//					osw.write(node.getStatus());
+//					osw.flush();
+//					osw.close();
+//				} else if(command.equalsIgnoreCase("PEERS")) {
+//					if(logMINOR) Logger.minor(this, "Sending references");
+//					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
+//					BufferedWriter bw = new BufferedWriter(osw);
+//					bw.write("My darknet ref:\n\n");
+//					SimpleFieldSet fs = node.exportDarknetPublicFieldSet();
+//					fs.writeTo(bw);
+//					if(node.isOpennetEnabled()) {
+//						bw.write("My opennet ref:\n\n");
+//						fs = node.exportOpennetPublicFieldSet();
+//						fs.writeTo(bw);
+//					}
+//					bw.write("\n\nMy peers:\n");
+//					bw.write(node.peers.getDarknetPeersString().toString());
+//					bw.close();
+//				}else {
+//					Logger.error(this, "Unknown testnet command: "+command);
+//				}
+//			} catch (IOException e) {
+//				Logger.normal(this, "Failure handling testnet connection: "+e);
+//			} finally {
+//				if(is != null)
+//					try {
+//						is.close();
+//					} catch (IOException e) {
+//						// Ignore
+//					}
+//				if(os != null)
+//					try {
+//						os.close();
+//					} catch (IOException e) {
+//						// Ignore
+//					}
+//			}
+//		}
+//
+//	}
+//
+//	static class TestnetPortNumberCallback extends IntCallback  {
+//		Node node;
+//		
+//		TestnetPortNumberCallback(Node n){
+//			this.node = n;
+//		}
+//		
+//		@Override
+//		public Integer get() {
+//			return node.testnetHandler.getPort();
+//		}
+//		
+//		@Override
+//		public void set(Integer val) throws InvalidConfigValueException {
+//			if (get().equals(val))
+//				return;
+//			node.testnetHandler.rebind(val);
+//		}
+//	}	
+//	
+//	
 	public static TestnetHandler maybeCreate(Node node, Config config) throws NodeInitException {
         SubConfig testnetConfig = new SubConfig("node.testnet", config);
         
         // Get the testnet port
-        
-        testnetConfig.register("port", node.getDarknetPortNumber()+1000, 2, true, false, "TestnetHandler.port", "TestnetHandler.portLong",
-        		new TestnetPortNumberCallback(node), false);
-        
-        int port = testnetConfig.getInt("port");
         
         testnetConfig.finishedInitialization();
         return new TestnetHandler(node, port);

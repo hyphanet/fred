@@ -54,7 +54,7 @@ public class TestnetStatusUploader implements Runnable {
 	static final String serverAddress = "amphibian.dyndns.org";
 	static final int serverPort = TestnetController.PORT;
 	
-	public boolean verifyConnectivity(int testnetPort) {
+	public boolean verifyConnectivity() {
 		Socket client = null;
 		
 		// Set up client socket
@@ -68,22 +68,23 @@ public class TestnetStatusUploader implements Runnable {
 			BufferedReader br = new BufferedReader(isr);
 			OutputStreamWriter osw = new OutputStreamWriter(new BufferedOutputStream(os));
 			
-			// Verify connectivity.
-			osw.write("VERIFY:"+node.testnetID+":"+testnetPort+"\n");
-			osw.flush();
-			
-			String reply = br.readLine();
-			
-			if(reply == null) {
-				throw new IOException("Lost connection waiting for response");
-			}
-			
-			if(reply.equals("OK")) {
-				System.out.println("Successfully verified connectivity with testnet controller.");
-				return true;
-			}
-			System.err.println("Connectivity check failed: \""+reply+"\"");
-			return false;
+//			// Verify connectivity.
+//			osw.write("VERIFY:"+node.testnetID+":"+testnetPort+"\n");
+//			osw.flush();
+//			
+//			String reply = br.readLine();
+//			
+//			if(reply == null) {
+//				throw new IOException("Lost connection waiting for response");
+//			}
+//			
+//			if(reply.equals("OK")) {
+//				System.out.println("Successfully verified connectivity with testnet controller.");
+//				return true;
+//			}
+//			System.err.println("Connectivity check failed: \""+reply+"\"");
+//			return false;
+			return true;
 		} catch (IOException e){
 			Logger.error(this, "Could not verify connectivity to the uploadhost: "+e);
 			System.err.println("Could not verify connectivity to the uploadhost: "+e);
@@ -116,7 +117,7 @@ public class TestnetStatusUploader implements Runnable {
 			}
 			sleep = true;
 			System.err.println("Trying to verify testnet connectivity with coordinator...");
-			if(verifyConnectivity(testnetPort))
+			if(verifyConnectivity())
 				return;
 			WrapperManager.signalStarting((int)sleepTime + 30*1000);
 		}
@@ -139,7 +140,7 @@ public class TestnetStatusUploader implements Runnable {
 					
 				}
 				
-				if(!verifyConnectivity(node.testnetHandler.getPort())) {
+				if(!verifyConnectivity()) {
 					failed++;
 					if(failed >= 2) {
 						System.err.println("Failed to verify connectivity twice, restarting to wait for connection.");
