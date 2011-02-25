@@ -198,7 +198,7 @@ public class LoggingConfigHandler {
 		logRotateInterval = config.getString("interval");
     	
 		// max cached bytes in RAM
-		config.register("maxCachedBytes", "10M", 6, true, false, "LogConfigHandler.maxCachedBytes",
+		config.register("maxCachedBytes", "100M", 6, true, false, "LogConfigHandler.maxCachedBytes",
 				"LogConfigHandler.maxCachedBytesLong",
 				new LongCallback() {
 					@Override
@@ -217,7 +217,7 @@ public class LoggingConfigHandler {
 		maxCachedLogBytes = config.getLong("maxCachedBytes");
     	
 		// max cached lines in RAM
-		config.register("maxCachedLines", "100k", 7, true, false, "LogConfigHandler.maxCachedLines",
+		config.register("maxCachedLines", "500k", 7, true, false, "LogConfigHandler.maxCachedLines",
 				"LogConfigHandler.maxCachedLinesLong",
 				new IntCallback() {
 					@Override
@@ -235,7 +235,7 @@ public class LoggingConfigHandler {
     	
 		maxCachedLogLines = config.getInt("maxCachedLines");
 		
-		config.register("maxBacklogNotBusy", "60000", 8, true, false, "LogConfigHandler.maxBacklogNotBusy", 
+		config.register("maxBacklogNotBusy", "20000", 8, true, false, "LogConfigHandler.maxBacklogNotBusy", 
 				"LogConfigHandler.maxBacklogNotBusy", 
 				new LongCallback() {
 
