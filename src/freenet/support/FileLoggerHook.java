@@ -620,10 +620,11 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		if(files == null) return;
 		java.util.Arrays.sort(files);
 		long lastStartTime = -1;
-		File oldFile = null;
         if(latestFile.exists())
         	FileUtil.renameTo(latestFile, previousFile);
 
+        ArrayList<File> sameTimes = new ArrayList<File>();
+        
 		for(int i=0;i<files.length;i++) {
 			File f = files[i];
 			String name = f.getName();
@@ -677,26 +678,32 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				gc.set(Calendar.SECOND, 0);
 				gc.set(Calendar.MILLISECOND, 0);
 				long startTime = gc.getTimeInMillis();
-				if(oldFile != null) {
-					long l = oldFile.length();
-					OldLogFile olf = new OldLogFile(oldFile, lastStartTime, startTime, l);
-					synchronized(logFiles) {
-						logFiles.addLast(olf);
+				if(lastStartTime == -1) {
+					lastStartTime = startTime;
+				} else if(lastStartTime != startTime) {
+					for(File oldFile : sameTimes) {
+						long l = oldFile.length();
+						OldLogFile olf = new OldLogFile(oldFile, lastStartTime, startTime, l);
+						synchronized(logFiles) {
+							logFiles.addLast(olf);
+						}
+						synchronized(trimOldLogFilesLock) {
+							oldLogFilesDiskSpaceUsage += l;
+						}
 					}
-					synchronized(trimOldLogFilesLock) {
-						oldLogFilesDiskSpaceUsage += l;
-					}
+					sameTimes.clear();
+					lastStartTime = startTime;
 				}
-				lastStartTime = startTime;
-				oldFile = f;
+				sameTimes.add(f);
 			} else {
 				// Nothing to do with us
 				Logger.normal(this, "Unknown file: "+name+" in the log directory");
 			}
 		}
-		if(oldFile != null) {
+		long startTime = System.currentTimeMillis();
+		for(File oldFile : sameTimes) {
 			long l = oldFile.length();
-			OldLogFile olf = new OldLogFile(oldFile, lastStartTime, System.currentTimeMillis(), l);
+			OldLogFile olf = new OldLogFile(oldFile, lastStartTime, startTime, l);
 			synchronized(logFiles) {
 				logFiles.addLast(olf);
 			}
@@ -1133,7 +1140,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					doneLast = true;
 					olf = new OldLogFile(currentLogFile, currentLogFileStartTime, currentLogFileEndTime, currentLogFile.length());
 				}
-				System.out.println("Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
+				System.out.println("Checking "+time+" against "+olf.filename+" : start="+new Date(olf.start)+", end="+new Date(olf.end));
 		    	if(logMINOR)
 		    		Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
 				if((time >= olf.start) && (time < olf.end)) {
