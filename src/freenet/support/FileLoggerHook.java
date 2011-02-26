@@ -704,6 +704,15 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					if(numericSameDateFilename != null) {
 						System.out.println("Renaming to: "+numericSameDateFilename);
 						FileUtil.renameTo(currentFilename, numericSameDateFilename);
+						synchronized(logFiles) {
+							for(int i=0;i<logFiles.size();i++) {
+								OldLogFile f = logFiles.get(i);
+								if(f.filename.equals(currentFilename)) {
+									logFiles.remove(f);
+									logFiles.add(new OldLogFile(numericSameDateFilename, f.start, f.end, f.size));
+								}
+							}
+						}
 					}
 					break;
 				}
