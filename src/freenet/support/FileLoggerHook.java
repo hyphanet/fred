@@ -125,6 +125,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	long maxOldLogfilesDiskUsage;
 	/** LOCKING: Protected by logFiles */
 	private File currentLogFile;
+	private long currentLogFileStartTime;
+	private long currentLogFileEndTime;
 	protected final LinkedList<OldLogFile> logFiles = new LinkedList<OldLogFile>();
 	private long oldLogFilesDiskSpaceUsage = 0;
 
@@ -278,23 +280,25 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 				findOldLogFiles(gc);
 				currentFilename = new File(getHourLogName(gc, -1, true));
+				startTime = gc.getTimeInMillis();
+				lastTime = startTime;
+				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
+				nextHour = gc.getTimeInMillis();
 				synchronized(logFiles) {
 					if((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
 						logFiles.removeLast();
 					}
 					currentLogFile = currentFilename;
+					currentLogFileStartTime = startTime;
+					currentLogFileEndTime = nextHour;
 				}
 				logStream = openNewLogFile(currentFilename, true);
 				if(latestFile != null) {
 					altLogStream = openNewLogFile(latestFile, false);
 				}
 				System.err.println("Created log files");
-				startTime = gc.getTimeInMillis();
 		    	if(logMINOR)
 		    		Logger.minor(this, "Start time: "+gc+" -> "+startTime);
-				lastTime = startTime;
-				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
-				nextHour = gc.getTimeInMillis();
 			}
 			long timeWaitingForSync = -1;
 			long flush;
@@ -306,11 +310,12 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					thisTime = System.currentTimeMillis();
 					if (baseFilename != null) {
 						if ((thisTime > nextHour) || switchedBaseFilename) {
-							currentFilename = rotateLog(currentFilename, lastTime, nextHour, gc);
-							
 							gc.add(INTERVAL, INTERVAL_MULTIPLIER);
+							long newEndTime = gc.getTimeInMillis();
+							currentFilename = rotateLog(currentFilename, lastTime, nextHour, newEndTime, gc);
+							
 							lastTime = nextHour;
-							nextHour = gc.getTimeInMillis();
+							nextHour = newEndTime;
 
 							if(switchedBaseFilename) {
 								synchronized(FileLoggerHook.class) {
@@ -415,7 +420,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			}
 		}
 
-		private File rotateLog(File currentFilename, long lastTime, long nextHour, GregorianCalendar gc) {
+		private File rotateLog(File currentFilename, long lastTime, long nextHour, long newNextHour, GregorianCalendar gc) {
 	        // Switch logs
 	        try {
 	        	logStream.flush();
@@ -437,6 +442,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	        synchronized(logFiles) {
 	        	logFiles.addLast(olf);
 	        	currentLogFile = currentFilename;
+	        	currentLogFileStartTime = nextHour;
+	        	currentLogFileEndTime = newNextHour;
 	        }
 	        oldLogFilesDiskSpaceUsage += length;
 	        trimOldLogFiles();
@@ -1101,8 +1108,16 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		ArrayList<OldLogFile> toReturn = new ArrayList<OldLogFile>();
 		synchronized(logFiles) {
 			Iterator<OldLogFile> i = logFiles.iterator();
-			while(i.hasNext()) {
-				OldLogFile olf = i.next();
+			boolean doneLast = false;
+			while(true) {
+				OldLogFile olf;
+				if(i.hasNext()) {
+					olf = i.next();
+				} else {
+					if(doneLast) break;
+					doneLast = true;
+					olf = new OldLogFile(currentLogFile, currentLogFileStartTime, currentLogFileEndTime, currentLogFile.length());
+				}
 		    	if(logMINOR)
 		    		Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
 				if((time >= olf.start) && (time < olf.end)) {
@@ -1110,6 +1125,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					if(logMINOR) Logger.minor(this, "Found "+olf);
 				}
 			}
+			
 			if(toReturn.isEmpty()) {
 				System.out.println("Could not find log file");
 				return; // couldn't find it
