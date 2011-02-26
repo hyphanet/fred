@@ -35,6 +35,7 @@ import java.util.zip.GZIPOutputStream;
 
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.node.Version;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**
@@ -1169,27 +1170,30 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			osw.flush();
 			for(OldLogFile olf : toReturn) {
 				System.out.println("Writing data from log "+olf.filename);
-				FileInputStream fis = new FileInputStream(olf.filename);
-				DataInputStream dis = new DataInputStream(fis);
-				long written = 0;
-				long size = olf.size;
-				osw.write("Log:"+olf.filename.getName()+"\n");
-				osw.write("LENGTH: "+size+"\n");
-				osw.flush();
-				byte[] buf = new byte[4096];
-				while(written < size) {
-					int toRead = (int) Math.min(buf.length, (size - written));
-					try {
-						dis.readFully(buf, 0, toRead);
-					} catch (IOException e) {
-						Logger.error(this, "Could not read bytes "+written+" to "+(written + toRead)+" from file "+olf.filename+" which is supposed to be "+size+" bytes ("+olf.filename.length()+ ')');
-						return;
+				FileInputStream fis = null;
+				try {
+					fis = new FileInputStream(olf.filename);
+					DataInputStream dis = new DataInputStream(fis);
+					long written = 0;
+					long size = olf.size;
+					osw.write("Log:"+olf.filename.getName()+"\n");
+					osw.write("LENGTH: "+size+"\n");
+					osw.flush();
+					byte[] buf = new byte[4096];
+					while(written < size) {
+						int toRead = (int) Math.min(buf.length, (size - written));
+						try {
+							dis.readFully(buf, 0, toRead);
+						} catch (IOException e) {
+							Logger.error(this, "Could not read bytes "+written+" to "+(written + toRead)+" from file "+olf.filename+" which is supposed to be "+size+" bytes ("+olf.filename.length()+ ')');
+							return;
+						}
+						os.write(buf, 0, toRead);
+						written += toRead;
 					}
-					os.write(buf, 0, toRead);
-					written += toRead;
+				} finally {
+					Closer.close(fis);
 				}
-				dis.close();
-				fis.close();
 			}
 		} else {
 			for(OldLogFile olf : toReturn) {
