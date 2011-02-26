@@ -128,7 +128,7 @@ public class TestnetStatusUploader {
 					// Ignore
 				}
 				System.out.println("Disconnected from testnet coordinator");
-				verifyConnectivity();
+				tryVerifyConnectivity();
 			}
 		}
 		private void handleTestnetConnection() {
