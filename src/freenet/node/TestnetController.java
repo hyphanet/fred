@@ -497,11 +497,14 @@ public class TestnetController implements Runnable {
 		
 	}
 	
-	class WaitingStatusCommand extends GenericWaitingCommand {
-
-		WaitingStatusCommand() {
-			super(TestnetCommandType.GetConnectionStatusCounts);
+	abstract class GenericWaitingSFSCommand extends GenericWaitingCommand {
+		
+		public GenericWaitingSFSCommand(
+				TestnetCommandType type) {
+			super(type);
 		}
+		
+		protected abstract String expectedPrecursor();
 		
 		@Override
 		protected Retval innerExecute(LineReadingInputStream lris,
@@ -511,7 +514,7 @@ public class TestnetController implements Runnable {
 			String precursor = lris.readLine(1024, 30, true);
 			if(precursor == null)
 				return new Retval(true, "No response");
-			if(!precursor.equals("ConnectionStatusCounts")) {
+			if(!precursor.equals(expectedPrecursor())) {
 				if(precursor.startsWith("Error:"))
 					return new Retval(false, "Unexpected error: "+precursor);
 				else
@@ -521,6 +524,21 @@ public class TestnetController implements Runnable {
 			return new Retval(false, "Connection status:\n"+fs.toOrderedString());
 		}
 
+
+		
+	}
+	
+	class WaitingStatusCommand extends GenericWaitingSFSCommand {
+
+		WaitingStatusCommand() {
+			super(TestnetCommandType.GetConnectionStatusCounts);
+		}
+
+		@Override
+		protected String expectedPrecursor() {
+			return "ConnectionStatusCounts";
+		}
+		
 	}
 	
 	class TestnetNode implements Runnable {
