@@ -111,6 +111,7 @@ public class TestnetController implements Runnable {
 		logDir.mkdir();
 		if(!logDir.exists()) throw new IOException("Unable to create logs dir");
 		Logger.setupChain();
+		Logger.getChain().setThreshold(Logger.LogLevel.NORMAL);
 		FileLoggerHook hook;
 		hook = 
 			new FileLoggerHook(true, new File(logDir, "testnet-coordinator").getAbsolutePath(), 
