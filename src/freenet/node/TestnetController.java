@@ -339,24 +339,33 @@ public class TestnetController implements Runnable {
 			super(TestnetCommandType.Ping);
 		}
 		
-		@Override
-		public boolean execute(LineReadingInputStream lris, OutputStream os,
+		protected String innerExecute(LineReadingInputStream lris, OutputStream os,
 				Writer w, TestnetNode client) throws IOException {
 			writeCommand(w);
 			Logger.normal(this, "Waiting for reply to ping");
 			String response = lris.readLine(1024, 20, true);
 			Logger.normal(this, "Received reply to ping: \""+response+"\"");
 			if(response == null) {
-				Logger.error(this, "Timed out waiting for ping response, disconnecting");
-				return true;
+				return "Timed out waiting for ping response, disconnecting";
 			}
 			if(!response.equals("Pong")) {
-				Logger.error(this, "Bogus return from ping, disconnecting");
+				return "Bogus return from ping, disconnecting";
+			}
+			return null;
+			
+		}
+		
+		@Override
+		public boolean execute(LineReadingInputStream lris, OutputStream os,
+				Writer w, TestnetNode client) throws IOException {
+			String s = innerExecute(lris, os, w, client);
+			if(s == null) {
+				client.queuePing();
+				Logger.normal(this, "Ping ok from "+client.id);
+				return false;
+			} else {
 				return true;
 			}
-			client.queuePing();
-			Logger.normal(this, "Ping ok from "+client.id);
-			return false;
 		}
 		
 		@Override
@@ -374,7 +383,7 @@ public class TestnetController implements Runnable {
 	class WaitingPingCommand extends PingCommand implements WaitingCommand {
 
 		private boolean completed;
-		private boolean success;
+		private String status;
 		
 		public String waitFor() {
 			synchronized(this) {
@@ -385,27 +394,40 @@ public class TestnetController implements Runnable {
 						// Ignore
 					}
 				}
-				return success ? "Pong" : "NAK";
+				return status;
 			}
 		}
 		
 		@Override
 		public boolean execute(LineReadingInputStream lris, OutputStream os,
 				Writer w, TestnetNode client) throws IOException {
-			boolean disconnect = super.execute(lris, os, w, client);
-			synchronized(this) {
-				completed = true;
-				this.success = !disconnect;
-				notifyAll();
+			boolean disconnect = false;
+			String s = innerExecute(lris, os, w, client);
+			if(s == null) {
+				client.queuePing();
+				Logger.normal(this, "Ping ok from "+client.id);
+				disconnect = false;
+				synchronized(this) {
+					completed = true;
+					status = "Pong";
+					notifyAll();
+				}
+				return false;
+			} else {
+				synchronized(this) {
+					completed = true;
+					status = s;
+					notifyAll();
+				}
+				return true;
 			}
-			return success;
 		}
 		
 		@Override
 		public void disconnected() {
 			synchronized(this) {
 				completed = true;
-				success = false;
+				status = "Disconnected while waiting";
 				notifyAll();
 			}
 		}
