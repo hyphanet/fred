@@ -173,11 +173,7 @@ public class TestnetController implements Runnable {
 				
 				if(command.equalsIgnoreCase("ping")) {
 					System.out.println("Waiting for ping from "+nodeID);
-					if(target.pingSync()) {
-						System.out.println("Pong");
-					} else {
-						System.out.println("NAK");
-					}
+					System.out.println(target.pingSync());
 				}
 			}
 		}
@@ -371,7 +367,7 @@ public class TestnetController implements Runnable {
 	
 	interface WaitingCommand {
 		
-		public boolean waitFor();
+		public String waitFor();
 		
 	};
 	
@@ -380,7 +376,7 @@ public class TestnetController implements Runnable {
 		private boolean completed;
 		private boolean success;
 		
-		public boolean waitFor() {
+		public String waitFor() {
 			synchronized(this) {
 				while(!completed) {
 					try {
@@ -389,7 +385,7 @@ public class TestnetController implements Runnable {
 						// Ignore
 					}
 				}
-				return success;
+				return success ? "Pong" : "NAK";
 			}
 		}
 		
@@ -431,10 +427,10 @@ public class TestnetController implements Runnable {
 			return socket.getInetAddress().getHostAddress();
 		}
 
-		public boolean pingSync() {
+		public String pingSync() {
 			WaitingPingCommand command;
 			synchronized(this) {
-				if(disconnected) return false;
+				if(disconnected) return "Not connected";
 				command = new WaitingPingCommand();
 				commandQueue.add(command);
 			}
