@@ -286,7 +286,7 @@ public class TestnetStatusUploader {
 		while(true) {
 			if(sleep) {
 				try {
-					System.out.println("Sleeping for "+sleep+"ms");
+					System.out.println("Sleeping for "+sleepTime+"ms");
 					Thread.sleep(sleepTime);
 					sleepTime *= 2;
 					if(sleepTime > maxSleepTime)
