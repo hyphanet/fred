@@ -13,9 +13,14 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -29,6 +34,8 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.Ticker;
 import freenet.support.TrivialTicker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
 
 /** Testnet controller. This runs on one system and testnet nodes connect to it to get
@@ -193,6 +200,19 @@ public class TestnetController implements Runnable {
 				} else if(command.equalsIgnoreCase("list")) {
 					System.out.println("Waiting for log list from "+nodeID);
 					System.out.println("\n"+target.sync(new WaitingLogsListCommand()));
+				} else if(command.equalsIgnoreCase("log")) {
+					DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
+					df.setTimeZone(TimeZone.getTimeZone("GMT"));
+					Date d;
+					try {
+						d = df.parse(commandline);
+					} catch (ParseException e) {
+						System.err.println("Cannot parse date");
+						continue;
+					}
+					System.out.println("Fetching logs for "+df.format(d)+" from node "+nodeID);
+					// This is a synchronous command because we want to say "Fetching 3 logs" before we background it.
+					System.out.println("\n"+target.sync(new PartlyWaitingLogsFetchCommand(d)));
 				} else {
 					System.out.println("Error: Unknown command");
 				}
@@ -209,7 +229,7 @@ public class TestnetController implements Runnable {
 
 		private void showConsoleHelp() {
 			System.out.println("Syntax: COMMAND NODEID [ OPTIONS ]");
-			System.out.println("Simple commands: PING");
+			System.out.println("Simple commands: PING STATUS NODEREF CONFIG STATS CONNECTIONS LIST");
 		}
 	}
 
@@ -455,7 +475,7 @@ public class TestnetController implements Runnable {
 		
 	}
 	
-	abstract class GenericWaitingCommand extends TestnetCommand {
+	abstract class GenericWaitingCommand extends TestnetCommand implements WaitingCommand {
 		
 		private boolean completed;
 		private String status;
@@ -621,6 +641,179 @@ public class TestnetController implements Runnable {
 		
 	}
 	
+	class PartlyWaitingLogsFetchCommand extends TestnetCommand implements WaitingCommand {
+
+		private Date d;
+		
+		PartlyWaitingLogsFetchCommand(Date d) {
+			super(TestnetCommandType.GetLog);
+			this.d = d;
+		}
+		
+		/** Completed waiting for the number of logs? */
+		private boolean completedFirstStage;
+		private int logCount;
+		private String status;
+		
+		/** Wait for the initial notification that we are going to fetch N logs */
+		public String waitFor() {
+			synchronized(this) {
+				while(!completedFirstStage) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+				return status;
+			}
+		}
+
+		@Override
+		public boolean execute(LineReadingInputStream lris, OutputStream os,
+				Writer w, TestnetNode client) throws IOException {
+			DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
+			w.write(type.name()+":"+df.format(d)+"\n");
+			w.flush();
+			String firstReply = lris.readLine(1024, 30, true);
+			if(firstReply == null) {
+				synchronized(this) {
+					completedFirstStage = true;
+					logCount = 0;
+					status = "No reply to log fetch command";
+					notifyAll();
+				}
+				return true;
+			}
+			if(!firstReply.equals("Logs:")) {
+				if(firstReply.startsWith("Error:")) {
+					synchronized(this) {
+						completedFirstStage = true;
+						logCount = 0;
+						status = "Error fetching logs: "+firstReply;
+						notifyAll();
+					}
+					return false;
+				} else {
+					synchronized(this) {
+						completedFirstStage = true;
+						logCount = 0;
+						status = "Unexpected reply fetching logs: "+firstReply;
+						notifyAll();
+					}
+					return true;
+				}
+			}
+			String countReply = lris.readLine(1024, 30, true);
+			if(countReply == null) {
+				synchronized(this) {
+					completedFirstStage = true;
+					logCount = 0;
+					status = "No log count fetching logs";
+					notifyAll();
+				}
+				return true;
+			}
+			if(!countReply.startsWith("LogCount:")) {
+				if(firstReply.startsWith("Error:")) {
+					synchronized(this) {
+						completedFirstStage = true;
+						logCount = 0;
+						status = "Error getting log count fetching logs: "+firstReply;
+						notifyAll();
+					}
+					return true;
+				} else {
+					synchronized(this) {
+						completedFirstStage = true;
+						logCount = 0;
+						status = "Unexpected reply (expected log count) fetching logs: "+firstReply;
+						notifyAll();
+					}
+					return true;
+				}
+			}
+			int count;
+			try {
+				count = Integer.parseInt(countReply.substring("LogCount:".length()));
+			} catch (NumberFormatException e) {
+				synchronized(this) {
+					completedFirstStage = true;
+					logCount = 0;
+					status = "Cannot parse reply (expected log count) fetching logs: "+firstReply;
+					notifyAll();
+				}
+				return true;
+			}
+			File logDir = new File("downloaded-logs");
+			File thisLogDir = new File(logDir, Long.toString(client.id));
+			thisLogDir.mkdirs();
+			if(!thisLogDir.exists() && thisLogDir.isDirectory() && thisLogDir.canWrite()) {
+				synchronized(this) {
+					completedFirstStage = true;
+					logCount = 0;
+					status = "Unable to write logs to \""+thisLogDir+"\", disconnecting...";
+					notifyAll();
+				}
+				return true;
+			}
+			synchronized(this) {
+				completedFirstStage = true;
+				logCount = count;
+				status = "Fetching "+count+" logs";
+				notifyAll();
+			}
+			for(int i=0;i<count;i++) {
+				String logName = lris.readLine(1024, 30, true);
+				if(!(countReply.startsWith("Log:") && countReply.length() > "Log:".length())) {
+					if(firstReply.startsWith("Error:")) {
+						Logger.error(this, "Failed to download log #"+i+" from "+client.id+" : "+countReply);
+						continue;
+					} else {
+						Logger.error(this, "Failed to download logs, unexpected reply on log #"+i+" : "+countReply);
+						return true;
+					}
+				}
+				logName = FileUtil.sanitize(countReply.substring("Log:".length()));
+				long length;
+				String lengthString = lris.readLine(1024, 30, true);
+				if(!(countReply.startsWith("LENGTH: ") && countReply.length() > "LENGTH: ".length())) {
+					if(firstReply.startsWith("Error:")) {
+						Logger.error(this, "Failed to download log (length) #"+i+" from "+client.id+" : "+countReply);
+						continue;
+					} else {
+						Logger.error(this, "Failed to download logs, unexpected reply (length) on log #"+i+" : "+countReply);
+						return true;
+					}
+				}
+				try {
+					length = Long.parseLong(lengthString);
+				} catch (NumberFormatException e) {
+					Logger.error(this, "Failed to download logs, unexpected reply (length) on log #"+i+" : "+countReply);
+					return true;
+				}
+				File out = new File(thisLogDir, logName);
+				Logger.normal(this, "Downloading log to "+out+" length "+length+" from node "+client.id);
+				FileBucket fb = new FileBucket(out, false, false, false, false, false);
+				OutputStream saveLog = fb.getOutputStream();
+				FileUtil.copy(lris, saveLog, length);
+				Logger.error(this, "Saved log "+i+"/"+count+" to "+out+" length "+length+" from node "+client.id);
+			}
+			Logger.error(this, "Saved all "+count+" logs from "+client.id+" for time "+d);
+			return false;
+		}
+
+		@Override
+		public void disconnected() {
+			synchronized(this) {
+				completedFirstStage = true;
+				status = "Disconnected in queue";
+				notifyAll();
+			}
+		}
+
+	}
+	
 	class TestnetNode implements Runnable {
 		
 		public TestnetNode(Socket sock, LineReadingInputStream lris2,
@@ -646,10 +839,10 @@ public class TestnetController implements Runnable {
 			return command.waitFor();
 		}
 
-		public String sync(GenericWaitingCommand command) {
+		public String sync(WaitingCommand command) {
 			synchronized(this) {
 				if(disconnected) return "Not connected";
-				commandQueue.add(command);
+				commandQueue.add((TestnetCommand)command);
 			}
 			return command.waitFor();
 		}
