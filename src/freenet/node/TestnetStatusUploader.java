@@ -84,6 +84,7 @@ public class TestnetStatusUploader {
 				}
 			} else {
 				failed = 0;
+				return;
 			}
 			
 		}
