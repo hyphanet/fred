@@ -765,24 +765,25 @@ public class TestnetController implements Runnable {
 			}
 			for(int i=0;i<count;i++) {
 				String logName = lris.readLine(1024, 30, true);
-				if(!(countReply.startsWith("Log:") && countReply.length() > "Log:".length())) {
-					if(firstReply.startsWith("Error:")) {
-						Logger.error(this, "Failed to download log #"+i+" from "+client.id+" : "+countReply);
+				if(!(logName.startsWith("Log:") && logName.length() > "Log:".length())) {
+					if(logName.startsWith("Error:")) {
+						Logger.error(this, "Failed to download log #"+i+" from "+client.id+" : "+logName);
 						continue;
 					} else {
-						Logger.error(this, "Failed to download logs, unexpected reply on log #"+i+" : "+countReply);
+						Logger.error(this, "Failed to download logs, unexpected reply on log #"+i+" : "+logName);
 						return true;
 					}
 				}
-				logName = FileUtil.sanitize(countReply.substring("Log:".length()));
+				logName = FileUtil.sanitize(logName.substring("Log:".length()));
+				Logger.normal(this, "Log name is \""+logName+"\"");
 				long length;
 				String lengthString = lris.readLine(1024, 30, true);
-				if(!(countReply.startsWith("LENGTH: ") && countReply.length() > "LENGTH: ".length())) {
-					if(firstReply.startsWith("Error:")) {
-						Logger.error(this, "Failed to download log (length) #"+i+" from "+client.id+" : "+countReply);
+				if(!(lengthString.startsWith("LENGTH: ") && lengthString.length() > "LENGTH: ".length())) {
+					if(lengthString.startsWith("Error:")) {
+						Logger.error(this, "Failed to download log (length) #"+i+" from "+client.id+" : "+lengthString);
 						continue;
 					} else {
-						Logger.error(this, "Failed to download logs, unexpected reply (length) on log #"+i+" : "+countReply);
+						Logger.error(this, "Failed to download logs, unexpected reply (length) on log #"+i+" : "+lengthString);
 						return true;
 					}
 				}
