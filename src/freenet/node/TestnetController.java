@@ -122,6 +122,7 @@ public class TestnetController implements Runnable {
 		public void run() {
 			boolean movedOn = false;
 			try {
+				System.out.println("Incoming connection from "+sock.getInetAddress());
 				InputStream is = sock.getInputStream();
 				BufferedInputStream bis = new BufferedInputStream(is);
 				LineReadingInputStream lris; // Not using BufferedReader as we may need to pull binary data.
@@ -144,6 +145,7 @@ public class TestnetController implements Runnable {
 						osw.write("GENERATEDID:"+id+"\n");
 						osw.flush();
 					} else if(line.startsWith("READY:")) {
+						System.out.println("Connection waiting for commands: "+sock.getInetAddress());
 						long id;
 						try {
 							id = Long.parseLong(line.substring("READY:".length()));
@@ -163,6 +165,7 @@ public class TestnetController implements Runnable {
 						executor.execute(connected);
 						movedOn = true;
 						onConnectedTestnetNodesChanged();
+						return;
 					} else {
 						// Do nothing. Read the next line.
 					}
@@ -191,6 +194,7 @@ public class TestnetController implements Runnable {
 		
 		protected void writeCommand(Writer w) throws IOException {
 			w.write(type.name()+"\n");
+			w.flush();
 		}
 		
 		/** @return True to disconnect. */
@@ -218,7 +222,9 @@ public class TestnetController implements Runnable {
 		public boolean execute(LineReadingInputStream lris, OutputStream os,
 				Writer w, TestnetNode client) throws IOException {
 			writeCommand(w);
+			System.out.println("Waiting for reply to ping");
 			String response = lris.readLine(1024, 20, true);
+			System.out.println("Received reply to ping: \""+response+"\"");
 			if(response == null) {
 				System.err.println("Timed out waiting for ping response, disconnecting");
 				return true;
@@ -265,6 +271,7 @@ public class TestnetController implements Runnable {
 					TestnetCommand command;
 					try {
 						command = commandQueue.take();
+						System.out.println("Sending command to "+id+" : "+command);
 					} catch (InterruptedException e) {
 						continue;
 					}
@@ -307,7 +314,7 @@ public class TestnetController implements Runnable {
 	}
 
 	// FIXME increase???
-	static final long PING_PERIOD = 30*1000;
+	static final long PING_PERIOD = 10*1000;
 	
 	public synchronized long generateID() throws IOException {
 		if(counter == -1) counter++; // -1 not allowed

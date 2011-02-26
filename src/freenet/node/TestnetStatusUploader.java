@@ -112,6 +112,7 @@ public class TestnetStatusUploader {
 			this.os = os;
 		}
 		public void run() {
+			System.out.println("Talking to testnet coordinator");
 			try {
 				handleTestnetConnection();
 			} finally {
@@ -125,16 +126,20 @@ public class TestnetStatusUploader {
 				} catch (IOException e) {
 					// Ignore
 				}
+				System.out.println("Disconnected from testnet coordinator");
 				verifyConnectivity();
 			}
 		}
 		private void handleTestnetConnection() {
 			try {
 				w.write("READY:"+node.testnetID+"\n");
+				w.flush();
+				System.out.println("Waiting for commands from testnet coordinator");
 				while(true) {
 					String command = br.readLine();
 					try {
 						if(handleCommandFromTestnetController(command, br, w, os)) return;
+						w.flush();
 					} catch (IOException e) {
 						return;
 					} catch (Throwable t) {
@@ -154,6 +159,7 @@ public class TestnetStatusUploader {
 	private TestnetConnectionHandler connectionHandler;
 	
 	public boolean verifyConnectivity() {
+		System.out.println("Will connect to testnet coordinator");
 		synchronized(this) {
 			if(verifyingConnectivity) return true;
 			if(connectionHandler != null) return true;
@@ -165,7 +171,11 @@ public class TestnetStatusUploader {
 		// Set up client socket
 		try
 		{
+			
+			System.out.println("Connecting to testnet coordinator");
 			client = new Socket(serverAddress, serverPort);
+			
+			System.out.println("Connected to testnet coordinator");
 			
 			InputStream is = client.getInputStream();
 			OutputStream os = client.getOutputStream();
@@ -203,8 +213,10 @@ public class TestnetStatusUploader {
 			return false;
 		} finally {
 			synchronized(this) {
-				if(!success)
+				if(!success) {
 					verifyingConnectivity = false;
+					connectionHandler = null;
+				}
 			}
 			try {
 				if(client != null)
@@ -221,6 +233,7 @@ public class TestnetStatusUploader {
 	 * @return True to close the connection.
 	 * @throws IOException */
 	public boolean handleCommandFromTestnetController(String command, BufferedReader br, Writer w, OutputStream os) throws IOException {
+		System.out.println("Received command from testnet controller: \""+command+"\"");
 		if(command.equals("Close")) {
 			return true;
 		} else if(command.equals("Ping")) {
@@ -304,6 +317,7 @@ public class TestnetStatusUploader {
 		while(true) {
 			if(sleep) {
 				try {
+					System.out.println("Sleeping for "+sleep+"ms");
 					Thread.sleep(sleepTime);
 					sleepTime *= 2;
 					if(sleepTime > maxSleepTime)
