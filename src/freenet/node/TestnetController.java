@@ -174,6 +174,8 @@ public class TestnetController implements Runnable {
 				if(command.equalsIgnoreCase("ping")) {
 					System.out.println("Waiting for ping from "+nodeID);
 					System.out.println(target.pingSync());
+				} else {
+					System.out.println("Error: Unknown command");
 				}
 			}
 		}
