@@ -3,6 +3,7 @@ package freenet.node;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -23,6 +24,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import freenet.io.NetworkInterface;
 import freenet.support.Executor;
@@ -34,6 +37,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.Ticker;
 import freenet.support.TrivialTicker;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
@@ -213,6 +217,41 @@ public class TestnetController implements Runnable {
 					System.out.println("Fetching logs for "+df.format(d)+" from node "+nodeID);
 					// This is a synchronous command because we want to say "Fetching 3 logs" before we background it.
 					System.out.println("\n"+target.sync(new PartlyWaitingLogsFetchCommand(d)));
+				} else if(command.equalsIgnoreCase("filter")) {
+					int idx = commandline.indexOf(" ");
+					while(commandline.length() > idx && commandline.charAt(idx) == ' ') {
+						idx++;
+					}
+					if(idx == -1 || idx == commandline.length()-1) {
+						System.err.println("No regex");
+						continue;
+					}
+					idx = commandline.indexOf(" ", idx+1);
+					String datePart = commandline.substring(0, idx);
+					String regex = commandline.substring(idx+1);
+					DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
+					df.setTimeZone(TimeZone.getTimeZone("GMT"));
+					Date d;
+					try {
+						d = df.parse(datePart);
+					} catch (ParseException e) {
+						System.err.println("Cannot parse date \""+datePart+"\"");
+						continue;
+					}
+					try {
+						Pattern check = Pattern.compile(regex);
+					} catch (PatternSyntaxException e) {
+						System.err.println("Cannot parse regex \""+regex+"\"");
+						continue;
+					}
+					File outputFile = new File("filtered."+nodeID+"."+FileUtil.sanitize(regex)+"."+System.currentTimeMillis());
+					FilteredLogsCommand filterLogs = 
+						new FilteredLogsCommand(d, regex, outputFile);
+					if(target.queue(filterLogs)) {
+						System.err.println("Error: Unable to queue command, disconnected");
+					} else {
+						System.out.println("Fetching logs for "+df.format(d)+" filtered with \""+regex+"\" from node "+nodeID+" to \""+outputFile+"\"");
+					}
 				} else {
 					System.out.println("Error: Unknown command");
 				}
@@ -643,7 +682,7 @@ public class TestnetController implements Runnable {
 	
 	class PartlyWaitingLogsFetchCommand extends TestnetCommand implements WaitingCommand {
 
-		private Date d;
+		private final Date d;
 		
 		PartlyWaitingLogsFetchCommand(Date d) {
 			super(TestnetCommandType.GetLog);
@@ -817,6 +856,88 @@ public class TestnetController implements Runnable {
 
 	}
 	
+	class FilteredLogsCommand extends TestnetCommand {
+
+		FilteredLogsCommand(Date d, String regex, File outputFile) {
+			super(TestnetCommandType.GetLogFiltered);
+			this.d = d;
+			this.regex = regex;
+			this.outputFile = outputFile;
+		}
+		
+		final File outputFile;
+		private final Date d;
+		final String regex;
+		
+		@Override
+		public boolean execute(LineReadingInputStream lris, OutputStream os,
+				Writer w, TestnetNode client) throws IOException {
+			DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
+			w.write(type.name()+":"+df.format(d)+":"+regex+"\n");
+			w.flush();
+			String firstReply = lris.readLine(1024, 30, true);
+			if(firstReply == null) {
+				Logger.error(this, "No reply to filter logs command on "+client.id+" to "+outputFile);
+				return true;
+			}
+			if(!firstReply.equals("Logs:")) {
+				if(firstReply.startsWith("Error:")) {
+					Logger.error(this, "Error in response to filter logs: \""+firstReply+"\" on "+client.id+" to "+outputFile);
+					return false;
+				} else {
+					Logger.error(this, "Unexpected reply in response to filter logs: \""+firstReply+"\" on "+client.id+" to "+outputFile);
+					return true;
+				}
+			}
+			FileOutputStream fos = null;
+			BufferedWriter bw = null;
+			try {
+				fos = new FileOutputStream(outputFile);
+				BufferedOutputStream bos = new BufferedOutputStream(fos);
+				OutputStreamWriter osw = new OutputStreamWriter(bos);
+				bw = new BufferedWriter(osw);
+				while(true) {
+					String line;
+					try {
+						line = lris.readLine(65536, 100, true);
+					} catch (IOException e) {
+						// Network problem, disconnect.
+						Logger.error(this, "Failed to download filtered logs from "+client.id+" to "+outputFile);
+						return true;
+					}
+					if(line == null) {
+						Logger.error(this, "No reply in middle of downloading filter logs from "+client.id+" to "+outputFile);
+						break;
+					}
+					if(line.equals("EndLogFiltered")) {
+						Logger.error(this, "Successfully fetched logs from "+client.id+" filtered with regex \""+regex+"\" to "+outputFile);
+						break;
+					}
+					if(line.startsWith("Error")) {
+						Logger.error(this, "Error in middle of downloading fetched logs from "+client.id+" filtered with regex \""+regex+"\" to "+outputFile);
+						break;
+					}
+					if(!line.startsWith("MATCH:")) {
+						Logger.error(this, "Unexpected response \""+line+"\" while downloading fetched logs from "+client.id+" filtered with regex \""+regex+"\" to "+outputFile);
+						break;
+					}
+					bw.write(line.substring("MATCH:".length()) + "\n");
+				}
+			} finally {
+				Closer.close(bw);
+				Closer.close(fos);
+				Logger.normal(this, "Finished writing fetched logs from "+client.id+" filtered with regex \""+regex+"\" to "+outputFile);
+			}
+			return false;
+		}
+
+		@Override
+		public void disconnected() {
+			Logger.error(this, "Unable to fetch filtered logs: disconnected");
+		}
+		
+	}
+	
 	class TestnetNode implements Runnable {
 		
 		public TestnetNode(Socket sock, LineReadingInputStream lris2,
@@ -828,6 +949,14 @@ public class TestnetController implements Runnable {
 			this.id = id;
 		}
 		
+		public boolean queue(TestnetCommand command) {
+			synchronized(this) {
+				if(disconnected) return true;
+				commandQueue.add(command);
+			}
+			return false;
+		}
+
 		public String getAddress() {
 			return socket.getInetAddress().getHostAddress();
 		}
