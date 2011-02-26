@@ -177,7 +177,22 @@ public class TestnetController implements Runnable {
 					System.out.println(target.pingSync());
 				} else if(command.equalsIgnoreCase("status")) {
 					System.out.println("Waiting for status from "+nodeID);
-					System.out.println(target.statusSync());
+					System.out.println(target.sync(new WaitingStatusCommand()));
+				} else if(command.equalsIgnoreCase("noderef")) {
+					System.out.println("Waiting for noderef from "+nodeID);
+					System.out.println(target.sync(new WaitingMyRefCommand()));
+				} else if(command.equalsIgnoreCase("config")) {
+					System.out.println("Waiting for config from "+nodeID);
+					System.out.println(target.sync(new WaitingConfigCommand()));
+				} else if(command.equalsIgnoreCase("stats")) {
+					System.out.println("Waiting for stats from "+nodeID);
+					System.out.println(target.sync(new WaitingStatsCommand()));
+				} else if(command.equalsIgnoreCase("connections")) {
+					System.out.println("Waiting for connections detailed info from "+nodeID);
+					System.out.println(target.sync(new WaitingConnectionsCommand()));
+				} else if(command.equalsIgnoreCase("list")) {
+					System.out.println("Waiting for log list from "+nodeID);
+					System.out.println(target.sync(new WaitingLogsListCommand()));
 				} else {
 					System.out.println("Error: Unknown command");
 				}
@@ -541,6 +556,71 @@ public class TestnetController implements Runnable {
 		
 	}
 	
+	class WaitingMyRefCommand extends GenericWaitingSFSCommand {
+		
+		WaitingMyRefCommand() {
+			super(TestnetCommandType.GetMyReference);
+		}
+		
+		@Override
+		protected String expectedPrecursor() {
+			return "MyReference";
+		}
+		
+	}
+	
+	class WaitingConfigCommand extends GenericWaitingSFSCommand {
+		
+		WaitingConfigCommand() {
+			super(TestnetCommandType.GetConfig);
+		}
+
+		@Override
+		protected String expectedPrecursor() {
+			return "MyConfig";
+		}
+		
+	}
+	
+	class WaitingStatsCommand extends GenericWaitingSFSCommand {
+
+		public WaitingStatsCommand() {
+			super(TestnetCommandType.GetFCPStatsSummary);
+		}
+
+		@Override
+		protected String expectedPrecursor() {
+			return "FCPStatsSummary";
+		}
+		
+	}
+	
+	class WaitingConnectionsCommand extends GenericWaitingSFSCommand {
+
+		public WaitingConnectionsCommand() {
+			super(TestnetCommandType.GetConnections);
+		}
+
+		@Override
+		protected String expectedPrecursor() {
+			return "Connections";
+		}
+		
+	}
+	
+	class WaitingLogsListCommand extends GenericWaitingSFSCommand {
+
+		public WaitingLogsListCommand() {
+			super(TestnetCommandType.GetLogsList);
+		}
+
+		@Override
+		protected String expectedPrecursor() {
+			return "LogsList";
+		}
+		
+	}
+	
 	class TestnetNode implements Runnable {
 		
 		public TestnetNode(Socket sock, LineReadingInputStream lris2,
@@ -566,11 +646,9 @@ public class TestnetController implements Runnable {
 			return command.waitFor();
 		}
 
-		public String statusSync() {
-			WaitingStatusCommand command;
+		public String sync(GenericWaitingCommand command) {
 			synchronized(this) {
 				if(disconnected) return "Not connected";
-				command = new WaitingStatusCommand();
 				commandQueue.add(command);
 			}
 			return command.waitFor();
