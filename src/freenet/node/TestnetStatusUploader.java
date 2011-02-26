@@ -284,12 +284,10 @@ public class TestnetStatusUploader {
 				return false;
 			}
 			String date = split[1];
-			DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
-			df.setTimeZone(TimeZone.getTimeZone("GMT"));
-			Date d;
+			long d;
 			try {
-				d = df.parse(date);
-			} catch (ParseException e) {
+				d = Long.parseLong(date);
+			} catch (NumberFormatException e) {
 				System.err.println("Cannot parse date");
 				w.write("ErrorCannotParseDate\n");
 				return false;
@@ -313,7 +311,7 @@ public class TestnetStatusUploader {
 			}
 			w.write("Logs:\n");
 			w.flush();
-			loggerHook.sendLogByContainedDate(d.getTime(), os, p);
+			loggerHook.sendLogByContainedDate(d, os, p);
 		}
 		// FIXME fetch recent error messages
 		return false;

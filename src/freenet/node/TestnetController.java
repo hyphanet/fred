@@ -872,8 +872,7 @@ public class TestnetController implements Runnable {
 		@Override
 		public boolean execute(LineReadingInputStream lris, OutputStream os,
 				Writer w, TestnetNode client) throws IOException {
-			DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
-			w.write(type.name()+":"+df.format(d)+":"+regex+"\n");
+			w.write(type.name()+":"+d.getTime()+":"+regex+"\n");
 			w.flush();
 			String firstReply = lris.readLine(1024, 30, true);
 			if(firstReply == null) {
