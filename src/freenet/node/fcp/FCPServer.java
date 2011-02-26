@@ -58,7 +58,7 @@ public class FCPServer implements Runnable, DownloadCache {
 
 	FCPPersistentRoot persistentRoot;
 	private static boolean logMINOR;
-	public final static int DEFAULT_FCP_PORT = 9481;
+	public final static int DEFAULT_FCP_PORT = 19841; // testnet needs different port
 	NetworkInterface networkInterface;
 	final NodeClientCore core;
 	final Node node;

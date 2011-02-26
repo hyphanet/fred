@@ -79,7 +79,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private String allowedHosts;
 	private NetworkInterface networkInterface;
 	private boolean ssl = false;
-	public static final int DEFAULT_FPROXY_PORT = 8888;
+	public static final int DEFAULT_FPROXY_PORT = 19848;
 	
 	// ACL
 	private final AllowedHosts allowedFullAccess;
