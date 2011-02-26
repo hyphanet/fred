@@ -1,12 +1,17 @@
 package freenet.support;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
@@ -23,6 +28,9 @@ import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.node.SemiOrderedShutdownHook;
@@ -1127,7 +1135,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		return fs;
 	}
 
-	public void sendLogByContainedDate(long time, OutputStream os) throws IOException {
+	public void sendLogByContainedDate(long time, OutputStream os, Pattern p) throws IOException {
 		ArrayList<OldLogFile> toReturn = new ArrayList<OldLogFile>();
 		synchronized(logFiles) {
 			Iterator<OldLogFile> i = logFiles.iterator();
@@ -1155,32 +1163,58 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				return; // couldn't find it
 			}
 		}
-		OutputStreamWriter osw = new OutputStreamWriter(os, "UTF-8");
-		osw.write("LogCount:"+toReturn.size()+"\n");
-		osw.flush();
-		for(OldLogFile olf : toReturn) {
-			System.out.println("Writing data from log "+olf.filename);
-			FileInputStream fis = new FileInputStream(olf.filename);
-			DataInputStream dis = new DataInputStream(fis);
-			long written = 0;
-			long size = olf.size;
-			osw.write("Log:"+olf.filename.getName()+"\n");
-			osw.write("LENGTH: "+size+"\n");
+		BufferedWriter osw = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+		if(p == null) {
+			osw.write("LogCount:"+toReturn.size()+"\n");
 			osw.flush();
-			byte[] buf = new byte[4096];
-			while(written < size) {
-				int toRead = (int) Math.min(buf.length, (size - written));
+			for(OldLogFile olf : toReturn) {
+				System.out.println("Writing data from log "+olf.filename);
+				FileInputStream fis = new FileInputStream(olf.filename);
+				DataInputStream dis = new DataInputStream(fis);
+				long written = 0;
+				long size = olf.size;
+				osw.write("Log:"+olf.filename.getName()+"\n");
+				osw.write("LENGTH: "+size+"\n");
+				osw.flush();
+				byte[] buf = new byte[4096];
+				while(written < size) {
+					int toRead = (int) Math.min(buf.length, (size - written));
+					try {
+						dis.readFully(buf, 0, toRead);
+					} catch (IOException e) {
+						Logger.error(this, "Could not read bytes "+written+" to "+(written + toRead)+" from file "+olf.filename+" which is supposed to be "+size+" bytes ("+olf.filename.length()+ ')');
+						return;
+					}
+					os.write(buf, 0, toRead);
+					written += toRead;
+				}
+				dis.close();
+				fis.close();
+			}
+		} else {
+			for(OldLogFile olf : toReturn) {
+				System.out.println("Writing data from log "+olf.filename);
+				// We will just prefix each line appropriately.
 				try {
-					dis.readFully(buf, 0, toRead);
+					FileInputStream fis = new FileInputStream(olf.filename);
+					GZIPInputStream gis = new GZIPInputStream(new BufferedInputStream(fis));
+					BufferedReader br = new BufferedReader(new InputStreamReader(gis));
+					String line;
+					while((line = br.readLine()) != null) {
+						if(p.matcher(line).find()) {
+							osw.write("MATCH:"+line+"\n");
+						}
+					}
+				} catch (EOFException e) {
+					// Okay.
 				} catch (IOException e) {
-					Logger.error(this, "Could not read bytes "+written+" to "+(written + toRead)+" from file "+olf.filename+" which is supposed to be "+size+" bytes ("+olf.filename.length()+ ')');
+					// Not okay.
+					osw.write("Error:IOException\n");
+					osw.flush();
 					return;
 				}
-				os.write(buf, 0, toRead);
-				written += toRead;
 			}
-			dis.close();
-			fis.close();
+			osw.write("EndLogFiltered\n");
 		}
 	}
 

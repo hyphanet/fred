@@ -23,6 +23,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -274,9 +276,45 @@ public class TestnetStatusUploader {
 			}
 			w.write("Logs:\n");
 			w.flush();
-			loggerHook.sendLogByContainedDate(d.getTime(), os);
+			loggerHook.sendLogByContainedDate(d.getTime(), os, null);
+		} else if(command.startsWith("GetLogFiltered:")) {
+			String[] split = command.split(":");
+			if(split.length != 3) {
+				w.write("ErrorTooFewFields");
+				return false;
+			}
+			String date = split[1];
+			DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
+			df.setTimeZone(TimeZone.getTimeZone("GMT"));
+			Date d;
+			try {
+				d = df.parse(date);
+			} catch (ParseException e) {
+				System.err.println("Cannot parse date");
+				w.write("ErrorCannotParseDate\n");
+				return false;
+			}
+			String regex = split[2];
+			Pattern p = null;
+			try {
+				p = Pattern.compile(regex);
+			} catch (PatternSyntaxException e) {
+				System.err.println("Cannot parse regex");
+				w.write("ErrorCannotParseRegex\n");
+				return false;
+			}
+			System.out.println("Coordinator asked for log at time "+d+" filtered with regex \""+regex+"\"");
+			w.flush();
+			FileLoggerHook loggerHook;
+			loggerHook = Node.logConfigHandler.getFileLoggerHook();
+			if(loggerHook == null) {
+				w.write("ErrorNoLogger\n");
+				return false;
+			}
+			w.write("Logs:\n");
+			w.flush();
+			loggerHook.sendLogByContainedDate(d.getTime(), os, p);
 		}
-		// FIXME fetch a log, grepping it
 		// FIXME fetch recent error messages
 		return false;
 	}
