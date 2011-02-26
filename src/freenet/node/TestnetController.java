@@ -26,6 +26,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.zip.GZIPInputStream;
 
 import freenet.io.NetworkInterface;
 import freenet.support.Executor;
@@ -891,6 +892,9 @@ public class TestnetController implements Runnable {
 			FileOutputStream fos = null;
 			BufferedWriter bw = null;
 			try {
+				// Data is gzipped.
+				GZIPInputStream gis = new GZIPInputStream(lris);
+				lris = new LineReadingInputStream(gis);
 				fos = new FileOutputStream(outputFile);
 				BufferedOutputStream bos = new BufferedOutputStream(fos);
 				OutputStreamWriter osw = new OutputStreamWriter(bos);

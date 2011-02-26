@@ -1196,6 +1196,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 			}
 		} else {
+			osw.flush();
+			// Gzip the rest.
+			GZIPOutputStream gos = new GZIPOutputStream(os);
+			osw = new BufferedWriter(new OutputStreamWriter(gos, "UTF-8"));
 			for(OldLogFile olf : toReturn) {
 				System.out.println("Writing data from log "+olf.filename);
 				// We will just prefix each line appropriately.
@@ -1223,6 +1227,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			}
 			osw.write("EndLogFiltered\n");
 			osw.flush();
+			gos.finish();
 		}
 	}
 
