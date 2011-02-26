@@ -314,7 +314,7 @@ public class TestnetController implements Runnable {
 	}
 
 	// FIXME increase???
-	static final long PING_PERIOD = 10*1000;
+	static final long PING_PERIOD = 300*1000;
 	
 	public synchronized long generateID() throws IOException {
 		if(counter == -1) counter++; // -1 not allowed
