@@ -19,9 +19,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import freenet.io.NetworkInterface;
 import freenet.support.Executor;
+import freenet.support.FileLoggerHook;
+import freenet.support.FileLoggerHook.IntervalParseException;
+import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.Ticker;
 import freenet.support.TrivialTicker;
+import freenet.support.Logger.LogLevel;
 import freenet.support.io.LineReadingInputStream;
 
 /** Testnet controller. This runs on one system and testnet nodes connect to it to get
@@ -93,11 +97,29 @@ public class TestnetController implements Runnable {
 		System.err.println("Next counter is: "+counter);
 	}
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, IntervalParseException {
+		setupLogging();
+
 		System.err.println("Testnet controller starting up");
 		TestnetController controller = new TestnetController();
 		controller.start();
 		controller.run();
+	}
+
+	private static void setupLogging() throws IOException, IntervalParseException {
+		File logDir = new File("testnet-coordinator-logs");
+		logDir.mkdir();
+		if(!logDir.exists()) throw new IOException("Unable to create logs dir");
+		Logger.setupChain();
+		FileLoggerHook hook;
+		hook = 
+			new FileLoggerHook(true, new File(logDir, "testnet-coordinator-").getAbsolutePath(), 
+					"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", "1HOUR", LogLevel.DEBUG /* filtered by chain */, false, true, 
+					1024*1024*1024, 100*1000);
+		hook.setMaxListBytes(100*1000);
+		hook.setMaxBacklogNotBusy(1*1000);
+		Logger.globalAddHook(hook);
+		hook.start();
 	}
 
 	public void run() {

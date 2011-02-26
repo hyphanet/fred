@@ -246,7 +246,7 @@ public abstract class Logger {
 	 * Single global LoggerHook.
 	 */
 	static Logger logger = new VoidLogger();
-
+	
 	/** Log to standard output. */
 	public synchronized static FileLoggerHook setupStdoutLogging(LogLevel level, String detail) throws InvalidThresholdException {
 		setupChain();
