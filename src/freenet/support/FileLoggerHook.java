@@ -694,6 +694,16 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				Logger.normal(this, "Unknown file: "+name+" in the log directory");
 			}
 		}
+		if(oldFile != null) {
+			long l = oldFile.length();
+			OldLogFile olf = new OldLogFile(oldFile, lastStartTime, System.currentTimeMillis(), l);
+			synchronized(logFiles) {
+				logFiles.addLast(olf);
+			}
+			synchronized(trimOldLogFilesLock) {
+				oldLogFilesDiskSpaceUsage += l;
+			}
+		}
 		//If a compressed log file already exists for a given date,
 		//add a number to the end of the file that already exists
 		if(currentFilename != null && currentFilename.exists()) {
@@ -716,16 +726,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					}
 					break;
 				}
-			}
-		}
-		if(oldFile != null) {
-			long l = oldFile.length();
-			OldLogFile olf = new OldLogFile(oldFile, lastStartTime, System.currentTimeMillis(), l);
-			synchronized(logFiles) {
-				logFiles.addLast(olf);
-			}
-			synchronized(trimOldLogFilesLock) {
-				oldLogFilesDiskSpaceUsage += l;
 			}
 		}
 		trimOldLogFiles();
