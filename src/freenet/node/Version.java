@@ -50,11 +50,11 @@ public class Version {
 	public static final String protocolVersion = "TESTNET 1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 11;
+	private static final int buildNumber = 12;
 
 	/** Oldest build of Fred we will talk to */
-	private static final int oldLastGoodBuild = 11;
-	private static final int newLastGoodBuild = 11;
+	private static final int oldLastGoodBuild = 12;
+	private static final int newLastGoodBuild = 12;
 	static final long transitionTime;
 
 	static {
