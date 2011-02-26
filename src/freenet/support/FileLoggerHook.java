@@ -248,6 +248,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	// Unless we are writing flat out, everything will hit disk within this period.
 	private long flushTime = 1000; // Default is 1 second. Will be set by setMaxBacklogNotBusy().
 
+	static final TimeZone gmt = TimeZone.getTimeZone("GMT");
+	
 	class WriterThread extends Thread {
 		WriterThread() {
 			super("Log File Writer Thread");
@@ -266,7 +268,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			if (baseFilename != null) {
 				latestFile = new File(baseFilename+"-latest.log");
 				previousFile = new File(baseFilename+"-previous.log");
-				gc = new GregorianCalendar();
+				gc = new GregorianCalendar(gmt, Locale.UK);
 				switch (INTERVAL) {
 					case Calendar.YEAR :
 						gc.set(Calendar.MONTH, 0);
