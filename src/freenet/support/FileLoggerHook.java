@@ -123,6 +123,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	protected long listBytes = 0;
 
 	long maxOldLogfilesDiskUsage;
+	/** LOCKING: Protected by logFiles */
+	private File currentLogFile;
 	protected final LinkedList<OldLogFile> logFiles = new LinkedList<OldLogFile>();
 	private long oldLogFilesDiskSpaceUsage = 0;
 
@@ -280,6 +282,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					if((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
 						logFiles.removeLast();
 					}
+					currentLogFile = currentFilename;
 				}
 				logStream = openNewLogFile(currentFilename, true);
 				if(latestFile != null) {
@@ -429,13 +432,14 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	        }
 	        long length = currentFilename.length();
 	        OldLogFile olf = new OldLogFile(currentFilename, lastTime, nextHour, length);
+	        // Rotate primary log stream
+	        currentFilename = new File(getHourLogName(gc, -1, true));
 	        synchronized(logFiles) {
 	        	logFiles.addLast(olf);
+	        	currentLogFile = currentFilename;
 	        }
 	        oldLogFilesDiskSpaceUsage += length;
 	        trimOldLogFiles();
-	        // Rotate primary log stream
-	        currentFilename = new File(getHourLogName(gc, -1, true));
 	        logStream = openNewLogFile(currentFilename, true);
 	        if(latestFile != null) {
 	        	try {
