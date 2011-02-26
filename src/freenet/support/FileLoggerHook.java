@@ -1156,7 +1156,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			DataInputStream dis = new DataInputStream(fis);
 			long written = 0;
 			long size = olf.size;
-			osw.write("Log:"+olf.filename+"\n");
+			osw.write("Log:"+olf.filename.getName()+"\n");
 			osw.write("LENGTH: "+size+"\n");
 			osw.flush();
 			byte[] buf = new byte[4096];
