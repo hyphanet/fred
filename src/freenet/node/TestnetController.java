@@ -2,10 +2,12 @@ package freenet.node;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -66,6 +68,8 @@ public class TestnetController implements Runnable {
 	
 	public void start() {
 		executor.start();
+		TestnetConsole console = new TestnetConsole();
+		console.start();
 	}
 	
 	private void initCounter() {
@@ -104,6 +108,92 @@ public class TestnetController implements Runnable {
 		TestnetController controller = new TestnetController();
 		controller.start();
 		controller.run();
+	}
+	
+	class TestnetConsole implements Runnable {
+		
+		public void start() {
+			executor.execute(this);
+		}
+		
+		public void run() {
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e2) {
+				// Ignore.
+			}
+			System.out.println("Testnet Console");
+			System.out.println("Please tail the latest log for asynchronous notifications and error messages, as above.");
+			InputStreamReader isr = new InputStreamReader(System.in);
+			BufferedReader br = new BufferedReader(isr);
+			while(true) {
+				System.out.println();
+				showConsoleHelp();
+				showConsoleStatus();
+				System.out.print("Command? ");
+				String commandline;
+				try {
+					commandline = br.readLine().trim();
+				} catch (IOException e1) {
+					return;
+				}
+				// All commands start COMMAND NODEID
+				// Some have more than that.
+				// Some commands may include spaces later on, so don't just split().
+				int i = commandline.indexOf(' ');
+				if(i == -1) {
+					System.out.println("Error: No command");
+					continue;
+				}
+				String command = commandline.substring(0, i);
+				commandline = commandline.substring(i).trim();
+				i = commandline.indexOf(' ');
+				if(i == -1) {
+					// Might be the last parameter.
+					i = commandline.length();
+				}
+				long nodeID;
+				try {
+					nodeID = Long.parseLong(commandline.substring(0, i));
+				} catch (NumberFormatException e) {
+					System.out.println("Error: No node ID");
+					continue;
+				}
+				commandline = commandline.substring(i).trim();
+				
+				TestnetNode target;
+				
+				synchronized(connectedTestnetNodes) {
+					target = connectedTestnetNodes.get(nodeID);
+					if(target == null) {
+						System.out.println("Error: Not connected to that node ID");
+						continue;
+					}
+				}
+				
+				if(command.equalsIgnoreCase("ping")) {
+					System.out.println("Waiting for ping from "+nodeID);
+					if(target.pingSync()) {
+						System.out.println("Pong");
+					} else {
+						System.out.println("NAK");
+					}
+				}
+			}
+		}
+
+		private void showConsoleStatus() {
+			synchronized(connectedTestnetNodes) {
+				System.out.println("Connected testnet nodes: "+connectedTestnetNodes.size());
+				for(TestnetNode node : connectedTestnetNodes.values())
+					System.out.println("Connected to: "+node.id+" at "+node.getAddress());
+			}
+		}
+
+		private void showConsoleHelp() {
+			System.out.println("Syntax: COMMAND NODEID [ OPTIONS ]");
+			System.out.println("Simple commands: PING");
+		}
 	}
 
 	private static void setupLogging() throws IOException, IntervalParseException {
@@ -227,6 +317,8 @@ public class TestnetController implements Runnable {
 		
 		/** @return True to disconnect. */
 		public abstract boolean execute(LineReadingInputStream lris, OutputStream os, Writer w, TestnetNode client) throws IOException;
+		
+		public abstract void disconnected();
 	}
 	
 	class QuitCommand extends TestnetCommand {
@@ -238,6 +330,11 @@ public class TestnetController implements Runnable {
 		public boolean execute(LineReadingInputStream lris, OutputStream os,
 				Writer w, TestnetNode client) {
 			return true;
+		}
+		
+		@Override
+		public void disconnected() {
+			// Ignore
 		}
 	}
 	
@@ -265,6 +362,58 @@ public class TestnetController implements Runnable {
 			Logger.normal(this, "Ping ok from "+client.id);
 			return false;
 		}
+		
+		@Override
+		public void disconnected() {
+			// Ignore
+		}
+	};
+	
+	interface WaitingCommand {
+		
+		public boolean waitFor();
+		
+	};
+	
+	class WaitingPingCommand extends PingCommand implements WaitingCommand {
+
+		private boolean completed;
+		private boolean success;
+		
+		public boolean waitFor() {
+			synchronized(this) {
+				while(!completed) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+				return success;
+			}
+		}
+		
+		@Override
+		public boolean execute(LineReadingInputStream lris, OutputStream os,
+				Writer w, TestnetNode client) throws IOException {
+			boolean disconnect = super.execute(lris, os, w, client);
+			synchronized(this) {
+				completed = true;
+				this.success = !disconnect;
+				notifyAll();
+			}
+			return success;
+		}
+		
+		@Override
+		public void disconnected() {
+			synchronized(this) {
+				completed = true;
+				success = false;
+				notifyAll();
+			}
+		}
+		
 	}
 	
 	class TestnetNode implements Runnable {
@@ -278,6 +427,20 @@ public class TestnetController implements Runnable {
 			this.id = id;
 		}
 		
+		public String getAddress() {
+			return socket.getInetAddress().getHostAddress();
+		}
+
+		public boolean pingSync() {
+			WaitingPingCommand command;
+			synchronized(this) {
+				if(disconnected) return false;
+				command = new WaitingPingCommand();
+				commandQueue.add(command);
+			}
+			return command.waitFor();
+		}
+
 		public void disconnect() {
 			commandQueue.add(new QuitCommand());
 		}
@@ -288,6 +451,8 @@ public class TestnetController implements Runnable {
 		final Writer w;
 		
 		final long id;
+		
+		private boolean disconnected;
 		
 		final BlockingQueue<TestnetCommand> commandQueue =
 			new LinkedBlockingQueue<TestnetCommand>();
@@ -312,11 +477,14 @@ public class TestnetController implements Runnable {
 				}
 			} finally {
 				boolean removed = false;
+				TestnetCommand[] commandsDropped;
 				synchronized(connectedTestnetNodes) {
 					if(connectedTestnetNodes.get(id) == this) {
 						removed = true;
 						connectedTestnetNodes.remove(id);
 					}
+					disconnected = true;
+					commandsDropped = commandQueue.toArray(new TestnetCommand[commandQueue.size()]);
 				}
 				try {
 					socket.close();
@@ -325,6 +493,8 @@ public class TestnetController implements Runnable {
 				}
 				if(removed)
 					onConnectedTestnetNodesChanged();
+				for(TestnetCommand cmd : commandsDropped)
+					cmd.disconnected();
 			}
 		}
 
