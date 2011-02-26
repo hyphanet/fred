@@ -25,6 +25,7 @@ import freenet.support.FileLoggerHook;
 import freenet.support.FileLoggerHook.IntervalParseException;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
+import freenet.support.SimpleFieldSet;
 import freenet.support.Ticker;
 import freenet.support.TrivialTicker;
 import freenet.support.Logger.LogLevel;
@@ -174,6 +175,9 @@ public class TestnetController implements Runnable {
 				if(command.equalsIgnoreCase("ping")) {
 					System.out.println("Waiting for ping from "+nodeID);
 					System.out.println(target.pingSync());
+				} else if(command.equalsIgnoreCase("status")) {
+					System.out.println("Waiting for status from "+nodeID);
+					System.out.println(target.statusSync());
 				} else {
 					System.out.println("Error: Unknown command");
 				}
@@ -436,6 +440,89 @@ public class TestnetController implements Runnable {
 		
 	}
 	
+	abstract class GenericWaitingCommand extends TestnetCommand {
+		
+		private boolean completed;
+		private String status;
+		
+		protected class Retval {
+			public Retval(boolean b, String string) {
+				this.disconnect = b;
+				this.status = string;
+			}
+			boolean disconnect;
+			String status;
+		}
+		
+		public GenericWaitingCommand(
+				TestnetCommandType type) {
+			super(type);
+		}
+
+		public String waitFor() {
+			synchronized(this) {
+				while(!completed) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+				return status;
+			}
+		}
+		
+		protected abstract Retval innerExecute(LineReadingInputStream lris, OutputStream os,
+				Writer w, TestnetNode client) throws IOException;
+		
+		public void disconnected() {
+			synchronized(this) {
+				completed = true;
+				status = "Disconnected while waiting";
+				notifyAll();
+			}
+		}
+		
+		@Override
+		public boolean execute(LineReadingInputStream lris, OutputStream os,
+				Writer w, TestnetNode client) throws IOException {
+			Retval ret = innerExecute(lris, os, w, client);
+			synchronized(this) {
+				completed = true;
+				status = ret.status;
+				notifyAll();
+			}
+			return ret.disconnect;
+		}
+		
+	}
+	
+	class WaitingStatusCommand extends GenericWaitingCommand {
+
+		WaitingStatusCommand() {
+			super(TestnetCommandType.GetConnectionStatusCounts);
+		}
+		
+		@Override
+		protected Retval innerExecute(LineReadingInputStream lris,
+				OutputStream os, Writer w, TestnetNode client)
+				throws IOException {
+			writeCommand(w);
+			String precursor = lris.readLine(1024, 30, true);
+			if(precursor == null)
+				return new Retval(true, "No response");
+			if(!precursor.equals("ConnectionStatusCounts")) {
+				if(precursor.startsWith("Error:"))
+					return new Retval(false, "Unexpected error: "+precursor);
+				else
+					return new Retval(true, "Unexpected response: "+precursor);
+			}
+			SimpleFieldSet fs = SimpleFieldSet.readFrom(lris, false, true);
+			return new Retval(false, "Connection status:\n"+fs.toOrderedString());
+		}
+
+	}
+	
 	class TestnetNode implements Runnable {
 		
 		public TestnetNode(Socket sock, LineReadingInputStream lris2,
@@ -456,6 +543,16 @@ public class TestnetController implements Runnable {
 			synchronized(this) {
 				if(disconnected) return "Not connected";
 				command = new WaitingPingCommand();
+				commandQueue.add(command);
+			}
+			return command.waitFor();
+		}
+
+		public String statusSync() {
+			WaitingStatusCommand command;
+			synchronized(this) {
+				if(disconnected) return "Not connected";
+				command = new WaitingStatusCommand();
 				commandQueue.add(command);
 			}
 			return command.waitFor();
