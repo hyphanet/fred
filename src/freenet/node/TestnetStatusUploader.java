@@ -108,6 +108,7 @@ public class TestnetStatusUploader {
 				System.out.println("Waiting for commands from testnet coordinator");
 				while(true) {
 					String command = br.readLine();
+					if(command == null) return;
 					try {
 						if(handleCommandFromTestnetController(command, br, w, os)) return;
 						w.flush();
