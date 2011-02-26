@@ -1195,8 +1195,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			for(OldLogFile olf : toReturn) {
 				System.out.println("Writing data from log "+olf.filename);
 				// We will just prefix each line appropriately.
+				FileInputStream fis = null;
 				try {
-					FileInputStream fis = new FileInputStream(olf.filename);
+					fis = new FileInputStream(olf.filename);
 					GZIPInputStream gis = new GZIPInputStream(new BufferedInputStream(fis));
 					BufferedReader br = new BufferedReader(new InputStreamReader(gis));
 					String line;
@@ -1212,6 +1213,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					osw.write("Error:IOException\n");
 					osw.flush();
 					return;
+				} finally {
+					Closer.close(fis);
 				}
 			}
 			osw.write("EndLogFiltered\n");
