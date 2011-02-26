@@ -94,7 +94,7 @@ public class TestnetController implements Runnable {
 		}
 		counter++;
 		if(counter == -1) counter++; // -1 not allowed
-		System.err.println("Next counter is: "+counter);
+		Logger.error(this, "Next counter is: "+counter);
 	}
 
 	public static void main(String[] args) throws IOException, IntervalParseException {
@@ -113,13 +113,18 @@ public class TestnetController implements Runnable {
 		Logger.setupChain();
 		FileLoggerHook hook;
 		hook = 
-			new FileLoggerHook(true, new File(logDir, "testnet-coordinator-").getAbsolutePath(), 
+			new FileLoggerHook(true, new File(logDir, "testnet-coordinator").getAbsolutePath(), 
 					"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", "1HOUR", LogLevel.DEBUG /* filtered by chain */, false, true, 
 					1024*1024*1024, 100*1000);
 		hook.setMaxListBytes(100*1000);
 		hook.setMaxBacklogNotBusy(1*1000);
 		Logger.globalAddHook(hook);
 		hook.start();
+		File latest = new File(logDir, "testnet-coordinator-latest.log");
+		System.err.println("Logging to "+logDir);
+		System.err.println("You should watch this file: "+latest);
+		System.err.println("tail --follow=name --retry "+latest);
+		System.err.println();
 	}
 
 	public void run() {
@@ -144,7 +149,7 @@ public class TestnetController implements Runnable {
 		public void run() {
 			boolean movedOn = false;
 			try {
-				System.out.println("Incoming connection from "+sock.getInetAddress());
+				Logger.normal(this, "Incoming connection from "+sock.getInetAddress());
 				InputStream is = sock.getInputStream();
 				BufferedInputStream bis = new BufferedInputStream(is);
 				LineReadingInputStream lris; // Not using BufferedReader as we may need to pull binary data.
@@ -167,7 +172,7 @@ public class TestnetController implements Runnable {
 						osw.write("GENERATEDID:"+id+"\n");
 						osw.flush();
 					} else if(line.startsWith("READY:")) {
-						System.out.println("Connection waiting for commands: "+sock.getInetAddress());
+						Logger.normal(this, "Connection waiting for commands: "+sock.getInetAddress());
 						long id;
 						try {
 							id = Long.parseLong(line.substring("READY:".length()));
@@ -179,7 +184,7 @@ public class TestnetController implements Runnable {
 							new TestnetNode(sock, lris, os, osw, id);
 						synchronized(connectedTestnetNodes) {
 							if(connectedTestnetNodes.containsKey(id)) {
-								System.err.println("Two connections from peer "+sock.getInetAddress()+" for testnet node "+id);
+								Logger.error(this, "Two connections from peer "+sock.getInetAddress()+" for testnet node "+id);
 								connectedTestnetNodes.get(id).disconnect();
 							}
 							connectedTestnetNodes.put(id, connected);
@@ -244,19 +249,19 @@ public class TestnetController implements Runnable {
 		public boolean execute(LineReadingInputStream lris, OutputStream os,
 				Writer w, TestnetNode client) throws IOException {
 			writeCommand(w);
-			System.out.println("Waiting for reply to ping");
+			Logger.normal(this, "Waiting for reply to ping");
 			String response = lris.readLine(1024, 20, true);
-			System.out.println("Received reply to ping: \""+response+"\"");
+			Logger.normal(this, "Received reply to ping: \""+response+"\"");
 			if(response == null) {
-				System.err.println("Timed out waiting for ping response, disconnecting");
+				Logger.error(this, "Timed out waiting for ping response, disconnecting");
 				return true;
 			}
 			if(!response.equals("Pong")) {
-				System.err.println("Bogus return from ping, disconnecting");
+				Logger.error(this, "Bogus return from ping, disconnecting");
 				return true;
 			}
 			client.queuePing();
-			System.out.println("Ping ok from "+client.id);
+			Logger.normal(this, "Ping ok from "+client.id);
 			return false;
 		}
 	}
@@ -293,7 +298,7 @@ public class TestnetController implements Runnable {
 					TestnetCommand command;
 					try {
 						command = commandQueue.take();
-						System.out.println("Sending command to "+id+" : "+command);
+						Logger.normal(this, "Sending command to "+id+" : "+command);
 					} catch (InterruptedException e) {
 						continue;
 					}
@@ -350,7 +355,7 @@ public class TestnetController implements Runnable {
 
 	public void onConnectedTestnetNodesChanged() {
 		synchronized(connectedTestnetNodes) {
-			System.out.println("Connected testnet nodes: "+connectedTestnetNodes.size());
+			Logger.normal(this, "Connected testnet nodes: "+connectedTestnetNodes.size());
 		}
 	}
 
@@ -383,14 +388,14 @@ public class TestnetController implements Runnable {
 			osw.write(""+port+":"+System.currentTimeMillis()+":"+addr.getHostAddress()+":"+inPort+"\n");
 			osw.flush();
 		} catch (IOException e) {
-			System.err.println("Failed to write verify log: "+e);
+			Logger.error(this, "Failed to write verify log: "+e);
 			e.printStackTrace();
 		} finally {
 			if(fos != null) {
 				try {
 					fos.close();
 				} catch (IOException e) {
-					System.err.println("Failed to log verify attempt: "+e);
+					Logger.error(this, "Failed to log verify attempt: "+e);
 					e.printStackTrace();
 				}
 			}
