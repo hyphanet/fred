@@ -1222,6 +1222,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 			}
 			osw.write("EndLogFiltered\n");
+			osw.flush();
 		}
 	}
 
