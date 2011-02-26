@@ -1119,7 +1119,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				olf = new OldLogFile(currentLogFile, currentLogFileStartTime, currentLogFileEndTime, currentLogFile.length());
 			SimpleFieldSet subset = new SimpleFieldSet(true);
 			subset.putSingle("Filename", olf.filename.getName());
-			subset.putSingle("Date", tempDF.format(new Date(olf.start)));
+			subset.putSingle("DateStart", tempDF.format(new Date(olf.start)));
+			subset.putSingle("DateEnd", tempDF.format(new Date(olf.end)));
 			subset.put("Size", olf.size);
 			fs.put(Integer.toString(i), subset);
 		}
