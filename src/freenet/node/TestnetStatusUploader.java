@@ -241,6 +241,7 @@ public class TestnetStatusUploader {
 				fs.put("peer" + x, peerFS);
 				x++;
 			}
+			fs.writeTo(w);
 		} else if(command.equals("GetLogsList")) {
 			w.write("LogsList\n");
 			FileLoggerHook loggerHook;
