@@ -177,22 +177,22 @@ public class TestnetController implements Runnable {
 					System.out.println(target.pingSync());
 				} else if(command.equalsIgnoreCase("status")) {
 					System.out.println("Waiting for status from "+nodeID);
-					System.out.println(target.sync(new WaitingStatusCommand()));
+					System.out.println("\n"+target.sync(new WaitingStatusCommand()));
 				} else if(command.equalsIgnoreCase("noderef")) {
 					System.out.println("Waiting for noderef from "+nodeID);
-					System.out.println(target.sync(new WaitingMyRefCommand()));
+					System.out.println("\n"+target.sync(new WaitingMyRefCommand()));
 				} else if(command.equalsIgnoreCase("config")) {
 					System.out.println("Waiting for config from "+nodeID);
-					System.out.println(target.sync(new WaitingConfigCommand()));
+					System.out.println("\n"+target.sync(new WaitingConfigCommand()));
 				} else if(command.equalsIgnoreCase("stats")) {
 					System.out.println("Waiting for stats from "+nodeID);
-					System.out.println(target.sync(new WaitingStatsCommand()));
+					System.out.println("\n"+target.sync(new WaitingStatsCommand()));
 				} else if(command.equalsIgnoreCase("connections")) {
 					System.out.println("Waiting for connections detailed info from "+nodeID);
-					System.out.println(target.sync(new WaitingConnectionsCommand()));
+					System.out.println("\n"+target.sync(new WaitingConnectionsCommand()));
 				} else if(command.equalsIgnoreCase("list")) {
 					System.out.println("Waiting for log list from "+nodeID);
-					System.out.println(target.sync(new WaitingLogsListCommand()));
+					System.out.println("\n"+target.sync(new WaitingLogsListCommand()));
 				} else {
 					System.out.println("Error: Unknown command");
 				}
