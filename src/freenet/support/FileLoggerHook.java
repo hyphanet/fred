@@ -296,7 +296,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				if(latestFile != null) {
 					altLogStream = openNewLogFile(latestFile, false);
 				}
-				System.err.println("Created log files");
+				System.err.println("Created log files: "+currentFilename+" next threshold is "+new Date(gc.getTimeInMillis()));
 		    	if(logMINOR)
 		    		Logger.minor(this, "Start time: "+gc+" -> "+startTime);
 			}
@@ -310,9 +310,11 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					thisTime = System.currentTimeMillis();
 					if (baseFilename != null) {
 						if ((thisTime > nextHour) || switchedBaseFilename) {
+					        File newFilename = new File(getHourLogName(gc, -1, true));
 							gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 							long newEndTime = gc.getTimeInMillis();
-							currentFilename = rotateLog(currentFilename, lastTime, nextHour, newEndTime, gc);
+							rotateLog(currentFilename, newFilename, lastTime, nextHour, newEndTime, gc);
+							currentFilename = newFilename;
 							
 							lastTime = nextHour;
 							nextHour = newEndTime;
@@ -420,7 +422,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			}
 		}
 
-		private File rotateLog(File currentFilename, long lastTime, long nextHour, long newNextHour, GregorianCalendar gc) {
+		private File rotateLog(File currentFilename, File newFilename, long lastTime, long nextHour, long newNextHour, GregorianCalendar gc) {
 	        // Switch logs
 	        try {
 	        	logStream.flush();
@@ -438,7 +440,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	        long length = currentFilename.length();
 	        OldLogFile olf = new OldLogFile(currentFilename, lastTime, nextHour, length);
 	        // Rotate primary log stream
-	        currentFilename = new File(getHourLogName(gc, -1, true));
+	        currentFilename = newFilename;
 	        synchronized(logFiles) {
 	        	logFiles.addLast(olf);
 	        	currentLogFile = currentFilename;
@@ -1093,8 +1095,12 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 		DateFormat tempDF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
 		tempDF.setTimeZone(TimeZone.getTimeZone("GMT"));
-		for(int i=0;i<oldLogFiles.length;i++) {
-			OldLogFile olf = oldLogFiles[i];
+		for(int i=0;i<=oldLogFiles.length;i++) {
+			OldLogFile olf;
+			if(i < oldLogFiles.length)
+				olf = oldLogFiles[i];
+			else
+				olf = new OldLogFile(currentLogFile, currentLogFileStartTime, currentLogFileEndTime, currentLogFile.length());
 			SimpleFieldSet subset = new SimpleFieldSet(true);
 			subset.putSingle("Filename", olf.filename.getName());
 			subset.putSingle("Date", tempDF.format(new Date(olf.start)));
@@ -1118,6 +1124,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					doneLast = true;
 					olf = new OldLogFile(currentLogFile, currentLogFileStartTime, currentLogFileEndTime, currentLogFile.length());
 				}
+				System.out.println("Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
 		    	if(logMINOR)
 		    		Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
 				if((time >= olf.start) && (time < olf.end)) {
