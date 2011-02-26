@@ -273,6 +273,7 @@ public class TestnetStatusUploader {
 				return false;
 			}
 			w.write("Logs:\n");
+			w.flush();
 			loggerHook.sendLogByContainedDate(d.getTime(), os);
 		}
 		// FIXME fetch a log, grepping it
