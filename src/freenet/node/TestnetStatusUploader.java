@@ -55,41 +55,9 @@ public class TestnetStatusUploader {
 	}
 
 	void start() {
-		tryVerifyConnectivity();
+		waitForConnectivity();
 	}
 	
-	private void tryVerifyConnectivity() {
-	    freenet.support.Logger.OSThread.logPID(this);
-		//thread loop
-	    
-	    int failed = 0;
-	    
-		while(true){
-			
-			try{
-				Thread.sleep(updateInterval);
-					
-			//how i love java 
-			}catch (InterruptedException e){
-				return;
-				
-			}
-			
-			if(!verifyConnectivity()) {
-				failed++;
-				if(failed >= 2) {
-					System.err.println("Failed to verify connectivity twice, restarting to wait for connection.");
-					WrapperManager.restart();
-					System.exit(NodeInitException.EXIT_TESTNET_FAILED);
-				}
-			} else {
-				failed = 0;
-				return;
-			}
-			
-		}
-	}
-
 	private final Node node;
 	private final int updateInterval;
 	
@@ -128,7 +96,7 @@ public class TestnetStatusUploader {
 					// Ignore
 				}
 				System.out.println("Disconnected from testnet coordinator");
-				tryVerifyConnectivity();
+				waitForConnectivity();
 			}
 		}
 		private void handleTestnetConnection() {
