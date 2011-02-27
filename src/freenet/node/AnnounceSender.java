@@ -520,7 +520,8 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		}
 		// If we want it, add it and send it.
 		try {
-			if(om.addNewOpennetNode(fs, ConnectionType.ANNOUNCE) != null) {
+			// Allow reconnection - sometimes one side has the ref and the other side doesn't.
+			if(om.addNewOpennetNode(fs, ConnectionType.ANNOUNCE, true) != null) {
 				sendOurRef(source, om.crypto.myCompressedFullRef());
 			} else {
 				if(logMINOR)

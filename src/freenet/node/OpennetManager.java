@@ -326,7 +326,7 @@ public class OpennetManager {
 		return stopping;
 	}
 
-	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType, boolean allowExisting) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		try {
 		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
 		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity)) {
@@ -335,7 +335,12 @@ public class OpennetManager {
 		}
 		if(peersLRU.contains(pn)) {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
-			return null;
+			if(allowExisting) {
+				// However, we can reconnect.
+				return (OpennetPeerNode) peersLRU.get(pn);
+			} else {
+				return null;
+			}
 		}
 		if(node.isSeednode() && pn.isUnroutableOlderVersion()) {
 			// We can't send the UOM to it, so we should not accept it.

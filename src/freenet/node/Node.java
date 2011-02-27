@@ -5609,7 +5609,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		// FIXME: perhaps this should throw OpennetDisabledExcemption rather than returing false?
 		if(opennet == null) return null;
-		return opennet.addNewOpennetNode(fs, connectionType);
+		return opennet.addNewOpennetNode(fs, connectionType, false);
 	}
 
 	public byte[] getOpennetIdentity() {
