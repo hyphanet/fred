@@ -627,7 +627,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						// Is it internal?
 						boolean internal = false;
 						for(int j=0;j<nodeAddrs.length;j++) {
-							if(addr.equals(nodeAddrs[j].getAddress())) {
+							if(addr.equals(nodeAddrs[j].getAddress(false))) {
 								// Internal
 								internal = true;
 								break;
