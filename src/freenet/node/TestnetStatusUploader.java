@@ -205,7 +205,7 @@ public class TestnetStatusUploader {
 	 * @return True to close the connection.
 	 * @throws IOException */
 	public boolean handleCommandFromTestnetController(String command, BufferedReader br, Writer w, OutputStream os) throws IOException {
-		System.out.println("Received command from testnet controller: \""+command+"\"");
+		Logger.normal(this, "Received command from testnet controller: \""+command+"\"");
 		if(command.equals("Close")) {
 			return true;
 		} else if(command.equals("Ping")) {
@@ -232,7 +232,7 @@ public class TestnetStatusUploader {
 			fs.writeTo(w);
 		} else if(command.equals("GetConnections")) {
 			w.write("Connections\n");
-			PeerNode[] peers = node.peers.connectedPeers;
+			PeerNode[] peers = node.peers.myPeers;
 			SimpleFieldSet fs = new SimpleFieldSet(true);
 			int x = 0;
 			for(PeerNode p : peers) {
