@@ -93,7 +93,7 @@ public class TestnetStatusUploader {
 			try {
 				handleTestnetConnection();
 			} finally {
-				if(logMINOR) Logger.minor(this, "Connection to testnet handler closing");
+				Logger.error(this, "Connection to testnet handler closing");
 				synchronized(TestnetStatusUploader.this) {
 					if(connectionHandler == this) {
 						connectionHandler = null;
