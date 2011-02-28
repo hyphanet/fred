@@ -43,6 +43,12 @@ import freenet.support.SimpleFieldSet;
  * 
  */
 public class TestnetStatusUploader {
+	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerClass(TestnetStatusUploader.class);
+	}
 
 	public TestnetStatusUploader(Node node2, int updateInterval) {
 		this.node = node2;
@@ -87,6 +93,7 @@ public class TestnetStatusUploader {
 			try {
 				handleTestnetConnection();
 			} finally {
+				if(logMINOR) Logger.minor(this, "Connection to testnet handler closing");
 				synchronized(TestnetStatusUploader.this) {
 					if(connectionHandler == this) {
 						connectionHandler = null;
@@ -112,6 +119,7 @@ public class TestnetStatusUploader {
 					try {
 						if(handleCommandFromTestnetController(command, br, w, os)) return;
 						w.flush();
+						if(logMINOR) Logger.minor(this, "Handled command");
 					} catch (IOException e) {
 						return;
 					} catch (Throwable t) {

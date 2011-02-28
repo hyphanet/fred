@@ -56,6 +56,12 @@ import freenet.support.io.LineReadingInputStream;
  */
 public class TestnetController implements Runnable {
 	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerClass(TestnetController.class);
+	}
+
 	private long counter;
 	final File baseDir;
 	final File nodesDir;
@@ -352,7 +358,7 @@ public class TestnetController implements Runnable {
 							new TestnetNode(sock, lris, os, osw, id);
 						synchronized(connectedTestnetNodes) {
 							if(connectedTestnetNodes.containsKey(id)) {
-								Logger.error(this, "Two connections from peer "+sock.getInetAddress()+" for testnet node "+id);
+								Logger.error(this, "Two connections from peer "+sock.getInetAddress()+" for testnet node "+id+" : old is "+connectedTestnetNodes.get(id)+" new is "+connected);
 								connectedTestnetNodes.get(id).disconnect();
 							}
 							connectedTestnetNodes.put(id, connected);
@@ -965,6 +971,7 @@ public class TestnetController implements Runnable {
 		}
 
 		public String pingSync() {
+			if(logMINOR) Logger.minor(this, "Pinging "+id+" on "+this);
 			WaitingPingCommand command;
 			synchronized(this) {
 				if(disconnected) return "Not connected";
@@ -1005,7 +1012,7 @@ public class TestnetController implements Runnable {
 					TestnetCommand command;
 					try {
 						command = commandQueue.take();
-						Logger.normal(this, "Sending command to "+id+" : "+command);
+						Logger.normal(this, "Sending command to "+id+" ("+getAddress()+") : "+command);
 					} catch (InterruptedException e) {
 						continue;
 					}
