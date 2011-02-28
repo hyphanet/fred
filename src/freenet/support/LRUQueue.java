@@ -4,8 +4,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-import freenet.node.OpennetPeerNode;
-
 /**
  * LRU Queue
  * 
