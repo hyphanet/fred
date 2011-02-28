@@ -2948,6 +2948,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		fs.putSingle("identity", getIdentityString());
 		fs.putSingle("location", Double.toString(currentLocation));
 		fs.putSingle("testnet", Boolean.toString(testnetEnabled));
+		fs.put("testnetID", testnetID);
 		fs.putSingle("version", version);
 		if(peerCryptoGroup != null)
 			fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
