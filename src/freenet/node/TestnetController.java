@@ -1026,6 +1026,7 @@ public class TestnetController implements Runnable {
 					}
 				}
 			} finally {
+				Logger.error(this, "Disconnecting from node "+id);
 				boolean removed = false;
 				TestnetCommand[] commandsDropped;
 				synchronized(connectedTestnetNodes) {
