@@ -323,6 +323,8 @@ public class TestnetController implements Runnable {
 		public void run() {
 			boolean movedOn = false;
 			try {
+				// Timeout in a reasonable period.
+				sock.setSoTimeout(60*1000);
 				Logger.normal(this, "Incoming connection from "+sock.getInetAddress());
 				InputStream is = sock.getInputStream();
 				BufferedInputStream bis = new BufferedInputStream(is);

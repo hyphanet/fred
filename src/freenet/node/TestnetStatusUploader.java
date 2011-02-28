@@ -160,6 +160,9 @@ public class TestnetStatusUploader {
 			
 			System.out.println("Connecting to testnet coordinator");
 			client = new Socket(serverAddress, serverPort);
+			int timeout = client.getSoTimeout();
+			// We expect them to send a ping every 5 minutes so disconnect if nothing in 10.
+			client.setSoTimeout(600*1000);
 			
 			System.out.println("Connected to testnet coordinator");
 			
