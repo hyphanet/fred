@@ -141,8 +141,14 @@ public class TestnetStatusUploader {
 	public boolean verifyConnectivity() {
 		System.out.println("Will connect to testnet coordinator");
 		synchronized(this) {
-			if(verifyingConnectivity) return true;
-			if(connectionHandler != null) return true;
+			if(verifyingConnectivity) {
+				if(logMINOR) Logger.minor(this, "Already verifying connectivity");
+				return true;
+			}
+			if(connectionHandler != null) {
+				if(logMINOR) Logger.minor(this, "Already connected: connection handler is "+connectionHandler);
+				return true;
+			}
 			verifyingConnectivity = true;
 		}
 		Socket client = null;
