@@ -604,10 +604,16 @@ loadWaiterLoop:
         	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
         	msg.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
         	try {
-				pn.sendAsync(msg, null, this);
+        		pn.sendSync(msg, this, realTimeFlag);
 			} catch (NotConnectedException e2) {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+				offers.deleteLastOffer();
+	        	origTag.removeFetchingOfferedKeyFrom(pn);
+				continue;
+			} catch (SyncSendWaitedTooLongException e) {
+				if(logMINOR)
+					Logger.minor(this, "Took too long sending offer get to "+pn+" for "+key);
 				offers.deleteLastOffer();
 	        	origTag.removeFetchingOfferedKeyFrom(pn);
 				continue;
