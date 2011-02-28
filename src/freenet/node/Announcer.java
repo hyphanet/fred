@@ -63,7 +63,7 @@ public class Announcer {
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
-	public static final String SEEDNODES_FILENAME = "seednodes.fref";
+	public static final String SEEDNODES_FILENAME = "seednodes-testnet.fref";
 	/** Total nodes added by announcement so far */
 	private int announcementAddedNodes;
 	/** Total nodes that didn't want us so far */
