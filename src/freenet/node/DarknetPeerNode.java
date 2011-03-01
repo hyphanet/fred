@@ -1653,7 +1653,7 @@ public class DarknetPeerNode extends PeerNode {
 		System.err.println("Your friend node \""+getName()+"\" ("+getPeer()+") is having severe problems. We have disconnected to try to limit the effect on us. It will reconnect soon.");
 		// FIXME post a useralert
 		// Disconnect.
-		forceDisconnect(false);
+		forceDisconnect(true);
 	}
 
 	public synchronized FRIEND_TRUST getTrustLevel() {
