@@ -109,7 +109,7 @@ public class RequestStarterGroup {
 		chkInsertStarterBulk.setScheduler(chkPutSchedulerBulk);
 		chkInsertStarterRT.setScheduler(chkPutSchedulerRT);
 		
-		registerSchedulerConfig(schedulerConfig, "CHKinserter", chkFetchSchedulerBulk, chkFetchSchedulerRT, false, true);
+		registerSchedulerConfig(schedulerConfig, "CHKinserter", chkPutSchedulerBulk, chkPutSchedulerRT, false, true);
 		
 		sskRequestThrottleBulk = new MyRequestThrottle(5000, "SSK Request", fs == null ? null : fs.subset("SSKRequestThrottle"), 1024, false);
 		sskRequestThrottleRT = new MyRequestThrottle(5000, "SSK Request (RT)", fs == null ? null : fs.subset("SSKRequestThrottleRT"), 1024, true);
@@ -141,7 +141,7 @@ public class RequestStarterGroup {
 		sskInsertStarterBulk.setScheduler(sskPutSchedulerBulk);
 		sskInsertStarterRT.setScheduler(sskPutSchedulerRT);
 		
-		registerSchedulerConfig(schedulerConfig, "SSKinserter", chkFetchSchedulerBulk, chkFetchSchedulerRT, true, true);
+		registerSchedulerConfig(schedulerConfig, "SSKinserter", sskPutSchedulerBulk, sskPutSchedulerRT, true, true);
 		
 		schedulerConfig.finishedInitialization();
 	}
