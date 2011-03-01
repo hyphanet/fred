@@ -406,14 +406,18 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
                 if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
             }
             starting = false;
+            boolean successNow = false;
             synchronized (this) {
             	if(htl == 0) {
+            		successNow = true;
             		// Send an InsertReply back
             		if(!sentRequest)
             			origTag.setNotRoutedOnwards();
-            		finish(SUCCESS, null);
-            		return;
             	}
+            }
+            if(successNow) {
+        		finish(SUCCESS, null);
+        		return;
             }
             
             if( node.canWriteDatastoreInsert(htl) && (!canWriteStorePrev) && forkOnCacheable && forkedRequestTag == null) {
