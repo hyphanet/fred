@@ -3629,6 +3629,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			}
 
 		}
+		if(logMINOR) Logger.minor(this, "Peer node status now "+peerNodeStatus+" was "+oldPeerNodeStatus);
 		if(peerNodeStatus!=oldPeerNodeStatus){
 			notifyPeerNodeStatusChangeListeners();
 		}
