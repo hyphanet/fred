@@ -993,7 +993,7 @@ outer:
 				bufferUsage = sendBufferUsed;
 			}
 			int maxSendBufferSize = maxSendBufferSize();
-			if((bufferUsage + 200 /* bigger than most messages */ ) > maxSendBufferSize()) {
+			if((bufferUsage + 200 /* bigger than most messages */ ) > maxSendBufferSize) {
 				if(logDEBUG) Logger.debug(this, "Cannot send: Would exceed remote buffer size. Remote at " + bufferUsage+" max is "+maxSendBufferSize);
 				return false;
 			}
