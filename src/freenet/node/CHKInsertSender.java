@@ -407,15 +407,17 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             }
             starting = false;
             boolean successNow = false;
+            boolean noRequest = false;
             synchronized (this) {
             	if(htl == 0) {
             		successNow = true;
             		// Send an InsertReply back
-            		if(!sentRequest)
-            			origTag.setNotRoutedOnwards();
+            		noRequest = !sentRequest;
             	}
             }
             if(successNow) {
+        		if(noRequest)
+        			origTag.setNotRoutedOnwards();
         		finish(SUCCESS, null);
         		return;
             }
