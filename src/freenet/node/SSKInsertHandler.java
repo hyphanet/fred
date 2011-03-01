@@ -114,6 +114,14 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				Message msg = node.usm.waitFor(mf, this);
 				if(msg == null) {
 					Logger.normal(this, "Failed to receive FNPSSKInsertRequestHeaders for "+uid);
+					Message failed = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
+					try {
+						source.sendSync(failed, this, realTimeFlag);
+					} catch (NotConnectedException e) {
+						// Ignore
+					} catch (SyncSendWaitedTooLongException e) {
+						// Ignore
+					}
 					return;
 				}
 				headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
@@ -129,6 +137,14 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				Message msg = node.usm.waitFor(mf, this);
 				if(msg == null) {
 					Logger.normal(this, "Failed to receive FNPSSKInsertRequestData for "+uid);
+					Message failed = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
+					try {
+						source.sendSync(failed, this, realTimeFlag);
+					} catch (NotConnectedException e) {
+						// Ignore
+					} catch (SyncSendWaitedTooLongException e) {
+						// Ignore
+					}
 					return;
 				}
 				data = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
