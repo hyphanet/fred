@@ -4490,7 +4490,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(RTO > MAX_RTO)
 					RTO = MAX_RTO;
 			}
-			if(logMINOR) Logger.minor(this, "Reported ping "+t+" avg is now "+pingAverage.currentValue()+" RTO is "+RTO+" for "+shortToString());
+			if(logMINOR) Logger.minor(this, "Reported ping "+t+" avg is now "+pingAverage.currentValue()+" RTO is "+RTO+" SRTT is "+SRTT+" RTTVAR is "+RTTVAR+" for "+shortToString());
 		}
 	}
 	
