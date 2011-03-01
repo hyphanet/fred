@@ -1003,7 +1003,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	}
 	
 	private void setTransferTimedOut() {
-		if (transferTimedOut) return;
 		synchronized(this) {
 			if(!transferTimedOut) {
 				transferTimedOut = true;
