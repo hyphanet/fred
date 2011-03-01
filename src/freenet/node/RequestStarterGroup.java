@@ -124,7 +124,7 @@ public class RequestStarterGroup {
 		sskRequestStarterBulk.setScheduler(sskFetchSchedulerBulk);
 		sskRequestStarterRT.setScheduler(sskFetchSchedulerRT);
 		
-		registerSchedulerConfig(schedulerConfig, "SSKrequester", chkFetchSchedulerBulk, chkFetchSchedulerRT, true, false);
+		registerSchedulerConfig(schedulerConfig, "SSKrequester", sskFetchSchedulerBulk, sskFetchSchedulerRT, true, false);
 		
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
