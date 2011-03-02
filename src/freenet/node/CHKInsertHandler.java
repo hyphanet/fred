@@ -11,6 +11,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
+import freenet.io.comm.SlowAsyncMessageFilterCallback;
 import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockReceiver.BlockReceiverCompletion;
@@ -308,12 +309,48 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null);
     		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert", true);
     		source.localRejectedOverload("TimedOutAwaitingDataInsert", realTimeFlag);
-    		source.fatalTimeout();
+    		
+    		// Two stage timeout. Don't go fatal unless no response in 60 seconds.
+    		// Yes it's ugly everywhere but since we have a longish connection timeout it's necessary everywhere. :|
+    		// FIXME review two stage timeout everywhere with some low level networking guru.
+    		MessageFilter mf = makeDataInsertFilter(60*1000);
+    		node.usm.addAsyncFilter(mf, new SlowAsyncMessageFilterCallback() {
+
+    			public void onMatched(Message m) {
+    				// Okay, great.
+    			}
+
+    			public boolean shouldTimeout() {
+    				return false;
+    			}
+
+    			public void onTimeout() {
+    				// Fatal timeout. Something is seriously busted.
+    				// We've waited long enough that we know it's not just a connectivity problem - if it was we'd have disconnected by now.
+    	    		source.fatalTimeout();
+    			}
+
+    			public void onDisconnect(PeerContext ctx) {
+    				// Okay. Somewhat expected, it was having problems.
+    			}
+
+    			public void onRestarted(PeerContext ctx) {
+    				// Okay.
+    			}
+
+    			public int getPriority() {
+    				return NativeThread.NORM_PRIORITY;
+    			}
+    			
+    		}, this);
     		return;
     	} catch (NotConnectedException e) {
     		if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
-    	}
+    	} catch (DisconnectedException e) {
+    		if(logMINOR) Logger.minor(this, "Lost connection to source");
+			return;
+		}
 	}
 
 	private boolean canCommit = false;
