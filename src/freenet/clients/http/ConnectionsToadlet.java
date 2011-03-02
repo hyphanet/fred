@@ -755,6 +755,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerAdditionForm.addChild("#", l10n("peerTrustIntroduction"));
 			for(FRIEND_TRUST trust : FRIEND_TRUST.valuesBackwards()) { // FIXME reverse order
 				HTMLNode input = peerAdditionForm.addChild("br").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "trust", trust.name() });
+				if(trust == FRIEND_TRUST.NORMAL) // Select NORMAL by default
+					input.addAttribute("checked", "true");
 				input.addChild("b", l10n("peerTrust."+trust.name())); // FIXME l10n
 				input.addChild("#", ": ");
 				input.addChild("#", l10n("peerTrustExplain."+trust.name()));
