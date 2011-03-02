@@ -126,7 +126,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         // Source will send us a DataInsert
         
         MessageFilter mf;
-        mf = MessageFilter.create().setType(DMT.FNPDataInsert).setField(DMT.UID, uid).setSource(source).setTimeout(DATA_INSERT_TIMEOUT);
+        mf = makeDataInsertFilter(DATA_INSERT_TIMEOUT);
         
         Message msg;
         try {
@@ -289,6 +289,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             finish(CHKInsertSender.INTERNAL_ERROR);
             return;
         }
+	}
+
+	private MessageFilter makeDataInsertFilter(int timeout) {
+    	return MessageFilter.create().setType(DMT.FNPDataInsert).setField(DMT.UID, uid).setSource(source).setTimeout(timeout);
 	}
 
 	private void handleNoDataInsert() {
