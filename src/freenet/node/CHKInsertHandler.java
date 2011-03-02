@@ -139,24 +139,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         if(logMINOR) Logger.minor(this, "Received "+msg);
         
         if(msg == null) {
-        	try {
-        		// Nodes wait until they have the DataInsert before forwarding, so there is absolutely no excuse: There is a local problem here!
-        		if(source.isConnected() && (startTime > (source.timeLastConnectionCompleted()+Node.HANDSHAKE_TIMEOUT*4)))
-        			Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
-        		Message tooSlow = DMT.createFNPRejectedTimeout(uid);
-        		source.sendAsync(tooSlow, null, this);
-        		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
-        		source.sendAsync(m, null, this);
-        		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-        		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null);
-        		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert", true);
-        		source.localRejectedOverload("TimedOutAwaitingDataInsert", realTimeFlag);
-        		source.fatalTimeout();
-        		return;
-        	} catch (NotConnectedException e) {
-        		if(logMINOR) Logger.minor(this, "Lost connection to source");
-    			return;
-        	}
+        	handleNoDataInsert();
+        	return;
         }
         
         // We have a DataInsert
@@ -305,6 +289,27 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             finish(CHKInsertSender.INTERNAL_ERROR);
             return;
         }
+	}
+
+	private void handleNoDataInsert() {
+    	try {
+    		// Nodes wait until they have the DataInsert before forwarding, so there is absolutely no excuse: There is a local problem here!
+    		if(source.isConnected() && (startTime > (source.timeLastConnectionCompleted()+Node.HANDSHAKE_TIMEOUT*4)))
+    			Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
+    		Message tooSlow = DMT.createFNPRejectedTimeout(uid);
+    		source.sendAsync(tooSlow, null, this);
+    		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
+    		source.sendAsync(m, null, this);
+    		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
+    		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false, realTimeFlag, null);
+    		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert", true);
+    		source.localRejectedOverload("TimedOutAwaitingDataInsert", realTimeFlag);
+    		source.fatalTimeout();
+    		return;
+    	} catch (NotConnectedException e) {
+    		if(logMINOR) Logger.minor(this, "Lost connection to source");
+			return;
+    	}
 	}
 
 	private boolean canCommit = false;
