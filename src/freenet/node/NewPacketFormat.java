@@ -143,6 +143,8 @@ public class NewPacketFormat implements PacketFormat {
 		pn.reportIncomingPacket(buf, offset, length, now);
 
 		LinkedList<byte[]> finished = handleDecryptedPacket(packet, s);
+		if(logMINOR && !finished.isEmpty()) 
+			Logger.minor(this, "Decoded messages: "+finished.size());
 		DecodingMessageGroup group = pn.startProcessingDecryptedMessages(finished.size());
 		for(byte[] buffer : finished) {
 			group.processDecryptedMessage(buffer, 0, buffer.length, 0);
