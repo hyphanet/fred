@@ -1067,15 +1067,15 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 		}
         
-        	synchronized(this) {
-        		// waitForBackgroundTransferCompletions() may have already set it.
-        		if(!allTransfersCompleted) {
-        			if(failedRecv)
-        				status = RECEIVE_FAILED;
-        			allTransfersCompleted = true;
-        			notifyAll();
-        		}
-        	}
+		synchronized(this) {
+			// waitForBackgroundTransferCompletions() may have already set it.
+			if(!allTransfersCompleted) {
+				if(failedRecv)
+					status = RECEIVE_FAILED;
+				allTransfersCompleted = true;
+				notifyAll();
+			}
+		}
         	
         if(status == SUCCESS && next != null)
         	next.onSuccess(true, false);
@@ -1150,22 +1150,22 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		
 		private void waitForBackgroundTransferCompletions() {
 			try {
-		    freenet.support.Logger.OSThread.logPID(this);
-			if(logMINOR) Logger.minor(this, "Waiting for background transfer completions: "+this);
-			
-			// We must presently be at such a stage that no more background transfers will be added.
-			
-			BackgroundTransfer[] transfers;
-			synchronized(backgroundTransfers) {
-				transfers = new BackgroundTransfer[backgroundTransfers.size()];
-				transfers = backgroundTransfers.toArray(transfers);
-			}
-			
-			// Wait for the outgoing transfers to complete.
-			if(!waitForBackgroundTransfers(transfers)) {
-				setTransferTimedOut();
-				return;
-			}
+				freenet.support.Logger.OSThread.logPID(this);
+				if(logMINOR) Logger.minor(this, "Waiting for background transfer completions: "+this);
+				
+				// We must presently be at such a stage that no more background transfers will be added.
+				
+				BackgroundTransfer[] transfers;
+				synchronized(backgroundTransfers) {
+					transfers = new BackgroundTransfer[backgroundTransfers.size()];
+					transfers = backgroundTransfers.toArray(transfers);
+				}
+				
+				// Wait for the outgoing transfers to complete.
+				if(!waitForBackgroundTransfers(transfers)) {
+					setTransferTimedOut();
+					return;
+				}
 			} finally {
 				synchronized(CHKInsertSender.this) {
 					allTransfersCompleted = true;
