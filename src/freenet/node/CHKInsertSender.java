@@ -1097,6 +1097,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
      * failed.
      */
     public void onReceiveFailed() {
+    	if(logMINOR) Logger.minor(this, "Receive failed on "+this);
     	synchronized(backgroundTransfers) {
     		receiveFailed = true;
     		backgroundTransfers.notifyAll();
