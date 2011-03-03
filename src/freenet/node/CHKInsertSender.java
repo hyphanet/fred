@@ -1198,7 +1198,11 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					boolean completedTransfers = true;
 					boolean completedNotifications = true;
 					for(int i=0;i<transfers.length;i++) {
-						if(!transfers[i].pn.isRoutable()) continue;
+						if(!transfers[i].pn.isRoutable()) {
+							if(logMINOR)
+								Logger.minor(this, "Ignoring transfer to "+transfers[i].pn+" for "+this+" as not routable");
+							continue;
+						}
 						noneRouteable = false;
 						if(!transfers[i].completedTransfer) {
 							if(logMINOR)
