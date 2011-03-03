@@ -1061,11 +1061,13 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
         
         	synchronized(this) {
-        		if(allTransfersCompleted) return;
-        		if(failedRecv)
-        			status = RECEIVE_FAILED;
-        		allTransfersCompleted = true;
-        		notifyAll();
+        		// waitForBackgroundTransferCompletions() may have already set it.
+        		if(!allTransfersCompleted) {
+        			if(failedRecv)
+        				status = RECEIVE_FAILED;
+        			allTransfersCompleted = true;
+        			notifyAll();
+        		}
         	}
         	
         if(status == SUCCESS && next != null)
