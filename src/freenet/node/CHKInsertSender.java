@@ -715,7 +715,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     private void handleRejectedTimeout(Message msg, PeerNode next) {
 		// Timeout :(
 		// Fairly serious problem
-		Logger.error(this, "Node timed out waiting for our DataInsert (" + msg
+		Logger.error(this, "Node timed out waiting for our DataInsert (" + msg + " from " + next
 				+ ") after Accepted in insert - treating as fatal timeout");
 		// Terminal overload
 		// Try to propagate back to source
