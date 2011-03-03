@@ -1048,16 +1048,23 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         	if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         }
 		
-        boolean failedRecv; // receiveFailed is protected by backgroundTransfers but status by this
+        boolean failedRecv = false; // receiveFailed is protected by backgroundTransfers but status by this
         // Now wait for transfers, or for downstream transfer notifications.
         // Note that even the data receive may not have completed by this point.
+        boolean mustWait = false;
 		synchronized(backgroundTransfers) {
-			if (!backgroundTransfers.isEmpty()) {
-				waitForBackgroundTransferCompletions();
-			} else {
+			if (backgroundTransfers.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "No background transfers");
+				failedRecv = receiveFailed;
+			} else {
+				mustWait = true;
 			}
-			failedRecv = receiveFailed;
+		}
+		if(mustWait) { 
+			waitForBackgroundTransferCompletions();
+			synchronized(backgroundTransfers) {
+				failedRecv = receiveFailed;
+			}
 		}
         
         	synchronized(this) {
