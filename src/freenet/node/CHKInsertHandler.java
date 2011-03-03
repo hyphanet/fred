@@ -535,10 +535,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         				Logger.error(this, "Took too long to send "+msg+" to "+source);
 					}
         			if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
-        				Logger.normal(this, "Failed to retrieve (disconnect): "+e, e);
+        				Logger.normal(this, "Failed to retrieve (disconnect): "+e+" for "+CHKInsertHandler.this, e);
         			else
         				// Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
-        				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
+        				Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" for "+CHKInsertHandler.this, e);
         			
         			if(!prb.abortedLocally())
         				node.nodeStats.failedBlockReceive(false, false, realTimeFlag, false);
