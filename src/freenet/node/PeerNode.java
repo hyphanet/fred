@@ -1304,7 +1304,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(_lastThrottle != null)
 			_lastThrottle.maybeDisconnected();
 		node.lm.lostOrRestartedNode(this);
-		setPeerNodeStatus(now);
+		if(peers.havePeer(this))
+			setPeerNodeStatus(now);
 		if(!dumpMessageQueue) {
 			node.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
