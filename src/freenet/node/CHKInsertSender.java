@@ -1197,6 +1197,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					boolean noneRouteable = true;
 					boolean completedTransfers = true;
 					boolean completedNotifications = true;
+					boolean someFailed = false;
 					for(int i=0;i<transfers.length;i++) {
 						if(!transfers[i].pn.isRoutable()) {
 							if(logMINOR)
@@ -1219,10 +1220,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							break;
 						}
 						if (!transfers[i].completionSucceeded)
-							return false;
+							someFailed = true;
 					}
 					if(noneRouteable) return false;
-					if(completedTransfers && completedNotifications) return true;
+					if(completedTransfers && completedNotifications) return !someFailed;
 					
 					if(logMINOR) Logger.minor(this, "Waiting: transfer completion=" + completedTransfers + " notification="+completedNotifications); 
 					try {
