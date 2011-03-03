@@ -376,7 +376,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		CHKBlock block = verify();
 		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
 		
-        if(logMINOR) Logger.minor(this, "Waiting for completion");
         // Wait for completion
         boolean sentCompletionWasSet;
         synchronized(sentCompletionLock) {
@@ -387,6 +386,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		Message m=null;
 		
         if((sender != null) && (!sentCompletionWasSet)) {
+            if(logMINOR) Logger.minor(this, "Waiting for completion");
 			//If there are downstream senders, our final success report depends on there being no timeouts in the chain.
         	while(true) {
         		synchronized(sender) {
