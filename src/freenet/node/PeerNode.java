@@ -2111,7 +2111,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				myLastSuccessfulBootID = myBootID;
 			}
 			if(bootIDChanged && wasARekey) {
-				Logger.error(this, "Changed boot ID while rekeying! from " + bootID + " to " + thisBootID + " for " + getPeer());
+				// This can happen if the other side thought we disconnected but we didn't think they did.
+				Logger.normal(this, "Changed boot ID while rekeying! from " + bootID + " to " + thisBootID + " for " + getPeer());
 				wasARekey = false;
 				connectedTime = now;
 				countSelectionsSinceConnected = 0;
