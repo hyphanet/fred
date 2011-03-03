@@ -173,29 +173,7 @@ public class LoggingConfigHandler {
     	
 		// interval
     	
-		config.register("interval", "10MINUTE", 5, true, false, "LogConfigHandler.rotationInterval",
-				"LogConfigHandler.rotationIntervalLong",
-				new StringCallback() {
-					@Override
-					public String get() {
-						return logRotateInterval;
-					}
-
-					@Override
-					public void set(String val) throws InvalidConfigValueException {
-						if (val.equals(logRotateInterval)) return;
-						if (fileLoggerHook != null) {
-							try {
-								fileLoggerHook.setInterval(val);
-							} catch (FileLoggerHook.IntervalParseException e) {
-								throw new OptionFormatException(e.getMessage());
-							}
-						}
-						logRotateInterval = val;
-					}
-				});
-    	
-		logRotateInterval = config.getString("interval");
+		logRotateInterval = "10MINUTE"; // For testnet.
     	
 		// max cached bytes in RAM
 		config.register("maxCachedBytes", "100M", 6, true, false, "LogConfigHandler.maxCachedBytes",
