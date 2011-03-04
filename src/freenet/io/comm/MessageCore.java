@@ -211,6 +211,8 @@ public class MessageCore {
 					matched = true;
 					i.remove();
 					match = f;
+					// We must setMessage() inside the lock to ensure that waitFor() sees it even if it times out.
+					f.setMessage(m);
 					if(logMINOR) Logger.minor(this, "Matched: "+f);
 					break; // Only one match permitted per message
 				} else if(logMINOR) Logger.minor(this, "Did not match "+f);
@@ -224,7 +226,6 @@ public class MessageCore {
 			}
 		}
 		if(match != null) {
-			match.setMessage(m);
 			match.onMatched(_executor);
 		}
 		// Feed unmatched messages to the dispatcher
