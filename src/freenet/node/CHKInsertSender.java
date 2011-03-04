@@ -859,6 +859,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
 			
 			if (msg.getSpec() == DMT.FNPRejectedLoop) {
+				if(logMINOR) Logger.minor(this, "Rejected (loop) on "+this);
 				next.successNotOverload(realTimeFlag);
 				// Loop - we don't want to send the data to this one
 				next.noLongerRoutingTo(thisTag, false);
