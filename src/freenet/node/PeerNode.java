@@ -4451,8 +4451,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return IPUtil.isValidAddress(addr, false);
 	}
 
-	private static final double MAX_RTO = 60*1000;
-	private static final double MIN_RTO = 1000;
+	static final double MAX_RTO = 60*1000;
+	static final double MIN_RTO = 1000;
 	
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
