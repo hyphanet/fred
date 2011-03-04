@@ -530,7 +530,7 @@ public class MessageCore {
 				}
 				ret = filter.getMessage();
 			}
-			if(logDEBUG) Logger.debug(this, "Returning "+ret+" from "+filter);
+			if(logMINOR) Logger.minor(this, "Returning "+ret+" from "+filter);
 		}
 		if(!filter.matched()) {
 			// We must remove it from _filters before we return, or when it is re-added,
