@@ -1026,13 +1026,9 @@ outer:
 
 	private double averageRTT() {
 		if(pn != null) {
-			// RFC 2988 specifies a 1 second minimum RTT, mostly due to legacy issues,
-			// but given that Freenet is mostly used on very slow upstream links, it 
-			// probably makes sense for us too for now, to avoid excessive retransmits.
-			// FIXME !!!
-			return Math.max(1000, pn.averagePingTimeCorrected());
+			return pn.averagePingTimeCorrected();
 		}
-		return 1000;
+		return PeerNode.MIN_RTO;
 	}
 
 	static class SentPacket {
