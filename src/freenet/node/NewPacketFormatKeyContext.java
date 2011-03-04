@@ -46,7 +46,6 @@ public class NewPacketFormatKeyContext {
 	/** Minimum RTT for purposes of calculating whether to retransmit. 
 	 * Must be greater than MAX_ACK_DELAY */
 	private static final int MIN_RTT_FOR_RETRANSMIT = 250;
-	private static final int NUM_RTTS_TO_LOOSE = 2;
 	
 	private int maxSeenInFlight;
 	
@@ -249,7 +248,7 @@ public class NewPacketFormatKeyContext {
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
 				SentPacket s = e.getValue();
-				long t = (long) (s.getSentTime() + (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1));
+				long t = (long) (s.getSentTime() + (avgRtt + MAX_ACK_DELAY * 1.1));
 				if(t < timeCheck) timeCheck = t;
 			}
 		}
@@ -268,11 +267,11 @@ public class NewPacketFormatKeyContext {
 			while(it.hasNext()) {
 				Map.Entry<Integer, SentPacket> e = it.next();
 				SentPacket s = e.getValue();
-				if(s.getSentTime() < (curTime - (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1))) {
+				if(s.getSentTime() < (curTime - (avgRtt + MAX_ACK_DELAY * 1.1))) {
 					if(logMINOR) {
 						Logger.minor(this, "Assuming packet " + e.getKey() + " has been lost. "
 						                + "Delay " + (curTime - s.getSentTime()) + "ms, "
-						                + "threshold " + (NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
+						                + "threshold " + (avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 					}
 					s.lost();
 					it.remove();
@@ -281,7 +280,7 @@ public class NewPacketFormatKeyContext {
 					count++;
 			}
 			if(count > 0 && logMINOR)
-				Logger.minor(this, ""+count+" messages in flight with threshold "+(NUM_RTTS_TO_LOOSE * avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
+				Logger.minor(this, ""+count+" messages in flight with threshold "+(avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 		}
 		if(bigLostCount != 0 && pn != null) {
 			PacketThrottle throttle = pn.getThrottle();
