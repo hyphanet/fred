@@ -4455,6 +4455,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	static final double MIN_RTO = 1000;
 	private int consecutiveRTOBackoffs;
 	
+	// Clock generally has 20ms granularity or better, right?
+	// FIXME determine the clock granularity.
+	private static int CLOCK_GRANULARITY = 20;
+	
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
 		synchronized(this) {
@@ -4465,7 +4469,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// Initialize
 				SRTT = t;
 				RTTVAR = t / 2;
-				RTO = SRTT + RTTVAR * 4;
+				RTO = SRTT + Math.max(CLOCK_GRANULARITY, RTTVAR * 4);
 				// RFC 2988 specifies a 1 second minimum RTT, mostly due to legacy issues,
 				// but given that Freenet is mostly used on very slow upstream links, it 
 				// probably makes sense for us too for now, to avoid excessive retransmits.
@@ -4485,7 +4489,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// Update
 				RTTVAR = 0.75 * RTTVAR + 0.25 * Math.abs(SRTT - t);
 				SRTT = 0.875 * SRTT + 0.125 * t;
-				RTO = SRTT + RTTVAR * 4;
+				RTO = SRTT + Math.max(CLOCK_GRANULARITY, RTTVAR * 4);
 				// RFC 2988 specifies a 1 second minimum RTT, mostly due to legacy issues,
 				// but given that Freenet is mostly used on very slow upstream links, it 
 				// probably makes sense for us too for now, to avoid excessive retransmits.
