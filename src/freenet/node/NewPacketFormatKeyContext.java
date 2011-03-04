@@ -112,7 +112,7 @@ public class NewPacketFormatKeyContext {
 		boolean lostBeforeAcked = false;
 		boolean validAck = false;
 		synchronized(sentPackets) {
-			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack);
+			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack+" from "+pn);
 			SentPacket sent = sentPackets.remove(ack);
 			if(sent != null) {
 				rtt = sent.acked();
