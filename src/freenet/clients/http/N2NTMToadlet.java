@@ -22,10 +22,11 @@ import freenet.support.api.HTTPRequest;
 public class N2NTMToadlet extends Toadlet {
 	private Node node;
 	private NodeClientCore core;
-
+	private HighLevelSimpleClient client;
 	protected N2NTMToadlet(Node n, NodeClientCore core,
 			HighLevelSimpleClient client) {
 		super(client);
+		this.client = client;
 		this.node = n;
 		this.core = core;
 	}
@@ -126,8 +127,15 @@ public class N2NTMToadlet extends Toadlet {
 					.getString("Toadlet.unauthorized"));
 			return;
 		}
+		
+		if(request.isPartSet("n2nm-browse"))
+		{
+			LocalFileN2NMToadlet t = new LocalFileN2NMToadlet(core, client);
+			t.handleMethodPOST(uri, request, ctx);
+			return;
+		}
 
-		if (request.isPartSet("send")) {
+		if (request.isPartSet("send") || request.isPartSet("insert-local-file") || request.isPartSet("insert-local-dir")) {
 			String message = request.getPartAsString("message", 5 * 1024);
 			message = message.trim();
 			if (message.length() > 1024) {
@@ -256,8 +264,15 @@ public class N2NTMToadlet extends Toadlet {
 				"cols" }, new String[] { "n2ntmtext", "message", "8", "74" });
 		messageForm.addChild("br");
 		messageForm.addChild("#", "You may attach a file:");
+		// Local file browser
+		if(ctx.isAllowedFullAccess()) {
+			messageForm.addChild("br");
+			messageForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
+			messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "n2nm-browse", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
+			messageForm.addChild("br");
+		}
 		messageForm.addChild("input", new String[] { "type", "name", "value" },
-				new String[] { "text", "filename", "" });
+				new String[] { "file", "filename", "" });
 		messageForm.addChild("input", new String[] { "type", "name", "value" },
 				new String[] { "submit", "send", l10n("sendMessageShort") });
 	}

@@ -130,9 +130,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private boolean isReversed = false;
 
 	private final boolean uploads;
-
+	private HighLevelSimpleClient client;
 	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client, boolean uploads) {
 		super(client);
+		this.client = client;
 		this.core = core;
 		this.fcp = fcp;
 		this.uploads = uploads;
@@ -155,9 +156,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		try {
 			// Browse... button
 			if (request.getPartAsString("insert-local", 128).length() > 0) {
-
-				// Preserve the key
-
+				
 				FreenetURI insertURI;
 				String keyType = request.getPartAsString("keytype", 10);
 				if ("CHK@".equals(keyType)) {
@@ -180,13 +179,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				}
 
-				String overrideSplitfileKey = request.getPartAsString("overrideSplitfileKey", 65);
-
-				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
-				boolean compress = request.getPartAsString("compress", 128).length() > 0;
-				String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
-				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString() + "&compress=" + compress+"&compatibilityMode="+compatibilityMode+"&overrideSplitfileKey="+overrideSplitfileKey);
-				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
+				// FIXME Might be nicer than using an override to modify HTTPRequest, but that can't currently be done.
+				LocalFileInsertToadlet t = new LocalFileInsertToadlet(core, client,  insertURI.toASCIIString());
+				t.handleMethodPOST(uri, request, ctx);
 				return;
 			}
 
