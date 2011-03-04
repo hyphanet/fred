@@ -3833,6 +3833,10 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 
+		if(javaVersion.startsWith("1.5.0_")) {
+			clientCore.alerts.register(new SimpleUserAlert(false, l10n("java15DeprecatedTitle"), l10n("java15Deprecated"), l10n("java15DeprecatedTitle"), UserAlert.CRITICAL_ERROR));
+		}
+		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 
 		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun ")) || (jvmVendor.startsWith("Apple ")))) {
