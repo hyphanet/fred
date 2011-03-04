@@ -4499,6 +4499,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 	
+	/**
+	 * RFC 2988:
+	 *    Note that a TCP implementation MAY clear SRTT and RTTVAR after
+	 *    backing off the timer multiple times as it is likely that the
+	 *    current SRTT and RTTVAR are bogus in this situation.  Once SRTT and
+	 *    RTTVAR are cleared they should be initialized with the next RTT
+	 *    sample taken per (2.2) rather than using (2.3).
+	 */
 	static final int MAX_CONSECUTIVE_RTO_BACKOFFS = 5;
 	
 	public synchronized void backoffOnResend() {
@@ -4509,6 +4517,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(RTO > MAX_RTO)
 			RTO = MAX_RTO;
 		consecutiveRTOBackoffs++;
+		if(consecutiveRTOBackoffs > MAX_CONSECUTIVE_RTO_BACKOFFS) {
+			Logger.warning(this, "Resetting RTO for "+this+" after "+consecutiveRTOBackoffs+" consecutive backoffs due to packet loss");
+			consecutiveRTOBackoffs = 0;
+			reportedRTT = false;
+		}
 		if(logMINOR) Logger.minor(this, "Backed off on resend, RTO is now "+RTO+" for "+shortToString()+" consecutive RTO backoffs is "+consecutiveRTOBackoffs);
 	}
 
