@@ -1677,7 +1677,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	}
 
 	/**
-	* Enqueue a message to be sent to this node and wait up to a minute for it to be transmitted.
+	* Enqueue a message to be sent to this node and wait up to a minute for it to be transmitted
+	* and acknowledged.
 	*/
 	public void sendSync(Message req, ByteCounter ctr, boolean realTime) throws NotConnectedException, SyncSendWaitedTooLongException {
 		SyncMessageCallback cb = new SyncMessageCallback();
@@ -1755,10 +1756,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 
 		public void sent() {
-			synchronized(this) {
-				done = true;
-				notifyAll();
-			}
+			// Ignore.
+			// It might have been lost, we wait until it is acked.
 		}
 	}
 
