@@ -4458,6 +4458,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
 		synchronized(this) {
+			consecutiveRTOBackoffs = 0;
 			// Update RTT according to RFC 2988.
 			if(!reportedRTT) {
 				double oldRTO = RTO;
@@ -4497,6 +4498,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(logMINOR) Logger.minor(this, "Reported ping "+t+" avg is now "+pingAverage.currentValue()+" RTO is "+RTO+" SRTT is "+SRTT+" RTTVAR is "+RTTVAR+" for "+shortToString());
 		}
 	}
+	
+	static final int MAX_CONSECUTIVE_RTO_BACKOFFS = 5;
 	
 	public synchronized void backoffOnResend() {
 		if(RTO >= MAX_RTO) {
