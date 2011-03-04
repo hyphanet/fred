@@ -478,23 +478,16 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             
             try {
 				/*
-				 When using sendSync(), this send can often timeout (it is the first request we are sending to this node).
-				 -If sendSync blocks here (message queue is full, node down, etc.) it can take up to 10 minutes,
-				  if this occurs at even two nodes in any given insert (at any point in the path), the entire insert chain
-				  will fatally timeout.
-				 -We cannot be informed if sendSync() does timeout. A message will be logged, but this thread will simply continue
-				   to the waitFor() and spend another timeout period there.
-				 -The timeout on the waitFor() is 10 seconds (ACCEPTED_TIMEOUT).
-				 -The interesting case is when this next node is temporarily busy, in which case we might skip a busy node if they
-				   don't respond in ten seconds (ACCEPTED_TIMEOUT). Or, if the length of the send queue to them is greater than
-				   ACCEPTED_TIMEOUT, using sendAsync() will skip them before they get the request. This would be a need for retuning
-				   ACCEPTED_TIMEOUT.
 				 Note also that we won't fork here, unlike in RequestSender, because the data won't be sent after a timeout, and the
 				 insert will not be routed any further without the DataInsert.
 				 */
-				next.sendAsync(req, null, this);
+				next.sendSync(req, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
+				thisTag.removeRoutingTo(next);
+				continue;
+			} catch (SyncSendWaitedTooLongException e) {
+				Logger.warning(this, "Failed to send request to "+next);
 				thisTag.removeRoutingTo(next);
 				continue;
 			}

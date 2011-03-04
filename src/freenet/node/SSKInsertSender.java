@@ -245,9 +245,13 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             // Send to next node
             
             try {
-				next.sendAsync(request, null, this);
+            	next.sendSync(request, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
+				thisTag.removeRoutingTo(next);
+				continue;
+			} catch (SyncSendWaitedTooLongException e) {
+				Logger.warning(this, "Failed to send request to "+next);
 				thisTag.removeRoutingTo(next);
 				continue;
 			}

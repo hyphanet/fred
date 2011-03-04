@@ -4460,19 +4460,25 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return IPUtil.isValidAddress(addr, false);
 	}
 
-	private static final double MAX_RTO = 60*1000;
-	private static final double MIN_RTO = 1000;
+	static final double MAX_RTO = 60*1000;
+	static final double MIN_RTO = 1000;
+	private int consecutiveRTOBackoffs;
+	
+	// Clock generally has 20ms granularity or better, right?
+	// FIXME determine the clock granularity.
+	private static int CLOCK_GRANULARITY = 20;
 	
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
 		synchronized(this) {
+			consecutiveRTOBackoffs = 0;
 			// Update RTT according to RFC 2988.
 			if(!reportedRTT) {
 				double oldRTO = RTO;
 				// Initialize
 				SRTT = t;
 				RTTVAR = t / 2;
-				RTO = SRTT + RTTVAR * 4;
+				RTO = SRTT + Math.max(CLOCK_GRANULARITY, RTTVAR * 4);
 				// RFC 2988 specifies a 1 second minimum RTT, mostly due to legacy issues,
 				// but given that Freenet is mostly used on very slow upstream links, it 
 				// probably makes sense for us too for now, to avoid excessive retransmits.
@@ -4492,7 +4498,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				// Update
 				RTTVAR = 0.75 * RTTVAR + 0.25 * Math.abs(SRTT - t);
 				SRTT = 0.875 * SRTT + 0.125 * t;
-				RTO = SRTT + RTTVAR * 4;
+				RTO = SRTT + Math.max(CLOCK_GRANULARITY, RTTVAR * 4);
 				// RFC 2988 specifies a 1 second minimum RTT, mostly due to legacy issues,
 				// but given that Freenet is mostly used on very slow upstream links, it 
 				// probably makes sense for us too for now, to avoid excessive retransmits.
@@ -4506,6 +4512,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 	}
 	
+	/**
+	 * RFC 2988:
+	 *    Note that a TCP implementation MAY clear SRTT and RTTVAR after
+	 *    backing off the timer multiple times as it is likely that the
+	 *    current SRTT and RTTVAR are bogus in this situation.  Once SRTT and
+	 *    RTTVAR are cleared they should be initialized with the next RTT
+	 *    sample taken per (2.2) rather than using (2.3).
+	 */
+	static final int MAX_CONSECUTIVE_RTO_BACKOFFS = 5;
+	
 	public synchronized void backoffOnResend() {
 		if(RTO >= MAX_RTO) {
 			Logger.error(this, "Major packet loss on "+this+" - RTO is already at limit and still losing packets!");
@@ -4513,7 +4529,13 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		RTO = RTO * 2;
 		if(RTO > MAX_RTO)
 			RTO = MAX_RTO;
-		if(logMINOR) Logger.minor(this, "Backed off on resend, RTO is now "+RTO+" for "+shortToString());
+		consecutiveRTOBackoffs++;
+		if(consecutiveRTOBackoffs > MAX_CONSECUTIVE_RTO_BACKOFFS) {
+			Logger.warning(this, "Resetting RTO for "+this+" after "+consecutiveRTOBackoffs+" consecutive backoffs due to packet loss");
+			consecutiveRTOBackoffs = 0;
+			reportedRTT = false;
+		}
+		if(logMINOR) Logger.minor(this, "Backed off on resend, RTO is now "+RTO+" for "+shortToString()+" consecutive RTO backoffs is "+consecutiveRTOBackoffs);
 	}
 
 	private long resendBytesSent;

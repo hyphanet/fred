@@ -109,7 +109,7 @@ public class RequestStarterGroup {
 		chkInsertStarterBulk.setScheduler(chkPutSchedulerBulk);
 		chkInsertStarterRT.setScheduler(chkPutSchedulerRT);
 		
-		registerSchedulerConfig(schedulerConfig, "CHKinserter", chkFetchSchedulerBulk, chkFetchSchedulerRT, false, true);
+		registerSchedulerConfig(schedulerConfig, "CHKinserter", chkPutSchedulerBulk, chkPutSchedulerRT, false, true);
 		
 		sskRequestThrottleBulk = new MyRequestThrottle(5000, "SSK Request", fs == null ? null : fs.subset("SSKRequestThrottle"), 1024, false);
 		sskRequestThrottleRT = new MyRequestThrottle(5000, "SSK Request (RT)", fs == null ? null : fs.subset("SSKRequestThrottleRT"), 1024, true);
@@ -124,7 +124,7 @@ public class RequestStarterGroup {
 		sskRequestStarterBulk.setScheduler(sskFetchSchedulerBulk);
 		sskRequestStarterRT.setScheduler(sskFetchSchedulerRT);
 		
-		registerSchedulerConfig(schedulerConfig, "SSKrequester", chkFetchSchedulerBulk, chkFetchSchedulerRT, true, false);
+		registerSchedulerConfig(schedulerConfig, "SSKrequester", sskFetchSchedulerBulk, sskFetchSchedulerRT, true, false);
 		
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
@@ -141,7 +141,7 @@ public class RequestStarterGroup {
 		sskInsertStarterBulk.setScheduler(sskPutSchedulerBulk);
 		sskInsertStarterRT.setScheduler(sskPutSchedulerRT);
 		
-		registerSchedulerConfig(schedulerConfig, "SSKinserter", chkFetchSchedulerBulk, chkFetchSchedulerRT, true, true);
+		registerSchedulerConfig(schedulerConfig, "SSKinserter", sskPutSchedulerBulk, sskPutSchedulerRT, true, true);
 		
 		schedulerConfig.finishedInitialization();
 	}
