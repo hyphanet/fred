@@ -955,6 +955,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 
 				public void onTimeout() {
+					Logger.error(this, "Fatal: No Accepted/Rejected for "+CHKInsertSender.this);
 					tag.removeRoutingTo(next);
 					next.fatalTimeout();
 				}
@@ -1088,6 +1089,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     	synchronized(backgroundTransfers) {
     		if(!receiveFailed) return false;
     	}
+    	if(logMINOR) Logger.minor(this, "Failing because receive failed on "+this);
     	if(tag != null && next != null) {
    			next.noLongerRoutingTo(tag, false);
     	}
