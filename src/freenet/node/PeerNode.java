@@ -4453,6 +4453,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	static final double MAX_RTO = 60*1000;
 	static final double MIN_RTO = 1000;
+	private int consecutiveRTOBackoffs;
 	
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
@@ -4504,7 +4505,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		RTO = RTO * 2;
 		if(RTO > MAX_RTO)
 			RTO = MAX_RTO;
-		if(logMINOR) Logger.minor(this, "Backed off on resend, RTO is now "+RTO+" for "+shortToString());
+		consecutiveRTOBackoffs++;
+		if(logMINOR) Logger.minor(this, "Backed off on resend, RTO is now "+RTO+" for "+shortToString()+" consecutive RTO backoffs is "+consecutiveRTOBackoffs);
 	}
 
 	private long resendBytesSent;
