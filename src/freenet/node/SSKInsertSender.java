@@ -299,16 +299,21 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
             	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey);
             	try {
-            		next.sendAsync(pkMsg, null, this);
+            		next.sendSync(pkMsg, this, realTimeFlag);
             	} catch (NotConnectedException e) {
             		if(logMINOR) Logger.minor(this, "Node disconnected while sending pubkey: "+next);
 					thisTag.removeRoutingTo(next);
             		continue;
-            	}
+            	} catch (SyncSendWaitedTooLongException e) {
+            		Logger.warning(this, "Took too long to send pubkey to "+next+" on "+this);
+					thisTag.removeRoutingTo(next);
+            		continue;
+				}
             	
             	// Wait for the SSKPubKeyAccepted
             	
-            	MessageFilter mf1 = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPSSKPubKeyAccepted);
+            	// FIXME doubled the timeout because handling it properly would involve forking.
+            	MessageFilter mf1 = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT*2).setType(DMT.FNPSSKPubKeyAccepted);
             	
             	Message newAck;
 				try {
@@ -320,13 +325,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
             	
             	if(newAck == null) {
-					// Try to propagate back to source
-            		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
-					next.localRejectedOverload("Timeout2", realTimeFlag);
-            		// This is a local timeout, they should send it immediately.
-            		next.fatalTimeout();
-					forwardRejectedOverload();
-					thisTag.removeRoutingTo(next);
+            		handleNoPubkeyAccepted(next, thisTag);
 					// Try another peer
 					continue;
             	}
@@ -399,7 +398,20 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         }
     }
     
-    private MessageFilter makeSearchFilter(PeerNode next,
+    private void handleNoPubkeyAccepted(PeerNode next, InsertTag thisTag) {
+    	// FIXME implementing two stage timeout would likely involve forking at this point.
+    	// The problem is the peer has now got everything it needs to run the insert!
+    	
+		// Try to propagate back to source
+		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
+		next.localRejectedOverload("Timeout2", realTimeFlag);
+		// This is a local timeout, they should send it immediately.
+		next.fatalTimeout();
+		forwardRejectedOverload();
+		thisTag.removeRoutingTo(next);
+	}
+
+	private MessageFilter makeSearchFilter(PeerNode next,
 			int searchTimeout) {
         /** What are we waiting for now??:
          * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
