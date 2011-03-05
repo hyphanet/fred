@@ -6,6 +6,7 @@ package freenet.node;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import freenet.crypt.HMAC;
 import freenet.io.comm.ByteCounter;
@@ -26,6 +27,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
@@ -228,15 +230,20 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(spec == DMT.FNPSwapComplete) {
 			return node.lm.handleSwapComplete(m, source);
 		} else if(spec == DMT.FNPCHKDataRequest) {
-			return handleDataRequest(m, source, false);
+			handleDataRequest(m, source, false);
+			return true;
 		} else if(spec == DMT.FNPSSKDataRequest) {
-			return handleDataRequest(m, source, true);
+			handleDataRequest(m, source, true);
+			return true;
 		} else if(spec == DMT.FNPInsertRequest) {
-			return handleInsertRequest(m, source, false);
+			handleInsertRequest(m, source, false);
+			return true;
 		} else if(spec == DMT.FNPSSKInsertRequest) {
-			return handleInsertRequest(m, source, true);
+			handleInsertRequest(m, source, true);
+			return true;
 		} else if(spec == DMT.FNPSSKInsertRequestNew) {
-			return handleInsertRequest(m, source, true);
+			handleInsertRequest(m, source, true);
+			return true;
 		} else if(spec == DMT.FNPRHProbeRequest) {
 			return handleProbeRequest(m, source);
 		} else if(spec == DMT.FNPRoutedPing) {
@@ -396,10 +403,45 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		return true;
 	}
 
+	// We need to check the datastore before deciding whether to accept a request.
+	// This can block - in bad cases, for a long time.
+	// So we need to run it on a separate thread.
+	
+	private final PrioRunnable queueRunner = new PrioRunnable() {
+
+		public void run() {
+			while(true) {
+				try {
+					Message msg = requestQueue.take();
+					boolean isSSK = msg.getSpec() == DMT.FNPSSKDataRequest;
+					innerHandleDataRequest(msg, (PeerNode)msg.getSource(), isSSK);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+		}
+
+		public int getPriority() {
+			return NativeThread.HIGH_PRIORITY;
+		}
+		
+	};
+	
+	private final ArrayBlockingQueue<Message> requestQueue = new ArrayBlockingQueue<Message>(100);
+	
+	private void handleDataRequest(Message m, PeerNode source, boolean isSSK) {
+		// FIXME check probablyInStore and if not, we can handle it inline.
+		// This and DatastoreChecker require that method be implemented...
+		// For now just handle everything on the thread...
+		if(!requestQueue.offer(m)) {
+			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr);
+		}
+	}
+	
 	/**
 	 * Handle an incoming FNPDataRequest.
 	 */
-	private boolean handleDataRequest(Message m, PeerNode source, boolean isSSK) {
+	private void innerHandleDataRequest(Message m, PeerNode source, boolean isSSK) {
 		long id = m.getLong(DMT.UID);
 		ByteCounter ctr = isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr;
 		if(node.recentlyCompleted(id)) {
@@ -409,7 +451,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting data request (loop, finished): "+e);
 			}
-			return true;
+			return;
 		}
         short htl = m.getShort(DMT.HTL);
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
@@ -424,7 +466,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				Logger.normal(this, "Rejecting request from "+source.getPeer()+": "+e);
 			}
 			node.failureTable.onFinalFailure(key, null, htl, htl, -1, source);
-			return true;
+			return;
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
 		}
@@ -455,16 +497,15 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			// Do not tell failure table.
 			// Otherwise an attacker can flood us with requests very cheaply and purge our
 			// failure table even though we didn't accept any of them.
-			return true;
+			return;
 		}
 		nodeStats.reportIncomingRequestLocation(key.toNormalizedDouble());
 		//if(!node.lockUID(id)) return false;
 		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key, tag, block, realTimeFlag);
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
-		return true;
 	}
 
-	private boolean handleInsertRequest(Message m, PeerNode source, boolean isSSK) {
+	private void handleInsertRequest(Message m, PeerNode source, boolean isSSK) {
 		ByteCounter ctr = isSSK ? node.nodeStats.sskInsertCtr : node.nodeStats.chkInsertCtr;
 		long id = m.getLong(DMT.UID);
 		if(node.recentlyCompleted(id)) {
@@ -474,7 +515,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
 			}
-			return true;
+			return;
 		}
         boolean realTimeFlag = DMT.getRealTimeFlag(m);
 		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE, source, realTimeFlag, id, node);
@@ -486,7 +527,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
 			}
-			return true;
+			return;
 		}
 		boolean preferInsert = Node.PREFER_INSERT_DEFAULT;
 		boolean ignoreLowBackoff = Node.IGNORE_LOW_BACKOFF_DEFAULT;
@@ -513,7 +554,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
 			tag.unlockHandler(rejectReason.soft);
-			return true;
+			return;
 		}
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
@@ -535,7 +576,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
-		return true;
 	}
 	
 	private boolean handleProbeRequest(Message m, PeerNode source) {
@@ -872,6 +912,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 
 	void start(NodeStats stats) {
 		this.nodeStats = stats;
+		node.executor.execute(queueRunner);
 	}
 
 	public static String peersUIDsToString(long[] peerUIDs, double[] peerLocs) {
