@@ -579,6 +579,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					Runnable r = new Runnable() {
 
 						public void run() {
+							// We do not need to unlock the tag here.
+							// That will happen in the BackgroundTransfer, which has already started.
+							
 							// FIXME factor out
 			                MessageFilter mfInsertReply = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPInsertReply);
 			                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedOverload);
