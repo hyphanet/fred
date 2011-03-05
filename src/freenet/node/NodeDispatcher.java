@@ -27,6 +27,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.Logger.LogLevel;
+import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
@@ -406,7 +407,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	// This can block - in bad cases, for a long time.
 	// So we need to run it on a separate thread.
 	
-	private final Runnable queueRunner = new Runnable() {
+	private final PrioRunnable queueRunner = new PrioRunnable() {
 
 		public void run() {
 			while(true) {
@@ -418,6 +419,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 					// Ignore
 				}
 			}
+		}
+
+		public int getPriority() {
+			return NativeThread.HIGH_PRIORITY;
 		}
 		
 	};
