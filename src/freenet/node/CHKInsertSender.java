@@ -106,12 +106,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 		
 		private void completedTransfer(boolean success) {
-			synchronized(this) {
+			synchronized(backgroundTransfers) {
 				transferSucceeded = success;
 				completedTransfer = true;
 				notifyAll();
-			}
-			synchronized(backgroundTransfers) {
 				backgroundTransfers.notifyAll();
 			}
 			if(!success) {
@@ -125,7 +123,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			if(logMINOR) Logger.minor(this, "Received notice: "+success+(timeout ? " (timeout)" : "")+" on "+this);
 			boolean noUnlockPeer = false;
 			boolean noNotifyOriginator = false;
-			synchronized(this) {
+			synchronized(backgroundTransfers) {
 				if(finishedWaiting) {
 					Logger.error(this, "Finished waiting already yet receivedNotice("+success+","+timeout+")", new Exception("error"));
 					return false;
@@ -150,16 +148,13 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 						thisTag.handlingTimeout(pn);
 						noUnlockPeer = true;
 					}
-					notifyAll();
 				}
-			}
-			if(!noNotifyOriginator) {
-				synchronized(backgroundTransfers) {
+				if(!noNotifyOriginator) {
 					backgroundTransfers.notifyAll();
 				}
-				if(!success) {
-					setTransferTimedOut();
-				}
+			}
+			if(!success) {
+				setTransferTimedOut();
 			}
 			if(!noUnlockPeer)
 				// Downstream (away from originator), we need to stay locked on the peer until the fatal timeout / the delayed notice.
