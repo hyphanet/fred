@@ -299,12 +299,16 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
             	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey);
             	try {
-            		next.sendAsync(pkMsg, null, this);
+            		next.sendSync(pkMsg, this, realTimeFlag);
             	} catch (NotConnectedException e) {
             		if(logMINOR) Logger.minor(this, "Node disconnected while sending pubkey: "+next);
 					thisTag.removeRoutingTo(next);
             		continue;
-            	}
+            	} catch (SyncSendWaitedTooLongException e) {
+            		Logger.warning(this, "Took too long to send pubkey to "+next+" on "+this);
+					thisTag.removeRoutingTo(next);
+            		continue;
+				}
             	
             	// Wait for the SSKPubKeyAccepted
             	
