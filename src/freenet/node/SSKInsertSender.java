@@ -734,10 +734,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPSSKAccepted);
         MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedLoop);
         MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedOverload);
-        // mfRejectedOverload must be the last thing in the or
-        // So its or pointer remains null
-        // Otherwise we need to recreate it below
-        mfRejectedOverload.clearOr();
         return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
 	}
 
