@@ -312,7 +312,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	
             	// Wait for the SSKPubKeyAccepted
             	
-            	MessageFilter mf1 = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPSSKPubKeyAccepted);
+            	// FIXME doubled the timeout because handling it properly would involve forking.
+            	MessageFilter mf1 = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT*2).setType(DMT.FNPSSKPubKeyAccepted);
             	
             	Message newAck;
 				try {
@@ -398,6 +399,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     }
     
     private void handleNoPubkeyAccepted(PeerNode next, InsertTag thisTag) {
+    	// FIXME implementing two stage timeout would likely involve forking at this point.
+    	// The problem is the peer has now got everything it needs to run the insert!
+    	
 		// Try to propagate back to source
 		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
 		next.localRejectedOverload("Timeout2", realTimeFlag);
