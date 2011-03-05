@@ -538,8 +538,7 @@ loadWaiterLoop:
 				if(msg == null) {
 					// Second timeout.
 					Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+waitingFor);
-					waitingFor.fatalTimeout();
-					origTag.removeRoutingTo(waitingFor);
+					waitingFor.fatalTimeout(origTag, false);
 					return;
 				}
 				
@@ -639,8 +638,7 @@ loadWaiterLoop:
         			offers.deleteLastOffer();
         			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
         			// FIXME bug #4613 consider two-stage timeout.
-        			pn.fatalTimeout();
-    	        	origTag.removeFetchingOfferedKeyFrom(pn);
+        			pn.fatalTimeout(origTag, true);
         			continue;
         		} else {
         			if(handleCHKOfferReply(reply, pn, offer, offers)) return true;
@@ -963,8 +961,7 @@ loadWaiterLoop:
 
 				public void onTimeout() {
 					Logger.error(this, "Fatal timeout waiting for Accepted/Rejected from "+next+" on "+RequestSender.this);
-					origTag.removeRoutingTo(next);
-					next.fatalTimeout();
+					next.fatalTimeout(origTag, false);
 				}
 
 				public void onDisconnect(PeerContext ctx) {

@@ -369,8 +369,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						if(msg == null) {
 							// Second timeout.
 							Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
-							next.fatalTimeout();
-							thisTag.removeRoutingTo(next);
+							next.fatalTimeout(thisTag, false);
 							return;
 						}
 						
@@ -406,9 +405,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
 		next.localRejectedOverload("Timeout2", realTimeFlag);
 		// This is a local timeout, they should send it immediately.
-		next.fatalTimeout();
 		forwardRejectedOverload();
-		thisTag.removeRoutingTo(next);
+		next.fatalTimeout(thisTag, false);
 	}
 
 	private MessageFilter makeSearchFilter(PeerNode next,
@@ -518,8 +516,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 								public void onTimeout() {
 									// Grrr!
 									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
-									tag.removeRoutingTo(next);
-									next.fatalTimeout();
+									next.fatalTimeout(tag, false);
 								}
 
 								public void onDisconnect(PeerContext ctx) {
@@ -543,8 +540,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 				public void onTimeout() {
 					Logger.error(this, "Fatal: No Accepted/Rejected for "+SSKInsertSender.this);
-					tag.removeRoutingTo(next);
-					next.fatalTimeout();
+					next.fatalTimeout(tag, false);
 				}
 
 				public void onDisconnect(PeerContext ctx) {

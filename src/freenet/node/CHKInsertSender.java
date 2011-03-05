@@ -208,8 +208,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 			} else {
 				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
-				pn.fatalTimeout();
-				thisTag.removeRoutingTo(pn);
+				pn.fatalTimeout(thisTag, false);
 			}
 		}
 
@@ -927,8 +926,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 								public void onTimeout() {
 									// Grrr!
 									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
-									tag.removeRoutingTo(next);
-									next.fatalTimeout();
+									next.fatalTimeout(tag, false);
 								}
 
 								public void onDisconnect(PeerContext ctx) {
@@ -952,8 +950,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 
 				public void onTimeout() {
 					Logger.error(this, "Fatal: No Accepted/Rejected for "+CHKInsertSender.this);
-					tag.removeRoutingTo(next);
-					next.fatalTimeout();
+					next.fatalTimeout(tag, false);
 				}
 
 				public void onDisconnect(PeerContext ctx) {
