@@ -324,13 +324,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
             	
             	if(newAck == null) {
-					// Try to propagate back to source
-            		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
-					next.localRejectedOverload("Timeout2", realTimeFlag);
-            		// This is a local timeout, they should send it immediately.
-            		next.fatalTimeout();
-					forwardRejectedOverload();
-					thisTag.removeRoutingTo(next);
+            		handleNoPubkeyAccepted(next, thisTag);
 					// Try another peer
 					continue;
             	}
@@ -403,7 +397,17 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         }
     }
     
-    private MessageFilter makeSearchFilter(PeerNode next,
+    private void handleNoPubkeyAccepted(PeerNode next, InsertTag thisTag) {
+		// Try to propagate back to source
+		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
+		next.localRejectedOverload("Timeout2", realTimeFlag);
+		// This is a local timeout, they should send it immediately.
+		next.fatalTimeout();
+		forwardRejectedOverload();
+		thisTag.removeRoutingTo(next);
+	}
+
+	private MessageFilter makeSearchFilter(PeerNode next,
 			int searchTimeout) {
         /** What are we waiting for now??:
          * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
