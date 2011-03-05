@@ -1589,6 +1589,8 @@ loadWaiterLoop:
             notifyAll();
         }
         
+    	boolean shouldUnlock = doOpennet && next != null;
+        
         if(status == SUCCESS) {
         	if((!isSSK) && transferTime > 0 && logMINOR) {
         		long timeTaken = System.currentTimeMillis() - startTime;
@@ -1614,7 +1616,8 @@ loadWaiterLoop:
        			fireRequestSenderFinished(code, fromOfferedKey);
        			
        			if(doOpennet) {
-       				finishOpennet(next);
+       				if(finishOpennet(next))
+       					shouldUnlock = false;
        			}
        		} finally {
        			if(doOpennet)
@@ -1625,7 +1628,7 @@ loadWaiterLoop:
 			fireRequestSenderFinished(code, fromOfferedKey);
 		}
         
-    	if(doOpennet && next != null) next.noLongerRoutingTo(origTag, fromOfferedKey);
+    	if(shouldUnlock) next.noLongerRoutingTo(origTag, fromOfferedKey);
 		
 		synchronized(this) {
 			opennetFinished = true;
@@ -1652,8 +1655,9 @@ loadWaiterLoop:
      * If the former, exit.
      * If we want a connection, reply with a ConnectReply, otherwise send a ConnectRejected and exit.
      * Add the peer.
+     * @return True only if there was a fatal timeout and the caller should not unlock.
      */
-    private void finishOpennet(PeerNode next) {
+    private boolean finishOpennet(PeerNode next) {
     	
     	OpennetManager om;
     	
@@ -1662,21 +1666,21 @@ loadWaiterLoop:
         	
         	if(noderef == null) {
         		ackOpennet(next);
-        		return;
+        		return false;
         	}
         	
     		om = node.getOpennet();
     		
     		if(om == null) {
         		ackOpennet(next);
-        		return;
+        		return false;
     		}
     		
         	SimpleFieldSet ref = OpennetManager.validateNoderef(noderef, 0, noderef.length, next, false);
         	
         	if(ref == null) {
         		ackOpennet(next);
-        		return;
+        		return false;
         	}
         	
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
@@ -1685,7 +1689,7 @@ loadWaiterLoop:
 					opennetNoderef = noderef;
 					// RequestHandler will send a noderef back up, eventually
 				}
-				return;
+				return false;
 			} else {
 				// opennetNoderef = null i.e. we want the noderef so we won't pass it further down.
 				Logger.normal(this, "Added opennet noderef in "+this+" from "+next);
@@ -1697,15 +1701,15 @@ loadWaiterLoop:
 		} catch (FSParseException e) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
     		ackOpennet(next);
-			return;
+			return false;
 		} catch (PeerParseException e) {
 			Logger.error(this, "Could not parse opennet noderef for "+this+" from "+next, e);
     		ackOpennet(next);
-			return;
+			return false;
 		} catch (ReferenceSignatureVerificationException e) {
 			Logger.error(this, "Bad signature on opennet noderef for "+this+" from "+next+" : "+e, e);
     		ackOpennet(next);
-			return;
+			return false;
 		} catch (NotConnectedException e) {
 			// Hmmm... let the LRU deal with it
 			if(logMINOR)
@@ -1725,7 +1729,9 @@ loadWaiterLoop:
 			} catch (WaitedTooLongForOpennetNoderefException e1) {
 	    		Logger.error(this, "RequestSender FATAL TIMEOUT out waiting for noderef from "+next+" for "+this);
 				// Fatal timeout. Urgh.
-				next.fatalTimeout();
+				next.fatalTimeout(origTag, false);
+	    		ackOpennet(next);
+	    		return true;
 			}
     		ackOpennet(next);
 		} finally {
@@ -1734,6 +1740,7 @@ loadWaiterLoop:
     			notifyAll();
     		}
     	}
+		return false;
 	}
 
     // Opennet stuff
