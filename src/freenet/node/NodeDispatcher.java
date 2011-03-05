@@ -6,6 +6,7 @@ package freenet.node;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import freenet.crypt.HMAC;
 import freenet.io.comm.ByteCounter;
@@ -401,10 +402,41 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		return true;
 	}
 
+	// We need to check the datastore before deciding whether to accept a request.
+	// This can block - in bad cases, for a long time.
+	// So we need to run it on a separate thread.
+	
+	private final Runnable queueRunner = new Runnable() {
+
+		public void run() {
+			while(true) {
+				try {
+					Message msg = requestQueue.take();
+					boolean isSSK = msg.getSpec() == DMT.FNPSSKDataRequest;
+					innerHandleDataRequest(msg, (PeerNode)msg.getSource(), isSSK);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+		}
+		
+	};
+	
+	private final ArrayBlockingQueue<Message> requestQueue = new ArrayBlockingQueue<Message>(100);
+	
+	private void handleDataRequest(Message m, PeerNode source, boolean isSSK) {
+		// FIXME check probablyInStore and if not, we can handle it inline.
+		// This and DatastoreChecker require that method be implemented...
+		// For now just handle everything on the thread...
+		if(!requestQueue.offer(m)) {
+			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr);
+		}
+	}
+	
 	/**
 	 * Handle an incoming FNPDataRequest.
 	 */
-	private void handleDataRequest(Message m, PeerNode source, boolean isSSK) {
+	private void innerHandleDataRequest(Message m, PeerNode source, boolean isSSK) {
 		long id = m.getLong(DMT.UID);
 		ByteCounter ctr = isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr;
 		if(node.recentlyCompleted(id)) {
@@ -875,6 +907,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 
 	void start(NodeStats stats) {
 		this.nodeStats = stats;
+		node.executor.execute(queueRunner);
 	}
 
 	public static String peersUIDsToString(long[] peerUIDs, double[] peerLocs) {
