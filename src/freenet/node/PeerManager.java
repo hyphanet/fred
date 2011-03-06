@@ -533,7 +533,7 @@ public class PeerManager {
 	}
 	
 	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge) {
-		disconnect(pn, sendDisconnectMessage, waitForAck, purge, false, true);
+		disconnect(pn, sendDisconnectMessage, waitForAck, purge, false, true, Node.MAX_PEER_INACTIVITY);
 	}
 
 	/**
@@ -546,7 +546,7 @@ public class PeerManager {
 	 * disconnect completes.
 	 * @param remove If true, remove the node from the routing table and tell the peer to do so.
 	 */
-	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge, boolean dumpMessagesNow, final boolean remove) {
+	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge, boolean dumpMessagesNow, final boolean remove, int timeout) {
 		if(logMINOR)
 			Logger.minor(this, "Disconnecting " + pn.shortToString());
 		synchronized(this) {
@@ -616,7 +616,7 @@ public class PeerManager {
                                     	pn.disconnected(true, true);
                                     }
                                 }
-                            }, Node.MAX_PEER_INACTIVITY);
+                            }, timeout);
                         }
 		} else {
 			if(remove) {

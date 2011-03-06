@@ -245,9 +245,13 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             // Send to next node
             
             try {
-				next.sendAsync(request, null, this);
+            	next.sendSync(request, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
+				thisTag.removeRoutingTo(next);
+				continue;
+			} catch (SyncSendWaitedTooLongException e) {
+				Logger.warning(this, "Failed to send request to "+next);
 				thisTag.removeRoutingTo(next);
 				continue;
 			}
@@ -295,16 +299,21 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
             	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey);
             	try {
-            		next.sendAsync(pkMsg, null, this);
+            		next.sendSync(pkMsg, this, realTimeFlag);
             	} catch (NotConnectedException e) {
             		if(logMINOR) Logger.minor(this, "Node disconnected while sending pubkey: "+next);
 					thisTag.removeRoutingTo(next);
             		continue;
-            	}
+            	} catch (SyncSendWaitedTooLongException e) {
+            		Logger.warning(this, "Took too long to send pubkey to "+next+" on "+this);
+					thisTag.removeRoutingTo(next);
+            		continue;
+				}
             	
             	// Wait for the SSKPubKeyAccepted
             	
-            	MessageFilter mf1 = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPSSKPubKeyAccepted);
+            	// FIXME doubled the timeout because handling it properly would involve forking.
+            	MessageFilter mf1 = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT*2).setType(DMT.FNPSSKPubKeyAccepted);
             	
             	Message newAck;
 				try {
@@ -316,13 +325,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
             	
             	if(newAck == null) {
-					// Try to propagate back to source
-            		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
-					next.localRejectedOverload("Timeout2", realTimeFlag);
-            		// This is a local timeout, they should send it immediately.
-            		next.fatalTimeout();
-					forwardRejectedOverload();
-					thisTag.removeRoutingTo(next);
+            		handleNoPubkeyAccepted(next, thisTag);
 					// Try another peer
 					continue;
             	}
@@ -366,8 +369,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						if(msg == null) {
 							// Second timeout.
 							Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
-							next.fatalTimeout();
-							thisTag.removeRoutingTo(next);
+							next.fatalTimeout(thisTag, false);
 							return;
 						}
 						
@@ -395,7 +397,19 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         }
     }
     
-    private MessageFilter makeSearchFilter(PeerNode next,
+    private void handleNoPubkeyAccepted(PeerNode next, InsertTag thisTag) {
+    	// FIXME implementing two stage timeout would likely involve forking at this point.
+    	// The problem is the peer has now got everything it needs to run the insert!
+    	
+		// Try to propagate back to source
+		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
+		next.localRejectedOverload("Timeout2", realTimeFlag);
+		// This is a local timeout, they should send it immediately.
+		forwardRejectedOverload();
+		next.fatalTimeout(thisTag, false);
+	}
+
+	private MessageFilter makeSearchFilter(PeerNode next,
 			int searchTimeout) {
         /** What are we waiting for now??:
          * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
@@ -477,12 +491,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						// Ok.
 						tag.removeRoutingTo(next);
 					} else {
-						if(m.getSpec() != DMT.FNPSSKAccepted) {
-							Logger.error(this, "Matched bogus message waiting for accepted/rejected: "+m);
-							next.noLongerRoutingTo(tag, false);
-							next.fatalTimeout();
-							return;
-						}
 						assert(m.getSpec() == DMT.FNPSSKAccepted);
 						if(logMINOR) Logger.minor(this, "Forked timed out insert but not going to send DataInsert on "+SSKInsertSender.this+" to "+next);
 						// We are not going to send the DataInsert.
@@ -502,8 +510,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 								public void onTimeout() {
 									// Grrr!
 									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
-									tag.removeRoutingTo(next);
-									next.fatalTimeout();
+									next.fatalTimeout(tag, false);
 								}
 
 								public void onDisconnect(PeerContext ctx) {
@@ -526,8 +533,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				}
 
 				public void onTimeout() {
-					tag.removeRoutingTo(next);
-					next.fatalTimeout();
+					Logger.error(this, "Fatal: No Accepted/Rejected for "+SSKInsertSender.this);
+					next.fatalTimeout(tag, false);
 				}
 
 				public void onDisconnect(PeerContext ctx) {
@@ -727,10 +734,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPSSKAccepted);
         MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedLoop);
         MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedOverload);
-        // mfRejectedOverload must be the last thing in the or
-        // So its or pointer remains null
-        // Otherwise we need to recreate it below
-        mfRejectedOverload.clearOr();
         return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
 	}
 
