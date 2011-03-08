@@ -369,8 +369,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						if(msg == null) {
 							// Second timeout.
 							Logger.error(this, "Fatal timeout waiting for reply after Accepted on "+this+" from "+next);
-							next.fatalTimeout();
-							thisTag.removeRoutingTo(next);
+							next.fatalTimeout(thisTag, false);
 							return;
 						}
 						
@@ -406,9 +405,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 		Logger.error(this, "Timeout waiting for FNPSSKPubKeyAccepted on "+next);
 		next.localRejectedOverload("Timeout2", realTimeFlag);
 		// This is a local timeout, they should send it immediately.
-		next.fatalTimeout();
 		forwardRejectedOverload();
-		thisTag.removeRoutingTo(next);
+		next.fatalTimeout(thisTag, false);
 	}
 
 	private MessageFilter makeSearchFilter(PeerNode next,
@@ -493,12 +491,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						// Ok.
 						tag.removeRoutingTo(next);
 					} else {
-						if(m.getSpec() != DMT.FNPSSKAccepted) {
-							Logger.error(this, "Matched bogus message waiting for accepted/rejected: "+m);
-							next.noLongerRoutingTo(tag, false);
-							next.fatalTimeout();
-							return;
-						}
 						assert(m.getSpec() == DMT.FNPSSKAccepted);
 						if(logMINOR) Logger.minor(this, "Forked timed out insert but not going to send DataInsert on "+SSKInsertSender.this+" to "+next);
 						// We are not going to send the DataInsert.
@@ -518,8 +510,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 								public void onTimeout() {
 									// Grrr!
 									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
-									tag.removeRoutingTo(next);
-									next.fatalTimeout();
+									next.fatalTimeout(tag, false);
 								}
 
 								public void onDisconnect(PeerContext ctx) {
@@ -543,8 +534,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 				public void onTimeout() {
 					Logger.error(this, "Fatal: No Accepted/Rejected for "+SSKInsertSender.this);
-					tag.removeRoutingTo(next);
-					next.fatalTimeout();
+					next.fatalTimeout(tag, false);
 				}
 
 				public void onDisconnect(PeerContext ctx) {
@@ -744,10 +734,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPSSKAccepted);
         MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedLoop);
         MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(acceptedTimeout).setType(DMT.FNPRejectedOverload);
-        // mfRejectedOverload must be the last thing in the or
-        // So its or pointer remains null
-        // Otherwise we need to recreate it below
-        mfRejectedOverload.clearOr();
         return mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
 	}
 

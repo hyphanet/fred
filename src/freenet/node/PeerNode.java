@@ -5037,6 +5037,20 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return realtime ? loadSenderRealTime : loadSenderBulk;
 	}
 	
+	/** A fatal timeout occurred, and we don't know whether the peer is still running the
+	 * request we passed in for us. If it is, we cannot reuse that slot. So we need to
+	 * query it periodically until it is no longer running it. If we cannot send the query
+	 * or if we don't get a response, we disconnect via fatalTimeout() (with no arguments).
+	 * @param tag The request which we routed to this peer. It may or may not still be
+	 * running.
+	 */
+	public void fatalTimeout(UIDTag tag, boolean offeredKey) {
+		// FIXME implement! For now we just disconnect (no-op).
+		// A proper implementation requires new messages.
+		noLongerRoutingTo(tag, offeredKey);
+		fatalTimeout();
+	}
+	
 	/** After a fatal timeout - that is, a timeout that we reasonably believe originated
 	 * on the node rather than downstream - we do not know whether or not the node thinks
 	 * the request is still running. Hence load management will get really confused and 

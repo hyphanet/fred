@@ -109,7 +109,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			synchronized(backgroundTransfers) {
 				transferSucceeded = success;
 				completedTransfer = true;
-				notifyAll();
 				backgroundTransfers.notifyAll();
 			}
 			if(!success) {
@@ -208,8 +207,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 			} else {
 				Logger.error(this, "Second timeout waiting for final ack from "+pn+" on "+this);
-				pn.fatalTimeout();
-				thisTag.removeRoutingTo(pn);
+				pn.fatalTimeout(thisTag, false);
 			}
 		}
 
@@ -580,6 +578,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					Runnable r = new Runnable() {
 
 						public void run() {
+							// We do not need to unlock the tag here.
+							// That will happen in the BackgroundTransfer, which has already started.
+							
 							// FIXME factor out
 			                MessageFilter mfInsertReply = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPInsertReply);
 			                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(waitingFor).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedOverload);
@@ -927,8 +928,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 								public void onTimeout() {
 									// Grrr!
 									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
-									tag.removeRoutingTo(next);
-									next.fatalTimeout();
+									next.fatalTimeout(tag, false);
 								}
 
 								public void onDisconnect(PeerContext ctx) {
@@ -952,8 +952,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 
 				public void onTimeout() {
 					Logger.error(this, "Fatal: No Accepted/Rejected for "+CHKInsertSender.this);
-					tag.removeRoutingTo(next);
-					next.fatalTimeout();
+					next.fatalTimeout(tag, false);
 				}
 
 				public void onDisconnect(PeerContext ctx) {
