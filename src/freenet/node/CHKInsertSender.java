@@ -109,7 +109,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			synchronized(backgroundTransfers) {
 				transferSucceeded = success;
 				completedTransfer = true;
-				notifyAll();
 				backgroundTransfers.notifyAll();
 			}
 			if(!success) {
