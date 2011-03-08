@@ -152,7 +152,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					backgroundTransfers.notifyAll();
 				}
 			}
-			if(!success) {
+			if((!noNotifyOriginator) && (!success)) {
 				setTransferTimedOut();
 			}
 			if(!noUnlockPeer)
