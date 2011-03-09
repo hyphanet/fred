@@ -929,6 +929,7 @@ public class TestnetController implements Runnable {
 						break;
 					}
 					if(line.equals("WAIT")) {
+						Logger.normal(this, "Got WAIT from filtered fetch");
 						continue;
 					}
 					if(!line.startsWith("MATCH:")) {

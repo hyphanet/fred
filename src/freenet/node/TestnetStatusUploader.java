@@ -298,6 +298,7 @@ public class TestnetStatusUploader {
 		} else if(command.startsWith("GetLogFiltered:")) {
 			String[] split = command.split(":");
 			if(split.length != 3) {
+				System.err.println("Invalid get log filtered - wrong number of fields "+split.length);
 				w.write("ErrorTooFewFields");
 				return false;
 			}
@@ -324,12 +325,16 @@ public class TestnetStatusUploader {
 			FileLoggerHook loggerHook;
 			loggerHook = Node.logConfigHandler.getFileLoggerHook();
 			if(loggerHook == null) {
+				System.err.println("Cannot handle filtered log fetch: no logger");
 				w.write("ErrorNoLogger\n");
 				return false;
 			}
+			System.out.println("Sending filtered logs");
 			w.write("Logs:\n");
 			w.flush();
 			loggerHook.sendLogByContainedDate(d, os, p);
+		} else {
+			System.err.println("Unknown command from controller: "+command);
 		}
 		// FIXME fetch recent error messages
 		return false;
