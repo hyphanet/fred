@@ -881,7 +881,7 @@ public class TestnetController implements Runnable {
 		@Override
 		public boolean execute(LineReadingInputStream lris, OutputStream os,
 				Writer w, TestnetNode client) throws IOException {
-			w.write(type.name()+":"+d.getTime()+":"+regex+"\n");
+			w.write(type.name()+":"+d.getTime()+":"+freenet.support.Base64.encode(regex.getBytes("UTF-8"))+"\n");
 			w.flush();
 			String firstReply = lris.readLine(1024, 30, true);
 			if(firstReply == null) {

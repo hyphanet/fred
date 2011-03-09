@@ -29,6 +29,7 @@ import java.util.regex.PatternSyntaxException;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.support.FileLoggerHook;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -312,6 +313,13 @@ public class TestnetStatusUploader {
 				return false;
 			}
 			String regex = split[2];
+			try {
+				regex = new String(freenet.support.Base64.decode(regex), "UTF-8");
+			} catch (IllegalBase64Exception e1) {
+				System.err.println("Cannot parse base64 regex");
+				w.write("ErrorCannotParseRegexBase64");
+				return false;
+			}
 			Pattern p = null;
 			try {
 				p = Pattern.compile(regex);
