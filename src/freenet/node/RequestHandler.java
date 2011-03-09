@@ -492,8 +492,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
+		if(realTimeFlag) headersMsg.boostPriority();
 		source.sendAsync(headersMsg, null, this);
 		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data);
+		if(realTimeFlag) dataMsg.boostPriority();
 		node.executor.execute(new PrioRunnable() {
 
 			public int getPriority() {
@@ -526,6 +528,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		if(needsPubKey) {
 			Message pk = DMT.createFNPSSKPubKey(uid, pubKey);
+			if(realTimeFlag) pk.boostPriority();
 			source.sendAsync(pk, null, this);
 		}
 	}
