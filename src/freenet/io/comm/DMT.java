@@ -620,6 +620,9 @@ public class DMT {
 		return "Unknown reason code: "+reason;
 	}
 
+	// FIXME consider using this again now we have new packet format which can handle big messages on any connection.
+	// FIXME be careful if we do - make sure boost priority if realtime, and note timeout issues associated with sending a request at BULK.
+	
 	public static final MessageType FNPSSKInsertRequest = new MessageType("FNPSSKInsertRequest", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 		addField(HTL, Short.class);
@@ -655,6 +658,8 @@ public class DMT {
 		msg.set(FREENET_ROUTING_KEY, myKey);
 		return msg;
 	}
+	
+	// SSK inserts data and headers. These are BULK_DATA or REALTIME.
 
 	public static final MessageType FNPSSKInsertRequestHeaders = new MessageType("FNPSSKInsertRequestHeaders", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
@@ -679,6 +684,10 @@ public class DMT {
 		msg.set(DATA, new ShortBuffer(data));
 		return msg;
 	}
+	
+	// SSK pubkeys, data and headers are all BULK_DATA or REALTIME.
+	// Requests wait for them all equally, so there is no reason for them to be different,
+	// plus everything is throttled now.
 	
 	public static final MessageType FNPSSKDataFoundHeaders = new MessageType("FNPSSKDataFoundHeaders", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
