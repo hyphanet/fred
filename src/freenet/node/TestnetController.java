@@ -928,6 +928,9 @@ public class TestnetController implements Runnable {
 						Logger.error(this, "Error in middle of downloading fetched logs from "+client.id+" filtered with regex \""+regex+"\" to "+outputFile);
 						break;
 					}
+					if(line.equals("WAIT")) {
+						continue;
+					}
 					if(!line.startsWith("MATCH:")) {
 						Logger.error(this, "Unexpected response \""+line+"\" while downloading fetched logs from "+client.id+" filtered with regex \""+regex+"\" to "+outputFile);
 						break;

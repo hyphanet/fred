@@ -1198,6 +1198,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 			}
 		} else {
+			long timeSent = System.currentTimeMillis();
 			osw.flush();
 			// Gzip the rest.
 			GZIPOutputStream gos = new GZIPOutputStream(os);
@@ -1214,6 +1215,13 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					while((line = br.readLine()) != null) {
 						if(p.matcher(line).find()) {
 							osw.write("MATCH:"+line+"\n");
+							timeSent = System.currentTimeMillis();
+						} else {
+							if(System.currentTimeMillis() - timeSent > 5*1000) {
+								osw.write("WAIT\n");
+								osw.flush();
+								timeSent = System.currentTimeMillis();
+							}
 						}
 					}
 				} catch (EOFException e) {
