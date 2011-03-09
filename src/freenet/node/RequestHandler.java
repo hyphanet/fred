@@ -487,46 +487,54 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		else if(xferFinished)
 			transferFinished(xferSuccess);
 	}
-
+	
 	private void sendSSK(byte[] headers, final byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
+		boolean isOldFNP = source.isOldFNP();
+		MultiMessageCallback mcb = null;
+		if(!isOldFNP) mcb = new MultiMessageCallback() {
+			public void finish(boolean success) {
+				sentPayload(data.length); // FIXME report this at the time when that message is acked for more accurate reporting???
+				applyByteCounts();
+				unregisterRequestHandlerWithNode();
+			}
+		};
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers, realTimeFlag);
-		source.sendAsync(headersMsg, null, this);
+		source.sendAsync(headersMsg, isOldFNP ? null : mcb.make(), this);
 		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data, realTimeFlag);
-		node.executor.execute(new PrioRunnable() {
-
-			public int getPriority() {
-				return RequestHandler.this.getPriority();
-			}
-
-			public void run() {
-				try {
-					if(source.isOldFNP())
-						source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60 * 1000, true, null);
-					else {
-						source.sendSync(dataMsg, RequestHandler.this, realTimeFlag);
-						sentPayload(data.length);
-					}
-					applyByteCounts();
-				} catch(NotConnectedException e) {
-					// Okay
-				} catch(WaitedTooLongException e) {
-					// Grrrr
-					Logger.error(this, "Waited too long to send SSK data on " + RequestHandler.this + " because of bwlimiting");
-				} catch(SyncSendWaitedTooLongException e) {
-					Logger.error(this, "Waited too long to send SSK data on " + RequestHandler.this + " because of peer");
-				} catch (PeerRestartedException e) {
-					// :(
-				} finally {
-					unregisterRequestHandlerWithNode();
-				}
-			}
-		}, "Send throttled SSK data for " + RequestHandler.this);
-
 		if(needsPubKey) {
 			Message pk = DMT.createFNPSSKPubKey(uid, pubKey, realTimeFlag);
-			source.sendAsync(pk, null, this);
+			source.sendAsync(pk, isOldFNP ? null : mcb.make(), this);
+		}
+		if(isOldFNP) {
+			node.executor.execute(new PrioRunnable() {
+				
+				public int getPriority() {
+					return RequestHandler.this.getPriority();
+				}
+				
+				public void run() {
+					try {
+						source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60 * 1000, true, null);
+						applyByteCounts();
+					} catch(NotConnectedException e) {
+						// Okay
+					} catch(WaitedTooLongException e) {
+						// Grrrr
+						Logger.error(this, "Waited too long to send SSK data on " + RequestHandler.this + " because of bwlimiting");
+					} catch(SyncSendWaitedTooLongException e) {
+						Logger.error(this, "Waited too long to send SSK data on " + RequestHandler.this + " because of peer");
+					} catch (PeerRestartedException e) {
+						// :(
+					} finally {
+						unregisterRequestHandlerWithNode();
+					}
+				}
+			}, "Send throttled SSK data for " + RequestHandler.this);
+		} else {
+			source.sendAsync(dataMsg, isOldFNP ? null : mcb.make(), this);
+			if(mcb != null) mcb.arm();
 		}
 	}
 
