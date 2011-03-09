@@ -192,7 +192,7 @@ public class DMT {
 		addField(UID, Long.class);
 	}};
 	
-	public static final Message createAllSent(long uid) {
+	public static final Message createAllSent(long uid, boolean realTime) {
 		Message msg = new Message(allSent);
 		msg.set(UID, uid);
 		return msg;
@@ -227,7 +227,7 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPBulkPacketSend(long uid, int packetNo, ShortBuffer data) {
+	public static final Message createFNPBulkPacketSend(long uid, int packetNo, ShortBuffer data, boolean realTime) {
 		Message msg = new Message(FNPBulkPacketSend);
 		msg.set(UID, uid);
 		msg.set(PACKET_NO, packetNo);
@@ -235,8 +235,8 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data) {
-		return createFNPBulkPacketSend(uid, packetNo, new ShortBuffer(data));
+	public static final Message createFNPBulkPacketSend(long uid, int packetNo, byte[] data, boolean realTime) {
+		return createFNPBulkPacketSend(uid, packetNo, new ShortBuffer(data), realTime);
 	}
 	
 	public static final MessageType FNPBulkSendAborted = new MessageType("FNPBulkSendAborted", PRIORITY_UNSPECIFIED) {{
@@ -620,6 +620,9 @@ public class DMT {
 		return "Unknown reason code: "+reason;
 	}
 
+	// FIXME consider using this again now we have new packet format which can handle big messages on any connection.
+	// FIXME be careful if we do - make sure boost priority if realtime, and note timeout issues associated with sending a request at BULK.
+	
 	public static final MessageType FNPSSKInsertRequest = new MessageType("FNPSSKInsertRequest", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 		addField(HTL, Short.class);
@@ -630,7 +633,7 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, byte[] headers, byte[] data, byte[] pubKeyHash) {
+	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, byte[] headers, byte[] data, byte[] pubKeyHash, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequest);
 		msg.set(UID, uid);
 		msg.set(HTL, htl);
@@ -639,6 +642,7 @@ public class DMT {
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
 		msg.set(PUBKEY_HASH, new ShortBuffer(pubKeyHash));
 		msg.set(DATA, new ShortBuffer(data));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -655,16 +659,19 @@ public class DMT {
 		msg.set(FREENET_ROUTING_KEY, myKey);
 		return msg;
 	}
+	
+	// SSK inserts data and headers. These are BULK_DATA or REALTIME.
 
-	public static final MessageType FNPSSKInsertRequestHeaders = new MessageType("FNPSSKInsertRequestHeaders", PRIORITY_LOW) {{
+	public static final MessageType FNPSSKInsertRequestHeaders = new MessageType("FNPSSKInsertRequestHeaders", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSSKInsertRequestHeaders(long uid, byte[] headers) {
+	public static final Message createFNPSSKInsertRequestHeaders(long uid, byte[] headers, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequestHeaders);
 		msg.set(UID, uid);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -673,22 +680,28 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSSKInsertRequestData(long uid, byte[] data) {
+	public static final Message createFNPSSKInsertRequestData(long uid, byte[] data, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequestData);
 		msg.set(UID, uid);
 		msg.set(DATA, new ShortBuffer(data));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
-	public static final MessageType FNPSSKDataFoundHeaders = new MessageType("FNPSSKDataFoundHeaders", PRIORITY_UNSPECIFIED) {{
+	// SSK pubkeys, data and headers are all BULK_DATA or REALTIME.
+	// Requests wait for them all equally, so there is no reason for them to be different,
+	// plus everything is throttled now.
+	
+	public static final MessageType FNPSSKDataFoundHeaders = new MessageType("FNPSSKDataFoundHeaders", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKDataFoundHeaders(long uid, byte[] headers) {
+	public static Message createFNPSSKDataFoundHeaders(long uid, byte[] headers, boolean realTime) {
 		Message msg = new Message(FNPSSKDataFoundHeaders);
 		msg.set(UID, uid);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -697,10 +710,11 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKDataFoundData(long uid, byte[] data) {
+	public static Message createFNPSSKDataFoundData(long uid, byte[] data, boolean realTime) {
 		Message msg = new Message(FNPSSKDataFoundData);
 		msg.set(UID, uid);
 		msg.set(DATA, new ShortBuffer(data));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -723,10 +737,11 @@ public class DMT {
 		addField(PUBKEY_AS_BYTES, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKPubKey(long uid, DSAPublicKey pubkey) {
+	public static Message createFNPSSKPubKey(long uid, DSAPublicKey pubkey, boolean realTime) {
 		Message msg = new Message(FNPSSKPubKey);
 		msg.set(UID, uid);
 		msg.set(PUBKEY_AS_BYTES, new ShortBuffer(pubkey.asPaddedBytes()));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	

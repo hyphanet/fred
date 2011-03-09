@@ -303,9 +303,7 @@ outer:	while(true) {
 			// Congestion control and bandwidth limiting
 			try {
 				if(logMINOR) Logger.minor(this, "Sending packet "+blockNo);
-				Message msg = DMT.createFNPBulkPacketSend(uid, blockNo, buf);
-				if(realTime)
-					msg.boostPriority();
+				Message msg = DMT.createFNPBulkPacketSend(uid, blockNo, buf, realTime);
 				boolean isOldFNP = peer.isOldFNP();
 				UnsentPacketTag tag = new UnsentPacketTag(isOldFNP);
 				if(isOldFNP) {
