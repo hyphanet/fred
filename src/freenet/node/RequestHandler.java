@@ -541,10 +541,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	static void sendSSK(byte[] headers, byte[] data, boolean needsPubKey, DSAPublicKey pubKey, final PeerNode source, long uid, ByteCounter ctr, boolean realTimeFlag) throws NotConnectedException, WaitedTooLongException, PeerRestartedException, SyncSendWaitedTooLongException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
+		boolean isOldFNP = source.isOldFNP();
+		WaitingMultiMessageCallback mcb = null;
+		if(!isOldFNP) mcb = new WaitingMultiMessageCallback();
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers, realTimeFlag);
-		source.sendAsync(headersMsg, null, ctr);
+		source.sendAsync(headersMsg, isOldFNP ? null : mcb.make(), ctr);
 		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data, realTimeFlag);
-		if(source.isOldFNP()) {
+		if(isOldFNP) {
 			try {
 				source.sendThrottledMessage(dataMsg, data.length, ctr, 60 * 1000, false, null);
 			} catch(SyncSendWaitedTooLongException e) {
@@ -552,13 +555,17 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				throw new Error(e);
 			}
 		} else {
-			source.sendSync(dataMsg, ctr, realTimeFlag);
-			ctr.sentPayload(data.length);
+			source.sendAsync(dataMsg, isOldFNP ? null : mcb.make(), ctr);
 		}
 
 		if(needsPubKey) {
 			Message pk = DMT.createFNPSSKPubKey(uid, pubKey, realTimeFlag);
-			source.sendAsync(pk, null, ctr);
+			source.sendAsync(pk, isOldFNP ? null : mcb.make(), ctr);
+		}
+		
+		if(!isOldFNP) {
+			mcb.waitFor();
+			ctr.sentPayload(data.length);
 		}
 	}
 

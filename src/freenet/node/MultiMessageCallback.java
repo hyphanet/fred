@@ -41,8 +41,7 @@ public abstract class MultiMessageCallback {
 						if(!success) someFailed = true;
 						finished = true;
 						waiting--;
-						if(waiting > 0) return;
-						if(!armed) return;
+						if(!finished()) return;
 						if(someFailed) success = false;
 					}
 					finish(success);
@@ -58,10 +57,14 @@ public abstract class MultiMessageCallback {
 		boolean success;
 		synchronized(this) {
 			armed = true;
-			if(waiting > 0) return;
+			if(!finished()) return;
 			success = !someFailed;
 		}
 		finish(success);
+	}
+	
+	protected final synchronized boolean finished() {
+		return armed && waiting == 0;
 	}
 
 }
