@@ -564,6 +564,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 		
 		if(!isOldFNP) {
+			mcb.arm();
 			mcb.waitFor();
 			ctr.sentPayload(data.length);
 		}
