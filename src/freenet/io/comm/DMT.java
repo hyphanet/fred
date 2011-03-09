@@ -656,7 +656,7 @@ public class DMT {
 		return msg;
 	}
 
-	public static final MessageType FNPSSKInsertRequestHeaders = new MessageType("FNPSSKInsertRequestHeaders", PRIORITY_LOW) {{
+	public static final MessageType FNPSSKInsertRequestHeaders = new MessageType("FNPSSKInsertRequestHeaders", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
