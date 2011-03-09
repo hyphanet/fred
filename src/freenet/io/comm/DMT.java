@@ -633,7 +633,7 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, byte[] headers, byte[] data, byte[] pubKeyHash) {
+	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, byte[] headers, byte[] data, byte[] pubKeyHash, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequest);
 		msg.set(UID, uid);
 		msg.set(HTL, htl);
@@ -642,6 +642,7 @@ public class DMT {
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
 		msg.set(PUBKEY_HASH, new ShortBuffer(pubKeyHash));
 		msg.set(DATA, new ShortBuffer(data));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -666,10 +667,11 @@ public class DMT {
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSSKInsertRequestHeaders(long uid, byte[] headers) {
+	public static final Message createFNPSSKInsertRequestHeaders(long uid, byte[] headers, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequestHeaders);
 		msg.set(UID, uid);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -678,10 +680,11 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static final Message createFNPSSKInsertRequestData(long uid, byte[] data) {
+	public static final Message createFNPSSKInsertRequestData(long uid, byte[] data, boolean realTime) {
 		Message msg = new Message(FNPSSKInsertRequestData);
 		msg.set(UID, uid);
 		msg.set(DATA, new ShortBuffer(data));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -694,10 +697,11 @@ public class DMT {
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKDataFoundHeaders(long uid, byte[] headers) {
+	public static Message createFNPSSKDataFoundHeaders(long uid, byte[] headers, boolean realTime) {
 		Message msg = new Message(FNPSSKDataFoundHeaders);
 		msg.set(UID, uid);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -706,10 +710,11 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKDataFoundData(long uid, byte[] data) {
+	public static Message createFNPSSKDataFoundData(long uid, byte[] data, boolean realTime) {
 		Message msg = new Message(FNPSSKDataFoundData);
 		msg.set(UID, uid);
 		msg.set(DATA, new ShortBuffer(data));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	
@@ -732,10 +737,11 @@ public class DMT {
 		addField(PUBKEY_AS_BYTES, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKPubKey(long uid, DSAPublicKey pubkey) {
+	public static Message createFNPSSKPubKey(long uid, DSAPublicKey pubkey, boolean realTime) {
 		Message msg = new Message(FNPSSKPubKey);
 		msg.set(UID, uid);
 		msg.set(PUBKEY_AS_BYTES, new ShortBuffer(pubkey.asPaddedBytes()));
+		if(realTime) msg.boostPriority();
 		return msg;
 	}
 	

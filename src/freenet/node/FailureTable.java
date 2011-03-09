@@ -441,8 +441,8 @@ public class FailureTable implements OOMHook {
 				return;
 			}
 			
-			final Message data = DMT.createFNPSSKDataFoundData(uid, block.getRawData());
-			Message headers = DMT.createFNPSSKDataFoundHeaders(uid, block.getRawHeaders());
+			final Message data = DMT.createFNPSSKDataFoundData(uid, block.getRawData(), realTimeFlag);
+			Message headers = DMT.createFNPSSKDataFoundHeaders(uid, block.getRawHeaders(), realTimeFlag);
 			final int dataLength = block.getRawData().length;
 			
 			source.sendAsync(headers, null, senderCounter);
@@ -478,7 +478,7 @@ public class FailureTable implements OOMHook {
 			}, "Send offered SSK");
 			
 			if(needPubKey) {
-				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
+				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey(), realTimeFlag);
 				source.sendAsync(pk, null, senderCounter);
 			}
 		} else {

@@ -265,10 +265,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             // Send the headers and data
             
-            Message headersMsg = DMT.createFNPSSKInsertRequestHeaders(uid, headers);
-            if(realTimeFlag) headersMsg.boostPriority();
-            Message dataMsg = DMT.createFNPSSKInsertRequestData(uid, data);
-            if(realTimeFlag) dataMsg.boostPriority();
+            Message headersMsg = DMT.createFNPSSKInsertRequestHeaders(uid, headers, realTimeFlag);
+            Message dataMsg = DMT.createFNPSSKInsertRequestData(uid, data, realTimeFlag);
             
             try {
 				next.sendAsync(headersMsg, null, this);
@@ -299,8 +297,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             // Do we need to send them the pubkey?
             
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
-            	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey);
-            	if(realTimeFlag) pkMsg.boostPriority();
+            	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey, realTimeFlag);
             	try {
             		next.sendSync(pkMsg, this, realTimeFlag);
             	} catch (NotConnectedException e) {
