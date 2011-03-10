@@ -343,10 +343,13 @@ public class PeerMessageQueue {
 				if(nonEmptyItemsWithID != null) {
 					for(Items items : nonEmptyItemsWithID) {
 						if(items.items.size() == 0) continue;
-						// It is possible that something requeued isn't urgent, so check anyway.
-						t = Math.min(t, items.items.getFirst().submitted + timeout);
-						// Later items will have later expiry times.
-						return t;
+						// Generally anything in nonEmptyItemsWithID is urgent.
+						// But it is possible that something requeued isn't urgent, so check anyway.
+						long thisTimeout = items.items.getFirst().submitted + timeout;
+						if(thisTimeout <= now) return thisTimeout;
+						else if(thisTimeout < t) t = thisTimeout;
+						// Check all slots until we find something that is urgent.
+						// It won't take long.
 					}
 				}
 			} else {
