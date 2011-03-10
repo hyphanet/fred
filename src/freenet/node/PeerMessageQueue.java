@@ -223,7 +223,7 @@ public class PeerMessageQueue {
 					return;
 				}
 			}
-			nonEmptyItemsWithID.unshift(list);
+			nonEmptyItemsWithID.push(list);
 		}
 
 		private void moveFromEmptyToNonEmptyBackward(Items list) {
