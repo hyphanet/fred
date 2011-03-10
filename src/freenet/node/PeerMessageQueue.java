@@ -324,15 +324,26 @@ public class PeerMessageQueue {
 		/** Check that nonEmptyItemsWithID is ordered correctly. 
 		 * LOCKING: Caller must synchronize on PeerMessageQueue.this. */
 		private void checkOrder() {
-			if(nonEmptyItemsWithID == null) return;
-			long prev = -1;
-			Items prevItems = null;
-			for(Items items : nonEmptyItemsWithID) {
-				long thisTime = items.timeLastSent;
-				if(thisTime < prev)
-					Logger.error(this, "Inconsistent order in non empty items with ID: prev timeout was "+prev+" for "+prevItems+" but this timeout is "+thisTime+" for "+items, new Exception("error"));
-				prev = thisTime;
-				prevItems = items;
+			if(nonEmptyItemsWithID != null) {
+				long prev = -1;
+				Items prevItems = null;
+				for(Items items : nonEmptyItemsWithID) {
+					long thisTime = items.timeLastSent;
+					if(thisTime < prev)
+						Logger.error(this, "Inconsistent order in non empty items with ID: prev timeout was "+prev+" for "+prevItems+" but this timeout is "+thisTime+" for "+items, new Exception("error"));
+					prev = thisTime;
+					prevItems = items;
+				}
+			}
+			if(itemsNonUrgent != null) {
+				long prev = -1;
+				MessageItem prevItem = null;
+				for(MessageItem item : itemsNonUrgent) {
+					if(item.submitted < prev)
+						Logger.error(this, "Inconsistent order in itemsNonUrgent: prev submitted at "+prev+" but this at "+item.submitted+" prev is "+prevItem+" this is "+item);
+					prev = item.submitted;
+					prevItem = item;
+				}
 			}
 		}
 
