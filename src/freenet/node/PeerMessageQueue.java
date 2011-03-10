@@ -128,8 +128,23 @@ public class PeerMessageQueue {
 			}
 			if(itemsNonUrgent == null)
 				itemsNonUrgent = new LinkedList<MessageItem>();
-			itemsNonUrgent.addLast(item);
-			if(logMINOR) checkOrder();
+			ListIterator<MessageItem> it = itemsNonUrgent.listIterator(itemsNonUrgent.size());
+			// MessageItem's can be created out of order, so the timestamps may not be consistent.
+			// CONCURRENCY: This is not a problem in addNonUrgentMessages() because it is always called from one thread.
+			while(true) {
+				if(!it.hasPrevious()) {
+					it.add(item);
+					if(logMINOR) checkOrder();
+					return;
+				}
+				MessageItem prev = it.previous();
+				if(item.submitted >= prev.submitted) {
+					it.next();
+					it.add(item);
+					if(logMINOR) checkOrder();
+					return;
+				}
+			}
 		}
 		
 		private void moveToUrgent(long now) {
