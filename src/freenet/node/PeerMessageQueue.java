@@ -152,6 +152,7 @@ public class PeerMessageQueue {
 					moveIt = true;
 				}
 				if(moveIt) {
+					if(logMINOR) Logger.minor(this, "Moving message to urgent list: "+item);
 					if(logMINOR) checkOrder();
 					// Move to urgent list
 					if(itemsByID == null) {
