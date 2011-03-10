@@ -482,6 +482,7 @@ public class PeerMessageQueue {
 						DoublyLinkedList<? super Items> parent = tracker.getParent();
 						// Demote the corresponding tracker to maintain round-robin.
 						if(tracker.items.isEmpty()) {
+							if(logDEBUG) Logger.debug(this, "Moving "+tracker+" to end of empty list in addNonUrgentMessages");
 							if(emptyItemsWithID == null)
 								emptyItemsWithID = new DoublyLinkedListImpl<Items>();
 							if(parent == null) {
@@ -496,6 +497,7 @@ public class PeerMessageQueue {
 								assert(false);
 							addToEmptyBackward(tracker);
 						} else {
+							if(logDEBUG) Logger.debug(this, "Moving "+tracker+" to end of non-empty list in addNonUrgentMessages");
 							if(nonEmptyItemsWithID == null)
 								nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 							if(parent == null) {
@@ -612,8 +614,10 @@ public class PeerMessageQueue {
 					nonEmptyItemsWithID.remove(list);
 					list.timeLastSent = now;
 					if(!list.items.isEmpty()) {
+						if(logDEBUG) Logger.debug(this, "Moving "+list+" to end of non empty list in addUrgentMessages");
 						addToNonEmptyBackward(list);
 					} else {
+						if(logDEBUG) Logger.debug(this, "Moving "+list+" to end of empty list in addUrgentMessages");
 						addToEmptyBackward(list);
 					}
 					if(prev == null)
