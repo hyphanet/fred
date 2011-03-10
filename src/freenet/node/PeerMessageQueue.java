@@ -587,7 +587,6 @@ public class PeerMessageQueue {
 					messages.add(item);
 					added++;
 					addedNone = false;
-					MessageItem load = null;
 					if(mustSendLoadRT && item.sendLoadRT && !addPeerLoadStatsRT.value) {
 						if(size + 2 + MAX_PEER_LOAD_STATS_SIZE > maxSize) {
 							if(logMINOR) Logger.minor(this, "Unable to add load message (realtime) to packet");
