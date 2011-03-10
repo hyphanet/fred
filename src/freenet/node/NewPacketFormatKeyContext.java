@@ -280,7 +280,7 @@ public class NewPacketFormatKeyContext {
 					count++;
 			}
 			if(count > 0 && logMINOR)
-				Logger.minor(this, ""+count+" messages in flight with threshold "+(avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
+				Logger.minor(this, ""+count+" packets in flight with threshold "+(avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 		}
 		if(bigLostCount != 0 && pn != null) {
 			PacketThrottle throttle = pn.getThrottle();
