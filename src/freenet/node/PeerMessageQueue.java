@@ -540,7 +540,10 @@ public class PeerMessageQueue {
 			while(true) {
 				boolean addedNone = true;
 				int lists = 0;
-				if(nonEmptyItemsWithID == null) return size;
+				if(nonEmptyItemsWithID == null) {
+					if(logMINOR) Logger.minor(this, "No non-empty items to send, not sending any urgent messages");
+					return size;
+				}
 				lists += nonEmptyItemsWithID.size();
 				Items list = nonEmptyItemsWithID.head();
 				for(int i=0;i<lists && list != null;i++) {
@@ -550,7 +553,10 @@ public class PeerMessageQueue {
 						Logger.error(this, "List is in nonEmptyItemsWithID yet it is empty?!: "+list);
 						nonEmptyItemsWithID.remove(list);
 						addToEmptyBackward(list);
-						if(nonEmptyItemsWithID.isEmpty()) return size;
+						if(nonEmptyItemsWithID.isEmpty()) {
+							if(logMINOR) Logger.minor(this, "Run out of non-empty items to send");
+							return size;
+						}
 						list = nonEmptyItemsWithID.head();
 						continue;
 					}
@@ -563,8 +569,7 @@ public class PeerMessageQueue {
 							oversize = true;
 						} else {
 							// Send what we have so far.
-							if(logDEBUG && added != 0)
-								Logger.debug(this, "Added "+added+" urgent messages, could add more but out of space at "+size);
+							Logger.minor(this, "Added "+added+" urgent messages, could add more but out of space at "+size);
 							return -size;
 						}
 					}
@@ -608,7 +613,10 @@ public class PeerMessageQueue {
 						if(logDEBUG) Logger.debug(this, "Returning with oversize urgent message");
 						return size;
 					}
-					if(messages.size() >= maxMessages) return size;
+					if(messages.size() >= maxMessages) {
+						if(logMINOR) Logger.minor(this, "Returning "+messages.size()+" urgent messages");
+						return size;
+					}
 				}
 				if(addedNone) {
 					if(logDEBUG && added != 0)
