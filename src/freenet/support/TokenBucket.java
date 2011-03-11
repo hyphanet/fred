@@ -216,6 +216,7 @@ public class TokenBucket {
 		if(timeLastTick > nowNS) {
 			System.err.println("CLOCK SKEW DETECTED! CLOCK WENT BACKWARDS BY AT LEAST "+TimeUtil.formatTime((timeLastTick - nowNS)/(1000*1000)));
 			System.err.println("FREENET WILL BREAK SEVERELY IF THIS KEEPS HAPPENING!");
+			Logger.error(this, "CLOCK SKEW DETECTED! CLOCK WENT BACKWARDS BY AT LEAST "+TimeUtil.formatTime((timeLastTick - nowNS)/(1000*1000)));
 			timeLastTick = nowNS;
 			return 0;
 		}
