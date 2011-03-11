@@ -442,6 +442,15 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	 * Handle an incoming FNPDataRequest.
 	 */
 	private void innerHandleDataRequest(Message m, PeerNode source, boolean isSSK) {
+		if(!source.isConnected()) {
+			if(logMINOR) Logger.minor(this, "Handling request off thread, source disconnected: "+source+" for "+m);
+			return;
+		}
+		if(!source.isRoutable()) {
+			if(logMINOR) Logger.minor(this, "Handling request off thread, source no longer routable: "+source+" for "+m);
+			rejectRequest(m, isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr);
+			return;
+		}
 		long id = m.getLong(DMT.UID);
 		ByteCounter ctr = isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr;
 		if(node.recentlyCompleted(id)) {
