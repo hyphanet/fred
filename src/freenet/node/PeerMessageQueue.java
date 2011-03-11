@@ -190,27 +190,24 @@ public class PeerMessageQueue {
 							nonEmptyItemsWithID.unshift(list);
 							itemsByID.put(id, list);
 							if(logMINOR) checkOrder();
-							list.addLast(item);
 						} else {
 							if(list.items.isEmpty()) {
 								if(list.getParent() == nonEmptyItemsWithID) {
 									Logger.error(this, "Was empty but was in nonEmptyItemsWithID: "+list);
-									list.addLast(item);
 								} else {
 									assert(list.getParent() == emptyItemsWithID);
 									// It already exists, so it has a valid time.
 									// Which is probably in the past, so use Forward.
 									// Must add it to the list before moving to non-empty because of assertion.
-									list.addLast(item);
 									moveFromEmptyToNonEmptyForward(list);
 								}
 							} else {
 								assert(list.getParent() == nonEmptyItemsWithID);
-								list.addLast(item);
 							}
 							if(logMINOR) checkOrder();
 						}
 					}
+					list.addLast(item);
 					it.remove();
 					moved++;
 					if(logMINOR) checkOrder();
