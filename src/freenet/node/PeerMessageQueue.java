@@ -203,7 +203,6 @@ public class PeerMessageQueue {
 								}
 							} else {
 								assert(list.getParent() == nonEmptyItemsWithID);
-								list.addLast(item);
 							}
 							if(logMINOR) checkOrder();
 						}
