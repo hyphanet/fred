@@ -539,7 +539,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			
 			if(trust == null && !isOpennet()) {
 				// FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
-				this.sendErrorPage(ctx, 200, l10n("noTrustLevelAddingFriendTitle"), l10n("noTrustLevelAddingFriend"));
+				this.sendErrorPage(ctx, 200, l10n("noTrustLevelAddingFriendTitle"), l10n("noTrustLevelAddingFriend"), !isOpennet());
 				return;
 			}
 			
@@ -557,7 +557,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						ref.append( line ).append('\n');
 					}
 				} catch (IOException e) {
-					this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), NodeL10n.getBase().getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[] { "url" }, new String[] { urltext }));
+					this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), NodeL10n.getBase().getString("DarknetConnectionsToadlet.cantFetchNoderefURL", new String[] { "url" }, new String[] { urltext }), !isOpennet());
 					return;
 				} finally {
 					if( in != null ){
@@ -569,7 +569,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
 				ref = new StringBuilder(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
 			} else {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("noRefOrURL"));
+				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("noRefOrURL"), !isOpennet());
 				request.freeParts();
 				return;
 			}
@@ -1014,4 +1014,16 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	private String sortString(boolean isReversed, String type) {
 		return (isReversed ? ("?sortBy="+type) : ("?sortBy="+type+"&reversed"));
 	}
+	
+	/**
+	 * Send a simple error page.
+	 */
+	protected void sendErrorPage(ToadletContext ctx, int code, String desc, String message, boolean returnToAddFriends) throws ToadletContextClosedException, IOException {
+		HTMLNode content = new HTMLNode("#", message);
+		if(returnToAddFriends) {
+			content.addChild("p").addChild("a", "href", DarknetAddRefToadlet.PATH, l10n("returnToAddAFriendPage"));
+		}
+		sendErrorPage(ctx, code, desc, content);
+	}
+
 }
