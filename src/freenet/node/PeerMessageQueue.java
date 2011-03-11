@@ -177,7 +177,6 @@ public class PeerMessageQueue {
 						list = new Items(id);
 						nonEmptyItemsWithID.push(list);
 						itemsByID.put(id, list);
-						list.addLast(item);
 						if(logMINOR) checkOrder();
 					} else {
 						if(list == null) {
