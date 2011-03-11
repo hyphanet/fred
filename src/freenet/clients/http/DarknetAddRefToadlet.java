@@ -123,10 +123,11 @@ public class DarknetAddRefToadlet extends Toadlet {
 	private static String l10n(String string) {
 		return NodeL10n.getBase().getString("DarknetAddRefToadlet."+string);
 	}
-	
+
+	static final String PATH = "/addfriend/";
 
 	@Override
 	public String path() {
-		return "/addfriend/";
+		return PATH;
 	}
 }
