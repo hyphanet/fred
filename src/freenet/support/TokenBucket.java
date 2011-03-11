@@ -213,6 +213,12 @@ public class TokenBucket {
 	
 	synchronized long tokensToAdd() {
 		long nowNS = System.currentTimeMillis() * (1000 * 1000);
+		if(timeLastTick > nowNS) {
+			System.err.println("CLOCK SKEW DETECTED! CLOCK WENT BACKWARDS BY AT LEAST "+TimeUtil.formatTime((timeLastTick - nowNS)/(1000*1000)));
+			System.err.println("FREENET WILL BREAK SEVERELY IF THIS KEEPS HAPPENING!");
+			timeLastTick = nowNS;
+			return 0;
+		}
 		long nextTick = timeLastTick + nanosPerTick;
 		if(nextTick > nowNS) {
 			return 0;
