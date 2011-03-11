@@ -537,6 +537,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(trustS != null && !trustS.equals(""))
 				trust = FRIEND_TRUST.valueOf(trustS);
 			
+			if(trust == null && !isOpennet()) {
+				// FIXME: Layering violation. Ideally DarknetPeerNode would do this check.
+				this.sendErrorPage(ctx, 200, l10n("noTrustLevelAddingFriendTitle"), l10n("noTrustLevelAddingFriend"));
+				return;
+			}
+			
 			StringBuilder ref = new StringBuilder(1024);
 			if (urltext.length() > 0) {
 				// fetch reference from a URL
