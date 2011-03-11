@@ -1019,11 +1019,24 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 * Send a simple error page.
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, String message, boolean returnToAddFriends) throws ToadletContextClosedException, IOException {
-		HTMLNode content = new HTMLNode("#", message);
+		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
+		
+		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
+		infoboxContent.addChild("#", message);
 		if(returnToAddFriends) {
-			content.addChild("p").addChild("a", "href", DarknetAddRefToadlet.PATH, l10n("returnToAddAFriendPage"));
+			infoboxContent.addChild("br");
+			infoboxContent.addChild("a", "href", DarknetAddRefToadlet.PATH, l10n("returnToAddAFriendPage"));
+			infoboxContent.addChild("br");
+		} else {
+			infoboxContent.addChild("br");
+			infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
+			infoboxContent.addChild("br");
 		}
-		sendErrorPage(ctx, code, desc, content);
+		addHomepageLink(infoboxContent);
+		
+		writeHTMLReply(ctx, code, desc, pageNode.generate());
 	}
 
 }
