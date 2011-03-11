@@ -135,6 +135,8 @@ public class DMT {
 	public static final String ENABLE_INSERT_FORK_WHEN_CACHEABLE = "enableInsertForkWhenCacheable";
 	public static final String PREFER_INSERT = "preferInsert";
 	public static final String IGNORE_LOW_BACKOFF = "ignoreLowBackoff";
+	public static final String LIST_OF_UIDS = "listOfUIDs";
+	public static final String UID_STILL_RUNNING_FLAGS = "UIDStillRunningFlags";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=0;
@@ -1742,4 +1744,15 @@ public class DMT {
 		return (spec == FNPCHKDataRequest || spec == FNPSSKDataRequest || spec == FNPSSKInsertRequest || spec == FNPInsertRequest || spec == FNPSSKInsertRequestNew || spec == FNPGetOfferedKey);
 	}
 	
+	// Extended fatal timeout handling.
+	
+	public static final MessageType FNPCheckStillRunning = new MessageType("FNPCheckStillRunning", PRIORITY_HIGH) {{
+		addField(UID, Long.class); // UID for this message
+		addField(LIST_OF_UIDS, ShortBuffer.class);
+	}};
+	
+	public static final MessageType FNPIsStillRunning = new MessageType("FNPIsStillRunning", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(UID_STILL_RUNNING_FLAGS, BitArray.class);
+	}};
 }
