@@ -869,6 +869,7 @@ loadWaiterLoop:
                 				finish(INTERNAL_ERROR, p, true);
                 			}
                 		} finally {
+                			// This is only necessary here because we don't always call finish().
                 			pn.noLongerRoutingTo(origTag, true);
                 		}
 					}
@@ -901,6 +902,7 @@ loadWaiterLoop:
                 				finish(INTERNAL_ERROR, p, true);
                 			}
                 		} finally {
+                			// This is only necessary here because we don't always call finish().
                 			pn.noLongerRoutingTo(origTag, true);
                 		}
 					}
