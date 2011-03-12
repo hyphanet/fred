@@ -701,6 +701,12 @@ outer:
 		
 		if(!ackOnly) {
 			
+			// Always check canSend() to amongst other things check whether there are too
+			// many payload-carrying packets in flight (ack-only packets aren't acked so
+			// we don't keep track of them). If there are not too many packets in flight,
+			// we can allocate as many messages as we like in order to fill up a packet
+			// below - big messages and small messages, we don't want to be only able to
+			// start sending small messages and starve the big ones.
 			cantSend = !canSend(null);
 			sendStatsBulk = pn.grabSendLoadStatsASAP(false);
 			sendStatsRT = pn.grabSendLoadStatsASAP(true);
