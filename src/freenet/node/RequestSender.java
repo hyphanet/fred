@@ -897,7 +897,9 @@ loadWaiterLoop:
 		    					node.nodeStats.failedBlockReceive(false, false, realTimeFlag, source == null);
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
-                			finish(INTERNAL_ERROR, p, true);
+                			if(offers != null) {
+                				finish(INTERNAL_ERROR, p, true);
+                			}
                 		} finally {
                 			pn.noLongerRoutingTo(origTag, true);
                 		}
