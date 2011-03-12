@@ -603,7 +603,7 @@ loadWaiterLoop:
         	BlockOffer offer = offers.getFirstOffer();
         	if(offer == null) {
         		if(logMINOR) Logger.minor(this, "No more offers");
-        		break;
+        		return false;
         	}
         	PeerNode pn = offer.getPeerNode();
         	OFFER_STATUS status = tryOffer(offer, pn, offers);
@@ -626,7 +626,6 @@ loadWaiterLoop:
 				continue;
 			}
         }
-        return false;
     }
 
     private OFFER_STATUS tryOffer(final BlockOffer offer, final PeerNode pn, final OfferList offers) {
