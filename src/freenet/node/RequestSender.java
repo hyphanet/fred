@@ -577,10 +577,10 @@ loadWaiterLoop:
     };
     
     enum OFFER_STATUS {
-    	FETCHING,
-    	FATAL,
-    	TRY_ANOTHER,
-    	KEEP
+    	FETCHING, // Fetching asynchronously or already fetched.
+    	FATAL, // Fatal error, fail the whole request.
+    	TRY_ANOTHER, // Delete the offer and move on.
+    	KEEP // Keep the offer and move on.
     }
     
 	/** @return True if we successfully fetched an offered key or failed fatally, or if
@@ -689,7 +689,22 @@ loadWaiterLoop:
     	        	origTag.removeFetchingOfferedKeyFrom(pn);
         			continue;
         		} else {
-        			if(handleSSKOfferReply(reply, pn, offer, offers)) return true;
+        			OFFER_STATUS status = handleSSKOfferReply(reply, pn, offer, offers);
+        			switch(status) {
+        			case FATAL:
+        				origTag.removeFetchingOfferedKeyFrom(pn);
+        				return true;
+        			case FETCHING:
+        				return true;
+        			case KEEP:
+        				offers.keepLastOffer();
+        				origTag.removeFetchingOfferedKeyFrom(pn);
+        				continue;
+        			case TRY_ANOTHER:
+        				offers.deleteLastOffer();
+        				origTag.removeFetchingOfferedKeyFrom(pn);
+        				continue;
+        			}
         		}
         	}
         	// RejectedOverload is possible - but we need to include it in the statistics.
@@ -699,22 +714,18 @@ loadWaiterLoop:
         return false;
     }
 
-    private boolean handleSSKOfferReply(Message reply, PeerNode pn,
+    private OFFER_STATUS handleSSKOfferReply(Message reply, PeerNode pn,
 			BlockOffer offer, OfferList offers) {
     	if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
-			offers.keepLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
-			return false;
+			return OFFER_STATUS.KEEP;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
-			offers.deleteLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
-			return false;
+			return OFFER_STATUS.TRY_ANOTHER;
 		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
 			byte[] headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Wait for the data
@@ -725,15 +736,11 @@ loadWaiterLoop:
 			} catch (DisconnectedException e) {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting data for offer for "+key);
-				offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
-	        	return false;
+				return OFFER_STATUS.TRY_ANOTHER;
 			}
 			if(dataMessage == null) {
 				Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key);
-				offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
-				return false;
+				return OFFER_STATUS.TRY_ANOTHER;
 			}
 			byte[] sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
 			if(pubKey == null) {
@@ -744,46 +751,37 @@ loadWaiterLoop:
 				} catch (DisconnectedException e) {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
-					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				if(pk == null) {
 					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
-					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				try {
 					pubKey = DSAPublicKey.create(((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData());
 				} catch (CryptFormatException e) {
 					Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
-					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				
 				try {
 					((NodeSSK)key).setPubKey(pubKey);
 				} catch (SSKVerifyException e) {
 					Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
-					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 			}
 			
 			if(finishSSKFromGetOffer(pn, headers, sskData)) {
 				if(logMINOR) Logger.minor(this, "Successfully fetched SSK from offer from "+pn+" for "+key);
-				return true;
+				return OFFER_STATUS.FETCHING;
 			} else {
-        		offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
-        		return false;
+				return OFFER_STATUS.TRY_ANOTHER;
 			}
 		} else {
-        	origTag.removeFetchingOfferedKeyFrom(pn);
-			return false;
+			// Impossible???
+			Logger.error(this, "Unexpected reply to get offered key: "+reply);
+			return OFFER_STATUS.TRY_ANOTHER;
 		}
 	}
 
