@@ -650,6 +650,9 @@ loadWaiterLoop:
     		return OFFER_STATUS.TRY_ANOTHER;
 		}
     	// Wait asynchronously for a response.
+		synchronized(this) {
+			receivingAsync = true;
+		}
 		try {
 			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_TIMEOUT), new SlowAsyncMessageFilterCallback() {
 				
