@@ -663,49 +663,7 @@ loadWaiterLoop:
     			mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPRejectedOverload);
     			mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
     			mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPCHKDataFound);
-    			try {
-					node.usm.addAsyncFilter(mfDF.or(mfRO.or(mfGetInvalid)), new SlowAsyncMessageFilterCallback() {
-
-						public void onMatched(Message m) {
-							OFFER_STATUS status = 
-								handleCHKOfferReply(m, pn, offer, null);
-							if(status != OFFER_STATUS.FETCHING)
-								origTag.removeFetchingOfferedKeyFrom(pn);
-							// If FETCHING, the block transfer will unlock it.
-							if(logMINOR) Logger.minor(this, "Forked get offered key due to two stage timeout completed with status "+status+" from message "+m+" for "+RequestSender.this+" to "+pn);
-						}
-
-						public boolean shouldTimeout() {
-							return false;
-						}
-
-						public void onTimeout() {
-							Logger.error(this, "Fatal timeout getting offered key from "+pn+" for "+RequestSender.this);
-							pn.fatalTimeout(origTag, true);
-						}
-
-						public void onDisconnect(PeerContext ctx) {
-							// Ok.
-							origTag.removeFetchingOfferedKeyFrom(pn);
-						}
-
-						public void onRestarted(PeerContext ctx) {
-							// Ok.
-							origTag.removeFetchingOfferedKeyFrom(pn);
-						}
-
-						public int getPriority() {
-							return NativeThread.HIGH_PRIORITY;
-						}
-						
-					}, this);
-					return OFFER_STATUS.TWO_STAGE_TIMEOUT;
-				} catch (DisconnectedException e) {
-					// Okay.
-					if(logMINOR)
-						Logger.minor(this, "Disconnected (2): "+pn+" getting offer for "+key);
-		    		return OFFER_STATUS.TRY_ANOTHER;
-				}
+    			return handleOfferTimeout(offer, pn, offers, mfDF.or(mfRO.or(mfGetInvalid)));
     		} else {
     			return handleCHKOfferReply(reply, pn, offer, offers);
     		}
@@ -727,54 +685,59 @@ loadWaiterLoop:
     			mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPRejectedOverload);
     			mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
     			mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
-    			try {
-					node.usm.addAsyncFilter(mfAltDF.or(mfRO.or(mfGetInvalid)), new SlowAsyncMessageFilterCallback() {
-
-						public void onMatched(Message m) {
-							OFFER_STATUS status = 
-								handleSSKOfferReply(m, pn, offer, null);
-							if(status != OFFER_STATUS.FETCHING)
-								origTag.removeFetchingOfferedKeyFrom(pn);
-							// If FETCHING, the block transfer will unlock it.
-							// Actually that can't happen here anyway...
-							if(logMINOR) Logger.minor(this, "Forked get offered key due to two stage timeout completed with status "+status+" from message "+m+" for "+RequestSender.this+" to "+pn);
-						}
-
-						public boolean shouldTimeout() {
-							return false;
-						}
-
-						public void onTimeout() {
-							Logger.error(this, "Fatal timeout getting offered key from "+pn+" for "+RequestSender.this);
-							pn.fatalTimeout(origTag, true);
-						}
-
-						public void onDisconnect(PeerContext ctx) {
-							// Ok.
-							origTag.removeFetchingOfferedKeyFrom(pn);
-						}
-
-						public void onRestarted(PeerContext ctx) {
-							// Ok.
-							origTag.removeFetchingOfferedKeyFrom(pn);
-						}
-
-						public int getPriority() {
-							return NativeThread.HIGH_PRIORITY;
-						}
-						
-					}, this);
-					return OFFER_STATUS.TWO_STAGE_TIMEOUT;
-				} catch (DisconnectedException e) {
-					// Okay.
-					if(logMINOR)
-						Logger.minor(this, "Disconnected (2): "+pn+" getting offer for "+key);
-		    		return OFFER_STATUS.TRY_ANOTHER;
-				}
+    			return handleOfferTimeout(offer, pn, offers, mfAltDF.or(mfRO.or(mfGetInvalid)));
     		} else {
     			return handleSSKOfferReply(reply, pn, offer, offers);
     		}
     	}
+	}
+
+	private OFFER_STATUS handleOfferTimeout(final BlockOffer offer, final PeerNode pn,
+			OfferList offers, MessageFilter filter) {
+		try {
+			node.usm.addAsyncFilter(filter, new SlowAsyncMessageFilterCallback() {
+				
+				public void onMatched(Message m) {
+					OFFER_STATUS status = 
+						isSSK ? handleSSKOfferReply(m, pn, offer, null) :
+							handleCHKOfferReply(m, pn, offer, null);
+						if(status != OFFER_STATUS.FETCHING)
+							origTag.removeFetchingOfferedKeyFrom(pn);
+						// If FETCHING, the block transfer will unlock it.
+						if(logMINOR) Logger.minor(this, "Forked get offered key due to two stage timeout completed with status "+status+" from message "+m+" for "+RequestSender.this+" to "+pn);
+				}
+				
+				public boolean shouldTimeout() {
+					return false;
+				}
+				
+				public void onTimeout() {
+					Logger.error(this, "Fatal timeout getting offered key from "+pn+" for "+RequestSender.this);
+					pn.fatalTimeout(origTag, true);
+				}
+				
+				public void onDisconnect(PeerContext ctx) {
+					// Ok.
+					origTag.removeFetchingOfferedKeyFrom(pn);
+				}
+				
+				public void onRestarted(PeerContext ctx) {
+					// Ok.
+					origTag.removeFetchingOfferedKeyFrom(pn);
+				}
+				
+				public int getPriority() {
+					return NativeThread.HIGH_PRIORITY;
+				}
+				
+			}, this);
+			return OFFER_STATUS.TWO_STAGE_TIMEOUT;
+		} catch (DisconnectedException e) {
+			// Okay.
+			if(logMINOR)
+				Logger.minor(this, "Disconnected (2): "+pn+" getting offer for "+key);
+    		return OFFER_STATUS.TRY_ANOTHER;
+		}
 	}
 
 	private OFFER_STATUS handleSSKOfferReply(Message reply, PeerNode pn,
