@@ -247,6 +247,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             Logger.error(this, "Caught "+t, t);
             finish(INTERNAL_ERROR, null, false);
         } finally {
+        	// LOCKING: Normally receivingAsync is set by this thread, so there is no need to synchronize.
+        	// If it is set by another thread it will only be after it was set by this thread.
         	if(status == NOT_FINISHED && !receivingAsync) {
         		Logger.error(this, "Not finished: "+this);
         		finish(INTERNAL_ERROR, null, false);
