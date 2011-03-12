@@ -722,10 +722,55 @@ loadWaiterLoop:
 			}
     		if(reply == null) {
     			// We gave it a chance, don't give it another.
-    			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
-    			// FIXME bug #4613 consider two-stage timeout.
-    			pn.fatalTimeout();
-				return OFFER_STATUS.TRY_ANOTHER;
+    			Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+    			// Two stage timeout.
+    			mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPRejectedOverload);
+    			mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
+    			mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
+    			try {
+					node.usm.addAsyncFilter(mfAltDF.or(mfRO.or(mfGetInvalid)), new SlowAsyncMessageFilterCallback() {
+
+						public void onMatched(Message m) {
+							OFFER_STATUS status = 
+								handleSSKOfferReply(m, pn, offer, null);
+							if(status != OFFER_STATUS.FETCHING)
+								origTag.removeFetchingOfferedKeyFrom(pn);
+							// If FETCHING, the block transfer will unlock it.
+							// Actually that can't happen here anyway...
+							if(logMINOR) Logger.minor(this, "Forked get offered key due to two stage timeout completed with status "+status+" from message "+m+" for "+RequestSender.this+" to "+pn);
+						}
+
+						public boolean shouldTimeout() {
+							return false;
+						}
+
+						public void onTimeout() {
+							Logger.error(this, "Fatal timeout getting offered key from "+pn+" for "+RequestSender.this);
+							pn.fatalTimeout(origTag, true);
+						}
+
+						public void onDisconnect(PeerContext ctx) {
+							// Ok.
+							origTag.removeFetchingOfferedKeyFrom(pn);
+						}
+
+						public void onRestarted(PeerContext ctx) {
+							// Ok.
+							origTag.removeFetchingOfferedKeyFrom(pn);
+						}
+
+						public int getPriority() {
+							return NativeThread.HIGH_PRIORITY;
+						}
+						
+					}, this);
+					return OFFER_STATUS.TWO_STAGE_TIMEOUT;
+				} catch (DisconnectedException e) {
+					// Okay.
+					if(logMINOR)
+						Logger.minor(this, "Disconnected (2): "+pn+" getting offer for "+key);
+		    		return OFFER_STATUS.TRY_ANOTHER;
+				}
     		} else {
     			return handleSSKOfferReply(reply, pn, offer, offers);
     		}
