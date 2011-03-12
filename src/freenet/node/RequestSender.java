@@ -642,15 +642,12 @@ loadWaiterLoop:
 				Logger.minor(this, "Took too long sending offer get to "+pn+" for "+key);
     		return OFFER_STATUS.TRY_ANOTHER;
 		}
-    	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPRejectedOverload);
-    	MessageFilter mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
     	// Wait for a response.
     	if(!isSSK) {
     		// Headers first, then block transfer.
-    		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPCHKDataFound);
     		Message reply;
 			try {
-				reply = node.usm.waitFor(mfDF.or(mfRO.or(mfGetInvalid)), this);
+				reply = node.usm.waitFor(getOfferedKeyReplyFilter(pn, GET_OFFER_TIMEOUT), this);
 			} catch (DisconnectedException e2) {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
@@ -660,19 +657,15 @@ loadWaiterLoop:
     			// We gave it a chance, don't give it another.
     			Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
     			// Two stage timeout.
-    			mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPRejectedOverload);
-    			mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
-    			mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPCHKDataFound);
-    			return handleOfferTimeout(offer, pn, offers, mfDF.or(mfRO.or(mfGetInvalid)));
+    			return handleOfferTimeout(offer, pn, offers, getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT));
     		} else {
     			return handleCHKOfferReply(reply, pn, offer, offers);
     		}
     	} else {
     		// Data, possibly followed by pubkey
-    		MessageFilter mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
     		Message reply;
 			try {
-				reply = node.usm.waitFor(mfRO.or(mfGetInvalid.or(mfAltDF)), this);
+				reply = node.usm.waitFor(getOfferedKeyReplyFilter(pn, GET_OFFER_TIMEOUT), this);
 			} catch (DisconnectedException e) {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
@@ -682,13 +675,22 @@ loadWaiterLoop:
     			// We gave it a chance, don't give it another.
     			Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
     			// Two stage timeout.
-    			mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPRejectedOverload);
-    			mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
-    			mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
-    			return handleOfferTimeout(offer, pn, offers, mfAltDF.or(mfRO.or(mfGetInvalid)));
+    			return handleOfferTimeout(offer, pn, offers, getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT));
     		} else {
     			return handleSSKOfferReply(reply, pn, offer, offers);
     		}
+    	}
+	}
+
+	private MessageFilter getOfferedKeyReplyFilter(final PeerNode pn, int timeout) {
+    	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRejectedOverload);
+    	MessageFilter mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPGetOfferedKeyInvalid);
+    	if(isSSK) {
+    		MessageFilter mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPSSKDataFoundHeaders);
+    		return mfAltDF.or(mfRO.or(mfGetInvalid));
+    	} else {
+    		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPCHKDataFound);
+    		return mfDF.or(mfRO.or(mfGetInvalid));
     	}
 	}
 
