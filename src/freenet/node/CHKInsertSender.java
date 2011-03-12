@@ -783,7 +783,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			} else {
 				try {
 					if (prb.allReceived()) {
-						Logger.error(this, "Received all data but send failed to " + next);
+						// Probably caused by transient connectivity problems.
+						// Only fatal timeouts warrant ERROR's because they indicate something seriously wrong that didn't result in a disconnection, and because they cause disconnections.
+						Logger.warning(this, "Received all data but send failed to " + next);
 					} else {
 						if (prb.isAborted()) {
 							Logger.normal(this, "Send failed: aborted: " + prb.getAbortReason() + ": " + prb.getAbortDescription());
