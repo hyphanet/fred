@@ -271,6 +271,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	if(tryOffers(offers)) return;
         }
         
+        startRequests();
+    }
+    
+    private void startRequests() {
         if(tryOffersOnly) {
         	if(logMINOR) Logger.minor(this, "Tried all offers, not doing a regular request for key");
         	finish(DATA_NOT_FOUND, null, true); // FIXME need a different error code?
@@ -282,9 +286,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
 		highHTLFailureCount = 0;
         routeRequests();
-    }
-    
-    private int routeAttempts = 0;
+	}
+
+	private int routeAttempts = 0;
     private boolean starting;
     private int highHTLFailureCount = 0;
     
