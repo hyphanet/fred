@@ -268,7 +268,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         final OfferList offers = node.failureTable.getOffers(key);
         
         if(offers != null)
-        	tryOffers(offers);
+        	tryOffers(offers, null, null);
         else
         	startRequests();
     }
@@ -592,38 +592,43 @@ loadWaiterLoop:
     
 	/** Tries offers. If we succeed or fatally fail, end the request. If an offer is being
 	 * transferred asynchronously, set the receivingAsync flag and return. Otherwise we 
-	 * have run out of offers without succeeding, so chain to startRequests(). */
-    private void tryOffers(final OfferList offers) {
-    	
+	 * have run out of offers without succeeding, so chain to startRequests(). 
+	 * @param pn If this and status are non-null, we have just tried an offer, and these
+	 * two contain its status. This should be handled before we try to do any more. */
+    private void tryOffers(final OfferList offers, PeerNode pn, OFFER_STATUS status) {
         while(true) {
-        	// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
-        	// but they're still worth trying.
-        	BlockOffer offer = offers.getFirstOffer();
-        	if(offer == null) {
-        		if(logMINOR) Logger.minor(this, "No more offers");
-        		startRequests();
-        		return;
+        	if(pn == null) {
+        		// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
+        		// but they're still worth trying.
+        		BlockOffer offer = offers.getFirstOffer();
+        		if(offer == null) {
+        			if(logMINOR) Logger.minor(this, "No more offers");
+        			startRequests();
+        			return;
+        		}
+        		pn = offer.getPeerNode();
+        		status = tryOffer(offer, pn, offers);
         	}
-        	PeerNode pn = offer.getPeerNode();
-        	OFFER_STATUS status = tryOffer(offer, pn, offers);
 			switch(status) {
 			case FATAL:
 				origTag.removeFetchingOfferedKeyFrom(pn);
 				return;
 			case TWO_STAGE_TIMEOUT:
 				offers.deleteLastOffer();
-				continue;
+				break;
 			case FETCHING:
 				return;
 			case KEEP:
 				offers.keepLastOffer();
 				origTag.removeFetchingOfferedKeyFrom(pn);
-				continue;
+				break;
 			case TRY_ANOTHER:
 				offers.deleteLastOffer();
 				origTag.removeFetchingOfferedKeyFrom(pn);
-				continue;
+				break;
 			}
+			pn = null;
+			status = null;
         }
     }
 
