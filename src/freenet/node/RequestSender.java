@@ -649,44 +649,51 @@ loadWaiterLoop:
 				Logger.minor(this, "Took too long sending offer get to "+pn+" for "+key);
     		return OFFER_STATUS.TRY_ANOTHER;
 		}
-    	// Wait for a response.
-    	if(!isSSK) {
-    		// Headers first, then block transfer.
-    		Message reply;
-			try {
-				reply = node.usm.waitFor(getOfferedKeyReplyFilter(pn, GET_OFFER_TIMEOUT), this);
-			} catch (DisconnectedException e2) {
-				if(logMINOR)
-					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
-	    		return OFFER_STATUS.TRY_ANOTHER;
-			}
-    		if(reply == null) {
-    			// We gave it a chance, don't give it another.
-    			Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
-    			// Two stage timeout.
-    			return handleOfferTimeout(offer, pn, offers);
-    		} else {
-    			return handleCHKOfferReply(reply, pn, offer, offers);
-    		}
-    	} else {
-    		// Data, possibly followed by pubkey
-    		Message reply;
-			try {
-				reply = node.usm.waitFor(getOfferedKeyReplyFilter(pn, GET_OFFER_TIMEOUT), this);
-			} catch (DisconnectedException e) {
-				if(logMINOR)
-					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
-				return OFFER_STATUS.TRY_ANOTHER;
-			}
-    		if(reply == null) {
-    			// We gave it a chance, don't give it another.
-    			Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
-    			// Two stage timeout.
-    			return handleOfferTimeout(offer, pn, offers);
-    		} else {
-    			return handleSSKOfferReply(reply, pn, offer, offers);
-    		}
-    	}
+    	// Wait asynchronously for a response.
+		try {
+			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_TIMEOUT), new SlowAsyncMessageFilterCallback() {
+				
+				public void onMatched(Message m) {
+					OFFER_STATUS status =
+						isSSK ? handleSSKOfferReply(m, pn, offer, offers) :
+							handleCHKOfferReply(m, pn, offer, offers);
+					tryOffers(offers, pn, status);
+				}
+				
+				public boolean shouldTimeout() {
+					return false;
+				}
+				
+				public void onTimeout() {
+					Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+					// Two stage timeout.
+					OFFER_STATUS status = handleOfferTimeout(offer, pn, offers);
+					tryOffers(offers, pn, status);
+				}
+				
+				public void onDisconnect(PeerContext ctx) {
+					if(logMINOR)
+						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+					tryOffers(offers, pn, OFFER_STATUS.TRY_ANOTHER);
+				}
+				
+				public void onRestarted(PeerContext ctx) {
+					if(logMINOR)
+						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+					tryOffers(offers, pn, OFFER_STATUS.TRY_ANOTHER);
+				}
+				
+				public int getPriority() {
+					return NativeThread.HIGH_PRIORITY;
+				}
+				
+			}, this);
+			return OFFER_STATUS.FETCHING;
+		} catch (DisconnectedException e) {
+			if(logMINOR)
+				Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+			return OFFER_STATUS.TRY_ANOTHER;
+		}
 	}
 
 	private MessageFilter getOfferedKeyReplyFilter(final PeerNode pn, int timeout) {
