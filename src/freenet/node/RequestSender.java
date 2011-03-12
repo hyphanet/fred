@@ -576,6 +576,13 @@ loadWaiterLoop:
     	
     };
     
+    enum OFFER_STATUS {
+    	FETCHING,
+    	FATAL,
+    	TRY_ANOTHER,
+    	KEEP
+    }
+    
 	/** @return True if we successfully fetched an offered key or failed fatally, or if
 	 * we have started an asynchronous transfer, in which case we have set receivingAsync 
 	 * and the request will fail if the transfer fails. False if we should proceed to a 
@@ -643,7 +650,22 @@ loadWaiterLoop:
         			pn.fatalTimeout(origTag, true);
         			continue;
         		} else {
-        			if(handleCHKOfferReply(reply, pn, offer, offers)) return true;
+        			OFFER_STATUS status = handleCHKOfferReply(reply, pn, offer, offers);
+        			switch(status) {
+        			case FATAL:
+        				origTag.removeFetchingOfferedKeyFrom(pn);
+        				return true;
+        			case FETCHING:
+        				return true;
+        			case KEEP:
+        				offers.keepLastOffer();
+        				origTag.removeFetchingOfferedKeyFrom(pn);
+        				continue;
+        			case TRY_ANOTHER:
+        				offers.deleteLastOffer();
+        				origTag.removeFetchingOfferedKeyFrom(pn);
+        				continue;
+        			}
         		}
         	} else {
         		// Data, possibly followed by pubkey
@@ -769,21 +791,17 @@ loadWaiterLoop:
 	 * to receive a block transfer asynchronously (in which case receivingAsync will be set,
 	 * and if it fails the whole request will fail). False if we should try the next offer 
 	 * and/or normal fetches. */
-	private boolean handleCHKOfferReply(Message reply, PeerNode pn, final BlockOffer offer, final OfferList offers) {
+	private OFFER_STATUS handleCHKOfferReply(Message reply, PeerNode pn, final BlockOffer offer, final OfferList offers) {
 		if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
-			offers.keepLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
-        	return false;
+			return OFFER_STATUS.KEEP;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
-			offers.deleteLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
-        	return false;
+			return OFFER_STATUS.TRY_ANOTHER;
 		} else if(reply.getSpec() == DMT.FNPCHKDataFound) {
 			finalHeaders = ((ShortBuffer)reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Receive the data
@@ -855,11 +873,15 @@ loadWaiterLoop:
 					}
         				
         		});
-        		return true;
+        		return OFFER_STATUS.FETCHING;
         	} finally {
         		node.removeTransferringSender((NodeCHK)key, this);
         	}
-		} else return false;
+		} else {
+			// Impossible.
+			Logger.error(this, "Unexpected reply to get offered key: "+reply);
+			return OFFER_STATUS.TRY_ANOTHER;
+		}
 	}
 
 	/** Here FINISHED means accepted, WAIT means try again (soft reject). */
