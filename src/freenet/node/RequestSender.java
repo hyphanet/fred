@@ -679,9 +679,6 @@ loadWaiterLoop:
     			return handleSSKOfferReply(reply, pn, offer, offers);
     		}
     	}
-    	// RejectedOverload is possible - but we need to include it in the statistics.
-    	// We don't remove the offer in that case. Otherwise we do, even if it fails.
-    	// FNPGetOfferedKeyInvalid is also possible.
 	}
 
 	private OFFER_STATUS handleSSKOfferReply(Message reply, PeerNode pn,
