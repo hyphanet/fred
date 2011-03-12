@@ -586,6 +586,13 @@ public class DMT {
 		return msg;
 	}
 	
+	// This is used by CHK inserts when the DataInsert isn't received.
+	// SSK inserts just use DataInsertRejected with a timeout reason.
+	// FIXME we probably should just use one message for both. One complication is that
+	// CHKs have a single DataInsert (followed by a transfer), whereas SSKs have 2-3 messages,
+	// any of which can timeout independantly. Arguably that's bad design and we should
+	// just send one message now that we have new packet format, see the discussion on
+	// FNPSSKInsertRequestNew vs the old version.
 	public static final MessageType FNPRejectedTimeout = new MessageType("FNPTooSlow", PRIORITY_UNSPECIFIED) {{
 		addField(UID, Long.class);
 	}};
