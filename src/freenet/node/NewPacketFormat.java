@@ -701,11 +701,11 @@ outer:
 		
 		if(!ackOnly) {
 			
+			cantSend = !canSend(null);
 			sendStatsBulk = pn.grabSendLoadStatsASAP(false);
 			sendStatsRT = pn.grabSendLoadStatsASAP(true);
 			
 			if(sendStatsBulk || sendStatsRT) {
-				cantSend = !canSend(null);
 				if(cantSend) {
 					if(sendStatsBulk)
 						pn.setSendLoadStatsASAP(false);
