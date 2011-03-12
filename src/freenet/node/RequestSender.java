@@ -576,8 +576,10 @@ loadWaiterLoop:
     	
     };
     
-	/** @return True if we successfully fetched an offered key or failed fatally. False
-     * if we should proceed to a normal fetch. */
+	/** @return True if we successfully fetched an offered key or failed fatally, or if
+	 * we have started an asynchronous transfer, in which case we have set receivingAsync 
+	 * and the request will fail if the transfer fails. False if we should proceed to a 
+	 * normal fetch. */
     private boolean tryOffers(final OfferList offers) {
     	
         while(true) {
@@ -763,8 +765,10 @@ loadWaiterLoop:
 		}
 	}
 
-	/** @return True if we successfully received the offer or failed fatally. False if we
-     * should try the next offer and/or normal fetches. */
+	/** @return True if we successfully received the offer or failed fatally, or we started
+	 * to receive a block transfer asynchronously (in which case receivingAsync will be set,
+	 * and if it fails the whole request will fail). False if we should try the next offer 
+	 * and/or normal fetches. */
 	private boolean handleCHKOfferReply(Message reply, PeerNode pn, final BlockOffer offer, final OfferList offers) {
 		if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
