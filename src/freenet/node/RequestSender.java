@@ -868,6 +868,8 @@ loadWaiterLoop:
                 			if(offers != null) {
                 				finish(INTERNAL_ERROR, p, true);
                 			}
+                		} finally {
+                			pn.noLongerRoutingTo(origTag, true);
                 		}
 					}
 
@@ -896,6 +898,8 @@ loadWaiterLoop:
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
                 			finish(INTERNAL_ERROR, p, true);
+                		} finally {
+                			pn.noLongerRoutingTo(origTag, true);
                 		}
 					}
         				
