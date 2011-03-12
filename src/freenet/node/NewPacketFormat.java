@@ -159,7 +159,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		for(int ack : packet.getAcks()) {
-			keyContext.ack(ack, pn);
+			keyContext.ack(ack, pn, sessionKey);
 		}
 		
 		boolean dontAck = false;
@@ -705,7 +705,7 @@ outer:
 			sendStatsRT = pn.grabSendLoadStatsASAP(true);
 			
 			if(sendStatsBulk || sendStatsRT) {
-				cantSend = !canSend();
+				cantSend = !canSend(null);
 				if(cantSend) {
 					if(sendStatsBulk)
 						pn.setSendLoadStatsASAP(false);
@@ -853,21 +853,10 @@ outer:
 		return packet;
 	}
 	
+	static final int MAX_MESSAGE_SIZE = 2048;
+	
 	private int maxSendBufferSize() {
-		if(pn == null)
-			return MAX_RECEIVE_BUFFER_SIZE;
-		else {
-			PacketThrottle throttle = pn.getThrottle();
-			if(throttle == null)
-				return MAX_RECEIVE_BUFFER_SIZE;
-			else {
-				int size = (int)Math.min(MAX_RECEIVE_BUFFER_SIZE, pn.getThrottle().getWindowSize() * Node.PACKET_SIZE);
-				// Impose a minimum so that we don't lose the ability to send anything.
-				// FIXME improve this.
-				if(size < 2048) return 2048;
-				return size;
-			}
-		}
+		return MAX_RECEIVE_BUFFER_SIZE;
 	}
 
 	/** For unit tests */
@@ -966,7 +955,7 @@ outer:
 		return ret;
 	}
 	
-	public boolean canSend() {
+	public boolean canSend(SessionKey sessionKey) {
 		
 		boolean canAllocateID;
 		
@@ -1002,6 +991,32 @@ outer:
 
 		}
 		
+		if(sessionKey != null) {
+			PacketThrottle throttle = pn.getThrottle();
+			if(throttle == null) {
+				// Ignore
+			} else {
+				int maxPackets = (int)Math.min(Integer.MAX_VALUE, pn.getThrottle().getWindowSize());
+				// Impose a minimum so that we don't lose the ability to send anything.
+				if(maxPackets < 1) maxPackets = 1;
+				NewPacketFormatKeyContext packets = sessionKey.packetContext;
+				if(maxPackets <= packets.countSentPackets()) {
+					// FIXME some packets will be visible from the outside yet only contain acks.
+					// SECURITY/INVISIBILITY: They won't count here, this is bad.
+					// However, counting packets in flight, rather than bytes of messages, is the right solution:
+					// 1. It's closer to what TCP does.
+					// 2. It avoids needing to have an excessively high minimum window size.
+					// 3. It allows us to start work on any message even if it's big, while still having reasonably accurate congestion control.
+					// This prevents us from getting into a situation where we never use up the full window but can never send big messages either.
+					// 4. It's closer to what we used to do (only limit big packets), which seemed to work mostly.
+					// 5. It avoids some complicated headaches with PeerMessageQueue. E.g. we need to avoid requeueing.
+					// 6. In spite of the issue with acks, it's probably more "invisible" on the whole, in that the number of packets is visible,
+					// whereas messages are supposed to not be visible.
+					// Arguably we should count bytes rather than packets.
+					return false;
+				}
+			}
+		}
 		return true;
 	}
 
@@ -1049,7 +1064,7 @@ outer:
 			ranges.add(new int[] { frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1 });
 		}
 
-		public long acked() {
+		public long acked(SessionKey key) {
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
 
@@ -1079,7 +1094,7 @@ outer:
 					if(removed != null) {
 						if(logDEBUG) Logger.debug(this, "Completed message "+wrapper.getMessageID()+" from "+wrapper);
 
-						boolean couldSend = npf.canSend();
+						boolean couldSend = npf.canSend(key);
 						int id = wrapper.getMessageID();
 						synchronized(npf) {
 							npf.ackedMessages.add(id, id);
@@ -1097,7 +1112,7 @@ outer:
 								npf.ackedMessages.remove(oldWindow, npf.messageWindowPtrAcked);
 							}
 						}
-						if(!couldSend && npf.canSend()) {
+						if(!couldSend && npf.canSend(key)) {
 							//We aren't blocked anymore, notify packet sender
 							npf.pn.wakeUpSender();
 						}

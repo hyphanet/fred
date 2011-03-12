@@ -106,7 +106,7 @@ public class NewPacketFormatKeyContext {
 
 	/** One of our outgoing packets has been acknowledged.
 	 * @return False if we have already acked the packet */
-	public void ack(int ack, BasePeerNode pn) {
+	public void ack(int ack, BasePeerNode pn, SessionKey key) {
 		long rtt;
 		int maxSize;
 		boolean lostBeforeAcked = false;
@@ -115,7 +115,7 @@ public class NewPacketFormatKeyContext {
 			if(logDEBUG) Logger.debug(this, "Acknowledging packet "+ack+" from "+pn);
 			SentPacket sent = sentPackets.remove(ack);
 			if(sent != null) {
-				rtt = sent.acked();
+				rtt = sent.acked(key);
 				maxSize = (maxSeenInFlight * 2) + 10;
 				sentTimes.removeTime(ack);
 				validAck = true;
