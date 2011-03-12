@@ -65,6 +65,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
     static final int GET_OFFER_TIMEOUT = 10000;
+    // After a get offered key fails, wait this long for two stage timeout. Probably we will
+    // have disconnected by then.
+    static final int GET_OFFER_LONG_TIMEOUT = 60*1000;
     static final int FETCH_TIMEOUT_BULK = 600*1000;
     static final int FETCH_TIMEOUT_REALTIME = 60*1000;
     final int fetchTimeout;
@@ -578,6 +581,7 @@ loadWaiterLoop:
     
     enum OFFER_STATUS {
     	FETCHING, // Fetching asynchronously or already fetched.
+    	TWO_STAGE_TIMEOUT, // Waiting asynchronously for two stage timeout; remove the offer, but don't unlock the tag.
     	FATAL, // Fatal error, fail the whole request.
     	TRY_ANOTHER, // Delete the offer and move on.
     	KEEP // Keep the offer and move on.
@@ -603,6 +607,9 @@ loadWaiterLoop:
 			case FATAL:
 				origTag.removeFetchingOfferedKeyFrom(pn);
 				return true;
+			case TWO_STAGE_TIMEOUT:
+				offers.deleteLastOffer();
+				continue;
 			case FETCHING:
 				return true;
 			case KEEP:
@@ -618,7 +625,7 @@ loadWaiterLoop:
         return false;
     }
 
-    private OFFER_STATUS tryOffer(BlockOffer offer, PeerNode pn, final OfferList offers) {
+    private OFFER_STATUS tryOffer(final BlockOffer offer, final PeerNode pn, final OfferList offers) {
     	if(pn == null) return OFFER_STATUS.TRY_ANOTHER;
     	if(pn.getBootID() != offer.bootID) return OFFER_STATUS.TRY_ANOTHER;
     	origTag.addRoutedTo(pn, true);
@@ -651,10 +658,54 @@ loadWaiterLoop:
 			}
     		if(reply == null) {
     			// We gave it a chance, don't give it another.
-    			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
-    			// FIXME bug #4613 consider two-stage timeout.
-    			pn.fatalTimeout(origTag, true);
-        		return OFFER_STATUS.TRY_ANOTHER;
+    			Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+    			// Two stage timeout.
+    			mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPRejectedOverload);
+    			mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
+    			mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_LONG_TIMEOUT).setType(DMT.FNPCHKDataFound);
+    			try {
+					node.usm.addAsyncFilter(mfDF.or(mfRO.or(mfGetInvalid)), new SlowAsyncMessageFilterCallback() {
+
+						public void onMatched(Message m) {
+							OFFER_STATUS status = 
+								handleCHKOfferReply(m, pn, offer, null);
+							if(status != OFFER_STATUS.FETCHING)
+								origTag.removeFetchingOfferedKeyFrom(pn);
+							// If FETCHING, the block transfer will unlock it.
+							if(logMINOR) Logger.minor(this, "Forked get offered key due to two stage timeout completed with status "+status+" from message "+m+" for "+RequestSender.this+" to "+pn);
+						}
+
+						public boolean shouldTimeout() {
+							return false;
+						}
+
+						public void onTimeout() {
+							Logger.error(this, "Fatal timeout getting offered key from "+pn+" for "+RequestSender.this);
+							pn.fatalTimeout(origTag, true);
+						}
+
+						public void onDisconnect(PeerContext ctx) {
+							// Ok.
+							origTag.removeFetchingOfferedKeyFrom(pn);
+						}
+
+						public void onRestarted(PeerContext ctx) {
+							// Ok.
+							origTag.removeFetchingOfferedKeyFrom(pn);
+						}
+
+						public int getPriority() {
+							return NativeThread.HIGH_PRIORITY;
+						}
+						
+					}, this);
+					return OFFER_STATUS.TWO_STAGE_TIMEOUT;
+				} catch (DisconnectedException e) {
+					// Okay.
+					if(logMINOR)
+						Logger.minor(this, "Disconnected (2): "+pn+" getting offer for "+key);
+		    		return OFFER_STATUS.TRY_ANOTHER;
+				}
     		} else {
     			return handleCHKOfferReply(reply, pn, offer, offers);
     		}
@@ -755,8 +806,11 @@ loadWaiterLoop:
 	/** @return True if we successfully received the offer or failed fatally, or we started
 	 * to receive a block transfer asynchronously (in which case receivingAsync will be set,
 	 * and if it fails the whole request will fail). False if we should try the next offer 
-	 * and/or normal fetches. */
-	private OFFER_STATUS handleCHKOfferReply(Message reply, PeerNode pn, final BlockOffer offer, final OfferList offers) {
+	 * and/or normal fetches.
+	 * @param offers The list of offered keys. Only used if we complete asynchronously.
+	 * Null indicates this is a fork due to two stage timeout. 
+	 * */
+	private OFFER_STATUS handleCHKOfferReply(Message reply, final PeerNode pn, final BlockOffer offer, final OfferList offers) {
 		if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
@@ -805,11 +859,15 @@ loadWaiterLoop:
 	                		node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
                 		} catch (KeyVerifyException e1) {
                 			Logger.normal(this, "Got data but verify failed: "+e1, e1);
-                			finish(GET_OFFER_VERIFY_FAILURE, p, true);
-                       		offers.deleteLastOffer();
+                			if(offers != null) {
+                				finish(GET_OFFER_VERIFY_FAILURE, p, true);
+                				offers.deleteLastOffer();
+                			}
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
-                			finish(INTERNAL_ERROR, p, true);
+                			if(offers != null) {
+                				finish(INTERNAL_ERROR, p, true);
+                			}
                 		}
 					}
 
@@ -825,10 +883,14 @@ loadWaiterLoop:
 							else
 								// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
 								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+p, e);
-							finish(GET_OFFER_TRANSFER_FAILED, p, true);
+							if(offers != null) {
+								finish(GET_OFFER_TRANSFER_FAILED, p, true);
+							}
 							// Backoff here anyway - the node really ought to have it!
 							p.transferFailed("RequestSenderGetOfferedTransferFailed", realTimeFlag);
-							offers.deleteLastOffer();
+							if(offers != null) {
+								offers.deleteLastOffer();
+							}
 		    				if(!prb.abortedLocally())
 		    					node.nodeStats.failedBlockReceive(false, false, realTimeFlag, source == null);
                 		} catch (Throwable t) {
