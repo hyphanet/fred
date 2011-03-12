@@ -657,7 +657,7 @@ loadWaiterLoop:
     			// We gave it a chance, don't give it another.
     			Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
     			// Two stage timeout.
-    			return handleOfferTimeout(offer, pn, offers, getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT));
+    			return handleOfferTimeout(offer, pn, offers);
     		} else {
     			return handleCHKOfferReply(reply, pn, offer, offers);
     		}
@@ -675,7 +675,7 @@ loadWaiterLoop:
     			// We gave it a chance, don't give it another.
     			Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
     			// Two stage timeout.
-    			return handleOfferTimeout(offer, pn, offers, getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT));
+    			return handleOfferTimeout(offer, pn, offers);
     		} else {
     			return handleSSKOfferReply(reply, pn, offer, offers);
     		}
@@ -695,9 +695,9 @@ loadWaiterLoop:
 	}
 
 	private OFFER_STATUS handleOfferTimeout(final BlockOffer offer, final PeerNode pn,
-			OfferList offers, MessageFilter filter) {
+			OfferList offers) {
 		try {
-			node.usm.addAsyncFilter(filter, new SlowAsyncMessageFilterCallback() {
+			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT), new SlowAsyncMessageFilterCallback() {
 				
 				public void onMatched(Message m) {
 					OFFER_STATUS status = 
