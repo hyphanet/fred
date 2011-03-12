@@ -509,7 +509,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 								public void onTimeout() {
 									// Grrr!
-									Logger.error(this, "Fatal timeout awaiting FNPRejectedTimeout on insert to "+next);
+									Logger.error(this, "Fatal timeout awaiting FNPRejectedTimeout on insert to "+next+" for "+SSKInsertSender.this);
 									next.fatalTimeout(tag, false);
 								}
 
