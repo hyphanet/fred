@@ -866,6 +866,9 @@ public class PeerMessageQueue {
 
 	/**
 	 * like enqueuePrioritizedMessageItem, but adds it to the front of those in the same priority.
+	 * 
+	 * WARNING: Pulling a message and then pushing it back will mess up the fairness 
+	 * between UID's send order. Try to avoid it.
 	 */
 	synchronized void pushfrontPrioritizedMessageItem(MessageItem addMe) {
 		//Assume it goes on the front
@@ -935,6 +938,10 @@ public class PeerMessageQueue {
 		return false;
 	}
 
+	/** Grab a message to send. WARNING: PeerMessageQueue not only removes the message,
+	 * it assumes it has been sent for purposes of fairness between UID's. You should try
+	 * not to call this function if you are not going to be able to send the message: 
+	 * check in advance if possible. */
 	public MessageItem grabQueuedMessageItem(int minPriority) {
 		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(1);
 		addMessages(0, System.currentTimeMillis(), 0, Integer.MAX_VALUE, messages, minPriority, 1);
