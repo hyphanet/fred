@@ -771,6 +771,7 @@ outer:
 							
 							int messageID = getMessageID();
 							if(messageID == -1) {
+								// Shouldn't happen as canSend() checks already.
 								if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
 								messageQueue.pushfrontPrioritizedMessageItem(item);
 								break fragments;
@@ -790,6 +791,7 @@ outer:
 							//Priority of the one we grabbed might be higher than i
 							HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
 							synchronized(sendBufferLock) {
+								// CONCURRENCY: This could go over the limit if we allow createPacket() for the same node on two threads in parallel. That's probably a bad idea anyway.
 								sendBufferUsed += item.buf.length;
 								if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + sendBufferUsed + " for "+pn.shortToString());
 								queue.put(messageID, wrapper);
