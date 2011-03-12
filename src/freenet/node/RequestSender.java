@@ -267,11 +267,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         
         final OfferList offers = node.failureTable.getOffers(key);
         
-        if(offers != null) {
-        	if(tryOffers(offers)) return;
-        }
-        
-        startRequests();
+        if(offers != null)
+        	tryOffers(offers);
+        else
+        	startRequests();
     }
     
     private void startRequests() {
@@ -591,11 +590,10 @@ loadWaiterLoop:
     	KEEP // Keep the offer and move on.
     }
     
-	/** @return True if we successfully fetched an offered key or failed fatally, or if
-	 * we have started an asynchronous transfer, in which case we have set receivingAsync 
-	 * and the request will fail if the transfer fails. False if we should proceed to a 
-	 * normal fetch. */
-    private boolean tryOffers(final OfferList offers) {
+	/** Tries offers. If we succeed or fatally fail, end the request. If an offer is being
+	 * transferred asynchronously, set the receivingAsync flag and return. Otherwise we 
+	 * have run out of offers without succeeding, so chain to startRequests(). */
+    private void tryOffers(final OfferList offers) {
     	
         while(true) {
         	// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
@@ -603,19 +601,20 @@ loadWaiterLoop:
         	BlockOffer offer = offers.getFirstOffer();
         	if(offer == null) {
         		if(logMINOR) Logger.minor(this, "No more offers");
-        		return false;
+        		startRequests();
+        		return;
         	}
         	PeerNode pn = offer.getPeerNode();
         	OFFER_STATUS status = tryOffer(offer, pn, offers);
 			switch(status) {
 			case FATAL:
 				origTag.removeFetchingOfferedKeyFrom(pn);
-				return true;
+				return;
 			case TWO_STAGE_TIMEOUT:
 				offers.deleteLastOffer();
 				continue;
 			case FETCHING:
-				return true;
+				return;
 			case KEEP:
 				offers.keepLastOffer();
 				origTag.removeFetchingOfferedKeyFrom(pn);
