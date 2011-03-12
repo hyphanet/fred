@@ -35,7 +35,7 @@ public interface PacketFormat {
 	 * Note that this only applies to packets being created from messages on the @see PeerMessageQueue.
 	 * @return {@code false} if the packet format can't send packets
 	 */
-	boolean canSend();
+	boolean canSend(SessionKey key);
 
 	/**
 	 * @return The time at which the packet format will want to send an ack or similar.
