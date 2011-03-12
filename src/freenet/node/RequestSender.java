@@ -619,12 +619,8 @@ loadWaiterLoop:
     }
 
     private OFFER_STATUS tryOffer(BlockOffer offer, PeerNode pn, final OfferList offers) {
-    	if(pn == null) {
-    		return OFFER_STATUS.TRY_ANOTHER;
-    	}
-    	if(pn.getBootID() != offer.bootID) {
-    		return OFFER_STATUS.TRY_ANOTHER;
-    	}
+    	if(pn == null) return OFFER_STATUS.TRY_ANOTHER;
+    	if(pn.getBootID() != offer.bootID) return OFFER_STATUS.TRY_ANOTHER;
     	origTag.addRoutedTo(pn, true);
     	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
     	msg.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
