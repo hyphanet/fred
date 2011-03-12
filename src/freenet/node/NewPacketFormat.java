@@ -771,7 +771,7 @@ outer:
 							
 							int messageID = getMessageID();
 							if(messageID == -1) {
-								// Shouldn't happen as canSend() checks already.
+								// Can happen as we allocate a message ID each time.
 								if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
 								messageQueue.pushfrontPrioritizedMessageItem(item);
 								break fragments;
