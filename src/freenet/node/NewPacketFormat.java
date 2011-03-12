@@ -759,14 +759,14 @@ outer:
 							if(item == null) break prio;
 							
 							int bufferUsage;
+							int maxSendBufferSize = maxSendBufferSize();
 							synchronized(sendBufferLock) {
 								bufferUsage = sendBufferUsed;
-							}
-							int maxSendBufferSize = maxSendBufferSize();
-							if((bufferUsage + item.buf.length) > maxSendBufferSize) {
-								if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
-								messageQueue.pushfrontPrioritizedMessageItem(item);
-								break fragments;
+								// Avoid prejudice against big messages that could cause problems.
+								if(bufferUsage + MAX_MESSAGE_SIZE > maxSendBufferSize) {
+									if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
+									break;
+								}
 							}
 							
 							int messageID = getMessageID();
