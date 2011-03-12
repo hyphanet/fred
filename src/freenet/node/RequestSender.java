@@ -833,6 +833,8 @@ loadWaiterLoop:
         		
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         		
+        		// FIXME kill the transfer if off-thread (two stage timeout, offers == null) and it's already completed successfully?
+        		// FIXME we are also plotting to get rid of transfer cancels so maybe not?
         		synchronized(this) {
         			notifyAll();
         		}
