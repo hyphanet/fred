@@ -698,20 +698,16 @@ outer:
 		}
 		
 		boolean sendStatsBulk = false, sendStatsRT = false, cantSend = false;
+		boolean checkedCanSend = true;
 		
 		if(!ackOnly) {
 			
-			// Always check canSend() to amongst other things check whether there are too
-			// many payload-carrying packets in flight (ack-only packets aren't acked so
-			// we don't keep track of them). If there are not too many packets in flight,
-			// we can allocate as many messages as we like in order to fill up a packet
-			// below - big messages and small messages, we don't want to be only able to
-			// start sending small messages and starve the big ones.
-			cantSend = !canSend(null);
 			sendStatsBulk = pn.grabSendLoadStatsASAP(false);
 			sendStatsRT = pn.grabSendLoadStatsASAP(true);
 			
 			if(sendStatsBulk || sendStatsRT) {
+				cantSend = !canSend(null);
+				checkedCanSend = true;
 				if(cantSend) {
 					if(sendStatsBulk)
 						pn.setSendLoadStatsASAP(false);
@@ -760,25 +756,24 @@ outer:
 						
 						//Add messages from the message queue
 						while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
+							
+							if(!checkedCanSend) {
+								// Check in advance to avoid reordering message items.
+								cantSend = !canSend(null);
+							}
+							checkedCanSend = false;
+							if(cantSend) break;
+							
 							MessageItem item = null;
 							item = messageQueue.grabQueuedMessageItem(i);
 							if(item == null) break prio;
 							
-							int bufferUsage;
-							int maxSendBufferSize = maxSendBufferSize();
-							synchronized(sendBufferLock) {
-								bufferUsage = sendBufferUsed;
-								// Avoid prejudice against big messages that could cause problems.
-								if(bufferUsage + MAX_MESSAGE_SIZE > maxSendBufferSize) {
-									if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
-									break;
-								}
-							}
-							
 							int messageID = getMessageID();
 							if(messageID == -1) {
-								// Can happen as we allocate a message ID each time.
-								if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
+								// CONCURRENCY: This will fail sometimes if we send messages to the same peer from different threads.
+								// This doesn't happen at the moment because we use a single PacketSender for all ports and all peers.
+								// We might in future split it across multiple threads but it'd be best to keep the same peer on the same thread.
+								Logger.error(this, "No availiable message ID, requeuing and sending packet (we already checked didn't we???)");
 								messageQueue.pushfrontPrioritizedMessageItem(item);
 								break fragments;
 							}
