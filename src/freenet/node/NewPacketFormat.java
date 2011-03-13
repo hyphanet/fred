@@ -832,6 +832,8 @@ outer:
 								packet.addLossyMessage(buf, maxPacketSize);
 							}
 						}
+						
+						if(cantSend) break;
 					}						
 				}
 		
