@@ -11,28 +11,34 @@ import java.net.URL;
 
 /**
  * A simple class to load native libraries from the -ext jarfile
- * 
+ *
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
- * 
+ *
  * TODO: make it more generic so that all libraries can use it (bigint, jcpuid, fec, ...)
  */
 public class LibraryLoader {
-	
+
 	public static String getSimplifiedArchitecture() {
+
+		String _os_arch =System.getProperty("os.arch").toLowerCase();
+		
 		String arch;
-		if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")) {
+		
+		if(_os_arch.matches("(i?[x0-9]86_64|amd64)")) {
 			arch = "amd64";
-		} else if(System.getProperty("os.arch").toLowerCase().matches("(ppc)")) {
+		} else if(_os_arch.matches("(arm)")) {
+			arch = "arm";
+		} else if(_os_arch.matches("(ppc)")) {
 			arch = "ppc";
 		} else {
 			// We want to try the i386 libraries if the architecture is unknown
 			// Wrappers MUST fallback to "plain java" implementation if loading native libraries fails
 			arch = "i386";
 		}
-		
+
 		return arch;
 	}
-	
+
 	public static boolean loadNative(String path, String libraryName) {
 		boolean success = false;
 		final boolean isWindows = File.pathSeparatorChar == ';';
