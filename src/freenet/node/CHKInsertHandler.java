@@ -300,7 +300,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     	try {
     		// Nodes wait until they have the DataInsert before forwarding, so there is absolutely no excuse: There is a local problem here!
     		if(source.isConnected() && (startTime > (source.timeLastConnectionCompleted()+Node.HANDSHAKE_TIMEOUT*4)))
-    			Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
+    			Logger.warning(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
     		Message tooSlow = DMT.createFNPRejectedTimeout(uid);
     		source.sendAsync(tooSlow, null, this);
     		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);

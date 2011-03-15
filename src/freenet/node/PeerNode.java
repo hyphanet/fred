@@ -1436,7 +1436,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(kt.packets.hasPacketsToResend()) return now;
 		}
 		if(pf != null) {
-			if(pf.canSend()) {
+			if(cur != null && pf.canSend(cur)) { // New messages are only sent on cur.
 				long l = messageQueue.getNextUrgentTime(t, now);
 				if(t >= now && l < now && logMINOR)
 					Logger.minor(this, "Next urgent time from message queue less than now");
@@ -5003,7 +5003,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				tag.removeFetchingOfferedKeyFrom(this);
 			else
 				tag.removeRoutingTo(this);
-			if(logMINOR) Logger.minor(this, "No longer routing to "+tag);
+			if(logMINOR) Logger.minor(this, "No longer routing "+tag+" to "+this);
 			outputLoadTracker(tag.realTimeFlag).maybeNotifySlotWaiter();
 		}
 	}

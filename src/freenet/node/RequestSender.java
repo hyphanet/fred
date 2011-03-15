@@ -65,6 +65,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
     static final int GET_OFFER_TIMEOUT = 10000;
+    // After a get offered key fails, wait this long for two stage timeout. Probably we will
+    // have disconnected by then.
+    static final int GET_OFFER_LONG_TIMEOUT = 60*1000;
     static final int FETCH_TIMEOUT_BULK = 600*1000;
     static final int FETCH_TIMEOUT_REALTIME = 60*1000;
     final int fetchTimeout;
@@ -244,6 +247,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             Logger.error(this, "Caught "+t, t);
             finish(INTERNAL_ERROR, null, false);
         } finally {
+        	// LOCKING: Normally receivingAsync is set by this thread, so there is no need to synchronize.
+        	// If it is set by another thread it will only be after it was set by this thread.
         	if(status == NOT_FINISHED && !receivingAsync) {
         		Logger.error(this, "Not finished: "+this);
         		finish(INTERNAL_ERROR, null, false);
@@ -264,10 +269,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         
         final OfferList offers = node.failureTable.getOffers(key);
         
-        if(offers != null) {
-        	if(tryOffers(offers)) return;
-        }
-        
+        if(offers != null)
+        	tryOffers(offers, null, null);
+        else
+        	startRequests();
+    }
+    
+    private void startRequests() {
         if(tryOffersOnly) {
         	if(logMINOR) Logger.minor(this, "Tried all offers, not doing a regular request for key");
         	finish(DATA_NOT_FOUND, null, true); // FIXME need a different error code?
@@ -279,9 +287,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
 		highHTLFailureCount = 0;
         routeRequests();
-    }
-    
-    private int routeAttempts = 0;
+	}
+
+	private int routeAttempts = 0;
     private boolean starting;
     private int highHTLFailureCount = 0;
     
@@ -576,121 +584,196 @@ loadWaiterLoop:
     	
     };
     
-	/** @return True if we successfully fetched an offered key or failed fatally. False
-     * if we should proceed to a normal fetch. */
-    private boolean tryOffers(final OfferList offers) {
-    	
+    enum OFFER_STATUS {
+    	FETCHING, // Fetching asynchronously or already fetched.
+    	TWO_STAGE_TIMEOUT, // Waiting asynchronously for two stage timeout; remove the offer, but don't unlock the tag.
+    	FATAL, // Fatal error, fail the whole request.
+    	TRY_ANOTHER, // Delete the offer and move on.
+    	KEEP // Keep the offer and move on.
+    }
+    
+	/** Tries offers. If we succeed or fatally fail, end the request. If an offer is being
+	 * transferred asynchronously, set the receivingAsync flag and return. Otherwise we 
+	 * have run out of offers without succeeding, so chain to startRequests(). 
+	 * @param pn If this and status are non-null, we have just tried an offer, and these
+	 * two contain its status. This should be handled before we try to do any more. */
+    private void tryOffers(final OfferList offers, PeerNode pn, OFFER_STATUS status) {
         while(true) {
-        	// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
-        	// but they're still worth trying.
-        	BlockOffer offer = offers.getFirstOffer();
-        	if(offer == null) {
-        		if(logMINOR) Logger.minor(this, "No more offers");
-        		break;
-        	}
-        	PeerNode pn = offer.getPeerNode();
         	if(pn == null) {
-        		offers.deleteLastOffer();
-        		if(logMINOR) Logger.minor(this, "Null offer");
-        		continue;
+        		// Fetches valid offers, then expired ones. Expired offers don't count towards failures,
+        		// but they're still worth trying.
+        		BlockOffer offer = offers.getFirstOffer();
+        		if(offer == null) {
+        			if(logMINOR) Logger.minor(this, "No more offers");
+        			startRequests();
+        			return;
+        		}
+        		pn = offer.getPeerNode();
+        		status = tryOffer(offer, pn, offers);
         	}
-        	if(pn.getBootID() != offer.bootID) {
-        		offers.deleteLastOffer();
-        		if(logMINOR) Logger.minor(this, "Restarted node");
-        		continue;
-        	}
-        	origTag.addRoutedTo(pn, true);
-        	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
-        	msg.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
-        	try {
-        		pn.sendSync(msg, this, realTimeFlag);
-			} catch (NotConnectedException e2) {
-				if(logMINOR)
-					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+			switch(status) {
+			case FATAL:
 				offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
-				continue;
-			} catch (SyncSendWaitedTooLongException e) {
-				if(logMINOR)
-					Logger.minor(this, "Took too long sending offer get to "+pn+" for "+key);
+				origTag.removeFetchingOfferedKeyFrom(pn);
+				return;
+			case TWO_STAGE_TIMEOUT:
 				offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
-				continue;
+				break;
+			case FETCHING:
+				return;
+			case KEEP:
+				offers.keepLastOffer();
+				origTag.removeFetchingOfferedKeyFrom(pn);
+				break;
+			case TRY_ANOTHER:
+				offers.deleteLastOffer();
+				origTag.removeFetchingOfferedKeyFrom(pn);
+				break;
 			}
-        	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPRejectedOverload);
-        	MessageFilter mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPGetOfferedKeyInvalid);
-        	// Wait for a response.
-        	if(!isSSK) {
-        		// Headers first, then block transfer.
-        		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPCHKDataFound);
-        		Message reply;
-				try {
-					reply = node.usm.waitFor(mfDF.or(mfRO.or(mfGetInvalid)), this);
-				} catch (DisconnectedException e2) {
-					if(logMINOR)
-						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
-					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
-					continue;
-				}
-        		if(reply == null) {
-        			// We gave it a chance, don't give it another.
-        			offers.deleteLastOffer();
-        			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
-        			// FIXME bug #4613 consider two-stage timeout.
-        			pn.fatalTimeout(origTag, true);
-        			continue;
-        		} else {
-        			if(handleCHKOfferReply(reply, pn, offer, offers)) return true;
-        		}
-        	} else {
-        		// Data, possibly followed by pubkey
-        		MessageFilter mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
-        		Message reply;
-				try {
-					reply = node.usm.waitFor(mfRO.or(mfGetInvalid.or(mfAltDF)), this);
-				} catch (DisconnectedException e) {
-					if(logMINOR)
-						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
-					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
-					continue;
-				}
-        		if(reply == null) {
-        			// We gave it a chance, don't give it another.
-            		offers.deleteLastOffer();
-        			Logger.error(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
-        			// FIXME bug #4613 consider two-stage timeout.
-        			pn.fatalTimeout();
-    	        	origTag.removeFetchingOfferedKeyFrom(pn);
-        			continue;
-        		} else {
-        			if(handleSSKOfferReply(reply, pn, offer, offers)) return true;
-        		}
-        	}
-        	// RejectedOverload is possible - but we need to include it in the statistics.
-        	// We don't remove the offer in that case. Otherwise we do, even if it fails.
-        	// FNPGetOfferedKeyInvalid is also possible.
+			pn = null;
+			status = null;
         }
-        return false;
     }
 
-    private boolean handleSSKOfferReply(Message reply, PeerNode pn,
-			BlockOffer offer, OfferList offers) {
+    private OFFER_STATUS tryOffer(final BlockOffer offer, final PeerNode pn, final OfferList offers) {
+    	if(pn == null) return OFFER_STATUS.TRY_ANOTHER;
+    	if(pn.getBootID() != offer.bootID) return OFFER_STATUS.TRY_ANOTHER;
+    	origTag.addRoutedTo(pn, true);
+    	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
+    	msg.addSubMessage(DMT.createFNPRealTimeFlag(realTimeFlag));
+    	try {
+    		pn.sendSync(msg, this, realTimeFlag);
+		} catch (NotConnectedException e2) {
+			if(logMINOR)
+				Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+    		return OFFER_STATUS.TRY_ANOTHER;
+		} catch (SyncSendWaitedTooLongException e) {
+			if(logMINOR)
+				Logger.minor(this, "Took too long sending offer get to "+pn+" for "+key);
+    		return OFFER_STATUS.TRY_ANOTHER;
+		}
+    	// Wait asynchronously for a response.
+		synchronized(this) {
+			receivingAsync = true;
+		}
+		try {
+			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_TIMEOUT), new SlowAsyncMessageFilterCallback() {
+				
+				public void onMatched(Message m) {
+					OFFER_STATUS status =
+						isSSK ? handleSSKOfferReply(m, pn, offer) :
+							handleCHKOfferReply(m, pn, offer, offers);
+					tryOffers(offers, pn, status);
+				}
+				
+				public boolean shouldTimeout() {
+					return false;
+				}
+				
+				public void onTimeout() {
+					Logger.warning(this, "Timeout awaiting reply to offer request on "+this+" to "+pn);
+					// Two stage timeout.
+					OFFER_STATUS status = handleOfferTimeout(offer, pn, offers);
+					tryOffers(offers, pn, status);
+				}
+				
+				public void onDisconnect(PeerContext ctx) {
+					if(logMINOR)
+						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+					tryOffers(offers, pn, OFFER_STATUS.TRY_ANOTHER);
+				}
+				
+				public void onRestarted(PeerContext ctx) {
+					if(logMINOR)
+						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+					tryOffers(offers, pn, OFFER_STATUS.TRY_ANOTHER);
+				}
+				
+				public int getPriority() {
+					return NativeThread.HIGH_PRIORITY;
+				}
+				
+			}, this);
+			return OFFER_STATUS.FETCHING;
+		} catch (DisconnectedException e) {
+			if(logMINOR)
+				Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
+			return OFFER_STATUS.TRY_ANOTHER;
+		}
+	}
+
+	private MessageFilter getOfferedKeyReplyFilter(final PeerNode pn, int timeout) {
+    	MessageFilter mfRO = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPRejectedOverload);
+    	MessageFilter mfGetInvalid = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPGetOfferedKeyInvalid);
+    	if(isSSK) {
+    		MessageFilter mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPSSKDataFoundHeaders);
+    		return mfAltDF.or(mfRO.or(mfGetInvalid));
+    	} else {
+    		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(timeout).setType(DMT.FNPCHKDataFound);
+    		return mfDF.or(mfRO.or(mfGetInvalid));
+    	}
+	}
+
+	private OFFER_STATUS handleOfferTimeout(final BlockOffer offer, final PeerNode pn,
+			OfferList offers) {
+		try {
+			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_LONG_TIMEOUT), new SlowAsyncMessageFilterCallback() {
+				
+				public void onMatched(Message m) {
+					OFFER_STATUS status = 
+						isSSK ? handleSSKOfferReply(m, pn, offer) :
+							handleCHKOfferReply(m, pn, offer, null);
+						if(status != OFFER_STATUS.FETCHING)
+							origTag.removeFetchingOfferedKeyFrom(pn);
+						// If FETCHING, the block transfer will unlock it.
+						if(logMINOR) Logger.minor(this, "Forked get offered key due to two stage timeout completed with status "+status+" from message "+m+" for "+RequestSender.this+" to "+pn);
+				}
+				
+				public boolean shouldTimeout() {
+					return false;
+				}
+				
+				public void onTimeout() {
+					Logger.error(this, "Fatal timeout getting offered key from "+pn+" for "+RequestSender.this);
+					pn.fatalTimeout(origTag, true);
+				}
+				
+				public void onDisconnect(PeerContext ctx) {
+					// Ok.
+					origTag.removeFetchingOfferedKeyFrom(pn);
+				}
+				
+				public void onRestarted(PeerContext ctx) {
+					// Ok.
+					origTag.removeFetchingOfferedKeyFrom(pn);
+				}
+				
+				public int getPriority() {
+					return NativeThread.HIGH_PRIORITY;
+				}
+				
+			}, this);
+			return OFFER_STATUS.TWO_STAGE_TIMEOUT;
+		} catch (DisconnectedException e) {
+			// Okay.
+			if(logMINOR)
+				Logger.minor(this, "Disconnected (2): "+pn+" getting offer for "+key);
+    		return OFFER_STATUS.TRY_ANOTHER;
+		}
+	}
+
+	private OFFER_STATUS handleSSKOfferReply(Message reply, PeerNode pn,
+			BlockOffer offer) {
     	if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
-			offers.keepLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
-			return false;
+			return OFFER_STATUS.KEEP;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
-			offers.deleteLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
-			return false;
+			return OFFER_STATUS.TRY_ANOTHER;
 		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
 			byte[] headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Wait for the data
@@ -701,15 +784,11 @@ loadWaiterLoop:
 			} catch (DisconnectedException e) {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting data for offer for "+key);
-				offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
-	        	return false;
+				return OFFER_STATUS.TRY_ANOTHER;
 			}
 			if(dataMessage == null) {
 				Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key);
-				offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
-				return false;
+				return OFFER_STATUS.TRY_ANOTHER;
 			}
 			byte[] sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
 			if(pubKey == null) {
@@ -720,66 +799,58 @@ loadWaiterLoop:
 				} catch (DisconnectedException e) {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
-					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				if(pk == null) {
 					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
-					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				try {
 					pubKey = DSAPublicKey.create(((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData());
 				} catch (CryptFormatException e) {
 					Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
-					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				
 				try {
 					((NodeSSK)key).setPubKey(pubKey);
 				} catch (SSKVerifyException e) {
 					Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
-					offers.deleteLastOffer();
-		        	origTag.removeFetchingOfferedKeyFrom(pn);
-					return false;
+					return OFFER_STATUS.TRY_ANOTHER;
 				}
 			}
 			
 			if(finishSSKFromGetOffer(pn, headers, sskData)) {
 				if(logMINOR) Logger.minor(this, "Successfully fetched SSK from offer from "+pn+" for "+key);
-				return true;
+				return OFFER_STATUS.FETCHING;
 			} else {
-        		offers.deleteLastOffer();
-	        	origTag.removeFetchingOfferedKeyFrom(pn);
-        		return false;
+				return OFFER_STATUS.TRY_ANOTHER;
 			}
 		} else {
-        	origTag.removeFetchingOfferedKeyFrom(pn);
-			return false;
+			// Impossible???
+			Logger.error(this, "Unexpected reply to get offered key: "+reply);
+			return OFFER_STATUS.TRY_ANOTHER;
 		}
 	}
 
-	/** @return True if we successfully received the offer or failed fatally. False if we
-     * should try the next offer and/or normal fetches. */
-	private boolean handleCHKOfferReply(Message reply, PeerNode pn, final BlockOffer offer, final OfferList offers) {
+	/** @return True if we successfully received the offer or failed fatally, or we started
+	 * to receive a block transfer asynchronously (in which case receivingAsync will be set,
+	 * and if it fails the whole request will fail). False if we should try the next offer 
+	 * and/or normal fetches.
+	 * @param offers The list of offered keys. Only used if we complete asynchronously.
+	 * Null indicates this is a fork due to two stage timeout. 
+	 * */
+	private OFFER_STATUS handleCHKOfferReply(Message reply, final PeerNode pn, final BlockOffer offer, final OfferList offers) {
 		if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey for "+key+" (expired="+offer.isExpired());
-			offers.keepLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
-        	return false;
+			return OFFER_STATUS.KEEP;
 		} else if(reply.getSpec() == DMT.FNPGetOfferedKeyInvalid) {
 			// Fatal, delete it.
 			if(logMINOR)
 				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
-			offers.deleteLastOffer();
-        	origTag.removeFetchingOfferedKeyFrom(pn);
-        	return false;
+			return OFFER_STATUS.TRY_ANOTHER;
 		} else if(reply.getSpec() == DMT.FNPCHKDataFound) {
 			finalHeaders = ((ShortBuffer)reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Receive the data
@@ -792,6 +863,8 @@ loadWaiterLoop:
         		
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         		
+        		// FIXME kill the transfer if off-thread (two stage timeout, offers == null) and it's already completed successfully?
+        		// FIXME we are also plotting to get rid of transfer cancels so maybe not?
         		synchronized(this) {
         			notifyAll();
         		}
@@ -818,11 +891,18 @@ loadWaiterLoop:
 	                		node.nodeStats.successfulBlockReceive(realTimeFlag, source == null);
                 		} catch (KeyVerifyException e1) {
                 			Logger.normal(this, "Got data but verify failed: "+e1, e1);
-                			finish(GET_OFFER_VERIFY_FAILURE, p, true);
-                       		offers.deleteLastOffer();
+                			if(offers != null) {
+                				finish(GET_OFFER_VERIFY_FAILURE, p, true);
+                				offers.deleteLastOffer();
+                			}
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
-                			finish(INTERNAL_ERROR, p, true);
+                			if(offers != null) {
+                				finish(INTERNAL_ERROR, p, true);
+                			}
+                		} finally {
+                			// This is only necessary here because we don't always call finish().
+                			pn.noLongerRoutingTo(origTag, true);
                 		}
 					}
 
@@ -838,24 +918,37 @@ loadWaiterLoop:
 							else
 								// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
 								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+p, e);
-							finish(GET_OFFER_TRANSFER_FAILED, p, true);
+							if(offers != null) {
+								finish(GET_OFFER_TRANSFER_FAILED, p, true);
+							}
 							// Backoff here anyway - the node really ought to have it!
 							p.transferFailed("RequestSenderGetOfferedTransferFailed", realTimeFlag);
-							offers.deleteLastOffer();
+							if(offers != null) {
+								offers.deleteLastOffer();
+							}
 		    				if(!prb.abortedLocally())
 		    					node.nodeStats.failedBlockReceive(false, false, realTimeFlag, source == null);
                 		} catch (Throwable t) {
                 			Logger.error(this, "Failed on "+this, t);
-                			finish(INTERNAL_ERROR, p, true);
+                			if(offers != null) {
+                				finish(INTERNAL_ERROR, p, true);
+                			}
+                		} finally {
+                			// This is only necessary here because we don't always call finish().
+                			pn.noLongerRoutingTo(origTag, true);
                 		}
 					}
         				
         		});
-        		return true;
+        		return OFFER_STATUS.FETCHING;
         	} finally {
         		node.removeTransferringSender((NodeCHK)key, this);
         	}
-		} else return false;
+		} else {
+			// Impossible.
+			Logger.error(this, "Unexpected reply to get offered key: "+reply);
+			return OFFER_STATUS.TRY_ANOTHER;
+		}
 	}
 
 	/** Here FINISHED means accepted, WAIT means try again (soft reject). */

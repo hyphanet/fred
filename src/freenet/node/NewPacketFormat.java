@@ -159,7 +159,7 @@ public class NewPacketFormat implements PacketFormat {
 
 		NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) sessionKey.packetContext;
 		for(int ack : packet.getAcks()) {
-			keyContext.ack(ack, pn);
+			keyContext.ack(ack, pn, sessionKey);
 		}
 		
 		boolean dontAck = false;
@@ -698,6 +698,7 @@ outer:
 		}
 		
 		boolean sendStatsBulk = false, sendStatsRT = false, cantSend = false;
+		boolean checkedCanSend = true;
 		
 		if(!ackOnly) {
 			
@@ -705,7 +706,8 @@ outer:
 			sendStatsRT = pn.grabSendLoadStatsASAP(true);
 			
 			if(sendStatsBulk || sendStatsRT) {
-				cantSend = !canSend();
+				cantSend = !canSend(null);
+				checkedCanSend = true;
 				if(cantSend) {
 					if(sendStatsBulk)
 						pn.setSendLoadStatsASAP(false);
@@ -754,24 +756,24 @@ outer:
 						
 						//Add messages from the message queue
 						while ((packet.getLength() + 10) < maxPacketSize) { //Fragment header is max 9 bytes, allow min 1 byte data
+							
+							if(!checkedCanSend) {
+								// Check in advance to avoid reordering message items.
+								cantSend = !canSend(null);
+							}
+							checkedCanSend = false;
+							if(cantSend) break;
+							
 							MessageItem item = null;
 							item = messageQueue.grabQueuedMessageItem(i);
 							if(item == null) break prio;
 							
-							int bufferUsage;
-							synchronized(sendBufferLock) {
-								bufferUsage = sendBufferUsed;
-							}
-							int maxSendBufferSize = maxSendBufferSize();
-							if((bufferUsage + item.buf.length) > maxSendBufferSize) {
-								if(logDEBUG) Logger.debug(this, "Would excede remote buffer size, requeuing and sending packet. Remote at " + bufferUsage);
-								messageQueue.pushfrontPrioritizedMessageItem(item);
-								break fragments;
-							}
-							
 							int messageID = getMessageID();
 							if(messageID == -1) {
-								if(logMINOR) Logger.minor(this, "No availiable message ID, requeuing and sending packet");
+								// CONCURRENCY: This will fail sometimes if we send messages to the same peer from different threads.
+								// This doesn't happen at the moment because we use a single PacketSender for all ports and all peers.
+								// We might in future split it across multiple threads but it'd be best to keep the same peer on the same thread.
+								Logger.error(this, "No availiable message ID, requeuing and sending packet (we already checked didn't we???)");
 								messageQueue.pushfrontPrioritizedMessageItem(item);
 								break fragments;
 							}
@@ -790,6 +792,7 @@ outer:
 							//Priority of the one we grabbed might be higher than i
 							HashMap<Integer, MessageWrapper> queue = startedByPrio.get(item.getPriority());
 							synchronized(sendBufferLock) {
+								// CONCURRENCY: This could go over the limit if we allow createPacket() for the same node on two threads in parallel. That's probably a bad idea anyway.
 								sendBufferUsed += item.buf.length;
 								if(logDEBUG) Logger.debug(this, "Added " + item.buf.length + " to remote buffer. Total is now " + sendBufferUsed + " for "+pn.shortToString());
 								queue.put(messageID, wrapper);
@@ -829,6 +832,8 @@ outer:
 								packet.addLossyMessage(buf, maxPacketSize);
 							}
 						}
+						
+						if(cantSend) break;
 					}						
 				}
 		
@@ -853,21 +858,10 @@ outer:
 		return packet;
 	}
 	
+	static final int MAX_MESSAGE_SIZE = 2048;
+	
 	private int maxSendBufferSize() {
-		if(pn == null)
-			return MAX_RECEIVE_BUFFER_SIZE;
-		else {
-			PacketThrottle throttle = pn.getThrottle();
-			if(throttle == null)
-				return MAX_RECEIVE_BUFFER_SIZE;
-			else {
-				int size = (int)Math.min(MAX_RECEIVE_BUFFER_SIZE, pn.getThrottle().getWindowSize() * Node.PACKET_SIZE);
-				// Impose a minimum so that we don't lose the ability to send anything.
-				// FIXME improve this.
-				if(size < 2048) return 2048;
-				return size;
-			}
-		}
+		return MAX_RECEIVE_BUFFER_SIZE;
 	}
 
 	/** For unit tests */
@@ -966,7 +960,7 @@ outer:
 		return ret;
 	}
 	
-	public boolean canSend() {
+	public boolean canSend(SessionKey sessionKey) {
 		
 		boolean canAllocateID;
 		
@@ -995,13 +989,39 @@ outer:
 				bufferUsage = sendBufferUsed;
 			}
 			int maxSendBufferSize = maxSendBufferSize();
-			if((bufferUsage + 200 /* bigger than most messages */ ) > maxSendBufferSize) {
+			if((bufferUsage + MAX_MESSAGE_SIZE) > maxSendBufferSize) {
 				if(logDEBUG) Logger.debug(this, "Cannot send: Would exceed remote buffer size. Remote at " + bufferUsage+" max is "+maxSendBufferSize);
 				return false;
 			}
 
 		}
 		
+		if(sessionKey != null) {
+			PacketThrottle throttle = pn.getThrottle();
+			if(throttle == null) {
+				// Ignore
+			} else {
+				int maxPackets = (int)Math.min(Integer.MAX_VALUE, pn.getThrottle().getWindowSize());
+				// Impose a minimum so that we don't lose the ability to send anything.
+				if(maxPackets < 1) maxPackets = 1;
+				NewPacketFormatKeyContext packets = sessionKey.packetContext;
+				if(maxPackets <= packets.countSentPackets()) {
+					// FIXME some packets will be visible from the outside yet only contain acks.
+					// SECURITY/INVISIBILITY: They won't count here, this is bad.
+					// However, counting packets in flight, rather than bytes of messages, is the right solution:
+					// 1. It's closer to what TCP does.
+					// 2. It avoids needing to have an excessively high minimum window size.
+					// 3. It allows us to start work on any message even if it's big, while still having reasonably accurate congestion control.
+					// This prevents us from getting into a situation where we never use up the full window but can never send big messages either.
+					// 4. It's closer to what we used to do (only limit big packets), which seemed to work mostly.
+					// 5. It avoids some complicated headaches with PeerMessageQueue. E.g. we need to avoid requeueing.
+					// 6. In spite of the issue with acks, it's probably more "invisible" on the whole, in that the number of packets is visible,
+					// whereas messages are supposed to not be visible.
+					// Arguably we should count bytes rather than packets.
+					return false;
+				}
+			}
+		}
 		return true;
 	}
 
@@ -1049,7 +1069,7 @@ outer:
 			ranges.add(new int[] { frag.fragmentOffset, frag.fragmentOffset + frag.fragmentLength - 1 });
 		}
 
-		public long acked() {
+		public long acked(SessionKey key) {
 			Iterator<MessageWrapper> msgIt = messages.iterator();
 			Iterator<int[]> rangeIt = ranges.iterator();
 
@@ -1079,7 +1099,7 @@ outer:
 					if(removed != null) {
 						if(logDEBUG) Logger.debug(this, "Completed message "+wrapper.getMessageID()+" from "+wrapper);
 
-						boolean couldSend = npf.canSend();
+						boolean couldSend = npf.canSend(key);
 						int id = wrapper.getMessageID();
 						synchronized(npf) {
 							npf.ackedMessages.add(id, id);
@@ -1097,7 +1117,7 @@ outer:
 								npf.ackedMessages.remove(oldWindow, npf.messageWindowPtrAcked);
 							}
 						}
-						if(!couldSend && npf.canSend()) {
+						if(!couldSend && npf.canSend(key)) {
 							//We aren't blocked anymore, notify packet sender
 							npf.pn.wakeUpSender();
 						}

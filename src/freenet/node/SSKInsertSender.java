@@ -265,8 +265,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             // Send the headers and data
             
-            Message headersMsg = DMT.createFNPSSKInsertRequestHeaders(uid, headers);
-            Message dataMsg = DMT.createFNPSSKInsertRequestData(uid, data);
+            Message headersMsg = DMT.createFNPSSKInsertRequestHeaders(uid, headers, realTimeFlag);
+            Message dataMsg = DMT.createFNPSSKInsertRequestData(uid, data, realTimeFlag);
             
             try {
 				next.sendAsync(headersMsg, null, this);
@@ -297,7 +297,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             // Do we need to send them the pubkey?
             
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
-            	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey);
+            	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey, realTimeFlag);
             	try {
             		next.sendSync(pkMsg, this, realTimeFlag);
             	} catch (NotConnectedException e) {
@@ -495,9 +495,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 						if(logMINOR) Logger.minor(this, "Forked timed out insert but not going to send DataInsert on "+SSKInsertSender.this+" to "+next);
 						// We are not going to send the DataInsert.
 						// We have moved on, and we don't want inserts to fork unnecessarily.
-			            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPRejectedTimeout);
+			            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(searchTimeout).setType(DMT.FNPDataInsertRejected);
 			            try {
-							node.usm.addAsyncFilter(mfTimeout, new AsyncMessageFilterCallback() {
+							node.usm.addAsyncFilter(mfDataInsertRejected, new AsyncMessageFilterCallback() {
 
 								public void onMatched(Message m) {
 									// Cool.
@@ -509,7 +509,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 								public void onTimeout() {
 									// Grrr!
-									Logger.error(this, "Timed out awaiting FNPRejectedTimeout on insert to "+next);
+									Logger.error(this, "Fatal timeout awaiting FNPRejectedTimeout on insert to "+next+" for "+SSKInsertSender.this);
 									next.fatalTimeout(tag, false);
 								}
 

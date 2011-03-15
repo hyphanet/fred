@@ -449,7 +449,7 @@ public class BlockTransmitter {
 	
 	private void sendAllSentNotification() {
 		try {
-			_usm.send(_destination, DMT.createAllSent(_uid), _ctr);
+			_usm.send(_destination, DMT.createAllSent(_uid, realTime), _ctr);
 		} catch (NotConnectedException e) {
 			Logger.normal(this, "disconnected for allSent()");
 		}
