@@ -623,7 +623,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 									msg = node.usm.waitFor(mf, CHKInsertSender.this);
 								} catch (DisconnectedException e) {
 									Logger.normal(this, "Disconnected from " + waitingFor
-											+ " while waiting for InsertReply on " + this);
+											+ " while waiting for InsertReply on " + CHKInsertSender.this);
 									return;
 								}
 								
@@ -632,7 +632,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 								if(msg == null) {
 									// Second timeout.
 									// Definitely caused by the next node, fatal.
-									Logger.error(this, "Got second (local) timeout on "+this+" from "+waitingFor);
+									Logger.error(this, "Got second (local) timeout on "+CHKInsertSender.this+" from "+waitingFor);
 									waitingFor.fatalTimeout();
 									return;
 								}
