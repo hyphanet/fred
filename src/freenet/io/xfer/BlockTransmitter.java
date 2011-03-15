@@ -278,11 +278,11 @@ public class BlockTransmitter {
 						//SEND_TIMEOUT (one minute) after all packets have been transmitted, terminate the send.
 						if(_failed) {
 							// Already failed, we were just waiting for the acknowledgement sendAborted.
-							Logger.error(this, "Terminating send after failure on "+this);
+							Logger.normal(this, "Terminating send after failure on "+this);
 							abortReason = "Already failed and no acknowledgement";
 						} else {
 							timeString=TimeUtil.formatTime((System.currentTimeMillis() - timeAllSent), 2, true);
-							Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
+							Logger.warning(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" as we haven't heard from receiver in "+timeString+ '.');
 							abortReason = "Haven't heard from you (receiver) in "+timeString;
 						}
 						fail = maybeFail(RetrievalException.RECEIVER_DIED, abortReason);
