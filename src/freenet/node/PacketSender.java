@@ -140,10 +140,10 @@ public class PacketSender implements Runnable {
                 PeerManager pm;
 		PeerNode[] nodes;
 
-                synchronized (PacketSender.class) {
-                    pm = node.peers;
-                    nodes = pm.myPeers;
-                }
+        pm = node.peers;
+        synchronized(pm) {
+        	nodes = pm.myPeers;
+        }
 
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;
