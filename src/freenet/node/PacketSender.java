@@ -192,6 +192,7 @@ public class PacketSender implements Runnable {
 					pn.disconnected(true, false);
 					continue;
 				} else if(now - pn.lastReceivedAckTime() > pn.maxTimeBetweenReceivedAcks()) {
+					// FIXME better to disconnect immediately???
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received acks recently");
 					// Do it properly.
 					// There appears to be connectivity from them to us but not from us to them.
