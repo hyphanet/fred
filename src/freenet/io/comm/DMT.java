@@ -1747,7 +1747,7 @@ public class DMT {
 	// Extended fatal timeout handling.
 	
 	public static final MessageType FNPCheckStillRunning = new MessageType("FNPCheckStillRunning", PRIORITY_HIGH) {{
-		addField(UID, Long.class); // UID for this message
+		addField(UID, Long.class); // UID for this message, used to identify reply
 		addField(LIST_OF_UIDS, ShortBuffer.class);
 	}};
 	
