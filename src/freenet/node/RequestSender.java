@@ -613,6 +613,7 @@ loadWaiterLoop:
         	}
 			switch(status) {
 			case FATAL:
+				offers.deleteLastOffer();
 				origTag.removeFetchingOfferedKeyFrom(pn);
 				return;
 			case TWO_STAGE_TIMEOUT:
