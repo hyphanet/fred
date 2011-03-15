@@ -660,7 +660,7 @@ loadWaiterLoop:
 				
 				public void onMatched(Message m) {
 					OFFER_STATUS status =
-						isSSK ? handleSSKOfferReply(m, pn, offer, offers) :
+						isSSK ? handleSSKOfferReply(m, pn, offer) :
 							handleCHKOfferReply(m, pn, offer, offers);
 					tryOffers(offers, pn, status);
 				}
@@ -720,7 +720,7 @@ loadWaiterLoop:
 				
 				public void onMatched(Message m) {
 					OFFER_STATUS status = 
-						isSSK ? handleSSKOfferReply(m, pn, offer, null) :
+						isSSK ? handleSSKOfferReply(m, pn, offer) :
 							handleCHKOfferReply(m, pn, offer, null);
 						if(status != OFFER_STATUS.FETCHING)
 							origTag.removeFetchingOfferedKeyFrom(pn);
@@ -762,7 +762,7 @@ loadWaiterLoop:
 	}
 
 	private OFFER_STATUS handleSSKOfferReply(Message reply, PeerNode pn,
-			BlockOffer offer, OfferList offers) {
+			BlockOffer offer) {
     	if(reply.getSpec() == DMT.FNPRejectedOverload) {
 			// Non-fatal, keep it.
 			if(logMINOR)
