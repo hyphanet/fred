@@ -1124,6 +1124,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     	synchronized(backgroundTransfers) {
     		receiveFailed = true;
     		backgroundTransfers.notifyAll();
+    		// Locking is safe as UIDTag always taken last.
+    		for(BackgroundTransfer t : backgroundTransfers)
+    			t.thisTag.handlingTimeout(t.pn);
     	}
     	// Set status immediately.
     	// The code (e.g. waitForStatus()) relies on a status eventually being set,
