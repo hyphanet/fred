@@ -272,6 +272,7 @@ public class MessageCore {
 						match = f;
 						i.remove();
 						if(logMINOR) Logger.minor(this, "Matched (2): "+f);
+						match.setMessage(m);
 						break; // Only one match permitted per message
 					} else if(status == MATCHED.TIMED_OUT || status == MATCHED.TIMED_OUT_AND_MATCHED) {
 						if(timedOut == null)
@@ -296,7 +297,6 @@ public class MessageCore {
 				}
 			}
 			if(match != null) {
-				match.setMessage(m);
 				match.onMatched(_executor);
 			}
 			if(timedOut != null) {
