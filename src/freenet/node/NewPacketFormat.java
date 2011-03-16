@@ -99,6 +99,7 @@ public class NewPacketFormat implements PacketFormat {
 	
 	private long timeLastSentPacket;
 	private long timeLastSentPayload;
+	private long timeLastSentPing;
 
 	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
@@ -706,8 +707,12 @@ outer:
 		boolean cantSend = false;
 		
 		boolean mustSendKeepalive = false;
+		boolean mustSendPing = false;
 		
 		if(DO_KEEPALIVES) {
+			// FIXME remove back compatibility kludge.
+			// This periodically pings 1356 nodes in order to ensure their UOM's don't timeout.
+			boolean needsPing = pn.getVersionNumber() == 1356;
 			synchronized(this) {
 				if(!mustSend) {
 					if(now - timeLastSentPacket > Node.KEEPALIVE_INTERVAL)
@@ -716,10 +721,13 @@ outer:
 				if((!ackOnly) && now - timeLastSentPayload > Node.KEEPALIVE_INTERVAL && 
 						packet.getFragments().isEmpty())
 					mustSendKeepalive = true;
+				if((!ackOnly) && now - timeLastSentPing > Node.KEEPALIVE_INTERVAL) {
+					mustSendPing = true;
+				}
 			}
 		}
 		
-		if(mustSendKeepalive) {
+		if(mustSendKeepalive || mustSendPing) {
 			if(!checkedCanSend)
 				cantSend = !canSend(sessionKey);
 			checkedCanSend = true;
@@ -803,18 +811,31 @@ outer:
 							if(cantSend) break;
 							
 							MessageItem item = null;
-							item = messageQueue.grabQueuedMessageItem(i);
-							if(item == null) {
-								if(mustSendKeepalive && packet.getFragments().isEmpty()) {
-									// Create a ping for keepalive purposes.
-									// It will be acked, this ensures both sides don't timeout.
-									Message msg;
-									synchronized(this) {
-										msg = DMT.createFNPPing(pingCounter++);
+							if(mustSendPing) {
+								// Create a ping for keepalive purposes.
+								// It will be acked, this ensures both sides don't timeout.
+								Message msg;
+								synchronized(this) {
+									msg = DMT.createFNPPing(pingCounter++);
+									timeLastSentPing = now;
+								}
+								item = new MessageItem(msg, null, null);
+								mustSendPing = false;
+							} else {
+								item = messageQueue.grabQueuedMessageItem(i);
+								if(item == null) {
+									if(mustSendKeepalive && packet.getFragments().isEmpty()) {
+										// Create a ping for keepalive purposes.
+										// It will be acked, this ensures both sides don't timeout.
+										Message msg;
+										synchronized(this) {
+											msg = DMT.createFNPPing(pingCounter++);
+											timeLastSentPing = now;
+										}
+										item = new MessageItem(msg, null, null);
+									} else {
+										break prio;
 									}
-									item = new MessageItem(msg, null, null);
-								} else {
-									break prio;
 								}
 							}
 							
