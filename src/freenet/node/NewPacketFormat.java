@@ -1003,7 +1003,7 @@ outer:
 		return ret;
 	}
 	
-	public boolean canSend(SessionKey sessionKey) {
+	public boolean canSend(SessionKey tracker) {
 		
 		boolean canAllocateID;
 		
@@ -1015,7 +1015,6 @@ outer:
 		
 		if(canAllocateID) {
 			// Check whether we need to rekey.
-			SessionKey tracker = pn.getCurrentKeyTracker();
 			if(tracker == null) return false;
 			NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) tracker.packetContext;
 			if(!keyContext.canAllocateSeqNum()) {
@@ -1039,7 +1038,7 @@ outer:
 
 		}
 		
-		if(sessionKey != null) {
+		if(tracker != null) {
 			PacketThrottle throttle = pn.getThrottle();
 			if(throttle == null) {
 				// Ignore
@@ -1047,7 +1046,7 @@ outer:
 				int maxPackets = (int)Math.min(Integer.MAX_VALUE, pn.getThrottle().getWindowSize());
 				// Impose a minimum so that we don't lose the ability to send anything.
 				if(maxPackets < 1) maxPackets = 1;
-				NewPacketFormatKeyContext packets = sessionKey.packetContext;
+				NewPacketFormatKeyContext packets = tracker.packetContext;
 				if(maxPackets <= packets.countSentPackets()) {
 					// FIXME some packets will be visible from the outside yet only contain acks.
 					// SECURITY/INVISIBILITY: They won't count here, this is bad.
