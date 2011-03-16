@@ -60,7 +60,7 @@ public class Version {
 	static {
 		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 		// year, month - 1 (or constant), day, hour, minute, second
-		_cal.set( 2011, Calendar.MARCH, 16, 0, 0, 0 );
+		_cal.set( 2011, Calendar.MARCH, 17, 0, 0, 0 );
 		transitionTime = _cal.getTimeInMillis();
 	}
 
