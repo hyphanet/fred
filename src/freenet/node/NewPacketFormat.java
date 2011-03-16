@@ -39,6 +39,7 @@ public class NewPacketFormat implements PacketFormat {
 	static final long NUM_SEQNUMS = 2147483648l;
 	private static final int MAX_MSGID_BLOCK_TIME = 10 * 60 * 1000;
 	private static final int MAX_ACKS = 500;
+	static boolean DO_KEEPALIVES = true;
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -706,14 +707,16 @@ outer:
 		
 		boolean mustSendKeepalive = false;
 		
-		synchronized(this) {
-			if(!mustSend) {
-				if(now - timeLastSentPacket > Node.KEEPALIVE_INTERVAL)
-					mustSend = true;
+		if(DO_KEEPALIVES) {
+			synchronized(this) {
+				if(!mustSend) {
+					if(now - timeLastSentPacket > Node.KEEPALIVE_INTERVAL)
+						mustSend = true;
+				}
+				if((!ackOnly) && now - timeLastSentPayload > Node.KEEPALIVE_INTERVAL && 
+						packet.getFragments().isEmpty())
+					mustSendKeepalive = true;
 			}
-			if((!ackOnly) && now - timeLastSentPayload > Node.KEEPALIVE_INTERVAL && 
-					packet.getFragments().isEmpty())
-				mustSendKeepalive = true;
 		}
 		
 		if(mustSendKeepalive) {

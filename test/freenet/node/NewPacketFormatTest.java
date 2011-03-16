@@ -12,6 +12,10 @@ import junit.framework.TestCase;
 
 public class NewPacketFormatTest extends TestCase {
 	
+	public void setUp() {
+		NewPacketFormat.DO_KEEPALIVES = false;
+	}
+	
 	public void testEmptyCreation() throws BlockedTooLongException {
 		NewPacketFormat npf = new NewPacketFormat(null, 0, 0);
 		PeerMessageQueue pmq = new PeerMessageQueue(new NullBasePeerNode());
