@@ -806,8 +806,12 @@ outer:
 							item = messageQueue.grabQueuedMessageItem(i);
 							if(item == null) {
 								if(mustSendKeepalive && packet.getFragments().isEmpty()) {
-									// Create an FNPVoid for keepalive purposes.
-									Message msg = DMT.createFNPVoid();
+									// Create a ping for keepalive purposes.
+									// It will be acked, this ensures both sides don't timeout.
+									Message msg;
+									synchronized(this) {
+										msg = DMT.createFNPPing(pingCounter++);
+									}
 									item = new MessageItem(msg, null, null);
 								} else {
 									break prio;
@@ -903,6 +907,8 @@ outer:
 
 		return packet;
 	}
+	
+	private int pingCounter;
 	
 	static final int MAX_MESSAGE_SIZE = 2048;
 	
