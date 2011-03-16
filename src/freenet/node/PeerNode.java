@@ -1450,12 +1450,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				if(t >= now && l < now && logMINOR)
 					Logger.minor(this, "Next urgent time from message queue less than now");
 				t = l;
-			} else {
-				long l = pf.timeNextUrgent();
-				if(l < now && logMINOR)
-					Logger.minor(this, "Next urgent time from packet format less than now");
-				t = Math.min(t, l);
 			}
+			long l = pf.timeNextUrgent();
+			if(l < now && logMINOR)
+				Logger.minor(this, "Next urgent time from packet format less than now");
+			t = Math.min(t, l);
 		}
 		return t;
 	}
