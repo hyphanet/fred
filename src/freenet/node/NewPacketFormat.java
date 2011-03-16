@@ -701,10 +701,27 @@ outer:
 
 		}
 		
+		boolean checkedCanSend = false;
+		boolean cantSend = false;
+		
+		boolean mustSendKeepalive = false;
+		
 		synchronized(this) {
 			if(!mustSend) {
 				if(now - timeLastSentPacket > Node.KEEPALIVE_INTERVAL)
 					mustSend = true;
+			}
+			if((!ackOnly) && now - timeLastSentPayload > Node.KEEPALIVE_INTERVAL && 
+					packet.getFragments().isEmpty())
+				mustSendKeepalive = true;
+		}
+		
+		if(mustSendKeepalive) {
+			if(!checkedCanSend)
+				cantSend = !canSend(null);
+			checkedCanSend = true;
+			if(!cantSend) {
+				mustSend = true;
 			}
 		}
 		
@@ -715,8 +732,7 @@ outer:
 			return null;
 		}
 		
-		boolean sendStatsBulk = false, sendStatsRT = false, cantSend = false;
-		boolean checkedCanSend = false;
+		boolean sendStatsBulk = false, sendStatsRT = false;
 		
 		if(!ackOnly) {
 			
@@ -724,7 +740,8 @@ outer:
 			sendStatsRT = pn.grabSendLoadStatsASAP(true);
 			
 			if(sendStatsBulk || sendStatsRT) {
-				cantSend = !canSend(null);
+				if(!checkedCanSend)
+					cantSend = !canSend(null);
 				checkedCanSend = true;
 				if(cantSend) {
 					if(sendStatsBulk)
@@ -784,7 +801,15 @@ outer:
 							
 							MessageItem item = null;
 							item = messageQueue.grabQueuedMessageItem(i);
-							if(item == null) break prio;
+							if(item == null) {
+								if(mustSendKeepalive && packet.getFragments().isEmpty()) {
+									// Create an FNPVoid for keepalive purposes.
+									Message msg = DMT.createFNPVoid();
+									item = new MessageItem(msg, null, null);
+								} else {
+									break prio;
+								}
+							}
 							
 							int messageID = getMessageID();
 							if(messageID == -1) {
