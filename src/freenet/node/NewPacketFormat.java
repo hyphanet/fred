@@ -95,6 +95,9 @@ public class NewPacketFormat implements PacketFormat {
 	
 	private long timeLastCalledMaybeSendPacketIncAckOnly;
 	private long timeLastCalledMaybeSendPacketNotAckOnly;
+	
+	private long timeLastSentPacket;
+	private long timeLastSentPayload;
 
 	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
@@ -553,13 +556,21 @@ outer:
 			keyContext.sent(packet.getSequenceNumber(), packet.getLength());
 		}
 
+		now = System.currentTimeMillis();
 		pn.sentPacket();
-		pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
+		pn.reportOutgoingPacket(data, 0, data.length, now);
 		if(pn.shouldThrottle()) {
 			pn.sentThrottledBytes(data.length);
 		}
 		if(packet.getFragments().size() == 0) {
 			pn.onNotificationOnlyPacketSent(data.length);
+		}
+		
+		synchronized(this) {
+			if(timeLastSentPacket < now) timeLastSentPacket = now;
+			if(packet.getFragments().size() > 0) {
+				if(timeLastSentPayload < now) timeLastSentPayload = now;
+			}
 		}
 
 		return true;
