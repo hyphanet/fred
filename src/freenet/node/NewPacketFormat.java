@@ -39,6 +39,7 @@ public class NewPacketFormat implements PacketFormat {
 	static final long NUM_SEQNUMS = 2147483648l;
 	private static final int MAX_MSGID_BLOCK_TIME = 10 * 60 * 1000;
 	private static final int MAX_ACKS = 500;
+	static boolean DO_KEEPALIVES = true;
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -95,6 +96,10 @@ public class NewPacketFormat implements PacketFormat {
 	
 	private long timeLastCalledMaybeSendPacketIncAckOnly;
 	private long timeLastCalledMaybeSendPacketNotAckOnly;
+	
+	private long timeLastSentPacket;
+	private long timeLastSentPayload;
+	private long timeLastSentPing;
 
 	public NewPacketFormat(BasePeerNode pn, int ourInitialMsgID, int theirInitialMsgID) {
 		this.pn = pn;
@@ -553,13 +558,21 @@ outer:
 			keyContext.sent(packet.getSequenceNumber(), packet.getLength());
 		}
 
+		now = System.currentTimeMillis();
 		pn.sentPacket();
-		pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
+		pn.reportOutgoingPacket(data, 0, data.length, now);
 		if(pn.shouldThrottle()) {
 			pn.sentThrottledBytes(data.length);
 		}
 		if(packet.getFragments().size() == 0) {
 			pn.onNotificationOnlyPacketSent(data.length);
+		}
+		
+		synchronized(this) {
+			if(timeLastSentPacket < now) timeLastSentPacket = now;
+			if(packet.getFragments().size() > 0) {
+				if(timeLastSentPayload < now) timeLastSentPayload = now;
+			}
 		}
 
 		return true;
@@ -690,6 +703,39 @@ outer:
 
 		}
 		
+		boolean checkedCanSend = false;
+		boolean cantSend = false;
+		
+		boolean mustSendKeepalive = false;
+		boolean mustSendPing = false;
+		
+		if(DO_KEEPALIVES) {
+			// FIXME remove back compatibility kludge.
+			// This periodically pings 1356 nodes in order to ensure their UOM's don't timeout.
+			boolean needsPing = pn.getVersionNumber() == 1356;
+			synchronized(this) {
+				if(!mustSend) {
+					if(now - timeLastSentPacket > Node.KEEPALIVE_INTERVAL)
+						mustSend = true;
+				}
+				if((!ackOnly) && now - timeLastSentPayload > Node.KEEPALIVE_INTERVAL && 
+						packet.getFragments().isEmpty())
+					mustSendKeepalive = true;
+				if((!ackOnly) && needsPing && now - timeLastSentPing > Node.KEEPALIVE_INTERVAL) {
+					mustSendPing = true;
+				}
+			}
+		}
+		
+		if(mustSendKeepalive || mustSendPing) {
+			if(!checkedCanSend)
+				cantSend = !canSend(sessionKey);
+			checkedCanSend = true;
+			if(!cantSend) {
+				mustSend = true;
+			}
+		}
+		
 		if(!mustSend) {
 			if(moved != null) {
 				moved.abort();
@@ -697,8 +743,7 @@ outer:
 			return null;
 		}
 		
-		boolean sendStatsBulk = false, sendStatsRT = false, cantSend = false;
-		boolean checkedCanSend = true;
+		boolean sendStatsBulk = false, sendStatsRT = false;
 		
 		if(!ackOnly) {
 			
@@ -706,7 +751,8 @@ outer:
 			sendStatsRT = pn.grabSendLoadStatsASAP(true);
 			
 			if(sendStatsBulk || sendStatsRT) {
-				cantSend = !canSend(null);
+				if(!checkedCanSend)
+					cantSend = !canSend(sessionKey);
 				checkedCanSend = true;
 				if(cantSend) {
 					if(sendStatsBulk)
@@ -759,14 +805,39 @@ outer:
 							
 							if(!checkedCanSend) {
 								// Check in advance to avoid reordering message items.
-								cantSend = !canSend(null);
+								cantSend = !canSend(sessionKey);
 							}
 							checkedCanSend = false;
 							if(cantSend) break;
 							
 							MessageItem item = null;
-							item = messageQueue.grabQueuedMessageItem(i);
-							if(item == null) break prio;
+							if(mustSendPing) {
+								// Create a ping for keepalive purposes.
+								// It will be acked, this ensures both sides don't timeout.
+								Message msg;
+								synchronized(this) {
+									msg = DMT.createFNPPing(pingCounter++);
+									timeLastSentPing = now;
+								}
+								item = new MessageItem(msg, null, null);
+								mustSendPing = false;
+							} else {
+								item = messageQueue.grabQueuedMessageItem(i);
+								if(item == null) {
+									if(mustSendKeepalive && packet.getFragments().isEmpty()) {
+										// Create a ping for keepalive purposes.
+										// It will be acked, this ensures both sides don't timeout.
+										Message msg;
+										synchronized(this) {
+											msg = DMT.createFNPPing(pingCounter++);
+											timeLastSentPing = now;
+										}
+										item = new MessageItem(msg, null, null);
+									} else {
+										break prio;
+									}
+								}
+							}
 							
 							int messageID = getMessageID();
 							if(messageID == -1) {
@@ -857,6 +928,8 @@ outer:
 
 		return packet;
 	}
+	
+	private int pingCounter;
 	
 	static final int MAX_MESSAGE_SIZE = 2048;
 	
@@ -960,7 +1033,7 @@ outer:
 		return ret;
 	}
 	
-	public boolean canSend(SessionKey sessionKey) {
+	public boolean canSend(SessionKey tracker) {
 		
 		boolean canAllocateID;
 		
@@ -972,7 +1045,6 @@ outer:
 		
 		if(canAllocateID) {
 			// Check whether we need to rekey.
-			SessionKey tracker = pn.getCurrentKeyTracker();
 			if(tracker == null) return false;
 			NewPacketFormatKeyContext keyContext = (NewPacketFormatKeyContext) tracker.packetContext;
 			if(!keyContext.canAllocateSeqNum()) {
@@ -996,7 +1068,7 @@ outer:
 
 		}
 		
-		if(sessionKey != null) {
+		if(tracker != null && pn != null) {
 			PacketThrottle throttle = pn.getThrottle();
 			if(throttle == null) {
 				// Ignore
@@ -1004,7 +1076,7 @@ outer:
 				int maxPackets = (int)Math.min(Integer.MAX_VALUE, pn.getThrottle().getWindowSize());
 				// Impose a minimum so that we don't lose the ability to send anything.
 				if(maxPackets < 1) maxPackets = 1;
-				NewPacketFormatKeyContext packets = sessionKey.packetContext;
+				NewPacketFormatKeyContext packets = tracker.packetContext;
 				if(maxPackets <= packets.countSentPackets()) {
 					// FIXME some packets will be visible from the outside yet only contain acks.
 					// SECURITY/INVISIBILITY: They won't count here, this is bad.
@@ -1022,7 +1094,8 @@ outer:
 				}
 			}
 		}
-		return true;
+		
+		return canAllocateID;
 	}
 
 	private long blockedSince = -1;

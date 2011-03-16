@@ -9,6 +9,7 @@ import java.util.Random;
 import junit.framework.TestCase;
 
 public class NPFPacketTest extends TestCase {
+	
 	public void testEmptyPacket() {
 		byte[] packet = new byte[] {
 		                (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, //Sequence number 0
