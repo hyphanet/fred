@@ -716,7 +716,7 @@ outer:
 		}
 		
 		boolean sendStatsBulk = false, sendStatsRT = false, cantSend = false;
-		boolean checkedCanSend = true;
+		boolean checkedCanSend = false;
 		
 		if(!ackOnly) {
 			
