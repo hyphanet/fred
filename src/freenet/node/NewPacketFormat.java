@@ -1038,7 +1038,7 @@ outer:
 
 		}
 		
-		if(tracker != null) {
+		if(tracker != null && pn != null) {
 			PacketThrottle throttle = pn.getThrottle();
 			if(throttle == null) {
 				// Ignore
