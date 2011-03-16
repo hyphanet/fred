@@ -488,13 +488,31 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				sentRequest = true;				
 			}
 
-			if(failIfReceiveFailed(thisTag, next)) return;
+			if(failIfReceiveFailed(thisTag, next)) {
+				// Need to tell the peer that the DataInsert is not forthcoming.
+				// DataInsertRejected is overridden to work both ways.
+				try {
+					next.sendAsync(DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED), null, this);
+				} catch (NotConnectedException e) {
+					// Ignore
+				}
+				return;
+			}
 			
             Message msg = null;
             
             if(!waitAccepted(next, thisTag)) {
 				thisTag.removeRoutingTo(next);
-				if(failIfReceiveFailed(thisTag, next)) return;
+				if(failIfReceiveFailed(thisTag, next)) {
+					// Need to tell the peer that the DataInsert is not forthcoming.
+					// DataInsertRejected is overridden to work both ways.
+					try {
+						next.sendAsync(DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED), null, this);
+					} catch (NotConnectedException e) {
+						// Ignore
+					}
+					return;
+				}
 				continue; // Try another node
             }
             	
@@ -523,7 +541,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             MessageFilter mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
 
             if(logMINOR) Logger.minor(this, "Sending DataInsert");
-			if(failIfReceiveFailed(thisTag, next)) return;
             try {
 				next.sendSync(dataInsert, this, realTimeFlag);
 			} catch (NotConnectedException e1) {
@@ -544,7 +561,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			
             while (true) {
 
-    			if(failIfReceiveFailed(thisTag, next)) return;
+    			if(failIfReceiveFailed(thisTag, next)) {
+    				// The transfer has started, it will be cancelled.
+    				return;
+    			}
 				
 				try {
 					msg = node.usm.waitFor(mf, this);
@@ -553,7 +573,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 							+ " while waiting for InsertReply on " + this);
 					break;
 				}
-    			if(failIfReceiveFailed(thisTag, next)) return;
+    			if(failIfReceiveFailed(thisTag, next)) {
+    				// The transfer has started, it will be cancelled.
+    				return;
+    			}
 				
 				if (msg == null) {
 					
@@ -600,7 +623,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 									msg = node.usm.waitFor(mf, CHKInsertSender.this);
 								} catch (DisconnectedException e) {
 									Logger.normal(this, "Disconnected from " + waitingFor
-											+ " while waiting for InsertReply on " + this);
+											+ " while waiting for InsertReply on " + CHKInsertSender.this);
 									return;
 								}
 								
@@ -609,7 +632,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 								if(msg == null) {
 									// Second timeout.
 									// Definitely caused by the next node, fatal.
-									Logger.error(this, "Got second (local) timeout on "+this+" from "+waitingFor);
+									Logger.error(this, "Got second (local) timeout on "+CHKInsertSender.this+" from "+waitingFor);
 									waitingFor.fatalTimeout();
 									return;
 								}
@@ -1101,6 +1124,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     	synchronized(backgroundTransfers) {
     		receiveFailed = true;
     		backgroundTransfers.notifyAll();
+    		// Locking is safe as UIDTag always taken last.
+    		for(BackgroundTransfer t : backgroundTransfers)
+    			t.thisTag.handlingTimeout(t.pn);
     	}
     	// Set status immediately.
     	// The code (e.g. waitForStatus()) relies on a status eventually being set,

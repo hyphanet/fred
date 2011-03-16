@@ -206,7 +206,7 @@ public abstract class UIDTag {
 					for(PeerNode pn : currentlyRoutingTo) {
 						if(handlingTimeouts.contains(pn)) {
 							if(logMINOR) Logger.debug(this, "Still waiting for "+pn.shortToString()+" but expected because handling timeout in unlockHandler - will reassign to self to resolve timeouts");
-							continue;
+							break;
 						}
 						expected = false;
 					}
@@ -229,7 +229,7 @@ public abstract class UIDTag {
 					for(PeerNode pn : fetchingOfferedKeyFrom) {
 						if(handlingTimeouts.contains(pn)) {
 							if(logMINOR) Logger.debug(this, "Still waiting for "+pn.shortToString()+" but expected because handling timeout in unlockHandler - will reassign to self to resolve timeouts");
-							continue;
+							break;
 						}
 						expected = false;
 					}
