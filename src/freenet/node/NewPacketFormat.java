@@ -701,6 +701,13 @@ outer:
 
 		}
 		
+		synchronized(this) {
+			if(!mustSend) {
+				if(now - timeLastSentPacket > Node.KEEPALIVE_INTERVAL)
+					mustSend = true;
+			}
+		}
+		
 		if(!mustSend) {
 			if(moved != null) {
 				moved.abort();
