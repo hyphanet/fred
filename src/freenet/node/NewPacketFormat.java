@@ -1013,6 +1013,8 @@ outer:
 				!seqNumGreaterThan(nextMessageID, (messageWindowPtrAcked + MSG_WINDOW_SIZE) % NUM_MESSAGE_IDS, 28);
 		}
 		
+		// FIXME if(!canAllocateID) return false;
+		
 		if(canAllocateID) {
 			// Check whether we need to rekey.
 			if(tracker == null) return false;
