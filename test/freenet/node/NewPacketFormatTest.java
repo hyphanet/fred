@@ -13,6 +13,8 @@ import junit.framework.TestCase;
 public class NewPacketFormatTest extends TestCase {
 	
 	public void setUp() {
+		// Because we don't call maybeSendPacket, the packet sent times are not updated,
+		// so lets turn off the keepalives.
 		NewPacketFormat.DO_KEEPALIVES = false;
 	}
 	
