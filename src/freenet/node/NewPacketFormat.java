@@ -712,7 +712,7 @@ outer:
 		if(DO_KEEPALIVES) {
 			// FIXME remove back compatibility kludge.
 			// This periodically pings 1356 nodes in order to ensure their UOM's don't timeout.
-			boolean needsPing = pn.getVersionNumber() == 1356;
+			boolean needsPing = pn.getVersionNumber() < 28;
 			synchronized(this) {
 				if(!mustSend) {
 					if(now - timeLastSentPacket > Node.KEEPALIVE_INTERVAL)
