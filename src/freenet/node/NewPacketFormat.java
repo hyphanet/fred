@@ -718,7 +718,7 @@ outer:
 		
 		if(mustSendKeepalive) {
 			if(!checkedCanSend)
-				cantSend = !canSend(null);
+				cantSend = !canSend(sessionKey);
 			checkedCanSend = true;
 			if(!cantSend) {
 				mustSend = true;
@@ -741,7 +741,7 @@ outer:
 			
 			if(sendStatsBulk || sendStatsRT) {
 				if(!checkedCanSend)
-					cantSend = !canSend(null);
+					cantSend = !canSend(sessionKey);
 				checkedCanSend = true;
 				if(cantSend) {
 					if(sendStatsBulk)
@@ -794,7 +794,7 @@ outer:
 							
 							if(!checkedCanSend) {
 								// Check in advance to avoid reordering message items.
-								cantSend = !canSend(null);
+								cantSend = !canSend(sessionKey);
 							}
 							checkedCanSend = false;
 							if(cantSend) break;
