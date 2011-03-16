@@ -335,7 +335,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     			}
 
     			public void onTimeout() {
-    				Logger.error(this, "No DataInsert for "+CHKInsertHandler.this);
+    				Logger.error(this, "No DataInsert for "+CHKInsertHandler.this+" from "+source+" ("+source.getVersionNumber()+")");
     				// Fatal timeout. Something is seriously busted.
     				// We've waited long enough that we know it's not just a connectivity problem - if it was we'd have disconnected by now.
     	    		source.fatalTimeout();
