@@ -721,7 +721,7 @@ outer:
 				if((!ackOnly) && now - timeLastSentPayload > Node.KEEPALIVE_INTERVAL && 
 						packet.getFragments().isEmpty())
 					mustSendKeepalive = true;
-				if((!ackOnly) && now - timeLastSentPing > Node.KEEPALIVE_INTERVAL) {
+				if((!ackOnly) && needsPing && now - timeLastSentPing > Node.KEEPALIVE_INTERVAL) {
 					mustSendPing = true;
 				}
 			}
