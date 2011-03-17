@@ -213,7 +213,7 @@ public class MessageCore {
 					match = f;
 					// We must setMessage() inside the lock to ensure that waitFor() sees it even if it times out.
 					f.setMessage(m);
-					if(logMINOR) Logger.minor(this, "Matched: "+f);
+					if(logMINOR) Logger.minor(this, "Matched (1): "+f);
 					break; // Only one match permitted per message
 				} else if(logMINOR) Logger.minor(this, "Did not match "+f);
 			}
@@ -271,7 +271,8 @@ public class MessageCore {
 						matched = true;
 						match = f;
 						i.remove();
-						if(logMINOR) Logger.minor(this, "Matched: "+f);
+						if(logMINOR) Logger.minor(this, "Matched (2): "+f);
+						match.setMessage(m);
 						break; // Only one match permitted per message
 					} else if(status == MATCHED.TIMED_OUT || status == MATCHED.TIMED_OUT_AND_MATCHED) {
 						if(timedOut == null)
@@ -296,7 +297,6 @@ public class MessageCore {
 				}
 			}
 			if(match != null) {
-				match.setMessage(m);
 				match.onMatched(_executor);
 			}
 			if(timedOut != null) {

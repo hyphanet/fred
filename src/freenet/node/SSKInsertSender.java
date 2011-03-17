@@ -501,6 +501,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
 								public void onMatched(Message m) {
 									// Cool.
+									tag.removeRoutingTo(next);
 								}
 
 								public boolean shouldTimeout() {
