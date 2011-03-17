@@ -175,7 +175,7 @@ public class PeerMessageQueue {
 						if(nonEmptyItemsWithID == null)
 							nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 						list = new Items(id);
-						nonEmptyItemsWithID.push(list);
+						addToNonEmptyForward(list);
 						itemsByID.put(id, list);
 						if(logMINOR) checkOrder();
 					} else {
@@ -183,11 +183,7 @@ public class PeerMessageQueue {
 							list = new Items(id);
 							if(nonEmptyItemsWithID == null)
 								nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
-							// In order to ensure fairness, we add it at the beginning.
-							// addLast() is typically called by sendAsync().
-							// If there are later items they are probably block transfers that are
-							// already in progress; it is fairer to send the new item first.
-							nonEmptyItemsWithID.unshift(list);
+							addToNonEmptyForward(list);
 							itemsByID.put(id, list);
 							if(logMINOR) checkOrder();
 						} else {
