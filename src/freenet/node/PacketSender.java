@@ -140,10 +140,10 @@ public class PacketSender implements Runnable {
                 PeerManager pm;
 		PeerNode[] nodes;
 
-                synchronized (PacketSender.class) {
-                    pm = node.peers;
-                    nodes = pm.myPeers;
-                }
+        pm = node.peers;
+        synchronized(pm) {
+        	nodes = pm.myPeers;
+        }
 
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;
@@ -192,6 +192,7 @@ public class PacketSender implements Runnable {
 					pn.disconnected(true, false);
 					continue;
 				} else if(now - pn.lastReceivedAckTime() > pn.maxTimeBetweenReceivedAcks()) {
+					// FIXME better to disconnect immediately??? Or check canSend()???
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received acks recently");
 					// Do it properly.
 					// There appears to be connectivity from them to us but not from us to them.

@@ -187,10 +187,10 @@ public class FNPWrapper implements PacketFormat {
 		return null;
 	}
 
-	public boolean canSend() {
-		SessionKey cur = pn.getCurrentKeyTracker();
+	public boolean canSend(SessionKey cur) {
+		if(cur == null) return false;
 		try {
-			return cur != null && !cur.packets.wouldBlock(false);
+			return !cur.packets.wouldBlock(false);
 		} catch (BlockedTooLongException e) {
 			return false;
 		}

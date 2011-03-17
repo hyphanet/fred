@@ -42,6 +42,13 @@ public class MessageItem {
 		this.sendLoadRT = msg2 == null ? false : msg2.needsLoadRT();
 		this.sendLoadBulk = msg2 == null ? false : msg2.needsLoadBulk();
 		buf = msg.encodeToPacket();
+		if(buf.length > NewPacketFormat.MAX_MESSAGE_SIZE) {
+			// This is bad because fairness between UID's happens at the level of message queueing,
+			// and the window size is frequently very small, so if we have really big messages they
+			// could cause big problems e.g. starvation of other messages, resulting in timeouts 
+			// (especially if there are retransmits).
+			Logger.error(this, "WARNING: Message too big: "+buf.length+" for "+msg2, new Exception("error"));
+		}
 	}
 
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr) {
@@ -54,6 +61,13 @@ public class MessageItem {
 		this.sendLoadRT = msg2.needsLoadRT();
 		this.sendLoadBulk = msg2.needsLoadBulk();
 		buf = msg.encodeToPacket();
+		if(buf.length > NewPacketFormat.MAX_MESSAGE_SIZE) {
+			// This is bad because fairness between UID's happens at the level of message queueing,
+			// and the window size is frequently very small, so if we have really big messages they
+			// could cause big problems e.g. starvation of other messages, resulting in timeouts 
+			// (especially if there are retransmits).
+			Logger.error(this, "WARNING: Message too big: "+buf.length+" for "+msg2, new Exception("error"));
+		}
 	}
 
 	public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority, boolean sendLoadRT, boolean sendLoadBulk) {

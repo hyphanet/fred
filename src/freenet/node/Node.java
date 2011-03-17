@@ -6063,7 +6063,7 @@ public class Node implements TimeSkewDetectorCallback {
     	    	synchronized(this) {
     	    		completeInsertsTotal++;
     	    		if(wouldHaveStored) {
-    	    			Logger.error(this, "Would have stored but haven't stored");
+    	    			if(logMINOR) Logger.minor(this, "Would have stored but haven't stored");
     	    			completeInsertsNotStoredWouldHaveStored++;
     	    		}
     	    	}
@@ -6076,7 +6076,7 @@ public class Node implements TimeSkewDetectorCallback {
     	    	synchronized(this) {
     	    		completeInsertsTotal++;
     	    		if(wouldHaveStored) {
-    	    			Logger.error(this, "Would have stored but haven't stored");
+    	    			if(logMINOR) Logger.minor(this, "Would have stored but haven't stored");
     	    			completeInsertsNotStoredWouldHaveStored++;
     	    		}
     	    	}

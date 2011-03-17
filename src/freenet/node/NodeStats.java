@@ -182,9 +182,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	final TrivialRunningAverage blockTransferPSuccessLocal;
 	final TrivialRunningAverage blockTransferFailTimeout;
 
-	final TrivialRunningAverage successfulLocalCHKFetchTimeAverage;
-	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverage;
-	final TrivialRunningAverage localCHKFetchTimeAverage;
+	final TrivialRunningAverage successfulLocalCHKFetchTimeAverageRT;
+	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverageRT;
+	final TrivialRunningAverage localCHKFetchTimeAverageRT;
+	final TrivialRunningAverage successfulLocalCHKFetchTimeAverageBulk;
+	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverageBulk;
+	final TrivialRunningAverage localCHKFetchTimeAverageBulk;
 
 	final public Histogram2 chkSuccessRatesByLocation;
 
@@ -493,9 +496,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		blockTransferPSuccessLocal = new TrivialRunningAverage();
 		blockTransferFailTimeout = new TrivialRunningAverage();
 
-		successfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
-		unsuccessfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
-		localCHKFetchTimeAverage = new TrivialRunningAverage();
+		successfulLocalCHKFetchTimeAverageRT = new TrivialRunningAverage();
+		unsuccessfulLocalCHKFetchTimeAverageRT = new TrivialRunningAverage();
+		localCHKFetchTimeAverageRT = new TrivialRunningAverage();
+		successfulLocalCHKFetchTimeAverageBulk = new TrivialRunningAverage();
+		unsuccessfulLocalCHKFetchTimeAverageBulk = new TrivialRunningAverage();
+		localCHKFetchTimeAverageBulk = new TrivialRunningAverage();
 
 		chkSuccessRatesByLocation = new Histogram2(10, 1.0);
 
@@ -2460,28 +2466,31 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return result;
 	}
 
-	public void reportCHKOutcome(long rtt, boolean successful, double location) {
+	public void reportCHKOutcome(long rtt, boolean successful, double location, boolean isRealtime) {
 		if (successful) {
-			successfulLocalCHKFetchTimeAverage.report(rtt);
+			(isRealtime ? successfulLocalCHKFetchTimeAverageRT : successfulLocalCHKFetchTimeAverageBulk).report(rtt);
 			chkSuccessRatesByLocation.report(location, 1.0);
 		} else {
-			unsuccessfulLocalCHKFetchTimeAverage.report(rtt);
+			(isRealtime ? unsuccessfulLocalCHKFetchTimeAverageRT : unsuccessfulLocalCHKFetchTimeAverageBulk).report(rtt);
 			chkSuccessRatesByLocation.report(location, 0.0);
 		}
-		localCHKFetchTimeAverage.report(rtt);
+		(isRealtime ? localCHKFetchTimeAverageRT : localCHKFetchTimeAverageBulk).report(rtt);
 	}
 
 	public void fillDetailedTimingsBox(HTMLNode html) {
 		HTMLNode table = html.addChild("table");
 		HTMLNode row = table.addChild("tr");
 		row.addChild("td", "Successful");
-		row.addChild("td", TimeUtil.formatTime((long)successfulLocalCHKFetchTimeAverage.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)successfulLocalCHKFetchTimeAverageBulk.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)successfulLocalCHKFetchTimeAverageRT.currentValue(), 2, true));
 		row = table.addChild("tr");
 		row.addChild("td", "Unsuccessful");
-		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalCHKFetchTimeAverage.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalCHKFetchTimeAverageBulk.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalCHKFetchTimeAverageRT.currentValue(), 2, true));
 		row = table.addChild("tr");
 		row.addChild("td", "Average");
-		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverage.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverageBulk.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverageRT.currentValue(), 2, true));
 	}
 
 	private HourlyStats hourlyStatsRT;

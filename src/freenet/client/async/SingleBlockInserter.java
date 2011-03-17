@@ -279,7 +279,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND || e.code == LowLevelPutException.ROUTE_REALLY_NOT_FOUND) {
 			consecutiveRNFs++;
 			if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+ctx.consecutiveRNFsCountAsSuccess);
-			if(consecutiveRNFs == ctx.consecutiveRNFsCountAsSuccess) {
+			// Use >= so that extra inserts see this as a success.
+			if(consecutiveRNFs >= ctx.consecutiveRNFsCountAsSuccess) {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
 				onSuccess(keyNum, container, context);
 				return;

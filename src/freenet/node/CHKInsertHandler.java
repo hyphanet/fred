@@ -144,6 +144,11 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         	return;
         }
         
+        if(msg.getSpec() == DMT.FNPDataInsertRejected) {
+        	// Not caused by the immediately upstream node.
+        	return;
+        }
+        
         // We have a DataInsert
         headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
         // FIXME check the headers
@@ -293,14 +298,17 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	}
 
 	private MessageFilter makeDataInsertFilter(int timeout) {
-    	return MessageFilter.create().setType(DMT.FNPDataInsert).setField(DMT.UID, uid).setSource(source).setTimeout(timeout);
+    	MessageFilter mfDataInsert = MessageFilter.create().setType(DMT.FNPDataInsert).setField(DMT.UID, uid).setSource(source).setTimeout(timeout);
+    	// DataInsertRejected means the transfer failed upstream so a DataInsert will not be sent.
+    	MessageFilter mfDataInsertRejected = MessageFilter.create().setType(DMT.FNPDataInsertRejected).setField(DMT.UID, uid).setSource(source).setTimeout(timeout);
+    	return mfDataInsert.or(mfDataInsertRejected);
 	}
 
 	private void handleNoDataInsert() {
     	try {
     		// Nodes wait until they have the DataInsert before forwarding, so there is absolutely no excuse: There is a local problem here!
     		if(source.isConnected() && (startTime > (source.timeLastConnectionCompleted()+Node.HANDSHAKE_TIMEOUT*4)))
-    			Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
+    			Logger.warning(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
     		Message tooSlow = DMT.createFNPRejectedTimeout(uid);
     		source.sendAsync(tooSlow, null, this);
     		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
@@ -318,6 +326,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 
     			public void onMatched(Message m) {
     				// Okay, great.
+    				// Either we got a DataInsert, in which case the transfer was aborted above, or we got a DataInsertRejected, which means it never started.
+    				// FIXME arguably we should wait until we have the message before sending the transfer cancel in case the message gets lost? Or maybe not?
     			}
 
     			public boolean shouldTimeout() {
@@ -325,7 +335,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     			}
 
     			public void onTimeout() {
-    				Logger.error(this, "No DataInsert for "+CHKInsertHandler.this);
+    				Logger.error(this, "No DataInsert for "+CHKInsertHandler.this+" from "+source+" ("+source.getVersionNumber()+")");
     				// Fatal timeout. Something is seriously busted.
     				// We've waited long enough that we know it's not just a connectivity problem - if it was we'd have disconnected by now.
     	    		source.fatalTimeout();
