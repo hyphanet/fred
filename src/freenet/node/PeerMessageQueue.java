@@ -67,10 +67,10 @@ public class PeerMessageQueue {
 			final LinkedList<MessageItem> items;
 			final long id;
 			long timeLastSent;
-			Items(long id) {
+			Items(long id, long initialTimeLastSent) {
 				items = new LinkedList<MessageItem>();
 				this.id = id;
-				timeLastSent = -1;
+				timeLastSent = initialTimeLastSent;
 			}
 			public void addLast(MessageItem item) {
 				items.addLast(item);
@@ -174,13 +174,13 @@ public class PeerMessageQueue {
 						itemsByID = new HashMap<Long, Items>();
 						if(nonEmptyItemsWithID == null)
 							nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
-						list = new Items(id);
+						list = new Items(id, item.submitted);
 						addToNonEmptyForward(list);
 						itemsByID.put(id, list);
 						if(logMINOR) checkOrder();
 					} else {
 						if(list == null) {
-							list = new Items(id);
+							list = new Items(id, item.submitted);
 							if(nonEmptyItemsWithID == null)
 								nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 							addToNonEmptyForward(list);
@@ -287,13 +287,13 @@ public class PeerMessageQueue {
 				itemsByID = new HashMap<Long, Items>();
 				if(nonEmptyItemsWithID == null)
 					nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
-				list = new Items(id);
-				nonEmptyItemsWithID.push(list);
+				list = new Items(id, -1);
+				addToNonEmptyForward(list);
 				itemsByID.put(id, list);
 			} else {
 				list = itemsByID.get(id);
 				if(list == null) {
-					list = new Items(id);
+					list = new Items(id, -1);
 					if(nonEmptyItemsWithID == null)
 						nonEmptyItemsWithID = new DoublyLinkedListImpl<Items>();
 					nonEmptyItemsWithID.unshift(list);
