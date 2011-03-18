@@ -108,6 +108,7 @@ public class NewPacketFormatKeyContext {
 	 * @return False if we have already acked the packet */
 	public void ack(int ack, BasePeerNode pn, SessionKey key) {
 		long rtt;
+		int packetLength = 0;
 		int maxSize;
 		boolean lostBeforeAcked = false;
 		boolean validAck = false;
@@ -116,6 +117,7 @@ public class NewPacketFormatKeyContext {
 			SentPacket sent = sentPackets.remove(ack);
 			if(sent != null) {
 				rtt = sent.acked(key);
+				packetLength = sent.packetLength;
 				maxSize = (maxSeenInFlight * 2) + 10;
 				sentTimes.removeTime(ack);
 				validAck = true;
@@ -143,8 +145,12 @@ public class NewPacketFormatKeyContext {
 		}
 		if(throttle != null) {
 			throttle.setRoundTripTime(rt);
-			if(!lostBeforeAcked)
+			// FIXME should we apply this to all packets?
+			// FIXME sub-packetsize MTUs may be a problem
+			// The throttle only applies to big blocks.
+			if(packetLength > Node.PACKET_SIZE) {
 				throttle.notifyOfPacketAcknowledged(maxSize);
+			}
 		}
 	}
 
@@ -275,12 +281,16 @@ public class NewPacketFormatKeyContext {
 					}
 					s.lost();
 					it.remove();
-					bigLostCount++;
+					// FIXME should we apply this to all packets?
+					// FIXME sub-packetsize MTUs may be a problem
+					// The throttle only applies to big blocks.
+					if(s.packetLength > Node.PACKET_SIZE)
+						bigLostCount++;
 				} else
 					count++;
 			}
 			if(count > 0 && logMINOR)
-				Logger.minor(this, ""+count+" packets in flight with threshold "+(avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
+				Logger.minor(this, ""+count+" packets in flight with threshold "+averageRTT + "ms");
 		}
 		if(bigLostCount != 0 && pn != null) {
 			PacketThrottle throttle = pn.getThrottle();
