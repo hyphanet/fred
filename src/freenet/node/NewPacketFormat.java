@@ -1090,11 +1090,13 @@ outer:
 					// 6. In spite of the issue with acks, it's probably more "invisible" on the whole, in that the number of packets is visible,
 					// whereas messages are supposed to not be visible.
 					// Arguably we should count bytes rather than packets.
+					if(logDEBUG) Logger.debug(this, "Cannot send because "+packets.countSentPackets()+" in flight of limit "+maxPackets);
 					return false;
 				}
 			}
 		}
 		
+		if(logDEBUG && !canAllocateID) Logger.debug(this, "Cannot send because cannot allocate ID");
 		return canAllocateID;
 	}
 
