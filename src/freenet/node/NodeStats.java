@@ -667,13 +667,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			
 			int limit = realTimeFlag ? BANDWIDTH_LIABILITY_LIMIT_SECONDS_REALTIME : BANDWIDTH_LIABILITY_LIMIT_SECONDS_BULK;
 			
+			int peers = node.peers.countConnectedPeers();
+			
 			outputBandwidthUpperLimit = getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction);
-			outputBandwidthLowerLimit = outputBandwidthUpperLimit / 2;
+			outputBandwidthLowerLimit = getLowerLimit(outputBandwidthUpperLimit, peers);
 			
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(limit);
-			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
-			
-			int peers = node.peers.countConnectedPeers();
+			inputBandwidthLowerLimit = getLowerLimit(inputBandwidthUpperLimit, peers);
 			
 			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, true, transfersPerInsert, realTimeFlag, peers);
 			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, true, transfersPerInsert, realTimeFlag, peers);
@@ -1049,6 +1049,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return null;
 	}
 	
+	public double getLowerLimit(double upperLimit, int peerCount) {
+		return upperLimit / 2;
+	}
+
 	public int outwardTransfersPerInsert() {
 		// FIXME compute an average
 		return 1;
@@ -1133,13 +1137,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			RunningRequestsSnapshot requestsSnapshot, boolean input, long limit,
 			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag) {
 		String name = input ? "Input" : "Output";
-		double bandwidthAvailableOutputLowerLimit = bandwidthAvailableOutputUpperLimit / 2;
+		int peers = node.peers.countConnectedPeers();
+		
+		double bandwidthAvailableOutputLowerLimit = getLowerLimit(bandwidthAvailableOutputUpperLimit, peers);
 		
 		double bandwidthLiabilityOutput = requestsSnapshot.calculate(ignoreLocalVsRemoteBandwidthLiability, input);
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
-		
-		int peers = node.peers.countConnectedPeers();
 		
 		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert, realTimeFlag, peers);
 		
