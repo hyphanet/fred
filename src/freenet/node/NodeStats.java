@@ -673,8 +673,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(limit);
 			inputBandwidthLowerLimit = inputBandwidthUpperLimit / 2;
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, true, transfersPerInsert, realTimeFlag);
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, true, transfersPerInsert, realTimeFlag);
+			int peers = node.peers.countConnectedPeers();
+			
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, true, transfersPerInsert, realTimeFlag, peers);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, true, transfersPerInsert, realTimeFlag, peers);
 			
 			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
 			
@@ -1137,7 +1139,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
 		
-		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert, realTimeFlag);
+		int peers = node.peers.countConnectedPeers();
+		
+		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert, realTimeFlag, peers);
 		
 		// Ignore the upper limit.
 		// Because we reassignToSelf() in various tricky timeout conditions, it is possible to exceed it.
@@ -1167,9 +1171,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	static final boolean SEND_LOAD_STATS_NOTICES = true;
 	
-	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer, int transfersPerInsert, boolean realTimeFlag) {
-		
-		int peers = node.peers.countConnectedPeers();
+	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer, int transfersPerInsert, boolean realTimeFlag, int peers) {
 		
 		double thisAllocation;
 		
