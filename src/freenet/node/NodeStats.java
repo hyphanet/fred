@@ -675,8 +675,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(limit);
 			inputBandwidthLowerLimit = getLowerLimit(inputBandwidthUpperLimit, peers);
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthLowerLimit, false, true, transfersPerInsert, realTimeFlag, peers);
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthLowerLimit, true, true, transfersPerInsert, realTimeFlag, peers);
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthUpperLimit - outputBandwidthLowerLimit, false, true, transfersPerInsert, realTimeFlag, peers);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthUpperLimit - inputBandwidthLowerLimit, true, true, transfersPerInsert, realTimeFlag, peers);
 			
 			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
 			
@@ -1049,8 +1049,41 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return null;
 	}
 	
+	/** The maximum number of peers' full fair shares that one node can use. The lower
+	 * bandwidth limit is either half the upper limit or this number of peers' fair 
+	 * shares, whichever is lower. JUSTIFICATION FOR THIS VALUE:
+	 * Let B_total be bandwidth in kilobytes after removing overheads, and N be the 
+	 * number of peers.
+	 * The number of transfers we accept, at realtime, is roughly B_total * 60 / 32, which
+	 * is roughly 2*B_total.
+	 * If we allow a single node to occupy half of that, then it can have B_total transfers.
+	 * However, there is fair sharing between peers in PacketSender, and "fixing" this is
+	 * a nontrivial task. So if all the other peers are busy with bulk traffic, and if the
+	 * peer in question also has bulk traffic, its bandwidth available for realtime 
+	 * transfers will be:
+	 * B_peer_realtime = B_total / (2*N)
+	 * Therefore, the average interval between block sends (which are 1KB) will be:
+	 * t = B_total / B_peer_realtime
+	 * = B_total / (B_total / (2*N))
+	 * = 1 / (1 / (2*N))
+	 * = 2*N
+	 * 
+	 * This is unacceptable! We have a timeout of 5 seconds for realtime transfers, and 
+	 * 30 seconds for bulk transfers (to which the above math also applies but twice the
+	 * final value because of 120 not 60 for the number of seconds we allow transfers to 
+	 * take in the first formula).
+	 * 
+	 * So, we allow one peer to use at most B_total / (N / 2). This makes:
+	 * t = (B_total / (N / 2)) / (B_total / (2*N))
+	 * = (1 / (N / 2)) / (1 / (2*N))
+	 * = (1 / (N * 0.5)) / (1 / (N * 2))
+	 * = 2 / 0.5
+	 * = 4 seconds at most; 16 for bulk.
+	 */
+	static final double ONE_PEER_MAX_PEERS_EQUIVALENT = 2.0;
+	
 	public double getLowerLimit(double upperLimit, int peerCount) {
-		return upperLimit / 2;
+		return Math.min(upperLimit / 2, upperLimit * (ONE_PEER_MAX_PEERS_EQUIVALENT / peerCount));
 	}
 
 	public int outwardTransfersPerInsert() {
@@ -1145,7 +1178,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
 		
-		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert, realTimeFlag, peers);
+		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert, realTimeFlag, peers);
 		
 		// Ignore the upper limit.
 		// Because we reassignToSelf() in various tricky timeout conditions, it is possible to exceed it.
@@ -1175,15 +1208,29 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 
 	static final boolean SEND_LOAD_STATS_NOTICES = true;
 	
-	private double getPeerLimit(PeerNode source, double bandwidthAvailableOutputLowerLimit, boolean input, boolean dontTellPeer, int transfersPerInsert, boolean realTimeFlag, int peers) {
+	/**
+	 * @param source The peer.
+	 * @param totalGuaranteedBandwidth The difference between the upper and lower overall
+	 * bandwidth limits. If the total usage is less than the lower limit, we do not 
+	 * enforce fairness. Any node may therefore optimistically try to use up to the lower
+	 * limit. However, the node is only guaranteed its fair share, which is defined as its
+	 * fraction of the part of the total that is above the lower limit.
+	 * @param input
+	 * @param dontTellPeer
+	 * @param transfersPerInsert
+	 * @param realTimeFlag
+	 * @param peers
+	 * @return
+	 */
+	private double getPeerLimit(PeerNode source, double totalGuaranteedBandwidth, boolean input, boolean dontTellPeer, int transfersPerInsert, boolean realTimeFlag, int peers) {
 		
 		double thisAllocation;
 		
 		// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
 		if(RequestStarter.LOCAL_REQUESTS_COMPETE_FAIRLY) {
-			thisAllocation = bandwidthAvailableOutputLowerLimit / (peers + 1);
+			thisAllocation = totalGuaranteedBandwidth / (peers + 1);
 		} else {
-			double totalAllocation = bandwidthAvailableOutputLowerLimit;
+			double totalAllocation = totalGuaranteedBandwidth;
 			// FIXME: MAKE CONFIGURABLE AND SECLEVEL DEPENDANT!
 			double localAllocation = totalAllocation * 0.5;
 			if(source == null)
