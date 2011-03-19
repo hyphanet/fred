@@ -55,7 +55,7 @@ public class NullBasePeerNode implements BasePeerNode {
 		return 0;
 	}
 
-	public OldPacketThrottle getThrottle() {
+	public OldPacketThrottle getOldThrottle() {
 		return null;
 	}
 

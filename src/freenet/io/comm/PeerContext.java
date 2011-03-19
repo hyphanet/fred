@@ -55,7 +55,7 @@ public interface PeerContext {
 
 	/** Get the OldPacketThrottle for the node's current address for the standard packet size (if the
 	 * address changes then we get a new throttle). */
-	public OldPacketThrottle getThrottle();
+	public OldPacketThrottle getOldThrottle();
 
 	/** Get the SocketHandler which handles incoming packets from this node */
 	SocketHandler getSocketHandler();

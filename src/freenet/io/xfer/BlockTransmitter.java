@@ -251,7 +251,7 @@ public class BlockTransmitter {
 			Logger.error(this, "Aborted during setup");
 			// Will throw on running
 		}
-		throttle = _destination.getThrottle();
+		throttle = _destination.getOldThrottle();
 		this.blockTimeCallback = blockTimes;
 		if(logMINOR) Logger.minor(this, "Starting block transmit for "+uid+" to "+destination.shortToString()+" realtime="+realTime+" throttle="+throttle);
 	}

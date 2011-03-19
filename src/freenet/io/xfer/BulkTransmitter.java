@@ -219,7 +219,7 @@ public class BulkTransmitter {
 		long lastSentPacket = System.currentTimeMillis();
 outer:	while(true) {
 			int max = Math.min(Integer.MAX_VALUE, prb.blocks);
-			OldPacketThrottle throttle = peer.getThrottle();
+			OldPacketThrottle throttle = peer.getOldThrottle();
 			if(throttle != null)
 				max = Math.min(max, (int)Math.min(Integer.MAX_VALUE, throttle.getWindowSize()));
 			// FIXME hardcoded limit for memory usage. We can probably get away with more for now but if we start doing lots of bulk transfers we'll need to limit this globally...
@@ -334,7 +334,7 @@ outer:	while(true) {
 					Logger.minor(this, "Canclled: not connected "+this);
 				return false;
 			} catch (WaitedTooLongException e) {
-				long rtt = peer.getThrottle().getRoundTripTime();
+				long rtt = peer.getOldThrottle().getRoundTripTime();
 				Logger.error(this, "Failed to send bulk packet "+blockNo+" for "+this+" RTT is "+TimeUtil.formatTime(rtt));
 				return false;
 			} catch (SyncSendWaitedTooLongException e) {
