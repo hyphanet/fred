@@ -137,7 +137,7 @@ public class NewPacketFormatKeyContext {
 		OldPacketThrottle throttle = null;
 		if(pn != null) {
 			pn.reportPing(rt);
-			throttle = pn.getThrottle();
+			throttle = pn.getOldThrottle();
 			if(validAck)
 				pn.receivedAck(System.currentTimeMillis());
 		}
@@ -283,7 +283,7 @@ public class NewPacketFormatKeyContext {
 				Logger.minor(this, ""+count+" packets in flight with threshold "+(avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 		}
 		if(bigLostCount != 0 && pn != null) {
-			OldPacketThrottle throttle = pn.getThrottle();
+			OldPacketThrottle throttle = pn.getOldThrottle();
 			if(throttle != null) {
 				for(int i=0;i<bigLostCount;i++) {
 					throttle.notifyOfPacketLost();

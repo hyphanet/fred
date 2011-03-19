@@ -1069,11 +1069,11 @@ outer:
 		}
 		
 		if(tracker != null && pn != null) {
-			OldPacketThrottle throttle = pn.getThrottle();
+			OldPacketThrottle throttle = pn.getOldThrottle();
 			if(throttle == null) {
 				// Ignore
 			} else {
-				int maxPackets = (int)Math.min(Integer.MAX_VALUE, pn.getThrottle().getWindowSize());
+				int maxPackets = (int)Math.min(Integer.MAX_VALUE, pn.getOldThrottle().getWindowSize());
 				// Impose a minimum so that we don't lose the ability to send anything.
 				if(maxPackets < 1) maxPackets = 1;
 				NewPacketFormatKeyContext packets = tracker.packetContext;

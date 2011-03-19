@@ -1146,7 +1146,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 * Returns the number of milliseconds that it is estimated to take to transmit the currently queued packets.
 	 */
 	public long getProbableSendQueueTime() {
-		double bandwidth = (getThrottle().getBandwidth()+1.0);
+		double bandwidth = (getOldThrottle().getBandwidth()+1.0);
 		if(shouldThrottle())
 			bandwidth = Math.min(bandwidth, node.getOutputBandwidthLimit() / 2);
 		long length = getMessageQueueLengthBytes();
@@ -1854,7 +1854,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			} else
 				return;
 		}
-		getThrottle().maybeDisconnected();
+		getOldThrottle().maybeDisconnected();
 		sendIPAddressMessage();
 	}
 
@@ -3826,7 +3826,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 	private final OldPacketThrottle _lastThrottle = new OldPacketThrottle(Node.PACKET_SIZE);
 
-	public OldPacketThrottle getThrottle() {
+	public OldPacketThrottle getOldThrottle() {
 		return _lastThrottle;
 	}
 
@@ -4555,7 +4555,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	public MessageItem sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long deadline = System.currentTimeMillis() + timeout;
 		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
-		return getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback, msg.getPriority() == DMT.PRIORITY_REALTIME_DATA);
+		return getOldThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback, msg.getPriority() == DMT.PRIORITY_REALTIME_DATA);
 	}
 
 	/**

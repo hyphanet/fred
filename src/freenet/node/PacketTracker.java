@@ -539,7 +539,7 @@ public class PacketTracker {
 			if(sentPacketsContents.remove(realSeqNo)) {
 				validAck = true;
 				if(buf.length > Node.PACKET_SIZE) {
-					OldPacketThrottle throttle = pn.getThrottle();
+					OldPacketThrottle throttle = pn.getOldThrottle();
 					throttle.notifyOfPacketAcknowledged(1024);
 					throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 				}
@@ -590,7 +590,7 @@ public class PacketTracker {
 		if(sentPacketsContents.remove(realSeqNo)) {
 			validAck = true;
 			if(buf.length > Node.PACKET_SIZE) {
-				OldPacketThrottle throttle = pn.getThrottle();
+				OldPacketThrottle throttle = pn.getOldThrottle();
 				throttle.notifyOfPacketAcknowledged(1024);
 				throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 			}
@@ -638,7 +638,7 @@ public class PacketTracker {
 		byte[] resendData = sentPacketsContents.get(seqNumber);
 		if(resendData != null) {
 			if(resendData.length > Node.PACKET_SIZE)
-				pn.getThrottle().notifyOfPacketLost();
+				pn.getOldThrottle().notifyOfPacketLost();
 			synchronized(packetsToResend) {
 				packetsToResend.add(seqNumber);
 			}
