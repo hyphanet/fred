@@ -152,7 +152,9 @@ public class NewPacketFormatKeyContext {
 			// when the packet is eventually sent, we send a few small ones and have a 
 			// big window. The RTO will be high, but the average successful round trip 
 			// time, which the bandwidth computations are based on, will be low. So we
-			// estimate a very high bandwidth, and therefore start too many transfers.
+			// estimate a very high bandwidth, and therefore start too many transfers,
+			// and as a result, some of them time out.
+			// Probably we need to implement #2121 before we can use all packets in the AIMD???
 			if(packetLength > Node.PACKET_SIZE) {
 				throttle.notifyOfPacketAcknowledged(maxSize);
 			}
@@ -286,9 +288,7 @@ public class NewPacketFormatKeyContext {
 					}
 					s.lost();
 					it.remove();
-					// FIXME should we apply this to all packets?
-					// FIXME sub-packetsize MTUs may be a problem
-					// The throttle only applies to big blocks.
+					// See comment in ack(), and bug #4806.
 					if(s.packetLength > Node.PACKET_SIZE)
 						bigLostCount++;
 				} else
