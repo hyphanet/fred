@@ -219,7 +219,7 @@ public class BulkTransmitter {
 		long lastSentPacket = System.currentTimeMillis();
 outer:	while(true) {
 			int max = Math.min(Integer.MAX_VALUE, prb.blocks);
-			PacketThrottle throttle = peer.getThrottle();
+			OldPacketThrottle throttle = peer.getThrottle();
 			if(throttle != null)
 				max = Math.min(max, (int)Math.min(Integer.MAX_VALUE, throttle.getWindowSize()));
 			// FIXME hardcoded limit for memory usage. We can probably get away with more for now but if we start doing lots of bulk transfers we'll need to limit this globally...

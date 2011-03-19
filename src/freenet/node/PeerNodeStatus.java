@@ -7,7 +7,7 @@ import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
 import freenet.io.comm.Peer;
-import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.OldPacketThrottle;
 import freenet.node.NodeStats.PeerLoadStats;
 import freenet.node.PeerNode.IncomingLoadSummaryStats;
 
@@ -90,7 +90,7 @@ public class PeerNodeStatus {
 	
 	private double percentTimeRoutableConnection;
 	
-	private PacketThrottle throttle;
+	private OldPacketThrottle throttle;
 	
 	private long clockDelta;
 	
@@ -420,7 +420,7 @@ public class PeerNodeStatus {
 		return percentTimeRoutableConnection;
 	}
 
-	public PacketThrottle getThrottle() {
+	public OldPacketThrottle getThrottle() {
 		return throttle;
 	}
 

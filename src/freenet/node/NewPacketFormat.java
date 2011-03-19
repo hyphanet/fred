@@ -18,7 +18,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
 import freenet.io.comm.Peer.LocalAddressException;
-import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.OldPacketThrottle;
 import freenet.node.NewPacketFormatKeyContext.AddedAcks;
 import freenet.support.ByteBufferInputStream;
 import freenet.support.LogThresholdCallback;
@@ -1069,7 +1069,7 @@ outer:
 		}
 		
 		if(tracker != null && pn != null) {
-			PacketThrottle throttle = pn.getThrottle();
+			OldPacketThrottle throttle = pn.getThrottle();
 			if(throttle == null) {
 				// Ignore
 			} else {

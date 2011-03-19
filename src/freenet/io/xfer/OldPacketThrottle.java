@@ -32,7 +32,14 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.Logger.LogLevel;
 
-public class PacketThrottle {
+/** Old packet throttle. Throttles the number of block sends we make on an old packet 
+ * format connection. Throttling occurs in sendThrottled(), which is synchronous, and is
+ * only called when using old packet format. The notifyOfPacketLost() and 
+ * notifyOfPacketAcknowledged() likewise are only called for old packet format.
+ * @see NewPacketThrottle
+ * @author toad
+ */
+public class OldPacketThrottle {
 
 	private static volatile boolean logMINOR;
 
@@ -50,7 +57,7 @@ public class PacketThrottle {
 	protected static final double SLOW_START_DIVISOR = 3.0;
 	protected static final long MAX_DELAY = 1000;
 	protected static final long MIN_DELAY = 1;
-	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
+	public static final String VERSION = "$Id: OldPacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
 	private long _roundTripTime = 500, _totalPackets, _droppedPackets;
 	/** The size of the window, in packets.
@@ -72,7 +79,7 @@ public class PacketThrottle {
 	/** The number of would-be packets which are no longer waiting in line for the transmition window */
 	private long _abandonedTickets;
 	
-	public PacketThrottle(int packetSize) {
+	public OldPacketThrottle(int packetSize) {
 		PACKET_SIZE = packetSize;
 	}
 
@@ -336,36 +343,36 @@ public class PacketThrottle {
 
 		public void acknowledged() {
 			sent(true); // Make sure it is called at least once.
-			synchronized(PacketThrottle.this) {
+			synchronized(OldPacketThrottle.this) {
 				if(finished) {
 					if(logMINOR) Logger.minor(this, "Already acked, ignoring callback: "+this);
 					return;
 				}
 				finished = true;
 				_packetsInFlight--;
-				PacketThrottle.this.notifyAll();
+				OldPacketThrottle.this.notifyAll();
 			}
 			if(logMINOR) Logger.minor(this, "Removed packet: acked for "+this);
 			if(chainCallback != null) chainCallback.acknowledged();
 		}
 
 		public void disconnected() {
-			synchronized(PacketThrottle.this) {
+			synchronized(OldPacketThrottle.this) {
 				if(finished) return;
 				finished = true;
 				_packetsInFlight--;
-				PacketThrottle.this.notifyAll();
+				OldPacketThrottle.this.notifyAll();
 			}
 			if(logMINOR) Logger.minor(this, "Removed packet: disconnected for "+this);
 			if(chainCallback != null) chainCallback.disconnected();
 		}
 
 		public void fatalError() {
-			synchronized(PacketThrottle.this) {
+			synchronized(OldPacketThrottle.this) {
 				if(finished) return;
 				finished = true;
 				_packetsInFlight--;
-				PacketThrottle.this.notifyAll();
+				OldPacketThrottle.this.notifyAll();
 			}
 			if(logMINOR) Logger.minor(this, "Removed packet: error for "+this);
 			if(chainCallback != null) chainCallback.fatalError();
@@ -376,7 +383,7 @@ public class PacketThrottle {
 		}
 
 		public void sent(boolean error) {
-			synchronized(PacketThrottle.this) {
+			synchronized(OldPacketThrottle.this) {
 				if(sent) return;
 				if(error) {
 					if(!isOldFNP)
@@ -397,7 +404,7 @@ public class PacketThrottle {
 		
 		@Override
 		public String toString() {
-			return super.toString()+":"+PacketThrottle.this.toString();
+			return super.toString()+":"+OldPacketThrottle.this.toString();
 		}
 		
 	}

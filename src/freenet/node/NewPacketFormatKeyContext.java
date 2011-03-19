@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
-import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.OldPacketThrottle;
 import freenet.node.NewPacketFormat.SentPacket;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -134,7 +134,7 @@ public class NewPacketFormatKeyContext {
 		}
 		
 		int rt = (int) Math.min(rtt, Integer.MAX_VALUE);
-		PacketThrottle throttle = null;
+		OldPacketThrottle throttle = null;
 		if(pn != null) {
 			pn.reportPing(rt);
 			throttle = pn.getThrottle();
@@ -283,7 +283,7 @@ public class NewPacketFormatKeyContext {
 				Logger.minor(this, ""+count+" packets in flight with threshold "+(avgRtt + MAX_ACK_DELAY * 1.1) + "ms");
 		}
 		if(bigLostCount != 0 && pn != null) {
-			PacketThrottle throttle = pn.getThrottle();
+			OldPacketThrottle throttle = pn.getThrottle();
 			if(throttle != null) {
 				for(int i=0;i<bigLostCount;i++) {
 					throttle.notifyOfPacketLost();
