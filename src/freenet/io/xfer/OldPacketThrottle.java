@@ -36,6 +36,12 @@ import freenet.support.Logger.LogLevel;
  * format connection. Throttling occurs in sendThrottled(), which is synchronous, and is
  * only called when using old packet format. The notifyOfPacketLost() and 
  * notifyOfPacketAcknowledged() likewise are only called for old packet format.
+ * 
+ * Warning: This cannot be used for new packet format, because sendThrottledMessage() 
+ * maintains the counter that tells us whether the window has been used, which we need to
+ * avoid increasing the window size while we are application-limited, as per RFC 2861.
+ * Plus, dealing in bytes is far closer to TCP and makes a lot more sense if we are
+ * throttling everything, as in new packet format.
  * @see NewPacketThrottle
  * @author toad
  */
