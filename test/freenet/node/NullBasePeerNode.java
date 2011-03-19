@@ -12,7 +12,7 @@ import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.comm.Peer.LocalAddressException;
-import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.OldPacketThrottle;
 import freenet.io.xfer.WaitedTooLongException;
 
 /** Tests can override this to record specific events e.g. rekey */
@@ -55,7 +55,7 @@ public class NullBasePeerNode implements BasePeerNode {
 		return 0;
 	}
 
-	public PacketThrottle getThrottle() {
+	public OldPacketThrottle getThrottle() {
 		return null;
 	}
 

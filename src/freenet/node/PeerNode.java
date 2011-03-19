@@ -63,7 +63,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
-import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.OldPacketThrottle;
 import freenet.io.xfer.ThrottleDeprecatedException;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.ClientSSK;
@@ -2259,7 +2259,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 					item.onDisconnect();
 				}
 		}
-		PacketThrottle throttle;
+		OldPacketThrottle throttle;
 		synchronized(this) {
 			throttle = _lastThrottle;
 		}
@@ -3834,9 +3834,9 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return Version.getArbitraryBuildNumber(getVersion(), -1);
 	}
 
-	private final PacketThrottle _lastThrottle = new PacketThrottle(Node.PACKET_SIZE);
+	private final OldPacketThrottle _lastThrottle = new OldPacketThrottle(Node.PACKET_SIZE);
 
-	public PacketThrottle getThrottle() {
+	public OldPacketThrottle getThrottle() {
 		return _lastThrottle;
 	}
 

@@ -5,7 +5,7 @@ package freenet.io.comm;
 
 import java.lang.ref.WeakReference;
 
-import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.OldPacketThrottle;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.node.MessageItem;
 import freenet.node.OutgoingPacketMangler;
@@ -53,9 +53,9 @@ public interface PeerContext {
 	/** Get the current boot ID. This is a random number that changes every time the node starts up. */
 	public long getBootID();
 
-	/** Get the PacketThrottle for the node's current address for the standard packet size (if the
+	/** Get the OldPacketThrottle for the node's current address for the standard packet size (if the
 	 * address changes then we get a new throttle). */
-	public PacketThrottle getThrottle();
+	public OldPacketThrottle getThrottle();
 
 	/** Get the SocketHandler which handles incoming packets from this node */
 	SocketHandler getSocketHandler();

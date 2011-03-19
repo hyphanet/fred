@@ -12,7 +12,7 @@ import java.util.Vector;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.OldPacketThrottle;
 import freenet.support.DoublyLinkedList;
 import freenet.support.IndexableUpdatableSortedLinkedListItem;
 import freenet.support.LimitedRangeIntByteArrayMap;
@@ -539,7 +539,7 @@ public class PacketTracker {
 			if(sentPacketsContents.remove(realSeqNo)) {
 				validAck = true;
 				if(buf.length > Node.PACKET_SIZE) {
-					PacketThrottle throttle = pn.getThrottle();
+					OldPacketThrottle throttle = pn.getThrottle();
 					throttle.notifyOfPacketAcknowledged(1024);
 					throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 				}
@@ -590,7 +590,7 @@ public class PacketTracker {
 		if(sentPacketsContents.remove(realSeqNo)) {
 			validAck = true;
 			if(buf.length > Node.PACKET_SIZE) {
-				PacketThrottle throttle = pn.getThrottle();
+				OldPacketThrottle throttle = pn.getThrottle();
 				throttle.notifyOfPacketAcknowledged(1024);
 				throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 			}

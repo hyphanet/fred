@@ -21,7 +21,7 @@ import java.util.Map;
 import freenet.client.HighLevelSimpleClient;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.OldPacketThrottle;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.FSParseException;
@@ -893,7 +893,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// total traffic column startup
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputSinceStartup())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputSinceStartup()));
 			// congestion control
-			PacketThrottle t = peerNodeStatus.getThrottle();
+			OldPacketThrottle t = peerNodeStatus.getThrottle();
 			String val;
 			if(t == null)
 				val = "none";

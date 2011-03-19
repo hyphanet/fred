@@ -85,7 +85,7 @@ public class BlockTransmitter {
 	private LinkedList<Integer> _unsent;
 	private BlockSenderJob _senderThread = new BlockSenderJob();
 	private BitArray _sentPackets;
-	final PacketThrottle throttle;
+	final OldPacketThrottle throttle;
 	private long timeAllSent = -1;
 	final ByteCounter _ctr;
 	final int PACKET_SIZE;
