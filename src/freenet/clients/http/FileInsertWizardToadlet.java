@@ -106,21 +106,14 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		}
 		if(isAdvancedModeEnabled) {
 			insertForm.addChild("br");
+			insertForm.addChild("br");
 			insertForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "compress", "checked" });
 			insertForm.addChild("#", ' ' + NodeL10n.getBase().getString("QueueToadlet.insertFileCompressLabel"));
 		} else {
 			insertForm.addChild("input", new String[] { "type", "value" }, new String[] { "hidden", "true" });
 		}
-		insertForm.addChild("br");
-		insertForm.addChild("br");
-		
-		// Local file browser
-		if(ctx.isAllowedFullAccess()) {
-			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
-			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
-			insertForm.addChild("br");
-		}
 		if(isAdvancedModeEnabled) {
+			insertForm.addChild("br");
 			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.compatModeLabel")+": ");
 			HTMLNode select = insertForm.addChild("select", "name", "compatibilityMode");
 			for(CompatibilityMode mode : InsertContext.CompatibilityMode.values()) {
@@ -130,8 +123,17 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 				if(mode == CompatibilityMode.COMPAT_CURRENT)
 					option.addAttribute("selected", "");
 			}
+			insertForm.addChild("br");
 			insertForm.addChild("#", l10n("splitfileCryptoKeyLabel")+": ");
 			insertForm.addChild("input", new String[] { "type", "name", "maxlength" }, new String[] { "text", "overrideSplitfileKey", "64" });
+		}
+		insertForm.addChild("br");
+		insertForm.addChild("br");
+		if(ctx.isAllowedFullAccess()) {
+			insertForm.addChild("br");
+			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
+			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
+			insertForm.addChild("br");
 		}
 		insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileLabel") + ": ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
