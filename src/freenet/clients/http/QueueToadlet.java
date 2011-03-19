@@ -128,7 +128,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	private boolean isReversed = false;
-
+	private LocalFileInsertToadlet browser;
 	private final boolean uploads;
 	private HighLevelSimpleClient client;
 	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client, boolean uploads) {
@@ -137,6 +137,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		this.core = core;
 		this.fcp = fcp;
 		this.uploads = uploads;
+		browser = new LocalFileInsertToadlet(core, client);
 		if(fcp == null) throw new NullPointerException();
 		fcp.setCompletionCallback(this);
 		try {
@@ -182,9 +183,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					return;
 				}
 
-				// FIXME Might be nicer than using an override to modify HTTPRequest, but that can't currently be done.
-				LocalFileInsertToadlet t = new LocalFileInsertToadlet(core, client,  insertURI.toASCIIString());
-				t.handleMethodPOST(uri, request, ctx);
+				browser.setOverrideKey(insertURI.toASCIIString());
+				browser.handleMethodPOST(uri, request, ctx);
 				return;
 			}
 
