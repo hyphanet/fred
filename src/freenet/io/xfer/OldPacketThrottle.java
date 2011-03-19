@@ -43,6 +43,7 @@ import freenet.support.Logger.LogLevel;
  * Plus, dealing in bytes is far closer to TCP and makes a lot more sense if we are
  * throttling everything, as in new packet format.
  * @see NewPacketThrottle
+ * FIXME remove this once old packet format is gone.
  * @author toad
  */
 public class OldPacketThrottle {
