@@ -145,9 +145,14 @@ public class NewPacketFormatKeyContext {
 		}
 		if(throttle != null) {
 			throttle.setRoundTripTime(rt);
-			// FIXME should we apply this to all packets?
-			// FIXME sub-packetsize MTUs may be a problem
-			// The throttle only applies to big blocks.
+			// See bug #4806.
+			// Selective loss of big packets is fairly common.
+			// TCP counts all packets but it doesn't vary its packet size as much as we do.
+			// We can have high packet loss by bytes, and very low throughput, and yet
+			// when the packet is eventually sent, we send a few small ones and have a 
+			// big window. The RTO will be high, but the average successful round trip 
+			// time, which the bandwidth computations are based on, will be low. So we
+			// estimate a very high bandwidth, and therefore start too many transfers.
 			if(packetLength > Node.PACKET_SIZE) {
 				throttle.notifyOfPacketAcknowledged(maxSize);
 			}
