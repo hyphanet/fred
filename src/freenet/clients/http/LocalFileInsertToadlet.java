@@ -7,6 +7,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.support.MultiValueTable;
+import freenet.support.api.HTTPRequest;
 
 
 public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
@@ -14,11 +15,6 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 	
 	public LocalFileInsertToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(core, highLevelSimpleClient);
-	}
-	
-	public LocalFileInsertToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient, String overrideKey) {
-		this(core, highLevelSimpleClient);
-		this.overrideKey = overrideKey;
 	}
 	
 	public String path()
@@ -31,11 +27,13 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 		return "/uploads/";
 	}
 	
-	protected void processParams(){
-		// Clean out any previous values
-		hiddenFieldName = new ArrayList<String>();
-		hiddenFieldValue = new ArrayList<String>();
-		
+	public void setOverrideKey(String overrideKey)
+	{
+		this.overrideKey = overrideKey;
+	}
+	
+	protected ArrayList<ArrayList<String>> processParams(HTTPRequest request){
+		ArrayList<ArrayList<String>> fieldPairs = new ArrayList<ArrayList<String>>();
 		FreenetURI furi = null;
 		String key;
 		if(overrideKey == null)
@@ -56,26 +54,20 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 			}
 		}
 		
-		// Build hidden field tables
 		// FIXME: What are lengths for these?
 		boolean compress = Boolean.valueOf(request.getPartAsStringFailsafe("compress", 4096));
 		String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 4096);
 		if(furi != null)
 		{
-			hiddenFieldName.add("key");
-			hiddenFieldValue.add(furi.toASCIIString());
+			fieldPairs.add(makePair("key",furi.toASCIIString()));
 		}
 		if (compress)
 		{
-			hiddenFieldName.add("compress");
-			hiddenFieldValue.add(String.valueOf(compress));
+			fieldPairs.add(makePair("compress",String.valueOf(compress)));
 		}
-		hiddenFieldName.add("compatibilityMode");
-		hiddenFieldValue.add(compatibilityMode);
-		
-		hiddenFieldName.add("overrideSplitfileKey");
-		// FIXME: What is the length for this?
-		hiddenFieldValue.add(request.getPartAsStringFailsafe("overrideSplitfileKey", 4096));
-		return;
+		fieldPairs.add(makePair("compatibilityMode",compatibilityMode));
+		// FIXME: What is the length of a splitfile key?
+		fieldPairs.add(makePair("overrideSplitfileKey", request.getPartAsStringFailsafe("overrideSplitfileKey", 4096)));
+		return fieldPairs;
 	}
 }

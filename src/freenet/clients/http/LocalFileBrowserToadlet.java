@@ -25,63 +25,59 @@ import freenet.support.api.HTTPRequest;
  * @author David 'Bombe' Roden &lt;bombe@freenetproject.org&gt;
  * @version $Id$
  */
-public class LocalFileBrowserToadlet extends Toadlet {	
+public abstract class LocalFileBrowserToadlet extends Toadlet {	
 	private final NodeClientCore core;
-	// For access from subclass' processParams 
-	protected HTTPRequest request;
-	protected ArrayList<String> hiddenFieldName;
-	protected ArrayList<String> hiddenFieldValue;
 	private File currentPath;
 
-	/**
-	 * 
-	 */
 	public LocalFileBrowserToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(highLevelSimpleClient);
 		this.core = core;
 	}
 	
-	public String path() {
-		return "/unset-file-browser/";
-	}
+	public abstract String path();
 	
-	protected String postTo(){
-		return "/unset-post-target/";
-	}
+	protected abstract String postTo();
 	
 	/**
 	 * Performs sanity checks and generates parameter persistence.
-	 * Must be called before using createHiddenParamFields or createDirectoryButton.
+	 * Must be called before using createHiddenParamFields or createDirectoryButton
+	 * because it returns hiddenFieldName and HiddenFieldValue pairs.
 	 */
-	protected void processParams(){
-		return;
+	protected abstract ArrayList<ArrayList<String>> processParams(HTTPRequest request);
+	
+	protected final ArrayList<String> makePair(String one, String two){
+		ArrayList<String> pair = new ArrayList<String>();
+		pair.add(one);
+		pair.add(two);
+		return pair;
 	}
 	
-	protected void createInsertDirectoryButton(HTMLNode fileRow, String path, ToadletContext ctx) {
+	protected void createInsertDirectoryButton(HTMLNode fileRow, String path, ToadletContext ctx, ArrayList<ArrayList<String>> fieldPairs) {
 		HTMLNode cellNode = fileRow.addChild("td");
 		HTMLNode formNode = ctx.addFormChild(cellNode, postTo(), "insertLocalFileForm");
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-dir", l10n("insert")});
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", path});
-		createHiddenParamFields(formNode);
+		createHiddenParamFields(formNode, fieldPairs);
 	}
 	
 	/**
 	 * Renders hidden fields on given fieldNode. 
 	 * hiddenFieldName and hiddenFieldValue must have the same number of elements.
 	 */
-	private final void createHiddenParamFields(HTMLNode formNode){
-		assert(hiddenFieldName.size() == hiddenFieldValue.size());
-		for(int i = 0; i < hiddenFieldName.size(); i++)
+	private final void createHiddenParamFields(HTMLNode formNode, ArrayList<ArrayList<String>> fieldPairs){
+		for(ArrayList<String> pair : fieldPairs)
 		{
-			formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", hiddenFieldName.get(i), hiddenFieldValue.get(i)});
+			assert(pair.size() == 2);
+			formNode.addChild("input", new String[] { "type", "name", "value" }, 
+					new String[] { "hidden", pair.get(0), pair.get(1)});
 		}
 		return;
 	}
 	
-	private final void createChangeDirButton(HTMLNode formNode, String buttonText, String path){
+	private final void createChangeDirButton(HTMLNode formNode, String buttonText, String path, ArrayList<ArrayList<String>> fieldPairs){
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "change-dir", buttonText});
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "path", path});
-		createHiddenParamFields(formNode);
+		createHiddenParamFields(formNode, fieldPairs);
 	}
 
 	// FIXME reentrancy issues with currentPath - fix running two at once.
@@ -90,12 +86,11 @@ public class LocalFileBrowserToadlet extends Toadlet {
 	 *      freenet.clients.http.ToadletContext)
 	 */
 	public void handleMethodPOST(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		this.request = request;
 		renderPage(request, ctx);
 	}
 	
 	private void renderPage(HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		processParams();
+		ArrayList<ArrayList<String>> fieldPairs = processParams(request);
 		// FIXME: What is a good maximum path length?
 		String path = request.getPartAsStringFailsafe("path", 4096);
 		if (path.length() == 0) {
@@ -106,7 +101,6 @@ public class LocalFileBrowserToadlet extends Toadlet {
 		}
 
 		File thisPath = new File(path).getCanonicalFile();
-		
 		
 		PageMaker pageMaker = ctx.getPageMaker();
 
@@ -184,7 +178,7 @@ public class LocalFileBrowserToadlet extends Toadlet {
 				rootRow.addChild("td");
 				HTMLNode rootLinkCellNode = rootRow.addChild("td");
 				HTMLNode rootLinkFormNode = ctx.addFormChild(rootLinkCellNode, path(), "insertLocalFileForm");
-				createChangeDirButton(rootLinkFormNode, currentRoot.getCanonicalPath(), currentRoot.getAbsolutePath());
+				createChangeDirButton(rootLinkFormNode, currentRoot.getCanonicalPath(), currentRoot.getAbsolutePath(), fieldPairs);
 				rootRow.addChild("td");
 			}
 			/* add back link */
@@ -193,7 +187,7 @@ public class LocalFileBrowserToadlet extends Toadlet {
 				backlinkRow.addChild("td");
 				HTMLNode backLinkCellNode = backlinkRow.addChild("td");
 				HTMLNode backLinkFormNode = ctx.addFormChild(backLinkCellNode, path(), "insertLocalFileForm");
-				createChangeDirButton(backLinkFormNode, "..", currentPath.getParent());
+				createChangeDirButton(backLinkFormNode, "..", currentPath.getParent(), fieldPairs);
 				backlinkRow.addChild("td");
 			}
 			for (int fileIndex = 0, fileCount = files.length; fileIndex < fileCount; fileIndex++) {
@@ -201,12 +195,12 @@ public class LocalFileBrowserToadlet extends Toadlet {
 				HTMLNode fileRow = listingTable.addChild("tr");
 				if (currentFile.isDirectory()) {
 					if (currentFile.canRead()) {
-						createInsertDirectoryButton(fileRow, currentFile.getAbsolutePath(), ctx);
+						createInsertDirectoryButton(fileRow, currentFile.getAbsolutePath(), ctx, fieldPairs);
 						
 						// Change directory
 						HTMLNode directoryCellNode = fileRow.addChild("td");
 						HTMLNode directoryFormNode = ctx.addFormChild(directoryCellNode, path(), "insertLocalFileForm");
-						createChangeDirButton(directoryFormNode, currentFile.getName(), currentFile.getAbsolutePath());
+						createChangeDirButton(directoryFormNode, currentFile.getName(), currentFile.getAbsolutePath(), fieldPairs);
 					} else {
 						fileRow.addChild("td");
 						fileRow.addChild("td", "class", "unreadable-file", currentFile.getName());
@@ -220,7 +214,7 @@ public class LocalFileBrowserToadlet extends Toadlet {
 						HTMLNode formNode = ctx.addFormChild(cellNode, postTo(), "insertLocalFileForm");
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", l10n("insert")});
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath()});
-						createHiddenParamFields(formNode);
+						createHiddenParamFields(formNode, fieldPairs);
 						
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align", String.valueOf(currentFile.length()));

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import freenet.client.HighLevelSimpleClient;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
+import freenet.support.api.HTTPRequest;
 
 public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
 
@@ -26,20 +27,17 @@ public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
 		fileRow.addChild("td");
 	}
 	
-	protected void processParams(){
-		hiddenFieldName = new ArrayList<String>();
-		hiddenFieldValue = new ArrayList<String>();
-		
-		hiddenFieldName.add("message");
-		hiddenFieldValue.add(request.getPartAsStringFailsafe("message", 5 * 1024));
+	protected ArrayList<ArrayList<String>> processParams(HTTPRequest request){
+		ArrayList<ArrayList<String>> fieldPairs = new ArrayList<ArrayList<String>>();
+		fieldPairs.add(makePair("message", request.getPartAsStringFailsafe("message", 5 * 1024)));
 		
 		for(String partName : request.getParts())
 		{
 			if(partName.startsWith("node_"))
 			{
-				hiddenFieldName.add(partName);
-				hiddenFieldValue.add("1");
+				fieldPairs.add(makePair(partName, "1"));
 			}
 		}
+		return fieldPairs;
 	}
 }
