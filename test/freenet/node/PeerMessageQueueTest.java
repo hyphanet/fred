@@ -56,4 +56,26 @@ public class PeerMessageQueueTest extends TestCase {
 			fail("Timeout not in expected range. Expected: " + (start + 100) + "->" + (end + 100) + ", actual: " + urgentTime);
 		}
 	}
+
+	public void testGrabQueuedMessageItem() {
+		PeerMessageQueue pmq = new PeerMessageQueue(null);
+
+		MessageItem itemUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+
+		//Sleep for a little while to get a later timeout
+		try {
+			Thread.sleep(1);
+		} catch (InterruptedException e) {
+
+		}
+
+		MessageItem itemNonUrgent = new MessageItem(new byte[1024], null, false, null, (short) 0, false, false);
+
+		//Queue the least urgent item first to get the wrong order
+		pmq.queueAndEstimateSize(itemNonUrgent, 1024);
+		pmq.queueAndEstimateSize(itemUrgent, 1024);
+
+		//grabQueuedMessageItem() should return the most urgent item, even though it was queued last
+		assertSame(itemUrgent, pmq.grabQueuedMessageItem(0));
+	}
 }
