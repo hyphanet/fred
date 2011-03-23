@@ -1046,10 +1046,6 @@ public class PluginManager {
 			this.experimental = experimental;
 			this.advanced = advanced;
 		}
-		
-		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
-			this(name, essential, minVer, usesXML, uri, false, false, false);
-		}
 	}
 
 	public static Map<String, OfficialPluginDescription> officialPlugins = new HashMap<String, OfficialPluginDescription>();
@@ -1079,19 +1075,27 @@ public class PluginManager {
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, null));
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, null, false, false, false));
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML, FreenetURI uri) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, uri));
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, uri, false, false, false));
+	}
+
+	static void addOfficialPlugin(String name, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, uri, deprecated, experimental, advanced));
 	}
 
 	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, null));
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, null, false, false, false));
 	}
 
 	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, uri));
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, uri, false, false, false));
+	}
+
+	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, uri, deprecated, experimental, advanced));
 	}
 
 	/**
