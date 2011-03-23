@@ -323,6 +323,9 @@ public class PproxyToadlet extends Toadlet {
 					super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
 					return;
 				}
+				
+				final int mode = ctx.getPageMaker().parseMode(request, this.container);
+				boolean advancedModeEnabled = (mode >= PageMaker.MODE_ADVANCED);
 
 				Iterator<PluginProgress> loadingPlugins = pm.getStartingPlugins().iterator();
 
@@ -359,7 +362,7 @@ public class PproxyToadlet extends Toadlet {
 
 				showStartingPlugins(pm, contentNode);
 				showPluginList(ctx, pm, contentNode);
-				showOfficialPluginLoader(ctx, contentNode, availablePlugins, pm);
+				showOfficialPluginLoader(ctx, contentNode, availablePlugins, pm, advancedModeEnabled);
 				showUnofficialPluginLoader(ctx, contentNode);
 				showFreenetPluginLoader(ctx, contentNode);
 
@@ -485,7 +488,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 	
-	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, List<OfficialPluginDescription> availablePlugins, PluginManager pm) {
+	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, List<OfficialPluginDescription> availablePlugins, PluginManager pm, boolean advancedModeEnabled) {
 		/* box for "official" plugins. */
 		HTMLNode addOfficialPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
@@ -526,9 +529,20 @@ public class PproxyToadlet extends Toadlet {
 		HTMLNode selectNode = p.addChild("select", "name", "plugin-name");
 		Iterator<OfficialPluginDescription> availablePluginIterator = availablePlugins.iterator();
 		while (availablePluginIterator.hasNext()) {
-			String pluginName = availablePluginIterator.next().name;
-			if(!pm.isPluginLoaded(pluginName))
-				selectNode.addChild("option", "value", pluginName, pluginName);
+			OfficialPluginDescription plugin = availablePluginIterator.next();
+			String pluginName = plugin.name;
+			if(!pm.isPluginLoaded(pluginName)) {
+				if(!advancedModeEnabled) {
+					if(plugin.advanced || plugin.deprecated || plugin.experimental)
+						continue;
+				}
+				HTMLNode option = selectNode.addChild("option", "value", pluginName);
+				option.addChild("#", pluginName);
+				if(plugin.deprecated)
+					option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
+				if(plugin.experimental)
+					option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
+			}
 		}
 		addOfficialForm.addChild("#", " ");
 		addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
