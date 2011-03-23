@@ -361,7 +361,7 @@ public class PproxyToadlet extends Toadlet {
 				}
 
 				showStartingPlugins(pm, contentNode);
-				showPluginList(ctx, pm, contentNode);
+				showPluginList(ctx, pm, contentNode, advancedModeEnabled);
 				showOfficialPluginLoader(ctx, contentNode, availablePlugins, pm, advancedModeEnabled);
 				showUnofficialPluginLoader(ctx, contentNode);
 				showFreenetPluginLoader(ctx, contentNode);
@@ -435,7 +435,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 
-	private void showPluginList(ToadletContext ctx, PluginManager pm, HTMLNode contentNode) throws ToadletContextClosedException, IOException {
+	private void showPluginList(ToadletContext ctx, PluginManager pm, HTMLNode contentNode, boolean advancedMode) throws ToadletContextClosedException, IOException {
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		infobox.addChild("div", "class", "infobox-header", NodeL10n.getBase().getString("PluginToadlet.pluginListTitle"));
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -445,10 +445,13 @@ public class PproxyToadlet extends Toadlet {
 			HTMLNode pluginTable = infoboxContent.addChild("table", "class", "plugins");
 			HTMLNode headerRow = pluginTable.addChild("tr");
 			headerRow.addChild("th", l10n("pluginFilename"));
-			headerRow.addChild("th", l10n("classNameTitle"));
+			if(advancedMode)
+				headerRow.addChild("th", l10n("classNameTitle"));
 			headerRow.addChild("th", l10n("versionTitle"));
-			headerRow.addChild("th", l10n("internalIDTitle"));
-			headerRow.addChild("th", l10n("startedAtTitle"));
+			if(advancedMode) {
+				headerRow.addChild("th", l10n("internalIDTitle"));
+				headerRow.addChild("th", l10n("startedAtTitle"));
+			}
 			headerRow.addChild("th");
 			headerRow.addChild("th");
 			headerRow.addChild("th");
@@ -457,14 +460,17 @@ public class PproxyToadlet extends Toadlet {
 				PluginInfoWrapper pi = it.next();
 				HTMLNode pluginRow = pluginTable.addChild("tr");
 				pluginRow.addChild("td", pi.getFilename());
-				pluginRow.addChild("td", pi.getPluginClassName());
+				if(advancedMode)
+					pluginRow.addChild("td", pi.getPluginClassName());
 				long ver = pi.getPluginLongVersion();
 				if(ver != -1)
 					pluginRow.addChild("td", pi.getPluginVersion()+" ("+ver+")");
 				else
 					pluginRow.addChild("td", pi.getPluginVersion());
-				pluginRow.addChild("td", pi.getThreadName());
-				pluginRow.addChild("td", new Date(pi.getStarted()).toString());
+				if(advancedMode) {
+					pluginRow.addChild("td", pi.getThreadName());
+					pluginRow.addChild("td", new Date(pi.getStarted()).toString());
+				}
 				if (pi.isStopping()) {
 					pluginRow.addChild("td", l10n("pluginStopping"));
 					/* add two empty cells. */
