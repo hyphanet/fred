@@ -532,8 +532,8 @@ public class PproxyToadlet extends Toadlet {
 		p = addOfficialForm.addChild("p");
 		
 		p.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
-		HTMLNode selectNode = p.addChild("select", "name", "plugin-name");
 		Iterator<OfficialPluginDescription> availablePluginIterator = availablePlugins.iterator();
+		boolean first = true;
 		while (availablePluginIterator.hasNext()) {
 			OfficialPluginDescription plugin = availablePluginIterator.next();
 			String pluginName = plugin.name;
@@ -542,16 +542,24 @@ public class PproxyToadlet extends Toadlet {
 					if(plugin.advanced || plugin.deprecated || plugin.experimental)
 						continue;
 				}
-				HTMLNode option = selectNode.addChild("option", "value", pluginName);
-				option.addChild("#", pluginName);
+				HTMLNode option;
+				if(first) {
+					option = addOfficialForm;
+					first = false;
+				} else {
+					option = addOfficialForm.addChild("br");
+				}
+				option = option.addChild("input", new String[] { "type", "name", "value" },
+						new String[] { "radio", "plugin-name", pluginName });
+				option.addChild("i", pluginName);
 				if(plugin.deprecated)
 					option.addChild("b", " ("+l10n("loadLabelDeprecated")+")");
 				if(plugin.experimental)
 					option.addChild("b", " ("+l10n("loadLabelExperimental")+")");
+				option.addChild("#", " - "+l10n("pluginDesc."+pluginName));
 			}
 		}
-		addOfficialForm.addChild("#", " ");
-		addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
+		addOfficialForm.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
 	}
 	
 	private void showUnofficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode) {
