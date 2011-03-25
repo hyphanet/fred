@@ -106,6 +106,7 @@ div#statusbar-container {
     background-position: 0px 0px;
 }
 
+
 div#statusbar {
     position: absolute;
     z-index:20;
@@ -117,6 +118,11 @@ div#statusbar {
     top: 0em;
     font-size: small;
     color: gray;
+}
+
+div#statusbar:hover {
+    background-color: white;
+    background-image: none;
 }
 
 div#statusbar a {
