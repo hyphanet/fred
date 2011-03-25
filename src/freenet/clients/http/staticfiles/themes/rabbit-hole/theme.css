@@ -697,10 +697,12 @@ div #navbar {
     display: none;
 }
 
-.navlist-not-selected:hover ul, .navlist-not-selected ul:hover{
+.navlist-not-selected:hover ul{
     z-index: 1000;
     display: block;
     position: absolute;
+    top: 1.18em;
+    padding-top: 0.15em;
     right: 0px;
     width: 100%; /* note change in width*/
     height: 2.7em;
@@ -737,6 +739,8 @@ div #navbar {
 	z-index: 0;
 	display: block;
 	position: absolute;
+	top: 1.18em;
+	padding-top: 0.15em;
 	right: 0px;
 	/*background-color: #AFAFC0;*/
 	height: 1.5em;
