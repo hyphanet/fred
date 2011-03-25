@@ -4,6 +4,7 @@
 @import url(/static/bookmark.css);
 
 /* Base theme; commented out, since it is not really compatible. TODO: Get everything therein to here and integrate it. */
+/* First: Progress bars */
 /* @import url(/static/themes/clean/theme.css); */
 
 /* alerts */
@@ -108,7 +109,7 @@ div#statusbar-container {
 div#statusbar {
     position: absolute;
     z-index:20;
-    background-color: white;
+    background-image: url(semi-transparent.png);
     margin-left: 66px;
     padding-left: 0.1em;
     padding-right: 0.1em;
