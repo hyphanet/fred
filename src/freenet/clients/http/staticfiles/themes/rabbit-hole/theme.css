@@ -726,7 +726,7 @@ div #navbar {
 }
 
 
-.navlist-selected{
+#navlist-selected{
 	z-index: 0;
 	width: 100%; /* note change in width*/
 	height: 2em;
