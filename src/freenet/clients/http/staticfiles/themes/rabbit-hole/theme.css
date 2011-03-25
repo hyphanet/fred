@@ -145,6 +145,57 @@ div#statusbar div.infobox-header {
 }
 
 
+/* progress bar */
+
+.progressbar {
+	position: relative;
+	font-size: small;
+	height: 15px;
+	width: 130px;
+	border: solid 1px #444444;
+	background-color: #e8e8e8;
+}
+
+.progressbar-done {
+	float: left;
+	height: 15px;
+	background-color: #44cc44;
+}
+
+.progressbar-min {
+	float: left;
+	height: 15px;
+	background-color: #cce8cc;
+}
+
+.progressbar-failed {
+	float: left;
+	height: 12px;
+	background-color: #ffcccc;
+}
+
+.progressbar-failed2 {
+	float: left;
+	height: 12px;
+	background-color: #ff4444;
+}
+
+.progress_fraction_finalized {
+	position: absolute;
+	left: 5px;
+	font-weight: bold;
+}
+
+.progress_fraction_not_finalized {
+	position: absolute;
+	left: 5px;
+	font-style: italic;
+}
+
+
+/* stuff */
+
+
 div#content {
 	position: inherit;
 	margin: 5px;
