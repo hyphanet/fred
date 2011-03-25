@@ -1,0 +1,395 @@
+/* clean-dropdown */
+
+/* Bookmarks & bookmark editor */
+@import url(/static/bookmark.css);
+
+/* Base theme; commented out, since it is not really compatible. TODO: Get everything therein to here and integrate it. */
+/* @import url(/static/themes/clean/theme.css); */
+
+/* alerts */
+
+.alert-error {
+	color: darkred;
+}
+
+.alert-warning {
+	color: blue;
+}
+
+.alert-minor {
+	color: green;
+}
+
+/* infoboxes */
+
+div.infobox div.infobox-header {
+	min-height: 32px;
+	font-weight: bold;
+	font-size: 11pt;
+	background-repeat: no-repeat;
+	background-position: right;
+}
+
+div.infobox-information div.infobox-header {
+	background-image: url(information.gif);
+}
+
+div.infobox-warning div.infobox-header {
+	background-color: #f8f8c0;
+	background-image: url(warning.gif);
+}
+
+div.infobox-alert {
+}
+
+div.infobox-alert div.infobox-header {
+	background-color: #ffd0d0;
+	background-image: url(alert.gif);
+}
+
+div.infobox-error {
+}
+
+div.infobox-error div.infobox-header {
+	background-color: #ffd0d0;
+	background-image: url(error.gif);
+}
+
+div.infobox-query div.infobox-header {
+	background-color: #f0f0e8;
+	background-image: url(query.gif);
+}
+
+div.infobox-success div.infobox-header {
+	background-color: #e8f0e8;
+	background-image: url(success.gif);
+}
+
+ul.alert-summary {
+	list-style-type: none;
+	text-indent: 20px;
+}
+
+li.alert-summary-text-error {
+	background: url(error-16.gif) left center no-repeat;
+}
+
+li.alert-summary-text-alert {
+	background: url(alert-16.gif) left center no-repeat;
+}
+
+li.alert-summary-text-warning {
+	background: url(warning-16.gif) left center no-repeat;
+}
+
+li.alert-summary-text-minor {
+	background: url(information-16.gif) left center no-repeat;
+}
+
+
+/* statusbar */
+
+div#statusbar-container {
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0px;
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:18;
+    min-height: 51px;
+    background-image: url(logo_solid.png);
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+}
+
+div#statusbar {
+    position: absolute;
+    z-index:20;
+    background-color: white;
+    margin-left: 66px;
+    padding-left: 0.1em;
+    padding-right: 0.1em;
+    top: 0em;
+    font-size: small;
+    color: gray;
+}
+
+div#statusbar a {
+    color: gray;
+}
+
+div#statusbar div {
+	display: inline;
+}
+
+div#statusbar div.progressbar {
+	display: inline-block;
+	margin-bottom: -3px;
+}
+
+div#statusbar div.separator {
+	display: inline-block;
+	background-color: #d0d0d0;
+	width: 1px;
+	margin-left: 9px;
+	margin-right: 9px;
+}
+
+div#statusbar div.infobox-header {
+	display: none;
+}
+
+
+div#content {
+	position: inherit;
+	margin: 5px;
+}
+
+/* rabbit hole */
+/* HTML5 tags for HTML 4.01 */
+header, section, footer, aside, nav, article, figure {
+    display: block;
+}
+
+aside .hidden {
+    display: none;
+    background-color: silver;
+    padding-left: 1em;
+    padding-right: 1em;
+    border: gray 1px dashed;
+}
+
+aside:hover .hidden {
+    display: block;
+}
+
+aside .hidden:hover {
+    display: block;
+}
+
+.gray {
+    color: gray;
+}
+
+.looking-glass {
+    float: left; 
+    margin-left: -1em; 
+    margin-top: 0.1em; 
+    margin-right: 0.2em;
+}
+
+body {
+    background-image: url(kaninchenspur.png);
+    background-repeat: no-repeat;
+    background-position: 90px 2.5em;
+}
+
+section {
+    background-color: white;
+}
+
+#topbar {
+    margin: 0px;
+    padding-left: 80px;
+    min-height: 41px; /* as big as the rabbit */
+}
+
+.rabbit {
+    position: fixed;
+    left: 0px;
+    top: 0.1em;
+}
+
+img {
+    border-style: none;
+}
+
+.status {
+    position: absolute;
+    left: 66px;
+    top: 0em;
+    font-size: small;
+    color: gray;
+}
+
+.language {
+    position: absolute;
+    left: 15px;
+    top: 3.2em;
+    font-size: small;
+    color: gray;
+}
+
+div #navbar {
+    position: absolute;
+    right: 0px;
+    top: 0.35em;
+    width: 100%;
+    padding-right: 0.3em;
+    min-height: 2.6em;
+    text-align: right;
+    color: gray;
+    background-image: url(line.png);
+    background-repeat: repeat-x;
+    background-position: 0em 2.45em;
+}
+
+#navlist {
+    position: absolute;
+    z-index:19; /* above status */
+    right: 0px;
+    top: 0.35em;
+    width: 82%;
+    text-align: right;
+    color: gray;
+}
+
+#navlist li {
+    display: inline;
+    list-style-type: none;
+    padding-left: 0.3em;
+}
+
+#navlist li a {
+    text-decoration: none;
+}
+
+.main-nav-line {
+    position: absolute;
+    top: 2.5em;
+    z-index: -1;
+    width: 100%;
+    right: 0px;
+    height: 2px;
+    background-image: url(line.png);
+}
+
+/* Popup-Sublist adapted from http://stopdesign.com/archive/2003/03/07/replace-text.html */
+
+.navlist-not-selected{
+    z-index: 1000;
+}
+
+.navlist-not-selected:hover{
+    z-index: 1000;
+    width: 100%; /* note change in width*/
+    height: 2em;
+    background-image: url(glass.png);
+    background-position: center 2px;
+    background-repeat: no-repeat;
+}
+
+.navlist-not-selected:hover ul{
+    z-index: 1000;
+    display: block;
+    position: absolute;
+    right: 0px;
+    width: 100%; /* note change in width*/
+    height: 2.5em;
+    background-image: url(nav-lower-bg.png);
+    background-position: center top;
+    background-repeat: repeat-x;
+}
+
+.navlist-not-selected ul{
+    z-index: 1000;
+    display: none;
+}
+
+.navlist-not-selected ul li{
+    z-index: 1000;
+    display: inline;
+    list-style: none;
+    top: 2em;
+    margin-top: 0.1em;
+}
+
+.navlist-not-selected ul li a span{
+    z-index: 1000;
+    display: inline;
+    visibility: hidden; /* BUG: In Mozilla, if this is display: none a render bug happens. */
+}
+
+
+/* Popup-Sublist adapted from http://stopdesign.com/archive/2003/03/07/replace-text.html */
+
+.navlist-selected{
+	z-index: 0;
+	width: 100%; /* note change in width*/
+	height: 2em;
+	background-image: url(glass.png);
+	background-position: center 2px;
+	background-repeat: no-repeat;
+}
+
+#navlist-selected ul{
+	z-index: 0;
+	display: block;
+	position: absolute;
+	right: 0px;
+	/*background-color: #AFAFC0;*/
+	height: 1.5em;
+	width: 100%; /* note change in width*/
+}
+
+#navlist-selected ul li{
+    z-index: 0;
+    display: inline;
+    list-style: none;
+    top: 2em;
+    margin-top: 0.1em;
+}
+
+#navlist-selected ul li a span{
+    z-index: 0;
+    display: inline;
+    visibility: hidden; /* BUG: In Mozilla, if this is display: none a render bug happens. */
+}
+
+
+/* Content styling */
+
+.content {
+    margin-top: 5em;
+    margin-left: 83px;
+    margin-right: 5em;
+}
+
+/* From greyandblue */
+/* infoboxes */
+
+div.infobox {
+	margin: 0 0 5px 0;
+	padding: 10px;
+/*	background-color: #f0f0f0;*/
+	border:0px none #676767;
+}
+
+div.infobox div.infobox-header {
+	color: #999999;
+	color: orange;
+	padding: 10px 0px 0px 0.5em;
+	font-family: verdana;
+	font-weight: bold;
+	font-size: 14pt;
+	background-repeat: no-repeat;
+	background-position: right;
+}
+
+div.infobox div.infobox-content {
+    color: navy;
+    padding: 10px;
+    /*background-color:navy;*/
+    border: 1px dashed silver;
+}
+
+h1 {
+    margin-top: 1em;
+    font-size: large;
+}
+
+#selected-subnavbar {
+    display: none
+}
