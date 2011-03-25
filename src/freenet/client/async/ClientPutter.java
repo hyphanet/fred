@@ -175,7 +175,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, Key.ALGO_AES_PCFB_256_SHA256, cryptoKey);
 					} else
 						currentState =
-							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx, context, container);
+							new BinaryBlobInserter(data, this, getClient(), false, priorityClass, ctx, context, container);
 				}
 			}
 			if(cancel) {

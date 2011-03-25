@@ -3784,7 +3784,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private void checkForEvilJVMBugs() {
 		// Now check whether we are likely to get the EvilJVMBug.
-		// If we are running a Sun or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
+		// If we are running a Sun/Oracle or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
 
 		String jvmVendor = System.getProperty("java.vm.vendor");
 		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
@@ -3839,8 +3839,11 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM name: "+jvmName+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 
-		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun ")) || (jvmVendor.startsWith("Apple ")))) {
-			// Sun bugs
+		//Add some checks for "Oracle" to futureproof against them renaming from "Sun".  
+		//Should have no effect because if a user has downloaded a new enough file for Oracle to have changed the name these bugs shouldn't apply.
+		//Still, one never knows and this code might be extended to cover future bugs.
+		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || jvmVendor.startsWith("Oracle ")) || (jvmVendor.startsWith("The FreeBSD Foundation") && (jvmSpecVendor.startsWith("Sun ") || jvmSpecVendor.startsWith("Oracle "))) || (jvmVendor.startsWith("Apple "))) {
+			// Sun/Oracle bugs
 
 			// Spurious OOMs
 			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795
@@ -3874,7 +3877,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 
 		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
-			//Note that Sun does not produce VMs for the Macintosh operating system, dont ask the user to find one...
+			//Note that Sun/Oracle does not produce VMs for the Macintosh operating system, dont ask the user to find one...
 		} else {
 			if(jvmVendor.startsWith("Free Software Foundation")) {
 				try {
