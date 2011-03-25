@@ -62,7 +62,7 @@ div.infobox-query div.infobox-header {
 }
 
 div.infobox-success div.infobox-header {
-    color: aqua;
+    color: green;
     background-image: url(success.gif);
 }
 
