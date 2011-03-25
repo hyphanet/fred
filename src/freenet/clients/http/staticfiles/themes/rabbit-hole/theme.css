@@ -599,6 +599,7 @@ section {
 }
 
 #topbar h1 {
+    color: gray;
     padding-left: 85px;
     margin-top: 1em;
     font-size: large;
@@ -715,8 +716,13 @@ div #navbar {
     z-index: 1000;
     display: inline;
     list-style: none;
+    white-space: normal;
     top: 2.0em;
     margin-top: 0.1em;
+}
+
+.navlist-not-selected ul li:after {
+    content: " ";
 }
 
 .navlist-not-selected ul li a span{
@@ -751,8 +757,13 @@ div #navbar {
     z-index: 0;
     display: inline;
     list-style: none;
+    white-space: normal;
     top: 2em;
     margin-top: 0.1em;
+}
+
+#navlist-selected ul li:after {
+    content: " ";
 }
 
 #navlist-selected ul li a span{
