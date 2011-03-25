@@ -28,14 +28,16 @@ div.infobox div.infobox-header {
 	font-size: 11pt;
 	background-repeat: no-repeat;
 	background-position: right;
+	color: orange;
 }
 
 div.infobox-information div.infobox-header {
+	color: silver;
 	background-image: url(information.gif);
 }
 
 div.infobox-warning div.infobox-header {
-	background-color: #f8f8c0;
+	color: silver;
 	background-image: url(warning.gif);
 }
 
@@ -43,7 +45,7 @@ div.infobox-alert {
 }
 
 div.infobox-alert div.infobox-header {
-	background-color: #ffd0d0;
+	color: red;
 	background-image: url(alert.gif);
 }
 
@@ -51,18 +53,17 @@ div.infobox-error {
 }
 
 div.infobox-error div.infobox-header {
-	background-color: #ffd0d0;
+	color: red;
 	background-image: url(error.gif);
 }
 
 div.infobox-query div.infobox-header {
-	background-color: #f0f0e8;
 	background-image: url(query.gif);
 }
 
 div.infobox-success div.infobox-header {
-	background-color: #e8f0e8;
-	background-image: url(success.gif);
+    color: aqua;
+    background-image: url(success.gif);
 }
 
 ul.alert-summary {
@@ -380,8 +381,7 @@ div.infobox {
 }
 
 div.infobox div.infobox-header {
-	color: #999999;
-	color: orange;
+	font-style: italic;
 	padding: 10px 0px 0px 0.5em;
 	font-family: verdana;
 	font-weight: bold;
