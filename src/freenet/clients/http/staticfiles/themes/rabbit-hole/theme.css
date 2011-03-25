@@ -288,7 +288,7 @@ div #navbar {
 .navlist-not-selected:hover{
     z-index: 1000;
     width: 100%; /* note change in width*/
-    height: 2em;
+    height: 2.2em;
     background-image: url(glass.png);
     background-position: center 2px;
     background-repeat: no-repeat;
