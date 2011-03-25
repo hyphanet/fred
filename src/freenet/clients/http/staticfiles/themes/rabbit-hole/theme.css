@@ -111,6 +111,7 @@ div#statusbar {
     margin-left: 66px;
     padding-left: 0.1em;
     padding-right: 0.1em;
+    white-space: nowrap;
     top: 0em;
     font-size: small;
     color: gray;
@@ -191,9 +192,15 @@ section {
 }
 
 #topbar {
+    max-width: 38%;
     margin: 0px;
-    padding-left: 80px;
     min-height: 41px; /* as big as the rabbit */
+}
+
+#topbar h1 {
+    padding-left: 85px;
+    margin-top: 1em;
+    font-size: large;
 }
 
 .rabbit {
@@ -225,7 +232,7 @@ img {
 div #navbar {
     position: absolute;
     right: 0px;
-    top: 0.35em;
+    top: 0em;
     width: 100%;
     padding-right: 0.3em;
     min-height: 2.6em;
@@ -241,7 +248,8 @@ div #navbar {
     z-index:19; /* above status */
     right: 0px;
     top: 0.35em;
-    width: 82%;
+    width: 62%;
+    white-space: nowrap;
     text-align: right;
     color: gray;
 }
@@ -249,11 +257,15 @@ div #navbar {
 #navlist li {
     display: inline;
     list-style-type: none;
-    padding-left: 0.3em;
+    padding-right: 0.3em;
 }
 
 #navlist li a {
     text-decoration: none;
+}
+
+#navlist li a:visited {
+    color: gray;
 }
 
 .main-nav-line {
@@ -383,11 +395,6 @@ div.infobox div.infobox-content {
     padding: 10px;
     /*background-color:navy;*/
     border: 1px dashed silver;
-}
-
-h1 {
-    margin-top: 1em;
-    font-size: large;
 }
 
 #selected-subnavbar {
