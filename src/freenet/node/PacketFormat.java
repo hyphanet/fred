@@ -41,8 +41,7 @@ public interface PacketFormat {
 
 	/**
 	 * @return The time at which the packet format will want to send an ack or similar.
-	 * 0 if there are already messages in flight. Long.MAX_VALUE if not supported or if 
-	 * there is nothing to ack and nothing in flight. */
+	 * Long.MAX_VALUE if not supported or if there is nothing to ack and nothing in flight. */
 	long timeNextUrgent();
 
 	void checkForLostPackets();
