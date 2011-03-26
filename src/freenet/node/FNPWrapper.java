@@ -197,6 +197,19 @@ public class FNPWrapper implements PacketFormat {
 	}
 
 	public long timeNextUrgent() {
+		SessionKey cur;
+		SessionKey prev;
+		synchronized(pn) {
+			cur = pn.getCurrentKeyTracker();
+			prev = pn.getPreviousKeyTracker();
+		}
+		long t = Long.MAX_VALUE;
+		if(cur != null) {
+			t = Math.min(t, cur.packets.getNextUrgentTime());
+		}
+		if(prev != null) {
+			t = Math.min(t, prev.packets.getNextUrgentTime());
+		}
 		return Long.MAX_VALUE;
 	}
 
