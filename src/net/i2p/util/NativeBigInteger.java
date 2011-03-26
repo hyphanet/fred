@@ -27,7 +27,7 @@ import freenet.support.CPUInformation.UnknownCPUException;
  * <p>BigInteger that takes advantage of the jbigi library for the modPow operation,
  * which accounts for a massive segment of the processing cost of asymmetric
  * crypto. It also takes advantage of the jbigi library for converting a BigInteger
- * value to a double. Sun's implementation of the 'doubleValue()' method is _very_ lousy.
+ * value to a double. Sun/Oracle's implementation of the 'doubleValue()' method is _very_ lousy.
  *
  * The jbigi library itself is basically just a JNI wrapper around the
  * GMP library - a collection of insanely efficient routines for dealing with
@@ -264,7 +264,7 @@ public class NativeBigInteger extends BigInteger {
          * @param integer
          */
 	public NativeBigInteger(BigInteger integer) {
-		//Now, why doesn't sun provide a constructor
+		//Now, why doesn't Sun/Oracle provide a constructor
 		//like this one in BigInteger?
 		this(integer.toByteArray());
 	}
