@@ -28,6 +28,7 @@ public class MessageItem {
 	private boolean hasCachedID;
 	final boolean sendLoadRT;
 	final boolean sendLoadBulk;
+	private long deadline;
 
 	public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, short overridePriority) {
 		this.msg = msg2;
@@ -171,5 +172,24 @@ public class MessageItem {
 				}
 			}
 		}
+	}
+
+	/** Set the deadline for this message. Called when a message is unqueued, when
+	 * we start to send it. Used if the message does not entirely fit in the 
+	 * packet, and also if it is retransmitted.
+	 * @param time The time (in the future) to set the deadline to.
+	 */
+	public synchronized void setDeadline(long time) {
+		deadline = time;
+	}
+	
+	/** Clear the deadline for this message. */
+	public synchronized void clearDeadline() {
+		deadline = 0;
+	}
+	
+	/** Get the deadline for this message. 0 means no deadline has been set. */
+	public synchronized long getDeadline() {
+		return deadline;
 	}
 }
