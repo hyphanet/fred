@@ -1309,4 +1309,8 @@ outer:
 		if(pn != null) return super.toString() +" for "+pn.shortToString();
 		else return super.toString();
 	}
+
+	public boolean fullPacketQueued(int maxPacketSize) {
+		return pn.getMessageQueue().mustSendSize(HMAC_LENGTH /* FIXME estimate headers */, maxPacketSize);
+	}
 }

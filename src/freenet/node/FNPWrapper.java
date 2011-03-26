@@ -241,4 +241,8 @@ public class FNPWrapper implements PacketFormat {
 	public void onReconnect(boolean wasARekey) {
 		// Do nothing.
 	}
+	
+	public boolean fullPacketQueued(int maxPacketSize) {
+		return pn.getMessageQueue().mustSendSize(FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE /* FIXME estimate headers */, maxPacketSize);
+	}
 }

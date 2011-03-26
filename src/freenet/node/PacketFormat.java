@@ -52,6 +52,10 @@ public interface PacketFormat {
 	 * thus avoid retransmission.
 	 */
 	long timeSendAcks();
+	
+	/** Is there enough data queued to justify sending a packet immediately? Ideally
+	 * this should take into account transport level headers. */
+	boolean fullPacketQueued(int maxPacketSize);
 
 	void checkForLostPackets();
 
