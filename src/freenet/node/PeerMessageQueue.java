@@ -52,6 +52,7 @@ public class PeerMessageQueue {
 	
 	private class PrioQueue {
 		
+		// FIXME refactor into PrioQueue and RoundRobinByUIDPrioQueue
 		PrioQueue(int timeout, boolean timeoutSinceLastSend) {
 			this.timeout = timeout;
 			this.roundRobinBetweenUIDs = timeoutSinceLastSend;
