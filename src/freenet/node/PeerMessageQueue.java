@@ -913,7 +913,7 @@ public class PeerMessageQueue {
 	 * @param now The current time. If the next urgent time is less than this we
 	 * return immediately rather than computing an accurate past value. Set to 
 	 * Long.MAX_VALUE if you want an accurate value.
-	 * @return
+	 * @return The next urgent time, but can be too high if it is less than now.
 	 */
 	public synchronized long getNextUrgentTime(long t, long now) {
 		for(int i=0;i<queuesByPriority.length;i++) {
