@@ -5,20 +5,17 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.InsertContext.CompatibilityMode;
-import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
-import freenet.support.MultiValueTable;
-import freenet.support.URLEncoder;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -43,16 +40,9 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 * Must be called before using createHiddenParamFields or createDirectoryButton
 	 * because it returns hiddenFieldName and HiddenFieldValue pairs.
 	 */
-	protected abstract ArrayList<ArrayList<String>> processParams(HTTPRequest request);
+	protected abstract Hashtable<String, String> persistanceFields(Hashtable<String, String> set);
 	
-	protected final ArrayList<String> makePair(String one, String two){
-		ArrayList<String> pair = new ArrayList<String>();
-		pair.add(one);
-		pair.add(two);
-		return pair;
-	}
-	
-	protected void createInsertDirectoryButton(HTMLNode fileRow, String path, ToadletContext ctx, ArrayList<ArrayList<String>> fieldPairs) {
+	protected void createInsertDirectoryButton(HTMLNode fileRow, String path, ToadletContext ctx, Hashtable<String, String> fieldPairs) {
 		HTMLNode cellNode = fileRow.addChild("td");
 		HTMLNode formNode = ctx.addFormChild(cellNode, postTo(), "insertLocalFileForm");
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-dir", l10n("insert")});
@@ -60,24 +50,69 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 		createHiddenParamFields(formNode, fieldPairs);
 	}
 	
-	/**
-	 * Renders hidden fields on given fieldNode. 
-	 * hiddenFieldName and hiddenFieldValue must have the same number of elements.
-	 */
-	private final void createHiddenParamFields(HTMLNode formNode, ArrayList<ArrayList<String>> fieldPairs){
-		for(ArrayList<String> pair : fieldPairs)
-		{
-			assert(pair.size() == 2);
-			formNode.addChild("input", new String[] { "type", "name", "value" }, 
-					new String[] { "hidden", pair.get(0), pair.get(1)});
-		}
-		return;
-	}
-	
-	private final void createChangeDirButton(HTMLNode formNode, String buttonText, String path, ArrayList<ArrayList<String>> fieldPairs){
+	private final void createChangeDirButton(HTMLNode formNode, String buttonText, String path, Hashtable<String, String> fieldPairs){
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "change-dir", buttonText});
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "path", path});
 		createHiddenParamFields(formNode, fieldPairs);
+	}
+	
+	/**
+	 * 
+	 * @param HTTPRequest request
+	 * @return Hashtable of all GET params.
+	 */
+	private final Hashtable<String, String> readGET(HTTPRequest request)
+	{
+		Hashtable<String, String> set = new Hashtable<String, String>();
+		Collection<String> names = request.getParameterNames();
+		for(String key : names)
+		{
+			set.put(key, request.getParam(key));
+		}
+		return set;
+	}
+	
+	/**
+	 * If the name is not recognized, the value may have a maximum length
+	 * of 4096 characters. "key" and "overrideSplitfileKey" have a maximum
+	 * length of QueueToadlet.MAX_KEY_LENGTH, and "message" has a maximum
+	 * length of 5*1024.
+	 * @param HTTPRequest request
+	 * @return Hashtable of all POST parts.
+	 */
+	protected Hashtable<String, String> readPOST(HTTPRequest request)
+	{
+		Hashtable<String, String> set = new Hashtable<String, String>();
+		String[] names = request.getParts();
+		for(String key : names)
+		{
+			if(key.equals("key") || key.equals("overrideSplitfileKey")) {
+				set.put(key, request.getPartAsStringFailsafe(key, QueueToadlet.MAX_KEY_LENGTH));
+			}
+			else if(key.equals("message")){
+				set.put(key, request.getPartAsStringFailsafe(key, 5*1024));
+			}
+			else {
+				//TODO: What is an appropriate maximum length?
+				set.put(key, request.getPartAsStringFailsafe(key, 4096));
+			}
+		}
+		return set;
+	}
+	
+	/**
+	 * Renders hidden fields on given formNode. 
+	 */
+	private final void createHiddenParamFields(HTMLNode formNode, Hashtable<String, String> fieldPairs){
+		Enumeration<String> keys = fieldPairs.keys();
+		String key;
+		while(keys.hasMoreElements())
+		{
+			key = keys.nextElement();
+			formNode.addChild("input", new String[] { "type", "name", "value" }, 
+					new String[] { "hidden", key, fieldPairs.get(key)});
+		}
+		return;
 	}
 
 	// FIXME reentrancy issues with currentPath - fix running two at once.
@@ -85,14 +120,14 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 	 * @see freenet.clients.http.Toadlet#handleGet(java.net.URI,
 	 *      freenet.clients.http.ToadletContext)
 	 */
+	public void handleMethodGET(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		renderPage(persistanceFields(readGET(request)), request.getParam("path"), ctx);
+	}
 	public void handleMethodPOST(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		renderPage(request, ctx);
+		renderPage(persistanceFields(readPOST(request)), request.getPartAsStringFailsafe("path", 4096), ctx);
 	}
 	
-	private void renderPage(HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		ArrayList<ArrayList<String>> fieldPairs = processParams(request);
-		// FIXME: What is a good maximum path length?
-		String path = request.getPartAsStringFailsafe("path", 4096);
+	private void renderPage(Hashtable<String, String> fieldPairs, String path, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		if (path.length() == 0) {
 			if (currentPath == null) {
 				currentPath = new File(System.getProperty("user.home")); // FIXME what if user.home is denied?
@@ -150,7 +185,7 @@ public abstract class LocalFileBrowserToadlet extends Toadlet {
 				}
 				sendErrorPage(ctx, 403, "Forbidden", l10n("dirAccessDenied"));
 				currentPath = home;
-				renderPage(request, ctx);
+				renderPage(fieldPairs, path, ctx);
 				return;
 			}
 			

@@ -1,15 +1,13 @@
 package freenet.clients.http;
 
-import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Set;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
-import freenet.support.api.HTTPRequest;
 
 public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
-
-	private String postTo;
 	
 	public String path() {
 		return "/n2nm-browse/";
@@ -23,19 +21,20 @@ public class LocalFileN2NMToadlet extends LocalFileBrowserToadlet {
 		super(core, highLevelSimpleClient);
 	}
 	
-	protected void createInsertDirectoryButton(HTMLNode fileRow, String path, ToadletContext ctx) {
+	protected void createInsertDirectoryButton(HTMLNode fileRow, String path, ToadletContext ctx, Hashtable<String, String> fieldPairs) {
 		fileRow.addChild("td");
 	}
 	
-	protected ArrayList<ArrayList<String>> processParams(HTTPRequest request){
-		ArrayList<ArrayList<String>> fieldPairs = new ArrayList<ArrayList<String>>();
-		fieldPairs.add(makePair("message", request.getPartAsStringFailsafe("message", 5 * 1024)));
-		
-		for(String partName : request.getParts())
+	protected Hashtable<String, String> persistanceFields(Hashtable<String, String> set){
+		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
+		String message = set.get("message");
+		if(message != null) fieldPairs.put("message", message);
+		Set<String> keys = set.keySet();
+		for(String key : keys)
 		{
-			if(partName.startsWith("node_"))
+			if(key.startsWith("node_"))
 			{
-				fieldPairs.add(makePair(partName, "1"));
+				fieldPairs.put(key, "1");
 			}
 		}
 		return fieldPairs;
