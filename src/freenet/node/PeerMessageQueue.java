@@ -54,14 +54,14 @@ public class PeerMessageQueue {
 		
 		PrioQueue(int timeout, boolean timeoutSinceLastSend) {
 			this.timeout = timeout;
-			this.timeoutSinceLastSend = timeoutSinceLastSend;
+			this.roundRobinBetweenUIDs = timeoutSinceLastSend;
 		}
 		
 		/** The timeout, period after which messages become urgent. */
 		final int timeout;
 		/** If true, do round-robin between UID's, and count the timeout relative
 		 * to the last send. Block transfers need this - both realtime and bulk. */
-		final boolean timeoutSinceLastSend;
+		final boolean roundRobinBetweenUIDs;
 		
 		private class Items extends DoublyLinkedListImpl.Item<Items> {
 			/** List of messages to send. Stuff to send first is at the beginning. */
@@ -112,7 +112,7 @@ public class PeerMessageQueue {
 		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
 			if(logMINOR) checkOrder();
-			if(timeoutSinceLastSend) {
+			if(roundRobinBetweenUIDs) {
 				long id = item.getID();
 				if(itemsByID != null) {
 					Items it = itemsByID.get(id);
@@ -164,7 +164,7 @@ public class PeerMessageQueue {
 				if(itemsByID != null)
 					list = itemsByID.get(id);
 				boolean moveIt = false;
-				if(list != null && timeoutSinceLastSend) {
+				if(list != null && roundRobinBetweenUIDs) {
 					if(list.timeLastSent + timeout <= now)
 						moveIt = true;
 				}
@@ -212,7 +212,7 @@ public class PeerMessageQueue {
 					it.remove();
 					moved++;
 					if(logMINOR) checkOrder();
-				} else if(!timeoutSinceLastSend)
+				} else if(!roundRobinBetweenUIDs)
 					break;
 			}
 			if(logDEBUG && moved > 0)
@@ -285,7 +285,7 @@ public class PeerMessageQueue {
 		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
 		 * we tried to send it and failed); it is assumed to already be urgent. */
 		public void addFirst(MessageItem item) {
-			if(!timeoutSinceLastSend) {
+			if(!roundRobinBetweenUIDs) {
 				addToNonUrgent(item);
 				return;
 			}
@@ -372,7 +372,7 @@ public class PeerMessageQueue {
 		 * send. This is intentional, and is relied upon by the bulk-or-realtime logic in
 		 * addMessages(). */
 		public long getNextUrgentTime(long t, long now) {
-			if(!timeoutSinceLastSend) {
+			if(!roundRobinBetweenUIDs) {
 				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
 					t = Math.min(t, itemsNonUrgent.getFirst().submitted + timeout);
 					if(t <= now) return t;
@@ -679,10 +679,10 @@ public class PeerMessageQueue {
 					} else if(logDEBUG)
 						Logger.debug(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
 				}
-				if(timeoutSinceLastSend)
+				if(roundRobinBetweenUIDs)
 					moveToUrgent(now);
 				clearOldNonUrgent(now);
-				if(timeoutSinceLastSend) {
+				if(roundRobinBetweenUIDs) {
 					size = addUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
 				} else {
 					assert(itemsByID == null);
