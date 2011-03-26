@@ -816,6 +816,7 @@ outer:
 											timeLastSentPing = now;
 										}
 										item = new MessageItem(msg, null, null);
+										item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
 									} else {
 										break prio;
 									}
