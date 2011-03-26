@@ -821,6 +821,7 @@ outer:
 								}
 								item = new MessageItem(msg, null, null);
 								mustSendPing = false;
+								item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
 							} else {
 								item = messageQueue.grabQueuedMessageItem(i);
 								if(item == null) {
