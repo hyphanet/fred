@@ -94,9 +94,6 @@ public class NewPacketFormat implements PacketFormat {
 	/** Lock protecting the size of the receive buffer. */
 	private final Object receiveBufferSizeLock = new Object();
 	
-	private long timeLastCalledMaybeSendPacketIncAckOnly;
-	private long timeLastCalledMaybeSendPacketNotAckOnly;
-	
 	private long timeLastSentPacket;
 	private long timeLastSentPayload;
 	private long timeLastSentPing;
@@ -453,21 +450,6 @@ outer:
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	throws BlockedTooLongException {
-		synchronized(this) {
-			long delta = (timeLastCalledMaybeSendPacketIncAckOnly == 0) ? -1 : (now - timeLastCalledMaybeSendPacketIncAckOnly);
-			timeLastCalledMaybeSendPacketIncAckOnly = now;
-			if(logDEBUG && delta != -1) Logger.debug(this, "Last called maybe send packet with ack only: "+delta+" on "+this);
-			if(!ackOnly) {
-				delta = (timeLastCalledMaybeSendPacketNotAckOnly == 0) ? -1 : (now - timeLastCalledMaybeSendPacketNotAckOnly);
-				timeLastCalledMaybeSendPacketNotAckOnly = now;
-				if(delta != -1) {
-					if(delta > 10000)
-						Logger.error(this, "Last called maybe send packet without ack only: "+delta+" on "+this);
-					else if(logDEBUG)
-						Logger.debug(this, "Last called maybe send packet without ack only: "+delta+" on "+this);
-				}
-			}
-		}
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
