@@ -212,6 +212,23 @@ public class FNPWrapper implements PacketFormat {
 		}
 		return Long.MAX_VALUE;
 	}
+	
+	public long timeSendAcks() {
+		SessionKey cur;
+		SessionKey prev;
+		synchronized(pn) {
+			cur = pn.getCurrentKeyTracker();
+			prev = pn.getPreviousKeyTracker();
+		}
+		long t = Long.MAX_VALUE;
+		if(cur != null) {
+			t = Math.min(t, cur.packets.timeSendAcks());
+		}
+		if(prev != null) {
+			t = Math.min(t, prev.packets.timeSendAcks());
+		}
+		return Long.MAX_VALUE;
+	}
 
 	public void checkForLostPackets() {
 		// Do nothing.

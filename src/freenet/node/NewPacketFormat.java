@@ -1041,6 +1041,10 @@ outer:
 		return ret;
 	}
 	
+	public long timeSendAcks() {
+		return timeCheckForAcks();
+	}
+	
 	public boolean canSend(SessionKey tracker) {
 		
 		boolean canAllocateID;

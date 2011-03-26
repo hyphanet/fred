@@ -40,9 +40,18 @@ public interface PacketFormat {
 	boolean canSend(SessionKey key);
 
 	/**
-	 * @return The time at which the packet format will want to send an ack or similar.
-	 * Long.MAX_VALUE if not supported or if there is nothing to ack and nothing in flight. */
+	 * @return The time at which the packet format will want to send an ack, finish sending a message,
+	 * retransmit a packet, or similar. Long.MAX_VALUE if not supported or if there is nothing to ack 
+	 * and nothing in flight. */
 	long timeNextUrgent();
+	
+	/**
+	 * @return The time at which the packet format will want to send an ack. Resends
+	 * etc don't count, only acks. The reason acks are special is they are needed
+	 * for the other side to recognise that their packets have been received and
+	 * thus avoid retransmission.
+	 */
+	long timeSendAcks();
 
 	void checkForLostPackets();
 
