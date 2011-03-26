@@ -1,17 +1,12 @@
 package freenet.clients.http;
-import java.io.File;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
+import java.util.Hashtable;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
-import freenet.support.MultiValueTable;
-import freenet.support.api.HTTPRequest;
-
 
 public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
-	private String overrideKey = null;
 	
 	public LocalFileInsertToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(core, highLevelSimpleClient);
@@ -27,25 +22,10 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 		return "/uploads/";
 	}
 	
-	public void setOverrideKey(String overrideKey)
-	{
-		this.overrideKey = overrideKey;
-	}
-	
-	protected ArrayList<ArrayList<String>> processParams(HTTPRequest request){
-		ArrayList<ArrayList<String>> fieldPairs = new ArrayList<ArrayList<String>>();
+	protected Hashtable<String, String> persistanceFields(Hashtable<String, String> set){
+		Hashtable<String, String> fieldPairs = new Hashtable<String, String>();
 		FreenetURI furi = null;
-		String key;
-		if(overrideKey == null)
-		{
-			key = request.getPartAsStringFailsafe("key", QueueToadlet.MAX_KEY_LENGTH);
-		}
-		else
-		{
-			key = overrideKey;
-			overrideKey = null;
-		}
-		
+		String key = set.get("key");
 		if(key != null) {
 			try {
 				furi = new FreenetURI(key);
@@ -54,20 +34,23 @@ public class LocalFileInsertToadlet extends LocalFileBrowserToadlet {
 			}
 		}
 		
-		// FIXME: What are lengths for these?
-		boolean compress = Boolean.valueOf(request.getPartAsStringFailsafe("compress", 4096));
-		String compatibilityMode = request.getPartAsStringFailsafe("compatibilityMode", 4096);
+		String element = set.get("compress");
+		if(element != null && Boolean.valueOf(element)) {
+			fieldPairs.put("compress", element);
+		}
+		
+		element = set.get("compatibilityMode"); 
+		if(element != null) {
+			fieldPairs.put("compatibilityMode", element);
+		}
+		
 		if(furi != null)
 		{
-			fieldPairs.add(makePair("key",furi.toASCIIString()));
+			fieldPairs.put("key", furi.toASCIIString());
 		}
-		if (compress)
-		{
-			fieldPairs.add(makePair("compress",String.valueOf(compress)));
-		}
-		fieldPairs.add(makePair("compatibilityMode",compatibilityMode));
-		// FIXME: What is the length of a splitfile key?
-		fieldPairs.add(makePair("overrideSplitfileKey", request.getPartAsStringFailsafe("overrideSplitfileKey", 4096)));
+		
+		element = set.get("overrideSplitfileKey");
+		if(element != null) fieldPairs.put("overrideSplitfileKey", element);
 		return fieldPairs;
 	}
 }

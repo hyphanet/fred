@@ -23,13 +23,11 @@ import freenet.support.api.HTTPRequest;
 public class N2NTMToadlet extends Toadlet {
 	private Node node;
 	private NodeClientCore core;
-	private HighLevelSimpleClient client;
 	private LocalFileN2NMToadlet browser;
 	protected N2NTMToadlet(Node n, NodeClientCore core,
 			HighLevelSimpleClient client) {
 		super(client);
 		browser = new LocalFileN2NMToadlet(core, client);
-		this.client = client;
 		this.node = n;
 		this.core = core;
 	}
@@ -187,6 +185,7 @@ public class N2NTMToadlet extends Toadlet {
 							long size = request.getUploadedFile("n2nm-upload").getData().size();
 							long maxMem = Math.round(0.05*Runtime.getRuntime().maxMemory());
 							long limit = Math.max(maxMem, 1024);
+							if(maxMem == Long.MAX_VALUE) limit = 1024;
 							//File size limit is 1 MiB or 5% of maximum Java memory, whichever is greater.
 							if(size > limit){
 								peerTableInfobox.addChild("#", l10n("tooLarge", new String[] {"attempt", "limit"}, 

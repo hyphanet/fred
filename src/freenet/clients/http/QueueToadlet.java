@@ -182,9 +182,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					writeError(NodeL10n.getBase().getString("QueueToadlet.errorMustSpecifyKeyTypeTitle"), NodeL10n.getBase().getString("QueueToadlet.errorMustSpecifyKeyType"), ctx, false, true);
 					return;
 				}
-
-				browser.setOverrideKey(insertURI.toASCIIString());
-				browser.handleMethodPOST(uri, request, ctx);
+				LocalFileInsertToadlet t = new LocalFileInsertToadlet(core, client);
+				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
+				responseHeaders.put("Location", t.path()+"?key="+insertURI.toASCIIString()+
+						"&compress="+String.valueOf(request.getPartAsString("compress", 128).length() > 0)+
+						"&compatibilityMode="+request.getPartAsString("compatibilityMode", 100)+
+						"&overrideSplitfileKey="+request.getPartAsString("overrideSplitfileKey", 65));
+				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			}
 
