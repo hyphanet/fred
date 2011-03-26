@@ -59,7 +59,8 @@ public class PeerMessageQueue {
 		
 		/** The timeout, period after which messages become urgent. */
 		final int timeout;
-		/** If true, the timeout is relative to the last send. */
+		/** If true, do round-robin between UID's, and count the timeout relative
+		 * to the last send. Block transfers need this - both realtime and bulk. */
 		final boolean timeoutSinceLastSend;
 		
 		private class Items extends DoublyLinkedListImpl.Item<Items> {
@@ -126,6 +127,10 @@ public class PeerMessageQueue {
 					}
 				}
 			}
+			addToNonUrgent(item);
+		}
+		
+		private void addToNonUrgent(MessageItem item) {
 			if(itemsNonUrgent == null)
 				itemsNonUrgent = new LinkedList<MessageItem>();
 			ListIterator<MessageItem> it = itemsNonUrgent.listIterator(itemsNonUrgent.size());
@@ -146,7 +151,7 @@ public class PeerMessageQueue {
 				}
 			}
 		}
-		
+
 		private void moveToUrgent(long now) {
 			if(logMINOR) checkOrder();
 			if(itemsNonUrgent == null) return;
@@ -280,6 +285,10 @@ public class PeerMessageQueue {
 		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
 		 * we tried to send it and failed); it is assumed to already be urgent. */
 		public void addFirst(MessageItem item) {
+			if(!timeoutSinceLastSend) {
+				addToNonUrgent(item);
+				return;
+			}
 			if(logMINOR) checkOrder();
 			long id = item.getID();
 			Items list;
@@ -368,18 +377,8 @@ public class PeerMessageQueue {
 					t = Math.min(t, itemsNonUrgent.getFirst().submitted + timeout);
 					if(t <= now) return t;
 				}
-				if(nonEmptyItemsWithID != null) {
-					for(Items items : nonEmptyItemsWithID) {
-						if(items.items.size() == 0) continue;
-						// Generally anything in nonEmptyItemsWithID is urgent.
-						// But it is possible that something requeued isn't urgent, so check anyway.
-						long thisTimeout = items.items.getFirst().submitted + timeout;
-						if(thisTimeout <= now) return thisTimeout;
-						else if(thisTimeout < t) t = thisTimeout;
-						// Check all slots until we find something that is urgent.
-						// It won't take long.
-					}
-				}
+				assert(nonEmptyItemsWithID == null);
+				assert(itemsByID == null);
 			} else {
 				if(nonEmptyItemsWithID != null) {
 					for(Items items : nonEmptyItemsWithID) {
@@ -680,9 +679,14 @@ public class PeerMessageQueue {
 					} else if(logDEBUG)
 						Logger.debug(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
 				}
-				moveToUrgent(now);
+				if(timeoutSinceLastSend)
+					moveToUrgent(now);
 				clearOldNonUrgent(now);
-				size = addUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
+				if(timeoutSinceLastSend) {
+					size = addUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
+				} else {
+					assert(itemsByID == null);
+				}
 				if(size < 0) {
 					size = -size;
 					incomplete.value = true;
@@ -691,11 +695,11 @@ public class PeerMessageQueue {
 					if(messages.size() >= maxMessages)
 						return size;
 					// If no more urgent messages, try to add some non-urgent messages too.
-					size = addNonUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
-					if(size < 0) {
-						size = -size;
-						incomplete.value = true;
-					}
+						size = addNonUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
+						if(size < 0) {
+							size = -size;
+							incomplete.value = true;
+						}
 				}
 			}
 			return size;
