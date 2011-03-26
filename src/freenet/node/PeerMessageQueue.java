@@ -908,8 +908,11 @@ public class PeerMessageQueue {
 	 * Get the time at which the next message must be sent. If any message is
 	 * overdue, we will return a value less than now, which may not be completely
 	 * accurate.
-	 * @param t
-	 * @param now
+	 * @param t The current next urgent time. The return value will be no greater
+	 * than this.
+	 * @param now The current time. If the next urgent time is less than this we
+	 * return immediately rather than computing an accurate past value. Set to 
+	 * Long.MAX_VALUE if you want an accurate value.
 	 * @return
 	 */
 	public synchronized long getNextUrgentTime(long t, long now) {
