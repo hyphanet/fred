@@ -129,6 +129,10 @@ div#statusbar a {
     color: gray;
 }
 
+div#statusbar:hover a {
+    color: gray;
+}
+
 div#statusbar div {
 	display: inline;
 }
@@ -545,8 +549,12 @@ table.queue span.key_is {
 
 
 div#content {
-	position: inherit;
-	margin: 5px;
+    position: inherit;
+    margin: 5px;
+    margin-left: 83px;
+    margin-right: 83px;
+}
+
 }
 
 /* rabbit hole */
