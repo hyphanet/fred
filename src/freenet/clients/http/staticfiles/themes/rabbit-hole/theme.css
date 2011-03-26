@@ -155,8 +155,8 @@ div#statusbar div.infobox-header {
 
 .progressbar {
 	position: relative;
-	font-size: small;
-	height: 15px;
+	font-size: x-small;
+	height: 12px;
 	width: 130px;
 	border: solid 1px #444444;
 	background-color: #e8e8e8;
@@ -164,13 +164,13 @@ div#statusbar div.infobox-header {
 
 .progressbar-done {
 	float: left;
-	height: 15px;
+	height: 12px;
 	background-color: #44cc44;
 }
 
 .progressbar-min {
 	float: left;
-	height: 15px;
+	height: 12px;
 	background-color: #cce8cc;
 }
 
