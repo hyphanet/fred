@@ -1425,7 +1425,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from curTracker less than now");
-			if(kt.packets.hasPacketsToResend()) return now;
+			if(kt.packets.hasPacketsToResend()) {
+				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
+				return now;
+			}
 		}
 		kt = prev;
 		if(kt != null) {
@@ -1433,7 +1436,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from prevTracker less than now");
-			if(kt.packets.hasPacketsToResend()) return now;
+			if(kt.packets.hasPacketsToResend()) {
+				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
+				return now;
+			}
 		}
 		if(pf != null) {
 			if(cur != null && pf.canSend(cur)) { // New messages are only sent on cur.
