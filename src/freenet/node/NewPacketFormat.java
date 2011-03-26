@@ -1017,16 +1017,22 @@ outer:
 	 * queued at plus the lesser of half the RTT or 100ms if there are acks queued. 
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
 	public long timeNextUrgent() {
+		long ret = Long.MAX_VALUE;
 		// Is there anything in flight?
 		synchronized(sendBufferLock) {
 			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
 				for(MessageWrapper wrapper : started.values()) {
 					if(!wrapper.allSent()) return 0;
+					long d = wrapper.getItem().getDeadline();
+					if(d > 0)
+						ret = Math.min(ret, d);
+					else
+						Logger.error(this, "Started sending message "+wrapper.getItem()+" but deadline is "+d);
 				}
 			}
 		}
 		// Check for acks.
-		long ret = timeCheckForAcks();
+		ret = Math.min(ret, timeCheckForAcks());
 		
 		// Always wake up after half an RTT, check whether stuff is lost or needs ack'ing.
 		ret = Math.min(ret, System.currentTimeMillis() + Math.min(100, (long)averageRTT()/2));
