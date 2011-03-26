@@ -112,6 +112,8 @@ public class PeerMessageQueue {
 		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
 		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
+			// Clear the deadline for the item.
+			item.clearDeadline();
 			if(logMINOR) checkOrder();
 			if(roundRobinBetweenUIDs) {
 				long id = item.getID();
@@ -286,6 +288,7 @@ public class PeerMessageQueue {
 		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
 		 * we tried to send it and failed); it is assumed to already be urgent. */
 		public void addFirst(MessageItem item) {
+			// Keep the old deadline for the item.
 			if(!roundRobinBetweenUIDs) {
 				addToNonUrgent(item);
 				return;
@@ -471,6 +474,7 @@ public class PeerMessageQueue {
 				}
 				size += 2 + thisSize;
 				items.remove();
+				item.setDeadline(item.submitted + timeout);
 				messages.add(item);
 				if(itemsByID != null) {
 					long id = item.getID();
@@ -610,6 +614,7 @@ public class PeerMessageQueue {
 					// Move to end of list.
 					Items prev = list.getPrev();
 					nonEmptyItemsWithID.remove(list);
+					item.setDeadline(list.timeLastSent + timeout);
 					list.timeLastSent = now;
 					if(!list.items.isEmpty()) {
 						if(logDEBUG) Logger.debug(this, "Moving "+list+" to end of non empty list in addUrgentMessages");
