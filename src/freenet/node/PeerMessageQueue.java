@@ -371,12 +371,17 @@ public class PeerMessageQueue {
 
 		/** Note that this does NOT consider the length of the queue, which can trigger a
 		 * send. This is intentional, and is relied upon by the bulk-or-realtime logic in
-		 * addMessages(). */
-		public long getNextUrgentTime(long t, long now) {
+		 * addMessages().
+		 * @param t The initial urgent time. What we return must be less than or 
+		 * equal to this. Convenient for chaining. 
+		 * @param stopIfBeforeTime If the next urgent time is <= to this time, 
+		 * return immediately.
+		 */
+		public long getNextUrgentTime(long t, long stopIfBeforeTime) {
 			if(!roundRobinBetweenUIDs) {
 				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
 					t = Math.min(t, itemsNonUrgent.getFirst().submitted + timeout);
-					if(t <= now) return t;
+					if(t <= stopIfBeforeTime) return t;
 				}
 				assert(nonEmptyItemsWithID == null);
 				assert(itemsByID == null);
@@ -386,11 +391,11 @@ public class PeerMessageQueue {
 						if(items.items.size() == 0) continue;
 						if(items.timeLastSent > 0) {
 							t = Math.min(t, items.timeLastSent + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 						} else {
 							// It is possible that something requeued isn't urgent, so check anyway.
 							t = Math.min(t, items.items.getFirst().submitted + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 						}
 					}
 				}
@@ -400,10 +405,10 @@ public class PeerMessageQueue {
 						Items items = itemsByID == null ? null : itemsByID.get(uid);
 						if(items != null && items.timeLastSent > 0) {
 							t = Math.min(t, items.timeLastSent + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 						} else {
 							t = Math.min(t, item.submitted + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 							if(itemsByID == null) break; // Only the first one matters, since none have been sent.
 						}
 					}
