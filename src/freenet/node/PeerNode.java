@@ -1443,7 +1443,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		if(pf != null) {
 			if(cur != null && pf.canSend(cur)) { // New messages are only sent on cur.
-				long l = messageQueue.getNextUrgentTime(t, now);
+				long l = messageQueue.getNextUrgentTime(t, Long.MAX_VALUE); // Need an accurate value even if in the past.
 				if(t >= now && l < now && logMINOR)
 					Logger.minor(this, "Next urgent time from message queue less than now");
 				t = l;
@@ -5295,6 +5295,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		lastIncomingRekey = now;
 		return false;
+	}
+
+	public boolean fullPacketQueued() {
+		return packetFormat.fullPacketQueued(getMaxPacketSize());
+	}
+
+	public long timeSendAcks() {
+		return packetFormat.timeSendAcks();
 	}
 	
 }
