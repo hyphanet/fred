@@ -94,6 +94,16 @@ public class N2NTMToadlet extends Toadlet {
 	private static String l10n(String key) {
 		return NodeL10n.getBase().getString("N2NTMToadlet." + key);
 	}
+	
+	/*
+	 * File size limit is 1 MiB or 5% of maximum Java memory, whichever is greater.
+	 */
+	private static long maxSize(){
+		long maxMem = Math.round(0.05*Runtime.getRuntime().maxMemory());
+		long limit = Math.max(maxMem, 1024);
+		if(maxMem == Long.MAX_VALUE) limit = 1024;
+		return limit;
+	}
 
 	private static HTMLNode createPeerInfobox(String infoboxType,
 			String header, String message) {
@@ -183,10 +193,7 @@ public class N2NTMToadlet extends Toadlet {
 					} else if(request.isPartSet("n2nm-upload")) {
 						try{
 							long size = request.getUploadedFile("n2nm-upload").getData().size();
-							long maxMem = Math.round(0.05*Runtime.getRuntime().maxMemory());
-							long limit = Math.max(maxMem, 1024);
-							if(maxMem == Long.MAX_VALUE) limit = 1024;
-							//File size limit is 1 MiB or 5% of maximum Java memory, whichever is greater.
+							long limit = maxSize();
 							if(size > limit){
 								peerTableInfobox.addChild("#", l10n("tooLarge", new String[] {"attempt", "limit"}, 
 										new String[] {SizeUtil.formatSize(size, true), SizeUtil.formatSize(limit, true)}));
@@ -291,9 +298,7 @@ public class N2NTMToadlet extends Toadlet {
 			messageForm.addChild("br");
 		}
 		if(mode >= PageMaker.MODE_ADVANCED){
-			long maxMem = Math.round(0.05*Runtime.getRuntime().maxMemory());
-			long limit = Math.max(maxMem, 1024);
-			messageForm.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.sizeWarning", "limit", SizeUtil.formatSize(limit, true)));
+			messageForm.addChild("#", NodeL10n.getBase().getString("N2NTMToadlet.sizeWarning", "limit", SizeUtil.formatSize(maxSize(), true)));
 			messageForm.addChild("br");
 			messageForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileLabel") + ": ");
 			messageForm.addChild("input", new String[] {"type", "name", "value" }, new String[] { "file", "n2nm-upload", "" });
