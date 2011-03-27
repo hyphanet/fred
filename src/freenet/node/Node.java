@@ -6141,4 +6141,11 @@ public class Node implements TimeSkewDetectorCallback {
 	public boolean isTestnetEnabled() {
 		return false;
 	}
+
+
+	public MersenneTwister createRandom() {
+		byte[] buf = new byte[16];
+		random.nextBytes(buf);
+		return new MersenneTwister(buf);
+	}
 }

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Vector;
 
@@ -17,6 +18,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.OOMHandler;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
+import freenet.support.math.MersenneTwister;
 
 /**
  * @author amphibian
@@ -66,6 +68,7 @@ public class PacketSender implements Runnable {
 	long lastReceivedPacketFromAnyNode;
 	private Vector<ResendPacketItem> rpiTemp;
 	private int[] rpiIntTemp;
+	private MersenneTwister localRandom;
 
 	PacketSender(Node node) {
 		this.node = node;
@@ -73,6 +76,7 @@ public class PacketSender implements Runnable {
 		myThread.setDaemon(true);
 		rpiTemp = new Vector<ResendPacketItem>();
 		rpiIntTemp = new int[64];
+		localRandom = node.createRandom();
 	}
 
 	void start(NodeStats stats) {
@@ -123,7 +127,7 @@ public class PacketSender implements Runnable {
 		while(true) {
 			lastReceivedPacketFromAnyNode = lastReportedNoPackets;
 			try {
-				brokeAt = realRun(brokeAt);
+				realRun();
 			} catch(OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Will retry above failed operation...");
@@ -135,7 +139,7 @@ public class PacketSender implements Runnable {
 		}
 	}
 
-	private int realRun(int brokeAt) {
+	private void realRun() {
 		long now = System.currentTimeMillis();
                 PeerManager pm;
 		PeerNode[] nodes;
@@ -161,13 +165,33 @@ public class PacketSender implements Runnable {
 				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 			nextActionTime = Math.min(nextActionTime, now + canSendAt);
 		}
+		
+		/** The earliest time at which a peer needs to send a packet, which is before
+		 * now. Throttled if canSendThrottled, otherwise not throttled. */
+		long lowestUrgentSendTime = Long.MAX_VALUE;
+		/** The peer(s) which lowestUrgentSendTime is referring to */
+		ArrayList<PeerNode> urgentSendPeers = null;
+		/** The earliest time at which a peer needs to send a packet, which is after
+		 * now, where there is a full packet's worth of data to send. 
+		 * Throttled if canSendThrottled, otherwise not throttled. */
+		long lowestFullPacketSendTime = Long.MAX_VALUE;
+		/** The peer(s) which lowestFullPacketSendTime is referring to */
+		ArrayList<PeerNode> urgentFullPacketPeers = null;
+		/** The earliest time at which a peer needs to send an ack, before now. */
+		long lowestAckTime = Long.MAX_VALUE;
+		/** The peer(s) which lowestAckTime is referring to */
+		ArrayList<PeerNode> ackPeers = null;
+		/** The earliest time at which a peer needs to handshake. */
+		long lowestHandshakeTime = Long.MAX_VALUE;
+		/** The peer(s) which lowestHandshakeTime is referring to */
+		ArrayList<PeerNode> handshakePeers = null;
 
-		int newBrokeAt = brokeAt;
 		for(int i = 0; i < nodes.length; i++) {
 			now = System.currentTimeMillis();
-			int idx = (i + brokeAt + 1) % nodes.length;
-			if(logMINOR)
-				Logger.minor(this, "Trying index "+idx+" of "+nodes.length+" canSend="+canSendThrottled);
+			int idx = i;
+			
+			// Basic peer maintenance.
+			
 			PeerNode pn = nodes[idx];
 			// For purposes of detecting not having received anything, which indicates a 
 			// serious connectivity problem, we want to look for *any* packets received, 
@@ -183,6 +207,8 @@ public class PacketSender implements Runnable {
 			if(pn.isConnected()) {
 				
 				boolean shouldThrottle = pn.shouldThrottle();
+				
+				pn.checkForLostPackets();
 
 				// Is the node dead?
 				// It might be disconnected in terms of FNP but trying to reconnect via JFK's, so we need to use the time when we last got a *data* packet.
@@ -211,31 +237,52 @@ public class PacketSender implements Runnable {
 					continue;
 				}
 
-				try {
-					boolean ackOnly = shouldThrottle && !canSendThrottled;
-					if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp, ackOnly)) {
-						count = node.outputThrottle.getCount();
-						if(count > MAX_PACKET_SIZE)
-							canSendThrottled = true;
-						else {
-							canSendThrottled = false;
-							long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-							canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
-							if(logMINOR)
-								Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
-							nextActionTime = Math.min(nextActionTime, now + canSendAt);
-							if(!ackOnly) {
-								if(logMINOR) Logger.minor(this, "Setting next starting point to "+idx);
-								newBrokeAt = idx;
+				// The peer is connected.
+				
+				if(canSendThrottled || !shouldThrottle) {
+					// We can send to this peer.
+					long sendTime = pn.getNextUrgentTime(now);
+					if(sendTime != Long.MAX_VALUE) {
+						if(sendTime <= now) {
+							// Message is urgent.
+							if(sendTime < lowestUrgentSendTime) {
+								lowestUrgentSendTime = sendTime;
+								if(urgentSendPeers != null)
+									urgentSendPeers.clear();
+								else
+									urgentSendPeers = new ArrayList<PeerNode>();
 							}
+							if(sendTime <= lowestUrgentSendTime)
+								urgentSendPeers.add(pn);
+						} else if(pn.fullPacketQueued()) {
+							if(sendTime < lowestFullPacketSendTime) {
+								lowestFullPacketSendTime = sendTime;
+								if(urgentFullPacketPeers != null)
+									urgentFullPacketPeers.clear();
+								else
+									urgentFullPacketPeers = new ArrayList<PeerNode>();
+							}
+							if(sendTime <= lowestFullPacketSendTime)
+								urgentFullPacketPeers.add(pn);
 						}
 					}
-				} catch (BlockedTooLongException e) {
-					Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+pn+" on "+e.tracker+" : "+(pn.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+pn.getVersionNumber()+") - DISCONNECTING!");
-					pn.forceDisconnect(true);
-					onForceDisconnectBlockTooLong(pn, e);
+				} else if(shouldThrottle && !canSendThrottled) {
+					long ackTime = pn.timeSendAcks();
+					if(ackTime != Long.MAX_VALUE) {
+						if(ackTime <= now) {
+							if(ackTime < lowestAckTime) {
+								lowestAckTime = ackTime;
+								if(ackPeers != null)
+									ackPeers.clear();
+								else
+									ackPeers = new ArrayList<PeerNode>();
+							}
+							if(ackTime <= lowestAckTime)
+								ackPeers.add(pn);
+						}
+					}
 				}
-
+				
 				if(canSendThrottled || !shouldThrottle) {
 					long urgentTime = pn.getNextUrgentTime(now);
 					// Should spam the logs, unless there is a deadlock
@@ -251,21 +298,132 @@ public class PacketSender implements Runnable {
 				if(pn.noContactDetails())
 					pn.startARKFetcher();
 
-			if(pn.shouldSendHandshake()) {
-				// Send handshake if necessary
-				long beforeHandshakeTime = System.currentTimeMillis();
-				pn.getOutgoingMangler().sendHandshake(pn, false);
-				long afterHandshakeTime = System.currentTimeMillis();
-				if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000))
-					Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + pn.userToString());
+			long handshakeTime = pn.timeSendHandshake(now);
+			if(handshakeTime != Long.MAX_VALUE) {
+				if(handshakeTime < lowestHandshakeTime) {
+					lowestHandshakeTime = handshakeTime;
+					if(handshakePeers != null)
+						handshakePeers.clear();
+					else
+						handshakePeers = new ArrayList<PeerNode>();
+				}
+				if(handshakeTime <= lowestHandshakeTime)
+					handshakePeers.add(pn);
 			}
+			
 			long tempNow = System.currentTimeMillis();
 			if((tempNow - oldTempNow) > (5 * 1000))
 				Logger.error(this, "tempNow is more than 5 seconds past oldTempNow (" + (tempNow - oldTempNow) + ") in PacketSender working with " + pn.userToString());
 			oldTempNow = tempNow;
 		}
-		brokeAt = newBrokeAt;
+		
+		// We may send a packet, send an ack-only packet, or send a handshake.
+		
+		PeerNode toSendPacket = null;
+		PeerNode toSendAckOnly = null;
+		PeerNode toSendHandshake = null;
+		
+		long t = Long.MAX_VALUE;
+		
+		if(lowestUrgentSendTime <= now) {
+			// We need to send a full packet.
+			toSendPacket = urgentSendPeers.get(localRandom.nextInt(urgentSendPeers.size()));
+			t = lowestUrgentSendTime;
+		} else if(lowestFullPacketSendTime < Long.MAX_VALUE) {
+			toSendPacket = urgentFullPacketPeers.get(localRandom.nextInt(urgentFullPacketPeers.size()));
+			t = lowestFullPacketSendTime;
+		} else if(lowestAckTime <= now) {
+			// We need to send an ack
+			toSendAckOnly = ackPeers.get(localRandom.nextInt(ackPeers.size()));
+			t = lowestAckTime;
+		}
+		
+		if(lowestHandshakeTime <= now && t > lowestHandshakeTime) {
+			toSendHandshake = handshakePeers.get(localRandom.nextInt(handshakePeers.size()));
+			toSendPacket = null;
+			toSendAckOnly = null;
+		}
+		
+		if(toSendPacket != null) {
+			try {
+				if(toSendPacket.maybeSendPacket(now, rpiTemp, rpiIntTemp, false)) {
+					count = node.outputThrottle.getCount();
+					if(count > MAX_PACKET_SIZE)
+						canSendThrottled = true;
+					else {
+						canSendThrottled = false;
+						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+						canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+						if(logMINOR)
+							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+						nextActionTime = Math.min(nextActionTime, now + canSendAt);
+					}
+				}
+			} catch (BlockedTooLongException e) {
+				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendPacket+" on "+e.tracker+" : "+(toSendPacket.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendPacket.getVersionNumber()+") - DISCONNECTING!");
+				toSendPacket.forceDisconnect(true);
+				onForceDisconnectBlockTooLong(toSendPacket, e);
+			}
 
+			if(canSendThrottled || !toSendPacket.shouldThrottle()) {
+				long urgentTime = toSendPacket.getNextUrgentTime(now);
+				// Should spam the logs, unless there is a deadlock
+				if(urgentTime < Long.MAX_VALUE && logMINOR)
+					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendPacket.getPeer());
+				nextActionTime = Math.min(nextActionTime, urgentTime);
+			} else {
+				nextActionTime = Math.min(nextActionTime, toSendPacket.timeCheckForLostPackets());
+			}
+
+		} else if(toSendAckOnly != null) {
+			try {
+				if(toSendAckOnly.maybeSendPacket(now, rpiTemp, rpiIntTemp, true)) {
+					count = node.outputThrottle.getCount();
+					if(count > MAX_PACKET_SIZE)
+						canSendThrottled = true;
+					else {
+						canSendThrottled = false;
+						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+						canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+						if(logMINOR)
+							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+						nextActionTime = Math.min(nextActionTime, now + canSendAt);
+					}
+				}
+			} catch (BlockedTooLongException e) {
+				Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+toSendAckOnly+" on "+e.tracker+" : "+(toSendAckOnly.isOldFNP() ? "(old packet format)" : "(new packet format)")+" (version "+toSendAckOnly.getVersionNumber()+") - DISCONNECTING!");
+				toSendAckOnly.forceDisconnect(true);
+				onForceDisconnectBlockTooLong(toSendAckOnly, e);
+			}
+
+			if(canSendThrottled || !toSendAckOnly.shouldThrottle()) {
+				long urgentTime = toSendAckOnly.getNextUrgentTime(now);
+				// Should spam the logs, unless there is a deadlock
+				if(urgentTime < Long.MAX_VALUE && logMINOR)
+					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendAckOnly.getPeer());
+				nextActionTime = Math.min(nextActionTime, urgentTime);
+			} else {
+				nextActionTime = Math.min(nextActionTime, toSendAckOnly.timeCheckForLostPackets());
+			}
+		}
+		
+		if(toSendHandshake != null) {
+			// Send handshake if necessary
+			long beforeHandshakeTime = System.currentTimeMillis();
+			toSendHandshake.getOutgoingMangler().sendHandshake(toSendHandshake, false);
+			long afterHandshakeTime = System.currentTimeMillis();
+			if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000))
+				Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + toSendHandshake.userToString());
+		}
+		
+		nextActionTime = Math.min(nextActionTime, lowestUrgentSendTime);
+		nextActionTime = Math.min(nextActionTime, lowestFullPacketSendTime);
+		nextActionTime = Math.min(nextActionTime, lowestAckTime);
+		nextActionTime = Math.min(nextActionTime, lowestHandshakeTime);
+
+		// FIXME: If we send something we will have to go around the loop again.
+		// OPTIMISATION: We could track the second best, and check how many are in the array.
+		
 		/* Attempt to connect to old-opennet-peers.
 		 * Constantly send handshake packets, in order to get through a NAT.
 		 * Most JFK(1)'s are less than 300 bytes. 25*300/15 = avg 500B/sec bandwidth cost.
@@ -333,7 +491,6 @@ public class PacketSender implements Runnable {
 			// because a new packet came in.
 			}
 		}
-		return brokeAt;
 	}
 
 	private final HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();

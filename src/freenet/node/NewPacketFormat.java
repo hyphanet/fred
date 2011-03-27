@@ -94,9 +94,6 @@ public class NewPacketFormat implements PacketFormat {
 	/** Lock protecting the size of the receive buffer. */
 	private final Object receiveBufferSizeLock = new Object();
 	
-	private long timeLastCalledMaybeSendPacketIncAckOnly;
-	private long timeLastCalledMaybeSendPacketNotAckOnly;
-	
 	private long timeLastSentPacket;
 	private long timeLastSentPayload;
 	private long timeLastSentPing;
@@ -453,21 +450,6 @@ outer:
 
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp, boolean ackOnly)
 	throws BlockedTooLongException {
-		synchronized(this) {
-			long delta = (timeLastCalledMaybeSendPacketIncAckOnly == 0) ? -1 : (now - timeLastCalledMaybeSendPacketIncAckOnly);
-			timeLastCalledMaybeSendPacketIncAckOnly = now;
-			if(logDEBUG && delta != -1) Logger.debug(this, "Last called maybe send packet with ack only: "+delta+" on "+this);
-			if(!ackOnly) {
-				delta = (timeLastCalledMaybeSendPacketNotAckOnly == 0) ? -1 : (now - timeLastCalledMaybeSendPacketNotAckOnly);
-				timeLastCalledMaybeSendPacketNotAckOnly = now;
-				if(delta != -1) {
-					if(delta > 10000)
-						Logger.error(this, "Last called maybe send packet without ack only: "+delta+" on "+this);
-					else if(logDEBUG)
-						Logger.debug(this, "Last called maybe send packet without ack only: "+delta+" on "+this);
-				}
-			}
-		}
 		SessionKey sessionKey = pn.getPreviousKeyTracker();
 		if(sessionKey != null) {
 			// Try to sent an ack-only packet.
@@ -821,6 +803,7 @@ outer:
 								}
 								item = new MessageItem(msg, null, null);
 								mustSendPing = false;
+								item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
 							} else {
 								item = messageQueue.grabQueuedMessageItem(i);
 								if(item == null) {
@@ -833,6 +816,7 @@ outer:
 											timeLastSentPing = now;
 										}
 										item = new MessageItem(msg, null, null);
+										item.setDeadline(now + PacketSender.MAX_COALESCING_DELAY);
 									} else {
 										break prio;
 									}
@@ -1017,20 +1001,32 @@ outer:
 	 * queued at plus the lesser of half the RTT or 100ms if there are acks queued. 
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
 	public long timeNextUrgent() {
+		long ret = Long.MAX_VALUE;
 		// Is there anything in flight?
 		synchronized(sendBufferLock) {
 			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
 				for(MessageWrapper wrapper : started.values()) {
 					if(!wrapper.allSent()) return 0;
+					// We do not reset the deadline when we resend.
+					// The RTO computation logic should ensure that we don't use horrible amounts of bandwidth for retransmission.
+					long d = wrapper.getItem().getDeadline();
+					if(d > 0)
+						ret = Math.min(ret, d);
+					else
+						Logger.error(this, "Started sending message "+wrapper.getItem()+" but deadline is "+d);
 				}
 			}
 		}
 		// Check for acks.
-		long ret = timeCheckForAcks();
+		ret = Math.min(ret, timeCheckForAcks());
 		
 		// Always wake up after half an RTT, check whether stuff is lost or needs ack'ing.
 		ret = Math.min(ret, System.currentTimeMillis() + Math.min(100, (long)averageRTT()/2));
 		return ret;
+	}
+	
+	public long timeSendAcks() {
+		return timeCheckForAcks();
 	}
 	
 	public boolean canSend(SessionKey tracker) {
@@ -1296,5 +1292,9 @@ outer:
 	public String toString() {
 		if(pn != null) return super.toString() +" for "+pn.shortToString();
 		else return super.toString();
+	}
+
+	public boolean fullPacketQueued(int maxPacketSize) {
+		return pn.getMessageQueue().mustSendSize(HMAC_LENGTH /* FIXME estimate headers */, maxPacketSize);
 	}
 }
