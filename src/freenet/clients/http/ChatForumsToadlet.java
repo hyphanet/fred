@@ -36,6 +36,9 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		contentBox.addChild("p", l10n("content1"));
 		HTMLNode ul = contentBox.addChild("ul");
 		HTMLNode li = ul.addChild("li");
+		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.freetalk", new String[] { "pluginspage" }, 
+				new HTMLNode[] { HTMLNode.link(PproxyToadlet.PATH)});
+		li = ul.addChild("li");
 		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.fms", new String[] { "fms", "fms-help" }, 
 				new HTMLNode[] { HTMLNode.link("/USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/101/"), HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/fms.htm")});
 		li = ul.addChild("li");
