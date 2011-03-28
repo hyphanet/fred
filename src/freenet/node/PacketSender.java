@@ -416,6 +416,8 @@ public class PacketSender implements Runnable {
 				Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + toSendHandshake.userToString());
 		}
 		
+		// All of these take into account whether the data can be sent already.
+		// So we can include them in nextActionTime.
 		nextActionTime = Math.min(nextActionTime, lowestUrgentSendTime);
 		nextActionTime = Math.min(nextActionTime, lowestFullPacketSendTime);
 		nextActionTime = Math.min(nextActionTime, lowestAckTime);
