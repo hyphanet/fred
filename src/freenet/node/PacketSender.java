@@ -287,7 +287,7 @@ public class PacketSender implements Runnable {
 					long urgentTime = pn.getNextUrgentTime(now);
 					// Should spam the logs, unless there is a deadlock
 					if(urgentTime < Long.MAX_VALUE && logMINOR)
-						Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn.getPeer());
+						Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn);
 					nextActionTime = Math.min(nextActionTime, urgentTime);
 				} else {
 					nextActionTime = Math.min(nextActionTime, pn.timeCheckForLostPackets());
@@ -369,7 +369,7 @@ public class PacketSender implements Runnable {
 				long urgentTime = toSendPacket.getNextUrgentTime(now);
 				// Should spam the logs, unless there is a deadlock
 				if(urgentTime < Long.MAX_VALUE && logMINOR)
-					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendPacket.getPeer());
+					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendPacket);
 				nextActionTime = Math.min(nextActionTime, urgentTime);
 			} else {
 				nextActionTime = Math.min(nextActionTime, toSendPacket.timeCheckForLostPackets());
@@ -400,7 +400,7 @@ public class PacketSender implements Runnable {
 				long urgentTime = toSendAckOnly.getNextUrgentTime(now);
 				// Should spam the logs, unless there is a deadlock
 				if(urgentTime < Long.MAX_VALUE && logMINOR)
-					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendAckOnly.getPeer());
+					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendAckOnly);
 				nextActionTime = Math.min(nextActionTime, urgentTime);
 			} else {
 				nextActionTime = Math.min(nextActionTime, toSendAckOnly.timeCheckForLostPackets());
