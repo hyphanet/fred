@@ -289,23 +289,25 @@ public class Cookie {
 	
 	/**
 	 * Encodes the content of this cookie to the HTTP header value representation as of RFC2965.
+	 * Does not quote any of the values as Firefox 4 does not support quotation and the latest IETF draft for cookies does not contain
+	 * quotation: http://tools.ietf.org/html/draft-ietf-httpstate-cookie-23
 	 * The key "set-cookie2:" is not prefixed to the returned String!
 	 */
 	protected String encodeToHeaderValue() {
 		StringBuilder sb = new StringBuilder(512); // TODO: As soon as something else besides Freetalk uses cookies, adjust this value.
 		
 		// RFC2965: Name MUST be first.
-		sb.append(name); sb.append("=\""); sb.append(value); sb.append('\"'); sb.append(';');
+		sb.append(name); sb.append("="); sb.append(value); sb.append(';');
 		
 		sb.append("version="); sb.append(version); sb.append(';');
 		
 		if(domain != null) {
-			sb.append("domain=\""); sb.append(domain); sb.append('\"'); sb.append(';');
+			sb.append("domain="); sb.append(domain); sb.append(';');
 		}
 		
-		sb.append("path=\""); sb.append(path); sb.append('\"'); sb.append(';');
+		sb.append("path="); sb.append(path); sb.append(';');
 		
-		sb.append("expires=\""); sb.append(TimeUtil.makeHTTPDate(expirationDate.getTime())); sb.append('\"'); sb.append(';');
+		sb.append("expires="); sb.append(TimeUtil.makeHTTPDate(expirationDate.getTime())); sb.append(';');
 		
 		if(discard) {
 			sb.append("discard="); sb.append(discard); sb.append(';');
