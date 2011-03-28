@@ -1000,20 +1000,23 @@ outer:
 	 * @return 0 if there is anything already in flight. The time that the oldest ack was
 	 * queued at plus the lesser of half the RTT or 100ms if there are acks queued. 
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
-	public long timeNextUrgent() {
+	public long timeNextUrgent(boolean canSend) {
 		long ret = Long.MAX_VALUE;
-		// Is there anything in flight?
-		synchronized(sendBufferLock) {
-			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
-				for(MessageWrapper wrapper : started.values()) {
-					if(!wrapper.allSent()) return 0;
-					// We do not reset the deadline when we resend.
-					// The RTO computation logic should ensure that we don't use horrible amounts of bandwidth for retransmission.
-					long d = wrapper.getItem().getDeadline();
-					if(d > 0)
-						ret = Math.min(ret, d);
-					else
-						Logger.error(this, "Started sending message "+wrapper.getItem()+" but deadline is "+d);
+		if(canSend) {
+			// Is there anything in flight?
+			// Packets in flight limit applies even if there is stuff to resend.
+			synchronized(sendBufferLock) {
+				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+					for(MessageWrapper wrapper : started.values()) {
+						if(!wrapper.allSent()) return 0;
+						// We do not reset the deadline when we resend.
+						// The RTO computation logic should ensure that we don't use horrible amounts of bandwidth for retransmission.
+						long d = wrapper.getItem().getDeadline();
+						if(d > 0)
+							ret = Math.min(ret, d);
+						else
+							Logger.error(this, "Started sending message "+wrapper.getItem()+" but deadline is "+d);
+					}
 				}
 			}
 		}
