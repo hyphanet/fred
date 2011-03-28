@@ -1095,6 +1095,16 @@ outer:
 			}
 		}
 		
+		if(!canAllocateID) {
+			synchronized(sendBufferLock) {
+				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+					for(MessageWrapper wrapper : started.values()) {
+						if(!wrapper.allSent()) return true;
+					}
+				}
+			}
+		}
+		
 		if(logDEBUG && !canAllocateID) Logger.debug(this, "Cannot send because cannot allocate ID on "+this);
 		return canAllocateID;
 	}
