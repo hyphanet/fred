@@ -492,6 +492,9 @@ public class PacketSender implements Runnable {
 			// Ignore, just wake up. Probably we got interrupt()ed
 			// because a new packet came in.
 			}
+		} else {
+			if(logDEBUG)
+				Logger.debug(this, "Next urgent time is "+(now - nextActionTime)+"ms in the past");
 		}
 	}
 
