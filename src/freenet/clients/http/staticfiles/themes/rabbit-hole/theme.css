@@ -563,6 +563,18 @@ header, section, footer, aside, nav, article, figure {
     display: block;
 }
 
+#foot #footHidden {
+    display: none;
+    background-color: silver;
+    padding-left: 1em;
+    padding-right: 1em;
+    border: gray 1px dashed;
+}
+
+#foot:hover #footHidden {
+    display: block;
+}
+
 aside .hidden {
     display: none;
     background-color: silver;
