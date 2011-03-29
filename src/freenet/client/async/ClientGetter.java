@@ -640,7 +640,7 @@ public class ClientGetter extends BaseClientGetter {
 	/**
 	 * Add a block to the binary blob.
 	 */
-	void addKeyToBinaryBlob(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
+	protected void addKeyToBinaryBlob(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
 		if(binaryBlobKeysAddedAlready == null) return;
 		if(persistent()) {
 			container.activate(binaryBlobStream, 1);
@@ -703,7 +703,7 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	/** Are we collecting a binary blob? */
-	boolean collectingBinaryBlob() {
+	protected boolean collectingBinaryBlob() {
 		return binaryBlobBucket != null;
 	}
 

@@ -1,0 +1,11 @@
+Licensing
+=========
+
+kfontview.svgz, kfontview.png, looking-glass.png and glass.png licensed under the LGPL.
+
+kfontview.svgz is copyright © 2008 Craig Drummond <craig@kde.org>
+kfontview.png, looking-glass.png and glass.png are copyright © 2008 Craig Drummond <craig@kde.org> and © 2011 Arne Babenhauserheide
+
+line.png, nav-lower-bg.png, kaninchenspur.png and kaninchenspur_dark.png are licensed under the GPL.
+
+line.png, nav-lower-bg.png, kaninchenspur.png and kaninchenspur_dark.png are copyright © 2011 Arne Babenhauserheide

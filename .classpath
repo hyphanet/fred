@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="freenet/node/*Test.java|plugins/JSTUN/**|test/**" kind="src" path="src"/>
-	<classpathentry including="freenet/|org/" kind="src" path="test"/>
+	<classpathentry excluding="freenet/node/*Test.java|plugins/JSTUN/**|test/**" kind="src" path="src" output="build/main"/>
+	<classpathentry including="freenet/|org/" kind="src" path="test" output="build/test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/usr/share/java/junit.jar"/>
 	<classpathentry kind="lib" path="lib/freenet-ext.jar"/>

@@ -183,9 +183,9 @@ public final class ReceivedCookie extends Cookie {
 				if(key.charAt(0) == '$')
 					currentCookieContent.put(key, value);
 				else {// We finished parsing of the current cookie, a new one starts here.
-					if(singleCookie)
-						throw new ParseException("Invalid cookie header: Multiple cookies specified but "
-								+ " the name of the first cookie was not the first attribute: " + httpHeader, i);
+					//if(singleCookie)
+					//	throw new ParseException("Invalid cookie header: Multiple cookies specified but "
+					//			+ " the name of the first cookie was not the first attribute: " + httpHeader, i);
 					
 					cookies.add(new ReceivedCookie(currentCookieName, currentCookieContent)); // Store the previous cookie.
 					

@@ -1029,13 +1029,22 @@ public class PluginManager {
 		public final boolean usesXML;
 		/** FreenetURI to get the latest version from */
 		public final FreenetURI uri;
+		/** If true, the plugin is obsolete. */
+		public final boolean deprecated;
+		/** If true, the plugin is experimental. */
+		public final boolean experimental;
+		/** If true, the plugin is geeky - it should not be shown except in advanced mode even though it's not deprecated nor is it experimental. */
+		public final boolean advanced;
 
-		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
+		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced) {
 			this.name = name;
 			this.essential = essential;
 			this.minimumVersion = minVer;
 			this.usesXML = usesXML;
 			this.uri = uri;
+			this.deprecated = deprecated;
+			this.experimental = experimental;
+			this.advanced = advanced;
 		}
 	}
 
@@ -1044,39 +1053,49 @@ public class PluginManager {
 	static {
 		try {
 		addOfficialPlugin("Freemail", false, 12, true, new FreenetURI("CHK@OwIWNuh0FvE4SO4HYV9TQ1GtwOrfuZZoJv4-WXp4X2Q,0jcAIHtFJOin6vke-KxUhps5jTxYeu1XvmuCZKxlQY4,AAIC--8/Freemail.jar"));
-		addOfficialPlugin("HelloWorld", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"));
-		addOfficialPlugin("HelloFCP", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"));
+		addOfficialPlugin("HelloWorld", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"), false, false, true);
+		addOfficialPlugin("HelloFCP", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"), false, false, true);
 		addOfficialPlugin("JSTUN", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
-		addOfficialPlugin("KeyUtils", false, 5007, false, new FreenetURI("CHK@c16sREW1FPGYGn2gdhy0ZSpLKmenMnQehdbZFe5QE5Y,3OHVJ~4skzUw5TsRTo3jKupKr4-JHq27N3nHdIJ6oiw,AAIC--8/KeyUtils.jar"));
+		addOfficialPlugin("KeyUtils", false, 5007, false, new FreenetURI("CHK@c16sREW1FPGYGn2gdhy0ZSpLKmenMnQehdbZFe5QE5Y,3OHVJ~4skzUw5TsRTo3jKupKr4-JHq27N3nHdIJ6oiw,AAIC--8/KeyUtils.jar"), false, false, true);
 		addOfficialPlugin("MDNSDiscovery", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
-		addOfficialPlugin("SNMP", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"));
-		addOfficialPlugin("TestGallery", false, 1, false, new FreenetURI("CHK@LfJVh1EkCr4ry0yDW74vwxkX-3nkr~ztW2z0SUZHfC0,-mz7l39dC6n0RTUiSokjC~pUDO7PWZ89miYesKH0-WA,AAIC--8/TestGallery.jar"));
+		addOfficialPlugin("SNMP", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"), false, false, true);
+		addOfficialPlugin("TestGallery", false, 1, false, new FreenetURI("CHK@LfJVh1EkCr4ry0yDW74vwxkX-3nkr~ztW2z0SUZHfC0,-mz7l39dC6n0RTUiSokjC~pUDO7PWZ89miYesKH0-WA,AAIC--8/TestGallery.jar"), false, true, false);
 		addOfficialPlugin("ThawIndexBrowser", false, 4, true, new FreenetURI("CHK@424rWuNPGY8FjiF4MMDPCwle4MboQg6GOmFReUhbJqU,79Zd2brL9PwZd7z2OL2DXW4xTNvm81EEYVYGmbLG5Jg,AAIC--8/ThawIndexBrowser.jar"));
 		addOfficialPlugin("UPnP", true, 10003, false, new FreenetURI("CHK@chunCVhavqu60gWdf1jlAzKyVhEx7Hy99BaDpoU~xlc,iI-VcHxkg66W8-61P-bHzJYTx9PYrI2GuGIjC4Lg8mI,AAIC--8/UPnP.jar"));
-		addOfficialPlugin("XMLLibrarian", false, 26, true, new FreenetURI("CHK@TvjyCaG1dx0xIBSJkXSKA1ZT4I~NkRKeQqwC0a0bhFM,JiQe4CRjF1RwhQRFFQzP-ih9t2i0peV0tBCfJAeFCdk,AAIC--8/XMLLibrarian.jar"));
-		addOfficialPlugin("XMLSpider", false, 47, true, new FreenetURI("CHK@IQU400XKMx~nMEfdXV2YokCzJxx6BeCBmIObzZuq1zo,cY6UJ~KWGESJvaFajXHfr9UZUKJzt7gkmqUKUIZF5SE,AAIC--8/XMLSpider.jar"));
+		addOfficialPlugin("XMLLibrarian", false, 26, true, new FreenetURI("CHK@TvjyCaG1dx0xIBSJkXSKA1ZT4I~NkRKeQqwC0a0bhFM,JiQe4CRjF1RwhQRFFQzP-ih9t2i0peV0tBCfJAeFCdk,AAIC--8/XMLLibrarian.jar"), true, false, false);
+		addOfficialPlugin("XMLSpider", false, 47, true, new FreenetURI("CHK@IQU400XKMx~nMEfdXV2YokCzJxx6BeCBmIObzZuq1zo,cY6UJ~KWGESJvaFajXHfr9UZUKJzt7gkmqUKUIZF5SE,AAIC--8/XMLSpider.jar"), true, false, false);
 		addOfficialPlugin("Freereader", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
 		addOfficialPlugin("Library", false, 22, true, new FreenetURI("CHK@zDlkryQcPRuK11Y1IjB-Rh4I5b7SMUdhwLvaEpjdjZM,8tLr~U~wi5BpvkoJtMY5gWiusH5VIUtwaWj1GNVCdPk,AAIC--8/Library.jar"));
-		addOfficialPlugin("Spider", false, 48, false, new FreenetURI("CHK@DBgu6re-bD8M2elkdvReOROyZm4f2ppWaLBpJ0Cvo-k,RaD2v5HYVV1Xqit9v6FRaUpz-weoi3ilt4xxr~d9IfE,AAIC--8/Spider.jar"));
+		addOfficialPlugin("Spider", false, 48, false, new FreenetURI("CHK@DBgu6re-bD8M2elkdvReOROyZm4f2ppWaLBpJ0Cvo-k,RaD2v5HYVV1Xqit9v6FRaUpz-weoi3ilt4xxr~d9IfE,AAIC--8/Spider.jar"), false, false, true);
+		addOfficialPlugin("Freetalk", false, 2, true, new FreenetURI("CHK@yMk2YONFKscYPSghB~7FG6jj-3qtAde20T7GTEGzx94,eAGQrqT0EUeqHC3kmhZk8hdoaGkjGVcm69vfQYp~fFY,AAIC--8/Freetalk.jar"), false, true, false);
+		addOfficialPlugin("WebOfTrust", false, 1, true, new FreenetURI("CHK@CRtw553rOsZViF52NaLZasHJ0hNtP42Q7gGODaJe4ck,1HSqw0QRCRycuyPENyCGrlHYL6ItmjpnNlqr5FidIXk,AAIC--8/WebOfTrust.jar"), false, true, false);
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, null));
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, null, false, false, false));
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML, FreenetURI uri) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, uri));
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, uri, false, false, false));
+	}
+
+	static void addOfficialPlugin(String name, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, uri, deprecated, experimental, advanced));
 	}
 
 	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, null));
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, null, false, false, false));
 	}
 
 	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, uri));
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, uri, false, false, false));
+	}
+
+	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri, boolean deprecated, boolean experimental, boolean advanced) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, uri, deprecated, experimental, advanced));
 	}
 
 	/**
