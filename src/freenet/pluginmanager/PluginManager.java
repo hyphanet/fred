@@ -1046,10 +1046,6 @@ public class PluginManager {
 			this.experimental = experimental;
 			this.advanced = advanced;
 		}
-		
-		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
-			this(name, essential, minVer, usesXML, uri, false, false, false);
-		}
 	}
 
 	public static Map<String, OfficialPluginDescription> officialPlugins = new HashMap<String, OfficialPluginDescription>();
