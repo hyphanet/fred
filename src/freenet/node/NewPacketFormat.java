@@ -1000,20 +1000,23 @@ outer:
 	 * @return 0 if there is anything already in flight. The time that the oldest ack was
 	 * queued at plus the lesser of half the RTT or 100ms if there are acks queued. 
 	 * Otherwise Long.MAX_VALUE to indicate that we need to get messages from the queue. */
-	public long timeNextUrgent() {
+	public long timeNextUrgent(boolean canSend) {
 		long ret = Long.MAX_VALUE;
-		// Is there anything in flight?
-		synchronized(sendBufferLock) {
-			for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
-				for(MessageWrapper wrapper : started.values()) {
-					if(!wrapper.allSent()) return 0;
-					// We do not reset the deadline when we resend.
-					// The RTO computation logic should ensure that we don't use horrible amounts of bandwidth for retransmission.
-					long d = wrapper.getItem().getDeadline();
-					if(d > 0)
-						ret = Math.min(ret, d);
-					else
-						Logger.error(this, "Started sending message "+wrapper.getItem()+" but deadline is "+d);
+		if(canSend) {
+			// Is there anything in flight?
+			// Packets in flight limit applies even if there is stuff to resend.
+			synchronized(sendBufferLock) {
+				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+					for(MessageWrapper wrapper : started.values()) {
+						if(!wrapper.allSent()) return 0;
+						// We do not reset the deadline when we resend.
+						// The RTO computation logic should ensure that we don't use horrible amounts of bandwidth for retransmission.
+						long d = wrapper.getItem().getDeadline();
+						if(d > 0)
+							ret = Math.min(ret, d);
+						else
+							Logger.error(this, "Started sending message "+wrapper.getItem()+" but deadline is "+d);
+					}
 				}
 			}
 		}
@@ -1046,7 +1049,7 @@ outer:
 			if(!keyContext.canAllocateSeqNum()) {
 				// We can't allocate more sequence numbers because we haven't rekeyed yet
 				pn.startRekeying();
-				Logger.error(this, "Can't send because we would block");
+				Logger.error(this, "Can't send because we would block on "+this);
 				return false;
 			}
 		}
@@ -1058,7 +1061,7 @@ outer:
 			}
 			int maxSendBufferSize = maxSendBufferSize();
 			if((bufferUsage + MAX_MESSAGE_SIZE) > maxSendBufferSize) {
-				if(logDEBUG) Logger.debug(this, "Cannot send: Would exceed remote buffer size. Remote at " + bufferUsage+" max is "+maxSendBufferSize);
+				if(logDEBUG) Logger.debug(this, "Cannot send: Would exceed remote buffer size. Remote at " + bufferUsage+" max is "+maxSendBufferSize+" on "+this);
 				return false;
 			}
 
@@ -1086,13 +1089,23 @@ outer:
 					// 6. In spite of the issue with acks, it's probably more "invisible" on the whole, in that the number of packets is visible,
 					// whereas messages are supposed to not be visible.
 					// Arguably we should count bytes rather than packets.
-					if(logDEBUG) Logger.debug(this, "Cannot send because "+packets.countSentPackets()+" in flight of limit "+maxPackets);
+					if(logDEBUG) Logger.debug(this, "Cannot send because "+packets.countSentPackets()+" in flight of limit "+maxPackets+" on "+this);
 					return false;
 				}
 			}
 		}
 		
-		if(logDEBUG && !canAllocateID) Logger.debug(this, "Cannot send because cannot allocate ID");
+		if(!canAllocateID) {
+			synchronized(sendBufferLock) {
+				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
+					for(MessageWrapper wrapper : started.values()) {
+						if(!wrapper.allSent()) return true;
+					}
+				}
+			}
+		}
+		
+		if(logDEBUG && !canAllocateID) Logger.debug(this, "Cannot send because cannot allocate ID on "+this);
 		return canAllocateID;
 	}
 

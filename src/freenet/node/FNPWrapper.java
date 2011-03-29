@@ -196,7 +196,7 @@ public class FNPWrapper implements PacketFormat {
 		}
 	}
 
-	public long timeNextUrgent() {
+	public long timeNextUrgent(boolean canSend) {
 		SessionKey cur;
 		SessionKey prev;
 		synchronized(pn) {

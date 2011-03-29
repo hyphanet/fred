@@ -287,7 +287,7 @@ public class PacketSender implements Runnable {
 					long urgentTime = pn.getNextUrgentTime(now);
 					// Should spam the logs, unless there is a deadlock
 					if(urgentTime < Long.MAX_VALUE && logMINOR)
-						Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn.getPeer());
+						Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn);
 					nextActionTime = Math.min(nextActionTime, urgentTime);
 				} else {
 					nextActionTime = Math.min(nextActionTime, pn.timeCheckForLostPackets());
@@ -369,7 +369,7 @@ public class PacketSender implements Runnable {
 				long urgentTime = toSendPacket.getNextUrgentTime(now);
 				// Should spam the logs, unless there is a deadlock
 				if(urgentTime < Long.MAX_VALUE && logMINOR)
-					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendPacket.getPeer());
+					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendPacket);
 				nextActionTime = Math.min(nextActionTime, urgentTime);
 			} else {
 				nextActionTime = Math.min(nextActionTime, toSendPacket.timeCheckForLostPackets());
@@ -400,7 +400,7 @@ public class PacketSender implements Runnable {
 				long urgentTime = toSendAckOnly.getNextUrgentTime(now);
 				// Should spam the logs, unless there is a deadlock
 				if(urgentTime < Long.MAX_VALUE && logMINOR)
-					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendAckOnly.getPeer());
+					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + toSendAckOnly);
 				nextActionTime = Math.min(nextActionTime, urgentTime);
 			} else {
 				nextActionTime = Math.min(nextActionTime, toSendAckOnly.timeCheckForLostPackets());
@@ -416,6 +416,8 @@ public class PacketSender implements Runnable {
 				Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + toSendHandshake.userToString());
 		}
 		
+		// All of these take into account whether the data can be sent already.
+		// So we can include them in nextActionTime.
 		nextActionTime = Math.min(nextActionTime, lowestUrgentSendTime);
 		nextActionTime = Math.min(nextActionTime, lowestFullPacketSendTime);
 		nextActionTime = Math.min(nextActionTime, lowestAckTime);
@@ -490,6 +492,9 @@ public class PacketSender implements Runnable {
 			// Ignore, just wake up. Probably we got interrupt()ed
 			// because a new packet came in.
 			}
+		} else {
+			if(logDEBUG)
+				Logger.debug(this, "Next urgent time is "+(now - nextActionTime)+"ms in the past");
 		}
 	}
 

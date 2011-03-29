@@ -42,8 +42,10 @@ public interface PacketFormat {
 	/**
 	 * @return The time at which the packet format will want to send an ack, finish sending a message,
 	 * retransmit a packet, or similar. Long.MAX_VALUE if not supported or if there is nothing to ack 
-	 * and nothing in flight. */
-	long timeNextUrgent();
+	 * and nothing in flight. 
+	 * @param canSend If false, canSend() has returned false. Some transports will
+	 * want to send a packet anyway e.g. an ack, a resend in some cases. */
+	long timeNextUrgent(boolean canSend);
 	
 	/**
 	 * @return The time at which the packet format will want to send an ack. Resends
