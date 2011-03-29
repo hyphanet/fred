@@ -154,6 +154,22 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "opennetF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+			HTMLNode footToggle = infoboxContent.addChild("div", "id", "footToggle");
+			footToggle.addChild("i", "¹: " + l10n("opennetChoiceHowSafeIsFreenetToggle"));
+			HTMLNode foot = infoboxContent.addChild("div", "id", "footHidden");
+			HTMLNode footList = foot.addChild("ol");
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetStupid"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetFriends") + "²");
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetTrustworthy"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetNoSuspect"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetChangeID"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetSSK"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetOS"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetBigPriv"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetDistant"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetBugs"));
+			HTMLNode foot2 = foot.addChild("p");
+			foot2.addChild("#", "²: " + l10n("opennetChoiceHowSafeIsFreenetFoot2"));
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.SECURITY_NETWORK) {
