@@ -137,7 +137,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			input.addChild("b", l10n("opennetChoiceConnectFriends")+":");
 			p.addChild("br");
 			p.addChild("i", l10n("opennetChoicePro"));
-			p.addChild("#", ": "+l10n("opennetChoiceConnectFriendsPRO"));
+			p.addChild("#", ": "+l10n("opennetChoiceConnectFriendsPRO") + "¹");
 			p.addChild("br");
 			p.addChild("i", l10n("opennetChoiceCon"));
 			p.addChild("#", ": "+l10n("opennetChoiceConnectFriendsCON", "minfriends", "5"));
