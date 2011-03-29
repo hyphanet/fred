@@ -40,10 +40,24 @@ public interface PacketFormat {
 	boolean canSend(SessionKey key);
 
 	/**
-	 * @return The time at which the packet format will want to send an ack or similar.
-	 * 0 if there are already messages in flight. Long.MAX_VALUE if not supported or if 
-	 * there is nothing to ack and nothing in flight. */
-	long timeNextUrgent();
+	 * @return The time at which the packet format will want to send an ack, finish sending a message,
+	 * retransmit a packet, or similar. Long.MAX_VALUE if not supported or if there is nothing to ack 
+	 * and nothing in flight. 
+	 * @param canSend If false, canSend() has returned false. Some transports will
+	 * want to send a packet anyway e.g. an ack, a resend in some cases. */
+	long timeNextUrgent(boolean canSend);
+	
+	/**
+	 * @return The time at which the packet format will want to send an ack. Resends
+	 * etc don't count, only acks. The reason acks are special is they are needed
+	 * for the other side to recognise that their packets have been received and
+	 * thus avoid retransmission.
+	 */
+	long timeSendAcks();
+	
+	/** Is there enough data queued to justify sending a packet immediately? Ideally
+	 * this should take into account transport level headers. */
+	boolean fullPacketQueued(int maxPacketSize);
 
 	void checkForLostPackets();
 

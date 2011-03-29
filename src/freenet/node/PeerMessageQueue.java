@@ -52,6 +52,7 @@ public class PeerMessageQueue {
 	
 	private class PrioQueue {
 		
+		// FIXME refactor into PrioQueue and RoundRobinByUIDPrioQueue
 		PrioQueue(int timeout, boolean timeoutSinceLastSend) {
 			this.timeout = timeout;
 			this.roundRobinBetweenUIDs = timeoutSinceLastSend;
@@ -111,6 +112,8 @@ public class PeerMessageQueue {
 		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
 		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
+			// Clear the deadline for the item.
+			item.clearDeadline();
 			if(logMINOR) checkOrder();
 			if(roundRobinBetweenUIDs) {
 				long id = item.getID();
@@ -285,6 +288,7 @@ public class PeerMessageQueue {
 		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
 		 * we tried to send it and failed); it is assumed to already be urgent. */
 		public void addFirst(MessageItem item) {
+			// Keep the old deadline for the item.
 			if(!roundRobinBetweenUIDs) {
 				addToNonUrgent(item);
 				return;
@@ -370,12 +374,17 @@ public class PeerMessageQueue {
 
 		/** Note that this does NOT consider the length of the queue, which can trigger a
 		 * send. This is intentional, and is relied upon by the bulk-or-realtime logic in
-		 * addMessages(). */
-		public long getNextUrgentTime(long t, long now) {
+		 * addMessages().
+		 * @param t The initial urgent time. What we return must be less than or 
+		 * equal to this. Convenient for chaining. 
+		 * @param stopIfBeforeTime If the next urgent time is <= to this time, 
+		 * return immediately.
+		 */
+		public long getNextUrgentTime(long t, long stopIfBeforeTime) {
 			if(!roundRobinBetweenUIDs) {
 				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
 					t = Math.min(t, itemsNonUrgent.getFirst().submitted + timeout);
-					if(t <= now) return t;
+					if(t <= stopIfBeforeTime) return t;
 				}
 				assert(nonEmptyItemsWithID == null);
 				assert(itemsByID == null);
@@ -385,11 +394,11 @@ public class PeerMessageQueue {
 						if(items.items.size() == 0) continue;
 						if(items.timeLastSent > 0) {
 							t = Math.min(t, items.timeLastSent + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 						} else {
 							// It is possible that something requeued isn't urgent, so check anyway.
 							t = Math.min(t, items.items.getFirst().submitted + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 						}
 					}
 				}
@@ -399,10 +408,10 @@ public class PeerMessageQueue {
 						Items items = itemsByID == null ? null : itemsByID.get(uid);
 						if(items != null && items.timeLastSent > 0) {
 							t = Math.min(t, items.timeLastSent + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 						} else {
 							t = Math.min(t, item.submitted + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 							if(itemsByID == null) break; // Only the first one matters, since none have been sent.
 						}
 					}
@@ -465,6 +474,7 @@ public class PeerMessageQueue {
 				}
 				size += 2 + thisSize;
 				items.remove();
+				item.setDeadline(item.submitted + timeout);
 				messages.add(item);
 				if(itemsByID != null) {
 					long id = item.getID();
@@ -604,6 +614,7 @@ public class PeerMessageQueue {
 					// Move to end of list.
 					Items prev = list.getPrev();
 					nonEmptyItemsWithID.remove(list);
+					item.setDeadline(list.timeLastSent + timeout);
 					list.timeLastSent = now;
 					if(!list.items.isEmpty()) {
 						if(logDEBUG) Logger.debug(this, "Moving "+list+" to end of non empty list in addUrgentMessages");
@@ -902,15 +913,18 @@ public class PeerMessageQueue {
 	 * Get the time at which the next message must be sent. If any message is
 	 * overdue, we will return a value less than now, which may not be completely
 	 * accurate.
-	 * @param t
-	 * @param now
-	 * @return
+	 * @param t The current next urgent time. The return value will be no greater
+	 * than this.
+	 * @param returnIfBefore The current time. If the next urgent time is less than 
+	 * this we return immediately rather than computing an accurate past value. 
+	 * Set to Long.MAX_VALUE if you want an accurate value.
+	 * @return The next urgent time, but can be too high if it is less than now.
 	 */
-	public synchronized long getNextUrgentTime(long t, long now) {
+	public synchronized long getNextUrgentTime(long t, long returnIfBefore) {
 		for(int i=0;i<queuesByPriority.length;i++) {
 			PrioQueue queue = queuesByPriority[i];
-			t = Math.min(t, queue.getNextUrgentTime(t, now));
-			if(t <= now) return t; // How much in the past doesn't matter, as long as it's in the past.
+			t = Math.min(t, queue.getNextUrgentTime(t, returnIfBefore));
+			if(t <= returnIfBefore) return t; // How much in the past doesn't matter, as long as it's in the past.
 		}
 		return t;
 	}
