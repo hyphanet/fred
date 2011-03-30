@@ -15,6 +15,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Writer;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
@@ -160,7 +161,10 @@ public class TestnetStatusUploader {
 		{
 			
 			System.out.println("Connecting to testnet coordinator");
-			client = new Socket(serverAddress, serverPort);
+			if(node.testnetID == 0) // Node 0 always runs on the same node as the coordinator.
+				client = new Socket(InetAddress.getByName("127.0.0.1"), serverPort);
+			else
+				client = new Socket(serverAddress, serverPort);
 			int timeout = client.getSoTimeout();
 			// We expect them to send a ping every 5 minutes so disconnect if nothing in 10.
 			client.setSoTimeout(600*1000);
