@@ -1455,7 +1455,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(pf != null) {
 			boolean canSend = cur != null && pf.canSend(cur);
 			if(canSend) { // New messages are only sent on cur.
-				long l = messageQueue.getNextUrgentTime(t, Long.MAX_VALUE); // Need an accurate value even if in the past.
+				long l = messageQueue.getNextUrgentTime(t, 0); // Need an accurate value even if in the past.
 				if(t >= now && l < now && logMINOR)
 					Logger.minor(this, "Next urgent time from message queue less than now");
 				else if(logDEBUG)
