@@ -1027,7 +1027,6 @@ public class PeerMessageQueue {
 		
 		MutableBoolean incomplete = new MutableBoolean();
 
-		// Do not allow realtime data to starve bulk data
 		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
 			if(i < minPriority) continue;
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
@@ -1041,15 +1040,9 @@ public class PeerMessageQueue {
 			}
 		}
 		
-		boolean tryRealtimeFirst = true;
+		// Include bulk or realtime, whichever is more urgent.
 		
-		// Most of the time there will only be bulk data.
-		// Bulk data has a long timeout - 30 seconds per block - so we can wait if necessary.
-		// Realtime is supposed to be bursty. 
-		// Realtime data is supposed to be urgent - it should be sent immediately.
-		// So when there is realtime data, we should give it preferential treatment.
-		// However, we do not want to starve the bulk data.
-		// So we should send realtime if there is realtime, unless the bulk data is older than 5000ms.
+		boolean tryRealtimeFirst = true;
 		
 		// LOCKING: Must lock while calling getNextUrgentTime, and also while accessing lastSentRealTime.
 		// However, we need to be (or needed to be in the FNP era anyway) flexible with addPriorityMessages,
@@ -1057,22 +1050,21 @@ public class PeerMessageQueue {
 		// FIXME: All this can go away when FNP goes away and we can just lock the whole function.
 		
 		synchronized(this) {
-		
-			if((!queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) &&
-					(!queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty())) {
-				// There is realtime data, and there is bulk data.
-				if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now) <= now) {
-					// The bulk data is urgent.
-					// The realtime data is assumed to be urgent because it is realtime.
-					// So alternate.
-					tryRealtimeFirst = !lastSentRealTime;
-				} else {
-					// The bulk data is not urgent.
-					// So we should send the realtime data.
-					// This should not prejudice future decisions.
-					tryRealtimeFirst = true;
-				}
+			
+			// If one is empty, try the other.
+			// Otherwise try whichever is more urgent, favouring realtime if there is a draw.
+			// Realtime is supposed to be bursty.
+			
+			if(queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) {
+				tryRealtimeFirst = false;
+			} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty()) {
+				tryRealtimeFirst = true;
+			} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, 0) >= queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)) {
+				tryRealtimeFirst = true;
+			} else {
+				tryRealtimeFirst = false;
 			}
+			
 		}
 		
 		// FIXME token bucket?
@@ -1081,9 +1073,6 @@ public class PeerMessageQueue {
 			if(logMINOR) Logger.minor(this, "Trying realtime first");
 			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
-				synchronized(this) {
-					lastSentRealTime = true;
-				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -1096,9 +1085,6 @@ public class PeerMessageQueue {
 			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				synchronized(this) {
-					lastSentRealTime = false;
-				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -1113,9 +1099,6 @@ public class PeerMessageQueue {
 			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				synchronized(this) {
-					lastSentRealTime = false;
-				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -1128,9 +1111,6 @@ public class PeerMessageQueue {
 			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				synchronized(this) {
-					lastSentRealTime = true;
-				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -1178,7 +1158,5 @@ public class PeerMessageQueue {
 			queue.removeUIDs(list);
 		}
 	}
-
-	private boolean lastSentRealTime;
 }
 
