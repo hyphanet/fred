@@ -787,7 +787,7 @@ loadWaiterLoop:
 				return OFFER_STATUS.TRY_ANOTHER;
 			}
 			if(dataMessage == null) {
-				Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key);
+				Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key+" on "+this);
 				return OFFER_STATUS.TRY_ANOTHER;
 			}
 			byte[] sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
@@ -802,7 +802,7 @@ loadWaiterLoop:
 					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				if(pk == null) {
-					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
+					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key+" on "+this);
 					return OFFER_STATUS.TRY_ANOTHER;
 				}
 				try {
