@@ -721,6 +721,7 @@ public class TestnetController implements Runnable {
 		public boolean execute(LineReadingInputStream lris, OutputStream os,
 				Writer w, TestnetNode client) throws IOException {
 			DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.UK);
+			df.setTimeZone(TimeZone.getTimeZone("GMT"));
 			w.write(type.name()+":"+df.format(d)+"\n");
 			w.flush();
 			String firstReply = lris.readLine(1024, 30, true);
