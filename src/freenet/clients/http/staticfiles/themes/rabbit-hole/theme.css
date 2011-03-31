@@ -568,11 +568,12 @@ header, section, footer, aside, nav, article, figure {
 
 /* Different look for toggleables */
 .toggleable {
-    color: silver;
+    color: gray;
 }
 
 .toggleable .hidden {
     background-color: silver;
+    color: navy;
     padding-left: 1em;
     padding-right: 1em;
     border: gray 1px dashed;
