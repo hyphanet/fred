@@ -1008,7 +1008,7 @@ outer:
 			synchronized(sendBufferLock) {
 				for(HashMap<Integer, MessageWrapper> started : startedByPrio) {
 					for(MessageWrapper wrapper : started.values()) {
-						if(!wrapper.allSent()) return 0;
+						if(wrapper.allSent()) continue;
 						// We do not reset the deadline when we resend.
 						// The RTO computation logic should ensure that we don't use horrible amounts of bandwidth for retransmission.
 						long d = wrapper.getItem().getDeadline();

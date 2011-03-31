@@ -403,12 +403,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	protected final LinkedList<byte[]> jfkNoncesSent = new LinkedList<byte[]>();
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -1444,9 +1446,11 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(pf != null) {
 			boolean canSend = cur != null && pf.canSend(cur);
 			if(canSend) { // New messages are only sent on cur.
-				long l = messageQueue.getNextUrgentTime(t, Long.MAX_VALUE); // Need an accurate value even if in the past.
+				long l = messageQueue.getNextUrgentTime(t, 0); // Need an accurate value even if in the past.
 				if(t >= now && l < now && logMINOR)
 					Logger.minor(this, "Next urgent time from message queue less than now");
+				else if(logDEBUG)
+					Logger.debug(this, "Next urgent time is "+(l-now)+"ms on "+this);
 				t = l;
 			}
 			long l = pf.timeNextUrgent(canSend);
@@ -1511,8 +1515,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized(this) {
 			c = ctx;
 		}
-		if(c != null && logMINOR)
-			Logger.minor(this, "Last used: " + (now - c.lastUsedTime()));
+		if(c != null && logDEBUG)
+			Logger.minor(this, "Last used (handshake): " + (now - c.lastUsedTime()));
 		return !((c == null) || (now - c.lastUsedTime() > Node.HANDSHAKE_TIMEOUT));
 	}
 	boolean firstHandshake = true;

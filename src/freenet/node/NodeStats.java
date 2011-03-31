@@ -1049,41 +1049,12 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return null;
 	}
 	
-	/** The maximum number of peers' full fair shares that one node can use. The lower
-	 * bandwidth limit is either half the upper limit or this number of peers' fair 
-	 * shares, whichever is lower. JUSTIFICATION FOR THIS VALUE:
-	 * Let B_total be bandwidth in kilobytes after removing overheads, and N be the 
-	 * number of peers.
-	 * The number of transfers we accept, at realtime, is roughly B_total * 60 / 32, which
-	 * is roughly 2*B_total.
-	 * If we allow a single node to occupy half of that, then it can have B_total transfers.
-	 * However, there is fair sharing between peers in PacketSender, and "fixing" this is
-	 * a nontrivial task. So if all the other peers are busy with bulk traffic, and if the
-	 * peer in question also has bulk traffic, its bandwidth available for realtime 
-	 * transfers will be:
-	 * B_peer_realtime = B_total / (2*N)
-	 * Therefore, the average interval between block sends (which are 1KB) will be:
-	 * t = B_total / B_peer_realtime
-	 * = B_total / (B_total / (2*N))
-	 * = 1 / (1 / (2*N))
-	 * = 2*N
-	 * 
-	 * This is unacceptable! We have a timeout of 5 seconds for realtime transfers, and 
-	 * 30 seconds for bulk transfers (to which the above math also applies but twice the
-	 * final value because of 120 not 60 for the number of seconds we allow transfers to 
-	 * take in the first formula).
-	 * 
-	 * So, we allow one peer to use at most B_total / (N / 2). This makes:
-	 * t = (B_total / (N / 2)) / (B_total / (2*N))
-	 * = (1 / (N / 2)) / (1 / (2*N))
-	 * = (1 / (N * 0.5)) / (1 / (N * 2))
-	 * = 2 / 0.5
-	 * = 4 seconds at most; 16 for bulk.
-	 */
 	static final double ONE_PEER_MAX_PEERS_EQUIVALENT = 2.0;
 	
 	public double getLowerLimit(double upperLimit, int peerCount) {
-		return Math.min(upperLimit / 2, upperLimit * (ONE_PEER_MAX_PEERS_EQUIVALENT / peerCount));
+		// Bandwidth scheduling is now unfair, based on deadlines.
+		// Therefore we can allocate a large chunk of our capacity to a single peer.
+		return upperLimit / 2;
 	}
 
 	public int outwardTransfersPerInsert() {
