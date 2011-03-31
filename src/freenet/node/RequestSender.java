@@ -64,13 +64,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
-    static final int GET_OFFER_TIMEOUT = 10000;
     // After a get offered key fails, wait this long for two stage timeout. Probably we will
     // have disconnected by then.
     static final int GET_OFFER_LONG_TIMEOUT = 60*1000;
     static final int FETCH_TIMEOUT_BULK = 600*1000;
     static final int FETCH_TIMEOUT_REALTIME = 60*1000;
     final int fetchTimeout;
+    final int getOfferedTimeout;
     /** Wait up to this long to get a path folding reply */
     static final int OPENNET_TIMEOUT = 120000;
     /** One in this many successful requests is randomly reinserted.
@@ -192,10 +192,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
     	startTime = System.currentTimeMillis();
     	this.realTimeFlag = realTimeFlag;
-    	if(realTimeFlag)
+    	if(realTimeFlag) {
     		fetchTimeout = FETCH_TIMEOUT_REALTIME;
-    	else
+    		getOfferedTimeout = BlockReceiver.RECEIPT_TIMEOUT_REALTIME;
+    	} else {
     		fetchTimeout = FETCH_TIMEOUT_BULK;
+    		getOfferedTimeout = BlockReceiver.RECEIPT_TIMEOUT_BULK;
+    	}
         this.key = key;
         this.pubKey = pubKey;
         this.htl = htl;
@@ -657,7 +660,7 @@ loadWaiterLoop:
 			receivingAsync = true;
 		}
 		try {
-			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, GET_OFFER_TIMEOUT), new SlowAsyncMessageFilterCallback() {
+			node.usm.addAsyncFilter(getOfferedKeyReplyFilter(pn, getOfferedTimeout), new SlowAsyncMessageFilterCallback() {
 				
 				public void onMatched(Message m) {
 					OFFER_STATUS status =
@@ -777,7 +780,7 @@ loadWaiterLoop:
 		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
 			byte[] headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
 			// Wait for the data
-			MessageFilter mfData = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
+			MessageFilter mfData = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(getOfferedTimeout).setType(DMT.FNPSSKDataFoundData);
 			Message dataMessage;
 			try {
 				dataMessage = node.usm.waitFor(mfData, this);
@@ -792,7 +795,7 @@ loadWaiterLoop:
 			}
 			byte[] sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
 			if(pubKey == null) {
-				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKPubKey);
+				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(getOfferedTimeout).setType(DMT.FNPSSKPubKey);
 				Message pk;
 				try {
 					pk = node.usm.waitFor(mfPK, this);
