@@ -1381,7 +1381,7 @@ public class PluginManager {
 						}
 						pluginFile.delete();
 						if(!downloaded) continue;
-						throw new PluginTooOldException("plugin too old: need at least version "+minVer);
+						throw new PluginTooOldException("plugin too old: need at least version "+minVer+" but is "+ver);
 					}
 
 					if(desc.usesXML && remoteCodeExecVuln) {
