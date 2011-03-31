@@ -1,5 +1,8 @@
 /* clean-static */
 
+/* Basic CSS functions */
+@import url(/static/base.css);
+
 /* Bookmarks & bookmark editor */
 @import url(/static/bookmark.css);
 
