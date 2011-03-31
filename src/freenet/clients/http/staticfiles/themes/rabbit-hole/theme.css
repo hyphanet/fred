@@ -1,4 +1,7 @@
-/* clean-dropdown */
+/* rabbit-hole */
+
+/* Basic CSS functions */
+@import url(/static/base.css);
 
 /* Bookmarks & bookmark editor */
 @import url(/static/bookmark.css);
@@ -563,16 +566,13 @@ header, section, footer, aside, nav, article, figure {
     display: block;
 }
 
-#foot #footHidden {
-    display: none;
+/* Different look for toggleables */
+.toggleable .hidden {
     background-color: silver;
+    color: silver;
     padding-left: 1em;
     padding-right: 1em;
     border: gray 1px dashed;
-}
-
-#foot:hover #footHidden {
-    display: block;
 }
 
 aside .hidden {

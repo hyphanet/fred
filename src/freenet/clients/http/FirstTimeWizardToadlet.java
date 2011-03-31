@@ -154,9 +154,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "opennetF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
-			HTMLNode foot = infoboxContent.addChild("div", "id", "foot");
+			HTMLNode foot = infoboxContent.addChild("div", "class", "toggleable");
 			foot.addChild("i", "¹: " + l10n("opennetChoiceHowSafeIsFreenetToggle"));
-			HTMLNode footHidden = foot.addChild("div", "id", "footHidden");
+			HTMLNode footHidden = foot.addChild("div", "class", "hidden");
 			HTMLNode footList = footHidden.addChild("ol");
 			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetStupid"));
 			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetFriends") + "²");
