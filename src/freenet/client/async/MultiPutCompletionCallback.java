@@ -203,6 +203,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 
 	public void arm(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Arming "+this);
 		boolean allDone;
 		boolean allGotBlocks;
 		synchronized(this) {
