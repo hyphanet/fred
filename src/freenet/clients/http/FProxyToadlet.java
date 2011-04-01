@@ -325,7 +325,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 		}
 		
-		if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+		if(threatLevel != PHYSICAL_THREAT_LEVEL.LOW) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 			optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
