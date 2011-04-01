@@ -96,12 +96,12 @@ public class N2NTMToadlet extends Toadlet {
 	}
 	
 	/*
-	 * File size limit is 1 MiB or 5% of maximum Java memory, whichever is greater.
+	 * File size limit is 1 MiB (1024*1024 bytes) or 5% of maximum Java memory, whichever is greater.
 	 */
 	private static long maxSize(){
 		long maxMem = Math.round(0.05*Runtime.getRuntime().maxMemory());
-		long limit = Math.max(maxMem, 1024);
-		if(maxMem == Long.MAX_VALUE) limit = 1024;
+		long limit = Math.max(maxMem, 1024*1024);
+		if(maxMem == Long.MAX_VALUE) limit = 1024*1024;
 		return limit;
 	}
 
