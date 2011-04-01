@@ -120,7 +120,7 @@ public class LoggingConfigHandler {
 		
 		// max space used by zipped logs
     	
-		config.register("maxZippedLogsSize", "128M", 3, true, true, "LogConfigHandler.maxZippedLogsSize",
+		config.register("maxZippedLogsSize", "10M", 3, true, true, "LogConfigHandler.maxZippedLogsSize",
 				"LogConfigHandler.maxZippedLogsSizeLong",
 				new LongCallback() {
 					@Override
@@ -145,7 +145,7 @@ public class LoggingConfigHandler {
 		// priority
     	
 		// Node must override this to minor on testnet.
-		config.register("priority", "normal", 4, false, false, "LogConfigHandler.minLoggingPriority",
+		config.register("priority", "warning", 4, false, false, "LogConfigHandler.minLoggingPriority",
 				"LogConfigHandler.minLoggingPriorityLong",
 				new PriorityCallback());
     	
@@ -173,7 +173,7 @@ public class LoggingConfigHandler {
     	
 		// interval
     	
-		config.register("interval", "10MINUTE", 5, true, false, "LogConfigHandler.rotationInterval",
+		config.register("interval", "12HOUR", 5, true, false, "LogConfigHandler.rotationInterval",
 				"LogConfigHandler.rotationIntervalLong",
 				new StringCallback() {
 					@Override
@@ -198,7 +198,7 @@ public class LoggingConfigHandler {
 		logRotateInterval = config.getString("interval");
     	
 		// max cached bytes in RAM
-		config.register("maxCachedBytes", "10M", 6, true, false, "LogConfigHandler.maxCachedBytes",
+		config.register("maxCachedBytes", "1M", 6, true, false, "LogConfigHandler.maxCachedBytes",
 				"LogConfigHandler.maxCachedBytesLong",
 				new LongCallback() {
 					@Override
@@ -217,7 +217,7 @@ public class LoggingConfigHandler {
 		maxCachedLogBytes = config.getLong("maxCachedBytes");
     	
 		// max cached lines in RAM
-		config.register("maxCachedLines", "100k", 7, true, false, "LogConfigHandler.maxCachedLines",
+		config.register("maxCachedLines", "10k", 7, true, false, "LogConfigHandler.maxCachedLines",
 				"LogConfigHandler.maxCachedLinesLong",
 				new IntCallback() {
 					@Override
