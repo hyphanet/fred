@@ -207,23 +207,21 @@ public class TranslationToadlet extends Toadlet {
 		legendRow.addChild("td", "class", "translation-key", l10n("currentTranslationLabel"));
 		
 		SimpleFieldSet sfs = this.base.getCurrentLanguageTranslation();
-		if(sfs != null) {
-			KeyIterator it = this.base.getDefaultLanguageTranslation().keyIterator("");
 
-			while(it.hasNext()) {
-				String key = it.nextKey();
-				boolean isOverriden = this.base.isOverridden(key);
-				if(!showEverything && (isOverriden || (this.base.getString(key, true) != null))) continue;
-				HTMLNode contentRow = legendTable.addChild("tr");
-				contentRow.addChild("td", "class", "translation-key",
-						key
-				);
-				contentRow.addChild("td", "class", "translation-orig",
-						this.base.getDefaultString(key)
-				);
+		KeyIterator it = sfs.keyIterator("");
 
+		while(it.hasNext()) {
+			String key = it.nextKey();
+			boolean isOverriden = this.base.isOverridden(key);
+			if(!showEverything && (isOverriden || (this.base.getString(key, true) != null))) continue;
+			HTMLNode contentRow = legendTable.addChild("tr");
+			contentRow.addChild("td", "class", "translation-key",
+					key
+			);
+			contentRow.addChild("td", "class", "translation-orig",
+					this.base.getDefaultString(key)
+			);
 				contentRow.addChild("td", "class", "translation-new").addChild(_setOrRemoveOverride(key, isOverriden, showEverything));
-			}
 		}
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());

@@ -282,10 +282,19 @@ public class BaseL10n {
 		if (this.translationOverride == null) {
 			this.translationOverride = new SimpleFieldSet(false);
 		}
+		
+		SimpleFieldSet current;
+		// If there is no l10n file for our current language, assume that
+		// we are translating from english.
+		if(this.currentTranslation == null) {
+			current = this.getDefaultLanguageTranslation();
+		} else {
+			current = this.currentTranslation;
+		}
 
 		// If there is no need to keep it in the override, remove it...
 		// unless the original/default is the same as the translation
-		if ("".equals(value) || value.equals(this.currentTranslation.get(key))) {
+		if ("".equals(value) || value.equals(current.get(key))) {
 			this.translationOverride.removeValue(key);
 		} else {
 			value = value.replaceAll("(\r|\n|\t)+", "");
@@ -331,7 +340,7 @@ public class BaseL10n {
 	 * @return SimpleFieldSet
 	 */
 	public SimpleFieldSet getCurrentLanguageTranslation() {
-		return (this.currentTranslation == null ? null : new SimpleFieldSet(currentTranslation));
+		return (this.currentTranslation == null ? this.getDefaultLanguageTranslation() : new SimpleFieldSet(currentTranslation));
 	}
 
 	/**
