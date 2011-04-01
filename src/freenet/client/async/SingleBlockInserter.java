@@ -96,7 +96,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	
 	/**
 	 * Create a SingleBlockInserter.
-	 * @param parent
+	 * @param parent The parent. Must be activated.
 	 * @param data
 	 * @param compressionCodec The compression codec.
 	 * @param uri
@@ -116,7 +116,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	 */
 	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, boolean realTimeFlag, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts, byte cryptoAlgorithm, byte[] cryptoKey) {
 		super(persistent, realTimeFlag);
-		assert(persistent == parent.persistent());
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
 		this.token = token;

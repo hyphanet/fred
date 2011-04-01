@@ -8,7 +8,6 @@ import java.io.IOException;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
-import freenet.client.FetchContext;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -175,7 +174,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode, false, persistent(), 0, 0, null, Key.ALGO_AES_PCFB_256_SHA256, cryptoKey);
 					} else
 						currentState =
-							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx, context, container);
+							new BinaryBlobInserter(data, this, getClient(), false, priorityClass, ctx, context, container);
 				}
 			}
 			if(cancel) {
@@ -387,6 +386,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public Bucket getData() {
 		return data;
+	}
+	
+	/**
+	 * Get the target URI with which this insert was started.
+	 */
+	public FreenetURI getTargetURI() {
+		return targetURI;
 	}
 
 	/** Get the final URI to the inserted data */

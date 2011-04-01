@@ -403,12 +403,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	protected final LinkedList<byte[]> jfkNoncesSent = new LinkedList<byte[]>();
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -1425,7 +1427,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from curTracker less than now");
-			if(kt.packets.hasPacketsToResend()) return now;
+			if(kt.packets.hasPacketsToResend()) {
+				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
+				return now;
+			}
 		}
 		kt = prev;
 		if(kt != null) {
@@ -1433,18 +1438,24 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from prevTracker less than now");
-			if(kt.packets.hasPacketsToResend()) return now;
+			if(kt.packets.hasPacketsToResend()) {
+				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
+				return now;
+			}
 		}
 		if(pf != null) {
-			if(cur != null && pf.canSend(cur)) { // New messages are only sent on cur.
-				long l = messageQueue.getNextUrgentTime(t, now);
+			boolean canSend = cur != null && pf.canSend(cur);
+			if(canSend) { // New messages are only sent on cur.
+				long l = messageQueue.getNextUrgentTime(t, 0); // Need an accurate value even if in the past.
 				if(t >= now && l < now && logMINOR)
 					Logger.minor(this, "Next urgent time from message queue less than now");
+				else if(logDEBUG)
+					Logger.debug(this, "Next urgent time is "+(l-now)+"ms on "+this);
 				t = l;
 			}
-			long l = pf.timeNextUrgent();
+			long l = pf.timeNextUrgent(canSend);
 			if(l < now && logMINOR)
-				Logger.minor(this, "Next urgent time from packet format less than now");
+				Logger.minor(this, "Next urgent time from packet format less than now on "+this);
 			t = Math.min(t, l);
 		}
 		return t;
@@ -1484,6 +1495,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): final = "+tempShouldSendHandshake);
 		return tempShouldSendHandshake;
 	}
+	
+	public long timeSendHandshake(long now) {
+		if(hasLiveHandshake(now)) return Long.MAX_VALUE;
+		synchronized(this) {
+			if(disconnecting) return Long.MAX_VALUE;
+			if(handshakeIPs == null) return Long.MAX_VALUE;
+			if(!(isRekeying || !isConnected())) return Long.MAX_VALUE;
+			return sendHandshakeTime;
+		}
+	}
 
 	/**
 	* Does the node have a live handshake in progress?
@@ -1494,8 +1515,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized(this) {
 			c = ctx;
 		}
-		if(c != null && logMINOR)
-			Logger.minor(this, "Last used: " + (now - c.lastUsedTime()));
+		if(c != null && logDEBUG)
+			Logger.minor(this, "Last used (handshake): " + (now - c.lastUsedTime()));
 		return !((c == null) || (now - c.lastUsedTime() > Node.HANDSHAKE_TIMEOUT));
 	}
 	boolean firstHandshake = true;
@@ -5279,6 +5300,24 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		lastIncomingRekey = now;
 		return false;
+	}
+
+	public boolean fullPacketQueued() {
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return false;
+		}
+		return pf.fullPacketQueued(getMaxPacketSize());
+	}
+
+	public long timeSendAcks() {
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return Long.MAX_VALUE;
+		}
+		return pf.timeSendAcks();
 	}
 	
 }
