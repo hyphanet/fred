@@ -129,8 +129,8 @@ public class FileInsertWizardToadlet extends Toadlet implements LinkEnabledCallb
 		}
 		insertForm.addChild("br");
 		insertForm.addChild("br");
+		// Local file browser
 		if(ctx.isAllowedFullAccess()) {
-			insertForm.addChild("br");
 			insertForm.addChild("#", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseLabel")+": ");
 			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", NodeL10n.getBase().getString("QueueToadlet.insertFileBrowseButton") + "..." });
 			insertForm.addChild("br");

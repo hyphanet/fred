@@ -128,14 +128,16 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	private boolean isReversed = false;
-
+	private LocalFileInsertToadlet browser;
 	private final boolean uploads;
-
+	private HighLevelSimpleClient client;
 	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client, boolean uploads) {
 		super(client);
+		this.client = client;
 		this.core = core;
 		this.fcp = fcp;
 		this.uploads = uploads;
+		browser = new LocalFileInsertToadlet(core, client);
 		if(fcp == null) throw new NullPointerException();
 		fcp.setCompletionCallback(this);
 		try {
@@ -155,9 +157,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		try {
 			// Browse... button
 			if (request.getPartAsString("insert-local", 128).length() > 0) {
-
-				// Preserve the key
-
+				
 				FreenetURI insertURI;
 				String keyType = request.getPartAsString("keytype", 10);
 				if ("CHK@".equals(keyType)) {
@@ -182,13 +182,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					writeError(NodeL10n.getBase().getString("QueueToadlet.errorMustSpecifyKeyTypeTitle"), NodeL10n.getBase().getString("QueueToadlet.errorMustSpecifyKeyType"), ctx, false, true);
 					return;
 				}
-
-				String overrideSplitfileKey = request.getPartAsString("overrideSplitfileKey", 65);
-
+				LocalFileInsertToadlet t = new LocalFileInsertToadlet(core, client);
 				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
-				boolean compress = request.getPartAsString("compress", 128).length() > 0;
-				String compatibilityMode = request.getPartAsString("compatibilityMode", 100);
-				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString() + "&compress=" + compress+"&compatibilityMode="+compatibilityMode+"&overrideSplitfileKey="+overrideSplitfileKey);
+				responseHeaders.put("Location", t.path()+"?key="+insertURI.toASCIIString()+
+						"&compress="+String.valueOf(request.getPartAsString("compress", 128).length() > 0)+
+						"&compatibilityMode="+request.getPartAsString("compatibilityMode", 100)+
+						"&overrideSplitfileKey="+request.getPartAsString("overrideSplitfileKey", 65));
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			}

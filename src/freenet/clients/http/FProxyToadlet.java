@@ -1105,8 +1105,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 		server.register(n2ntmToadlet, null, "/send_n2ntm/", true, true);
+		
 		LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
-		server.register(localFileInsertToadlet, null, "/files/", true, false);
+		server.register(localFileInsertToadlet, null, localFileInsertToadlet.path(), true, false);
+		
+		LocalFileN2NMToadlet localFileN2NMToadlet = new LocalFileN2NMToadlet(core, client);
+		server.register(localFileN2NMToadlet, null, localFileN2NMToadlet.path(), true, false);
 		
 		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core, bookmarks);
 		server.register(bookmarkEditorToadlet, null, "/bookmarkEditor/", true, false);
