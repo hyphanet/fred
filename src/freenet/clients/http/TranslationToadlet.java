@@ -269,7 +269,7 @@ public class TranslationToadlet extends Toadlet {
 			this.base.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), "UTF-8").trim());
 			
 			if("on".equalsIgnoreCase(request.getPartAsString("gotoNext", 7))) {
-				KeyIterator it = DEFAULT_TRANSLATION.keyIterator("");
+				KeyIterator it = this.base.getCurrentLanguageTranslation().keyIterator("");
 				
 				while(it.hasNext()) {
 					String newKey = it.nextKey();
