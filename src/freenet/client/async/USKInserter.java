@@ -190,7 +190,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				SingleBlockInserter sb = 
 					new SingleBlockInserter(parent, bucket, (short) -1, uri,
 							ctx, realTimeFlag, m, false, sourceLength, token, getCHKOnly, true, true /* we don't use it */, null, container, context, persistent, false, extraInserts, cryptoAlgorithm, forceCryptoKey);
-				Logger.normal(this, "Inserting "+uri+" for insert of "+pubUSK);
+				Logger.normal(this, "Inserting "+uri+" with "+sb+" for insert of "+pubUSK);
 				m.add(sb, container);
 				sb.schedule(container, context);
 				added = true;
