@@ -52,13 +52,11 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<property name="version.make" value="freenet/node/Version.class" />
 
 	<property name="lib" value="lib"/>
-	<proppath name="lib.contrib.dir" path="${contrib.dir}" else="${lib}"/>
+	<proppath name="lib.contrib.dir" path="${contrib.dir}/dist" else="${lib}"/>
 	<path id="lib.path">
-		<fileset dir="${lib.contrib.dir}" includes="**/*.jar"/>
 		<fileset dir="${lib}" includes="**/*.jar"/>
-		<fileset dir="${java.class.dirs}">
-			<include name="junit.jar"/>
-		</fileset>
+		<fileset dir="${lib.contrib.dir}" includes="**/*.jar"/>
+		<fileset dir="${java.class.dirs}" includes="${lib.jars}"/>
 	</path>
 
 	<property name="contrib.version.min" value="-1"/>
@@ -69,15 +67,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<path id="gjs.lib.path">
 		<fileset dir="${gjs.dir}" includes="lib/*.jar"/>
 		<pathelement location="${gjs.dir}/war/WEB-INF/classes"/>
-		<fileset dir="${java.class.dirs}">
-			<include name="gwt-dev-linux.jar"/>
-			<include name="gwt-dev-windows.jar"/>
-			<include name="gwt-dev.jar"/>
-			<include name="gwt-user.jar"/>
-			<include name="commons-collections3.jar"/>
-			<include name="ant.jar"/>
-			<include name="eclipse-ecj.jar"/>
-		</fileset>
+		<fileset dir="${java.class.dirs}" includes="${gjs.lib.jars}"/>
 	</path>
 
 	<assertions><enable/></assertions>
@@ -222,20 +212,26 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	</target>
 
 	<target name="package" depends="build, unit" description="build standard binary packages (Freenet daemon)" >
+		<property name="loc.lib.contrib.dir" location="${lib.contrib.dir}" />
+		<property name="loc.loc" location="${lib}" />
+		<pathconvert property="lib.jars.package" refid="lib.path" pathsep=" ">
+			<map from="${loc.lib.contrib.dir}" to="${java.class.dirs}/freenet"/>
+			<map from="${loc.lib}" to="${java.class.dirs}"/>
+		</pathconvert>
 		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet/node/Node"/>
 				<attribute name="Built-By" value="${user.name}"/>
 				<attribute name="Required-Ext-Version" value="${contrib.version.min}"/>
 				<attribute name="Recommended-Ext-Version" value="${contrib.version.rec}"/>
-				<attribute name="Class-Path" value="freenet-ext.jar" />
+				<attribute name="Class-Path" value="${lib.jars.package}" />
 				<section name="common">
 					<attribute name="Specification-Title" value="Freenet"/>
 					<attribute name="Specification-Version" value="0.7.5"/>
 					<attribute name="Specification-Vendor" value="freenetproject.org"/>
 					<attribute name="Implementation-Title" value="Freenet"/>
 					<attribute name="Implementation-Version" value="0.7.5 ${TODAY} ${git.revision}"/>
-					<attribute name="Implementation-Vendor" value="Freenetproject.org"/>
+					<attribute name="Implementation-Vendor" value="freenetproject.org"/>
 				</section>
 			</manifest>
 			<exclude name="${version.src}"/>
