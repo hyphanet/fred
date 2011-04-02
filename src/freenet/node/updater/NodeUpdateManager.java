@@ -918,11 +918,11 @@ public class NodeUpdateManager {
 					gotJarTime = System.currentTimeMillis();
 					if(logMINOR)
 						Logger.minor(this, "Got main jar: "+mainUpdater.getFetchedVersion());
+					if(requiredExt > -1)
+						minExtVersion = requiredExt;
+					if(recommendedExt > -1)
+						maxExtVersion = recommendedExt;
 				}
-				if(requiredExt > -1)
-					minExtVersion = requiredExt;
-				if(recommendedExt > -1)
-					maxExtVersion = recommendedExt;
 			}
 		}
 		if(!isExt && (requiredExt > -1 || recommendedExt > -1)) {
