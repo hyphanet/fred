@@ -13,8 +13,8 @@ import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
 import com.db4o.ObjectContainer;
 
@@ -353,10 +353,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(SimpleManifestPutter.this, 1);
 			}
 		}
-		
+
 		/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
 		protected int minSuccessFetchBlocks;
-		
+
 		@Override
 		public void addBlock(ObjectContainer container) {
 			if(persistent) {
@@ -436,7 +436,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(SimpleManifestPutter.this, 1);
 			super.addMustSucceedBlocks(blocks, container);
 		}
-		
+
 		@Override
 		public void notifyClients(ObjectContainer container, ClientContext context) {
 			if(persistent)
@@ -445,11 +445,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
-		
+
 		public synchronized int getMinSuccessFetchBlocks() {
 			return minSuccessFetchBlocks;
 		}
-		
+
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
@@ -552,10 +552,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	// FIXME: DB4O ISSUE: HASHMAP ACTIVATION:
-	
+
 	// Unfortunately this class uses a lot of HashMap's, and is persistent.
 	// The two things do not play well together!
-	
+
 	// Activating a HashMap to depth 1 breaks it badly, so that even if it is then activated to a higher depth, it remains empty.
 	// Activating a HashMap to depth 2 loads the elements but does not activate them. In particular, Metadata's used as keys will not have their hashCode loaded so we end up with all of them on the 0th slot.
 	// Activating a HashMap to depth 3 loads it properly, including activating both the keys and values to depth 1.
@@ -565,17 +565,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	// 1. Activate to depth 2. Activate the Metadata we are looking for *FIRST*!
 	// Then the Metadata we are looking for will be in the correct slot.
 	// Everything else will be in the 0'th slot, in one long chain, i.e. if there are lots of entries it will be a very inefficient HashMap.
-	
+
 	// 2. Activate to depth 3.
 	// If there are lots of entries, we have a significant I/O cost for activating *all* of them.
 	// We also have the possibility of a memory/space leak if these are linked from somewhere that assumed they had been deactivated.
-	
+
 	// Clearly option 1 is superior. However they both suck.
 	// The *correct* solution is to use a HashMap from a primitive type e.g. a String, so we can use depth 2.
-	
+
 	// Note that this also applies to HashSet's: The entries are the keys, and they are not activated, so we end up with them all in a long chain off bucket 0, except any that are already active.
 	// We don't have any real problems because the caller is generally already active - but it is grossly inefficient.
-	
+
 	private HashMap<String,Object> putHandlersByName;
 	private HashSet<PutHandler> runningPutHandlers;
 	private HashSet<PutHandler> putHandlersWaitingForMetadata;
@@ -611,13 +611,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
 		super(prioClass, clientContext);
 		this.defaultName = defaultName;
-		
+
 		if(defaultName != null) {
 			if(client.persistent())
 				container.activate(manifestElements, Integer.MAX_VALUE);
 			checkDefaultName(manifestElements, defaultName);
 		}
-		
+
 		this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
 
 		if(client.persistent())
@@ -1026,9 +1026,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// So we wrap it here and call close().
 		// Fix it in Contrib, release a new jar, require the new jar, then clean up this code.
 		os = new NoCloseProxyOutputStream(os);
-		TarOutputStream tarOS = new TarOutputStream(os);
-		tarOS.setLongFileMode(TarOutputStream.LONGFILE_GNU);
-		TarEntry ze;
+		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
+		tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+		TarArchiveEntry ze;
 
 		for(PutHandler ph : elementsToPutInArchive) {
 			if(persistent()) {
@@ -1037,26 +1037,26 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			if(logMINOR)
 				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
-			ze = new TarEntry(ph.targetInArchive);
+			ze = new TarArchiveEntry(ph.targetInArchive);
 			ze.setModTime(0);
 			long size = ph.data.size();
 			ze.setSize(size);
-			tarOS.putNextEntry(ze);
+			tarOS.putArchiveEntry(ze);
 			BucketTools.copyTo(ph.data, tarOS, size);
-			tarOS.closeEntry();
+			tarOS.closeArchiveEntry();
 		}
 
 		// Add .metadata - after the rest.
 		if(logMINOR)
 			Logger.minor(this, "Putting metadata into tar: length is "+inputBucket.size());
-		ze = new TarEntry(".metadata");
+		ze = new TarArchiveEntry(".metadata");
 		ze.setModTime(0); // -1 = now, 0 = 1970.
 		long size = inputBucket.size();
 		ze.setSize(size);
-		tarOS.putNextEntry(ze);
+		tarOS.putArchiveEntry(ze);
 		BucketTools.copyTo(inputBucket, tarOS, size);
 
-		tarOS.closeEntry();
+		tarOS.closeArchiveEntry();
 		// Both finish() and close() are necessary.
 		tarOS.finish();
 		tarOS.close();
@@ -1606,21 +1606,21 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	/** The number of blocks that will be needed to fetch the data. We put this in the top block metadata. */
 	protected int minSuccessFetchBlocks;
-	
+
 	public void addBlock(ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks++;
 		}
 		super.addBlock(container);
 	}
-	
+
 	public void addBlocks(int num, ObjectContainer container) {
 		synchronized(this) {
 			minSuccessFetchBlocks+=num;
 		}
 		super.addBlocks(num, container);
 	}
-	
+
 	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
 	public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 		synchronized(this) {
@@ -1629,7 +1629,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		super.addMustSucceedBlocks(blocks, container);
 	}
 
-	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. 
+	/** Add one or more blocks to the number of requires blocks, and don't notify the clients.
 	 * These blocks are added to the minSuccessFetchBlocks for the insert, but not to the counter for what
 	 * the requestor must fetch. */
 	public void addRedundantBlocks(int blocks, ObjectContainer container) {
@@ -1648,7 +1648,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public int getMinSuccessFetchBlocks() {
 		return minSuccessFetchBlocks;
 	}
-	
+
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			this.metadataBlockSetFinalized = true;

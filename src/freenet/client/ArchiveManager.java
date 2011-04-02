@@ -18,9 +18,9 @@ import java.util.zip.ZipInputStream;
 
 import net.contrapunctus.lzma.LzmaInputStream;
 
-import org.apache.tools.bzip2.CBZip2InputStream;
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 import com.db4o.ObjectContainer;
 
@@ -302,7 +302,7 @@ public class ArchiveManager {
 				wrapper = null;
 			} else if(ctype == COMPRESSOR_TYPE.BZIP2) {
 				if(logMINOR) Logger.minor(this, "dealing with BZIP2");
-				is = new CBZip2InputStream(data.getInputStream());
+				is = new BZip2CompressorInputStream(data.getInputStream());
 				wrapper = null;
 			} else if(ctype == COMPRESSOR_TYPE.GZIP) {
 				if(logMINOR) Logger.minor(this, "dealing with GZIP");
@@ -336,7 +336,7 @@ public class ArchiveManager {
 							Closer.close(is);
 						}
 					}
-					
+
 				});
 				is = pis;
 			} else if(ctype == COMPRESSOR_TYPE.LZMA) {
@@ -368,12 +368,12 @@ public class ArchiveManager {
 
 	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "Handling a TAR Archive");
-		TarInputStream tarIS = null;
+		TarArchiveInputStream tarIS = null;
 		try {
-			tarIS = new TarInputStream(data);
+			tarIS = new TarArchiveInputStream(data);
 
 			// MINOR: Assumes the first entry in the tarball is a directory.
-			TarEntry entry;
+			ArchiveEntry entry;
 
 			byte[] buf = new byte[32768];
 			HashSet<String> names = new HashSet<String>();
@@ -412,7 +412,7 @@ outerTAR:		while(true) {
 								continue outerTAR;
 							}
 						}
-						
+
 					} finally {
 						if(out != null) out.close();
 					}
@@ -479,7 +479,7 @@ outerZIP:		while(true) {
 					Bucket output = tempBucketFactory.makeBucket(size);
 					OutputStream out = output.getOutputStream();
 					try {
-						
+
 						int readBytes;
 						while((readBytes = zis.read(buf)) > 0) {
 							out.write(buf, 0, readBytes);
@@ -492,7 +492,7 @@ outerZIP:		while(true) {
 								continue outerZIP;
 							}
 						}
-						
+
 					} finally {
 						if(out != null) out.close();
 					}
@@ -714,20 +714,20 @@ outerZIP:		while(true) {
 		Logger.error(this, "Not storing ArchiveManager in database", new Exception("error"));
 		return false;
 	}
-	
+
 	public boolean objectCanUpdate(ObjectContainer container) {
 		Logger.error(this, "Trying to store an ArchiveManager!", new Exception("error"));
 		return false;
 	}
-	
+
 	public boolean objectCanActivate(ObjectContainer container) {
 		Logger.error(this, "Trying to store an ArchiveManager!", new Exception("error"));
 		return false;
 	}
-	
+
 	public boolean objectCanDeactivate(ObjectContainer container) {
 		Logger.error(this, "Trying to store an ArchiveManager!", new Exception("error"));
 		return false;
 	}
-	
+
 }

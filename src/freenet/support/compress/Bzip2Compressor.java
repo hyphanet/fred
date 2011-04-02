@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.apache.tools.bzip2.CBZip2InputStream;
-import org.apache.tools.bzip2.CBZip2OutputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -41,16 +41,16 @@ public class Bzip2Compressor implements Compressor {
 		}
 		return output;
 	}
-	
+
 	public long compress(InputStream is, OutputStream os, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		if(maxReadLength <= 0)
 			throw new IllegalArgumentException();
 		BufferedInputStream bis = new BufferedInputStream(is, 32768);
-		CBZip2OutputStream bz2os = null;
+		BZip2CompressorOutputStream bz2os = null;
 		try {
 			CountedOutputStream cos = new CountedOutputStream(new NoCloseProxyOutputStream(os));
-			bz2os = new CBZip2OutputStream(new BufferedOutputStream(cos, 32768));
-			// FIXME add finish() to CBZip2OutputStream and use it to avoid having to use NoCloseProxyOutputStream.
+			bz2os = new BZip2CompressorOutputStream(new BufferedOutputStream(cos, 32768));
+			// FIXME add finish() to BZip2CompressorOutputStream and use it to avoid having to use NoCloseProxyOutputStream.
 			// Requires changes to freenet-ext.jar.
 			long read = 0;
 			// Bigger input buffer, so can compress all at once.
@@ -77,12 +77,12 @@ public class Bzip2Compressor implements Compressor {
 				bz2os.flush();
 				bz2os.close();
 			}
-			
+
 		}
 	}
-	
+
 	public long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
-		CBZip2InputStream bz2is = new CBZip2InputStream(new BufferedInputStream(is));
+		BZip2CompressorInputStream bz2is = new BZip2CompressorInputStream(new BufferedInputStream(is));
 		long written = 0;
 		int bufSize = 32768;
 		if(maxLength > 0 && maxLength < (long)bufSize)
