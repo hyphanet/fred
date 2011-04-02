@@ -114,7 +114,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 
 			realAvailableVersion = found;
 			if(found > maxDeployVersion) {
-				System.err.println("Ignoring "+jarName() + " update edition "+l+": version too new");
+				System.err.println("Ignoring "+jarName() + " update edition "+l+": version too new (min "+minDeployVersion+" max "+maxDeployVersion+")");
 				found = maxDeployVersion;
 			}
 			
