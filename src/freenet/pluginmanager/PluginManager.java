@@ -1067,8 +1067,8 @@ public class PluginManager {
 		addOfficialPlugin("Freereader", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
 		addOfficialPlugin("Library", false, 22, true, new FreenetURI("CHK@zDlkryQcPRuK11Y1IjB-Rh4I5b7SMUdhwLvaEpjdjZM,8tLr~U~wi5BpvkoJtMY5gWiusH5VIUtwaWj1GNVCdPk,AAIC--8/Library.jar"));
 		addOfficialPlugin("Spider", false, 48, false, new FreenetURI("CHK@DBgu6re-bD8M2elkdvReOROyZm4f2ppWaLBpJ0Cvo-k,RaD2v5HYVV1Xqit9v6FRaUpz-weoi3ilt4xxr~d9IfE,AAIC--8/Spider.jar"), false, false, true);
-		addOfficialPlugin("Freetalk", false, 3, true, new FreenetURI("CHK@5CDmM9m7sIIgy3W035sz8ZuU2-T7D0-Rp8Y-VAYHGGs,j4wc2XGj-s51zvIDk2oazqXLWZPKx-oA8w-D-xXYLJE,AAIC--8/Freetalk.jar"), false, true, false);
-		addOfficialPlugin("WebOfTrust", false, 2, true, new FreenetURI("CHK@ZLNYg5W~K~zb~i3z6rA1ZRI3myKt1K9i-YXEoYuMNLo,c0OUv3Mb47nK3OGcQkgLOfXo2w-IENxNdcop4Ak5h8o,AAIC--8/WebOfTrust.jar"), false, true, false);
+		addOfficialPlugin("Freetalk", false, 3, true, new FreenetURI("CHK@5CDmM9m7sIIgy3W035sz8ZuU2-T7D0-Rp8Y-VAYHGGs,j4wc2XGj-s51zvIDk2oazqXLWZPKx-oA8w-D-xXYLJE,AAIC--8/Freetalk.jar"), false, false, false);
+		addOfficialPlugin("WebOfTrust", false, 2, true, new FreenetURI("CHK@ZLNYg5W~K~zb~i3z6rA1ZRI3myKt1K9i-YXEoYuMNLo,c0OUv3Mb47nK3OGcQkgLOfXo2w-IENxNdcop4Ak5h8o,AAIC--8/WebOfTrust.jar"), false, false, false);
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}
