@@ -325,7 +325,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 		}
 		
-		if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+		if(threatLevel != PHYSICAL_THREAT_LEVEL.LOW) {
 			HTMLNode option = optionList.addChild("li");
 			HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 			optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
@@ -336,12 +336,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 			optionForm.addChild("input", new String[] { "type", "name", "value" },
 					new String[] { "submit", "download", l10n("downloadInBackgroundToTempSpaceButton") });
+			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace",
+					new String[] { "page", "bold" }, new HTMLNode[] { DOWNLOADS_LINK, HTMLNode.STRONG });
 			HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
 			HTMLNode f = filterControl.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "filterData", "filterData", "checked"});
 			if(filterChecked) f.addAttribute("checked", "checked");
 			filterControl.addChild("div", l10n("filterDataMessage"));
-			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace",
-					new String[] { "page", "bold" }, new HTMLNode[] { DOWNLOADS_LINK, HTMLNode.STRONG });
+			
 		}
 	}
 	
@@ -1104,8 +1105,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 		server.register(n2ntmToadlet, null, "/send_n2ntm/", true, true);
+		
 		LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
-		server.register(localFileInsertToadlet, null, "/files/", true, false);
+		server.register(localFileInsertToadlet, null, localFileInsertToadlet.path(), true, false);
+		
+		LocalFileN2NMToadlet localFileN2NMToadlet = new LocalFileN2NMToadlet(core, client);
+		server.register(localFileN2NMToadlet, null, localFileN2NMToadlet.path(), true, false);
 		
 		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core, bookmarks);
 		server.register(bookmarkEditorToadlet, null, "/bookmarkEditor/", true, false);

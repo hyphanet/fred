@@ -147,7 +147,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			input.addChild("b", l10n("opennetChoiceConnectFriends")+":");
 			p.addChild("br");
 			p.addChild("i", l10n("opennetChoicePro"));
-			p.addChild("#", ": "+l10n("opennetChoiceConnectFriendsPRO"));
+			p.addChild("#", ": "+l10n("opennetChoiceConnectFriendsPRO") + "¹");
 			p.addChild("br");
 			p.addChild("i", l10n("opennetChoiceCon"));
 			p.addChild("#", ": "+l10n("opennetChoiceConnectFriendsCON", "minfriends", "5"));
@@ -164,6 +164,22 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "opennetF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
+			HTMLNode foot = infoboxContent.addChild("div", "class", "toggleable");
+			foot.addChild("i", "¹: " + l10n("opennetChoiceHowSafeIsFreenetToggle"));
+			HTMLNode footHidden = foot.addChild("div", "class", "hidden");
+			HTMLNode footList = footHidden.addChild("ol");
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetStupid"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetFriends") + "²");
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetTrustworthy"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetNoSuspect"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetChangeID"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetSSK"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetOS"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetBigPriv"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetDistant"));
+			footList.addChild("li", l10n("opennetChoiceHowSafeIsFreenetBugs"));
+			HTMLNode foot2 = footHidden.addChild("p");
+			foot2.addChild("#", "²: " + l10n("opennetChoiceHowSafeIsFreenetFoot2"));
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.SECURITY_NETWORK) {

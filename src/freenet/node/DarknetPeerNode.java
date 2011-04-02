@@ -45,6 +45,9 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.Logger.LogLevel;
+import freenet.support.api.HTTPUploadedFile;
+import freenet.support.io.BucketTools;
+import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
@@ -1375,18 +1378,14 @@ public class DarknetPeerNode extends PeerNode {
 		return getPeerNodeStatus();
 	}
 
-	public int sendFileOffer(File filename, String message) throws IOException {
-		long now = System.currentTimeMillis();
+	private int sendFileOffer(String fnam, String mime, String message, RandomAccessThing data) throws IOException {
 		long uid = node.random.nextLong();
-		String fnam = filename.getName();
-		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
-		RandomAccessThing data = new RandomAccessFileWrapper(filename, "r");
+		long now = System.currentTimeMillis();
 		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
 		synchronized(this) {
 			myFileOffersByUID.put(uid, fo);
 		}
 		storeOffers();
-
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fo.toFieldSet(fs);
 		if(logMINOR)
@@ -1396,6 +1395,20 @@ public class DarknetPeerNode extends PeerNode {
 		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
 		setPeerNodeStatus(System.currentTimeMillis());
 		return getPeerNodeStatus();
+	}
+	
+	public int sendFileOffer(File file, String message) throws IOException {
+		String fnam = file.getName();
+		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
+		RandomAccessThing data = new RandomAccessFileWrapper(file, "r");
+		return sendFileOffer(fnam, mime, message, data);
+	}
+	
+	public int sendFileOffer(HTTPUploadedFile file, String message) throws IOException {
+		String fnam = file.getFilename();
+		String mime = file.getContentType();
+		RandomAccessThing data = new ByteArrayRandomAccessThing(BucketTools.toByteArray(file.getData()));
+		return sendFileOffer(fnam, mime, message, data);
 	}
 
 	public void handleFproxyN2NTM(SimpleFieldSet fs, int fileNumber) {
