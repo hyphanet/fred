@@ -32,7 +32,6 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import freenet.support.io.NoCloseProxyOutputStream;
 
 /**
  * Insert a bunch of files as single Archive with .metadata
@@ -179,8 +178,6 @@ public class ContainerInserter implements ClientPutState {
 			String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
 				createTarBucket(os, container) :
 				createZipBucket(os, container));
-			os.flush();
-			os.close();
 			os = null;
 			if(logMINOR)
 				Logger.minor(this, "Archive size is "+outputBucket.size());
@@ -295,14 +292,12 @@ public class ContainerInserter implements ClientPutState {
 	}
 
 
-
+	/**
+	** OutputStream os will be close()d if this method returns successfully.
+	*/
 	private String createTarBucket(OutputStream os, @SuppressWarnings("unused") ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 
-		// FIXME: TarOutputStream.finish() does NOT call TarBuffer.flushBlock() from TarBuffer.close().
-		// So we wrap it here and call close().
-		// Fix it in Contrib, release a new jar, require the new jar, then clean up this code.
-		os = new NoCloseProxyOutputStream(os);
 		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
 		tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
 		TarArchiveEntry ze;
@@ -320,8 +315,6 @@ public class ContainerInserter implements ClientPutState {
 		}
 
 		tarOS.closeArchiveEntry();
-		// Both finish() and close() are necessary.
-		tarOS.finish();
 		tarOS.close();
 
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];

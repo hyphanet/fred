@@ -37,7 +37,7 @@ import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
-import freenet.support.io.NoCloseProxyOutputStream;
+import freenet.support.io.Closer;
 
 public class SimpleManifestPutter extends BaseClientPutter implements PutCompletionCallback {
 
@@ -952,16 +952,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			// We want to include the metadata.
 			// We have the metadata, fortunately enough, because everything has been resolve()d.
 			// So all we need to do is create the actual archive.
+			OutputStream os = null;
 			try {
 				Bucket outputBucket = context.getBucketFactory(persistent()).makeBucket(baseMetadata.dataLength());
 				// TODO: try both ? - maybe not worth it
 				archiveType = ARCHIVE_TYPE.getDefault();
-				OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
+				os = new BufferedOutputStream(outputBucket.getOutputStream());
 				String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
 					createTarBucket(bucket, os, container) :
 					createZipBucket(bucket, os, container));
-				os.flush();
-				os.close();
 				if(logMINOR)
 					Logger.minor(this, "Archive size is "+outputBucket.size());
 				bucket.free();
@@ -983,6 +982,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(persistent())
 					container.deactivate(baseMetadata, 1);
 				return;
+			} finally {
+				Closer.close(os);
 			}
 		} else {
 			if(persistent()) container.activate(targetURI, 5);
@@ -1019,13 +1020,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
+	/**
+	** OutputStream os will be close()d if this method returns successfully.
+	*/
 	private String createTarBucket(Bucket inputBucket, OutputStream os, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 
-		// FIXME: TarOutputStream.finish() does NOT call TarBuffer.flushBlock() from TarBuffer.close().
-		// So we wrap it here and call close().
-		// Fix it in Contrib, release a new jar, require the new jar, then clean up this code.
-		os = new NoCloseProxyOutputStream(os);
 		TarArchiveOutputStream tarOS = new TarArchiveOutputStream(os);
 		tarOS.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
 		TarArchiveEntry ze;
@@ -1057,8 +1057,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		BucketTools.copyTo(inputBucket, tarOS, size);
 
 		tarOS.closeArchiveEntry();
-		// Both finish() and close() are necessary.
-		tarOS.finish();
 		tarOS.close();
 
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
