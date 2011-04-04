@@ -1069,6 +1069,7 @@ public class PluginManager {
 		addOfficialPlugin("Spider", false, 48, false, new FreenetURI("CHK@DBgu6re-bD8M2elkdvReOROyZm4f2ppWaLBpJ0Cvo-k,RaD2v5HYVV1Xqit9v6FRaUpz-weoi3ilt4xxr~d9IfE,AAIC--8/Spider.jar"), false, false, true);
 		addOfficialPlugin("Freetalk", false, 4, true, new FreenetURI("CHK@u-~mSgBb~Wpff0dppSfoRaMPMdpl-v~RXvNBcWgpl20,M-Q-Wxh~k0-bS9kOhqimwLZIPM0YCtvSFcCHQWLkJPU,AAIC--8/Freetalk.jar"), false, false, false);
 		addOfficialPlugin("WebOfTrust", false, 3, true, new FreenetURI("CHK@WLu1~7LsDvpWpgWLvU6gGchaSMcYi5ZzY7AlXXJxoJ8,8iATHwL9Tv5H-IT~XeDCvJ~rkZ5ewWlLUsuEKob5W3M,AAIC--8/WebOfTrust.jar"), false, false, false);
+		addOfficialPlugin("FlogHelper", false, 23, true, new FreenetURI("CHK@M12EpXDCDrU6pjDXJ93VilBoay~I9FZ-sZRzllDj~iE,GM~2cfJfMrF7Td3NThkvLxn0UkB9qaxZJsjdVdvKkpc,AAIC--8/FlogHelper.jar"), false, false, false);
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}
