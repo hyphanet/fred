@@ -40,7 +40,7 @@ public class NodeStarter implements WrapperListener {
 	/** Freenet will function best with this build of freenet-ext.jar.
 	 * It may be required in the near future. The node will try to download it.
 	 * The node will not update to a later ext version than this, because that might be incompatible. */
-	public final static int RECOMMENDED_EXT_BUILD_NUMBER = 27;
+	public final static int RECOMMENDED_EXT_BUILD_NUMBER = 28;
 	/*
 	(File.separatorChar == '\\') &&
 	(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")) ? 6 : 2;
