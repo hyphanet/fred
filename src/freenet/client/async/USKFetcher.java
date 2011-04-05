@@ -1129,6 +1129,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				else {
 					synchronized(USKFetcher.this) {
 						runningAttempts.remove(attempts[i].number);
+						pollingAttempts.remove(attempts[i].number);
 					}
 				}
 			}
