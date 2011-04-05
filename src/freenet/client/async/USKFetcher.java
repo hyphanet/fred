@@ -242,6 +242,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					prio--;
 					// But don't go higher than progressPollPriority.
 					if(prio > progressPollPriority) prio = progressPollPriority;
+					if(prio < 0) prio = 0;
 					return prio;
 				}
 				if(progressed && !firstLoop) {
