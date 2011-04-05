@@ -129,7 +129,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 						container.activate(key, 5);
 					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK, realTimeFlag);
 					tracker.cooldownWakeupTime = sched.queueCooldown(key, this, container);
-					context.cooldownTracker.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), persistent, container, true);
+					context.cooldownTracker.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), persistent, container, context, true);
 					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
 					if(persistent)
 						container.deactivate(key, 5);
@@ -405,7 +405,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(wakeTime == 0)
 			return 0;
 		HasCooldownCacheItem parentRGA = getParentGrabArray();
-		context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container, true);
+		context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container, context, true);
 		return wakeTime;
 	}
 
