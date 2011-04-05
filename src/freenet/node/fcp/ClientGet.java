@@ -457,6 +457,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler, ObjectContainer container) {
 		FCPMessage oldProgress = null;
+		boolean noStore = false;
 		if(msg instanceof SimpleProgressMessage) {
 			oldProgress = progressPending;
 			progressPending = (SimpleProgressMessage)msg;
@@ -520,9 +521,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			}
 		} else if(msg instanceof EnterFiniteCooldown) {
 			// Do nothing, it's not persistent.
+			noStore = true;
 		} else
 			assert(false);
-		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+		if(persistenceType == ClientRequest.PERSIST_FOREVER && !noStore) {
 			container.store(this);
 			if(oldProgress != null) {
 				container.activate(oldProgress, 1);
