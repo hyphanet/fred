@@ -588,7 +588,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			for(Iterator<Map.Entry<Long, USKAttempt>> i = pollingAttempts.entrySet().iterator();i.hasNext();) {
 				Map.Entry<Long, USKAttempt> entry = i.next();
 				if(entry.getKey() < curLatest) {
-					if(v == null) v = new Vector<USKAttempt>(runningAttempts.size()-count);
+					if(v == null) v = new Vector<USKAttempt>(Math.max(1, pollingAttempts.size()-count));
 					v.add(entry.getValue());
 					i.remove();
 				} else break; // TreeMap is ordered.
