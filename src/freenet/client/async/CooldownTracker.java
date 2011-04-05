@@ -105,11 +105,11 @@ public class CooldownTracker {
 		}
 	}
 
-	public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container) {
-		setCachedWakeup(wakeupTime, toCheck, parent, persistent, container, false);
+	public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container, ClientContext context) {
+		setCachedWakeup(wakeupTime, toCheck, parent, persistent, container, context, false);
 	}
 	
-	public void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container, boolean dontLogOnClearingParents) {
+	public void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container, ClientContext context, boolean dontLogOnClearingParents) {
 		synchronized(this) {
 		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck+" parent is "+parent);
 		if(persistent) {
@@ -182,7 +182,7 @@ public class CooldownTracker {
 		if(toCheck instanceof RemoveRandomWithObject) {
 			Object client = ((RemoveRandomWithObject)toCheck).getObject();
 			if(client instanceof WantsCooldownCallback) {
-				((WantsCooldownCallback)client).enterCooldown(wakeupTime, container);
+				((WantsCooldownCallback)client).enterCooldown(wakeupTime, container, context);
 			}
 		}
 	}
