@@ -134,6 +134,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					if(persistent)
 						container.deactivate(key, 5);
 				}
+				onEnterFiniteCooldown(context);
 			} else {
 				// Wake the CRS after clearing cache.
 				this.clearCooldown(container, context, true);
@@ -142,6 +143,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		unregister(container, context, getPriorityClass(container));
 		return false;
+	}
+
+	protected void onEnterFiniteCooldown(ClientContext context) {
+		// Do nothing.
 	}
 
 	private MyCooldownTrackerItem makeCooldownTrackerItem(

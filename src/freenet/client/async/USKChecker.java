@@ -21,6 +21,8 @@ class USKChecker extends BaseSingleFileFetcher {
 
 	final USKCheckerCallback cb;
 	private int dnfs;
+	
+	private long cooldownWakeupTime;
 
         private static volatile boolean logMINOR;
 	static {
@@ -113,6 +115,11 @@ class USKChecker extends BaseSingleFileFetcher {
 	@Override
 	public short getPriorityClass(ObjectContainer container) {
 		return cb.getPriority();
+	}
+	
+	@Override
+	protected void onEnterFiniteCooldown(ClientContext context) {
+		cb.onEnterFiniteCooldown(context);
 	}
 
 }
