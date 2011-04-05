@@ -518,6 +518,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					cache.updateExpectedDataLength(identifier, foundDataLength);
 				}
 			}
+		} else if(msg instanceof EnterFiniteCooldown) {
+			// Do nothing, it's not persistent.
 		} else
 			assert(false);
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
