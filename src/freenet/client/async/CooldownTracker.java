@@ -10,6 +10,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.node.SendableGet;
 import freenet.support.Logger;
+import freenet.support.RemoveRandomWithObject;
 import freenet.support.Ticker;
 
 /** 
@@ -108,7 +109,8 @@ public class CooldownTracker {
 		setCachedWakeup(wakeupTime, toCheck, parent, persistent, container, false);
 	}
 	
-	public synchronized void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container, boolean dontLogOnClearingParents) {
+	public void setCachedWakeup(long wakeupTime, HasCooldownCacheItem toCheck, HasCooldownCacheItem parent, boolean persistent, ObjectContainer container, boolean dontLogOnClearingParents) {
+		synchronized(this) {
 		if(logMINOR) Logger.minor(this, "Wakeup time "+wakeupTime+" set for "+toCheck+" parent is "+parent);
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
@@ -176,6 +178,13 @@ public class CooldownTracker {
 				}
 			}
 		}
+		}
+		if(toCheck instanceof RemoveRandomWithObject) {
+			Object client = ((RemoveRandomWithObject)toCheck).getObject();
+			if(client instanceof WantsCooldownCallback) {
+				((WantsCooldownCallback)client).enterCooldown(wakeupTime, container);
+			}
+		}
 	}
 	
 	/** The cached item has been completed, failed etc. It should be removed but will 
@@ -204,7 +213,7 @@ public class CooldownTracker {
 	 * @param persistent
 	 * @param container
 	 */
-	public synchronized boolean clearCachedWakeup(HasCooldownCacheItem toCheck, boolean persistent, ObjectContainer container) {
+	public boolean clearCachedWakeup(HasCooldownCacheItem toCheck, boolean persistent, ObjectContainer container) {
 		if(toCheck == null) {
 			Logger.error(this, "Clearing cached wakeup for null", new Exception("error"));
 			return false;
@@ -213,19 +222,39 @@ public class CooldownTracker {
 		if(persistent) {
 			if(!container.ext().isStored(toCheck)) throw new IllegalArgumentException("Must store first!");
 			long uid = container.ext().getID(toCheck);
-			return clearCachedWakeupPersistent(uid);
+			if(clearCachedWakeupPersistent(uid)) {
+				if(toCheck instanceof RemoveRandomWithObject) {
+					Object client = ((RemoveRandomWithObject)toCheck).getObject();
+					if(client instanceof WantsCooldownCallback) {
+						boolean wasActive = container.ext().isActive(client);
+						if(!wasActive) container.activate(client, 1);
+						((WantsCooldownCallback)client).clearCooldown(container);
+						if(!wasActive) container.deactivate(client, 1);
+					}
+				}
+				return true;
+			} else return false;
 		} else {
 			boolean ret = false;
-			while(true) {
-				TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
-				if(item == null) return ret;
-				if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
-				ret = true;
-				cacheItemsTransient.remove(toCheck);
-				toCheck = item.parent.get();
-				if(toCheck == null) return ret;
-				if(logMINOR) Logger.minor(this, "Parent is "+toCheck);
+			synchronized(this) {
+				while(true) {
+					TransientCooldownCacheItem item = cacheItemsTransient.get(toCheck);
+					if(item == null) break;
+					if(logMINOR) Logger.minor(this, "Clearing "+toCheck);
+					ret = true;
+					cacheItemsTransient.remove(toCheck);
+					toCheck = item.parent.get();
+					if(toCheck == null) break;
+					if(logMINOR) Logger.minor(this, "Parent is "+toCheck);
+				}
 			}
+			if(toCheck instanceof RemoveRandomWithObject) {
+				Object client = ((RemoveRandomWithObject)toCheck).getObject();
+				if(client instanceof WantsCooldownCallback) {
+					((WantsCooldownCallback)client).clearCooldown(container);
+				}
+			}
+			return ret;
 		}
 
 	}
