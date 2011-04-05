@@ -474,6 +474,7 @@ public class USKManager {
 		if(fetcher != null) {
 			executor.execute(new Runnable() {
 				public void run() {
+					if(logMINOR) Logger.minor(this, "Starting "+fetcher);
 					fetcher.schedule(null, context);
 				}
 			}, "USKManager.schedule for "+fetcher);

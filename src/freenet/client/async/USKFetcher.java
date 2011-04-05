@@ -242,6 +242,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					prio--;
 					// But don't go higher than progressPollPriority.
 					if(prio > progressPollPriority) prio = progressPollPriority;
+					if(prio < 0) prio = 0;
 					return prio;
 				}
 				if(progressed && !firstLoop) {
@@ -253,6 +254,21 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 			} else
 				return parent.getPriorityClass();
+		}
+		
+		public void onEnterFiniteCooldown(ClientContext context) {
+			USKFetcher.this.onCheckEnteredFiniteCooldown(context);
+		}
+		public boolean isInCooldown() {
+			// TODO Auto-generated method stub
+			return false;
+		}
+		public boolean isInCooldown(long now, ClientContext context) {
+			long l = checker.getCooldownTime(null, context, now);
+			if(l == Long.MAX_VALUE) return false; // Doesn't count.
+			if(l <= 0) return false;
+			if(l < now) return false;
+			return true;
 		}
 	}
 	
@@ -322,6 +338,42 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		attemptsToStart = new ArrayList<USKAttempt>();
 	}
 	
+	public void onCheckEnteredFiniteCooldown(ClientContext context) {
+		checkFinishedForNow(context);
+	}
+
+	private void checkFinishedForNow(ClientContext context) {
+		USKAttempt[] attempts;
+		synchronized(this) {
+			if(runningStoreChecker != null) {
+				if(logMINOR) Logger.minor(this, "Not finished because still running store checker on "+this);
+				return; // Still checking the store
+			}
+			if(!runningAttempts.isEmpty()) {
+				if(logMINOR) Logger.minor(this, "Not finished because running attempts (random probes) on "+this);
+				return; // Still running
+			}
+			if(pollingAttempts.isEmpty()) {
+				if(logMINOR) Logger.minor(this, "Not finished because no polling attempts (not started???) on "+this);
+				return; // Not started yet
+			}
+			attempts = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
+		}
+		long now = System.currentTimeMillis();
+		for(USKAttempt a : attempts) {
+			if(!a.isInCooldown(now, context)) {
+				if(logMINOR) Logger.minor(this, "Not finished because polling attempt "+a+" not in cooldown on "+this);
+				return;
+			}
+		}
+		finishedForNow();
+	}
+
+	private void finishedForNow() {
+		System.out.println("Finished for now polling "+origUSK);
+		// FIXME call special callbacks
+	}
+
 	void onDNF(USKAttempt att, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "DNF: "+att);
 		boolean finished = false;
@@ -386,6 +438,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if(logMINOR) Logger.minor(this, "Sleep time is "+sleepTime+" this sleep is "+(end-now)+" for "+this);
 			}
 			schedule(end-now, null, context);
+			checkFinishedForNow(context);
 		} else {
 			USKFetcherCallback[] cb;
 			synchronized(this) {
@@ -536,7 +589,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			for(Iterator<Map.Entry<Long, USKAttempt>> i = pollingAttempts.entrySet().iterator();i.hasNext();) {
 				Map.Entry<Long, USKAttempt> entry = i.next();
 				if(entry.getKey() < curLatest) {
-					if(v == null) v = new Vector<USKAttempt>(runningAttempts.size()-count);
+					if(v == null) v = new Vector<USKAttempt>(Math.max(1, pollingAttempts.size()-count));
 					v.add(entry.getValue());
 					i.remove();
 				} else break; // TreeMap is ordered.
@@ -615,6 +668,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
     
 	public void schedule(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Scheduling "+this);
 		synchronized(this) {
 			if(cancelled) return;
 			if(completed) return;
@@ -998,6 +1052,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				// Ignore, hopefully it's already unregistered
 			}
 		}
+		if(logMINOR) Logger.minor(this, "Registered "+runningStoreChecker+" for "+this);
 		return true;
 	}
 	
@@ -1075,6 +1130,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				else {
 					synchronized(USKFetcher.this) {
 						runningAttempts.remove(attempts[i].number);
+						pollingAttempts.remove(attempts[i].number);
 					}
 				}
 			}
