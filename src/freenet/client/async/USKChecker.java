@@ -36,9 +36,9 @@ class USKChecker extends BaseSingleFileFetcher {
 
 	USKChecker(USKCheckerCallback cb, ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, boolean realTimeFlag) {
 		super(key, maxRetries, ctx, parent, false, realTimeFlag);
-                if(logMINOR)
-                    Logger.minor(USKChecker.class, "Created USKChecker for "+key);
 		this.cb = cb;
+        if(logMINOR)
+            Logger.minor(USKChecker.class, "Created USKChecker for "+key+" : "+this);
 	}
 	
 	@Override

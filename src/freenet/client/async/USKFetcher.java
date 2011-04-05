@@ -348,10 +348,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if(logMINOR) Logger.minor(this, "Not finished because still running store checker on "+this);
 				return; // Still checking the store
 			}
-			if(!started) {
-				if(logMINOR) Logger.minor(this, "Not finished because not started on "+this);
-				return;
-			}
 			if(!runningAttempts.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Not finished because running attempts (random probes) on "+this);
 				return; // Still running
@@ -365,7 +361,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		long now = System.currentTimeMillis();
 		for(USKAttempt a : attempts) {
 			if(!a.isInCooldown(now, context)) {
-				if(logMINOR) Logger.minor(this, "Not finished because polling attempt "+a.lookup+" not in cooldown on "+this);
+				if(logMINOR) Logger.minor(this, "Not finished because polling attempt "+a+" not in cooldown on "+this);
 				return;
 			}
 		}
