@@ -16,6 +16,14 @@ public abstract class PluginReplySender {
 		pluginname = pluginname2;
 		identifier = identifier2;
 	}
+	
+	public String getPluginName() {
+		return pluginname;
+	}
+	
+	public String getIdentifier() {
+		return identifier;
+	}
 
 	public void send(SimpleFieldSet params) throws PluginNotFoundException {
 		send(params, (Bucket)null);
