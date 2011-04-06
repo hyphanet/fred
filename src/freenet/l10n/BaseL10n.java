@@ -184,20 +184,7 @@ public class BaseL10n {
 		Logger.normal(this.getClass(), "Changing the current language to : " + this.lang);
 
 		try {
-			final File tmpFile = new File(this.getL10nOverrideFileName(this.lang));
-			if (tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
-				Logger.normal(this, "Override file detected : let's try to load it");
-				this.translationOverride = SimpleFieldSet.readFrom(tmpFile, false, false);
-			} else {
-				// try to restore a backup
-				final File backup = new File(tmpFile.getParentFile(), tmpFile.getName() + ".bak");
-				if (backup.exists() && backup.length() > 0) {
-					Logger.normal(this, "Override-backup file detected : let's try to load it");
-					this.translationOverride = SimpleFieldSet.readFrom(backup, false, false);
-				}
-				this.translationOverride = null;
-			}
-
+			this.loadOverrideFileOrBackup();
 		} catch (IOException e) {
 			this.translationOverride = null;
 			Logger.error(this, "IOError while accessing the file!" + e.getMessage(), e);
@@ -207,7 +194,27 @@ public class BaseL10n {
 		if (this.currentTranslation == null) {
 			Logger.error(this, "The translation file for " + lang + " is invalid. The node will load an empty template.");
 			this.currentTranslation = null;
-			this.translationOverride = new SimpleFieldSet(false);
+		}
+	}
+
+	/**
+	 * Try loading the override file, or the backup override file if it
+	 * exists.
+	 * @throws IOException
+	 */
+	private void loadOverrideFileOrBackup() throws IOException {
+		final File tmpFile = new File(this.getL10nOverrideFileName(this.lang));
+		if (tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
+			Logger.normal(this, "Override file detected : let's try to load it");
+			this.translationOverride = SimpleFieldSet.readFrom(tmpFile, false, false);
+		} else {
+			// try to restore a backup
+			final File backup = new File(tmpFile.getParentFile(), tmpFile.getName() + ".bak");
+			if (backup.exists() && backup.length() > 0) {
+				Logger.normal(this, "Override-backup file detected : let's try to load it");
+				this.translationOverride = SimpleFieldSet.readFrom(backup, false, false);
+			}
+			this.translationOverride = null;
 		}
 	}
 
