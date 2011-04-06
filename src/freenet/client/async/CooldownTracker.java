@@ -182,7 +182,11 @@ public class CooldownTracker {
 		if(toCheck instanceof RemoveRandomWithObject) {
 			Object client = ((RemoveRandomWithObject)toCheck).getObject();
 			if(client instanceof WantsCooldownCallback) {
+				boolean wasActive = true;
+				if(persistent) wasActive = container.ext().isActive(client);
+				if(!wasActive) container.activate(client, 1);
 				((WantsCooldownCallback)client).enterCooldown(wakeupTime, container, context);
+				if(!wasActive) container.deactivate(client, 1);
 			}
 		}
 	}

@@ -860,6 +860,10 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 			// FIXME implement when implement clearCooldown().
 			// It means everything that can be started has been started.
 		} else {
+			if(persistent()) {
+				container.activate(ctx, 1);
+				container.activate(ctx.eventProducer, 1);
+			}
 			ctx.eventProducer.produceEvent(new EnterFiniteCooldownEvent(wakeupTime), container, context);
 		}
 	}
