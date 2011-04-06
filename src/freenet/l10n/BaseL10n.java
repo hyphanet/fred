@@ -213,8 +213,9 @@ public class BaseL10n {
 			if (backup.exists() && backup.length() > 0) {
 				Logger.normal(this, "Override-backup file detected : let's try to load it");
 				this.translationOverride = SimpleFieldSet.readFrom(backup, false, false);
+			} else {
+				this.translationOverride = null;
 			}
-			this.translationOverride = null;
 		}
 	}
 
