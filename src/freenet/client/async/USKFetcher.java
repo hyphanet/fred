@@ -370,12 +370,29 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				return;
 			}
 		}
-		finishedForNow();
+		notifyFinishedForNow();
 	}
 
-	private void finishedForNow() {
-		System.out.println("Finished for now polling "+origUSK);
-		// FIXME call special callbacks
+	private void notifyFinishedForNow() {
+		USKCallback[] toCheck;
+		synchronized(this) {
+			toCheck = subscribers.toArray(new USKCallback[subscribers.size()]);
+		}
+		for(USKCallback cb : toCheck) {
+			if(cb instanceof USKProgressCallback)
+				((USKProgressCallback)cb).onRoundFinished();
+		}
+	}
+	
+	private void notifySendingToNetwork() {
+		USKCallback[] toCheck;
+		synchronized(this) {
+			toCheck = subscribers.toArray(new USKCallback[subscribers.size()]);
+		}
+		for(USKCallback cb : toCheck) {
+			if(cb instanceof USKProgressCallback)
+				((USKProgressCallback)cb).onSendingToNetwork();
+		}
 	}
 
 	void onDNF(USKAttempt att, ClientContext context) {
@@ -1121,8 +1138,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			checker.checked();
 			
 			if(logMINOR) Logger.minor(this, "Checked datastore, finishing registration for "+attempts.length+" checkers for "+USKFetcher.this+" for "+origUSK);
-			if(attempts.length > 0)
+			if(attempts.length > 0) {
 				parent.toNetwork(container, context);
+				notifySendingToNetwork();
+			}
 			for(int i=0;i<attempts.length;i++) {
 				long lastEd = uskManager.lookupLatestSlot(origUSK);
 				// FIXME not sure this condition works, test it!
