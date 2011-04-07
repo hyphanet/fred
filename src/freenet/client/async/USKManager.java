@@ -526,21 +526,27 @@ public class USKManager {
 		}
 		if(toCancel != null) toCancel.cancel(null, context);
 	}
-	
+
 	/**
 	 * Subscribe to a USK. When it is updated, the content will be fetched (subject to the limits in fctx),
-	 * and returned to the callback.
+	 * and returned to the callback. If we are asked to do a background fetch, we will only fetch editions
+	 * when we are fairly confident there are no more to fetch.
 	 * @param origUSK The USK to poll.
 	 * @param cb Callback, called when we have downloaded a new key.
 	 * @param runBackgroundFetch If true, start a background fetcher for the key, which will run
-	 * forever until we unsubscribe.
+	 * forever until we unsubscribe. Note that internally we use subscribeSparse() in this case,
+	 * i.e. we will only download editions which we are confident about.
 	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
 	 * @param prio Priority for fetching the content (see constants in RequestScheduler).
+	 * @param sparse If true, only fetch once we're sure it's the latest edition.
 	 * @return
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
 		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK);
-		subscribe(origUSK, ret, runBackgroundFetch, client);
+		if(runBackgroundFetch)
+			subscribeSparse(origUSK, ret, client);
+		else
+			subscribe(origUSK, ret, runBackgroundFetch, client);
 		return ret;
 	}
 	
