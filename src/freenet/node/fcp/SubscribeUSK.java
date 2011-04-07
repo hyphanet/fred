@@ -56,11 +56,11 @@ public class SubscribeUSK implements USKProgressCallback {
 		core.uskManager.unsubscribe(usk, this);
 	}
 
-	public void onSendingToNetwork() {
+	public void onSendingToNetwork(ClientContext context) {
 		handler.outputHandler.queue(new SubscribedUSKSendingToNetworkMessage(identifier));
 	}
 
-	public void onRoundFinished() {
+	public void onRoundFinished(ClientContext context) {
 		handler.outputHandler.queue(new SubscribedUSKRoundFinishedMessage(identifier));
 	}
 

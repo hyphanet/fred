@@ -370,28 +370,28 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				return;
 			}
 		}
-		notifyFinishedForNow();
+		notifyFinishedForNow(context);
 	}
 
-	private void notifyFinishedForNow() {
+	private void notifyFinishedForNow(ClientContext context) {
 		USKCallback[] toCheck;
 		synchronized(this) {
 			toCheck = subscribers.toArray(new USKCallback[subscribers.size()]);
 		}
 		for(USKCallback cb : toCheck) {
 			if(cb instanceof USKProgressCallback)
-				((USKProgressCallback)cb).onRoundFinished();
+				((USKProgressCallback)cb).onRoundFinished(context);
 		}
 	}
 	
-	private void notifySendingToNetwork() {
+	private void notifySendingToNetwork(ClientContext context) {
 		USKCallback[] toCheck;
 		synchronized(this) {
 			toCheck = subscribers.toArray(new USKCallback[subscribers.size()]);
 		}
 		for(USKCallback cb : toCheck) {
 			if(cb instanceof USKProgressCallback)
-				((USKProgressCallback)cb).onSendingToNetwork();
+				((USKProgressCallback)cb).onSendingToNetwork(context);
 		}
 	}
 
@@ -1140,7 +1140,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(logMINOR) Logger.minor(this, "Checked datastore, finishing registration for "+attempts.length+" checkers for "+USKFetcher.this+" for "+origUSK);
 			if(attempts.length > 0) {
 				parent.toNetwork(container, context);
-				notifySendingToNetwork();
+				notifySendingToNetwork(context);
 			}
 			for(int i=0;i<attempts.length;i++) {
 				long lastEd = uskManager.lookupLatestSlot(origUSK);
