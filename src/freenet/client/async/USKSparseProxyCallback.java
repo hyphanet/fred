@@ -14,6 +14,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 	final USK key;
 
 	private long lastEdition;
+	private long lastSent;
 	private boolean lastMetadata;
 	private short lastCodec;
 	private byte[] lastData;
@@ -22,6 +23,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 	public USKSparseProxyCallback(USKCallback cb, USK key) {
 		target = cb;
 		lastEdition = -1; // So we see the first one even if it's 0
+		lastSent = -1;
 		this.key = key;
 	}
 
@@ -61,7 +63,8 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 		byte[] data;
 		boolean wasKnownGood;
 		synchronized(this) {
-			ed = lastEdition;
+			if(lastSent == lastEdition) return;
+			lastSent = ed = lastEdition;
 			meta = lastMetadata;
 			codec = lastCodec;
 			data = lastData;
