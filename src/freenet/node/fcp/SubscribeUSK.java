@@ -31,7 +31,10 @@ public class SubscribeUSK implements USKProgressCallback {
 		prio = message.prio;
 		prioProgress = message.prioProgress;
 		handler.addUSKSubscription(identifier, this);
-		core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient(message.realTimeFlag));
+		if((!message.dontPoll) && message.sparsePoll)
+			core.uskManager.subscribeSparse(message.key, this, handler.getRebootClient().lowLevelClient(message.realTimeFlag));
+		else
+			core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient(message.realTimeFlag));
 	}
 
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
