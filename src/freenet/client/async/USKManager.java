@@ -415,6 +415,15 @@ public class USKManager {
 				}
 	}
 	
+	/** Subscribe to a given USK, and poll it in the background, but only 
+	 * report new editions when we've been through a round and are confident 
+	 * that we won't find more in the near future. Note that it will ignore
+	 * KnownGood, it only cares about latest slot. */
+	public void subscribeSparse(USK origUSK, USKCallback cb, RequestClient client) {
+		USKSparseProxyCallback proxy = new USKSparseProxyCallback(cb, origUSK);
+		subscribe(origUSK, proxy, true, client);
+	}
+	
 	/**
 	 * Subscribe to a given USK. Callback will be notified when it is
 	 * updated. Note that this does not imply that the USK will be
