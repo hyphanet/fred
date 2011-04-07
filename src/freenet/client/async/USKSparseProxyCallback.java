@@ -67,6 +67,14 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 			data = lastData;
 			wasKnownGood = lastWasKnownGoodToo;
 		}
+		if(ed == -1) {
+			ed = context.uskManager.lookupLatestSlot(key);
+			if(ed == -1) return;
+			meta = false;
+			codec = -1;
+			data = null;
+			wasKnownGood = false;
+		}
 		target.onFoundEdition(ed, key, null, context, meta, codec, data, wasKnownGood, wasKnownGood);
 	}
 
