@@ -412,13 +412,13 @@ public abstract class ClientRequester {
 		ObjectSet<ClientRequester> requesters = container.query(ClientRequester.class);
 		for(ClientRequester req : requesters) {
 			try {
-				System.out.println("Checking "+req);
+				if(logMINOR) Logger.minor(req, "Checking "+req);
 				if(req.isCancelled() || req.isFinished()) {
-					System.out.println("Cancelled or finished");
+					if(logMINOR) Logger.minor(req, "Cancelled or finished");
 				} else {
-					System.out.println("Checking for broken client: "+req);
+					if(logMINOR) Logger.minor(req, "Checking for broken client: "+req);
 					if(!req.checkForBrokenClient(container, clientContext))
-						System.out.println("Request is clean.");
+						if(logMINOR) Logger.minor(req, "Request is clean.");
 					else {
 						WrapperManager.signalStarting(5*60*1000);
 						container.commit();
