@@ -570,7 +570,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if(logMINOR) Logger.minor(this, "Not finished because no polling attempts (not started???) on "+this);
 				return; // Not started yet
 			}
-			if(dbrAttempts.isEmpty()) {
+			if(!dbrAttempts.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Not finished because still waiting for DBR attempts on "+this+" : "+dbrAttempts);
 				return; // DBRs
 			}
