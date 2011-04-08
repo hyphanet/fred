@@ -182,6 +182,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		DBRAttempt(ClientKey key, ClientContext context) {
 			fetcher = new SimpleSingleFileFetcher(key, 3, ctxDBR, parent, 
 					this, false, true, 0, null, context, false, isRealTime());
+			if(logMINOR) Logger.minor(this, "Created "+this+" with "+fetcher);
 		}
 		public void onSuccess(StreamGenerator streamGenerator,
 				ClientMetadata clientMetadata,
@@ -270,6 +271,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				Logger.error(this, "Unable to parse hint \""+value+"\"", e);
 				return;
 			}
+			Logger.normal(this, "Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
 			System.out.println("Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
 			processDBRHint(hint, context);
 		}
@@ -550,7 +552,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				return; // Not started yet
 			}
 			if(dbrAttempts.isEmpty()) {
-				if(logMINOR) Logger.minor(this, "Not finished because still waiting for DBR attempts on "+this);
+				if(logMINOR) Logger.minor(this, "Not finished because still waiting for DBR attempts on "+this+" : "+dbrAttempts);
 				return; // DBRs
 			}
 			attempts = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);

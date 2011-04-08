@@ -213,12 +213,17 @@ public class USKManager {
 	 * @throws MalformedURLException If the uri passed in is not a USK.
 	 */
 	public void hintUpdate(FreenetURI uri, ClientContext context, short priority) throws MalformedURLException {
-		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) return;
+		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) {
+			if(logMINOR) Logger.minor(this, "Ignoring hint because edition is "+uri.getSuggestedEdition()+" but latest is "+lookupLatestSlot(USK.create(uri)));
+			return;
+		}
 		uri = uri.sskForUSK();
+		if(logMINOR) Logger.minor(this, "Doing hint fetch for "+uri);
 		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
+			if(logMINOR) Logger.minor(this, "Cannot start hint fetch for "+uri+" : "+e, e);
 			// Ignore
 		}
 	}
