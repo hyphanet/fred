@@ -535,10 +535,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 	
 	public void processDBRHint(long hint, ClientContext context) {
-		// FIXME this is a very crude and inefficient first attempt!
+		// FIXME this is an inefficient first attempt!
 		// We should have a separate registry of latest DBR hint versions,
-		// we should handle it within the USKFetcher, and we should not 
-		// progress until they have finished.
+		// like those for latest known good and latest slot.
+		// We should dump anything before it within USKFetcher, and fetch from
+		// the given slot onwards, inclusive (unlike elsewhere where we fetch
+		// from the last known exclusive).
 		try {
 			updatePriorities();
 			short prio;
