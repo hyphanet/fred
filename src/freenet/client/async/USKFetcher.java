@@ -495,6 +495,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		ctxDBR.filterData = false;
 		ctxDBR.maxArchiveLevels = 0;
 		ctxDBR.maxArchiveRestarts = 0;
+		if(checkStoreOnly) ctxDBR.localRequestOnly = true;
 		if(ctx.ignoreStore) {
 			ctxNoStore = this.ctx;
 		} else {
