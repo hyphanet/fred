@@ -200,6 +200,10 @@ public class USKManager {
 		}
 	}
 
+	public void hintUpdate(FreenetURI uri, ClientContext context) throws MalformedURLException {
+		hintUpdate(uri, context, RequestStarter.UPDATE_PRIORITY_CLASS);
+	}
+	
 	/**
 	 * A non-authoritative hint that a specific edition *might* exist. At the moment,
 	 * we just fetch the block. We do not fetch the contents, and it is possible that
@@ -208,10 +212,10 @@ public class USKManager {
 	 * @param context
 	 * @throws MalformedURLException If the uri passed in is not a USK.
 	 */
-	public void hintUpdate(FreenetURI uri, ClientContext context) throws MalformedURLException {
+	public void hintUpdate(FreenetURI uri, ClientContext context, short priority) throws MalformedURLException {
 		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) return;
 		uri = uri.sskForUSK();
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {

@@ -519,7 +519,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		// we should handle it within the USKFetcher, and we should not 
 		// progress until they have finished.
 		try {
-			this.uskManager.hintUpdate(this.origUSK.copy(hint).getURI(), context);
+			updatePriorities();
+			short prio;
+			synchronized(this) {
+				prio = progressPollPriority;
+			}
+			this.uskManager.hintUpdate(this.origUSK.copy(hint).getURI(), context, prio);
 		} catch (MalformedURLException e) {
 			// Impossible
 		}
