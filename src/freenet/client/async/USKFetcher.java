@@ -927,11 +927,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				Lookup[] toPoll = list.toPoll;
 				Lookup[] toFetch = list.toFetch;
 				for(Lookup i : toPoll) {
-					if(logMINOR) Logger.minor(this, "Polling "+i+" for "+this);
+					if(logMINOR) Logger.minor(this, "Polling "+i+" for "+this+" in onFoundEdition");
 					attemptsToStart.add(add(i, true));	
 				}
 				for(Lookup i : toFetch) {
-					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
+					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK+" in onFoundEdition");
 					attemptsToStart.add(add(i, false));
 				}
 			}
