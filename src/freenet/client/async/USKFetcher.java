@@ -177,10 +177,27 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return true;
 	}
 	
+	class DBRFetcher extends SimpleSingleFileFetcher {
+
+		DBRFetcher(ClientKey key, int maxRetries, FetchContext ctx,
+				ClientRequester parent, GetCompletionCallback rcb,
+				boolean isEssential, boolean dontAdd, long l,
+				ObjectContainer container, ClientContext context,
+				boolean deleteFetchContext, boolean realTimeFlag) {
+			super(key, maxRetries, ctx, parent, rcb, isEssential, dontAdd, l, container,
+					context, deleteFetchContext, realTimeFlag);
+		}
+		
+		@Override
+		public short getPriorityClass(ObjectContainer container) {
+			return progressPollPriority;
+		}
+	}
+	
 	class DBRAttempt implements GetCompletionCallback {
 		final SimpleSingleFileFetcher fetcher;
 		DBRAttempt(ClientKey key, ClientContext context) {
-			fetcher = new SimpleSingleFileFetcher(key, 3, ctxDBR, parent, 
+			fetcher = new DBRFetcher(key, 3, ctxDBR, parent, 
 					this, false, true, 0, null, context, false, isRealTime());
 			if(logMINOR) Logger.minor(this, "Created "+this+" with "+fetcher);
 		}
