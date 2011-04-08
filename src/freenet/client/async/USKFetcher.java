@@ -210,6 +210,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				output.close();
 				pipeOut.close();
 				pipeIn.close();
+				
+				// Run directly - we are running on some thread somewhere, don't worry about it.
+				innerSuccess(data, container, context);
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Failing above attempted fetch...");
@@ -220,13 +223,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 				return;
 			} finally {
+				synchronized(USKFetcher.this) {
+					dbrAttempts.remove(this);
+				}
 				Closer.close(pipeOut);
 				Closer.close(pipeIn);
 				Closer.close(output);
+				checkFinishedForNow(context);
 			}
-
-			// Run directly - we are running on some thread somewhere, don't worry about it.
-			innerSuccess(data, container, context);
 		}
 		private void innerSuccess(Bucket bucket, ObjectContainer container,
 				ClientContext context) {
@@ -273,6 +277,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				ObjectContainer container, ClientContext context) {
 			// Okay.
 			if(logMINOR) Logger.minor(this, "Failed to fetch hint "+fetcher.getKey(null, container)+" for "+this+" for "+USKFetcher.this);
+			synchronized(USKFetcher.this) {
+				dbrAttempts.remove(this);
+			}
+			checkFinishedForNow(context);
 		}
 		public void onBlockSetFinished(ClientGetState state,
 				ObjectContainer container, ClientContext context) {
@@ -428,6 +436,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 	}
 	
+	private final HashSet<DBRAttempt> dbrAttempts = new HashSet<DBRAttempt>();
 	private final TreeMap<Long, USKAttempt> runningAttempts = new TreeMap<Long, USKAttempt>();
 	private final TreeMap<Long, USKAttempt> pollingAttempts = new TreeMap<Long, USKAttempt>();
 	
@@ -533,6 +542,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(pollingAttempts.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Not finished because no polling attempts (not started???) on "+this);
 				return; // Not started yet
+			}
+			if(dbrAttempts.isEmpty()) {
+				if(logMINOR) Logger.minor(this, "Not finished because still waiting for DBR attempts on "+this);
+				return; // DBRs
 			}
 			attempts = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
 		}
@@ -863,22 +876,23 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
     
 	public void schedule(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Scheduling "+this);
-		boolean scheduleDBRs;
+		DBRAttempt[] atts = null;
 		synchronized(this) {
 			if(cancelled) return;
 			if(completed) return;
-			scheduleDBRs = !scheduledDBRs;
+			if(!scheduledDBRs) {
+				atts = addDBRs(context);
+			}
 			scheduledDBRs = true;
 		}
 		context.getSskFetchScheduler(realTimeFlag).schedTransient.addPendingKeys(this);
 		updatePriorities();
 		uskManager.subscribe(origUSK, this, false, parent.getClient());
+		if(atts != null)
+			startDBRs(atts, context);
 		long lookedUp = uskManager.lookupLatestSlot(origUSK);
 		boolean registerNow = false;
 		boolean bye = false;
-		if(scheduleDBRs) {
-			scheduleDBRsInner(context);
-		}
 		synchronized(this) {
 			valueAtSchedule = Math.max(lookedUp+1, valueAtSchedule);
 			bye = cancelled || completed;
@@ -911,13 +925,24 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		context.getSskFetchScheduler(realTimeFlag).schedTransient.removePendingKeys((KeyListener)this);
 		uskManager.onFinished(this, true);
 	}
-
-	private void scheduleDBRsInner(ClientContext context) {
+	
+	/** Call synchronized, then call startDBRs() */
+	private DBRAttempt[] addDBRs(ClientContext context) {
 		USKDateHint date = new USKDateHint();
-		for(ClientSSK key : date.getRequestURIs(this.origUSK)) {
+		ClientSSK[] ssks = date.getRequestURIs(this.origUSK);
+		DBRAttempt[] atts = new DBRAttempt[ssks.length];
+		int x = 0;
+		for(ClientSSK key : ssks) {
 			DBRAttempt att = new DBRAttempt(key, context);
-			att.start(context);
+			this.dbrAttempts.add(att);
+			atts[x++] = att;
 		}
+		return atts;
+	}
+	
+	private void startDBRs(DBRAttempt[] toStart, ClientContext context) {
+		for(DBRAttempt att : toStart)
+			att.start(context);
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
