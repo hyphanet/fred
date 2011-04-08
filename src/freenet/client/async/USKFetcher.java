@@ -1367,7 +1367,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		 */
 		public synchronized ToFetch getEditionsToFetch(long lookedUp, Random random, ArrayList<Lookup> alreadyRunning) {
 			
-			if(logMINOR) Logger.minor(this, "Get editions to fetch, latest slot is "+lookedUp);
+			if(logMINOR) Logger.minor(this, "Get editions to fetch, latest slot is "+lookedUp+" running is "+alreadyRunning);
 			
 			ArrayList<Lookup> toFetch = new ArrayList<Lookup>();
 			ArrayList<Lookup> toPoll = new ArrayList<Lookup>();
@@ -1488,7 +1488,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			public synchronized void getNextEditions(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp, ArrayList<Lookup> alreadyRunning, Random random) {
 				if(logMINOR) Logger.minor(this, "Getting next editions from "+lookedUp);
 				if(lookedUp < 0) lookedUp = 0;
-				for(int i=0;i<origMinFailures;i++) {
+				for(int i=1;i<=origMinFailures;i++) {
 					long ed = i + lookedUp;
 					Lookup l = new Lookup();
 					l.val = ed;
