@@ -1494,11 +1494,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					l.val = ed;
 					boolean poll = backgroundPoll;
 					if(((!poll) && toFetch.contains(l)) || (poll && toPoll.contains(l))) {
-						if(logDEBUG) Logger.minor(this, "Ignoring "+l);
+						if(logDEBUG) Logger.debug(this, "Ignoring "+l);
 						continue;
 					}
 					if(alreadyRunning.contains(l)) {
-						if(logDEBUG) Logger.minor(this, "Ignoring (2): "+l);
+						if(logDEBUG) Logger.debug(this, "Ignoring (2): "+l);
 						alreadyRunning.remove(l);
 						continue;
 					}
@@ -1509,11 +1509,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					l.key = key;
 					l.ignoreStore = true;
 					if(poll) {
-						if(!toPoll.contains(l))
+						if(!toPoll.contains(l)) {
 							toPoll.add(l);
+						} else {
+							if(logDEBUG) Logger.debug(this, "Ignoring poll (3): "+l);
+						}
 					} else {
-						if(!toFetch.contains(l))
+						if(!toFetch.contains(l)) {
 							toFetch.add(l);
+						} else {
+							if(logDEBUG) Logger.debug(this, "Ignoring fetch (3): "+l);
+						}
 					}
 				}
 			}
