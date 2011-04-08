@@ -210,6 +210,7 @@ public class USKManager {
 	 */
 	public void hintUpdate(FreenetURI uri, ClientContext context) throws MalformedURLException {
 		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) return;
+		uri = uri.sskForUSK();
 		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
 		try {
 			get.start(null, context);
