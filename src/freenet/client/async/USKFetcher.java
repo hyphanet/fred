@@ -270,6 +270,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				Logger.error(this, "Unable to parse hint \""+value+"\"", e);
 				return;
 			}
+			System.out.println("Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
 			processDBRHint(hint, context);
 		}
 		
@@ -516,7 +517,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		// We should have a separate registry of latest DBR hint versions,
 		// we should handle it within the USKFetcher, and we should not 
 		// progress until they have finished.
-		System.out.println("Found DBR hint edition "+hint+" for "+origUSK);
 		try {
 			this.uskManager.hintUpdate(this.origUSK.copy(hint).getURI(), context);
 		} catch (MalformedURLException e) {
