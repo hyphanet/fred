@@ -243,6 +243,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			} finally {
 				synchronized(USKFetcher.this) {
 					dbrAttempts.remove(this);
+					if(logMINOR) Logger.minor(this, "Remaining DBR attempts: "+dbrAttempts);
 				}
 				Closer.close(pipeOut);
 				Closer.close(pipeIn);
@@ -299,6 +300,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(logMINOR) Logger.minor(this, "Failed to fetch hint "+fetcher.getKey(null, container)+" for "+this+" for "+USKFetcher.this);
 			synchronized(USKFetcher.this) {
 				dbrAttempts.remove(this);
+				if(logMINOR) Logger.minor(this, "Remaining DBR attempts: "+dbrAttempts);
 			}
 			checkFinishedForNow(context);
 		}
