@@ -1493,9 +1493,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					Lookup l = new Lookup();
 					l.val = ed;
 					boolean poll = backgroundPoll;
-					if(((!poll) && toFetch.contains(l)) || (poll && toPoll.contains(l)))
+					if(((!poll) && toFetch.contains(l)) || (poll && toPoll.contains(l))) {
+						if(logDEBUG) Logger.minor(this, "Ignoring "+l);
 						continue;
+					}
 					if(alreadyRunning.contains(l)) {
+						if(logDEBUG) Logger.minor(this, "Ignoring (2): "+l);
 						alreadyRunning.remove(l);
 						continue;
 					}
