@@ -4,7 +4,12 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,7 +26,11 @@ import java.util.Map.Entry;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
+import freenet.client.FetchException;
+import freenet.client.InsertContext.CompatibilityMode;
+import freenet.crypt.HashResult;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
@@ -42,10 +51,14 @@ import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.RemoveRangeArrayList;
 import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
+import freenet.support.compress.Compressor;
+import freenet.support.compress.DecompressorThreadManager;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 
 /**
  * 
@@ -117,6 +130,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	final FetchContext ctx;
 	/** Fetcher context ignoring store */
 	final FetchContext ctxNoStore;
+	/** Fetcher context for DBR hint fetches */
+	final FetchContext ctxDBR;
 	
 	/** Finished? */
 	private boolean completed;
@@ -160,6 +175,173 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		updatePriorities();
 		return true;
+	}
+	
+	class DBRFetcher extends SimpleSingleFileFetcher {
+
+		DBRFetcher(ClientKey key, int maxRetries, FetchContext ctx,
+				ClientRequester parent, GetCompletionCallback rcb,
+				boolean isEssential, boolean dontAdd, long l,
+				ObjectContainer container, ClientContext context,
+				boolean deleteFetchContext, boolean realTimeFlag) {
+			super(key, maxRetries, ctx, parent, rcb, isEssential, dontAdd, l, container,
+					context, deleteFetchContext, realTimeFlag);
+		}
+		
+		@Override
+		public short getPriorityClass(ObjectContainer container) {
+			return progressPollPriority;
+		}
+	}
+	
+	class DBRAttempt implements GetCompletionCallback {
+		final SimpleSingleFileFetcher fetcher;
+		DBRAttempt(ClientKey key, ClientContext context) {
+			fetcher = new DBRFetcher(key, ctxDBR.maxUSKRetries, ctxDBR, parent, 
+					this, false, true, 0, null, context, false, isRealTime());
+			if(logMINOR) Logger.minor(this, "Created "+this+" with "+fetcher);
+		}
+		public void onSuccess(StreamGenerator streamGenerator,
+				ClientMetadata clientMetadata,
+				List<? extends Compressor> decompressors, ClientGetState state,
+				ObjectContainer container, ClientContext context) {
+			OutputStream output = null;
+			PipedInputStream pipeIn = new PipedInputStream();
+			PipedOutputStream pipeOut = new PipedOutputStream();
+			Bucket data = null;
+			long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+			try {
+				data = context.getBucketFactory(false).makeBucket(maxLen);
+				output = data.getOutputStream();
+				if(decompressors != null) {
+					if(logMINOR) Logger.minor(this, "decompressing...");
+					pipeOut.connect(pipeIn);
+					DecompressorThreadManager decompressorManager =  new DecompressorThreadManager(pipeIn, decompressors, maxLen);
+					pipeIn = decompressorManager.execute();
+					ClientGetWorkerThread worker = new ClientGetWorkerThread(pipeIn, output, null, null, null, false, null, null, null);
+					worker.start();
+					streamGenerator.writeTo(pipeOut, container, context);
+					decompressorManager.waitFinished();
+					worker.waitFinished();
+				} else streamGenerator.writeTo(output, container, context);
+
+				output.close();
+				pipeOut.close();
+				pipeIn.close();
+				
+				// Run directly - we are running on some thread somewhere, don't worry about it.
+				innerSuccess(data, container, context);
+			} catch (OutOfMemoryError e) {
+				OOMHandler.handleOOM(e);
+				System.err.println("Failing above attempted fetch...");
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), state, container, context);
+				return;
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t, t);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
+				return;
+			} finally {
+				synchronized(USKFetcher.this) {
+					dbrAttempts.remove(this);
+					if(logMINOR) Logger.minor(this, "Remaining DBR attempts: "+dbrAttempts);
+				}
+				Closer.close(pipeOut);
+				Closer.close(pipeIn);
+				Closer.close(output);
+				checkFinishedForNow(context);
+			}
+		}
+		private void innerSuccess(Bucket bucket, ObjectContainer container,
+				ClientContext context) {
+			byte[] data;
+			try {
+				data = BucketTools.toByteArray(bucket);
+			} catch (IOException e) {
+				Logger.error(this, "Unable to read hint data because of I/O error, maybe bad decompression?: "+e, e);
+				return;
+			}
+			String line;
+			try {
+				line = new String(data, "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				Logger.error(this, "Impossible: "+e, e);
+				return;
+			} catch (Throwable t) {
+				// Something very bad happened, most likely bogus encoding.
+				// Ignore it.
+				Logger.error(this, "Impossible throwable - maybe bogus encoding?: "+t, t);
+				return;
+			}
+			String[] split = line.split("\n");
+			if(split.length < 3) {
+				Logger.error(this, "Unable to parse hint (not enough lines): \""+line+"\"");
+				return;
+			}
+			if(!split[0].startsWith("HINT")) {
+				Logger.error(this, "Unable to parse hint (first line doesn't start with HINT): \""+line+"\"");
+				return;
+			}
+			String value = split[1];
+			long hint;
+			try {
+				hint = Long.parseLong(value);
+			} catch (NumberFormatException e) {
+				Logger.error(this, "Unable to parse hint \""+value+"\"", e);
+				return;
+			}
+			Logger.normal(this, "Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
+			System.out.println("Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
+			processDBRHint(hint, context);
+		}
+		
+		public void onFailure(FetchException e, ClientGetState state,
+				ObjectContainer container, ClientContext context) {
+			// Okay.
+			if(logMINOR) Logger.minor(this, "Failed to fetch hint "+fetcher.getKey(null, container)+" for "+this+" for "+USKFetcher.this);
+			synchronized(USKFetcher.this) {
+				dbrAttempts.remove(this);
+				if(logMINOR) Logger.minor(this, "Remaining DBR attempts: "+dbrAttempts);
+			}
+			checkFinishedForNow(context);
+		}
+		public void onBlockSetFinished(ClientGetState state,
+				ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+		public void onTransition(ClientGetState oldState,
+				ClientGetState newState, ObjectContainer container) {
+			// Ignore
+		}
+		public void onExpectedSize(long size, ObjectContainer container,
+				ClientContext context) {
+			// Ignore
+		}
+		public void onExpectedMIME(String mime, ObjectContainer container,
+				ClientContext context) throws FetchException {
+			// Ignore
+		}
+		public void onFinalizedMetadata(ObjectContainer container) {
+			// Ignore
+		}
+		public void onExpectedTopSize(long size, long compressed,
+				int blocksReq, int blocksTotal, ObjectContainer container,
+				ClientContext context) {
+			// Ignore
+		}
+		public void onSplitfileCompatibilityMode(CompatibilityMode min,
+				CompatibilityMode max, byte[] customSplitfileKey,
+				boolean compressed, boolean bottomLayer,
+				boolean definitiveAnyway, ObjectContainer container,
+				ClientContext context) {
+			// Ignore
+		}
+		public void onHashes(HashResult[] hashes, ObjectContainer container,
+				ClientContext context) {
+			// Ignore
+		}
+		public void start(ClientContext context) {
+			this.fetcher.schedule(null, context);
+		}
 	}
 	
 	class USKAttempt implements USKCheckerCallback {
@@ -276,6 +458,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 	}
 	
+	private final HashSet<DBRAttempt> dbrAttempts = new HashSet<DBRAttempt>();
 	private final TreeMap<Long, USKAttempt> runningAttempts = new TreeMap<Long, USKAttempt>();
 	private final TreeMap<Long, USKAttempt> pollingAttempts = new TreeMap<Long, USKAttempt>();
 	
@@ -305,6 +488,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private short normalPollPriority = DEFAULT_NORMAL_POLL_PRIORITY;
 	private static short DEFAULT_PROGRESS_POLL_PRIORITY = RequestStarter.UPDATE_PRIORITY_CLASS;
 	private short progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
+	
+	private boolean scheduledDBRs;
 
 	// FIXME use this!
 	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData, boolean checkStoreOnly) {
@@ -319,12 +504,19 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		subscribers = new HashSet<USKCallback>();
 		lastFetchedEdition = -1;
 		this.realTimeFlag = parent.realTimeFlag();
+		ctxDBR = ctx.clone();
 		if(ctx.followRedirects) {
 			this.ctx = ctx.clone();
 			this.ctx.followRedirects = false;
 		} else {
 			this.ctx = ctx;
 		}
+		ctxDBR.maxOutputLength = 1024;
+		ctxDBR.maxTempLength = 32768;
+		ctxDBR.filterData = false;
+		ctxDBR.maxArchiveLevels = 0;
+		ctxDBR.maxArchiveRestarts = 0;
+		if(checkStoreOnly) ctxDBR.localRequestOnly = true;
 		if(ctx.ignoreStore) {
 			ctxNoStore = this.ctx;
 		} else {
@@ -342,6 +534,25 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		attemptsToStart = new ArrayList<USKAttempt>();
 	}
 	
+	public void processDBRHint(long hint, ClientContext context) {
+		// FIXME this is an inefficient first attempt!
+		// We should have a separate registry of latest DBR hint versions,
+		// like those for latest known good and latest slot.
+		// We should dump anything before it within USKFetcher, and fetch from
+		// the given slot onwards, inclusive (unlike elsewhere where we fetch
+		// from the last known exclusive).
+		try {
+			updatePriorities();
+			short prio;
+			synchronized(this) {
+				prio = progressPollPriority;
+			}
+			this.uskManager.hintUpdate(this.origUSK.copy(hint).getURI(), context, prio);
+		} catch (MalformedURLException e) {
+			// Impossible
+		}
+	}
+
 	public void onCheckEnteredFiniteCooldown(ClientContext context) {
 		checkFinishedForNow(context);
 	}
@@ -361,6 +572,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if(logMINOR) Logger.minor(this, "Not finished because no polling attempts (not started???) on "+this);
 				return; // Not started yet
 			}
+			if(!dbrAttempts.isEmpty()) {
+				if(logMINOR) Logger.minor(this, "Not finished because still waiting for DBR attempts on "+this+" : "+dbrAttempts);
+				return; // DBRs
+			}
 			attempts = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
 		}
 		long now = System.currentTimeMillis();
@@ -374,6 +589,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	private void notifyFinishedForNow(ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Notifying finished for now on "+this+" for "+origUSK);
 		USKCallback[] toCheck;
 		synchronized(this) {
 			toCheck = subscribers.toArray(new USKCallback[subscribers.size()]);
@@ -690,13 +906,20 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
     
 	public void schedule(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Scheduling "+this);
+		DBRAttempt[] atts = null;
 		synchronized(this) {
 			if(cancelled) return;
 			if(completed) return;
+			if(!scheduledDBRs) {
+				atts = addDBRs(context);
+			}
+			scheduledDBRs = true;
 		}
 		context.getSskFetchScheduler(realTimeFlag).schedTransient.addPendingKeys(this);
 		updatePriorities();
 		uskManager.subscribe(origUSK, this, false, parent.getClient());
+		if(atts != null)
+			startDBRs(atts, context);
 		long lookedUp = uskManager.lookupLatestSlot(origUSK);
 		boolean registerNow = false;
 		boolean bye = false;
@@ -731,6 +954,25 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		uskManager.unsubscribe(origUSK, this);
 		context.getSskFetchScheduler(realTimeFlag).schedTransient.removePendingKeys((KeyListener)this);
 		uskManager.onFinished(this, true);
+	}
+	
+	/** Call synchronized, then call startDBRs() */
+	private DBRAttempt[] addDBRs(ClientContext context) {
+		USKDateHint date = new USKDateHint();
+		ClientSSK[] ssks = date.getRequestURIs(this.origUSK);
+		DBRAttempt[] atts = new DBRAttempt[ssks.length];
+		int x = 0;
+		for(ClientSSK key : ssks) {
+			DBRAttempt att = new DBRAttempt(key, context);
+			this.dbrAttempts.add(att);
+			atts[x++] = att;
+		}
+		return atts;
+	}
+	
+	private void startDBRs(DBRAttempt[] toStart, ClientContext context) {
+		for(DBRAttempt att : toStart)
+			att.start(context);
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -927,11 +1169,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				Lookup[] toPoll = list.toPoll;
 				Lookup[] toFetch = list.toFetch;
 				for(Lookup i : toPoll) {
-					if(logMINOR) Logger.minor(this, "Polling "+i+" for "+this);
+					if(logMINOR) Logger.minor(this, "Polling "+i+" for "+this+" in onFoundEdition");
 					attemptsToStart.add(add(i, true));	
 				}
 				for(Lookup i : toFetch) {
-					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
+					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK+" in onFoundEdition");
 					attemptsToStart.add(add(i, false));
 				}
 			}
@@ -1367,7 +1609,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		 */
 		public synchronized ToFetch getEditionsToFetch(long lookedUp, Random random, ArrayList<Lookup> alreadyRunning) {
 			
-			if(logMINOR) Logger.minor(this, "Get editions to fetch, latest slot is "+lookedUp);
+			if(logMINOR) Logger.minor(this, "Get editions to fetch, latest slot is "+lookedUp+" running is "+alreadyRunning);
 			
 			ArrayList<Lookup> toFetch = new ArrayList<Lookup>();
 			ArrayList<Lookup> toPoll = new ArrayList<Lookup>();
@@ -1488,14 +1730,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			public synchronized void getNextEditions(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp, ArrayList<Lookup> alreadyRunning, Random random) {
 				if(logMINOR) Logger.minor(this, "Getting next editions from "+lookedUp);
 				if(lookedUp < 0) lookedUp = 0;
-				for(int i=0;i<origMinFailures;i++) {
+				for(int i=1;i<=origMinFailures;i++) {
 					long ed = i + lookedUp;
 					Lookup l = new Lookup();
 					l.val = ed;
 					boolean poll = backgroundPoll;
-					if(((!poll) && toFetch.contains(l)) || (poll && toPoll.contains(l)))
+					if(((!poll) && toFetch.contains(l)) || (poll && toPoll.contains(l))) {
+						if(logDEBUG) Logger.debug(this, "Ignoring "+l);
 						continue;
+					}
 					if(alreadyRunning.contains(l)) {
+						if(logDEBUG) Logger.debug(this, "Ignoring (2): "+l);
 						alreadyRunning.remove(l);
 						continue;
 					}
@@ -1506,11 +1751,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					l.key = key;
 					l.ignoreStore = true;
 					if(poll) {
-						if(!toPoll.contains(l))
+						if(!toPoll.contains(l)) {
 							toPoll.add(l);
+						} else {
+							if(logDEBUG) Logger.debug(this, "Ignoring poll (3): "+l);
+						}
 					} else {
-						if(!toFetch.contains(l))
+						if(!toFetch.contains(l)) {
 							toFetch.add(l);
+						} else {
+							if(logDEBUG) Logger.debug(this, "Ignoring fetch (3): "+l);
+						}
 					}
 				}
 			}
