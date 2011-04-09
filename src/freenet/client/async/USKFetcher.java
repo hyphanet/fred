@@ -241,14 +241,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 				return;
 			} finally {
+				boolean dbrsFinished;
 				synchronized(USKFetcher.this) {
 					dbrAttempts.remove(this);
 					if(logMINOR) Logger.minor(this, "Remaining DBR attempts: "+dbrAttempts);
+					dbrsFinished = dbrAttempts.isEmpty();
 				}
 				Closer.close(pipeOut);
 				Closer.close(pipeIn);
 				Closer.close(output);
-				checkFinishedForNow(context);
+				if(dbrsFinished)
+					onDBRsFinished(context);
 			}
 		}
 		private void innerSuccess(Bucket bucket, ObjectContainer container,
@@ -297,11 +300,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				ObjectContainer container, ClientContext context) {
 			// Okay.
 			if(logMINOR) Logger.minor(this, "Failed to fetch hint "+fetcher.getKey(null, container)+" for "+this+" for "+USKFetcher.this);
+			boolean dbrsFinished;
 			synchronized(USKFetcher.this) {
 				dbrAttempts.remove(this);
 				if(logMINOR) Logger.minor(this, "Remaining DBR attempts: "+dbrAttempts);
+				dbrsFinished = dbrAttempts.isEmpty();
 			}
-			checkFinishedForNow(context);
+			if(dbrsFinished)
+				onDBRsFinished(context);
 		}
 		public void onBlockSetFinished(ClientGetState state,
 				ObjectContainer container, ClientContext context) {
@@ -533,6 +539,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		attemptsToStart = new ArrayList<USKAttempt>();
 	}
 	
+	public void onDBRsFinished(ClientContext context) {
+		checkFinishedForNow(context);
+	}
+
 	public void processDBRHint(long hint, ClientContext context) {
 		// FIXME this is an inefficient first attempt!
 		// We should have a separate registry of latest DBR hint versions,
