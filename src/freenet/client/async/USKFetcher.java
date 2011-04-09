@@ -939,6 +939,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		long lookedUp = uskManager.lookupLatestSlot(origUSK);
 		boolean registerNow = false;
 		boolean bye = false;
+		boolean completeCheckingStore = false;
 		synchronized(this) {
 			valueAtSchedule = Math.max(lookedUp+1, valueAtSchedule);
 			bye = cancelled || completed;
@@ -967,10 +968,15 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				} else {
 					registerNow = !fillKeysWatching(lookedUp, context);
 				}
+				completeCheckingStore = checkStoreOnly && scheduleAfterDBRsDone && runningStoreChecker == null;
 			}
 		}
 		if(registerNow)
 			registerAttempts(context);
+		else if(completeCheckingStore) {
+			this.finishSuccess(context);
+			return;
+		}
 		if(!bye) return;
 		// We have been cancelled.
 		uskManager.unsubscribe(origUSK, this);
@@ -1427,6 +1433,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if(checkStoreOnly) {
 					if(logMINOR)
 						Logger.minor(this, "Just checking store, terminating "+USKFetcher.this+" ...");
+					synchronized(this) {
+						if(!dbrAttempts.isEmpty()) {
+							USKFetcher.this.scheduleAfterDBRsDone = true;
+							return;
+						}
+					}
 					finishSuccess(context);
 				}
 				// No need to call registerAttempts as we have already registered them.
