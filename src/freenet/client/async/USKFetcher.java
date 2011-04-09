@@ -197,7 +197,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	class DBRAttempt implements GetCompletionCallback {
 		final SimpleSingleFileFetcher fetcher;
 		DBRAttempt(ClientKey key, ClientContext context) {
-			fetcher = new DBRFetcher(key, 3, ctxDBR, parent, 
+			fetcher = new DBRFetcher(key, ctxDBR.maxUSKRetries, ctxDBR, parent, 
 					this, false, true, 0, null, context, false, isRealTime());
 			if(logMINOR) Logger.minor(this, "Created "+this+" with "+fetcher);
 		}
