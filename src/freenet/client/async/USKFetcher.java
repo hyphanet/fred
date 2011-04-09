@@ -495,6 +495,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private short progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
 	
 	private boolean scheduledDBRs;
+	private boolean scheduleAfterDBRsDone;
 
 	// FIXME use this!
 	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData, boolean checkStoreOnly) {
@@ -540,6 +541,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 	
 	public void onDBRsFinished(ClientContext context) {
+		boolean needSchedule = false;
+		synchronized(this) {
+			if(scheduleAfterDBRsDone) needSchedule = true; // FIXME other conditions???
+		}
+		if(needSchedule)
+			schedule(null, context);
 		checkFinishedForNow(context);
 	}
 
@@ -953,7 +960,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 				
 				started = true;
-				registerNow = !fillKeysWatching(lookedUp, context);
+				if(lookedUp <= 0 && atts != null) {
+					// If we don't know anything, do the DBRs first.
+					scheduleAfterDBRsDone = true;
+					registerNow = false;
+				} else {
+					registerNow = !fillKeysWatching(lookedUp, context);
+				}
 			}
 		}
 		if(registerNow)
