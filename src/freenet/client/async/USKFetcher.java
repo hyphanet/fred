@@ -241,14 +241,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), state, container, context);
 				return;
 			} finally {
+				boolean dbrsFinished;
 				synchronized(USKFetcher.this) {
 					dbrAttempts.remove(this);
 					if(logMINOR) Logger.minor(this, "Remaining DBR attempts: "+dbrAttempts);
+					dbrsFinished = dbrAttempts.isEmpty();
 				}
 				Closer.close(pipeOut);
 				Closer.close(pipeIn);
 				Closer.close(output);
-				checkFinishedForNow(context);
+				if(dbrsFinished)
+					onDBRsFinished(context);
 			}
 		}
 		private void innerSuccess(Bucket bucket, ObjectContainer container,
@@ -289,8 +292,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				Logger.error(this, "Unable to parse hint \""+value+"\"", e);
 				return;
 			}
-			Logger.normal(this, "Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
-			System.out.println("Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
+			if(logMINOR) Logger.minor(this, "Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
 			processDBRHint(hint, context);
 		}
 		
@@ -298,11 +300,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				ObjectContainer container, ClientContext context) {
 			// Okay.
 			if(logMINOR) Logger.minor(this, "Failed to fetch hint "+fetcher.getKey(null, container)+" for "+this+" for "+USKFetcher.this);
+			boolean dbrsFinished;
 			synchronized(USKFetcher.this) {
 				dbrAttempts.remove(this);
 				if(logMINOR) Logger.minor(this, "Remaining DBR attempts: "+dbrAttempts);
+				dbrsFinished = dbrAttempts.isEmpty();
 			}
-			checkFinishedForNow(context);
+			if(dbrsFinished)
+				onDBRsFinished(context);
 		}
 		public void onBlockSetFinished(ClientGetState state,
 				ObjectContainer container, ClientContext context) {
@@ -490,6 +495,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private short progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
 	
 	private boolean scheduledDBRs;
+	private boolean scheduleAfterDBRsDone;
 
 	// FIXME use this!
 	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData, boolean checkStoreOnly) {
@@ -534,6 +540,16 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		attemptsToStart = new ArrayList<USKAttempt>();
 	}
 	
+	public void onDBRsFinished(ClientContext context) {
+		boolean needSchedule = false;
+		synchronized(this) {
+			if(scheduleAfterDBRsDone) needSchedule = true; // FIXME other conditions???
+		}
+		if(needSchedule)
+			schedule(null, context);
+		checkFinishedForNow(context);
+	}
+
 	public void processDBRHint(long hint, ClientContext context) {
 		// FIXME this is an inefficient first attempt!
 		// We should have a separate registry of latest DBR hint versions,
@@ -923,6 +939,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		long lookedUp = uskManager.lookupLatestSlot(origUSK);
 		boolean registerNow = false;
 		boolean bye = false;
+		boolean completeCheckingStore = false;
 		synchronized(this) {
 			valueAtSchedule = Math.max(lookedUp+1, valueAtSchedule);
 			bye = cancelled || completed;
@@ -944,11 +961,22 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 				
 				started = true;
-				registerNow = !fillKeysWatching(lookedUp, context);
+				if(lookedUp <= 0 && atts != null) {
+					// If we don't know anything, do the DBRs first.
+					scheduleAfterDBRsDone = true;
+					registerNow = false;
+				} else {
+					registerNow = !fillKeysWatching(lookedUp, context);
+				}
+				completeCheckingStore = checkStoreOnly && scheduleAfterDBRsDone && runningStoreChecker == null;
 			}
 		}
 		if(registerNow)
 			registerAttempts(context);
+		else if(completeCheckingStore) {
+			this.finishSuccess(context);
+			return;
+		}
 		if(!bye) return;
 		// We have been cancelled.
 		uskManager.unsubscribe(origUSK, this);
@@ -1405,6 +1433,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if(checkStoreOnly) {
 					if(logMINOR)
 						Logger.minor(this, "Just checking store, terminating "+USKFetcher.this+" ...");
+					synchronized(this) {
+						if(!dbrAttempts.isEmpty()) {
+							USKFetcher.this.scheduleAfterDBRsDone = true;
+							return;
+						}
+					}
 					finishSuccess(context);
 				}
 				// No need to call registerAttempts as we have already registered them.
