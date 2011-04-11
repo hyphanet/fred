@@ -476,7 +476,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				else
 					overrideSplitfileKey = null;
 				final String fnam;
-				if(insertURI.getKeyType().equals("CHK") || keyType.equals("SSK@"))
+				if(insertURI.getKeyType().equals("CHK") || keyType.equals("SSK"))
 					fnam = file.getFilename();
 				else
 					fnam = null;
