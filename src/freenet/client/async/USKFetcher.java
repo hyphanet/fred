@@ -800,7 +800,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	private boolean shouldAddRandomEditions(Random random) {
 		if(firstLoop) return false;
-		return random.nextInt(dbrHintsStarted + 1) < dbrHintsFound;
+		return random.nextInt(dbrHintsStarted + 1) > dbrHintsFound;
 	}
 
 	void onCancelled(USKAttempt att, ClientContext context) {
