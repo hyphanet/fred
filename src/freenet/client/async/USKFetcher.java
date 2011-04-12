@@ -192,6 +192,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public short getPriorityClass(ObjectContainer container) {
 			return progressPollPriority;
 		}
+		
+		@Override
+		public String toString() {
+			return super.toString()+" for "+USKFetcher.this;
+		}
 	}
 	
 	class DBRAttempt implements GetCompletionCallback {
@@ -361,6 +366,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		boolean cancelled;
 		final Lookup lookup;
 		final boolean forever;
+		private boolean everInCooldown;
 		public USKAttempt(Lookup l, boolean forever) {
 			this.lookup = l;
 			this.number = l.val;
@@ -424,19 +430,16 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public short getPriority() {
 			if(backgroundPoll) {
 				if(forever) {
-					// Boost the priority for the regular next-slot polling to ensure ULPRs work.
-					short prio = normalPollPriority;
-					prio--;
-					// But don't go higher than progressPollPriority.
-					if(prio < progressPollPriority) prio = progressPollPriority;
-					if(prio < 0) prio = 0;
-					return prio;
-				}
-				if(progressed && !firstLoop) {
-					// Just advanced, boost the priority.
-					// Do NOT boost the priority if just started.
-					return progressPollPriority;
+					if(!everInCooldown) {
+						// Boost the priority initially, so that finding the first edition takes precedence over ongoing polling after we're fairly sure we're not going to find anything.
+						// The ongoing polling keeps the ULPRs up to date so that we will get told quickly, but if we are overloaded we won't be able to keep up regardless.
+						return progressPollPriority;
+					} else {
+						return normalPollPriority;
+					}
 				} else {
+					// If !forever, this is a random-probe.
+					// It's not that important.
 					return normalPollPriority;
 				}
 			} else
@@ -444,22 +447,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		
 		public void onEnterFiniteCooldown(ClientContext context) {
+			synchronized(this) {
+				everInCooldown = true;
+			}
 			USKFetcher.this.onCheckEnteredFiniteCooldown(context);
 		}
-		public boolean isInCooldown() {
-			// TODO Auto-generated method stub
-			return false;
-		}
-		/** @return True if we are in a finite cooldown or have completed. */
-		public boolean isInCooldown(long now, ClientContext context) {
-			// FIXME synchronize on access to checker
-			USKChecker c = checker;
-			if(c == null) return true; // doesn't block it
-			long l = c.getCooldownTime(null, context, now);
-			if(l == Long.MAX_VALUE) return false; // Doesn't count.
-			if(l <= 0) return false;
-			if(l < now) return false;
-			return true;
+		public synchronized boolean everInCooldown() {
+			return everInCooldown;
 		}
 	}
 	
@@ -549,6 +543,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			schedule(null, context);
 		checkFinishedForNow(context);
 	}
+	
+	private int dbrHintsFound = 0;
+	private int dbrHintsStarted = 0;
 
 	public void processDBRHint(long hint, ClientContext context) {
 		// FIXME this is an inefficient first attempt!
@@ -561,6 +558,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			updatePriorities();
 			short prio;
 			synchronized(this) {
+				dbrHintsFound++;
 				prio = progressPollPriority;
 			}
 			this.uskManager.hintUpdate(this.origUSK.copy(hint).getURI(), context, prio);
@@ -594,10 +592,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			attempts = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
 		}
-		long now = System.currentTimeMillis();
 		for(USKAttempt a : attempts) {
-			if(!a.isInCooldown(now, context)) {
-				if(logMINOR) Logger.minor(this, "Not finished because polling attempt "+a+" not in cooldown on "+this);
+			// All the polling attempts currently running must have entered cooldown once.
+			// I.e. they must have done all their fetches at least once.
+			// If we check whether they are *currently* in cooldown, then under heavy USK load (the common case!), we can see them overlapping and never notify finished.
+			if(!a.everInCooldown()) {
+				if(logMINOR) Logger.minor(this, "Not finished because polling attempt "+a+" never entered cooldown on "+this);
 				return;
 			}
 		}
@@ -748,7 +748,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(logMINOR) Logger.minor(this, "Latest: "+curLatest+" in onSuccess");
 			if(!checkStoreOnly) {
 				killAttempts = cancelBefore(curLatest, context);
-				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest, context.random, getRunningFetchEditions());
+				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest, context.random, getRunningFetchEditions(), shouldAddRandomEditions(context.random));
 				Lookup[] toPoll = list.toPoll;
 				Lookup[] toFetch = list.toFetch;
 				for(Lookup i : toPoll) {
@@ -796,6 +796,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			uskManager.updateSlot(origUSK, curLatest, context);
 		if(registerNow)
 			registerAttempts(context);
+	}
+
+	private boolean shouldAddRandomEditions(Random random) {
+		if(firstLoop) return false;
+		return random.nextInt(dbrHintsStarted + 1) > dbrHintsFound;
 	}
 
 	void onCancelled(USKAttempt att, ClientContext context) {
@@ -947,7 +952,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				
 				// subscribe() above may have called onFoundEdition and thus added a load of stuff. If so, we don't need to do so here.
 				if((!checkStoreOnly) && attemptsToStart.isEmpty() && runningAttempts.isEmpty() && pollingAttempts.isEmpty()) {
-					USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp, context.random, getRunningFetchEditions());
+					USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp, context.random, getRunningFetchEditions(), shouldAddRandomEditions(context.random));
 					Lookup[] toPoll = list.toPoll;
 					Lookup[] toFetch = list.toFetch;
 					for(Lookup i : toPoll) {
@@ -995,6 +1000,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			this.dbrAttempts.add(att);
 			atts[x++] = att;
 		}
+		dbrHintsStarted = atts.length;
 		return atts;
 	}
 	
@@ -1193,7 +1199,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			
 			if(!checkStoreOnly) {
 				killAttempts = cancelBefore(ed, context);
-				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed, context.random, getRunningFetchEditions());
+				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed, context.random, getRunningFetchEditions(), shouldAddRandomEditions(context.random));
 				Lookup[] toPoll = list.toPoll;
 				Lookup[] toFetch = list.toFetch;
 				for(Lookup i : toPoll) {
@@ -1641,7 +1647,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		 * @param alreadyRunning This will be modified: We will remove anything that should still be running from it.
 		 * @return Editions to fetch and editions to poll for.
 		 */
-		public synchronized ToFetch getEditionsToFetch(long lookedUp, Random random, ArrayList<Lookup> alreadyRunning) {
+		public synchronized ToFetch getEditionsToFetch(long lookedUp, Random random, ArrayList<Lookup> alreadyRunning, boolean doRandom) {
 			
 			if(logMINOR) Logger.minor(this, "Get editions to fetch, latest slot is "+lookedUp+" running is "+alreadyRunning);
 			
@@ -1663,28 +1669,30 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				entry.getValue().getNextEditions(toFetch, toPoll, l, alreadyRunning, random);
 			}
 			
-			// Now getRandomEditions
-			// But how many???
-			int runningRandom = 0;
-			for(Lookup l : alreadyRunning) {
-				if(toFetch.contains(l) || toPoll.contains(l)) continue;
-				runningRandom++;
-			}
-			
-			int allowedRandom = 2 + 2*fromSubscribers.size();
-			if(logMINOR) Logger.minor(this, "Running random requests: "+runningRandom+" total allowed: "+allowedRandom+" looked up is "+lookedUp+" for "+USKFetcher.this);
-			
-			allowedRandom -= runningRandom;
-			
-			if(allowedRandom > 0 && probeFromLastKnownGood) {
-				fromLastKnownSlot.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(2, allowedRandom));
-				allowedRandom-=2;
-			}
-			
-			for(Iterator<KeyList> it = fromSubscribers.values().iterator(); allowedRandom >= 2 && it.hasNext();) {
-				KeyList k = it.next();
-				k.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(2, allowedRandom));
-				allowedRandom -= 2;
+			if(doRandom) {
+				// Now getRandomEditions
+				// But how many???
+				int runningRandom = 0;
+				for(Lookup l : alreadyRunning) {
+					if(toFetch.contains(l) || toPoll.contains(l)) continue;
+					runningRandom++;
+				}
+				
+				int allowedRandom = 1 + fromSubscribers.size();
+				if(logMINOR) Logger.minor(this, "Running random requests: "+runningRandom+" total allowed: "+allowedRandom+" looked up is "+lookedUp+" for "+USKFetcher.this);
+				
+				allowedRandom -= runningRandom;
+				
+				if(allowedRandom > 0 && probeFromLastKnownGood) {
+					fromLastKnownSlot.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(1, allowedRandom));
+					allowedRandom-=1;
+				}
+				
+				for(Iterator<KeyList> it = fromSubscribers.values().iterator(); allowedRandom >= 2 && it.hasNext();) {
+					KeyList k = it.next();
+					k.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(1, allowedRandom));
+					allowedRandom -= 1;
+				}
 			}
 			
 			return new ToFetch(toFetch, toPoll);
