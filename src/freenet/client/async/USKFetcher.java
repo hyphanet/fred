@@ -446,10 +446,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public void onEnterFiniteCooldown(ClientContext context) {
 			USKFetcher.this.onCheckEnteredFiniteCooldown(context);
 		}
-		public boolean isInCooldown() {
-			// TODO Auto-generated method stub
-			return false;
-		}
 		/** @return True if we are in a finite cooldown or have completed. */
 		public boolean isInCooldown(long now, ClientContext context) {
 			// FIXME synchronize on access to checker
