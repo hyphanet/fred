@@ -1667,20 +1667,20 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				runningRandom++;
 			}
 			
-			int allowedRandom = 2 + 2*fromSubscribers.size();
+			int allowedRandom = 1 + fromSubscribers.size();
 			if(logMINOR) Logger.minor(this, "Running random requests: "+runningRandom+" total allowed: "+allowedRandom+" looked up is "+lookedUp+" for "+USKFetcher.this);
 			
 			allowedRandom -= runningRandom;
 			
 			if(allowedRandom > 0 && probeFromLastKnownGood) {
-				fromLastKnownSlot.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(2, allowedRandom));
-				allowedRandom-=2;
+				fromLastKnownSlot.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(1, allowedRandom));
+				allowedRandom-=1;
 			}
 			
 			for(Iterator<KeyList> it = fromSubscribers.values().iterator(); allowedRandom >= 2 && it.hasNext();) {
 				KeyList k = it.next();
-				k.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(2, allowedRandom));
-				allowedRandom -= 2;
+				k.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(1, allowedRandom));
+				allowedRandom -= 1;
 			}
 			
 			return new ToFetch(toFetch, toPoll);
