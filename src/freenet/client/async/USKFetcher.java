@@ -192,6 +192,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public short getPriorityClass(ObjectContainer container) {
 			return progressPollPriority;
 		}
+		
+		@Override
+		public String toString() {
+			return super.toString()+" for "+USKFetcher.this;
+		}
 	}
 	
 	class DBRAttempt implements GetCompletionCallback {
