@@ -437,12 +437,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					} else {
 						return normalPollPriority;
 					}
-				}
-				if(progressed && !firstLoop) {
-					// Just advanced, boost the priority.
-					// Do NOT boost the priority if just started.
-					return progressPollPriority;
 				} else {
+					// If !forever, this is a random-probe.
+					// It's not that important.
 					return normalPollPriority;
 				}
 			} else
