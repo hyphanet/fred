@@ -430,13 +430,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public short getPriority() {
 			if(backgroundPoll) {
 				if(forever) {
-					// Boost the priority for the regular next-slot polling to ensure ULPRs work.
-					short prio = normalPollPriority;
-					prio--;
-					// But don't go higher than progressPollPriority.
-					if(prio < progressPollPriority) prio = progressPollPriority;
-					if(prio < 0) prio = 0;
-					return prio;
+					if(!everInCooldown) {
+						// Boost the priority initially, so that finding the first edition takes precedence over ongoing polling after we're fairly sure we're not going to find anything.
+						// The ongoing polling keeps the ULPRs up to date so that we will get told quickly, but if we are overloaded we won't be able to keep up regardless.
+						return progressPollPriority;
+					} else {
+						return normalPollPriority;
+					}
 				}
 				if(progressed && !firstLoop) {
 					// Just advanced, boost the priority.
