@@ -361,6 +361,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		boolean cancelled;
 		final Lookup lookup;
 		final boolean forever;
+		private boolean everInCooldown;
 		public USKAttempt(Lookup l, boolean forever) {
 			this.lookup = l;
 			this.number = l.val;
@@ -444,18 +445,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		
 		public void onEnterFiniteCooldown(ClientContext context) {
+			synchronized(this) {
+				everInCooldown = true;
+			}
 			USKFetcher.this.onCheckEnteredFiniteCooldown(context);
 		}
-		/** @return True if we are in a finite cooldown or have completed. */
-		public boolean isInCooldown(long now, ClientContext context) {
-			// FIXME synchronize on access to checker
-			USKChecker c = checker;
-			if(c == null) return true; // doesn't block it
-			long l = c.getCooldownTime(null, context, now);
-			if(l == Long.MAX_VALUE) return false; // Doesn't count.
-			if(l <= 0) return false;
-			if(l < now) return false;
-			return true;
+		public synchronized boolean everInCooldown() {
+			return everInCooldown;
 		}
 	}
 	
@@ -590,10 +586,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			attempts = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
 		}
-		long now = System.currentTimeMillis();
 		for(USKAttempt a : attempts) {
-			if(!a.isInCooldown(now, context)) {
-				if(logMINOR) Logger.minor(this, "Not finished because polling attempt "+a+" not in cooldown on "+this);
+			// All the polling attempts currently running must have entered cooldown once.
+			// I.e. they must have done all their fetches at least once.
+			// If we check whether they are *currently* in cooldown, then under heavy USK load (the common case!), we can see them overlapping and never notify finished.
+			if(!a.everInCooldown()) {
+				if(logMINOR) Logger.minor(this, "Not finished because polling attempt "+a+" never entered cooldown on "+this);
 				return;
 			}
 		}
