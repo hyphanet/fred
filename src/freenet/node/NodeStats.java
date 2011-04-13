@@ -2504,15 +2504,15 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	public void fillDetailedTimingsBox(HTMLNode html) {
 		HTMLNode table = html.addChild("table");
 		HTMLNode row = table.addChild("tr");
-		row.addChild("td", "Successful");
+		row.addChild("td", l10n("successfulHeader"));
 		row.addChild("td", TimeUtil.formatTime((long)successfulLocalCHKFetchTimeAverageBulk.currentValue(), 2, true));
 		row.addChild("td", TimeUtil.formatTime((long)successfulLocalCHKFetchTimeAverageRT.currentValue(), 2, true));
 		row = table.addChild("tr");
-		row.addChild("td", "Unsuccessful");
+		row.addChild("td", l10n("unsuccessfulHeader"));
 		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalCHKFetchTimeAverageBulk.currentValue(), 2, true));
 		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalCHKFetchTimeAverageRT.currentValue(), 2, true));
 		row = table.addChild("tr");
-		row.addChild("td", "Average");
+		row.addChild("td", l10n("averageHeader"));
 		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverageBulk.currentValue(), 2, true));
 		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverageRT.currentValue(), 2, true));
 	}

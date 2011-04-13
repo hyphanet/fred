@@ -1015,6 +1015,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		assert(container == null);
 		USKAttempt[] attempts;
 		USKAttempt[] polling;
+		DBRFetcher[] fetchers;
 		uskManager.onFinished(this);
 		SendableGet storeChecker;
 		synchronized(this) {
@@ -1023,6 +1024,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			cancelled = true;
 			attempts = runningAttempts.values().toArray(new USKAttempt[runningAttempts.size()]);
 			polling = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
+			fetchers = dbrAttempts.toArray(new DBRFetcher[dbrAttempts.size()]);
 			attemptsToStart.clear();
 			storeChecker = runningStoreChecker;
 			runningStoreChecker = null;
@@ -1031,6 +1033,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			attempts[i].cancel(container, context);
 		for(int i=0;i<polling.length;i++)
 			polling[i].cancel(container, context);
+		for(DBRFetcher f : fetchers)
+			f.cancel(container, context);
 		if(storeChecker != null)
 			// Remove from the store checker queue.
 			storeChecker.unregister(container, context, storeChecker.getPriorityClass(container));
