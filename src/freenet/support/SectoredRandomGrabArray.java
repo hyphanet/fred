@@ -515,7 +515,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			// This is not unusual, it was e.g. removed because of being empty.
 			// And it has already been removeFrom()'ed.
 			if(logMINOR) Logger.minor(this, "Not in parent: "+r+" for "+this, new Exception("error"));
-			context.cooldownTracker.removeCachedWakeup(this, persistent, container);
+			context.cooldownTracker.removeCachedWakeup(r, persistent, container);
 		} else if(persistent) {
 			container.store(this);
 			r.removeFrom(container);
