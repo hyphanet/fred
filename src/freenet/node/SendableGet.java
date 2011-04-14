@@ -117,7 +117,9 @@ public abstract class SendableGet extends BaseSendableGet {
 	
 	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
 		super.unregister(container, context, oldPrio);
-		context.cooldownTracker.removeCachedWakeup(this, persistent, container);
+		synchronized(getScheduler(container, context)) {
+			context.cooldownTracker.removeCachedWakeup(this, persistent, container);
+		}
 		context.checker.removeRequest(this, persistent, container, context, oldPrio == -1 ? getPriorityClass(container) : oldPrio);
 	}
 	

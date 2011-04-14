@@ -661,7 +661,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		boolean addedMore = false;
 		while(true) {
-			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
+			SelectorReturn r;
+			// Must synchronize on scheduler to avoid problems with cooldown queue. See notes on CooldownTracker.clearCachedWakeup, which also applies to other cooldown operations.
+			synchronized(this) {
+				r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
+			}
 			SendableRequest request = null;
 			if(r != null && r.req != null) request = r.req;
 			else {
