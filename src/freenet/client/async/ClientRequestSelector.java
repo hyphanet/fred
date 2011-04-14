@@ -634,6 +634,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 
+	/** LOCKING: Caller should hold as few locks as possible */ 
 	public void removeFetchingKey(final Key key) {
 		Long[] persistentWaiting;
 		WeakReference<BaseSendableGet>[] transientWaiting;
@@ -655,7 +656,9 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					for(WeakReference<BaseSendableGet> ref : transientWaiting) {
 						BaseSendableGet get = ref.get();
 						if(get == null) continue;
-						tracker.clearCachedWakeup(get, false, null);
+						synchronized(sched) {
+							tracker.clearCachedWakeup(get, false, null);
+						}
 					}
 				}
 			}

@@ -152,7 +152,8 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		return false;
 	}
 
-	/** Must be called when we retry a block. */
+	/** Must be called when we retry a block. 
+	 * LOCKING: Caller should hold as few locks as possible */ 
 	public void clearCooldown(ObjectContainer container, ClientContext context, boolean definitelyExists) {
 		if(persistent && !container.ext().isStored(this)) {
 			if(definitelyExists)
@@ -167,14 +168,17 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		// Stuff that uses the cooldown queue will set or clear depending on whether we retry, but
 		// we clear here for stuff that doesn't use it.
 		// Note also that the performance cost of going over that particular part of the tree again should be very low.
-		context.cooldownTracker.clearCachedWakeup(this, persistent, container);
-		// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
-		// We should wake up the parent as well even if this item is not in cooldown.
 		RandomGrabArray rga = getParentGrabArray();
-		if(rga != null)
-			context.cooldownTracker.clearCachedWakeup(rga, persistent, container);
-		// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
-		getScheduler(container, context).wakeStarter();
+		ClientRequestScheduler sched = getScheduler(container, context);
+		synchronized(sched) {
+			context.cooldownTracker.clearCachedWakeup(this, persistent, container);
+			// It is possible that the parent was added to the cache because e.g. a request was running for the same key.
+			// We should wake up the parent as well even if this item is not in cooldown.
+			if(rga != null)
+				context.cooldownTracker.clearCachedWakeup(rga, persistent, container);
+			// If we didn't actually get queued, we should wake up the starter, for the same reason we clearCachedWakeup().
+		}
+		sched.wakeStarter();
 	}
 	
 	public boolean realTimeFlag() {

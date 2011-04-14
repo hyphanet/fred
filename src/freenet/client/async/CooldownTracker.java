@@ -213,6 +213,11 @@ public class CooldownTracker {
 	 * CALLER SHOULD CALL wakeStarter() on the ClientRequestScheduler. We can't do that 
 	 * here because we don't know which scheduler to wake and will often be inside locks 
 	 * etc.
+	 * 
+	 * LOCKING: Caller should hold the ClientRequestScheduler lock, or otherwise we
+	 * can get nasty race conditions, involving one thread seeing the cooldowns and 
+	 * adding a higher one while another clears it (the overlapping case is 
+	 * especially bad). Callers of callers should hold as few locks as possible.
 	 * @param toCheck
 	 * @param persistent
 	 * @param container
