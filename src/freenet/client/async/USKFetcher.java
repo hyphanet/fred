@@ -1332,24 +1332,30 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 	}
 
-	private synchronized boolean fillKeysWatching(long ed, ClientContext context) {
-		// Do not run a new one until this one has finished. 
-		// StoreCheckerGetter itself will automatically call back to fillKeysWatching so there is no chance of losing it.
-		if(runningStoreChecker != null) return true;
-		final USKStoreChecker checker = watchingKeys.getDatastoreChecker(ed);
-		if(checker == null) {
-			if(logMINOR) Logger.minor(this, "No datastore checker");
-			return false;
+	private boolean fillKeysWatching(long ed, ClientContext context) {
+		synchronized(this) {
+			// Do not run a new one until this one has finished. 
+			// StoreCheckerGetter itself will automatically call back to fillKeysWatching so there is no chance of losing it.
+			if(runningStoreChecker != null) return true;
+			final USKStoreChecker checker = watchingKeys.getDatastoreChecker(ed);
+			if(checker == null) {
+				if(logMINOR) Logger.minor(this, "No datastore checker");
+				return false;
+			}
+				
+			runningStoreChecker = new StoreCheckerGetter(parent, checker);
 		}
-			
-		runningStoreChecker = new StoreCheckerGetter(parent, checker);
 		try {
 			context.getSskFetchScheduler(realTimeFlag).register(null, new SendableGet[] { runningStoreChecker } , false, null, null, false);
 		} catch (KeyListenerConstructionException e1) {
 			// Impossible
-			runningStoreChecker = null;
+			synchronized(this) {
+				runningStoreChecker = null;
+			}
 		} catch (Throwable t) {
-			runningStoreChecker = null;
+			synchronized(this) {
+				runningStoreChecker = null;
+			}
 			Logger.error(this, "Unable to start: "+t, t);
 			try {
 				runningStoreChecker.unregister(null, context, progressPollPriority);
