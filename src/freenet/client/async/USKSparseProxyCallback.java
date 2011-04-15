@@ -3,6 +3,9 @@ package freenet.client.async;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.USK;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 
 /** Proxy class to only pass through latest-slot updates after an onRoundFinished().
  * Note that it completely ignores last-known-good updates.
@@ -20,11 +23,17 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 	private byte[] lastData;
 	private boolean lastWasKnownGoodToo;
 	
+    private static volatile boolean logMINOR;
+	static {
+		Logger.registerClass(USKSparseProxyCallback.class);
+	}
+
 	public USKSparseProxyCallback(USKCallback cb, USK key) {
 		target = cb;
 		lastEdition = -1; // So we see the first one even if it's 0
 		lastSent = -1;
 		this.key = key;
+		if(logMINOR) Logger.minor(this, "Creating sparse proxy callback "+this+" for "+cb+" for "+key);
 	}
 
 	public void onFoundEdition(long l, USK key, ObjectContainer container,

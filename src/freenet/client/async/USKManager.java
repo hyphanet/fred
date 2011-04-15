@@ -553,6 +553,7 @@ public class USKManager {
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
 		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK);
+		if(logMINOR) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb);
 		if(runBackgroundFetch)
 			subscribeSparse(origUSK, ret, client);
 		else
