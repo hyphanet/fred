@@ -3,6 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
+
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.ObjectContainer;
@@ -60,6 +67,11 @@ public abstract class ClientRequester {
 			throw new NullPointerException();
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
 		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
+		synchronized(allRequesters) {
+			if(!persistent())
+				allRequesters.put(this, dumbValue);
+		}
+		creationTime = System.currentTimeMillis();
 	}
 
 	/** Cancel the request. Inner method, subclasses should actually tell 
@@ -431,4 +443,13 @@ public abstract class ClientRequester {
 		}
 	}
 
+	private static WeakHashMap<ClientRequester,Object> allRequesters = new WeakHashMap<ClientRequester,Object>();
+	private static Object dumbValue = new Object();
+	public final long creationTime;
+
+	public static ClientRequester[] getAll() {
+		synchronized(allRequesters) {
+			return allRequesters.keySet().toArray(new ClientRequester[0]);
+		}
+	}
 }

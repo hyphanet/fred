@@ -2377,8 +2377,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		Logger.minor(this, "Stopping ARK fetcher for " + this + " : " + myARK);
 		// FIXME any way to reduce locking here?
 		synchronized(arkFetcherSync) {
-			if(arkFetcher == null)
+			if(arkFetcher == null) {
+				if(logMINOR) Logger.minor(this, "ARK fetcher not running for "+this);
 				return;
+			}
 			node.clientCore.uskManager.unsubscribeContent(myARK, this.arkFetcher, true);
 			arkFetcher = null;
 		}

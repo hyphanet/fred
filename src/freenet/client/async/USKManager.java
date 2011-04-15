@@ -428,10 +428,14 @@ public class USKManager {
 	/** Subscribe to a given USK, and poll it in the background, but only 
 	 * report new editions when we've been through a round and are confident 
 	 * that we won't find more in the near future. Note that it will ignore
-	 * KnownGood, it only cares about latest slot. */
-	public void subscribeSparse(USK origUSK, USKCallback cb, RequestClient client) {
+	 * KnownGood, it only cares about latest slot.
+	 * @return The proxy object which was actually subscribed. The caller MUST
+	 * record this and pass it in to unsubscribe() when unsubscribing.  
+	 * */
+	public USKSparseProxyCallback subscribeSparse(USK origUSK, USKCallback cb, RequestClient client) {
 		USKSparseProxyCallback proxy = new USKSparseProxyCallback(cb, origUSK);
 		subscribe(origUSK, proxy, true, client);
+		return proxy;
 	}
 	
 	/**
@@ -534,7 +538,11 @@ public class USKManager {
 			// Temporary background fetchers run once and then die.
 			// They do not care about callbacks.
 		}
-		if(toCancel != null) toCancel.cancel(null, context);
+		if(toCancel != null) {
+			toCancel.cancel(null, context);
+		} else {
+			if(logMINOR) Logger.minor(this, "Not found unsubscribing");
+		}
 	}
 
 	/**
@@ -553,15 +561,19 @@ public class USKManager {
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
 		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK);
-		if(runBackgroundFetch)
-			subscribeSparse(origUSK, ret, client);
-		else
-			subscribe(origUSK, ret, runBackgroundFetch, client);
+		USKCallback toSub = ret;
+		if(logMINOR) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb);
+		if(runBackgroundFetch) {
+			USKSparseProxyCallback proxy = new USKSparseProxyCallback(ret, origUSK);
+			ret.setProxy(proxy);
+			toSub = proxy;
+		}
+		subscribe(origUSK, toSub, runBackgroundFetch, client);
 		return ret;
 	}
 	
 	public void unsubscribeContent(USK origUSK, USKRetriever ret, boolean runBackgroundFetch) {
-		unsubscribe(origUSK, ret);
+		unsubscribe(origUSK, ret.getProxy());
 	}
 	
 	// REMOVE: DO NOT Synchronize! ... debugging only.
