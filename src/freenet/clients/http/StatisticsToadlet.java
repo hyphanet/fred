@@ -11,12 +11,16 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutter;
+import freenet.client.async.ClientRequester;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
 import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.l10n.NodeL10n;
+import freenet.keys.FreenetURI;
 import freenet.node.FNPPacketMangler;
 import freenet.node.Location;
 import freenet.node.Node;
@@ -26,6 +30,7 @@ import freenet.node.NodeStats;
 import freenet.node.OpennetManager;
 import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarterGroup;
 import freenet.node.Version;
 import freenet.node.stats.DataStoreInstanceType;
@@ -411,6 +416,10 @@ public class StatisticsToadlet extends Toadlet {
 					drawSeedStatsBox(nextTableCell.addChild("div", "class", "infobox"), om);
 			}
 
+			overviewTableRow = overviewTable.addChild("tr");
+			nextTableCell = overviewTableRow.addChild("td", new String[] {"class", "colspan"}, new String[] {"first", "3"});
+			drawClientRequestersBox(nextTableCell.addChild("div", "class", "infobox"));
+
 			// peer distribution box
 			overviewTableRow = overviewTable.addChild("tr");
 			nextTableCell = overviewTableRow.addChild("td", "class", "first");
@@ -633,6 +642,50 @@ public class StatisticsToadlet extends Toadlet {
 		box.addChild("div", "class", "infobox-header", l10n("seedStats"));
 		HTMLNode opennetStatsContent = box.addChild("div", "class", "infobox-content");
 		om.drawSeedStatsBox(opennetStatsContent);
+	}
+
+	private void drawClientRequestersBox(HTMLNode box) {
+		box.addChild("div", "class", "infobox-header", l10n("clientRequesterObjects"));
+		HTMLNode masterContent = box.addChild("div", "class", "infobox-content");
+		HTMLNode table = masterContent.addChild("table");
+		HTMLNode row = table.addChild("tr");
+		row.addChild("th", "RequestClient");
+		row.addChild("th", l10n("clientRequesters.class"));
+		row.addChild("th", l10n("clientRequesters.age"));
+		row.addChild("th", l10n("clientRequesters.priorityClass"));
+		row.addChild("th", l10n("clientRequesters.realtimeFlag"));
+		row.addChild("th", l10n("clientRequesters.uri"));
+		NumberFormat nf = NumberFormat.getInstance();
+		nf.setMaximumFractionDigits(0);
+		nf.setMinimumIntegerDigits(2);
+		ClientRequester[] requests = ClientRequester.getAll();
+		Arrays.sort(requests, new Comparator<ClientRequester>() {
+				public int compare(ClientRequester a, ClientRequester b) {
+					return -Long.signum(a.creationTime - b.creationTime);
+				}
+			});
+		long now = System.currentTimeMillis();
+		for(ClientRequester request : requests) {
+			if(request.isFinished() || request.isCancelled())
+				continue;
+			row = table.addChild("tr");
+			RequestClient client = request.getClient();
+			// client can be null if the request is stored in DB4O and then deactivated
+			row.addChild("td", client==null ? "null" : client.toString());
+			row.addChild("td", request.getClass().toString());
+			long diff = now - request.creationTime;
+			StringBuilder sb = new StringBuilder();
+			sb.append(nf.format(diff / (60*60*1000)));
+			sb.append(':');
+			sb.append(nf.format(diff / (60*1000) % 60));
+			sb.append(':');
+			sb.append(nf.format(diff / 1000 % 60));
+			row.addChild("td", sb.toString());
+			row.addChild("td", Short.toString(request.getPriorityClass()));
+			row.addChild("td", client==null ? "?" : Boolean.toString(client.realTimeFlag()));
+			FreenetURI uri = request.getURI(); // getURI() sometimes returns null, eg for ClientPutters
+			row.addChild("td", uri == null ? "null" : uri.toString());
+		}
 	}
 
 	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, double loc, long nodeUptimeSeconds) {
