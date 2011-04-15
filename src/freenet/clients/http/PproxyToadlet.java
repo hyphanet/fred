@@ -358,7 +358,7 @@ public class PproxyToadlet extends Toadlet {
 				while (loadingPlugins.hasNext()) {
 					PluginProgress pluginProgress = loadingPlugins.next();
 					String pluginName = pluginProgress.getName();
-					availablePlugins.remove(pluginName);
+					availablePlugins.remove(pm.isOfficialPlugin(pluginName));
 				}
 
 				showStartingPlugins(pm, contentNode);
