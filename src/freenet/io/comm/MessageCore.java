@@ -446,6 +446,11 @@ public class MessageCore {
 	 */
 	public Message waitFor(MessageFilter filter, ByteCounter ctr) throws DisconnectedException {
 		if(logDEBUG) Logger.debug(this, "Waiting for "+filter);
+
+		if(filter.hasCallback()) {
+			throw new IllegalArgumentException("waitFor called with a filter that has a callback");
+		}
+
 		long startTime = System.currentTimeMillis();
 		if(filter.matched()) {
 			Logger.error(this, "waitFor() on a filter which is already matched: "+filter, new Exception("error"));
