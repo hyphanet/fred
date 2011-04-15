@@ -121,6 +121,15 @@ public class StatisticsToadlet extends Toadlet {
 			return;
 		}
 		final SubConfig nodeConfig = node.config.get("node");
+		
+		final String requestPath = request.getPath().substring(path().length());
+
+		if (requestPath.length() > 0) {
+			if(requestPath.equals("requesters.html") || requestPath.equals("/requesters.html")) {
+				showRequesters(request, ctx);
+				return;
+			}
+		}
 
 		node.clientCore.bandwidthStatsPutter.updateData();
 
@@ -416,10 +425,6 @@ public class StatisticsToadlet extends Toadlet {
 					drawSeedStatsBox(nextTableCell.addChild("div", "class", "infobox"), om);
 			}
 
-			overviewTableRow = overviewTable.addChild("tr");
-			nextTableCell = overviewTableRow.addChild("td", new String[] {"class", "colspan"}, new String[] {"first", "3"});
-			drawClientRequestersBox(nextTableCell.addChild("div", "class", "infobox"));
-
 			// peer distribution box
 			overviewTableRow = overviewTable.addChild("tr");
 			nextTableCell = overviewTableRow.addChild("td", "class", "first");
@@ -482,6 +487,15 @@ public class StatisticsToadlet extends Toadlet {
 		}
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+	}
+
+	private void showRequesters(HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
+
+		drawClientRequestersBox(contentNode);
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	private void drawLoadBalancingBox(HTMLNode loadStatsInfobox, boolean realTime) {
