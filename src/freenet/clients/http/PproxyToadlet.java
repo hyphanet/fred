@@ -346,13 +346,14 @@ public class PproxyToadlet extends Toadlet {
 					PluginInfoWrapper pluginInfoWrapper = loadedPlugins.next();
 					String pluginName = pluginInfoWrapper.getPluginClassName();
 					String shortPluginName = pluginName.substring(pluginName.lastIndexOf('.') + 1);
-					availablePlugins.remove(shortPluginName);
 
 					/* FIXME: Workaround the "Freemail" plugin show duplicate problem
 					 * The "Freemail" plugin is show on "Aviliable Plugin" even
 					 * if it is loaded. However fixing the plugin itself may break
 					 * running it as standalone application. */
-					if (shortPluginName.equals("FreemailPlugin")) availablePlugins.remove("Freemail"); // DOH!
+					if (shortPluginName.equals("FreemailPlugin")) shortPluginName = "Freemail"; // DOH!
+
+					availablePlugins.remove(pm.isOfficialPlugin(shortPluginName));
 				}
 				while (loadingPlugins.hasNext()) {
 					PluginProgress pluginProgress = loadingPlugins.next();
