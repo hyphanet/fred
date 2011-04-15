@@ -562,6 +562,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			updatePriorities();
 			short prio;
 			synchronized(this) {
+				if(cancelled || completed) return;
 				dbrHintsFound++;
 				prio = progressPollPriority;
 			}
@@ -578,6 +579,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private void checkFinishedForNow(ClientContext context) {
 		USKAttempt[] attempts;
 		synchronized(this) {
+			if(cancelled || completed) return;
 			if(runningStoreChecker != null) {
 				if(logMINOR) Logger.minor(this, "Not finished because still running store checker on "+this);
 				return; // Still checking the store
@@ -612,6 +614,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(logMINOR) Logger.minor(this, "Notifying finished for now on "+this+" for "+origUSK);
 		USKCallback[] toCheck;
 		synchronized(this) {
+			if(cancelled || completed) return;
 			toCheck = subscribers.toArray(new USKCallback[subscribers.size()]);
 		}
 		for(USKCallback cb : toCheck) {
@@ -623,6 +626,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private void notifySendingToNetwork(ClientContext context) {
 		USKCallback[] toCheck;
 		synchronized(this) {
+			if(cancelled || completed) return;
 			toCheck = subscribers.toArray(new USKCallback[subscribers.size()]);
 		}
 		for(USKCallback cb : toCheck) {
