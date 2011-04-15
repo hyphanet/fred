@@ -439,10 +439,13 @@ public class MessageCore {
 	/**
 	 * Wait for a filter to trigger, or timeout. Blocks until either the trigger is activated, or it times
 	 * out, or the peer is disconnected.
-	 * @param filter The filter to wait for.
+	 * @param filter The filter to wait for. This filter must not have a callback.
 	 * @param ctr Byte counter to add bytes from the message to.
+	 *
 	 * @return Either a message, or null if the filter timed out.
+	 *
 	 * @throws DisconnectedException If the single peer being waited for disconnects.
+	 * @throws IllegalArgumentException If {@code filter} has a callback
 	 */
 	public Message waitFor(MessageFilter filter, ByteCounter ctr) throws DisconnectedException {
 		if(logDEBUG) Logger.debug(this, "Waiting for "+filter);
