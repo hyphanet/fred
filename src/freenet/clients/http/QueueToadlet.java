@@ -434,11 +434,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			} else if (request.getPartAsString("insert", 128).length() > 0) {
 				final FreenetURI insertURI;
 				String keyType = request.getPartAsString("keytype", 10);
-				if ("CHK@".equals(keyType)) {
+				if ("CHK".equals(keyType)) {
 					insertURI = new FreenetURI("CHK@");
 					if(fiw != null)
 						fiw.reportCanonicalInsert();
-				} else if("SSK@".equals(keyType)) {
+				} else if("SSK".equals(keyType)) {
 					insertURI = new FreenetURI("SSK@");
 					if(fiw != null)
 						fiw.reportRandomInsert();
