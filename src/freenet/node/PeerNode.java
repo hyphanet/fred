@@ -5319,5 +5319,12 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		}
 		return pf.timeSendAcks();
 	}
+
+	/** Calculate the maximum number of outgoing transfers to this peer that we
+	 * will accept in requests and inserts. */
+	public int calculateMaxTransfersOut() {
+		// FIXME calculate it properly based on link level bandwidth, global bandwidth, and inter-block timeout.
+		return 65535;
+	}
 	
 }

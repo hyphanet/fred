@@ -690,7 +690,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			expectedTransfersOutCHK = runningGlobal.expectedTransfersOutCHK - runningLocal.expectedTransfersOutCHK;
 			expectedTransfersOutSSK = runningGlobal.expectedTransfersOutSSK - runningLocal.expectedTransfersOutSSK;
 			totalRequests = runningGlobal.totalRequests - runningLocal.totalRequests;
-			maxTransfersOut = 65536; // FIXME calculate it properly based on link level bandwidth, global bandwidth, and inter-block timeout.
+			maxTransfersOut = peer.calculateMaxTransfersOut();
 		}
 
 		public PeerLoadStats(PeerNode source, Message m) {
