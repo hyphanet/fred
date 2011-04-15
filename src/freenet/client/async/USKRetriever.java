@@ -71,6 +71,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			Logger.warning(this, "Found edition prior to that specified by the client: "+l+" < "+origUSK.suggestedEdition, new Exception("error"));
 			return;
 		}
+		if(logMINOR) Logger.minor(this, "Found edition "+l+" for "+this+" - fetching...");
 		// Create a SingleFileFetcher for the key (as an SSK).
 		// Put the edition number into its context object.
 		// Put ourself as callback.

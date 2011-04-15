@@ -22,6 +22,7 @@ import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
+import freenet.client.events.EnterFiniteCooldownEvent;
 import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.ExpectedMIMEEvent;
@@ -63,6 +64,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	private static final int VERBOSITY_EXPECTED_HASHES = 8;
 	private static final int VERBOSITY_EXPECTED_TYPE = 32;
 	private static final int VERBOSITY_EXPECTED_SIZE = 64;
+	private static final int VERBOSITY_ENTER_FINITE_COOLDOWN = 128;
 
 	// Stuff waiting for reconnection
 	/** Did the request succeed? Valid if finished. */
@@ -455,6 +457,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	private void trySendProgress(FCPMessage msg, final int verbosityMask, FCPConnectionOutputHandler handler, ObjectContainer container) {
 		FCPMessage oldProgress = null;
+		boolean noStore = false;
 		if(msg instanceof SimpleProgressMessage) {
 			oldProgress = progressPending;
 			progressPending = (SimpleProgressMessage)msg;
@@ -516,9 +519,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					cache.updateExpectedDataLength(identifier, foundDataLength);
 				}
 			}
+		} else if(msg instanceof EnterFiniteCooldown) {
+			// Do nothing, it's not persistent.
+			noStore = true;
 		} else
 			assert(false);
-		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+		if(persistenceType == ClientRequest.PERSIST_FOREVER && !noStore) {
 			container.store(this);
 			if(oldProgress != null) {
 				container.activate(oldProgress, 1);
@@ -726,6 +732,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				return;
 			ExpectedFileSizeEvent event = (ExpectedFileSizeEvent)ce;
 			progress = new ExpectedDataLength(identifier, global, event.expectedSize);
+		} else if(ce instanceof EnterFiniteCooldownEvent) {
+			verbosityMask = VERBOSITY_ENTER_FINITE_COOLDOWN;
+			if((verbosity & verbosityMask) == 0)
+				return;
+			EnterFiniteCooldownEvent event = (EnterFiniteCooldownEvent)ce;
+			progress = new EnterFiniteCooldown(identifier, global, event.wakeupTime);
 		}
 		else return; // Don't know what to do with event
 		// container may be null...

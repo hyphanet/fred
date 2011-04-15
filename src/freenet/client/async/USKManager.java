@@ -200,6 +200,10 @@ public class USKManager {
 		}
 	}
 
+	public void hintUpdate(FreenetURI uri, ClientContext context) throws MalformedURLException {
+		hintUpdate(uri, context, RequestStarter.UPDATE_PRIORITY_CLASS);
+	}
+	
 	/**
 	 * A non-authoritative hint that a specific edition *might* exist. At the moment,
 	 * we just fetch the block. We do not fetch the contents, and it is possible that
@@ -208,12 +212,18 @@ public class USKManager {
 	 * @param context
 	 * @throws MalformedURLException If the uri passed in is not a USK.
 	 */
-	public void hintUpdate(FreenetURI uri, ClientContext context) throws MalformedURLException {
-		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) return;
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
+	public void hintUpdate(FreenetURI uri, ClientContext context, short priority) throws MalformedURLException {
+		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) {
+			if(logMINOR) Logger.minor(this, "Ignoring hint because edition is "+uri.getSuggestedEdition()+" but latest is "+lookupLatestSlot(USK.create(uri)));
+			return;
+		}
+		uri = uri.sskForUSK();
+		if(logMINOR) Logger.minor(this, "Doing hint fetch for "+uri);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
+			if(logMINOR) Logger.minor(this, "Cannot start hint fetch for "+uri+" : "+e, e);
 			// Ignore
 		}
 	}
@@ -415,6 +425,15 @@ public class USKManager {
 				}
 	}
 	
+	/** Subscribe to a given USK, and poll it in the background, but only 
+	 * report new editions when we've been through a round and are confident 
+	 * that we won't find more in the near future. Note that it will ignore
+	 * KnownGood, it only cares about latest slot. */
+	public void subscribeSparse(USK origUSK, USKCallback cb, RequestClient client) {
+		USKSparseProxyCallback proxy = new USKSparseProxyCallback(cb, origUSK);
+		subscribe(origUSK, proxy, true, client);
+	}
+	
 	/**
 	 * Subscribe to a given USK. Callback will be notified when it is
 	 * updated. Note that this does not imply that the USK will be
@@ -459,7 +478,7 @@ public class USKManager {
 			if(runBackgroundFetch) {
 				USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 5, true, false, false);
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 3, true, false, false);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}
@@ -474,6 +493,7 @@ public class USKManager {
 		if(fetcher != null) {
 			executor.execute(new Runnable() {
 				public void run() {
+					if(logMINOR) Logger.minor(this, "Starting "+fetcher);
 					fetcher.schedule(null, context);
 				}
 			}, "USKManager.schedule for "+fetcher);
@@ -516,21 +536,27 @@ public class USKManager {
 		}
 		if(toCancel != null) toCancel.cancel(null, context);
 	}
-	
+
 	/**
 	 * Subscribe to a USK. When it is updated, the content will be fetched (subject to the limits in fctx),
-	 * and returned to the callback.
+	 * and returned to the callback. If we are asked to do a background fetch, we will only fetch editions
+	 * when we are fairly confident there are no more to fetch.
 	 * @param origUSK The USK to poll.
 	 * @param cb Callback, called when we have downloaded a new key.
 	 * @param runBackgroundFetch If true, start a background fetcher for the key, which will run
-	 * forever until we unsubscribe.
+	 * forever until we unsubscribe. Note that internally we use subscribeSparse() in this case,
+	 * i.e. we will only download editions which we are confident about.
 	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
 	 * @param prio Priority for fetching the content (see constants in RequestScheduler).
+	 * @param sparse If true, only fetch once we're sure it's the latest edition.
 	 * @return
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
 		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK);
-		subscribe(origUSK, ret, runBackgroundFetch, client);
+		if(runBackgroundFetch)
+			subscribeSparse(origUSK, ret, client);
+		else
+			subscribe(origUSK, ret, runBackgroundFetch, client);
 		return ret;
 	}
 	

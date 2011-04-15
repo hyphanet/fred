@@ -5,8 +5,10 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableUSK;
+import freenet.keys.USK;
 
 /** Utility class for date-based edition hints */
 public class USKDateHint {
@@ -58,6 +60,15 @@ public class USKDateHint {
 		int x = 0;
 		for(Type t : Type.values())
 			uris[x++] = key.getInsertableSSK(key.siteName+PREFIX+get(t)).getInsertURI();
+		return uris;
+	}
+
+	/** Return the URL's to fetch hint data from */
+	public ClientSSK[] getRequestURIs(USK key) {
+		ClientSSK[] uris = new ClientSSK[Type.values().length];
+		int x = 0;
+		for(Type t : Type.values())
+			uris[x++] = key.getSSK(key.siteName+PREFIX+get(t));
 		return uris;
 	}
 
