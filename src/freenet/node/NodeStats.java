@@ -1073,7 +1073,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	
 	public int calculateMaxTransfersOut(PeerNode peer, boolean realTime,
 			double nonOverheadFraction) {
-		return peer.calculateMaxTransfersOut(realTime ? 1 : 5, nonOverheadFraction);
+		if(peer == null) return Integer.MAX_VALUE;
+		else return peer.calculateMaxTransfersOut(realTime ? 1 : 5, nonOverheadFraction);
 	}
 
 	static final double ONE_PEER_MAX_PEERS_EQUIVALENT = 2.0;
