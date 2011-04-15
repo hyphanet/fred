@@ -555,7 +555,7 @@ public class MessageCore {
 			// Fortunately, it will be close to the beginning of the filters list, having
 			// just timed out. That is assuming it hasn't already been removed; in that
 			// case, this will be slower.
-			_filters.remove(_filters);
+			_filters.remove(filter);
 			// A filter being waitFor()'ed cannot have any callbacks, so we don't need to call onMatched().
 		}
 		
