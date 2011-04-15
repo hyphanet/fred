@@ -42,6 +42,8 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	final FetchContext ctx;
 	final USKRetrieverCallback cb;
 	final USK origUSK;
+	/** The USKCallback that is actually subscribed */
+	private USKCallback proxy;
 
         private static volatile boolean logMINOR;
 	static {
@@ -60,6 +62,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		this.ctx = fctx;
 		this.cb = cb;
 		this.origUSK = origUSK;
+		this.proxy = this;
 	}
 
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
@@ -254,6 +257,19 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	
 	public void onHashes(HashResult[] hashes, ObjectContainer container, ClientContext context) {
 		// Ignore
+	}
+	
+	/** Called when we subscribe() in USKManager, if we don't directly subscribe
+	 * the USKRetriever. Usually this happens when we put a proxy between them,
+	 * e.g. USKProxyCompletionCallback, which hides updates for efficiency. 
+	 * @param cb The callback that is actually USKManager.subscribe()'ed.
+	 */
+	synchronized void setProxy(USKCallback cb) {
+		proxy = cb;
+	}
+	
+	synchronized USKCallback getProxy() {
+		return proxy;
 	}
 	
 }

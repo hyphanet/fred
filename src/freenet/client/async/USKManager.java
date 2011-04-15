@@ -557,16 +557,19 @@ public class USKManager {
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
 		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK);
+		USKCallback toSub = ret;
 		if(logMINOR) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb);
-		if(runBackgroundFetch)
-			subscribeSparse(origUSK, ret, client);
-		else
-			subscribe(origUSK, ret, runBackgroundFetch, client);
+		if(runBackgroundFetch) {
+			USKSparseProxyCallback proxy = new USKSparseProxyCallback(ret, origUSK);
+			ret.setProxy(proxy);
+			toSub = proxy;
+		}
+		subscribe(origUSK, toSub, runBackgroundFetch, client);
 		return ret;
 	}
 	
 	public void unsubscribeContent(USK origUSK, USKRetriever ret, boolean runBackgroundFetch) {
-		unsubscribe(origUSK, ret);
+		unsubscribe(origUSK, ret.getProxy());
 	}
 	
 	// REMOVE: DO NOT Synchronize! ... debugging only.
