@@ -686,7 +686,16 @@ public class StatisticsToadlet extends Toadlet {
 			RequestClient client = request.getClient();
 			// client can be null if the request is stored in DB4O and then deactivated
 			row.addChild("td", client==null ? "null" : client.toString());
-			row.addChild("td", request.getClass().toString());
+			try {
+				String s = request.toString();
+				if(s.indexOf(':') > s.indexOf('@')) {
+					s = s.substring(0, s.indexOf(':'));
+				}
+				row.addChild("td", s);
+			} catch (Throwable t) {
+				// FIXME shouldn't happen...
+				row.addChild("td", "ERROR: "+request.getClass().toString());
+			}
 			long diff = now - request.creationTime;
 			StringBuilder sb = new StringBuilder();
 			sb.append(TimeUtil.formatTime(diff, 2));
