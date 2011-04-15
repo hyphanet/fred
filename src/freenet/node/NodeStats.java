@@ -627,6 +627,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		public final int totalRequests;
 		public final int averageTransfersOutPerInsert;
 		public final boolean realTime;
+		public final int maxTransfersOut;
 		
 		public boolean equals(Object o) {
 			if(!(o instanceof PeerLoadStats)) return false;
@@ -689,6 +690,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			expectedTransfersOutCHK = runningGlobal.expectedTransfersOutCHK - runningLocal.expectedTransfersOutCHK;
 			expectedTransfersOutSSK = runningGlobal.expectedTransfersOutSSK - runningLocal.expectedTransfersOutSSK;
 			totalRequests = runningGlobal.totalRequests - runningLocal.totalRequests;
+			maxTransfersOut = 65536; // FIXME calculate it properly based on link level bandwidth, global bandwidth, and inter-block timeout.
 		}
 
 		public PeerLoadStats(PeerNode source, Message m) {
@@ -699,19 +701,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				expectedTransfersOutCHK = m.getInt(DMT.OTHER_TRANSFERS_OUT_CHK);
 				expectedTransfersOutSSK = m.getInt(DMT.OTHER_TRANSFERS_OUT_SSK);
 				averageTransfersOutPerInsert = m.getInt(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT);
-
+				maxTransfersOut = m.getByte(DMT.MAX_TRANSFERS_OUT);
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusShort) {
 				expectedTransfersInCHK = m.getShort(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFFFF;
 				expectedTransfersInSSK = m.getShort(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFFFF;
 				expectedTransfersOutCHK = m.getShort(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFFFF;
 				expectedTransfersOutSSK = m.getShort(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFFFF;
 				averageTransfersOutPerInsert = m.getShort(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT) & 0xFFFF;
+				maxTransfersOut = m.getShort(DMT.MAX_TRANSFERS_OUT);
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusByte) {
 				expectedTransfersInCHK = m.getByte(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFF;
 				expectedTransfersInSSK = m.getByte(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFF;
 				expectedTransfersOutCHK = m.getByte(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFF;
 				expectedTransfersOutSSK = m.getByte(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFF;
 				averageTransfersOutPerInsert = m.getByte(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT) & 0xFF;
+				maxTransfersOut = m.getInt(DMT.MAX_TRANSFERS_OUT);
 			} else throw new IllegalArgumentException();
 			outputBandwidthLowerLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_LOWER_LIMIT);
 			outputBandwidthUpperLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_UPPER_LIMIT);
