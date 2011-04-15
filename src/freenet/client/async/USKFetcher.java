@@ -428,7 +428,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		@Override
 		public String toString() {
-			return "USKAttempt for "+number+" for "+origUSK.getURI()+" for "+USKFetcher.this;
+			return "USKAttempt for "+number+" for "+origUSK.getURI()+" for "+USKFetcher.this+(forever?" (forever)" : "");
 		}
 		
 		public short getPriority() {
