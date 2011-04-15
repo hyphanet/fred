@@ -4,6 +4,7 @@
 package freenet.client;
 
 import com.onionnetworks.fec.FECCode;
+import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.fec.PureCode;
 
 import freenet.support.LRUHashtable;
@@ -93,24 +94,24 @@ public class StandardOnionFECCodec extends FECCodec {
 		// FIXME: NATIVE FEC DISABLED PENDING FIXING THE SEGFAULT BUG (easily reproduced with check blocks > data blocks)
 		// AND A COMPETENT CODE REVIEW!!!
 		// SEGFAULT BUGS ARE USUALLY REMOTELY EXPLOITABLE!!!
-//		if((!noNative) && k <= 256 && n <= 256 && n <= k*2) { 
+		if((!noNative) && k <= 256 && n <= 256 && n <= k*2) { 
 //			System.out.println("Creating native FEC: n="+n+" k="+k);
 //			System.out.flush();
-//			try {
-//				fec2 = new Native8Code(k,n);
-//				Logger.minor(this, "Loaded native FEC.");
-//
-//			} catch (Throwable t) {
-//				if(!noNative) {
-//					System.err.println("Failed to load native FEC: "+t);
-//					t.printStackTrace();
-//				}
-//				Logger.error(this, "Failed to load native FEC: "+t+" (k="+k+" n="+n+ ')', t);
-//
-//				if(t instanceof UnsatisfiedLinkError)
-//					noNative = true;
-//			}
-//		} // FIXME 16-bit native FEC???
+			try {
+				fec2 = new Native8Code(k,n);
+				Logger.minor(this, "Loaded native FEC.");
+
+			} catch (Throwable t) {
+				if(!noNative) {
+					System.err.println("Failed to load native FEC: "+t);
+					t.printStackTrace();
+				}
+				Logger.error(this, "Failed to load native FEC: "+t+" (k="+k+" n="+n+ ')', t);
+
+				if(t instanceof UnsatisfiedLinkError)
+					noNative = true;
+			}
+		} // FIXME 16-bit native FEC???
 
 		if (fec2 != null){
 			synchronized(this) {

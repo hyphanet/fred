@@ -220,10 +220,10 @@ public abstract class FECCodec {
 			if(numberToDecode > 0)
 				// Do the (striped) decode
 				
-				if(fec instanceof Native8Code) {
-					System.out.println("Decoding with native code, n = "+n+" k = "+k);
-					System.out.flush();
-				}
+//				if(fec instanceof Native8Code) {
+//					System.out.println("Decoding with native code, n = "+n+" k = "+k);
+//					System.out.flush();
+//				}
 				
 				for(int offset = 0; offset < blockLength; offset += stripeSize) {
 					if(offset + stripeSize > blockLength)
@@ -378,10 +378,10 @@ public abstract class FECCodec {
 			if(logMINOR)
 				Logger.minor(this, "Memory in use before encodes: " + memUsedBeforeEncodes);
 
-			if(fec instanceof Native8Code) {
-				System.out.println("Encoding with native code, n = "+n+" k = "+k);
-				System.out.flush();
-			}
+//			if(fec instanceof Native8Code) {
+//				System.out.println("Encoding with native code, n = "+n+" k = "+k);
+//				System.out.flush();
+//			}
 			
 			if(numberToEncode > 0)
 				// Do the (striped) encode
