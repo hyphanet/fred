@@ -534,7 +534,11 @@ public class USKManager {
 			// Temporary background fetchers run once and then die.
 			// They do not care about callbacks.
 		}
-		if(toCancel != null) toCancel.cancel(null, context);
+		if(toCancel != null) {
+			toCancel.cancel(null, context);
+		} else {
+			if(logMINOR) Logger.minor(this, "Not found unsubscribing");
+		}
 	}
 
 	/**

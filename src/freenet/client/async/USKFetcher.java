@@ -1018,6 +1018,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Cancelling "+this);
 		uskManager.unsubscribe(origUSK, this);
 		context.getSskFetchScheduler(realTimeFlag).schedTransient.removePendingKeys((KeyListener)this);
 		assert(container == null);
