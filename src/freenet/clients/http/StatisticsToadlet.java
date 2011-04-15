@@ -675,11 +675,7 @@ public class StatisticsToadlet extends Toadlet {
 			row.addChild("td", request.getClass().toString());
 			long diff = now - request.creationTime;
 			StringBuilder sb = new StringBuilder();
-			sb.append(nf.format(diff / (60*60*1000)));
-			sb.append(':');
-			sb.append(nf.format(diff / (60*1000) % 60));
-			sb.append(':');
-			sb.append(nf.format(diff / 1000 % 60));
+			sb.append(TimeUtil.formatTime(diff, 2));
 			row.addChild("td", sb.toString());
 			row.addChild("td", Short.toString(request.getPriorityClass()));
 			row.addChild("td", client==null ? "?" : Boolean.toString(client.realTimeFlag()));

@@ -68,7 +68,8 @@ public abstract class ClientRequester {
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
 		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
 		synchronized(allRequesters) {
-			allRequesters.put(this, dumbValue);
+			if(!persistent())
+				allRequesters.put(this, dumbValue);
 		}
 		creationTime = System.currentTimeMillis();
 	}
