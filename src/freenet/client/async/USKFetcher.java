@@ -768,7 +768,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					attemptsToStart.add(add(i, false));
 				}
 			}
-			registerNow = !fillKeysWatching(curLatest, context);
+			if((!scheduleAfterDBRsDone) || dbrAttempts.isEmpty())
+				registerNow = !fillKeysWatching(curLatest, context);
+			else
+				registerNow = false;
 		}
 		finishCancelBefore(killAttempts, context);
 		Bucket data = null;
@@ -978,8 +981,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					// If we don't know anything, do the DBRs first.
 					scheduleAfterDBRsDone = true;
 					registerNow = false;
-				} else {
+				} else if((!scheduleAfterDBRsDone) || dbrAttempts.isEmpty()) {
 					registerNow = !fillKeysWatching(lookedUp, context);
+				} else {
+					registerNow = false;
 				}
 				completeCheckingStore = checkStoreOnly && scheduleAfterDBRsDone && runningStoreChecker == null;
 			}
@@ -1227,7 +1232,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					attemptsToStart.add(add(i, false));
 				}
 			}
-			registerNow = !fillKeysWatching(ed, context);
+			if((!scheduleAfterDBRsDone) || dbrAttempts.isEmpty())
+				registerNow = !fillKeysWatching(ed, context);
+			else
+				registerNow = false;
 			
 		}
 		finishCancelBefore(killAttempts, context);
