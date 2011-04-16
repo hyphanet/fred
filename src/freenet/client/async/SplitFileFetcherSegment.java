@@ -1498,11 +1498,23 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		return (MyCooldownTrackerItem) context.cooldownTracker.make(this, persistent, container);
 	}
 
+	/** Called when localRequestOnly is set and we check the datastore and find nothing.
+	 * We should fail() unless we are already decoding. */
+	void failCheckingDatastore(ObjectContainer container, ClientContext context) {
+		fail(null, container, context, false, true);
+	}
+	
 	void fail(FetchException e, ObjectContainer container, ClientContext context, boolean dontDeactivateParent) {
+		fail(e, container, context, dontDeactivateParent, false);
+	}
+	
+	private void fail(FetchException e, ObjectContainer container, ClientContext context, boolean dontDeactivateParent, boolean checkingStoreOnly) {
 		if(logMINOR) Logger.minor(this, "Failing segment "+this, e);
 		boolean alreadyDecoding = false;
 		synchronized(this) {
 			if(finished) return;
+			if(startedDecode && checkingStoreOnly) return;
+			if(checkingStoreOnly) e = new FetchException(FetchException.DATA_NOT_FOUND);
 			finished = true;
 			alreadyDecoding = startedDecode;
 			this.failureException = e;

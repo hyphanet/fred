@@ -90,6 +90,26 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		if(persistent) container.activate(ctx, 1);
 		return ctx;
 	}
+	
+	private boolean localRequestOnly(ObjectContainer container,
+			ClientContext context) {
+		boolean localOnly = false;
+		boolean segmentActive = true;
+		boolean ctxActive = true;
+		if(persistent) {
+			segmentActive = container.ext().isActive(segment);
+			if(!segmentActive) container.activate(segment, 1);
+		}
+		FetchContext ctx = segment.blockFetchContext;
+		if(!segmentActive) container.deactivate(segment, 1);
+		if(persistent) {
+			ctxActive = container.ext().isActive(ctx);
+			container.activate(ctx, 1);
+		}
+		localOnly = ctx.localRequestOnly;
+		if(!ctxActive) container.deactivate(ctx, 1);
+		return localOnly;
+	}
 
 	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
 	private FetchException translateException(LowLevelGetException e) {
@@ -214,9 +234,14 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public void preRegister(ObjectContainer container, ClientContext context,
+	public boolean preRegister(ObjectContainer container, ClientContext context,
 			boolean toNetwork) {
-		if(!toNetwork) return;
+		if(!toNetwork) return false;
+		if(localRequestOnly(container, context)) {
+			if(persistent) container.activate(segment, 1);
+			segment.failCheckingDatastore(container, context);
+			return true;
+		}
 		boolean deactivate = false;
 		if(persistent) {
 			deactivate = !container.ext().isActive(parent);
@@ -224,6 +249,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		}
 		parent.toNetwork(container, context);
 		if(deactivate) container.deactivate(parent, 1);
+		return false;
 	}
 
 	@Override

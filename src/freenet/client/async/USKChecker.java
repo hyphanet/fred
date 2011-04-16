@@ -122,4 +122,13 @@ class USKChecker extends BaseSingleFileFetcher {
 		cb.onEnterFiniteCooldown(context);
 	}
 
+	@Override
+	protected void notFoundInStore(ObjectContainer container,
+			ClientContext context) {
+		// Ran out of retries.
+		unregisterAll(container, context);
+		// Rest are non-fatal. If have DNFs, DNF, else network error.
+		cb.onDNF(context);
+	}
+
 }

@@ -1035,6 +1035,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			polling = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
 			atts = dbrAttempts.toArray(new DBRAttempt[dbrAttempts.size()]);
 			attemptsToStart.clear();
+			runningAttempts.clear();
+			pollingAttempts.clear();
+			dbrAttempts.clear();
 			storeChecker = runningStoreChecker;
 			runningStoreChecker = null;
 		}
@@ -1419,16 +1422,16 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+		public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
 			unregister(container, context, getPriorityClass(container));
 			USKAttempt[] attempts;
 			synchronized(USKFetcher.this) {
-				if(cancelled) return;
 				runningStoreChecker = null;
 				// FIXME should we only start the USKAttempt's if the datastore check hasn't made progress?
 				attempts = attemptsToStart.toArray(new USKAttempt[attemptsToStart.size()]);
 				attemptsToStart.clear();
 				done = true;
+				if(cancelled) return true;
 			}
 			checker.checked();
 			
@@ -1461,14 +1464,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					synchronized(this) {
 						if(!dbrAttempts.isEmpty()) {
 							USKFetcher.this.scheduleAfterDBRsDone = true;
-							return;
+							return true;
 						}
 					}
 					finishSuccess(context);
 				}
 				// No need to call registerAttempts as we have already registered them.
 			}
-			
+			return true;
 		}
 
 		@Override
@@ -1503,7 +1506,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 		@Override
 		public boolean isCancelled(ObjectContainer container) {
-			return done;
+			return done || USKFetcher.this.cancelled || USKFetcher.this.completed;
 		}
 
 		@Override
@@ -1514,10 +1517,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		@Override
 		public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 			return null;
-		}
-
-		public boolean isEmpty(ObjectContainer container) {
-			return done;
 		}
 
 		public long getCooldownTime(ObjectContainer container,

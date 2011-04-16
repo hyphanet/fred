@@ -384,16 +384,30 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		key.removeFrom(container);
 	}
 	
+	protected abstract void notFoundInStore(ObjectContainer container, ClientContext context);
+	
 	@Override
-	public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
-		if(!toNetwork) return;
+	public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+		if(!toNetwork) return false;
 		boolean deactivate = false;
+		if(persistent) {
+			deactivate = !container.ext().isActive(ctx);
+			container.activate(ctx, 1);
+		}
+		boolean localOnly = ctx.localRequestOnly;
+		if(deactivate) container.deactivate(ctx, 1);
+		if(localOnly) {
+			notFoundInStore(container, context);
+			return true;
+		}
+		deactivate = false;
 		if(persistent) {
 			deactivate = !container.ext().isActive(parent);
 			container.activate(parent, 1);
 		}
 		parent.toNetwork(container, context);
 		if(deactivate) container.deactivate(parent, 1);
+		return false;
 	}
 	
 	public synchronized long getCooldownTime(ObjectContainer container, ClientContext context, long now) {
