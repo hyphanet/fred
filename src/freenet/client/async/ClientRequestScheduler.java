@@ -322,8 +322,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 						// Just check isCancelled, we have already checked the cooldown.
 						if(!(getter.isCancelled(container))) {
 							wereAnyValid = true;
-							getter.preRegister(container, clientContext, true);
-							schedCore.innerRegister(getter, random, container, clientContext, getters);
+							if(!getter.preRegister(container, clientContext, true)) {
+								schedCore.innerRegister(getter, random, container, clientContext, getters);
+							} else {
+								getter.onFailure(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE), null, container, clientContext);
+							}
 						} else
 							getter.preRegister(container, clientContext, false);
 
@@ -344,8 +347,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if((!anyValid) || getters[i].isCancelled(null)) {
 					getters[i].preRegister(container, clientContext, false);
 					continue;
-				} else
-					getters[i].preRegister(container, clientContext, true);
+				} else {
+					if(getters[i].preRegister(container, clientContext, true)) continue;
+				}
 				if(!getters[i].isCancelled(null))
 					schedTransient.innerRegister(getters[i], random, null, clientContext, getters);
 			}
