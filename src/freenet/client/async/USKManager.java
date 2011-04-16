@@ -541,7 +541,7 @@ public class USKManager {
 		if(toCancel != null) {
 			toCancel.cancel(null, context);
 		} else {
-			if(logMINOR) Logger.minor(this, "Not found unsubscribing");
+			if(logMINOR) Logger.minor(this, "Not found unsubscribing: "+cb+" for "+origUSK);
 		}
 	}
 
