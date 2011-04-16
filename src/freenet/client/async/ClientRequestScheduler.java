@@ -324,8 +324,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 							wereAnyValid = true;
 							if(!getter.preRegister(container, clientContext, true)) {
 								schedCore.innerRegister(getter, random, container, clientContext, getters);
-							} else {
-								getter.onFailure(new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE), null, container, clientContext);
 							}
 						} else
 							getter.preRegister(container, clientContext, false);
