@@ -222,4 +222,10 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		rcb.onFailure(new FetchException(FetchException.CANCELLED), this, container, context);
 	}
 
+	@Override
+	protected void notFoundInStore(ObjectContainer container,
+			ClientContext context) {
+		this.onFailure(new FetchException(FetchException.DATA_NOT_FOUND), true, container, context);
+	}
+
 }

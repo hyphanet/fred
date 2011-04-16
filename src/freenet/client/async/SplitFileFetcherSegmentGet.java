@@ -237,7 +237,11 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	public boolean preRegister(ObjectContainer container, ClientContext context,
 			boolean toNetwork) {
 		if(!toNetwork) return false;
-		if(localRequestOnly(container, context)) return true;
+		if(localRequestOnly(container, context)) {
+			if(persistent) container.activate(segment, 1);
+			segment.failCheckingDatastore(container, context);
+			return true;
+		}
 		boolean deactivate = false;
 		if(persistent) {
 			deactivate = !container.ext().isActive(parent);
