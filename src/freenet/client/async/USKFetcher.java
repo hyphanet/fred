@@ -1422,7 +1422,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 
 		@Override
-		public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+		public boolean preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
 			unregister(container, context, getPriorityClass(container));
 			USKAttempt[] attempts;
 			synchronized(USKFetcher.this) {
@@ -1431,7 +1431,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				attempts = attemptsToStart.toArray(new USKAttempt[attemptsToStart.size()]);
 				attemptsToStart.clear();
 				done = true;
-				if(cancelled) return;
+				if(cancelled) return true;
 			}
 			checker.checked();
 			
@@ -1464,14 +1464,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					synchronized(this) {
 						if(!dbrAttempts.isEmpty()) {
 							USKFetcher.this.scheduleAfterDBRsDone = true;
-							return;
+							return true;
 						}
 					}
 					finishSuccess(context);
 				}
 				// No need to call registerAttempts as we have already registered them.
 			}
-			
+			return true;
 		}
 
 		@Override
