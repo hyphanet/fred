@@ -2813,26 +2813,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return sent;
 	}
 
-	void checkTrackerTimeout() {
-		long now = System.currentTimeMillis();
-		SessionKey prev = null;
-		SessionKey cur = null;
-		synchronized(this) {
-			if(previousTracker == null) return;
-			if(currentTracker == null) return;
-			cur = currentTracker;
-			prev = previousTracker;
-		}
-		if(prev.packets == cur.packets) return;
-		long t = prev.packets.getNextUrgentTime();
-		if(!(t > -1 && prev.packets.timeLastDecodedPacket() > 0 && (now - prev.packets.timeLastDecodedPacket()) > 60*1000 &&
-				cur.packets.timeLastDecodedPacket() > 0 && (now - cur.packets.timeLastDecodedPacket() < 30*1000) &&
-				(prev.packets.countAckRequests() > 0 || prev.packets.countResendRequests() > 0)))
-			return;
-		Logger.error(this, "No packets decoded on "+prev+" for 60 seconds, deprecating in favour of cur: "+cur);
-		prev.packets.completelyDeprecated(cur);
-	}
-
 	/**
 	 * Get a PeerNodeStatus for this node.
 	 * @param noHeavy If true, avoid any expensive operations e.g. the message count hashtables.

@@ -255,12 +255,10 @@ public class PluginManager {
 			stopping = true;
 			for(Iterator<PluginProgress> i = startingPlugins.iterator();i.hasNext();) {
 				PluginProgress progress = i.next();
-				if(matches == null) matches = new ArrayList<PluginProgress>();
 				matches.add(progress);
 				i.remove();
 			}
 		}
-		if(matches == null) return;
 		for(PluginProgress progress : matches) {
 			progress.kill();
 		}
