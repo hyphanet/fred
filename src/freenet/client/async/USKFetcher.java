@@ -1423,12 +1423,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			unregister(container, context, getPriorityClass(container));
 			USKAttempt[] attempts;
 			synchronized(USKFetcher.this) {
-				if(cancelled) return;
 				runningStoreChecker = null;
 				// FIXME should we only start the USKAttempt's if the datastore check hasn't made progress?
 				attempts = attemptsToStart.toArray(new USKAttempt[attemptsToStart.size()]);
 				attemptsToStart.clear();
 				done = true;
+				if(cancelled) return;
 			}
 			checker.checked();
 			
