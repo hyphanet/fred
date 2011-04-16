@@ -191,7 +191,7 @@ public class USKManager {
 	 */
 	public void hintUpdate(USK usk, long edition, ClientContext context) {
 		if(edition < lookupLatestSlot(usk)) return;
-		FreenetURI uri = usk.copy(edition).getURI();
+		FreenetURI uri = usk.copy(edition).getURI().sskForUSK();
 		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
 		try {
 			get.start(null, context);
