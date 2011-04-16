@@ -1503,7 +1503,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 		@Override
 		public boolean isCancelled(ObjectContainer container) {
-			return done;
+			return done || USKFetcher.this.cancelled || USKFetcher.this.completed;
 		}
 
 		@Override
