@@ -1035,6 +1035,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			polling = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
 			atts = dbrAttempts.toArray(new DBRAttempt[dbrAttempts.size()]);
 			attemptsToStart.clear();
+			runningAttempts.clear();
+			pollingAttempts.clear();
+			dbrAttempts.clear();
 			storeChecker = runningStoreChecker;
 			runningStoreChecker = null;
 		}
