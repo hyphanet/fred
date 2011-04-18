@@ -116,11 +116,14 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if((r <= maxRetries) || (maxRetries == -1)) {
 			if(persistent && maxRetries != -1)
 				container.store(this);
+			boolean active = true;
 			if(persistent) {
+				active = container.ext().isActive(ctx);
 				container.activate(ctx, 1);
 			}
 			int cooldownRetries = ctx.getCooldownRetries();
 			long cooldownTime = ctx.getCooldownTime();
+			if(!active) container.deactivate(ctx, 1);
 			if(cooldownRetries == 0 || r % cooldownRetries == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
