@@ -98,6 +98,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 			data = null;
 			wasKnownGood = false;
 		}
+		if(ed == -1) return;
 		target.onFoundEdition(ed, key, null, context, meta, codec, data, wasKnownGood, wasKnownGood);
 	}
 
