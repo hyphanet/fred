@@ -22,6 +22,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 	private short lastCodec;
 	private byte[] lastData;
 	private boolean lastWasKnownGoodToo;
+	private boolean roundFinished;
 	
     private static volatile boolean logMINOR;
 	static {
@@ -40,17 +41,21 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 			ClientContext context, boolean metadata, short codec, byte[] data,
 			boolean newKnownGood, boolean newSlotToo) {
 		synchronized(this) {
-			if(l < lastEdition) return;
-			else if(l == lastEdition) {
+			if(l < lastEdition) {
+				if(!roundFinished) return;
+				if(!newKnownGood) return;
+			} else if(l == lastEdition) {
 				if(newKnownGood) lastWasKnownGoodToo = true;
-				return;
+			} else {
+				lastEdition = l;
+				lastMetadata = metadata;
+				lastCodec = codec;
+				lastData = data;
+				lastWasKnownGoodToo = newKnownGood;
 			}
-			lastEdition = l;
-			lastMetadata = metadata;
-			lastCodec = codec;
-			lastData = data;
-			lastWasKnownGoodToo = newKnownGood;
+			if(!roundFinished) return;
 		}
+		target.onFoundEdition(l, key, null, context, metadata, codec, data, newKnownGood, newSlotToo);
 	}
 
 	public short getPollingPriorityNormal() {
@@ -72,6 +77,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 		byte[] data;
 		boolean wasKnownGood;
 		synchronized(this) {
+			roundFinished = true;
 			if(lastSent == lastEdition) return;
 			lastSent = ed = lastEdition;
 			meta = lastMetadata;
