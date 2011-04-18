@@ -929,13 +929,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	/**
-	 * MUST be called from database thread!
-	 */
-	public long queueCooldown(ClientKey key, SendableGet getter, ObjectContainer container) {
-		return System.currentTimeMillis() + COOLDOWN_PERIOD;
-	}
-
-	/**
 	 * Restore keys from the given cooldown queue. Find any keys that are due to be
 	 * restored, restore all requests both persistent and non-persistent for those keys.
 	 * @param queue
