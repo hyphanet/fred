@@ -9,7 +9,6 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
-import freenet.client.async.SplitFileFetcherSegment.MyCooldownTrackerItem;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
@@ -23,7 +22,6 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
 import freenet.support.Logger;
-import freenet.support.RandomGrabArray;
 import freenet.support.TimeUtil;
 
 public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener, HasCooldownTrackerItem {
@@ -118,7 +116,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if((r <= maxRetries) || (maxRetries == -1)) {
 			if(persistent && maxRetries != -1)
 				container.store(this);
-			if(r % RequestScheduler.COOLDOWN_RETRIES == 0) {
+			if(persistent) {
+				container.activate(ctx, 1);
+			}
+			int cooldownRetries = ctx.getCooldownRetries();
+			long cooldownTime = ctx.getCooldownTime();
+			if(cooldownRetries == 0 || r % cooldownRetries == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
 				if(tracker.cooldownWakeupTime > now) {
@@ -127,8 +130,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
 					if(persistent)
 						container.activate(key, 5);
-					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK, realTimeFlag);
-					tracker.cooldownWakeupTime = sched.queueCooldown(key, this, container);
+					tracker.cooldownWakeupTime = now + cooldownTime;
 					context.cooldownTracker.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), persistent, container, context, true);
 					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
 					if(persistent)
