@@ -67,17 +67,22 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 	}
 
 	public void onSendingToNetwork(ClientContext context) {
-		// Ignore
+		innerRoundFinished(context, false);
 	}
 
 	public void onRoundFinished(ClientContext context) {
+		innerRoundFinished(context, true);
+	}
+	
+	private void innerRoundFinished(ClientContext context, boolean finishedRound) {
 		long ed;
 		boolean meta;
 		short codec;
 		byte[] data;
 		boolean wasKnownGood;
 		synchronized(this) {
-			roundFinished = true;
+			if(finishedRound)
+				roundFinished = true;
 			if(lastSent == lastEdition) return;
 			lastSent = ed = lastEdition;
 			meta = lastMetadata;
