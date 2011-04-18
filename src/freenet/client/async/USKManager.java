@@ -572,8 +572,25 @@ public class USKManager {
 		return ret;
 	}
 	
+	/**
+	 * Subscribe to a USK with a custom FetchContext. This is "off the books",
+	 * i.e. the background fetcher isn't started by subscribe().
+	 */
+	public USKRetriever subscribeContentCustom(USK origUSK, USKRetrieverCallback cb, FetchContext fctx, short prio, RequestClient client) {
+		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK);
+		USKCallback toSub = ret;
+		if(logMINOR) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb);
+		USKSparseProxyCallback proxy = new USKSparseProxyCallback(ret, origUSK);
+		ret.setProxy(proxy);
+		toSub = proxy;
+		subscribe(origUSK, toSub, false, client);
+		USKFetcher f = new USKFetcher(origUSK, this, fctx, new USKFetcherWrapper(origUSK, prio, client), 3, true, false, false);
+		ret.setFetcher(f);
+		return ret;
+	}
+	
 	public void unsubscribeContent(USK origUSK, USKRetriever ret, boolean runBackgroundFetch) {
-		unsubscribe(origUSK, ret.getProxy());
+		ret.unsubscribe(this);
 	}
 	
 	// REMOVE: DO NOT Synchronize! ... debugging only.
@@ -623,5 +640,9 @@ public class USKManager {
 
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
+	}
+
+	ClientContext getContext() {
+		return context;
 	}
 }
