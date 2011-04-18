@@ -201,9 +201,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	
 	class DBRAttempt implements GetCompletionCallback {
 		final SimpleSingleFileFetcher fetcher;
-		DBRAttempt(ClientKey key, ClientContext context) {
+		final USKDateHint.Type type;
+		DBRAttempt(ClientKey key, ClientContext context, USKDateHint.Type type) {
 			fetcher = new DBRFetcher(key, ctxDBR.maxUSKRetries, ctxDBR, parent, 
 					this, false, true, 0, null, context, false, isRealTime());
+			this.type = type;
 			if(logMINOR) Logger.minor(this, "Created "+this+" with "+fetcher);
 		}
 		public void onSuccess(StreamGenerator streamGenerator,
@@ -298,7 +300,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				return;
 			}
 			if(logMINOR) Logger.minor(this, "Found DBR hint edition "+hint+" for "+this.fetcher.getKey(null, container).getURI()+" for "+USKFetcher.this);
-			processDBRHint(hint, context);
+			processDBRHint(hint, context, this);
 		}
 		
 		public void onFailure(FetchException e, ClientGetState state,
@@ -551,7 +553,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private int dbrHintsFound = 0;
 	private int dbrHintsStarted = 0;
 
-	public void processDBRHint(long hint, ClientContext context) {
+	public void processDBRHint(long hint, ClientContext context, DBRAttempt dbrAttempt) {
 		// FIXME this is an inefficient first attempt!
 		// We should have a separate registry of latest DBR hint versions,
 		// like those for latest known good and latest slot.
@@ -561,12 +563,25 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		try {
 			updatePriorities();
 			short prio;
+			ArrayList<DBRAttempt> toCancel = null;
 			synchronized(this) {
 				if(cancelled || completed) return;
 				dbrHintsFound++;
 				prio = progressPollPriority;
+				for(Iterator<DBRAttempt> i = dbrAttempts.iterator();i.hasNext();) {
+					DBRAttempt a = i.next();
+					if(dbrAttempt.type.alwaysMorePreciseThan(a.type)) {
+						if(toCancel == null) toCancel = new ArrayList<DBRAttempt>();
+						toCancel.add(a);
+						i.remove();
+					}
+				}
 			}
 			this.uskManager.hintUpdate(this.origUSK.copy(hint).getURI(), context, prio);
+			if(toCancel != null) {
+				for(DBRAttempt a : toCancel)
+					a.cancel(null, context);
+			}
 		} catch (MalformedURLException e) {
 			// Impossible
 		}
@@ -1008,8 +1023,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		ClientSSK[] ssks = date.getRequestURIs(this.origUSK);
 		DBRAttempt[] atts = new DBRAttempt[ssks.length];
 		int x = 0;
-		for(ClientSSK key : ssks) {
-			DBRAttempt att = new DBRAttempt(key, context);
+		for(int i=0;i<ssks.length;i++) {
+			ClientKey key = ssks[i];
+			DBRAttempt att = new DBRAttempt(key, context, USKDateHint.Type.values()[i]);
 			this.dbrAttempts.add(att);
 			atts[x++] = att;
 		}
