@@ -1140,6 +1140,8 @@ public class PeerManager {
 			}
 		}
 		
+		if(recentlyFailed != null && logMINOR)
+			Logger.minor(this, "Count waiting: "+countWaiting);
 		if(recentlyFailed != null && countWaiting >= 3) {
 			// Recently failed is possible.
 			// Route twice, each time ignoring timeout.
@@ -1149,11 +1151,13 @@ public class PeerManager {
 				long firstTime;
 				long secondTime;
 				if((firstTime = entry.getTimeoutTime(first, outgoingHTL, now)) > now) {
+					if(logMINOR) Logger.minor(this, "First choice is past now");
 					HashSet<PeerNode> newRoutedTo = new HashSet<PeerNode>(routedTo);
 					newRoutedTo.add(first);
 					PeerNode second = closerPeer(pn, newRoutedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true);
 					if(second != null) {
 						if((secondTime = entry.getTimeoutTime(first, outgoingHTL, now)) > now) {
+							if(logMINOR) Logger.minor(this, "Second choice is past now");
 							// Recently failed!
 							// Return the time at which this will change.
 							// This is the sooner of the two top nodes' timeouts.
@@ -1163,6 +1167,7 @@ public class PeerManager {
 								// Count the others as well if there are only 3.
 								// If there are more than that they won't matter.
 								until = Math.min(until, soonestTimeoutWakeup);
+								if(logMINOR) Logger.minor(this, "Recently failed: "+(int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now))+"ms");
 								recentlyFailed.fail(countWaiting, (int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now)));
 								return null;
 							}
