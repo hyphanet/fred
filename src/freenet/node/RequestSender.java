@@ -354,9 +354,20 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	return;
             }
 
+            RecentlyFailedReturn r = new RecentlyFailedReturn();
+            
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        key, htl, 0, source == null, realTimeFlag);
+			        2.0, key, htl, 0, source == null, realTimeFlag, r, false);
+            
+            int recentlyFailed = r.recentlyFailed();
+            if(recentlyFailed == 0) {
+            	synchronized(this) {
+            		recentlyFailedTimeLeft = recentlyFailed;
+            	}
+            	finish(RECENTLY_FAILED, null, false);
+            	return;
+            }
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
@@ -1462,11 +1473,12 @@ loadWaiterLoop:
 		timeLeft -= origTimeLeft / 100;
 		
 		//Store the timeleft so that the requestHandler can get at it.
-		recentlyFailedTimeLeft = timeLeft;
+		synchronized(this) {
+			recentlyFailedTimeLeft = timeLeft;
+		}
 		
 			// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
-		// FIXME we need to create the FT entry.
 		if(!wasFork)
 			finish(RECENTLY_FAILED, next, false);
 		else

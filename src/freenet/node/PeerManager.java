@@ -1163,7 +1163,7 @@ public class PeerManager {
 								// Count the others as well if there are only 3.
 								// If there are more than that they won't matter.
 								until = Math.min(until, soonestTimeoutWakeup);
-								recentlyFailed.fail(countWaiting, soonestTimeoutWakeup - now);
+								recentlyFailed.fail(countWaiting, (int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now)));
 								return null;
 							}
 						}
