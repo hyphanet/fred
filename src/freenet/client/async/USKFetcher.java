@@ -435,21 +435,23 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		public short getPriority() {
 			if(backgroundPoll) {
-				if(forever) {
-					if(!everInCooldown) {
-						// Boost the priority initially, so that finding the first edition takes precedence over ongoing polling after we're fairly sure we're not going to find anything.
-						// The ongoing polling keeps the ULPRs up to date so that we will get told quickly, but if we are overloaded we won't be able to keep up regardless.
-						return progressPollPriority;
+				synchronized(this) {
+					if(forever) {
+						if(!everInCooldown) {
+							// Boost the priority initially, so that finding the first edition takes precedence over ongoing polling after we're fairly sure we're not going to find anything.
+							// The ongoing polling keeps the ULPRs up to date so that we will get told quickly, but if we are overloaded we won't be able to keep up regardless.
+							return progressPollPriority;
+						} else {
+							return normalPollPriority;
+						}
 					} else {
+						// If !forever, this is a random-probe.
+						// It's not that important.
 						return normalPollPriority;
 					}
-				} else {
-					// If !forever, this is a random-probe.
-					// It's not that important.
-					return normalPollPriority;
 				}
-			} else
-				return parent.getPriorityClass();
+			}
+			return parent.getPriorityClass();
 		}
 		
 		public void onEnterFiniteCooldown(ClientContext context) {
