@@ -283,7 +283,7 @@ public class RealNodeULPRTest extends RealNodeTest {
 				break;
 			}
 			if(x % nodes.length == 0) {
-				System.err.print("Nodes that don't have the data: ");
+				System.err.print("Nodes that do have the data: ");
 				for(int i=0;i<nodes.length;i++)
 					if(nodes[i].hasKey(fetchKey.getNodeKey(false), true, true)) {
 						System.err.print(i+" ");
