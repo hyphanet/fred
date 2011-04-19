@@ -361,7 +361,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			        2.0, key, htl, 0, source == null, realTimeFlag, r, false);
             
             int recentlyFailed = r.recentlyFailed();
-            if(recentlyFailed == 0) {
+            if(recentlyFailed > 0) {
             	synchronized(this) {
             		recentlyFailedTimeLeft = recentlyFailed;
             	}
