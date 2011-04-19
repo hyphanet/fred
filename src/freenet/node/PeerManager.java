@@ -1168,9 +1168,9 @@ public class PeerManager {
 								// If there are more than that they won't matter.
 								until = Math.min(until, soonestTimeoutWakeup);
 								if(logMINOR) Logger.minor(this, "Recently failed: "+(int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now))+"ms");
-								recentlyFailed.fail(countWaiting, (int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now)));
-								return null;
 							}
+							recentlyFailed.fail(countWaiting, (int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now)));
+							return null;
 						}
 					}
 				}
