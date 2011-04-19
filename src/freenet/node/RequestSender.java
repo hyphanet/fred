@@ -366,6 +366,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		recentlyFailedTimeLeft = recentlyFailed;
             	}
             	finish(RECENTLY_FAILED, null, false);
+                node.failureTable.onFinalFailure(key, null, htl, origHTL, recentlyFailed, source);
             	return;
             }
             
