@@ -210,6 +210,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         	nodes[i].setDispatcherHook(cb);
         }
         
+        int countDNFs = 0;
         for(int i=0;i<nodes.length;i++) {
         	System.out.println("Searching from node "+i);
         	try {
@@ -219,10 +220,16 @@ public class RealNodeULPRTest extends RealNodeTest {
         	} catch (LowLevelGetException e) {
         		switch(e.code) {
         		case LowLevelGetException.DATA_NOT_FOUND:
+        			countDNFs++;
         		case LowLevelGetException.ROUTE_NOT_FOUND:
         			// Expected
         			System.err.println("Node "+i%nodes.length+" : key not found (expected behaviour)");
         			continue;
+        		case LowLevelGetException.RECENTLY_FAILED:
+        			if(countDNFs >= 3) {
+        				System.err.println("Node "+i%nodes.length+" : recently failed (expected behaviour on later tests)");
+        				continue;
+        			}
         		default:
         			System.err.println("Node "+i%nodes.length+" : UNEXPECTED ERROR: "+e.toString());
         			System.exit(EXIT_UNKNOWN_ERROR_CHECKING_KEY_NOT_EXIST);
