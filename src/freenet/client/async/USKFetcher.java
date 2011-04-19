@@ -628,7 +628,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	private void notifyFinishedForNow(ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Notifying finished for now on "+this+" for "+origUSK);
+		if(logMINOR) Logger.minor(this, "Notifying finished for now on "+this+" for "+origUSK+(this.realTimeFlag?" (realtime)" : " (bulk)"));
 		USKCallback[] toCheck;
 		synchronized(this) {
 			if(cancelled || completed) return;
