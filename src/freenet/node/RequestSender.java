@@ -334,8 +334,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             if(htl == 0) {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
-                finish(DATA_NOT_FOUND, null, false);
                 node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.REJECT_TIME, source);
+                finish(DATA_NOT_FOUND, null, false);
                 return;
             }
             
@@ -538,8 +538,8 @@ loadWaiterLoop:
 				// Fatal timeout
 				waitingFor.localRejectedOverload("FatalTimeout", realTimeFlag);
 				forwardRejectedOverload();
-				finish(TIMED_OUT, waitingFor, false);
 				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.REJECT_TIME, source);
+				finish(TIMED_OUT, waitingFor, false);
 			}
     		
 			// Wait for second timeout.
@@ -1312,11 +1312,11 @@ loadWaiterLoop:
     					verifyAndCommit(waiter.headers, data);
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
+    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     					if(!wasFork)
     						finish(VERIFY_FAILURE, sentTo, false);
     					else
     						origTag.removeRoutingTo(sentTo);
-    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     					return;
     				}
     				finish(SUCCESS, sentTo, false);
@@ -1347,9 +1347,9 @@ loadWaiterLoop:
     				// We do an ordinary backoff in all cases.
     				if(!prb.abortedLocally())
     					sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason(), realTimeFlag);
+    				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     				if(!wasFork)
     					finish(TRANSFER_FAILED, sentTo, false);
-    				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     				int reason = e.getReason();
     				boolean timeout = (!br.senderAborted()) &&
     				(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
@@ -1412,11 +1412,11 @@ loadWaiterLoop:
 
 	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
 		next.successNotOverload(realTimeFlag);
+		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
 		if(!wasFork)
 			finish(DATA_NOT_FOUND, next, false);
 		else
 			this.origTag.removeRoutingTo(next);
-		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 
 	private void handleRecentlyFailed(Message msg, boolean wasFork, PeerNode next) {
@@ -1480,12 +1480,12 @@ loadWaiterLoop:
 		
 			// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
+		node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, source);
 		if(!wasFork)
 			finish(RECENTLY_FAILED, next, false);
 		else
 			this.origTag.removeRoutingTo(next);
 		
-			node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, source);
 	}
 
 	/**

@@ -122,6 +122,12 @@ public class FailureTable implements OOMHook {
 		entry.failedTo(routedTo, timeout, now, htl);
 	}
 	
+	/** When a request finishes with a failure, record who generated the failure
+	 * so we don't route to them next time, and also who originated it so we can
+	 * send the data back to them if we find them.
+	 * ORDERING: You should generally call this *before* calling finish() to 
+	 * avoid problems.
+	 */
 	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int timeout, PeerNode requestor) {
 		if(timeout < -1 || timeout > REJECT_TIME) {
 			// -1 is a valid no-op.
