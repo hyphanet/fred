@@ -105,10 +105,15 @@ public class FailureTable implements OOMHook {
 	 * @param htl
 	 * @param timeout
 	 */
-	public void onFailed(Key key, PeerNode routedTo, short htl, int timeout) {
-		if(timeout < 0 || timeout > REJECT_TIME) {
-			Logger.error(this, "Bogus timeout "+timeout, new Exception("error"));
-			timeout = Math.max(Math.min(REJECT_TIME, timeout), 0);
+	public void onFailed(Key key, PeerNode routedTo, short htl, int rfTimeout, int ftTimeout) {
+		if(ftTimeout < 0 || ftTimeout > REJECT_TIME) {
+			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
+			ftTimeout = Math.max(Math.min(REJECT_TIME, ftTimeout), 0);
+		}
+		if(rfTimeout < 0 || rfTimeout > REJECT_TIME) {
+			if(rfTimeout > 0)
+				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
+			rfTimeout = Math.max(Math.min(REJECT_TIME, rfTimeout), 0);
 		}
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
@@ -121,7 +126,7 @@ public class FailureTable implements OOMHook {
 			// LOCKING: Taking PeerNode then FT/FTE will deadlock.
 			// However this should not happen.
 			// We have to do this inside the lock to prevent race condition with the cleaner causing us to get dropped because isEmpty() before updating.
-			entry.failedTo(routedTo, timeout, now, htl);
+			entry.failedTo(routedTo, rfTimeout, ftTimeout, now, htl);
 
 			trimEntries(now);
 		}
@@ -134,11 +139,16 @@ public class FailureTable implements OOMHook {
 	 * avoid problems.
 	 * LOCKING: NEVER synchronize on PeerNode before calling any FailureTable method.
 	 */
-	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int timeout, PeerNode requestor) {
-		if(timeout < -1 || timeout > REJECT_TIME) {
+	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int rfTimeout, int ftTimeout, PeerNode requestor) {
+		if(ftTimeout < -1 || ftTimeout > REJECT_TIME) {
 			// -1 is a valid no-op.
-			Logger.error(this, "Bogus timeout "+timeout, new Exception("error"));
-			timeout = Math.max(Math.min(REJECT_TIME, timeout), -1);
+			Logger.error(this, "Bogus timeout "+ftTimeout, new Exception("error"));
+			ftTimeout = Math.max(Math.min(REJECT_TIME, ftTimeout), 0);
+		}
+		if(rfTimeout < 0 || rfTimeout > REJECT_TIME) {
+			if(rfTimeout > 0)
+				Logger.error(this, "Bogus timeout "+rfTimeout, new Exception("error"));
+			rfTimeout = Math.max(Math.min(REJECT_TIME, rfTimeout), 0);
 		}
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
@@ -154,7 +164,7 @@ public class FailureTable implements OOMHook {
 			// We have to do this inside the lock to prevent race condition with the cleaner causing us to get dropped because isEmpty() before updating.
 			
 			if(routedTo != null)
-				entry.failedTo(routedTo, timeout, now, htl);
+				entry.failedTo(routedTo, rfTimeout, ftTimeout, now, htl);
 			if(requestor != null)
 				entry.addRequestor(requestor, now, origHTL);
 			

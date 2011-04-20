@@ -53,8 +53,15 @@ class FailureTableEntry implements TimedOutNodesList {
 	double[] requestedLocs;
 	long[] requestedBootIDs;
 	long[] requestedTimes;
-	/** Timeouts for each node */
-	long[] requestedTimeouts;
+	/** Timeouts for each node for purposes of RecentlyFailed. We accept what
+	 * they say, subject to an upper limit, because we MUST NOT suppress too
+	 * many requests, as that could lead to a self-sustaining key blocking. */
+	long[] requestedTimeoutsRF;
+	/** Timeouts for each node for purposes of per-node failure tables. We use
+	 * our own estimates, based on time elapsed, for most failure modes; a fixed
+	 * period for DNF and RecentlyFailed. */
+	long[] requestedTimeoutsFT;
+	
 	short[] requestedTimeoutHTLs;
 	
 	private static volatile boolean logMINOR;
@@ -93,20 +100,28 @@ class FailureTableEntry implements TimedOutNodesList {
 		requestedLocs = EMPTY_DOUBLE_ARRAY;
 		requestedBootIDs = EMPTY_LONG_ARRAY;
 		requestedTimes = EMPTY_LONG_ARRAY;
-		requestedTimeouts = EMPTY_LONG_ARRAY;
+		requestedTimeoutsRF = EMPTY_LONG_ARRAY;
+		requestedTimeoutsFT = EMPTY_LONG_ARRAY;
 		requestedTimeoutHTLs = EMPTY_SHORT_ARRAY;
 	}
 	
-	public synchronized void failedTo(PeerNode routedTo, int timeout, long now, short htl) {
+	public synchronized void failedTo(PeerNode routedTo, int rfTimeout, int ftTimeout, long now, short htl) {
 		if(logMINOR) {
-			Logger.minor(this, "Failed sending request to "+routedTo.shortToString()+" : timeout "+timeout);
+			Logger.minor(this, "Failed sending request to "+routedTo.shortToString()+" : timeout "+rfTimeout+" / "+ftTimeout);
 		}
 		int idx = addRequestedFrom(routedTo, htl, now);
-		long curTimeoutTime = requestedTimeouts[idx];
-		long newTimeoutTime = now +  timeout;
+		long curTimeoutTime = requestedTimeoutsRF[idx];
+		long newTimeoutTime = now + rfTimeout;
 		// FIXME htl???
 		if(newTimeoutTime > curTimeoutTime) {
-			requestedTimeouts[idx] = newTimeoutTime;
+			requestedTimeoutsRF[idx] = newTimeoutTime;
+			requestedTimeoutHTLs[idx] = htl;
+		}
+		curTimeoutTime = requestedTimeoutsFT[idx];
+		newTimeoutTime = now +  ftTimeout;
+		// FIXME htl???
+		if(newTimeoutTime > curTimeoutTime) {
+			requestedTimeoutsFT[idx] = newTimeoutTime;
 			requestedTimeoutHTLs[idx] = htl;
 		}
 	}
@@ -224,7 +239,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		int ret = -1;
 		for(int i=0;i<requestedNodes.length;i++) {
 			PeerNode got = requestedNodes[i] == null ? null : requestedNodes[i].get();
-			if(got == requestedFrom && (requestedTimeouts[i] == -1 || requestedTimeoutHTLs[i] == htl)) {
+			if(got == requestedFrom && (requestedTimeoutsRF[i] == -1 || requestedTimeoutsFT[i] == -1 || requestedTimeoutHTLs[i] == htl)) {
 				includedAlready = true;
 				requestedLocs[i] = requestedFrom.getLocation();
 				requestedBootIDs[i] = requestedFrom.getBootID();
@@ -249,7 +264,8 @@ class FailureTableEntry implements TimedOutNodesList {
 					requestedLocs[i] = requestedFrom.getLocation();
 					requestedBootIDs[i] = requestedFrom.getBootID();
 					requestedTimes[i] = now;
-					requestedTimeouts[i] = -1;
+					requestedTimeoutsRF[i] = -1;
+					requestedTimeoutsFT[i] = -1;
 					requestedTimeoutHTLs[i] = (short) -1;
 					return i;
 				}
@@ -260,7 +276,8 @@ class FailureTableEntry implements TimedOutNodesList {
 		double[] newRequestedLocs = new double[requestedNodes.length+notIncluded-nulls];
 		long[] newRequestedBootIDs = new long[requestedNodes.length+notIncluded-nulls];
 		long[] newRequestedTimes = new long[requestedNodes.length+notIncluded-nulls];
-		long[] newRequestedTimeouts = new long[requestedNodes.length+notIncluded-nulls];
+		long[] newRequestedTimeoutsFT = new long[requestedNodes.length+notIncluded-nulls];
+		long[] newRequestedTimeoutsRF = new long[requestedNodes.length+notIncluded-nulls];
 		short[] newRequestedTimeoutHTLs = new short[requestedNodes.length+notIncluded-nulls];
 
 		int toIndex = 0;
@@ -273,7 +290,8 @@ class FailureTableEntry implements TimedOutNodesList {
 			newRequestedTimes[toIndex] = requestedTimes[i];
 			newRequestedBootIDs[toIndex] = requestedBootIDs[i];
 			newRequestedLocs[toIndex] = requestedLocs[i];
-			newRequestedTimeouts[toIndex] = requestedTimeouts[i];
+			newRequestedTimeoutsFT[toIndex] = requestedTimeoutsFT[i];
+			newRequestedTimeoutsRF[toIndex] = requestedTimeoutsRF[i];
 			newRequestedTimeoutHTLs[toIndex] = requestedTimeoutHTLs[i];
 			toIndex++;
 		}
@@ -284,7 +302,8 @@ class FailureTableEntry implements TimedOutNodesList {
 			newRequestedTimes[toIndex] = now;
 			newRequestedBootIDs[toIndex] = requestedFrom.getBootID();
 			newRequestedLocs[toIndex] = requestedFrom.getLocation();
-			newRequestedTimeouts[toIndex] = -1;
+			newRequestedTimeoutsFT[toIndex] = -1;
+			newRequestedTimeoutsRF[toIndex] = -1;
 			newRequestedTimeoutHTLs[toIndex] = (short) -1;
 			ret = toIndex;
 			toIndex++;
@@ -297,26 +316,30 @@ class FailureTableEntry implements TimedOutNodesList {
 			double[] newNewRequestedLocs = new double[toIndex];
 			long[] newNewRequestedBootIDs = new long[toIndex];
 			long[] newNewRequestedTimes = new long[toIndex];
-			long[] newNewRequestedTimeouts = new long[toIndex];
+			long[] newNewRequestedTimeoutsFT = new long[toIndex];
+			long[] newNewRequestedTimeoutsRF = new long[toIndex];
 			short[] newNewRequestedTimeoutHTLs = new short[toIndex];
 			System.arraycopy(newRequestedNodes, 0, newNewRequestedNodes, 0, toIndex);
 			System.arraycopy(newRequestedLocs, 0, newNewRequestedLocs, 0, toIndex);
 			System.arraycopy(newRequestedBootIDs, 0, newNewRequestedBootIDs, 0, toIndex);
 			System.arraycopy(newRequestedTimes, 0, newNewRequestedTimes, 0, toIndex);
-			System.arraycopy(newRequestedTimeouts, 0, newNewRequestedTimeouts, 0, toIndex);
+			System.arraycopy(newRequestedTimeoutsRF, 0, newNewRequestedTimeoutsRF, 0, toIndex);
+			System.arraycopy(newRequestedTimeoutsFT, 0, newNewRequestedTimeoutsFT, 0, toIndex);
 			System.arraycopy(newRequestedTimeoutHTLs, 0, newNewRequestedTimeoutHTLs, 0, toIndex);
 			newRequestedNodes = newNewRequestedNodes;
 			newRequestedLocs = newNewRequestedLocs;
 			newRequestedBootIDs = newNewRequestedBootIDs;
 			newRequestedTimes = newNewRequestedTimes;
-			newRequestedTimeouts = newNewRequestedTimeouts;
+			newRequestedTimeoutsRF = newNewRequestedTimeoutsRF;
+			newRequestedTimeoutsFT = newNewRequestedTimeoutsFT;
 			newRequestedTimeoutHTLs = newNewRequestedTimeoutHTLs;
 		}
 		requestedNodes = newRequestedNodes;
 		requestedLocs = newRequestedLocs;
 		requestedBootIDs = newRequestedBootIDs;
 		requestedTimes = newRequestedTimes;
-		requestedTimeouts = newRequestedTimeouts;
+		requestedTimeoutsRF = newRequestedTimeoutsRF;
+		requestedTimeoutsFT = newRequestedTimeoutsFT;
 		requestedTimeoutHTLs = newRequestedTimeoutHTLs;
 		
 		return ret;
@@ -439,7 +462,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		}
 		if(!anyValid) {
 			requestedNodes = EMPTY_WEAK_REFERENCE;
-			requestedTimes = requestedBootIDs = requestedTimeouts = EMPTY_LONG_ARRAY;
+			requestedTimes = requestedBootIDs = requestedTimeoutsRF = requestedTimeoutsFT = EMPTY_LONG_ARRAY;
 			requestedTimeoutHTLs =EMPTY_SHORT_ARRAY;
 		}
 		return ret;
@@ -454,13 +477,13 @@ class FailureTableEntry implements TimedOutNodesList {
 	/** Get the timeout time for the given peer, taking HTL into account.
 	 * If there was a timeout at HTL 1, and we are now sending a request at
 	 * HTL 2, we ignore the timeout. */
-	public synchronized long getTimeoutTime(PeerNode peer, short htl, long now) {
+	public synchronized long getTimeoutTime(PeerNode peer, short htl, long now, boolean forPerNodeFailureTables) {
 		long timeout = -1;
 		for(int i=0;i<requestedNodes.length;i++) {
 			WeakReference<PeerNode> ref = requestedNodes[i];
 			if(ref != null && ref.get() == peer) {
 				if(requestedTimeoutHTLs[i] >= htl) {
-					long thisTimeout = requestedTimeouts[i];
+					long thisTimeout = forPerNodeFailureTables ? requestedTimeoutsFT[i] : requestedTimeoutsRF[i];
 					if(thisTimeout > timeout && thisTimeout > now)
 						timeout = thisTimeout;
 				}
@@ -532,11 +555,13 @@ class FailureTableEntry implements TimedOutNodesList {
 			requestedTimes[x] = requestedTimes[i];
 			requestedBootIDs[x] = requestedBootIDs[i];
 			requestedLocs[x] = requestedLocs[i];
-			if(now < requestedTimeouts[x]) { 
-				requestedTimeouts[x] = requestedTimeouts[i];
+			if(now < requestedTimeoutsRF[x] || now < requestedTimeoutsFT[x]) { 
+				requestedTimeoutsRF[x] = requestedTimeoutsRF[i];
+				requestedTimeoutsFT[x] = requestedTimeoutsFT[i];
 				requestedTimeoutHTLs[x] = requestedTimeoutHTLs[i];
 			} else {
-				requestedTimeouts[x] = -1;
+				requestedTimeoutsRF[x] = -1;
+				requestedTimeoutsFT[x] = -1;
 				requestedTimeoutHTLs[x] = (short)-1;
 			}
 			x++;
@@ -547,19 +572,22 @@ class FailureTableEntry implements TimedOutNodesList {
 			long[] newRequestedTimes = new long[x];
 			long[] newRequestedBootIDs = new long[x];
 			double[] newRequestedLocs = new double[x];
-			long[] newRequestedTimeouts = new long[x];
+			long[] newRequestedTimeoutsRF = new long[x];
+			long[] newRequestedTimeoutsFT = new long[x];
 			short[] newRequestedTimeoutHTLs = new short[x];
 			System.arraycopy(requestedNodes, 0, newRequestedNodes, 0, x);
 			System.arraycopy(requestedTimes, 0, newRequestedTimes, 0, x);
 			System.arraycopy(requestedBootIDs, 0, newRequestedBootIDs, 0, x);
 			System.arraycopy(requestedLocs, 0, newRequestedLocs, 0, x);
-			System.arraycopy(requestedTimeouts, 0, newRequestedTimeouts, 0, x);
+			System.arraycopy(requestedTimeoutsRF, 0, newRequestedTimeoutsRF, 0, x);
+			System.arraycopy(requestedTimeoutsFT, 0, newRequestedTimeoutsFT, 0, x);
 			System.arraycopy(requestedTimeoutHTLs, 0, newRequestedTimeoutHTLs, 0, x);
 			requestedNodes = newRequestedNodes;
 			requestedTimes = newRequestedTimes;
 			requestedBootIDs = newRequestedBootIDs;
 			requestedLocs = newRequestedLocs;
-			requestedTimeouts = newRequestedTimeouts;
+			requestedTimeoutsRF = newRequestedTimeoutsRF;
+			requestedTimeoutsFT = newRequestedTimeoutsFT;
 			requestedTimeoutHTLs = newRequestedTimeoutHTLs;
 		}
 		return empty;
