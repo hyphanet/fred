@@ -42,8 +42,13 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	final FetchContext ctx;
 	final USKRetrieverCallback cb;
 	final USK origUSK;
-	/** The USKCallback that is actually subscribed */
+	// In wierd 
+	/** The USKCallback that is actually subscribed. This is used when we may
+	 * be going through a USKSparseProxyCallback. */
 	private USKCallback proxy;
+	/** Alternatively, we may be driving a USKFetcher directly. This happens when
+	 * the client subscribes with a custom FetchContext. */
+	private USKFetcher fetcher;
 
         private static volatile boolean logMINOR;
 	static {
@@ -270,6 +275,27 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	
 	synchronized USKCallback getProxy() {
 		return proxy;
+	}
+	
+	synchronized void setFetcher(USKFetcher f) {
+		fetcher = f;
+	}
+	
+	synchronized USKFetcher getFetcher() {
+		return fetcher;
+	}
+
+	public void unsubscribe(USKManager manager) {
+		USKFetcher f;
+		USKCallback p;
+		synchronized(this) {
+			f = fetcher;
+			p = proxy;
+		}
+		if(f != null)
+			f.cancel(null, manager.getContext());
+		if(p != null)
+			manager.unsubscribe(origUSK, p);
 	}
 	
 }

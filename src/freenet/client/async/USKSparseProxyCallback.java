@@ -22,6 +22,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 	private short lastCodec;
 	private byte[] lastData;
 	private boolean lastWasKnownGoodToo;
+	private boolean roundFinished;
 	
     private static volatile boolean logMINOR;
 	static {
@@ -40,17 +41,21 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 			ClientContext context, boolean metadata, short codec, byte[] data,
 			boolean newKnownGood, boolean newSlotToo) {
 		synchronized(this) {
-			if(l < lastEdition) return;
-			else if(l == lastEdition) {
+			if(l < lastEdition) {
+				if(!roundFinished) return;
+				if(!newKnownGood) return;
+			} else if(l == lastEdition) {
 				if(newKnownGood) lastWasKnownGoodToo = true;
-				return;
+			} else {
+				lastEdition = l;
+				lastMetadata = metadata;
+				lastCodec = codec;
+				lastData = data;
+				lastWasKnownGoodToo = newKnownGood;
 			}
-			lastEdition = l;
-			lastMetadata = metadata;
-			lastCodec = codec;
-			lastData = data;
-			lastWasKnownGoodToo = newKnownGood;
+			if(!roundFinished) return;
 		}
+		target.onFoundEdition(l, key, null, context, metadata, codec, data, newKnownGood, newSlotToo);
 	}
 
 	public short getPollingPriorityNormal() {
@@ -62,16 +67,22 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 	}
 
 	public void onSendingToNetwork(ClientContext context) {
-		// Ignore
+		innerRoundFinished(context, false);
 	}
 
 	public void onRoundFinished(ClientContext context) {
+		innerRoundFinished(context, true);
+	}
+	
+	private void innerRoundFinished(ClientContext context, boolean finishedRound) {
 		long ed;
 		boolean meta;
 		short codec;
 		byte[] data;
 		boolean wasKnownGood;
 		synchronized(this) {
+			if(finishedRound)
+				roundFinished = true;
 			if(lastSent == lastEdition) return;
 			lastSent = ed = lastEdition;
 			meta = lastMetadata;
@@ -87,6 +98,7 @@ public class USKSparseProxyCallback implements USKProgressCallback {
 			data = null;
 			wasKnownGood = false;
 		}
+		if(ed == -1) return;
 		target.onFoundEdition(ed, key, null, context, meta, codec, data, wasKnownGood, wasKnownGood);
 	}
 

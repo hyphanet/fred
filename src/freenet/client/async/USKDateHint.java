@@ -17,7 +17,19 @@ public class USKDateHint {
 		YEAR,
 		MONTH,
 		DAY,
-		WEEK
+		WEEK;
+
+		public boolean alwaysMorePreciseThan(Type type) {
+			if(this.equals(type)) return false;
+			if(this.equals(DAY)) { // Day beats everything.
+				return true;
+			} else if(this.equals(MONTH)) { // Month and week don't beat each other as they sometimes overlap.
+				return type.equals(YEAR);
+			} else if(this.equals(WEEK)) {
+				return type.equals(YEAR);
+			} else // if(this.equals(YEAR)) - everything beats year
+				return false;
+		}
 	}
 	
 	private GregorianCalendar cal;
