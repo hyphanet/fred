@@ -514,15 +514,18 @@ public class PproxyToadlet extends Toadlet {
 		
 		HTMLNode input = addOfficialForm.addChild("input", new String[] { "type", "name", "value" },
 				new String[] { "radio", "pluginSource", "freenet" });
-		if(!isLowSecLevel)
+		boolean testnet = node.isTestnetEnabled();
+		if(testnet || !isLowSecLevel)
 			input.addAttribute("checked", "true");
 		addOfficialForm.addChild("#", l10n("pluginSourceFreenet"));
-		addOfficialForm.addChild("br");
-		input = addOfficialForm.addChild("input", new String[] { "type", "name", "value" },
-				new String[] { "radio", "pluginSource", "https" });
-		if(isLowSecLevel)
-			input.addAttribute("checked", "true");
-		addOfficialForm.addChild("#", l10n("pluginSourceHTTPS"));
+		if(!testnet) {
+			addOfficialForm.addChild("br");
+			input = addOfficialForm.addChild("input", new String[] { "type", "name", "value" },
+					new String[] { "radio", "pluginSource", "https" });
+			if(isLowSecLevel)
+				input.addAttribute("checked", "true");
+			addOfficialForm.addChild("#", l10n("pluginSourceHTTPS"));
+		}
 		addOfficialForm.addChild("#", " ");
 		if(node.getOpennet() == null)
 			addOfficialForm.addChild("b").addChild("font", "color", "red", l10n("pluginSourceHTTPSWarningDarknet"));
