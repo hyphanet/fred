@@ -362,7 +362,11 @@ public class FailureTable implements OOMHook {
 			}
 			return;
 		}
-		if(entry.isEmpty(now)) entriesByKey.removeKey(key);
+		if(entry.isEmpty(now)) {
+			synchronized(this) {
+				entriesByKey.removeKey(key);
+			}
+		}
 		
 		// Valid offer.
 		
