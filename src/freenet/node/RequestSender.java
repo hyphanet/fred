@@ -1490,21 +1490,14 @@ loadWaiterLoop:
 			recentlyFailedTimeLeft = timeLeft;
 		}
 		
-		/** FIXME SECURITY:
-		 * A node can return 0, or it can return a value it knows will be reduced
-		 * to 0 by the chain of nodes up to it. In doing so, it kills the request,
-		 * just like with a DNF, but with a DNF it would have not been routed to
-		 * for 10 minutes after. If it returns a low timeout, it can kill the 
-		 * request without jeopardising the same key being routed to it again!
-		 * 
-		 * We need to separate the timeouts for per-node failure tables and for
-		 * RecentlyFailed. For RecentlyFailed, what the node says goes. However,
-		 * for per-node failure tables, any fatal error should earn a 10 minute
-		 * timeout.
-		 */
-		
 			// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
+		// FIXME reconsider the exact numbers here.
+		// We need to ensure that a node can't just kill requests by returning RecentlyFailed with timeout = 0.
+		// However, after the period has elapsed, we may reroute, in which case it might be good to go to the same node.
+		// We probably want to keep track of previous failures and explicitly detect malicious behaviour, rather than always using the maximum?
+		// Or maybe we could just do max(timeLeft, *some reasonable threshold*) ????
+		// In which case we can get rid of the threshold above??? Which we should do anyway???
 		node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, FailureTable.REJECT_TIME, source);
 		if(!wasFork)
 			finish(RECENTLY_FAILED, next, false);
