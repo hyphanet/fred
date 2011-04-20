@@ -119,6 +119,10 @@ public class FailureTable implements OOMHook {
 			entriesByKey.push(key, entry);
 			trimEntries(now);
 		}
+		// FIXME LOCKING:
+		// If we call failedTo() etc inside the lock, we need to deal with nested
+		// locking, because entry locks and then calls PeerNode.getBootID() and getLocation().
+		// However, if we call it outside the lock then it could get cleaned because of isEmpty().
 		entry.failedTo(routedTo, timeout, now, htl);
 	}
 	
@@ -145,6 +149,10 @@ public class FailureTable implements OOMHook {
 
 			trimEntries(now);
 		}
+		// FIXME LOCKING:
+		// If we call failedTo() etc inside the lock, we need to deal with nested
+		// locking, because entry locks and then calls PeerNode.getBootID() and getLocation().
+		// However, if we call it outside the lock then it could get cleaned because of isEmpty().
 		if(routedTo != null)
 			entry.failedTo(routedTo, timeout, now, htl);
 		if(requestor != null)
