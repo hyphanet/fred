@@ -246,6 +246,7 @@ public class FailureTable implements OOMHook {
 	 * near future). If there are nodes waiting for it, we will offer it to them.
 	 */
 	public void onFound(KeyBlock block) {
+		if(logMINOR) Logger.minor(this, "Found "+block.getKey());
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		Key key = block.getKey();
 		if(key == null) throw new NullPointerException();
@@ -256,6 +257,7 @@ public class FailureTable implements OOMHook {
 			entriesByKey.removeKey(key);
 			blockOfferListByKey.removeKey(key);
 		}
+		if(logMINOR) Logger.minor(this, "Offering key");
 		if(!node.enableULPRDataPropagation) return;
 		entry.offer();
 	}
