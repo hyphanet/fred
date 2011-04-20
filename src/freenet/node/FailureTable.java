@@ -253,7 +253,10 @@ public class FailureTable implements OOMHook {
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = entriesByKey.get(key);
-			if(entry == null) return; // Nobody cares
+			if(entry == null) {
+				if(logMINOR) Logger.minor(this, "Key not found in entriesByKey");
+				return; // Nobody cares
+			}
 			entriesByKey.removeKey(key);
 			blockOfferListByKey.removeKey(key);
 		}
