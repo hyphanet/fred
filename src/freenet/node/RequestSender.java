@@ -1461,6 +1461,8 @@ loadWaiterLoop:
 		// Subtract 1% for good measure / to compensate for dodgy clocks
 		timeLeft -= origTimeLeft / 100;
 		
+		if(timeLeft < 0) timeLeft = 0;
+		
 		//Store the timeleft so that the requestHandler can get at it.
 		synchronized(this) {
 			recentlyFailedTimeLeft = timeLeft;
