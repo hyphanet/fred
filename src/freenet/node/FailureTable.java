@@ -643,6 +643,7 @@ public class FailureTable implements OOMHook {
 					synchronized(FailureTable.this) {
 						synchronized(entries[i]) {
 						if(entries[i].isEmpty()) {
+							if(logDEBUG) Logger.debug(this, "Removing entry for "+entries[i].key);
 							entriesByKey.removeKey(entries[i].key);
 						}
 						}
