@@ -223,6 +223,9 @@ public class RealNodeULPRTest extends RealNodeTest {
         			// Expected
         			System.err.println("Node "+i%nodes.length+" : key not found (expected behaviour)");
         			continue;
+        		case LowLevelGetException.RECENTLY_FAILED:
+       				System.err.println("Node "+i%nodes.length+" : recently failed (expected behaviour on later tests)");
+       				continue;
         		default:
         			System.err.println("Node "+i%nodes.length+" : UNEXPECTED ERROR: "+e.toString());
         			System.exit(EXIT_UNKNOWN_ERROR_CHECKING_KEY_NOT_EXIST);
@@ -246,8 +249,10 @@ public class RealNodeULPRTest extends RealNodeTest {
         
         // Store the key to ONE node.
         
+        Logger.normal(RealNodeULPRTest.class, "Inserting to node "+(nodes.length-1));
 		long tStart = System.currentTimeMillis();
 		nodes[nodes.length-1].store(block, false, false, true, false); // Write to datastore
+        Logger.normal(RealNodeULPRTest.class, "Inserted to node "+(nodes.length-1));
 		
 		int x = -1;
 		while(true) {
@@ -276,7 +281,7 @@ public class RealNodeULPRTest extends RealNodeTest {
 				break;
 			}
 			if(x % nodes.length == 0) {
-				System.err.print("Nodes that don't have the data: ");
+				System.err.print("Nodes that do have the data: ");
 				for(int i=0;i<nodes.length;i++)
 					if(nodes[i].hasKey(fetchKey.getNodeKey(false), true, true)) {
 						System.err.print(i+" ");

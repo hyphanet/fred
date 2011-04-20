@@ -876,7 +876,7 @@ public class PeerManager {
 
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
 	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime) {
-		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime);
+		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, false);
 	}
 
 	/**
@@ -893,9 +893,20 @@ public class PeerManager {
 	 * @param isLocal We don't just check pn == null because in some cases pn can be null here: If an insert is forked, for
 	 * a remote requests, we can route back to the originator, so we set pn to null. Whereas for stats we want to know 
 	 * accurately whether this was originated remotely.
+	 * @param recentlyFailed If non-null, we should check for recently failed: If we have routed to, and got
+	 * a failed response from, and are still connected to and within the timeout for, our top two routing choices,
+	 * *and* the same is true of at least 3 nodes, we fill in this object and return null. This will cause a
+	 * RecentlyFailed message to be returned to the originator, allowing them to retry in a little while. Note that the
+	 * scheduler is not clever enough to retry immediately when that timeout elapses, and even if it was, it probably
+	 * wouldn't be a good idea due to introducing a round-trip-to-request-originator; FIXME consider this.
 	 */
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
-	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime) {
+	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime,
+	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout) {
+		
+		int countWaiting = 0;
+		long soonestTimeoutWakeup = Long.MAX_VALUE;
+		
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = connectedPeers;
@@ -995,9 +1006,13 @@ public class PeerManager {
 			}
 			
 			long timeout = -1;
-			if(entry != null)
+			if(entry != null && !ignoreTimeout) {
 				timeout = entry.getTimeoutTime(p, outgoingHTL, now);
+				if(timeout > now)
+					soonestTimeoutWakeup = Math.min(soonestTimeoutWakeup, timeout);
+			}
 			boolean timedOut = timeout > now;
+			if(timedOut) countWaiting++;
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
 			double loc = p.getLocation();
 			boolean direct = true;
@@ -1123,6 +1138,43 @@ public class PeerManager {
 				best = leastRecentlyTimedOutBackedOff;
 				if(logMINOR)
 					Logger.minor(this, "Using least recently failed in-timeout-period backed-off peer for key: " + best.shortToString() + " for " + key);
+			}
+		}
+		
+		if(recentlyFailed != null && logMINOR)
+			Logger.minor(this, "Count waiting: "+countWaiting);
+		if(recentlyFailed != null && countWaiting >= 3) {
+			// Recently failed is possible.
+			// Route twice, each time ignoring timeout.
+			// If both return a node which is in timeout, we should do RecentlyFailed.
+			PeerNode first = closerPeer(pn, routedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true);
+			if(first != null) {
+				long firstTime;
+				long secondTime;
+				if((firstTime = entry.getTimeoutTime(first, outgoingHTL, now)) > now) {
+					if(logMINOR) Logger.minor(this, "First choice is past now");
+					HashSet<PeerNode> newRoutedTo = new HashSet<PeerNode>(routedTo);
+					newRoutedTo.add(first);
+					PeerNode second = closerPeer(pn, newRoutedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true);
+					if(second != null) {
+						if((secondTime = entry.getTimeoutTime(first, outgoingHTL, now)) > now) {
+							if(logMINOR) Logger.minor(this, "Second choice is past now");
+							// Recently failed!
+							// Return the time at which this will change.
+							// This is the sooner of the two top nodes' timeouts.
+							// We also take into account the sooner of any timed out node, IF there are exactly 3 nodes waiting.
+							long until = Math.min(secondTime, firstTime);
+							if(countWaiting == 3) {
+								// Count the others as well if there are only 3.
+								// If there are more than that they won't matter.
+								until = Math.min(until, soonestTimeoutWakeup);
+								if(logMINOR) Logger.minor(this, "Recently failed: "+(int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now))+"ms");
+							}
+							recentlyFailed.fail(countWaiting, (int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now)));
+							return null;
+						}
+					}
+				}
 			}
 		}
 

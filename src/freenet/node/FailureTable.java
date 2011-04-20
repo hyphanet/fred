@@ -42,6 +42,7 @@ import freenet.support.io.NativeThread;
  * Implements Ultra-Lightweight Persistent Requests: Refuse requests for a key for 10 minutes after it's DNFed 
  * (UNLESS we find a better route for the request), and when it is found, offer it to those who've asked for it
  * in the last hour.
+ * LOCKING: Do not lock PeerNode before FailureTable/FailureTableEntry.
  * @author toad
  */
 public class FailureTable implements OOMHook {
@@ -117,11 +118,22 @@ public class FailureTable implements OOMHook {
 			if(entry == null)
 				entry = new FailureTableEntry(key);
 			entriesByKey.push(key, entry);
+			// LOCKING: Taking PeerNode then FT/FTE will deadlock.
+			// However this should not happen.
+			// We have to do this inside the lock to prevent race condition with the cleaner causing us to get dropped because isEmpty() before updating.
+			entry.failedTo(routedTo, timeout, now, htl);
+
 			trimEntries(now);
 		}
-		entry.failedTo(routedTo, timeout, now, htl);
 	}
 	
+	/** When a request finishes with a failure, record who generated the failure
+	 * so we don't route to them next time, and also who originated it so we can
+	 * send the data back to them if we find them.
+	 * ORDERING: You should generally call this *before* calling finish() to 
+	 * avoid problems.
+	 * LOCKING: NEVER synchronize on PeerNode before calling any FailureTable method.
+	 */
 	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int timeout, PeerNode requestor) {
 		if(timeout < -1 || timeout > REJECT_TIME) {
 			// -1 is a valid no-op.
@@ -137,12 +149,17 @@ public class FailureTable implements OOMHook {
 				entry = new FailureTableEntry(key);
 			entriesByKey.push(key, entry);
 
+			// LOCKING: Taking PeerNode then FT/FTE will deadlock.
+			// However this should not happen.
+			// We have to do this inside the lock to prevent race condition with the cleaner causing us to get dropped because isEmpty() before updating.
+			
+			if(routedTo != null)
+				entry.failedTo(routedTo, timeout, now, htl);
+			if(requestor != null)
+				entry.addRequestor(requestor, now, origHTL);
+			
 			trimEntries(now);
 		}
-		if(routedTo != null)
-			entry.failedTo(routedTo, timeout, now, htl);
-		if(requestor != null)
-			entry.addRequestor(requestor, now, origHTL);
 	}
 	
 	private synchronized void trimEntries(long now) {
@@ -244,18 +261,28 @@ public class FailureTable implements OOMHook {
 	/**
 	 * Called when a data block is found (after it has been stored; there is a good chance of its being available in the
 	 * near future). If there are nodes waiting for it, we will offer it to them.
+	 * LOCKING: Never call when locked PeerNode, and try to avoid other locks as
+	 * they might cause a deadlock. Schedule off-thread if necessary.
 	 */
 	public void onFound(KeyBlock block) {
-		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
+		if(logMINOR) Logger.minor(this, "Found "+block.getKey());
+		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) {
+			if(logMINOR) Logger.minor(this, "Ignoring onFound because enable ULPR = "+node.enableULPRDataPropagation+" and enable failure tables = "+node.enablePerNodeFailureTables);
+			return;
+		}
 		Key key = block.getKey();
 		if(key == null) throw new NullPointerException();
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = entriesByKey.get(key);
-			if(entry == null) return; // Nobody cares
+			if(entry == null) {
+				if(logMINOR) Logger.minor(this, "Key not found in entriesByKey");
+				return; // Nobody cares
+			}
 			entriesByKey.removeKey(key);
 			blockOfferListByKey.removeKey(key);
 		}
+		if(logMINOR) Logger.minor(this, "Offering key");
 		if(!node.enableULPRDataPropagation) return;
 		entry.offer();
 	}
@@ -357,7 +384,11 @@ public class FailureTable implements OOMHook {
 			}
 			return;
 		}
-		if(entry.isEmpty(now)) entriesByKey.removeKey(key);
+		if(entry.isEmpty(now)) {
+			synchronized(this) {
+				entriesByKey.removeKey(key);
+			}
+		}
 		
 		// Valid offer.
 		
@@ -643,6 +674,7 @@ public class FailureTable implements OOMHook {
 					synchronized(FailureTable.this) {
 						synchronized(entries[i]) {
 						if(entries[i].isEmpty()) {
+							if(logMINOR) Logger.minor(this, "Removing entry for "+entries[i].key);
 							entriesByKey.removeKey(entries[i].key);
 						}
 						}
