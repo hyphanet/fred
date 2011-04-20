@@ -349,8 +349,8 @@ public class BookmarkManager implements RequestClient {
 		_innerReadBookmarks("", category, sfs);
 	}
 
-	static final short PRIORITY = RequestStarter.UPDATE_PRIORITY_CLASS;
-	static final short PRIORITY_PROGRESS = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+	static final short PRIORITY = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
+	static final short PRIORITY_PROGRESS = RequestStarter.UPDATE_PRIORITY_CLASS;
 
 	private void subscribeToUSK(BookmarkItem item) {
 		if("USK".equals(item.getKeyType()))
