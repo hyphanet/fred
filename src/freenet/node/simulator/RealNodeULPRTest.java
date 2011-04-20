@@ -256,6 +256,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         Logger.normal(RealNodeULPRTest.class, "Inserting to node "+(nodes.length-1));
 		long tStart = System.currentTimeMillis();
 		nodes[nodes.length-1].store(block, false, false, true, false); // Write to datastore
+        Logger.normal(RealNodeULPRTest.class, "Inserted to node "+(nodes.length-1));
 		
 		int x = -1;
 		while(true) {
