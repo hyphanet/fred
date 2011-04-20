@@ -1449,7 +1449,7 @@ loadWaiterLoop:
 		if(timeLeft <= 0) {
 			Logger.error(this, "Impossible: timeLeft="+timeLeft);
 			origTimeLeft = 0;
-			timeLeft=1000; // arbitrary default...
+			timeLeft = 0;
 		}
 		
 		// This is in theory relative to when the request was received by the node. Lets make it relative
