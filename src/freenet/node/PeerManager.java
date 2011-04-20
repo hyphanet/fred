@@ -1004,13 +1004,17 @@ public class PeerManager {
 				}
 			}
 			
-			long timeout = -1;
+			/** For RecentlyFailed i.e. request quenching */
+			long timeoutRF = -1;
+			/** For per-node failure tables i.e. routing */
+			long timeoutFT = -1;
 			if(entry != null && !ignoreTimeout) {
-				timeout = entry.getTimeoutTime(p, outgoingHTL, now);
-				if(timeout > now)
-					soonestTimeoutWakeup = Math.min(soonestTimeoutWakeup, timeout);
+				timeoutFT = entry.getTimeoutTime(p, outgoingHTL, now, true);
+				timeoutRF = entry.getTimeoutTime(p, outgoingHTL, now, false);
+				if(timeoutRF > now)
+					soonestTimeoutWakeup = Math.min(soonestTimeoutWakeup, timeoutRF);
 			}
-			boolean timedOut = timeout > now;
+			boolean timedOut = timeoutFT > now;
 			if(timedOut) countWaiting++;
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
 			double loc = p.getLocation();
@@ -1082,13 +1086,13 @@ public class PeerManager {
 			}
 			if(timedOut)
 				if(!backedOff) {
-					if(timeout < timeLeastRecentlyTimedOut) {
-						timeLeastRecentlyTimedOut = timeout;
+					if(timeoutFT < timeLeastRecentlyTimedOut) {
+						timeLeastRecentlyTimedOut = timeoutFT;
 						leastRecentlyTimedOut = p;
 					}
 				} else
-					if(timeout < timeLeastRecentlyTimedOutBackedOff) {
-						timeLeastRecentlyTimedOutBackedOff = timeout;
+					if(timeoutFT < timeLeastRecentlyTimedOutBackedOff) {
+						timeLeastRecentlyTimedOutBackedOff = timeoutFT;
 						leastRecentlyTimedOutBackedOff = p;
 					}
 			if(addUnpickedLocsTo != null && !chosen) {
@@ -1150,13 +1154,13 @@ public class PeerManager {
 			if(first != null) {
 				long firstTime;
 				long secondTime;
-				if((firstTime = entry.getTimeoutTime(first, outgoingHTL, now)) > now) {
+				if((firstTime = entry.getTimeoutTime(first, outgoingHTL, now, false)) > now) {
 					if(logMINOR) Logger.minor(this, "First choice is past now");
 					HashSet<PeerNode> newRoutedTo = new HashSet<PeerNode>(routedTo);
 					newRoutedTo.add(first);
 					PeerNode second = closerPeer(pn, newRoutedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true);
 					if(second != null) {
-						if((secondTime = entry.getTimeoutTime(first, outgoingHTL, now)) > now) {
+						if((secondTime = entry.getTimeoutTime(first, outgoingHTL, now, false)) > now) {
 							if(logMINOR) Logger.minor(this, "Second choice is past now");
 							// Recently failed!
 							// Return the time at which this will change.
