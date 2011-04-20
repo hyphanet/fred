@@ -209,7 +209,9 @@ public class PluginManager {
 		});
 
 		alwaysLoadOfficialPluginsFromCentralServer = pmconfig.getBoolean("alwaysLoadOfficialPluginsFromCentralServer");
-
+		if(node.isTestnetEnabled())
+			alwaysLoadOfficialPluginsFromCentralServer = false;
+		else {
 		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
@@ -221,6 +223,7 @@ public class PluginManager {
 			}
 
 		});
+		}
 
 		pmconfig.finishedInitialization();
 
