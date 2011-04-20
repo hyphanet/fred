@@ -247,7 +247,10 @@ public class FailureTable implements OOMHook {
 	 */
 	public void onFound(KeyBlock block) {
 		if(logMINOR) Logger.minor(this, "Found "+block.getKey());
-		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
+		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) {
+			if(logMINOR) Logger.minor(this, "Ignoring onFound because enable ULPR = "+node.enableULPRDataPropagation+" and enable failure tables = "+node.enablePerNodeFailureTables);
+			return;
+		}
 		Key key = block.getKey();
 		if(key == null) throw new NullPointerException();
 		FailureTableEntry entry;
