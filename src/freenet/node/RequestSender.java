@@ -1467,7 +1467,11 @@ loadWaiterLoop:
 		int origTimeLeft = timeLeft;
 		
 		if(timeLeft <= 0) {
-			Logger.error(this, "Impossible: timeLeft="+timeLeft);
+			if(timeLeft == 0) {
+				if(logMINOR) Logger.minor(this, "RecentlyFailed: timeout already consumed on "+this);
+			} else {
+				Logger.error(this, "Impossible: timeLeft="+timeLeft);
+			}
 			origTimeLeft = 0;
 			timeLeft = 0;
 		}
