@@ -1480,7 +1480,7 @@ loadWaiterLoop:
 		else
 			this.origTag.removeRoutingTo(next);
 		
-			node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, source);
+			node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 
 	/**
