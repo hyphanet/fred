@@ -548,7 +548,7 @@ public class PeerManager {
 	 */
 	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge, boolean dumpMessagesNow, final boolean remove, int timeout) {
 		if(logMINOR)
-			Logger.minor(this, "Disconnecting " + pn.shortToString());
+			Logger.minor(this, "Disconnecting " + pn.shortToString(), new Exception("debug"));
 		synchronized(this) {
 			if(!havePeer(pn))
 				return;
