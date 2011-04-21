@@ -1176,10 +1176,10 @@ public class PeerManager {
 							return null;
 						}
 					} else {
-						if(logMINOR) Logger.minor(this, "Second choice is not in timeout: "+second);
+						if(logMINOR) Logger.minor(this, "Second choice is not in timeout (for recentlyfailed): "+second);
 					}
 				} else {
-					if(logMINOR) Logger.minor(this, "First choice is not in timeout: "+first);
+					if(logMINOR) Logger.minor(this, "First choice is not in timeout (for recentlyfailed): "+first);
 				}
 			}
 		}
