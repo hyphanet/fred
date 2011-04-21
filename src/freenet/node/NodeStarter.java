@@ -24,6 +24,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.NativeThread;
+import freenet.support.ProcessPriority;
 
 /**
  *  @author nextgens
@@ -233,6 +234,10 @@ public class NodeStarter implements WrapperListener {
 	 * Main Method
 	 *-------------------------------------------------------------*/
 	public static void main(String[] args) {
+		// Immediately try entering background mode. This way also class
+		//  loading will be subject to reduced priority. 
+		ProcessPriority.backgroundMode(true);
+		
 		// Start the application.  If the JVM was launched from the native
 		//  Wrapper then the application will wait for the native Wrapper to
 		//  call the application's start method.  Otherwise the start method
