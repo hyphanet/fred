@@ -360,10 +360,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
 			        2.0, key, htl, 0, source == null, realTimeFlag, r, false);
             
-            int recentlyFailed = r.recentlyFailed();
-            if(recentlyFailed > 0) {
+            long recentlyFailed = r.recentlyFailed();
+            long now = System.currentTimeMillis();
+            if(recentlyFailed > now) {
             	synchronized(this) {
-            		recentlyFailedTimeLeft = recentlyFailed;
+            		recentlyFailedTimeLeft = (int)Math.min(Integer.MAX_VALUE, recentlyFailed - now);
             	}
             	finish(RECENTLY_FAILED, null, false);
                 node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);

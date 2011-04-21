@@ -1146,5 +1146,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public byte[] saltKey(boolean persistent, Key key) {
 		return persistent ? schedCore.saltKey(key) : schedTransient.saltKey(key);
 	}
+
+	/** Only used in rare special cases e.g. ClientRequestSelector.
+	 * FIXME add some interfaces to get rid of this gross layer violation. */
+	Node getNode() {
+		return node;
+	}
 	
 }

@@ -263,8 +263,12 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 			ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
 		ArrayList<Integer> possibles = segment.validBlockNumbers(keys, true, container, context);
-		if(possibles == null || possibles.isEmpty()) return null;
-		return new SplitFileFetcherSegmentSendableRequestItem(possibles.get(context.random.nextInt(possibles.size())));
+		while(true) {
+			if(possibles == null || possibles.isEmpty()) return null;
+			Integer x = possibles.remove(context.random.nextInt(possibles.size()));
+			if(segment.checkRecentlyFailed(x, container, context, keys, System.currentTimeMillis())) continue;
+			return new SplitFileFetcherSegmentSendableRequestItem(x);
+		}
 	}
 
 	@Override
@@ -309,11 +313,11 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 
 	@Override
 	public List<PersistentChosenBlock> makeBlocks(
-			PersistentChosenRequest request, RequestScheduler sched,
+			PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys,
 			ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
 		// FIXME why is the fetching keys list not passed in? We could at least check for other fetchers for the same key??? Need to modify the parameters ...
-		List<PersistentChosenBlock> blocks = segment.makeBlocks(request, sched, container, context);
+		List<PersistentChosenBlock> blocks = segment.makeBlocks(request, sched, keys, this, container, context);
 		if(persistent) container.deactivate(segment, 1);
 		return blocks;
 	}

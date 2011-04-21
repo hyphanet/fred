@@ -713,5 +713,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 				recentSuccesses.remove(0);
 		}
 	}
+
+	public long checkRecentlyFailed(Key key, boolean realTime) {
+		Node node = sched.getNode();
+		return node.clientCore.checkRecentlyFailed(key, realTime);
+	}
 	
 }

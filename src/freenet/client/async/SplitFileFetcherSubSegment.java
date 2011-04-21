@@ -306,7 +306,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		// This is safe because it won't be removed from the RGA.
 		queueMigrateToSegmentFetcher(container, context);
 		return null;
