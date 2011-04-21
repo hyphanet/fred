@@ -41,10 +41,15 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		while(true) {
 			assert(buf.length - ctr > 0);
 			int x = read(buf, ctr, buf.length - ctr);
-			if(x <= 0) {
+			if(x < 0) {
 				if(ctr == 0)
 					return null;
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
+			}
+			if(x == 0) {
+				// Don't busy-loop. Probably a socket closed or something.
+				// If not, it's not a salavageable situation; either way throw.
+				throw new EOFException();
 			}
 			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones.
 			int end = ctr + x;
