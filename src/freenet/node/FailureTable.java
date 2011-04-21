@@ -92,7 +92,7 @@ public class FailureTable implements OOMHook {
 	}
 	
 	public void start() {
-		offerExecutor.start(node.executor, "FailureTable offers executor");
+		offerExecutor.start(node.executor, "FailureTable offers executor for "+node.getDarknetPortNumber());
 		OOMHandler.addOOMHook(this);
 	}
 	
