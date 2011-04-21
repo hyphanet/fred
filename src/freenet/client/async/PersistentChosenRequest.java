@@ -97,16 +97,7 @@ public class PersistentChosenRequest {
 		blocksStarted = new HashSet<PersistentChosenBlock>(candidates.size() * 2);
 		blocksFinished = new HashSet<PersistentChosenBlock>(candidates.size() * 2);
 		
-		for(PersistentChosenBlock block : candidates) {
-			Key key = block.key;
-			// Only called by PersistentChosenRequest.
-			// We can safely pass in null here because we are not creating a cooldown.
-			if(key != null && sched.hasFetchingKey(key, null, false, null)) {
-				block.onDumped();
-				continue;
-			}
-			blocksNotStarted.add(block);
-		}
+		blocksNotStarted.addAll(candidates);
 		sender = req.getSender(container, context);
 		if(!reqActive)
 			container.deactivate(req, 1);
