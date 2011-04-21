@@ -16,6 +16,7 @@ import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.BulkCallFailureItem;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
@@ -80,7 +81,8 @@ public class PersistentChosenRequest {
 		boolean reqActive = container.ext().isActive(req);
 		if(!reqActive)
 			container.activate(req, 1);
-		List<PersistentChosenBlock> candidates = req.makeBlocks(this, sched, container, context);
+		KeysFetchingLocally keys = sched.fetchingKeys();
+		List<PersistentChosenBlock> candidates = req.makeBlocks(this, sched, keys, container, context);
 		if(candidates == null) {
 			if(!reqActive) container.deactivate(req, 1);
 			throw new NoValidBlocksException();

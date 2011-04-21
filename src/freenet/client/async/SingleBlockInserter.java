@@ -723,7 +723,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 	
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	// FIXME keys is ignored
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		BlockItem item;
 		try {
 			item = getBlockItem(container, context);

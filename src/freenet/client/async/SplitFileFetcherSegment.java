@@ -2212,13 +2212,15 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	 * future.
 	 * @param request
 	 * @param sched
+	 * @param getter 
+	 * @param keysFetching 
 	 * @param container
 	 * @param context
 	 * @return
 	 */
 	public List<PersistentChosenBlock> makeBlocks(
 			PersistentChosenRequest request, RequestScheduler sched,
-			ObjectContainer container, ClientContext context) {
+			KeysFetchingLocally fetching, SplitFileFetcherSegmentGet getter, ObjectContainer container, ClientContext context) {
 		long now = System.currentTimeMillis();
 		ArrayList<PersistentChosenBlock> list = null;
 		if(keys == null) 
@@ -2236,8 +2238,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				if(getBlockBucket(i, container) != null) continue;
 				// Possible ...
 				Key key = keys.getNodeKey(i, null, true);
-				// FIXME pass in the KeysFetchingLocally and check against it.
-				//if(fetching.hasKey(key)) continue;
+				if(fetching.hasKey(key, getter, persistent, container)) continue;
 				if(list == null) list = new ArrayList<PersistentChosenBlock>();
 				ClientCHK ckey = keys.getKey(i, null, true); // FIXME Duplicates the routingKey field
 				list.add(new PersistentChosenBlock(false, request, new SplitFileFetcherSegmentSendableRequestItem(i), key, ckey, sched));

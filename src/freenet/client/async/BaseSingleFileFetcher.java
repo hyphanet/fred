@@ -338,11 +338,14 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keysFetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
 		ClientKey ckey = key.cloneKey();
-		PersistentChosenBlock block = new PersistentChosenBlock(false, request, keys[0], ckey.getNodeKey(true), ckey, sched);
+		Key k = ckey.getNodeKey(true);
+		if(keysFetching.hasKey(k, this, persistent, container))
+			return null;
+		PersistentChosenBlock block = new PersistentChosenBlock(false, request, keys[0], k, ckey, sched);
 		return Collections.singletonList(block);
 	}
 
