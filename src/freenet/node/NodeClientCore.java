@@ -1930,7 +1930,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 	public long checkRecentlyFailed(Key key, boolean realTime) {
 		RecentlyFailedReturn r = new RecentlyFailedReturn();
-		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, node.maxHTL(), 0, true, realTime, r, false);
+		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, node.maxHTL(), 0, true, realTime, r, false, System.currentTimeMillis());
 		return r.recentlyFailed();
 	}
 
