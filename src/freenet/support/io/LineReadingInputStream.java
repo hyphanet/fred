@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,8 +39,9 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		int ctr = 0;
 		mark(maxLength + 2); // in case we have both a \r and a \n
 		while(true) {
+			assert(buf.length - ctr > 0);
 			int x = read(buf, ctr, buf.length - ctr);
-			if(x == -1) {
+			if(x <= 0) {
 				if(ctr == 0)
 					return null;
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
