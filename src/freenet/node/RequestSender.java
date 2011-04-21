@@ -334,8 +334,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             if(htl == 0) {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
+                node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
                 finish(DATA_NOT_FOUND, null, false);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.REJECT_TIME, source);
                 return;
             }
             
@@ -354,16 +354,30 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	return;
             }
 
+            RecentlyFailedReturn r = new RecentlyFailedReturn();
+            
+            long now = System.currentTimeMillis();
+            
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        key, htl, 0, source == null, realTimeFlag);
+			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now);
+            
+            long recentlyFailed = r.recentlyFailed();
+            if(recentlyFailed > now) {
+            	synchronized(this) {
+            		recentlyFailedTimeLeft = (int)Math.min(Integer.MAX_VALUE, recentlyFailed - now);
+            	}
+            	finish(RECENTLY_FAILED, null, false);
+                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
+            	return;
+            }
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
 					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
                 // Backtrack
                 finish(ROUTE_NOT_FOUND, null, false);
-                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
+                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, -1, source);
                 return;
             }
             
@@ -526,8 +540,8 @@ loadWaiterLoop:
 				// Fatal timeout
 				waitingFor.localRejectedOverload("FatalTimeout", realTimeFlag);
 				forwardRejectedOverload();
+				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
 				finish(TIMED_OUT, waitingFor, false);
-				node.failureTable.onFinalFailure(key, waitingFor, htl, origHTL, FailureTable.REJECT_TIME, source);
 			}
     		
 			// Wait for second timeout.
@@ -976,7 +990,8 @@ loadWaiterLoop:
     			// Timeout waiting for Accepted
     			next.localRejectedOverload("AcceptedTimeout", realTimeFlag);
     			forwardRejectedOverload();
-    			node.failureTable.onFailed(key, next, htl, timeSinceSent());
+    			int t = timeSinceSent();
+    			node.failureTable.onFailed(key, next, htl, t, t);
     			// Try next node
     			handleAcceptedRejectedTimeout(next, origTag);
     			return DO.NEXT_PEER;
@@ -985,7 +1000,8 @@ loadWaiterLoop:
     		if(msg.getSpec() == DMT.FNPRejectedLoop) {
     			if(logMINOR) Logger.minor(this, "Rejected loop");
     			next.successNotOverload(realTimeFlag);
-    			node.failureTable.onFailed(key, next, htl, timeSinceSent());
+    			int t = timeSinceSent();
+    			node.failureTable.onFailed(key, next, htl, t, t);
     			// Find another node to route to
     			next.noLongerRoutingTo(origTag, false);
     			return DO.NEXT_PEER;
@@ -1007,7 +1023,8 @@ loadWaiterLoop:
 //    					return DO.WAIT;
 //    				} else {
     					next.localRejectedOverload("ForwardRejectedOverload", realTimeFlag);
-    					node.failureTable.onFailed(key, next, htl, timeSinceSent());
+    					int t = timeSinceSent();
+    					node.failureTable.onFailed(key, next, htl, t, t);
     					if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
     					// Give up on this one, try another
     					next.noLongerRoutingTo(origTag, false);
@@ -1185,7 +1202,8 @@ loadWaiterLoop:
     	}
     	
    		Logger.error(this, "Unexpected message: "+msg);
-   		node.failureTable.onFailed(key, source, htl, timeSinceSent());
+   		int t = timeSinceSent();
+   		node.failureTable.onFailed(key, source, htl, t, t);
 		origTag.removeRoutingTo(source);
    		return DO.NEXT_PEER;
     	
@@ -1209,12 +1227,14 @@ loadWaiterLoop:
 		} catch (SSKVerifyException e) {
 			pubKey = null;
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+ ')', e);
-    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+			int t = timeSinceSent();
+    		node.failureTable.onFailed(key, next, htl, t, t);
 			origTag.removeRoutingTo(next);
 			return false; // try next node
 		} catch (CryptFormatException e) {
 			Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+ ')');
-    		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+			int t = timeSinceSent();
+    		node.failureTable.onFailed(key, next, htl, t, t);
 			origTag.removeRoutingTo(next);
 			return false; // try next node
 		}
@@ -1300,11 +1320,11 @@ loadWaiterLoop:
     					verifyAndCommit(waiter.headers, data);
     				} catch (KeyVerifyException e1) {
     					Logger.normal(this, "Got data but verify failed: "+e1, e1);
+    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
     					if(!wasFork)
     						finish(VERIFY_FAILURE, sentTo, false);
     					else
     						origTag.removeRoutingTo(sentTo);
-    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     					return;
     				}
     				finish(SUCCESS, sentTo, false);
@@ -1335,9 +1355,9 @@ loadWaiterLoop:
     				// We do an ordinary backoff in all cases.
     				if(!prb.abortedLocally())
     					sentTo.localRejectedOverload("TransferFailedRequest"+e.getReason(), realTimeFlag);
+    				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
     				if(!wasFork)
     					finish(TRANSFER_FAILED, sentTo, false);
-    				node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
     				int reason = e.getReason();
     				boolean timeout = (!br.senderAborted()) &&
     				(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
@@ -1350,7 +1370,7 @@ loadWaiterLoop:
     				} else {
     					// Quick failure (in that we didn't have to timeout). Don't backoff.
     					// Treat as a DNF.
-    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, source);
+    					node.failureTable.onFinalFailure(key, sentTo, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
     				}
     				if(!prb.abortedLocally())
     					node.nodeStats.failedBlockReceive(true, timeout, realTimeFlag, source == null);
@@ -1377,7 +1397,8 @@ loadWaiterLoop:
 		if (msg.getBoolean(DMT.IS_LOCAL)) {
 			//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 			//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
-    		node.failureTable.onFailed(key, next, htl, timeSinceSentForTimeout());
+			int t = timeSinceSentForTimeout();
+    		node.failureTable.onFailed(key, next, htl, t, t);
 			next.localRejectedOverload("ForwardRejectedOverload2", realTimeFlag);
 			// Node in trouble suddenly??
 			Logger.normal(this, "Local RejectedOverload after Accepted, moving on to next peer");
@@ -1394,17 +1415,18 @@ loadWaiterLoop:
 		short newHtl = msg.getShort(DMT.HTL);
 		if(newHtl < htl) htl = newHtl;
 		next.successNotOverload(realTimeFlag);
-		node.failureTable.onFailed(key, next, htl, timeSinceSent());
+		int t = timeSinceSent();
+		node.failureTable.onFailed(key, next, htl, t, t);
 		origTag.removeRoutingTo(next);
 	}
 
 	private void handleDataNotFound(Message msg, boolean wasFork, PeerNode next) {
 		next.successNotOverload(realTimeFlag);
+		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, FailureTable.REJECT_TIME, source);
 		if(!wasFork)
 			finish(DATA_NOT_FOUND, next, false);
 		else
 			this.origTag.removeRoutingTo(next);
-		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 
 	private void handleRecentlyFailed(Message msg, boolean wasFork, PeerNode next) {
@@ -1447,9 +1469,13 @@ loadWaiterLoop:
 		int origTimeLeft = timeLeft;
 		
 		if(timeLeft <= 0) {
-			Logger.error(this, "Impossible: timeLeft="+timeLeft);
+			if(timeLeft == 0) {
+				if(logMINOR) Logger.minor(this, "RecentlyFailed: timeout already consumed on "+this);
+			} else {
+				Logger.error(this, "Impossible: timeLeft="+timeLeft);
+			}
 			origTimeLeft = 0;
-			timeLeft=1000; // arbitrary default...
+			timeLeft = 0;
 		}
 		
 		// This is in theory relative to when the request was received by the node. Lets make it relative
@@ -1461,18 +1487,29 @@ loadWaiterLoop:
 		// Subtract 1% for good measure / to compensate for dodgy clocks
 		timeLeft -= origTimeLeft / 100;
 		
+		if(timeLeft < 0) timeLeft = 0;
+		
+		
+		
 		//Store the timeleft so that the requestHandler can get at it.
-		recentlyFailedTimeLeft = timeLeft;
+		synchronized(this) {
+			recentlyFailedTimeLeft = timeLeft;
+		}
 		
 			// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
-		// FIXME we need to create the FT entry.
+		// FIXME reconsider the exact numbers here.
+		// We need to ensure that a node can't just kill requests by returning RecentlyFailed with timeout = 0.
+		// However, after the period has elapsed, we may reroute, in which case it might be good to go to the same node.
+		// We probably want to keep track of previous failures and explicitly detect malicious behaviour, rather than always using the maximum?
+		// Or maybe we could just do max(timeLeft, *some reasonable threshold*) ????
+		// In which case we can get rid of the threshold above??? Which we should do anyway???
+		node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, FailureTable.REJECT_TIME, source);
 		if(!wasFork)
 			finish(RECENTLY_FAILED, next, false);
 		else
 			this.origTag.removeRoutingTo(next);
 		
-			node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, source);
 	}
 
 	/**

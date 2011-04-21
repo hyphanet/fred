@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
@@ -1640,7 +1641,17 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		else
 			return checkCooldownTimes[blockNum - dataBuckets.length];
 	}
-
+	
+	synchronized void setMaxCooldownWakeup(long until, int blockNum, int maxTries, ObjectContainer container, ClientContext context) {
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		long[] dataCooldownTimes = tracker.dataCooldownTimes;
+		long[] checkCooldownTimes = tracker.checkCooldownTimes;
+		if(blockNum < dataBuckets.length)
+			dataCooldownTimes[blockNum] = Math.max(dataCooldownTimes[blockNum], until);
+		else
+			checkCooldownTimes[blockNum] = Math.max(checkCooldownTimes[blockNum], until);
+	}
+	
 	private int getRetries(int blockNum, ObjectContainer container, ClientContext context) {
 		return getRetries(blockNum, getMaxRetries(container), container, context);
 	}
@@ -2190,6 +2201,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				// Possible ...
 				Key key = keys.getNodeKey(i, null, true);
 				if(fetching.hasKey(key, getter, persistent, container)) continue;
+				// Do not check RecentlyFailed here.
+				// 1. We're synchronized, so it would be a bad idea here.
+				// 2. It's way too heavyweight given we're not going to send most of the items added.
+				// Check it in the caller.
 				if(onlyLowestTries) {
 					int retryCount = this.getRetries(i, container, context);
 					if(retryCount > minRetries) {
@@ -2205,6 +2220,20 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			return list;
 		}
 	}
+	
+	public boolean checkRecentlyFailed(int blockNum, ObjectContainer container, ClientContext context, KeysFetchingLocally keys, long now) {
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		Key key = this.keys.getNodeKey(blockNum, null, true);
+		long timeout = keys.checkRecentlyFailed(key, realTimeFlag);
+		if(timeout <= now) return false;
+		// Concurrency is fine here, it won't go away before the given time.
+		setMaxCooldownWakeup(timeout, blockNum, this.getMaxRetries(container), container, context);
+		return true;
+	}
 
 	/** Separate method because we will need to create the Key anyway for checking against
 	 * the KeysFetchingLocally, and we can reuse that in the created Block. Yes we don't 
@@ -2212,13 +2241,15 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	 * future.
 	 * @param request
 	 * @param sched
+	 * @param getter 
+	 * @param keysFetching 
 	 * @param container
 	 * @param context
 	 * @return
 	 */
 	public List<PersistentChosenBlock> makeBlocks(
 			PersistentChosenRequest request, RequestScheduler sched,
-			ObjectContainer container, ClientContext context) {
+			KeysFetchingLocally fetching, SplitFileFetcherSegmentGet getter, ObjectContainer container, ClientContext context) {
 		long now = System.currentTimeMillis();
 		ArrayList<PersistentChosenBlock> list = null;
 		if(keys == null) 
@@ -2236,14 +2267,23 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				if(getBlockBucket(i, container) != null) continue;
 				// Possible ...
 				Key key = keys.getNodeKey(i, null, true);
-				// FIXME pass in the KeysFetchingLocally and check against it.
-				//if(fetching.hasKey(key)) continue;
+				if(fetching.hasKey(key, getter, persistent, container)) continue;
 				if(list == null) list = new ArrayList<PersistentChosenBlock>();
 				ClientCHK ckey = keys.getKey(i, null, true); // FIXME Duplicates the routingKey field
 				list.add(new PersistentChosenBlock(false, request, new SplitFileFetcherSegmentSendableRequestItem(i), key, ckey, sched));
 			}
-			return list;
 		}
+		if(list == null) return null;
+		for(Iterator<PersistentChosenBlock> i = list.iterator();i.hasNext();) {
+			PersistentChosenBlock block = i.next();
+			// We must do the actual check outside the lock.
+			long l = fetching.checkRecentlyFailed(block.key, realTimeFlag);
+			if(l < now) continue; // Okay
+			i.remove();
+			// Concurrency is fine here, it won't go away before the given time.
+			setMaxCooldownWakeup(l, ((SplitFileFetcherSegmentSendableRequestItem)block.token).blockNum, maxTries, container, context);
+		}
+		return list;
 	}
 	
 	public long getCooldownTime(ObjectContainer container, ClientContext context, HasCooldownCacheItem parentRGA, long now) {
@@ -2271,6 +2311,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				}
 				Key key = keys.getNodeKey(i, null, true);
 				if(fetching.hasKey(key, getter, persistent, container)) continue;
+				
 				return 0; // Stuff to send right now.
 			}
 		}

@@ -3,6 +3,7 @@ package freenet.node;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashSet;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -1925,6 +1926,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		if(this.clientContext.getFetchScheduler(isSSK, true).wantKey(key)) return true;
 		if(this.clientContext.getFetchScheduler(isSSK, false).wantKey(key)) return true;
 		return false;
+	}
+
+	public long checkRecentlyFailed(Key key, boolean realTime) {
+		RecentlyFailedReturn r = new RecentlyFailedReturn();
+		node.peers.closerPeer(null, new HashSet<PeerNode>(), key.toNormalizedDouble(), true, false, -1, null, 2.0, key, node.maxHTL(), 0, true, realTime, r, false, System.currentTimeMillis());
+		return r.recentlyFailed();
 	}
 
 }

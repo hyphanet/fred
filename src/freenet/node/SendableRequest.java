@@ -148,7 +148,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 
 	/** Construct a full set of ChosenBlock's for a persistent request. These are transient, so we will need to clone keys
 	 * etc. */
-	public abstract List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context);
+	public abstract List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context);
 
 	public boolean isStorageBroken(ObjectContainer container) {
 		return false;

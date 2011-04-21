@@ -76,7 +76,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public SendableRequestItem chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
-		if(fetching.hasKey(key.getNodeKey(false), this, persistent, container)) return null;
+		Key k = key.getNodeKey(false);
+		if(fetching.hasKey(k, this, persistent, container)) return null;
+		long l = fetching.checkRecentlyFailed(k, realTimeFlag);
+		if(l > 0 && l > System.currentTimeMillis()) {
+			// FIXME synchronization!!!
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
+			return null;
+		}
 		return keys[0];
 	}
 	
@@ -338,11 +346,21 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keysFetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
 		ClientKey ckey = key.cloneKey();
-		PersistentChosenBlock block = new PersistentChosenBlock(false, request, keys[0], ckey.getNodeKey(true), ckey, sched);
+		Key k = ckey.getNodeKey(true);
+		if(keysFetching.hasKey(k, this, persistent, container))
+			return null;
+		long l = keysFetching.checkRecentlyFailed(k, realTimeFlag);
+		if(l > 0 && l > System.currentTimeMillis()) {
+			// FIXME synchronization!!!
+			MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+			tracker.cooldownWakeupTime = Math.max(tracker.cooldownWakeupTime, l);
+			return null;
+		}
+		PersistentChosenBlock block = new PersistentChosenBlock(false, request, keys[0], k, ckey, sched);
 		return Collections.singletonList(block);
 	}
 

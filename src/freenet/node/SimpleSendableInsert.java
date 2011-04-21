@@ -168,7 +168,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		// Transient-only so no makeBlocks().
 		throw new UnsupportedOperationException();
 	}
