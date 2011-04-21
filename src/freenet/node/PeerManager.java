@@ -1176,7 +1176,11 @@ public class PeerManager {
 							recentlyFailed.fail(countWaiting, soonestTimeoutWakeup);
 							return null;
 						}
+					} else {
+						if(logMINOR) Logger.minor(this, "Second choice is not in timeout: "+second);
 					}
+				} else {
+					if(logMINOR) Logger.minor(this, "First choice is not in timeout: "+first);
 				}
 			}
 		}
