@@ -5,16 +5,16 @@ package freenet.node;
 public class RecentlyFailedReturn {
 	
 	private boolean recentlyFailed;
-	private int delta;
+	private long wakeup;
 	private int countWaiting;
-	public synchronized void fail(int countWaiting, int delta) {
+	public synchronized void fail(int countWaiting, long wakeupTime) {
 		this.countWaiting = countWaiting;
-		this.delta = delta;
+		this.wakeup = wakeupTime;
 		this.recentlyFailed = true;
 	}
-	public synchronized int recentlyFailed() {
+	public synchronized long recentlyFailed() {
 		if(recentlyFailed)
-			return delta;
+			return wakeup;
 		else
 			return -1;
 	}

@@ -263,8 +263,12 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 			ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
 		ArrayList<Integer> possibles = segment.validBlockNumbers(keys, true, container, context);
-		if(possibles == null || possibles.isEmpty()) return null;
-		return new SplitFileFetcherSegmentSendableRequestItem(possibles.get(context.random.nextInt(possibles.size())));
+		while(true) {
+			if(possibles == null || possibles.isEmpty()) return null;
+			Integer x = possibles.remove(context.random.nextInt(possibles.size()));
+			if(segment.checkRecentlyFailed(x, container, context, keys, System.currentTimeMillis())) continue;
+			return new SplitFileFetcherSegmentSendableRequestItem(x);
+		}
 	}
 
 	@Override
