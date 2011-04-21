@@ -1462,7 +1462,9 @@ loadWaiterLoop:
 		timeLeft -= origTimeLeft / 100;
 		
 		//Store the timeleft so that the requestHandler can get at it.
-		recentlyFailedTimeLeft = timeLeft;
+		synchronized(this) {
+			recentlyFailedTimeLeft = timeLeft;
+		}
 		
 			// Kill the request, regardless of whether there is timeout left.
 		// If there is, we will avoid sending requests for the specified period.
