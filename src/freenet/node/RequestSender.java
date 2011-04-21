@@ -356,12 +356,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
             RecentlyFailedReturn r = new RecentlyFailedReturn();
             
+            long now = System.currentTimeMillis();
+            
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        2.0, key, htl, 0, source == null, realTimeFlag, r, false);
+			        2.0, key, htl, 0, source == null, realTimeFlag, r, false, now);
             
             long recentlyFailed = r.recentlyFailed();
-            long now = System.currentTimeMillis();
             if(recentlyFailed > now) {
             	synchronized(this) {
             		recentlyFailedTimeLeft = (int)Math.min(Integer.MAX_VALUE, recentlyFailed - now);
