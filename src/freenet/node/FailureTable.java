@@ -92,7 +92,7 @@ public class FailureTable implements OOMHook {
 	}
 	
 	public void start() {
-		offerExecutor.start(node.executor, "FailureTable offers executor");
+		offerExecutor.start(node.executor, "FailureTable offers executor for "+node.getDarknetPortNumber());
 		OOMHandler.addOOMHook(this);
 	}
 	
@@ -333,6 +333,7 @@ public class FailureTable implements OOMHook {
 	 * serialise it, as high latencies can otherwise result.
 	 */
 	protected void innerOnOffer(Key key, PeerNode peer, byte[] authenticator) {
+		if(logMINOR) Logger.minor(this, "Inner on offer for "+key+" from "+peer+" on "+node.getDarknetPortNumber());
 		if(key.getRoutingKey() == null) throw new NullPointerException();
 		//NB: node.hasKey() executes a datastore fetch
 		// If we have the key in the datastore (store or cache), we don't want it.

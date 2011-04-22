@@ -549,7 +549,7 @@ public class PeerManager {
 	 */
 	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge, boolean dumpMessagesNow, final boolean remove, int timeout) {
 		if(logMINOR)
-			Logger.minor(this, "Disconnecting " + pn.shortToString());
+			Logger.minor(this, "Disconnecting " + pn.shortToString(), new Exception("debug"));
 		synchronized(this) {
 			if(!havePeer(pn))
 				return;
@@ -914,7 +914,7 @@ public class PeerManager {
 		if(!node.enablePerNodeFailureTables)
 			key = null;
 		if(logMINOR)
-			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length);
+			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length+" key "+key);
 		
 		double myLoc = node.getLocation();
 		
@@ -1177,10 +1177,10 @@ public class PeerManager {
 							return null;
 						}
 					} else {
-						if(logMINOR) Logger.minor(this, "Second choice is not in timeout: "+second);
+						if(logMINOR) Logger.minor(this, "Second choice is not in timeout (for recentlyfailed): "+second);
 					}
 				} else {
-					if(logMINOR) Logger.minor(this, "First choice is not in timeout: "+first);
+					if(logMINOR) Logger.minor(this, "First choice is not in timeout (for recentlyfailed): "+first);
 				}
 			}
 		}
