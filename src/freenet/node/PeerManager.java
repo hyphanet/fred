@@ -913,7 +913,7 @@ public class PeerManager {
 		if(!node.enablePerNodeFailureTables)
 			key = null;
 		if(logMINOR)
-			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length);
+			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length+" key "+key);
 		
 		double myLoc = node.getLocation();
 		
