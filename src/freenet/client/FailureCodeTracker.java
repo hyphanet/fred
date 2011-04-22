@@ -237,7 +237,7 @@ public class FailureCodeTracker {
 	public synchronized boolean isDataFound() {
 		for(Map.Entry<Integer, Item> entry : map.entrySet()) {
 			if(entry.getValue().x <= 0) continue;
-			if(FetchException.isDataFound(entry.getKey())) return true;
+			if(FetchException.isDataFound(entry.getKey(), null)) return true;
 		}
 		return false;
 	}
