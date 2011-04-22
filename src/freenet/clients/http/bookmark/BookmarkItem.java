@@ -168,6 +168,8 @@ public class BookmarkItem extends Bookmark {
         this.key = uri;
         this.desc = description;
         this.hasAnActivelink = hasAnActivelink;
+        if(!key.isUSK())
+        	disableBookmark();
     }
 
     public synchronized String getKeyType() {
