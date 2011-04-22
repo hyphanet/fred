@@ -1649,7 +1649,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		if(blockNum < dataBuckets.length)
 			dataCooldownTimes[blockNum] = Math.max(dataCooldownTimes[blockNum], until);
 		else
-			checkCooldownTimes[blockNum] = Math.max(checkCooldownTimes[blockNum], until);
+			checkCooldownTimes[blockNum - dataBuckets.length] = Math.max(checkCooldownTimes[blockNum - dataBuckets.length], until);
 	}
 	
 	private int getRetries(int blockNum, ObjectContainer container, ClientContext context) {
