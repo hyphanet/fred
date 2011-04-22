@@ -1501,8 +1501,6 @@ loadWaiterLoop:
 		
 		if(timeLeft < 0) timeLeft = 0;
 		
-		
-		
 		//Store the timeleft so that the requestHandler can get at it.
 		synchronized(this) {
 			recentlyFailedTimeLeft = timeLeft;
