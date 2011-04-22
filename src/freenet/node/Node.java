@@ -3056,7 +3056,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 		System.err.println("Finalising defragmentation...");
-		long oldSize = tmpFile.length();
+		long oldSize = backupFile.length();
 		long newSize = databaseFile.length();
 		
 		if(newSize <= 0) {
