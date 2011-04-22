@@ -303,6 +303,18 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         peerLoop:
         while(true) {
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
+            // FIXME SECURITY/NETWORK: Should we never decrement on the originator?
+            // It would buy us another hop of no-cache, making it significantly
+            // harder to trace after the fact; however it would make local 
+            // requests fractionally easier to detect by peers.
+            // IMHO local requests are so easy for peers to detect anyway that
+            // it's probably worth it.
+            // Currently the worst case is we don't cache on the originator
+            // and we don't cache on the first peer we route to. If we get
+            // RejectedOverload's etc we won't cache on them either, up to 5;
+            // but lets assume that one of them accepts, and routes onward;
+            // the *second* hop out (with the originator being 0) WILL cache.
+            // Note also that changing this will have a performance impact.
             if((!starting) && (!canWriteStorePrev)) {
             	// We always decrement on starting a sender.
             	// However, after that, if our HTL is above the no-cache threshold,
@@ -1488,8 +1500,6 @@ loadWaiterLoop:
 		timeLeft -= origTimeLeft / 100;
 		
 		if(timeLeft < 0) timeLeft = 0;
-		
-		
 		
 		//Store the timeleft so that the requestHandler can get at it.
 		synchronized(this) {
