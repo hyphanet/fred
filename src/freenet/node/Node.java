@@ -3058,10 +3058,20 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("Finalising defragmentation...");
 		long oldSize = tmpFile.length();
 		long newSize = databaseFile.length();
-		double change = 100.0 * (((double)(oldSize - newSize)) / ((double)oldSize));
-		FileUtil.secureDelete(tmpFile, random);
-		FileUtil.secureDelete(backupFile, random);
-		System.err.println("Defragment completed. "+SizeUtil.formatSize(oldSize)+" ("+oldSize+") -> "+SizeUtil.formatSize(newSize)+" ("+newSize+") ("+(int)change+"% shrink)");
+		
+		if(newSize <= 0) {
+			System.err.println("DEFRAG PRODUCED AN EMPTY FILE! Trying to restore old database file...");
+			databaseFile.delete();
+			if(!tmpFile.renameTo(databaseFile)) {
+				System.err.println("Unable to restore old database file but it should be in "+tmpFile);
+				throw new IOException("Defrag produced an empty file; Unable to restore old database file but it should be in "+tmpFile);
+			}
+		} else {
+			double change = 100.0 * (((double)(oldSize - newSize)) / ((double)oldSize));
+			FileUtil.secureDelete(tmpFile, random);
+			FileUtil.secureDelete(backupFile, random);
+			System.err.println("Defragment completed. "+SizeUtil.formatSize(oldSize)+" ("+oldSize+") -> "+SizeUtil.formatSize(newSize)+" ("+newSize+") ("+(int)change+"% shrink)");
+		}
 
 		synchronized(this) {
 			if(!defragOnce) return;
