@@ -3056,9 +3056,12 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 		}
 		System.err.println("Finalising defragmentation...");
+		long oldSize = tmpFile.length();
+		long newSize = databaseFile.length();
+		double change = 100.0 * (((double)(oldSize - newSize)) / ((double)oldSize));
 		FileUtil.secureDelete(tmpFile, random);
 		FileUtil.secureDelete(backupFile, random);
-		System.err.println("Defragment completed.");
+		System.err.println("Defragment completed. "+SizeUtil.formatSize(oldSize)+" ("+oldSize+") -> "+SizeUtil.formatSize(newSize)+" ("+newSize+") ("+(int)change+"% shrink)");
 
 		synchronized(this) {
 			if(!defragOnce) return;
