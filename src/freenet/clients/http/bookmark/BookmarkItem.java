@@ -152,6 +152,7 @@ public class BookmarkItem extends Bookmark {
         if (updated) {
             return;
         }
+        assert(key.isUSK());
         updated = true;
         alerts.register(alert);
     }
