@@ -159,6 +159,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			// Okay, we have already got them.
 			return;
 		}
+		innerCheckCachedCooldownData(container);
+	}
+	
+	private void innerCheckCachedCooldownData(ObjectContainer container) {
 		boolean active = true;
 		if(persistent) {
 			active = container.ext().isActive(ctx);
@@ -460,6 +464,20 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		HasCooldownCacheItem parentRGA = getParentGrabArray();
 		context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container, context, true);
 		return wakeTime;
+	}
+	
+	/** Reread the cached cooldown values (and anything else) from the FetchContext
+	 * after it changes. FIXME: Ideally this should be a generic mechanism, but
+	 * that looks too complex without significant changes to data structures.
+	 * For now it's just a hack to make changing the polling interval in USKs work.
+	 * @param container The database if this is a persistent request.
+	 * @param context The context object.
+	 */
+	public void onChangedFetchContext(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(cancelled || finished) return;
+		}
+		innerCheckCachedCooldownData(container);
 	}
 
 }
