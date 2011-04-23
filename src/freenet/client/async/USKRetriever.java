@@ -300,6 +300,8 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	
 	/** Only works if setFetcher() has been called, i.e. if this was created
 	 * through USKManager.subscribeContentCustom().
+	 * FIXME this is a special case hack, 
+	 * For a generic solution see https://bugs.freenetproject.org/view.php?id=4984
 	 * @param time The new cooldown time. At least 30 minutes or we throw.
 	 * @param tries The new number of tries after each cooldown. Greater than 0
 	 * and less than 3 or we throw.

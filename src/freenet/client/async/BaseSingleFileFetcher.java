@@ -470,6 +470,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	 * after it changes. FIXME: Ideally this should be a generic mechanism, but
 	 * that looks too complex without significant changes to data structures.
 	 * For now it's just a hack to make changing the polling interval in USKs work.
+	 * See bug https://bugs.freenetproject.org/view.php?id=4984
 	 * @param container The database if this is a persistent request.
 	 * @param context The context object.
 	 */

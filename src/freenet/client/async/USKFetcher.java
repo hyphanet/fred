@@ -1646,6 +1646,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return realTimeFlag;
 	}
 	
+	/** FIXME this is a special case hack
+	 * For a generic solution see https://bugs.freenetproject.org/view.php?id=4984
+	 */
 	public void changeUSKPollParameters(long time, int tries, ClientContext context) {
 		this.ctx.setCooldownRetries(tries);
 		this.ctxNoStore.setCooldownRetries(tries);
