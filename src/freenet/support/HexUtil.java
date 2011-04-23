@@ -17,7 +17,7 @@ import freenet.support.Logger.LogLevel;
  * @author syoung
  */
 public class HexUtil {
-	private static boolean logDEBUG =Logger.logger.instanceShouldLog(LogLevel.DEBUG,HexUtil.class);
+	private static boolean logDEBUG =Logger.shouldLog(Logger.DEBUG,HexUtil.class);
 	private HexUtil() {		
 	}	
 	
