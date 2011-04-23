@@ -1506,6 +1506,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			// Okay, we have already got them.
 			return;
 		}
+		innerCheckCachedCooldownData(container);
+	}
+	
+	private void innerCheckCachedCooldownData(ObjectContainer container) {
 		boolean active = true;
 		if(persistent) {
 			active = container.ext().isActive(blockFetchContext);
@@ -2387,6 +2391,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 
 	public synchronized int getMaxRetries(ObjectContainer container) {
 		if(maxRetries != 0) return maxRetries;
+		return innerGetMaxRetries(container);
+	}
+	
+	private synchronized int innerGetMaxRetries(ObjectContainer container) {
 		boolean contextActive = true;
 		if(persistent) {
 			contextActive = container.ext().isActive(blockFetchContext);
@@ -2398,6 +2406,21 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(!contextActive) container.deactivate(blockFetchContext, 1);
 		}
 		return maxRetries;
+	}
+
+	/** Reread the cached cooldown values (and anything else) from the FetchContext
+	 * after it changes. FIXME: Ideally this should be a generic mechanism, but
+	 * that looks too complex without significant changes to data structures.
+	 * For now it's just a hack to make changing the polling interval in USKs work.
+	 * @param container The database if this is a persistent request.
+	 * @param context The context object.
+	 */
+	public void onChangedFetchContext(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(finished) return;
+		}
+		innerCheckCachedCooldownData(container);
+		innerGetMaxRetries(container);
 	}
 
 }
