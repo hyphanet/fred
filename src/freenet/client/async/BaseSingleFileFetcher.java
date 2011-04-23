@@ -41,6 +41,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	final FetchContext ctx;
 	protected boolean deleteFetchContext;
 	static final SendableRequestItem[] keys = new SendableRequestItem[] { NullSendableRequestItem.nullItem };
+	private int cachedCooldownTries;
+	private long cachedCooldownTime;
 	
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -124,15 +126,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if((r <= maxRetries) || (maxRetries == -1)) {
 			if(persistent && maxRetries != -1)
 				container.store(this);
-			boolean active = true;
-			if(persistent) {
-				active = container.ext().isActive(ctx);
-				container.activate(ctx, 1);
-			}
-			int cooldownRetries = ctx.getCooldownRetries();
-			long cooldownTime = ctx.getCooldownTime();
-			if(!active) container.deactivate(ctx, 1);
-			if(cooldownRetries == 0 || r % cooldownRetries == 0) {
+			checkCachedCooldownData(container);
+			if(cachedCooldownTries == 0 || r % cachedCooldownTries == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
 				if(tracker.cooldownWakeupTime > now) {
@@ -141,7 +136,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
 					if(persistent)
 						container.activate(key, 5);
-					tracker.cooldownWakeupTime = now + cooldownTime;
+					tracker.cooldownWakeupTime = now + cachedCooldownTime;
 					context.cooldownTracker.setCachedWakeup(tracker.cooldownWakeupTime, this, getParentGrabArray(), persistent, container, context, true);
 					if(logMINOR) Logger.minor(this, "Added single file fetcher into cooldown until "+TimeUtil.formatTime(tracker.cooldownWakeupTime - now));
 					if(persistent)
@@ -156,6 +151,22 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		unregister(container, context, getPriorityClass(container));
 		return false;
+	}
+
+	private void checkCachedCooldownData(ObjectContainer container) {
+		// 0/0 is illegal, and it's also the default, so use it to indicate we haven't fetched them.
+		if(!(cachedCooldownTime == 0 && cachedCooldownTries == 0)) {
+			// Okay, we have already got them.
+			return;
+		}
+		boolean active = true;
+		if(persistent) {
+			active = container.ext().isActive(ctx);
+			container.activate(ctx, 1);
+		}
+		cachedCooldownTries = ctx.getCooldownRetries();
+		cachedCooldownTime = ctx.getCooldownTime();
+		if(!active) container.deactivate(ctx, 1);
 	}
 
 	protected void onEnterFiniteCooldown(ClientContext context) {
