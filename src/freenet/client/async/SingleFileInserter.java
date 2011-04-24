@@ -511,7 +511,7 @@ class SingleFileInserter implements ClientPutState {
 				try {
 					BucketTools.copyTo(data, hasher, data.size());
 				} catch (IOException e) {
-					throw new InsertException(InsertException.BUCKET_ERROR, "I/O error generating hashes", null);
+					throw new InsertException(InsertException.BUCKET_ERROR, "I/O error generating hashes", e, null);
 				}
 				hashes = hasher.getResults();
 			}

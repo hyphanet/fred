@@ -9,6 +9,8 @@ import freenet.node.Node;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.PluginManager;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
+import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
 
 public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
@@ -33,12 +35,13 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		
 		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode, "chat-list", true);
 		
-		contentBox.addChild("p", l10n("content1"));
+		contentBox.addChild("p", l10n("freetalkRecommended"));
+		contentBox.addChild("p", l10n("freetalkCaveat"));
+		ctx.addFormChild(contentBox, path(), "loadFreetalkButton").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "loadFreetalk", l10n("freetalkButton") });
+		contentBox.addChild("p", l10n("othersIntro"));
+		
 		HTMLNode ul = contentBox.addChild("ul");
 		HTMLNode li = ul.addChild("li");
-		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.freetalk", new String[] { "pluginspage" }, 
-				new HTMLNode[] { HTMLNode.link(PproxyToadlet.PATH)});
-		li = ul.addChild("li");
 		NodeL10n.getBase().addL10nSubstitution(li, "ChatForumsToadlet.fms", new String[] { "fms", "fms-help" }, 
 				new HTMLNode[] { HTMLNode.link("/USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/101/"), HTMLNode.link("/SSK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25RIwDH99M,9T20t3xoG-dQfMO94LGOl9AxRTkaz~TykFY-voqaTQI,AQACAAE/FAFS-49/files/fms.htm")});
 		li = ul.addChild("li");
@@ -47,6 +50,55 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		contentBox.addChild("p", l10n("content2"));
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+	}
+	
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		
+		// FIXME we should really refactor this boilerplate stuff out somehow...
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
+			return;
+		}
+		
+		String pass = request.getPartAsString("formPassword", 32);
+		if((pass == null) || !pass.equals(node.clientCore.formPassword)) {
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			headers.put("Location", path());
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		}
+		
+		if(request.isPartSet("loadFreetalk")) {
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					if(!node.pluginManager.isPluginLoaded("plugins.WebOfTrust.WebOfTrust")) {
+						node.pluginManager.startPluginOfficial("WebOfTrust", true, false, false);
+					}
+				}
+			});
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					if(!node.pluginManager.isPluginLoaded("plugins.Freetalk.Freetalk")) {
+						node.pluginManager.startPluginOfficial("Freetalk", true, false, false);
+					}
+				}
+			});
+			try {
+				// Wait a little to ensure we have at least started loading them.
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// Ignore
+			}
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			headers.put("Location", PproxyToadlet.PATH);
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+		} else {
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			headers.put("Location", path());
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+		}
 	}
 
 	private static final String l10n(String string) {

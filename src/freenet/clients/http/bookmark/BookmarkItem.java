@@ -15,7 +15,6 @@ import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.Fields;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -153,6 +152,7 @@ public class BookmarkItem extends Bookmark {
         if (updated) {
             return;
         }
+        assert(key.isUSK());
         updated = true;
         alerts.register(alert);
     }
@@ -169,6 +169,8 @@ public class BookmarkItem extends Bookmark {
         this.key = uri;
         this.desc = description;
         this.hasAnActivelink = hasAnActivelink;
+        if(!key.isUSK())
+        	disableBookmark();
     }
 
     public synchronized String getKeyType() {

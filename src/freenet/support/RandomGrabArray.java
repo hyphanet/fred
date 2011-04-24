@@ -450,7 +450,7 @@ public class RandomGrabArray implements RemoveRandom, HasCooldownCacheItem {
 						container.deactivate(blocks[blockNumWriting], 1);
 				}
 				if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
-				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container);
+				context.cooldownTracker.setCachedWakeup(wakeupTime, this, parent, persistent, container, context);
 				return new RemoveRandomReturn(wakeupTime);
 			} else if(valid == 1) {
 				ret = validItem;

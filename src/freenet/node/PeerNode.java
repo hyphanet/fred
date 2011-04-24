@@ -2368,8 +2368,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		Logger.minor(this, "Stopping ARK fetcher for " + this + " : " + myARK);
 		// FIXME any way to reduce locking here?
 		synchronized(arkFetcherSync) {
-			if(arkFetcher == null)
+			if(arkFetcher == null) {
+				if(logMINOR) Logger.minor(this, "ARK fetcher not running for "+this);
 				return;
+			}
 			node.clientCore.uskManager.unsubscribeContent(myARK, this.arkFetcher, true);
 			arkFetcher = null;
 		}
@@ -2809,26 +2811,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 		}
 		return sent;
-	}
-
-	void checkTrackerTimeout() {
-		long now = System.currentTimeMillis();
-		SessionKey prev = null;
-		SessionKey cur = null;
-		synchronized(this) {
-			if(previousTracker == null) return;
-			if(currentTracker == null) return;
-			cur = currentTracker;
-			prev = previousTracker;
-		}
-		if(prev.packets == cur.packets) return;
-		long t = prev.packets.getNextUrgentTime();
-		if(!(t > -1 && prev.packets.timeLastDecodedPacket() > 0 && (now - prev.packets.timeLastDecodedPacket()) > 60*1000 &&
-				cur.packets.timeLastDecodedPacket() > 0 && (now - cur.packets.timeLastDecodedPacket() < 30*1000) &&
-				(prev.packets.countAckRequests() > 0 || prev.packets.countResendRequests() > 0)))
-			return;
-		Logger.error(this, "No packets decoded on "+prev+" for 60 seconds, deprecating in favour of cur: "+cur);
-		prev.packets.completelyDeprecated(cur);
 	}
 
 	/**
@@ -4734,6 +4716,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		private int lastSentAllocationInput;
 		private int lastSentAllocationOutput;
+		private int lastSentMaxOutputTransfers = Integer.MAX_VALUE;
 		private long timeLastSentAllocationNotice;
 		private long countAllocationNotices;
 		private PeerLoadStats lastFullStats;
@@ -4765,11 +4748,23 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(!mustSend) return;
 		}
 		
+		public void onSetMaxOutputTransfers(int maxOutputTransfers) {
+			synchronized(this) {
+				if(maxOutputTransfers == lastSentMaxOutputTransfers) return;
+				if(lastSentMaxOutputTransfers == Integer.MAX_VALUE || lastSentMaxOutputTransfers == 0) {
+					sendASAP = true;
+				} else if(maxOutputTransfers > lastSentMaxOutputTransfers * 1.05 || maxOutputTransfers < lastSentMaxOutputTransfers * 0.9) {
+					sendASAP = true;
+				}
+			}
+		}
+		
 		Message makeLoadStats(long now, int transfersPerInsert, boolean noRemember) {
 			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, transfersPerInsert, realTimeFlag);
 			synchronized(this) {
 				lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
 				lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
+				lastSentMaxOutputTransfers = (int) stats.maxTransfersOut;
 				if(!noRemember) {
 					if(lastFullStats != null && lastFullStats.equals(stats)) return null;
 					lastFullStats = stats;
@@ -4791,13 +4786,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public synchronized void setSendASAP() {
 			sendASAP = true;
 		}
+
 	}
 	
 	void removeUIDsFromMessageQueues(Long[] list) {
 		this.messageQueue.removeUIDsFromMessageQueues(list);
 	}
+
+	public void onSetMaxOutputTransfers(boolean realTime, int maxOutputTransfers) {
+		(realTime ? loadSenderRealTime : loadSenderBulk).onSetMaxOutputTransfers(maxOutputTransfers);
+	}
 	
-	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, boolean realTime) {
+	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, int maxOutputTransfers, boolean realTime) {
 		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation, transfersPerInsert);
 	}
 
@@ -5318,6 +5318,17 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(pf == null) return Long.MAX_VALUE;
 		}
 		return pf.timeSendAcks();
+	}
+
+	/** Calculate the maximum number of outgoing transfers to this peer that we
+	 * will accept in requests and inserts. */
+	public int calculateMaxTransfersOut(int timeout, double nonOverheadFraction) {
+		double bandwidth = (getThrottle().getBandwidth()+1.0);
+		if(shouldThrottle())
+			bandwidth = Math.min(bandwidth, node.getOutputBandwidthLimit() / 2);
+		bandwidth *= nonOverheadFraction;
+		double kilobytesPerSecond = bandwidth / 1024.0;
+		return (int)Math.max(1, Math.min(kilobytesPerSecond * timeout, Integer.MAX_VALUE));
 	}
 	
 }

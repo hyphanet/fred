@@ -7,10 +7,11 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
+import freenet.client.async.USKProgressCallback;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 
-public class SubscribeUSK implements USKCallback {
+public class SubscribeUSK implements USKProgressCallback {
 
 	// FIXME allow client to specify priorities
 	final FCPConnectionHandler handler;
@@ -20,6 +21,7 @@ public class SubscribeUSK implements USKCallback {
 	final short prio;
 	final short prioProgress;
 	final USK usk;
+	final USKCallback toUnsub;
 	
 	public SubscribeUSK(SubscribeUSKMessage message, NodeClientCore core, FCPConnectionHandler handler) throws IdentifierCollisionException {
 		this.handler = handler;
@@ -30,7 +32,12 @@ public class SubscribeUSK implements USKCallback {
 		prio = message.prio;
 		prioProgress = message.prioProgress;
 		handler.addUSKSubscription(identifier, this);
-		core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient(message.realTimeFlag));
+		if((!message.dontPoll) && message.sparsePoll)
+			toUnsub = core.uskManager.subscribeSparse(message.key, this, handler.getRebootClient().lowLevelClient(message.realTimeFlag));
+		else {
+			core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient(message.realTimeFlag));
+			toUnsub = this;
+		}
 	}
 
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
@@ -53,6 +60,14 @@ public class SubscribeUSK implements USKCallback {
 
 	public void unsubscribe() {
 		core.uskManager.unsubscribe(usk, this);
+	}
+
+	public void onSendingToNetwork(ClientContext context) {
+		handler.outputHandler.queue(new SubscribedUSKSendingToNetworkMessage(identifier));
+	}
+
+	public void onRoundFinished(ClientContext context) {
+		handler.outputHandler.queue(new SubscribedUSKRoundFinishedMessage(identifier));
 	}
 
 }

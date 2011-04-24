@@ -23,6 +23,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertContext.CompatibilityMode;
+import freenet.client.events.EnterFiniteCooldownEvent;
 import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedHashesEvent;
 import freenet.client.events.ExpectedMIMEEvent;
@@ -54,7 +55,7 @@ import freenet.support.io.NullBucket;
  * of the request is stored in currentState. The ClientGetState's do most of the work. SingleFileFetcher for
  * example fetches a key, parses the metadata, and if necessary creates other states to e.g. fetch splitfiles.
  */
-public class ClientGetter extends BaseClientGetter {
+public class ClientGetter extends BaseClientGetter implements WantsCooldownCallback {
 
 	private static volatile boolean logMINOR;
 
@@ -850,6 +851,25 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		if(persistent()) container.store(this);
 		ctx.eventProducer.produceEvent(new ExpectedHashesEvent(hashes), container, context);
+	}
+
+	public void enterCooldown(long wakeupTime, ObjectContainer container,
+			ClientContext context) {
+		if(wakeupTime == Long.MAX_VALUE) {
+			// Ignore.
+			// FIXME implement when implement clearCooldown().
+			// It means everything that can be started has been started.
+		} else {
+			if(persistent()) {
+				container.activate(ctx, 1);
+				container.activate(ctx.eventProducer, 1);
+			}
+			ctx.eventProducer.produceEvent(new EnterFiniteCooldownEvent(wakeupTime), container, context);
+		}
+	}
+
+	public void clearCooldown(ObjectContainer container) {
+		// Ignore for now. FIXME.
 	}
 	
 }

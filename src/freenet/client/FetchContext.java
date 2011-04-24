@@ -12,6 +12,7 @@ import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.client.filter.FoundURICallback;
 import freenet.client.filter.TagReplacerCallback;
+import freenet.node.RequestScheduler;
 import freenet.support.api.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
@@ -93,6 +94,13 @@ public class FetchContext implements Cloneable {
 	public TagReplacerCallback tagReplacer;
 	/**Force the content fiter to use this MIME type*/
 	public String overrideMIME;
+	/** Number of attempts before we go into cooldown. Must be less than or equal to
+	 * RequestScheduler.COOLDOWN_RETRIES. */
+	private int cooldownRetries;
+	/** Time period for which we go into cooldown. Must be NO LESS THAN 
+	 * RequestScheduler.COOLDOWN_PERIOD, because ULPRs will ensure rapid success
+	 * with that interval or less. */
+	private long cooldownTime;
 
 	public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -125,6 +133,8 @@ public class FetchContext implements Cloneable {
 		this.canWriteClientCache = canWriteClientCache;
 		this.charset = charset;
 		this.overrideMIME = overrideMIME;
+		this.cooldownRetries = RequestScheduler.COOLDOWN_RETRIES;
+		this.cooldownTime = RequestScheduler.COOLDOWN_PERIOD;
 		hasOwnEventProducer = true;
 	}
 
@@ -168,6 +178,8 @@ public class FetchContext implements Cloneable {
 		this.prefetchHook = ctx.prefetchHook;
 		this.tagReplacer = ctx.tagReplacer;
 		this.overrideMIME = ctx.overrideMIME;
+		this.cooldownRetries = ctx.cooldownRetries;
+		this.cooldownTime = ctx.cooldownTime;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT
@@ -205,5 +217,29 @@ public class FetchContext implements Cloneable {
 		// Storing a BlockSet to the database is not supported, see comments on SimpleBlockSet.objectCanNew().
 		// allowedMIMETypes is passed in, whoever passes it in is responsible for deleting it.
 		container.delete(this);
+	}
+	
+	public void setCooldownRetries(int cooldownRetries) {
+		if(cooldownRetries < 0)
+			throw new IllegalArgumentException("Bogus negative retries");
+		if(cooldownRetries > RequestScheduler.COOLDOWN_RETRIES)
+			throw new IllegalArgumentException("Invalid COOLDOWN_RETRIES: Must be <= "+RequestScheduler.COOLDOWN_RETRIES+" since the network will not tolerate more than that");
+		this.cooldownRetries = cooldownRetries;
+	}
+	
+	public void setCooldownTime(long cooldownTime) {
+		if(cooldownTime < 0)
+			throw new IllegalArgumentException("Bogus negative cooldown time");
+		if(cooldownTime < RequestScheduler.COOLDOWN_PERIOD)
+			throw new IllegalArgumentException("Invalid COOLDOWN_PERIOD: Must be >= "+RequestScheduler.COOLDOWN_PERIOD+" since ULPRs will ensure fast response at that level");
+		this.cooldownTime = cooldownTime;
+	}
+	
+	public int getCooldownRetries() {
+		return cooldownRetries;
+	}
+	
+	public long getCooldownTime() {
+		return cooldownTime;
 	}
 }

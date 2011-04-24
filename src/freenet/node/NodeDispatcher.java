@@ -475,7 +475,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting request from "+source.getPeer()+": "+e);
 			}
-			node.failureTable.onFinalFailure(key, null, htl, htl, -1, source);
+			node.failureTable.onFinalFailure(key, null, htl, htl, -1, -1, source);
 			return;
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
