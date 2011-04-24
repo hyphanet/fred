@@ -66,6 +66,23 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 	
 	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private ClientPutter() {
+		targetURI = null;
+		targetFilename = null;
+		overrideSplitfileCrypto = null;
+		isMetadata = false;
+		getCHKOnly = false;
+		data = null;
+		ctx = null;
+		cm = null;
+		client = null;
+		binaryBlob = false;
+	}
+
+	/**
 	 * @param client The object to call back when we complete, or don't.
 	 * @param data The data to insert. This will not be freed by ClientPutter, the callback must do that. However,
 	 * buckets used internally by the client layer will be freed.
