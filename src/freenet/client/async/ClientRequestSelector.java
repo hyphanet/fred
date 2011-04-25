@@ -172,7 +172,11 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		// If a block is already running it will return null. Try to find a valid block in that case.
 		long now = System.currentTimeMillis();
 		for(int i=0;i<5;i++) {
-			SelectorReturn r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, realTime, context, container, now);
+			// Must synchronize on scheduler to avoid problems with cooldown queue. See notes on CooldownTracker.clearCachedWakeup, which also applies to other cooldown operations.
+			SelectorReturn r;
+			synchronized(sched) {
+				r = removeFirstInner(fuzz, random, offeredKeys, starter, null, schedTransient, true, false, maxPrio, realTime, context, container, now);
+			}
 			SendableRequest req = null;
 			if(r != null && r.req != null) req = r.req;
 			if(req == null) continue;
@@ -402,7 +406,10 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 						if(baseRGA != null) {
 							if(chosenTracker.persistent())
 								container.activate(baseRGA, 1);
-							baseRGA.remove(req, container, context);
+							// Must synchronize on scheduler to avoid nasty race conditions with cooldown.
+							synchronized(sched) {
+								baseRGA.remove(req, container, context);
+							}
 						} else {
 							// Okay, it's been removed already. Cool.
 						}
@@ -634,6 +641,7 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 		}
 	}
 
+	/** LOCKING: Caller should hold as few locks as possible */ 
 	public void removeFetchingKey(final Key key) {
 		Long[] persistentWaiting;
 		WeakReference<BaseSendableGet>[] transientWaiting;
@@ -655,7 +663,9 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 					for(WeakReference<BaseSendableGet> ref : transientWaiting) {
 						BaseSendableGet get = ref.get();
 						if(get == null) continue;
-						tracker.clearCachedWakeup(get, false, null);
+						synchronized(sched) {
+							tracker.clearCachedWakeup(get, false, null);
+						}
 					}
 				}
 			}
@@ -702,6 +712,11 @@ outer:	for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			while(recentSuccesses.size() > 8)
 				recentSuccesses.remove(0);
 		}
+	}
+
+	public long checkRecentlyFailed(Key key, boolean realTime) {
+		Node node = sched.getNode();
+		return node.clientCore.checkRecentlyFailed(key, realTime);
 	}
 	
 }

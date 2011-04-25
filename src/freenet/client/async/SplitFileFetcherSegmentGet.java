@@ -90,6 +90,26 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		if(persistent) container.activate(ctx, 1);
 		return ctx;
 	}
+	
+	private boolean localRequestOnly(ObjectContainer container,
+			ClientContext context) {
+		boolean localOnly = false;
+		boolean segmentActive = true;
+		boolean ctxActive = true;
+		if(persistent) {
+			segmentActive = container.ext().isActive(segment);
+			if(!segmentActive) container.activate(segment, 1);
+		}
+		FetchContext ctx = segment.blockFetchContext;
+		if(!segmentActive) container.deactivate(segment, 1);
+		if(persistent) {
+			ctxActive = container.ext().isActive(ctx);
+			container.activate(ctx, 1);
+		}
+		localOnly = ctx.localRequestOnly;
+		if(!ctxActive) container.deactivate(ctx, 1);
+		return localOnly;
+	}
 
 	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
 	private FetchException translateException(LowLevelGetException e) {
@@ -214,9 +234,14 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public void preRegister(ObjectContainer container, ClientContext context,
+	public boolean preRegister(ObjectContainer container, ClientContext context,
 			boolean toNetwork) {
-		if(!toNetwork) return;
+		if(!toNetwork) return false;
+		if(localRequestOnly(container, context)) {
+			if(persistent) container.activate(segment, 1);
+			segment.failCheckingDatastore(container, context);
+			return true;
+		}
 		boolean deactivate = false;
 		if(persistent) {
 			deactivate = !container.ext().isActive(parent);
@@ -224,6 +249,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		}
 		parent.toNetwork(container, context);
 		if(deactivate) container.deactivate(parent, 1);
+		return false;
 	}
 
 	@Override
@@ -237,8 +263,12 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 			ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
 		ArrayList<Integer> possibles = segment.validBlockNumbers(keys, true, container, context);
-		if(possibles == null || possibles.isEmpty()) return null;
-		return new SplitFileFetcherSegmentSendableRequestItem(possibles.get(context.random.nextInt(possibles.size())));
+		while(true) {
+			if(possibles == null || possibles.isEmpty()) return null;
+			Integer x = possibles.remove(context.random.nextInt(possibles.size()));
+			if(segment.checkRecentlyFailed(x, container, context, keys, System.currentTimeMillis())) continue;
+			return new SplitFileFetcherSegmentSendableRequestItem(x);
+		}
 	}
 
 	@Override
@@ -283,11 +313,11 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 
 	@Override
 	public List<PersistentChosenBlock> makeBlocks(
-			PersistentChosenRequest request, RequestScheduler sched,
+			PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys,
 			ObjectContainer container, ClientContext context) {
 		if(persistent) container.activate(segment, 1);
 		// FIXME why is the fetching keys list not passed in? We could at least check for other fetchers for the same key??? Need to modify the parameters ...
-		List<PersistentChosenBlock> blocks = segment.makeBlocks(request, sched, container, context);
+		List<PersistentChosenBlock> blocks = segment.makeBlocks(request, sched, keys, this, container, context);
 		if(persistent) container.deactivate(segment, 1);
 		return blocks;
 	}
@@ -301,7 +331,7 @@ public class SplitFileFetcherSegmentGet extends SendableGet implements SupportsB
 		HasCooldownCacheItem parentRGA = getParentGrabArray();
 		long wakeTime = segment.getCooldownTime(container, context, parentRGA, now);
 		if(wakeTime > 0)
-			context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container, true);
+			context.cooldownTracker.setCachedWakeup(wakeTime, this, parentRGA, persistent, container, context, true);
 		return wakeTime;
 	}
 

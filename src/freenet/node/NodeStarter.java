@@ -55,6 +55,9 @@ public class NodeStarter implements WrapperListener {
 
 	private FreenetFilePersistentConfig cfg;
 
+	// experimental osgi support
+	private static NodeStarter nodestarter_osgi = null;
+
 	/*---------------------------------------------------------------
 	 * Constructors
 	 *-------------------------------------------------------------*/
@@ -397,5 +400,17 @@ public class NodeStarter implements WrapperListener {
 		node.peers.removeAllPeers();
 
 		return node;
+	}
+
+	// experimental osgi support
+	public static void start_osgi(String[] args) {
+		nodestarter_osgi = new NodeStarter();
+		nodestarter_osgi.start(args);
+	}
+
+	// experimental osgi support
+	public static void stop_osgi(int exitCode) {
+		nodestarter_osgi.stop(exitCode);
+		nodestarter_osgi = null;
 	}
 }

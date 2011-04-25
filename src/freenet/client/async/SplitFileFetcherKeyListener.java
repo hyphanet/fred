@@ -99,7 +99,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				segmentFilters[i] = cachedSegFilters[i];
 				container.activate(cachedSegFilters[i], Integer.MAX_VALUE);
 				cachedSegFilters[i].init(container);
-				System.out.println("Restored segment "+i+" filter for "+parent+" : k="+cachedSegFilters[i].getK()+" size = "+cachedSegFilters[i].getSizeBytes()+" bytes = "+cachedSegFilters[i].getLength()+" elements, filled: "+cachedSegFilters[i].getFilledCount());
+				if(logMINOR) Logger.minor(this, "Restored segment "+i+" filter for "+parent+" : k="+cachedSegFilters[i].getK()+" size = "+cachedSegFilters[i].getSizeBytes()+" bytes = "+cachedSegFilters[i].getLength()+" elements, filled: "+cachedSegFilters[i].getFilledCount());
 			}
 		} else {
 			byte[] segmentsFilterBuffer = new byte[segmentFilterSizeBytes * segments];

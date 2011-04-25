@@ -145,6 +145,7 @@ public interface HTTPRequest {
 	
 	/**
 	 * Gets up to maxLength characters from the part, ignores any characters after the limit.
+	 * If no such part exists, an empty String is returned.
 	 */
 	public String getPartAsStringFailsafe(String name, int maxlength);
 
@@ -159,6 +160,7 @@ public interface HTTPRequest {
 	
 	/**
 	 * Gets up to maxLength bytes from the part, ignores any bytes after the limit.
+	 * If no such part exists, a byte[] with size 0 is returned. 
 	 */
 	public byte[] getPartAsBytesFailsafe(String name, int maxlength);
 	

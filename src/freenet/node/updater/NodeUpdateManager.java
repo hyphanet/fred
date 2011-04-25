@@ -646,7 +646,7 @@ public class NodeUpdateManager {
 			}
 			int extVer = getReadyExt();
 			if(extVer < minExtVersion || extVer > maxExtVersion) {
-				if(logMINOR) Logger.minor(this, "Invalid ext: current "+extVer+" must be between "+minExtVersion+" and "+maxExtVersion);
+				System.err.println("Invalid ext: current "+extVer+" must be between "+minExtVersion+" and "+maxExtVersion);
 				return false;
 			}
 			if(!ignoreRevocation) {
@@ -918,13 +918,11 @@ public class NodeUpdateManager {
 					gotJarTime = System.currentTimeMillis();
 					if(logMINOR)
 						Logger.minor(this, "Got main jar: "+mainUpdater.getFetchedVersion());
+					if(requiredExt > -1)
+						minExtVersion = requiredExt;
+					if(recommendedExt > -1)
+						maxExtVersion = recommendedExt;
 				}
-			}
-			if(!isExt) {
-				if(requiredExt > -1)
-					minExtVersion = requiredExt;
-				if(recommendedExt > -1)
-					maxExtVersion = recommendedExt;
 			}
 		}
 		if(!isExt && (requiredExt > -1 || recommendedExt > -1)) {

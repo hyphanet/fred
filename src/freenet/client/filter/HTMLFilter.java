@@ -2346,10 +2346,23 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		@Override
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
+			// HTML5 is just <!doctype html>
+			if(t.unparsedAttrs.length == 1) {
+				if (!t.unparsedAttrs[0].equalsIgnoreCase("html"))
+					return null;
+				return t;
+			}
 			if (!((t.unparsedAttrs.length == 3) || (t.unparsedAttrs.length == 4)))
 				return null;
 			if (!t.unparsedAttrs[0].equalsIgnoreCase("html"))
 				return null;
+			if(t.unparsedAttrs[1].equalsIgnoreCase("system") && t.unparsedAttrs.length == 3) {
+				// HTML5 allows <!DOCTYPE html SYSTEM "about:legacy-compat"> (either kind of quotes)
+				String s = stripQuotes(t.unparsedAttrs[2]);
+				if(s.equals("about:legacy-compat") && t.unparsedAttrs.length == 3) {
+					return t;
+				} else return null;
+			}
 			if (!t.unparsedAttrs[1].equalsIgnoreCase("public"))
 				return null;
 			String s = stripQuotes(t.unparsedAttrs[2]);

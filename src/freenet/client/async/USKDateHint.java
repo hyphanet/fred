@@ -5,8 +5,10 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableUSK;
+import freenet.keys.USK;
 
 /** Utility class for date-based edition hints */
 public class USKDateHint {
@@ -15,7 +17,19 @@ public class USKDateHint {
 		YEAR,
 		MONTH,
 		DAY,
-		WEEK
+		WEEK;
+
+		public boolean alwaysMorePreciseThan(Type type) {
+			if(this.equals(type)) return false;
+			if(this.equals(DAY)) { // Day beats everything.
+				return true;
+			} else if(this.equals(MONTH)) { // Month and week don't beat each other as they sometimes overlap.
+				return type.equals(YEAR);
+			} else if(this.equals(WEEK)) {
+				return type.equals(YEAR);
+			} else // if(this.equals(YEAR)) - everything beats year
+				return false;
+		}
 	}
 	
 	private GregorianCalendar cal;
@@ -58,6 +72,15 @@ public class USKDateHint {
 		int x = 0;
 		for(Type t : Type.values())
 			uris[x++] = key.getInsertableSSK(key.siteName+PREFIX+get(t)).getInsertURI();
+		return uris;
+	}
+
+	/** Return the URL's to fetch hint data from */
+	public ClientSSK[] getRequestURIs(USK key) {
+		ClientSSK[] uris = new ClientSSK[Type.values().length];
+		int x = 0;
+		for(Type t : Type.values())
+			uris[x++] = key.getSSK(key.siteName+PREFIX+get(t));
 		return uris;
 	}
 

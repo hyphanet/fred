@@ -1258,7 +1258,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	@Override
-	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+		// FIXME use keys
 		if(persistent) {
 			container.activate(blocks, 1);
 		}

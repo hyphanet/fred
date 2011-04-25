@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
@@ -146,6 +147,9 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	private transient int crossCheckBlocksAllocated;
 	
 	private final boolean realTimeFlag;
+	
+	private int cachedCooldownTries;
+	private long cachedCooldownTime;
 	
 	@Override
 	public int hashCode() {
@@ -1424,6 +1428,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			checkRetries = tracker.checkRetries;
 			callStore = false;
 		}
+		checkCachedCooldownData(container);
 		synchronized(this) {
 			if(isFinished(container)) return false;
 			if(blockNo < dataBuckets.length) {
@@ -1431,14 +1436,15 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				tries = ++dataRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
-					if(tries % RequestScheduler.COOLDOWN_RETRIES == 0) {
+					if(cachedCooldownTries == 0 ||
+							tries % cachedCooldownTries == 0) {
 						long now = System.currentTimeMillis();
 						if(dataCooldownTimes[blockNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" data block no "+blockNo, new Exception("error"));
 						else {
 							SplitFileFetcherSegmentGet getter = makeGetter(container, context);
 							if(getter != null) {
-								dataCooldownTimes[blockNo] = sched.queueCooldown(key, getter, container);
+								dataCooldownTimes[blockNo] = now + cachedCooldownTime;
 								if(logMINOR) Logger.minor(this, "Putting data block "+blockNo+" into cooldown until "+(dataCooldownTimes[blockNo]-now));
 							}
 						}
@@ -1453,14 +1459,15 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				tries = ++checkRetries[checkNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
-					if(tries % RequestScheduler.COOLDOWN_RETRIES == 0) {
+					if(cachedCooldownTries == 0 ||
+							tries % cachedCooldownTries == 0) {
 						long now = System.currentTimeMillis();
 						if(checkCooldownTimes[checkNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
 						else {
 							SplitFileFetcherSegmentGet getter = makeGetter(container, context);
 							if(getter != null) {
-								checkCooldownTimes[checkNo] = sched.queueCooldown(key, getter, container);
+								checkCooldownTimes[checkNo] = now + cachedCooldownTime;
 								if(logMINOR) Logger.minor(this, "Putting check block "+blockNo+" into cooldown until "+(checkCooldownTimes[checkNo]-now));
 							}
 						}
@@ -1493,16 +1500,48 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		return mustSchedule;
 	}
 	
+	private void checkCachedCooldownData(ObjectContainer container) {
+		// 0/0 is illegal, and it's also the default, so use it to indicate we haven't fetched them.
+		if(!(cachedCooldownTime == 0 && cachedCooldownTries == 0)) {
+			// Okay, we have already got them.
+			return;
+		}
+		innerCheckCachedCooldownData(container);
+	}
+	
+	private void innerCheckCachedCooldownData(ObjectContainer container) {
+		boolean active = true;
+		if(persistent) {
+			active = container.ext().isActive(blockFetchContext);
+			container.activate(blockFetchContext, 1);
+		}
+		cachedCooldownTries = blockFetchContext.getCooldownRetries();
+		cachedCooldownTime = blockFetchContext.getCooldownTime();
+		if(!active) container.deactivate(blockFetchContext, 1);
+	}
+
 	private MyCooldownTrackerItem makeCooldownTrackerItem(
 			ObjectContainer container, ClientContext context) {
 		return (MyCooldownTrackerItem) context.cooldownTracker.make(this, persistent, container);
 	}
 
+	/** Called when localRequestOnly is set and we check the datastore and find nothing.
+	 * We should fail() unless we are already decoding. */
+	void failCheckingDatastore(ObjectContainer container, ClientContext context) {
+		fail(null, container, context, false, true);
+	}
+	
 	void fail(FetchException e, ObjectContainer container, ClientContext context, boolean dontDeactivateParent) {
+		fail(e, container, context, dontDeactivateParent, false);
+	}
+	
+	private void fail(FetchException e, ObjectContainer container, ClientContext context, boolean dontDeactivateParent, boolean checkingStoreOnly) {
 		if(logMINOR) Logger.minor(this, "Failing segment "+this, e);
 		boolean alreadyDecoding = false;
 		synchronized(this) {
 			if(finished) return;
+			if(startedDecode && checkingStoreOnly) return;
+			if(checkingStoreOnly) e = new FetchException(FetchException.DATA_NOT_FOUND);
 			finished = true;
 			alreadyDecoding = startedDecode;
 			this.failureException = e;
@@ -1618,7 +1657,17 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 		else
 			return checkCooldownTimes[blockNum - dataBuckets.length];
 	}
-
+	
+	synchronized void setMaxCooldownWakeup(long until, int blockNum, int maxTries, ObjectContainer container, ClientContext context) {
+		MyCooldownTrackerItem tracker = makeCooldownTrackerItem(container, context);
+		long[] dataCooldownTimes = tracker.dataCooldownTimes;
+		long[] checkCooldownTimes = tracker.checkCooldownTimes;
+		if(blockNum < dataBuckets.length)
+			dataCooldownTimes[blockNum] = Math.max(dataCooldownTimes[blockNum], until);
+		else
+			checkCooldownTimes[blockNum - dataBuckets.length] = Math.max(checkCooldownTimes[blockNum - dataBuckets.length], until);
+	}
+	
 	private int getRetries(int blockNum, ObjectContainer container, ClientContext context) {
 		return getRetries(blockNum, getMaxRetries(container), container, context);
 	}
@@ -2168,6 +2217,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				// Possible ...
 				Key key = keys.getNodeKey(i, null, true);
 				if(fetching.hasKey(key, getter, persistent, container)) continue;
+				// Do not check RecentlyFailed here.
+				// 1. We're synchronized, so it would be a bad idea here.
+				// 2. It's way too heavyweight given we're not going to send most of the items added.
+				// Check it in the caller.
 				if(onlyLowestTries) {
 					int retryCount = this.getRetries(i, container, context);
 					if(retryCount > minRetries) {
@@ -2183,6 +2236,20 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			return list;
 		}
 	}
+	
+	public boolean checkRecentlyFailed(int blockNum, ObjectContainer container, ClientContext context, KeysFetchingLocally keys, long now) {
+		if(keys == null) 
+			migrateToKeys(container);
+		else {
+			if(persistent) container.activate(keys, 1);
+		}
+		Key key = this.keys.getNodeKey(blockNum, null, true);
+		long timeout = keys.checkRecentlyFailed(key, realTimeFlag);
+		if(timeout <= now) return false;
+		// Concurrency is fine here, it won't go away before the given time.
+		setMaxCooldownWakeup(timeout, blockNum, this.getMaxRetries(container), container, context);
+		return true;
+	}
 
 	/** Separate method because we will need to create the Key anyway for checking against
 	 * the KeysFetchingLocally, and we can reuse that in the created Block. Yes we don't 
@@ -2190,13 +2257,15 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 	 * future.
 	 * @param request
 	 * @param sched
+	 * @param getter 
+	 * @param keysFetching 
 	 * @param container
 	 * @param context
 	 * @return
 	 */
 	public List<PersistentChosenBlock> makeBlocks(
 			PersistentChosenRequest request, RequestScheduler sched,
-			ObjectContainer container, ClientContext context) {
+			KeysFetchingLocally fetching, SplitFileFetcherSegmentGet getter, ObjectContainer container, ClientContext context) {
 		long now = System.currentTimeMillis();
 		ArrayList<PersistentChosenBlock> list = null;
 		if(keys == null) 
@@ -2214,14 +2283,23 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				if(getBlockBucket(i, container) != null) continue;
 				// Possible ...
 				Key key = keys.getNodeKey(i, null, true);
-				// FIXME pass in the KeysFetchingLocally and check against it.
-				//if(fetching.hasKey(key)) continue;
+				if(fetching.hasKey(key, getter, persistent, container)) continue;
 				if(list == null) list = new ArrayList<PersistentChosenBlock>();
 				ClientCHK ckey = keys.getKey(i, null, true); // FIXME Duplicates the routingKey field
 				list.add(new PersistentChosenBlock(false, request, new SplitFileFetcherSegmentSendableRequestItem(i), key, ckey, sched));
 			}
-			return list;
 		}
+		if(list == null) return null;
+		for(Iterator<PersistentChosenBlock> i = list.iterator();i.hasNext();) {
+			PersistentChosenBlock block = i.next();
+			// We must do the actual check outside the lock.
+			long l = fetching.checkRecentlyFailed(block.key, realTimeFlag);
+			if(l < now) continue; // Okay
+			i.remove();
+			// Concurrency is fine here, it won't go away before the given time.
+			setMaxCooldownWakeup(l, ((SplitFileFetcherSegmentSendableRequestItem)block.token).blockNum, maxTries, container, context);
+		}
+		return list;
 	}
 	
 	public long getCooldownTime(ObjectContainer container, ClientContext context, HasCooldownCacheItem parentRGA, long now) {
@@ -2249,6 +2327,7 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 				}
 				Key key = keys.getNodeKey(i, null, true);
 				if(fetching.hasKey(key, getter, persistent, container)) continue;
+				
 				return 0; // Stuff to send right now.
 			}
 		}
@@ -2312,6 +2391,10 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 
 	public synchronized int getMaxRetries(ObjectContainer container) {
 		if(maxRetries != 0) return maxRetries;
+		return innerGetMaxRetries(container);
+	}
+	
+	private synchronized int innerGetMaxRetries(ObjectContainer container) {
 		boolean contextActive = true;
 		if(persistent) {
 			contextActive = container.ext().isActive(blockFetchContext);
@@ -2323,6 +2406,22 @@ public class SplitFileFetcherSegment implements FECCallback, HasCooldownTrackerI
 			if(!contextActive) container.deactivate(blockFetchContext, 1);
 		}
 		return maxRetries;
+	}
+
+	/** Reread the cached cooldown values (and anything else) from the FetchContext
+	 * after it changes. FIXME: Ideally this should be a generic mechanism, but
+	 * that looks too complex without significant changes to data structures.
+	 * For now it's just a hack to make changing the polling interval in USKs work.
+	 * See https://bugs.freenetproject.org/view.php?id=4984
+	 * @param container The database if this is a persistent request.
+	 * @param context The context object.
+	 */
+	public void onChangedFetchContext(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(finished) return;
+		}
+		innerCheckCachedCooldownData(container);
+		innerGetMaxRetries(container);
 	}
 
 }

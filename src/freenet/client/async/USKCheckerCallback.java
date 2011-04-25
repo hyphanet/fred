@@ -28,5 +28,8 @@ interface USKCheckerCallback {
 	
 	/** Get priority to run the request at */
 	public short getPriority();
+
+	/** Called when we enter a finite cooldown */
+	public void onEnterFiniteCooldown(ClientContext context);
 	
 }

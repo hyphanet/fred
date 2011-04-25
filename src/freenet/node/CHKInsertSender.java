@@ -580,7 +580,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				
 				if (msg == null) {
 					
-					Logger.error(this, "Timeout on insert "+this+" to "+next);
+					Logger.warning(this, "Timeout on insert "+this+" to "+next);
 					
 					// First timeout.
 					// Could be caused by the next node, or could be caused downstream.

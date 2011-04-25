@@ -191,7 +191,7 @@ public class USKManager {
 	 */
 	public void hintUpdate(USK usk, long edition, ClientContext context) {
 		if(edition < lookupLatestSlot(usk)) return;
-		FreenetURI uri = usk.copy(edition).getURI();
+		FreenetURI uri = usk.copy(edition).getURI().sskForUSK();
 		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
 		try {
 			get.start(null, context);
@@ -200,6 +200,10 @@ public class USKManager {
 		}
 	}
 
+	public void hintUpdate(FreenetURI uri, ClientContext context) throws MalformedURLException {
+		hintUpdate(uri, context, RequestStarter.UPDATE_PRIORITY_CLASS);
+	}
+	
 	/**
 	 * A non-authoritative hint that a specific edition *might* exist. At the moment,
 	 * we just fetch the block. We do not fetch the contents, and it is possible that
@@ -208,13 +212,87 @@ public class USKManager {
 	 * @param context
 	 * @throws MalformedURLException If the uri passed in is not a USK.
 	 */
-	public void hintUpdate(FreenetURI uri, ClientContext context) throws MalformedURLException {
-		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) return;
-		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, rcBulk, new NullBucket(), null);
+	public void hintUpdate(FreenetURI uri, ClientContext context, short priority) throws MalformedURLException {
+		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) {
+			if(logMINOR) Logger.minor(this, "Ignoring hint because edition is "+uri.getSuggestedEdition()+" but latest is "+lookupLatestSlot(USK.create(uri)));
+			return;
+		}
+		uri = uri.sskForUSK();
+		if(logMINOR) Logger.minor(this, "Doing hint fetch for "+uri);
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null);
 		try {
 			get.start(null, context);
 		} catch (FetchException e) {
+			if(logMINOR) Logger.minor(this, "Cannot start hint fetch for "+uri+" : "+e, e);
 			// Ignore
+		}
+	}
+	
+	public interface HintCallback {
+
+		/** The SSK block exists. The USK tracker will have been updated. We 
+		 * did not try to fetch the rest of the key.
+		 * @param origURI The original FreenetURI object.
+		 * @param token The token object passed in by the caller.
+		 */
+		void success(FreenetURI origURI, Object token);
+
+		/** The SSK block does not exist. We got a DNF, DNF with RecentlyFailed,
+		 * check store only and it wasn't in the datastore etc.
+		 * @param origURI The original FreenetURI object.
+		 * @param token The token object passed in by the caller.
+		 * @param e The exception.
+		 */
+		void dnf(FreenetURI origURI, Object token, FetchException e);
+
+		/** Some other error. We don't necessarily know that it doesn't exist. 
+		 * @param origURI The original FreenetURI object.
+		 * @param token The token object passed in by the caller.
+		 * @param e The exception.
+		 */
+		void failed(FreenetURI origURI, Object token, FetchException e);
+		
+	}
+	
+	/** Simply check whether the block exists, in such a way that we don't fetch
+	 * the full content. If it does exist then the USK tracker, and therefore 
+	 * any fetchers, will be updated. You can pass either an SSK or a USK. */
+	public void hintCheck(FreenetURI uri, final Object token, ClientContext context, short priority, final HintCallback cb) throws MalformedURLException {
+		final FreenetURI origURI = uri;
+		if(uri.isUSK()) uri = uri.sskForUSK();
+		if(logMINOR) Logger.minor(this, "Doing hint fetch for "+uri);
+		final ClientGetter get = new ClientGetter(new ClientGetCallback() {
+
+			public void onMajorProgress(ObjectContainer container) {
+				// Ignore
+			}
+
+			public void onSuccess(FetchResult result, ClientGetter state,
+					ObjectContainer container) {
+				cb.success(origURI, token);
+			}
+
+			public void onFailure(FetchException e, ClientGetter state,
+					ObjectContainer container) {
+				if(e.isDataFound())
+					cb.success(origURI, token);
+				else if(e.isDNF())
+					cb.dnf(origURI, token, e);
+				else
+					cb.failed(origURI, token, e);
+			}
+			
+		}, uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), priority, rcBulk, new NullBucket(), null);
+		try {
+			get.start(null, context);
+		} catch (FetchException e) {
+			if(logMINOR) Logger.minor(this, "Cannot start hint fetch for "+uri+" : "+e, e);
+			if(e.isDataFound())
+				cb.success(origURI, token);
+			else if(e.isDNF())
+				cb.dnf(origURI, token, e);
+			else
+				cb.failed(origURI, token, e);
 		}
 	}
 
@@ -415,6 +493,19 @@ public class USKManager {
 				}
 	}
 	
+	/** Subscribe to a given USK, and poll it in the background, but only 
+	 * report new editions when we've been through a round and are confident 
+	 * that we won't find more in the near future. Note that it will ignore
+	 * KnownGood, it only cares about latest slot.
+	 * @return The proxy object which was actually subscribed. The caller MUST
+	 * record this and pass it in to unsubscribe() when unsubscribing.  
+	 * */
+	public USKSparseProxyCallback subscribeSparse(USK origUSK, USKCallback cb, RequestClient client) {
+		USKSparseProxyCallback proxy = new USKSparseProxyCallback(cb, origUSK);
+		subscribe(origUSK, proxy, true, client);
+		return proxy;
+	}
+	
 	/**
 	 * Subscribe to a given USK. Callback will be notified when it is
 	 * updated. Note that this does not imply that the USK will be
@@ -459,7 +550,7 @@ public class USKManager {
 			if(runBackgroundFetch) {
 				USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 5, true, false, false);
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 3, true, false, false);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}
@@ -474,6 +565,7 @@ public class USKManager {
 		if(fetcher != null) {
 			executor.execute(new Runnable() {
 				public void run() {
+					if(logMINOR) Logger.minor(this, "Starting "+fetcher);
 					fetcher.schedule(null, context);
 				}
 			}, "USKManager.schedule for "+fetcher);
@@ -514,28 +606,59 @@ public class USKManager {
 			// Temporary background fetchers run once and then die.
 			// They do not care about callbacks.
 		}
-		if(toCancel != null) toCancel.cancel(null, context);
+		if(toCancel != null) {
+			toCancel.cancel(null, context);
+		} else {
+			if(logMINOR) Logger.minor(this, "Not found unsubscribing: "+cb+" for "+origUSK);
+		}
 	}
-	
+
 	/**
 	 * Subscribe to a USK. When it is updated, the content will be fetched (subject to the limits in fctx),
-	 * and returned to the callback.
+	 * and returned to the callback. If we are asked to do a background fetch, we will only fetch editions
+	 * when we are fairly confident there are no more to fetch.
 	 * @param origUSK The USK to poll.
 	 * @param cb Callback, called when we have downloaded a new key.
 	 * @param runBackgroundFetch If true, start a background fetcher for the key, which will run
-	 * forever until we unsubscribe.
+	 * forever until we unsubscribe. Note that internally we use subscribeSparse() in this case,
+	 * i.e. we will only download editions which we are confident about.
 	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
 	 * @param prio Priority for fetching the content (see constants in RequestScheduler).
+	 * @param sparse If true, only fetch once we're sure it's the latest edition.
 	 * @return
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
 		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK);
-		subscribe(origUSK, ret, runBackgroundFetch, client);
+		USKCallback toSub = ret;
+		if(logMINOR) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb);
+		if(runBackgroundFetch) {
+			USKSparseProxyCallback proxy = new USKSparseProxyCallback(ret, origUSK);
+			ret.setProxy(proxy);
+			toSub = proxy;
+		}
+		subscribe(origUSK, toSub, runBackgroundFetch, client);
+		return ret;
+	}
+	
+	/**
+	 * Subscribe to a USK with a custom FetchContext. This is "off the books",
+	 * i.e. the background fetcher isn't started by subscribe().
+	 */
+	public USKRetriever subscribeContentCustom(USK origUSK, USKRetrieverCallback cb, FetchContext fctx, short prio, RequestClient client) {
+		USKRetriever ret = new USKRetriever(fctx, prio, client, cb, origUSK);
+		USKCallback toSub = ret;
+		if(logMINOR) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb);
+		USKSparseProxyCallback proxy = new USKSparseProxyCallback(ret, origUSK);
+		ret.setProxy(proxy);
+		toSub = proxy;
+		subscribe(origUSK, toSub, false, client);
+		USKFetcher f = new USKFetcher(origUSK, this, fctx, new USKFetcherWrapper(origUSK, prio, client), 3, true, false, false);
+		ret.setFetcher(f);
 		return ret;
 	}
 	
 	public void unsubscribeContent(USK origUSK, USKRetriever ret, boolean runBackgroundFetch) {
-		unsubscribe(origUSK, ret);
+		ret.unsubscribe(this);
 	}
 	
 	// REMOVE: DO NOT Synchronize! ... debugging only.
@@ -585,5 +708,9 @@ public class USKManager {
 
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
+	}
+
+	ClientContext getContext() {
+		return context;
 	}
 }

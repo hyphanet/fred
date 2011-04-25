@@ -609,6 +609,25 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, getRandomSplitfileKeys(target, ctx, persistent, container, context), container, context);
+
+	}
+		
+	private static byte[] getRandomSplitfileKeys(FreenetURI target,
+			InsertContext ctx, boolean persistent, ObjectContainer container, ClientContext context) {
+		boolean randomiseSplitfileKeys = ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container);
+		if(randomiseSplitfileKeys) {
+			byte[] forceCryptoKey = new byte[32];
+			context.random.nextBytes(forceCryptoKey);
+			return forceCryptoKey;
+		} else {
+			return null;
+		}
+	}
+
+	public SimpleManifestPutter(ClientPutCallback cb,
+			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, byte cryptoAlgorithm, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
 		super(prioClass, clientContext);
 		this.defaultName = defaultName;
 
@@ -618,19 +637,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			checkDefaultName(manifestElements, defaultName);
 		}
 
-		this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		this.cryptoAlgorithm = cryptoAlgorithm;
 
 		if(client.persistent())
 			this.targetURI = target.clone();
 		else
 			this.targetURI = target;
-		boolean randomiseSplitfileKeys = ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container);
-		if(randomiseSplitfileKeys) {
-			forceCryptoKey = new byte[32];
-			context.random.nextBytes(forceCryptoKey);
-		} else {
-			forceCryptoKey = null;
-		}
+		this.forceCryptoKey = forceCryptoKey;
 		this.cb = cb;
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly;
