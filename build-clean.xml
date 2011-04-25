@@ -47,6 +47,12 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<fileset dir="${lib.contrib.dir}" includes="**/*.jar"/>
 		<fileset dir="${java.class.dirs}" includes="${lib.jars}"/>
 	</path>
+	<path id="libtest.path">
+		<path refid="lib.path"/>
+		<fileset dir="${java.class.dirs}" includes="${libtest.jars}"/>
+		<pathelement path="${main.make}"/>
+		<pathelement path="${test.make}"/>
+	</path>
 
 	<property name="contrib.version.min" value="-1"/>
 	<property name="contrib.version.rec" value="-1"/>
@@ -240,10 +246,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	<target name="unit-build" depends="build, libdep-junit" unless="${test.skip}">
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on" source="1.5" target="1.5">
 			<compilerarg line="${javac.args}"/>
-			<classpath>
-				<path refid="lib.path"/>
-				<pathelement path="${main.make}"/>
-			</classpath>
+			<classpath refid="libtest.path"/>
 			<include name="**/*.java"/>
 			<exclude name="*.java"/>
 		</javac>
@@ -257,14 +260,8 @@ build-dependency on ant-optional, libbsf-java and rhino.
 
 	<target name="unit" depends="unit-build" unless="${test.skip}">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes" dir="${test.dst}">
-			<classpath>
-				<path refid="lib.path"/>
-				<pathelement path="${main.make}"/>
-				<pathelement path="${test.make}"/>
-			</classpath>
-
+			<classpath refid="libtest.path"/>
 			<formatter type="plain" usefile="false"/>
-
 			<batchtest fork="yes">
 				<fileset dir="${test.make}">
 					<include name="**/*Test.class"/>
