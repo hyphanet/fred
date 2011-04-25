@@ -217,7 +217,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		</copy>
 	</target>
 
-	<target name="package" depends="build, unit" description="build standard binary packages (Freenet daemon)" >
+	<target name="package-only" depends="build">
 		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet/node/Node"/>
@@ -237,6 +237,8 @@ build-dependency on ant-optional, libbsf-java and rhino.
 			<exclude name="${version.src}"/>
 		</jar>
 	</target>
+
+	<target name="package" depends="unit, package-only" description="build standard binary packages (Freenet daemon)"/>
 
 	<target name="unit-build" depends="build, libdep-junit" unless="${test.skip}">
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on" source="1.5" target="1.5">
