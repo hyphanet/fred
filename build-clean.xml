@@ -215,8 +215,9 @@ build-dependency on ant-optional, libbsf-java and rhino.
 		<property name="loc.lib.contrib.dir" location="${lib.contrib.dir}" />
 		<property name="loc.loc" location="${lib}" />
 		<pathconvert property="lib.jars.package" refid="lib.path" pathsep=" ">
-			<map from="${loc.lib.contrib.dir}" to="${java.class.dirs}/freenet"/>
-			<map from="${loc.lib}" to="${java.class.dirs}"/>
+			<map from="${loc.lib.contrib.dir}" to="freenet"/>
+			<map from="${loc.lib}/" to=""/>
+			<map from="${java.class.dirs}/" to=""/>
 		</pathconvert>
 		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
 			<manifest>
