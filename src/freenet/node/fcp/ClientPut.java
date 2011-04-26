@@ -62,6 +62,19 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private ClientPut() {
+		uploadFrom = 0;
+		targetURI = null;
+		targetFilename = null;
+		origFilename = null;
+		clientMetadata = null;
+		binaryBlob = false;
+	}
+
+	/**
 	 * Fproxy
 	 * Creates a new persistent insert.
 	 * @param uri

@@ -71,7 +71,23 @@ public abstract class ClientRequest {
 			}
 		});
 	}
-	
+
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	protected ClientRequest() {
+		verbosity = 0;
+		startupTime = 0;
+		persistenceType = 0;
+		origHandler = null;
+		lowLevelClient = null;
+		charset = null;
+		client = null;
+		global = false;
+		hashCode = 0;
+		identifier = null;
+	}
+
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
 			FCPConnectionHandler handler, FCPClient client, short priorityClass2, short persistenceType2, boolean realTime, String clientToken2, boolean global, ObjectContainer container) {
 		int hash = super.hashCode();

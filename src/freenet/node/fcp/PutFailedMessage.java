@@ -25,7 +25,23 @@ public class PutFailedMessage extends FCPMessage {
 	final String identifier;
 	final boolean global;
 	final boolean isFatal;
-	
+
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private PutFailedMessage() {
+		tracker = null;
+		shortCodeDescription = null;
+		isFatal = false;
+		identifier = null;
+		global = false;
+		extraDescription = null;
+		expectedURI = null;
+		codeDescription = null;
+		code = 0;
+	}
+
 	public PutFailedMessage(InsertException e, String identifier, boolean global) {
 		this.code = e.getMode();
 		this.codeDescription = InsertException.getMessage(code);
