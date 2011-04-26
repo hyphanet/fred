@@ -127,6 +127,38 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	/** When this reaches crossCheckBlocks, we can encode the check blocks. */
 	private int encodedCrossCheckBlocks;
 
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private SplitFileInserterSegment() {
+		splitfileAlgo = 0;
+		segNo = 0;
+		putter = null;
+		persistent = false;
+		parent = null;
+		maxRetries = 0;
+		getCHKOnly = false;
+		errors = null;
+		dataURIs = null;
+		dataRetries = null;
+		dataFinished = null;
+		dataFailed = null;
+		dataConsecutiveRNFs = null;
+		dataBlocks = null;
+		cryptoKey = null;
+		crossSegmentsByBlock = null;
+		crossCheckBlocks = 0;
+		checkURIs = null;
+		checkRetries = null;
+		checkFinished = null;
+		checkFailed = null;
+		checkConsecutiveRNFs = null;
+		checkBlocks = null;
+		blocks = null;
+		blockInsertContext = null;
+	}
+
 	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, boolean realTimeFlag, BaseClientPutter putter,
 			short splitfileAlgo, int crossCheckBlocks, int checkBlockCount, Bucket[] origDataBlocks,
 			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, byte cryptoAlgorithm, byte[] cryptoKey, ObjectContainer container) {

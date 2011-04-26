@@ -59,6 +59,16 @@ public abstract class ClientRequester {
 		return priorityClass;
 	}
 
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	protected ClientRequester() {
+		realTimeFlag = false;
+		creationTime = 0;
+		hashCode = 0;
+		requests = null;
+	}
+
 	protected ClientRequester(short priorityClass, RequestClient client) {
 		this.priorityClass = priorityClass;
 		this.client = client;
