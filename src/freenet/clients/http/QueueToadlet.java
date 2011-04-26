@@ -288,9 +288,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					reqs = fcp.getGlobalRequests();
 					
 					for(RequestStatus r : reqs) {
-						if(r instanceof DownloadRequestStatus && r.isPersistent() && r.hasSucceeded() && r.isTotalFinalized()) {
-							identifier = r.getIdentifier();
-							fcp.removeGlobalRequestBlocking(identifier);
+						if(r instanceof DownloadRequestStatus) {
+							DownloadRequestStatus download = (DownloadRequestStatus)r;
+							if(download.isPersistent() && download.hasSucceeded() && download.isTotalFinalized() && !download.toTempSpace()) {
+								identifier = download.getIdentifier();
+								fcp.removeGlobalRequestBlocking(identifier);
+							}
 						}
 					}
 				} catch (MessageInvalidException e) {
