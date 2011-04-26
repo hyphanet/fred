@@ -287,12 +287,25 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					RequestStatus[] reqs;
 					reqs = fcp.getGlobalRequests();
 					
-					for(RequestStatus r : reqs) {
-						if(r instanceof DownloadRequestStatus) {
-							DownloadRequestStatus download = (DownloadRequestStatus)r;
-							if(download.isPersistent() && download.hasSucceeded() && download.isTotalFinalized() && !download.toTempSpace()) {
-								identifier = download.getIdentifier();
-								fcp.removeGlobalRequestBlocking(identifier);
+					boolean hasIdentifier = false;
+					for(String part : request.getParts()) {
+						if(!part.startsWith("identifier-")) continue;
+						hasIdentifier = true;
+						identifier = part.substring("identifier-".length());
+						if(identifier.length() > 50) continue;
+						identifier = request.getPartAsString(part, MAX_IDENTIFIER_LENGTH);
+						if(logMINOR) Logger.minor(this, "Removing "+identifier);
+						fcp.removeGlobalRequestBlocking(identifier);
+					}
+					
+					if(!hasIdentifier) { // delete all, because no identifier is given
+						for(RequestStatus r : reqs) {
+							if(r instanceof DownloadRequestStatus) {
+								DownloadRequestStatus download = (DownloadRequestStatus)r;
+								if(download.isPersistent() && download.hasSucceeded() && download.isTotalFinalized() && !download.toTempSpace()) {
+									identifier = download.getIdentifier();
+									fcp.removeGlobalRequestBlocking(identifier);
+								}
 							}
 						}
 					}
@@ -1808,10 +1821,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode formDiv = new HTMLNode("div", "class", "request-table-form");
 		HTMLNode form = ctx.addFormChild(formDiv, path(), "request-table-form-"+id+(advancedModeEnabled?"-advanced":"-simple"));
 		
-		if( isFinishedDiskDownloads )
+		if( isFinishedDiskDownloads ) {
 			form.addChild(createRemoveFinishedDownloadsControl(pageMaker, ctx));
-		if( !isFinishedDiskDownloads || advancedModeEnabled )
+		} else {
 			form.addChild(createDeleteControl(pageMaker, ctx, isDownloadToTemp, isFailed, isDisableFilterChecked, isUpload));
+		}
 		if(hasFriends && !(isUpload && isFailed))
 			form.addChild(createRecommendControl(pageMaker, ctx));
 		if(advancedModeEnabled && !(isFailed || isCompleted))
