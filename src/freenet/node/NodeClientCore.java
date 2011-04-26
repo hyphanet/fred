@@ -1171,12 +1171,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						nodeStats.successfulSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 				}
 
+				long rtt = System.currentTimeMillis() - startTime;
 				if((status == RequestSender.TIMED_OUT) ||
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 					if(!rejectedOverload) {
 						requestStarters.rejectedOverload(true, false, realTimeFlag);
 						rejectedOverload = true;
 					}
+					node.nodeStats.reportSSKOutcome(rtt, false, realTimeFlag);
 				} else
 					if(rs.hasForwarded() &&
 						((status == RequestSender.DATA_NOT_FOUND) ||
@@ -1185,12 +1187,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						(status == RequestSender.ROUTE_NOT_FOUND) ||
 						(status == RequestSender.VERIFY_FAILURE) ||
 						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
-						long rtt = System.currentTimeMillis() - startTime;
 
 						if(!rejectedOverload)
 							requestStarters.requestCompleted(true, false, key.getNodeKey(true), realTimeFlag);
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.getThrottle(true, false, realTimeFlag).successfulCompletion(rtt);
+						node.nodeStats.reportSSKOutcome(rtt, status == RequestSender.SUCCESS, realTimeFlag);
 					}
 
 				if(rs.getStatus() == RequestSender.SUCCESS)
