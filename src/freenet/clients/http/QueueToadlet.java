@@ -281,7 +281,33 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				writePermanentRedirect(ctx, "Done", path());
 				return;
-			} else if(request.isPartSet("restart_request") && (request.getPartAsString("restart_request", 128).length() > 0)) {
+			} else if(request.isPartSet("remove_finished_downloads_request") && (request.getPartAsString("remove_finished_downloads_request", 128).length() > 0)) {
+				String identifier = "";
+				try {
+					RequestStatus[] reqs;
+					reqs = fcp.getGlobalRequests();
+					
+					for(RequestStatus r : reqs) {
+						if(r instanceof DownloadRequestStatus && r.isPersistent() && r.hasSucceeded() && r.isTotalFinalized()) {
+							identifier = r.getIdentifier();
+							fcp.removeGlobalRequestBlocking(identifier);
+						}
+					}
+				} catch (MessageInvalidException e) {
+					this.sendErrorPage(ctx, 200,
+							NodeL10n.getBase().getString("QueueToadlet.failedToRemoveRequest"),
+							NodeL10n.getBase().getString("QueueToadlet.failedToRemove",
+									new String[]{ "id", "message" },
+									new String[]{ identifier, e.getMessage()}
+							));
+					return;
+				} catch (DatabaseDisabledException e) {
+					sendPersistenceDisabledError(ctx);
+					return;
+				}
+				writePermanentRedirect(ctx, "Done", path());
+			}
+			else if(request.isPartSet("restart_request") && (request.getPartAsString("restart_request", 128).length() > 0)) {
 				boolean disableFilterData = request.isPartSet("disableFilterData");
 				
 				
@@ -1518,7 +1544,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return pageNode;
 	}
 
-
 	private HTMLNode createReasonCell(String failureReason) {
 		HTMLNode reasonCell = new HTMLNode("td", "class", "request-reason");
 		if (failureReason == null) {
@@ -1631,6 +1656,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode recommendDiv = new HTMLNode("div", "class", "request-recommend");
 		recommendDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", NodeL10n.getBase().getString("QueueToadlet.recommendFilesToFriends") });
 		return recommendDiv;
+	}
+
+	private HTMLNode createRemoveFinishedDownloadsControl( PageMaker pageMaker, ToadletContext ctx ) {
+		HTMLNode deleteDiv = new HTMLNode("div", "class", "request-delete-finished-downloads");
+		deleteDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_finished_downloads_request", NodeL10n.getBase().getString("QueueToadlet.removeFinishedDownloads") });
+		return deleteDiv;
 	}
 	
 	/** Create a delete or restart control at the top of a table. It applies to whichever requests are checked in the table below. */
@@ -1768,12 +1799,16 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List<? extends RequestStatus> requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload, String id, boolean isDownloadToTemp, boolean isFailed, boolean isDisableFilterChecked, boolean isCompleted) {
 		boolean hasFriends = core.node.getDarknetConnections().length > 0;
+		boolean isFinishedDiskDownloads = isCompleted && !isUpload && !isDownloadToTemp && !isFailed;
 		long now = System.currentTimeMillis();
 		
 		HTMLNode formDiv = new HTMLNode("div", "class", "request-table-form");
 		HTMLNode form = ctx.addFormChild(formDiv, path(), "request-table-form-"+id+(advancedModeEnabled?"-advanced":"-simple"));
 		
-		form.addChild(createDeleteControl(pageMaker, ctx, isDownloadToTemp, isFailed, isDisableFilterChecked, isUpload));
+		if( isFinishedDiskDownloads )
+			form.addChild(createRemoveFinishedDownloadsControl(pageMaker, ctx));
+		if( !isFinishedDiskDownloads || advancedModeEnabled )
+			form.addChild(createDeleteControl(pageMaker, ctx, isDownloadToTemp, isFailed, isDisableFilterChecked, isUpload));
 		if(hasFriends && !(isUpload && isFailed))
 			form.addChild(createRecommendControl(pageMaker, ctx));
 		if(advancedModeEnabled && !(isFailed || isCompleted))
