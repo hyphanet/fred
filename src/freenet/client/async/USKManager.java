@@ -718,8 +718,8 @@ public class USKManager {
 	public void checkUSK(FreenetURI uri, boolean persistent,
 			ObjectContainer container, boolean isMetadata) {
 		try {
+			if(persistent) container.activate(uri, 5);
 			if(uri.isSSK() && uri.isSSKForUSK()) {
-				if(persistent) container.activate(uri, 5);
 				FreenetURI uu = uri.setMetaString(null).uskForSSK();
 				USK usk = USK.create(uu);
 				if(!isMetadata)
