@@ -1012,6 +1012,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				Closer.close(pipeIn);
 				Closer.close(output);
 			}
+			if(key instanceof ClientSSK) {
+				// Fetching the container is essentially a full success, we should update the latest known good.
+				context.uskManager.checkUSK(uri, persistent, container, false);
+			}
 
 			if(!persistent) {
 				// Run directly - we are running on some thread somewhere, don't worry about it.
