@@ -1,0 +1,3 @@
+[submodule "src/freenet/clients/http/staticfiles/IpToCountry"]
+	path = src/freenet/clients/http/staticfiles/IpToCountry
+	url = git://github.com/freenet/IpToCountry.git
