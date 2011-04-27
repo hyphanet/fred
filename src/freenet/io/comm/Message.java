@@ -139,7 +139,7 @@ public class Message {
 			String msg = peer.getPeer()+" sent a message packet that ends prematurely while deserialising "+mspec.getName();
 			if(inSubMessage ||
 					// FIXME remove this part of the condition
-					(mspec.getName().startsWith("FNPPeerLoadStatus") && Version.lastGoodBuild() < 1365))
+					(mspec.getName().startsWith("FNPPeerLoadStatus")))
 				Logger.minor(Message.class, msg+" in sub-message", e);
 			else
 				Logger.error(Message.class, msg, e);
