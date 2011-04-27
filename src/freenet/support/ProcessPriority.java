@@ -1,6 +1,8 @@
 package freenet.support;
 
-import com.sun.jna.*;
+import com.sun.jna.Native;
+import com.sun.jna.Platform;
+import com.sun.jna.Pointer;
 import com.sun.jna.win32.StdCallLibrary;
 
 public class ProcessPriority {
@@ -17,8 +19,8 @@ public class ProcessPriority {
 
         public static int PROCESS_MODE_BACKGROUND_BEGIN         = 0x00100000;
         public static int PROCESS_MODE_BACKGROUND_END           = 0x00200000;
-        public static int ERROR_THREAD_MODE_ALREADY_BACKGROUND  = 402;
-        public static int ERROR_THREAD_MODE_NOT_BACKGROUND      = 403;
+        public static int ERROR_PROCESS_MODE_ALREADY_BACKGROUND = 402;
+        public static int ERROR_PROCESS_MODE_NOT_BACKGROUND     = 403;
     }
 
     private static Kernel32 win = null;
@@ -46,7 +48,7 @@ public class ProcessPriority {
             if (Platform.isWindows())
                 if (win.SetPriorityClass(win.GetCurrentProcess(), Kernel32.PROCESS_MODE_BACKGROUND_BEGIN))
                     return background = true;
-                else if (win.GetLastError() == Kernel32.ERROR_THREAD_MODE_ALREADY_BACKGROUND)
+                else if (win.GetLastError() == Kernel32.ERROR_PROCESS_MODE_ALREADY_BACKGROUND)
                     throw new Exception("Illegal state");
         return background;
     }
@@ -58,7 +60,7 @@ public class ProcessPriority {
             if (Platform.isWindows())
                 if (win.SetPriorityClass(win.GetCurrentProcess(), Kernel32.PROCESS_MODE_BACKGROUND_END))
                     return background = false;
-                else if (win.GetLastError() == Kernel32.ERROR_THREAD_MODE_NOT_BACKGROUND)
+                else if (win.GetLastError() == Kernel32.ERROR_PROCESS_MODE_NOT_BACKGROUND)
                     throw new Exception("Illegal state");
         return background;
     }
