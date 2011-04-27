@@ -142,7 +142,7 @@ public class Message {
 					(mspec.getName().startsWith("FNPPeerLoadStatus")))
 				Logger.minor(Message.class, msg+" in sub-message", e);
 			else if(mspec.getName().startsWith("FNPPeerLoadStatus"))
-				Logger.warning(Message.class, msg, e);
+				Logger.warning(Message.class, msg, e); // FIXME remove this after all the old builds have gone away
 			else
 				Logger.error(Message.class, msg, e);
 		    return null;
