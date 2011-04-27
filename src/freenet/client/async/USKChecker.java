@@ -47,6 +47,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			container.activate(this, 1);
 			container.activate(cb, 1);
 		}
+		context.uskManager.checkUSK(key.getURI(), fromStore, container, block.isMetadata());
 		cb.onSuccess((ClientSSKBlock)block, context);
 	}
 
