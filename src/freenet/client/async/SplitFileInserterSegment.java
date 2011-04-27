@@ -49,8 +49,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
-				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, SplitFileInserterSegment.class);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, SplitFileInserterSegment.class);
 			}
 		});
 	}
@@ -179,7 +179,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				// See onEncodedCrossCheckBlock().
 				if(encodedCrossCheckBlocks != crossCheckBlocks)
 					return;
-				System.out.println("Starting segment "+segNo);
+				if(logMINOR) Logger.minor(this, "Starting segment "+segNo);
 			}
 			if(started) return;
 			started = true;
@@ -1585,8 +1585,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 			dataBlocks[blockNum] = data;
 			++encodedCrossCheckBlocks;
-			if(encodedCrossCheckBlocks != crossCheckBlocks)
-				System.out.println("Segment "+segNo+" has "+encodedCrossCheckBlocks+" encoded of "+crossCheckBlocks+", still waiting...");
+			if(logMINOR && encodedCrossCheckBlocks != crossCheckBlocks)
+				Logger.minor(this, "Segment "+segNo+" has "+encodedCrossCheckBlocks+" encoded of "+crossCheckBlocks+", still waiting...");
 		}
 		if(persistent) {
 			data.storeTo(container);
