@@ -1,3 +1,7 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
+
 package freenet.support;
 
 import com.sun.jna.Native;
@@ -5,6 +9,22 @@ import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
 import com.sun.jna.win32.StdCallLibrary;
 
+/**
+ * A class to control the global priority of the current process.
+ * Microsoft suggests flagging daemon/server processes with the BACKGROUND_MODE
+ * priority class so that they don't interfere with the responsiveness of the
+ * rest of the system. This is especially important when freenet is started at
+ * system startup.
+ * We use JNA to call the OS libraries directly without needing JNI wrappers.
+ * Its usage is really simple: just call ProcessPriority.backgroundMode(true).
+ * If the OS doesn't support it or if the process doesn't have the appropriate
+ * permissions, the above call is simply a no-op.
+ *
+ * @author Carlo Alberto Ferraris &lt;cafxx@strayorange.com&gt;
+ *
+ * TODO: emulate the BACKGROUND_MODE priority class on other OSes (linux, mac)
+ */
+ 
 public class ProcessPriority {
     private static boolean inited = false;
     private static boolean background = false;
