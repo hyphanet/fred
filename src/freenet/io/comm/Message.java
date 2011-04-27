@@ -141,6 +141,8 @@ public class Message {
 					// FIXME remove this part of the condition
 					(mspec.getName().startsWith("FNPPeerLoadStatus")))
 				Logger.minor(Message.class, msg+" in sub-message", e);
+			else if(mspec.getName().startsWith("FNPPeerLoadStatus"))
+				Logger.warning(Message.class, msg, e);
 			else
 				Logger.error(Message.class, msg, e);
 		    return null;
