@@ -187,24 +187,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		Bucket data = extract(block, container, context);
 		if(key instanceof ClientSSK) {
-			try {
-				if(uri.isSSK() && uri.isSSKForUSK()) {
-					if(persistent) container.activate(uri, 5);
-					FreenetURI uu = uri.setMetaString(null).uskForSSK();
-					USK usk = USK.create(uu);
-					if(data != null && !block.isMetadata())
-						context.uskManager.updateKnownGood(usk, uu.getSuggestedEdition(), context);
-					else
-						// We don't know whether the metadata is fetchable.
-						// FIXME add a callback so if the rest of the request completes we updateKnownGood().
-						context.uskManager.updateSlot(usk, uu.getSuggestedEdition(), context);
-				}
-			} catch (MalformedURLException e) {
-				Logger.error(this, "Caught "+e, e);
-			} catch (Throwable t) {
-				// Don't let the USK hint cause us to not succeed on the block.
-				Logger.error(this, "Caught "+t, t);
-			}
+			context.uskManager.checkUSK(uri, persistent, container, data != null && !block.isMetadata());
 		}
 		if(data == null) {
 			if(logMINOR)
