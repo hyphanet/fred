@@ -37,6 +37,7 @@ import freenet.client.filter.UnknownContentTypeException;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.crypt.HashResult;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
@@ -227,6 +228,8 @@ public class ClientGetter extends BaseClientGetter implements WantsCooldownCallb
 	public void onSuccess(StreamGenerator streamGenerator, ClientMetadata clientMetadata, List<? extends Compressor> decompressors, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
+		// Fetching the container is essentially a full success, we should update the latest known good.
+		context.uskManager.checkUSK(uri, persistent(), container, false);
 		if(persistent()) {
 			container.activate(uri, 5);
 			container.activate(clientMetadata, Integer.MAX_VALUE);
