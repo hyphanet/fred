@@ -332,9 +332,8 @@ public class FreenetURI implements Cloneable {
 		// Strip ?max-size, ?type etc.
 		// Un-encoded ?'s are illegal.
 		int x = URI.indexOf('?');
-		if(x > -1 && URI.substring(x).indexOf('=') > -1) {
+		if(x > -1)
 			URI = URI.substring(0, x);
-		}
 			
 		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0)
 			// Encoded URL?
