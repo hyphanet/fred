@@ -49,7 +49,7 @@ public class ProcessPriority {
                 if (win.SetPriorityClass(win.GetCurrentProcess(), Kernel32.PROCESS_MODE_BACKGROUND_BEGIN))
                     return background = true;
                 else if (win.GetLastError() == Kernel32.ERROR_PROCESS_MODE_ALREADY_BACKGROUND)
-                    throw new Exception("Illegal state");
+                    throw new IllegalStateException();
         return background;
     }
 
@@ -61,7 +61,7 @@ public class ProcessPriority {
                 if (win.SetPriorityClass(win.GetCurrentProcess(), Kernel32.PROCESS_MODE_BACKGROUND_END))
                     return background = false;
                 else if (win.GetLastError() == Kernel32.ERROR_PROCESS_MODE_NOT_BACKGROUND)
-                    throw new Exception("Illegal state");
+                    throw new IllegalStateException();
         return background;
     }
     
