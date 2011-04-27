@@ -372,7 +372,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					try {
 						FreenetURI fetchURI = new FreenetURI(currentKey);
 						fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, null, "forever", target, false);
-						success.add(currentKey);
+						success.add(fetchURI.toString(true, false));
 					} catch (Exception e) {
 						failure.add(currentKey);
 						Logger.error(this, "An error occured while attempting to download key("+i+") : "+currentKey+ " : "+e.getMessage());
