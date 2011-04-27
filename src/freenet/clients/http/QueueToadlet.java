@@ -1706,13 +1706,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return sizeCell;
 	}
 
-	private HTMLNode createKeyCell(FreenetURI uri, boolean addSlash, long size) {
+	private HTMLNode createKeyCell(FreenetURI uri, boolean addSlash) {
 		HTMLNode keyCell = new HTMLNode("td", "class", "request-key");
 		if (uri != null) {
-			String extra = "";
-			if(size > 0)
-				extra = "?max-size="+size;
-			keyCell.addChild("span", "class", "key_is").addChild("a", "href", '/' + uri.toString() + (addSlash ? "/" : "") + extra, uri.toShortString() + (addSlash ? "/" : ""));
+			keyCell.addChild("span", "class", "key_is").addChild("a", "href", '/' + uri.toString() + (addSlash ? "/" : ""), uri.toShortString() + (addSlash ? "/" : ""));
 		} else {
 			keyCell.addChild("span", "class", "key_unknown", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 		}
@@ -1839,11 +1836,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					requestRow.addChild(createPersistenceCell(clientRequest.isPersistent(), clientRequest.isPersistentForever()));
 				} else if (column == LIST_KEY) {
 					if (clientRequest instanceof DownloadRequestStatus) {
-						requestRow.addChild(createKeyCell(((DownloadRequestStatus) clientRequest).getURI(), false, clientRequest.getDataSize()));
+						requestRow.addChild(createKeyCell(((DownloadRequestStatus) clientRequest).getURI(), false));
 					} else if (clientRequest instanceof UploadFileRequestStatus) {
-						requestRow.addChild(createKeyCell(((UploadFileRequestStatus) clientRequest).getFinalURI(), false, clientRequest.getDataSize()));
+						requestRow.addChild(createKeyCell(((UploadFileRequestStatus) clientRequest).getFinalURI(), false));
 					}else {
-						requestRow.addChild(createKeyCell(((UploadDirRequestStatus) clientRequest).getFinalURI(), true, clientRequest.getDataSize()));
+						requestRow.addChild(createKeyCell(((UploadDirRequestStatus) clientRequest).getFinalURI(), true));
 					}
 				} else if (column == LIST_FILENAME) {
 					if (clientRequest instanceof DownloadRequestStatus) {
