@@ -1302,6 +1302,11 @@ public class PeerManager {
 				wakeup = Math.max(wakeup, Math.min(bulkBackoff, rtBackoff));
 			if(wakeup > now)
 				overallWakeup = Math.min(overallWakeup, wakeup);
+			else {
+				// Race condition??? Just come out of backoff and we used the other one?
+				// Don't take it into account.
+				if(logMINOR) Logger.minor(this, "Better node in check backoffs for RecentlyFailed??? "+p);
+			}
 		}
 		return overallWakeup;
 	}
