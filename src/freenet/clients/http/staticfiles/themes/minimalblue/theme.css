@@ -4,6 +4,9 @@
 /* Global config */
 /*****************/
 
+/* Basic CSS functions */
+@import url(/static/base.css);
+
 @import url(/static/bookmark.css);
 
 /* Status bar style & colors */
@@ -610,4 +613,10 @@ div#statusbar-alerts.alerts-line.contains-warning div.infobox-content a {
 
 div#statusbar div#statusbar-alerts.contains-information, div#statusbar div#statusbar-alerts.contains-information a {
 	color: #AAF;
+}
+
+/* Fix: Show hidden list as list */
+.hidden ol li, .hidden ol {
+    list-style: decimal outside none;
+    margin-left: 0px;
 }

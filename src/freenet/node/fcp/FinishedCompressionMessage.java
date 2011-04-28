@@ -17,7 +17,19 @@ public class FinishedCompressionMessage extends FCPMessage {
 	final int codec;
 	final long origSize;
 	final long compressedSize;
-	
+
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private FinishedCompressionMessage() {
+		origSize = 0;
+		identifier = null;
+		global = false;
+		compressedSize = 0;
+		codec = 0;
+	}
+
 	public FinishedCompressionMessage(String identifier, boolean global, FinishedCompressionEvent event) {
 		this.identifier = identifier;
 		this.codec = event.codec;

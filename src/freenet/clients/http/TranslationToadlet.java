@@ -32,7 +32,6 @@ import freenet.support.io.BucketTools;
 public class TranslationToadlet extends Toadlet {
 	public static final String TOADLET_URL = "/translation/";
 	private final NodeClientCore core;
-	private static final SimpleFieldSet DEFAULT_TRANSLATION = NodeL10n.getBase().getDefaultLanguageTranslation();
 	private BaseL10n base;
 	private String translatingFor;
 
@@ -206,24 +205,21 @@ public class TranslationToadlet extends Toadlet {
 		legendRow.addChild("td", "class", "translation-key", l10n("originalVersionLabel"));
 		legendRow.addChild("td", "class", "translation-key", l10n("currentTranslationLabel"));
 		
-		SimpleFieldSet sfs = this.base.getCurrentLanguageTranslation();
-		if(sfs != null) {
-			KeyIterator it = this.base.getDefaultLanguageTranslation().keyIterator("");
-
-			while(it.hasNext()) {
-				String key = it.nextKey();
-				boolean isOverriden = this.base.isOverridden(key);
-				if(!showEverything && (isOverriden || (this.base.getString(key, true) != null))) continue;
-				HTMLNode contentRow = legendTable.addChild("tr");
-				contentRow.addChild("td", "class", "translation-key",
-						key
-				);
-				contentRow.addChild("td", "class", "translation-orig",
-						this.base.getDefaultString(key)
-				);
-
-				contentRow.addChild("td", "class", "translation-new").addChild(_setOrRemoveOverride(key, isOverriden, showEverything));
-			}
+		KeyIterator it = this.base.getDefaultLanguageTranslation().keyIterator("");
+		
+		while(it.hasNext()) {
+			String key = it.nextKey();
+			boolean isOverriden = this.base.isOverridden(key);
+			if(!showEverything && (isOverriden || (this.base.getString(key, true) != null))) continue;
+			HTMLNode contentRow = legendTable.addChild("tr");
+			contentRow.addChild("td", "class", "translation-key",
+					key
+			);
+			contentRow.addChild("td", "class", "translation-orig",
+					this.base.getDefaultString(key)
+			);
+			
+			contentRow.addChild("td", "class", "translation-new").addChild(_setOrRemoveOverride(key, isOverriden, showEverything));
 		}
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
@@ -271,7 +267,7 @@ public class TranslationToadlet extends Toadlet {
 			this.base.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), "UTF-8").trim());
 			
 			if("on".equalsIgnoreCase(request.getPartAsString("gotoNext", 7))) {
-				KeyIterator it = DEFAULT_TRANSLATION.keyIterator("");
+				KeyIterator it = base.getDefaultLanguageTranslation().keyIterator("");
 				
 				while(it.hasNext()) {
 					String newKey = it.nextKey();

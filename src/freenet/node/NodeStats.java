@@ -189,6 +189,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverageBulk;
 	final TrivialRunningAverage localCHKFetchTimeAverageBulk;
 
+	final TrivialRunningAverage successfulLocalSSKFetchTimeAverageRT;
+	final TrivialRunningAverage unsuccessfulLocalSSKFetchTimeAverageRT;
+	final TrivialRunningAverage localSSKFetchTimeAverageRT;
+	final TrivialRunningAverage successfulLocalSSKFetchTimeAverageBulk;
+	final TrivialRunningAverage unsuccessfulLocalSSKFetchTimeAverageBulk;
+	final TrivialRunningAverage localSSKFetchTimeAverageBulk;
+
 	final public Histogram2 chkSuccessRatesByLocation;
 
 	private long previous_input_stat;
@@ -503,6 +510,13 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		unsuccessfulLocalCHKFetchTimeAverageBulk = new TrivialRunningAverage();
 		localCHKFetchTimeAverageBulk = new TrivialRunningAverage();
 
+		successfulLocalSSKFetchTimeAverageRT = new TrivialRunningAverage();
+		unsuccessfulLocalSSKFetchTimeAverageRT = new TrivialRunningAverage();
+		localSSKFetchTimeAverageRT = new TrivialRunningAverage();
+		successfulLocalSSKFetchTimeAverageBulk = new TrivialRunningAverage();
+		unsuccessfulLocalSSKFetchTimeAverageBulk = new TrivialRunningAverage();
+		localSSKFetchTimeAverageBulk = new TrivialRunningAverage();
+
 		chkSuccessRatesByLocation = new Histogram2(10, 1.0);
 
 		requestOutputThrottle =
@@ -627,6 +641,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		public final int totalRequests;
 		public final int averageTransfersOutPerInsert;
 		public final boolean realTime;
+		public final int maxTransfersOut;
 		
 		public boolean equals(Object o) {
 			if(!(o instanceof PeerLoadStats)) return false;
@@ -675,8 +690,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			inputBandwidthUpperLimit = getInputBandwidthUpperLimit(limit);
 			inputBandwidthLowerLimit = getLowerLimit(inputBandwidthUpperLimit, peers);
 			
-			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthUpperLimit - outputBandwidthLowerLimit, false, true, transfersPerInsert, realTimeFlag, peers);
-			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthUpperLimit - inputBandwidthLowerLimit, true, true, transfersPerInsert, realTimeFlag, peers);
+			maxTransfersOut = calculateMaxTransfersOut(peer, realTime, nonOverheadFraction);
+			
+			outputBandwidthPeerLimit = getPeerLimit(peer, outputBandwidthUpperLimit - outputBandwidthLowerLimit, false, true, transfersPerInsert, realTimeFlag, peers, maxTransfersOut);
+			inputBandwidthPeerLimit = getPeerLimit(peer, inputBandwidthUpperLimit - inputBandwidthLowerLimit, true, true, transfersPerInsert, realTimeFlag, peers, maxTransfersOut);
 			
 			boolean ignoreLocalVsRemote = ignoreLocalVsRemoteBandwidthLiability();
 			
@@ -699,19 +716,21 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				expectedTransfersOutCHK = m.getInt(DMT.OTHER_TRANSFERS_OUT_CHK);
 				expectedTransfersOutSSK = m.getInt(DMT.OTHER_TRANSFERS_OUT_SSK);
 				averageTransfersOutPerInsert = m.getInt(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT);
-
+				maxTransfersOut = m.getInt(DMT.MAX_TRANSFERS_OUT);
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusShort) {
 				expectedTransfersInCHK = m.getShort(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFFFF;
 				expectedTransfersInSSK = m.getShort(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFFFF;
 				expectedTransfersOutCHK = m.getShort(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFFFF;
 				expectedTransfersOutSSK = m.getShort(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFFFF;
 				averageTransfersOutPerInsert = m.getShort(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT) & 0xFFFF;
+				maxTransfersOut = m.getShort(DMT.MAX_TRANSFERS_OUT);
 			} else if(m.getSpec() == DMT.FNPPeerLoadStatusByte) {
 				expectedTransfersInCHK = m.getByte(DMT.OTHER_TRANSFERS_IN_CHK) & 0xFF;
 				expectedTransfersInSSK = m.getByte(DMT.OTHER_TRANSFERS_IN_SSK) & 0xFF;
 				expectedTransfersOutCHK = m.getByte(DMT.OTHER_TRANSFERS_OUT_CHK) & 0xFF;
 				expectedTransfersOutSSK = m.getByte(DMT.OTHER_TRANSFERS_OUT_SSK) & 0xFF;
 				averageTransfersOutPerInsert = m.getByte(DMT.AVERAGE_TRANSFERS_OUT_PER_INSERT) & 0xFF;
+				maxTransfersOut = m.getByte(DMT.MAX_TRANSFERS_OUT);
 			} else throw new IllegalArgumentException();
 			outputBandwidthLowerLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_LOWER_LIMIT);
 			outputBandwidthUpperLimit = m.getInt(DMT.OUTPUT_BANDWIDTH_UPPER_LIMIT);
@@ -898,6 +917,10 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			return totalRequests;
 		}
 
+		public int totalOutTransfers() {
+			return expectedTransfersOutCHK + expectedTransfersOutSSK;
+		}
+
 	}
 	
 	// Look plausible from my node-throttle.dat stats as of 01/11/2010.
@@ -998,13 +1021,26 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		// Multiply by limit: X seconds at full power should be able to clear the transfers even if all the requests succeed.
 		
-		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), requestsSnapshot, false, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag);  
+		int maxOutputTransfers = this.calculateMaxTransfersOut(source, realTimeFlag, nonOverheadFraction);
+		
+		RunningRequestsSnapshot peerRequestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemoteBandwidthLiability, transfersPerInsert, realTimeFlag);
+		
+		if(source != null) {
+			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersPerInsert, hasInStore);
+		}
+		
+		String ret = checkBandwidthLiability(getOutputBandwidthUpperLimit(totalSent, totalOverhead, uptime, limit, nonOverheadFraction), requestsSnapshot, peerRequestsSnapshot, false, limit,
+				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers);  
 		if(ret != null) return new RejectReason(ret, true);
 		
-		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), requestsSnapshot, true, limit,
-				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag);  
+		ret = checkBandwidthLiability(getInputBandwidthUpperLimit(limit), requestsSnapshot, peerRequestsSnapshot, true, limit,
+				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers);  
 		if(ret != null) return new RejectReason(ret, true);
+		
+		if(peerRequestsSnapshot.totalOutTransfers() > maxOutputTransfers) {
+			// Can't handle that many transfers with current bandwidth.
+			return new RejectReason("CongestionControl", true);
+		}
 		
 		// Do we have the bandwidth?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
@@ -1049,41 +1085,18 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		return null;
 	}
 	
-	/** The maximum number of peers' full fair shares that one node can use. The lower
-	 * bandwidth limit is either half the upper limit or this number of peers' fair 
-	 * shares, whichever is lower. JUSTIFICATION FOR THIS VALUE:
-	 * Let B_total be bandwidth in kilobytes after removing overheads, and N be the 
-	 * number of peers.
-	 * The number of transfers we accept, at realtime, is roughly B_total * 60 / 32, which
-	 * is roughly 2*B_total.
-	 * If we allow a single node to occupy half of that, then it can have B_total transfers.
-	 * However, there is fair sharing between peers in PacketSender, and "fixing" this is
-	 * a nontrivial task. So if all the other peers are busy with bulk traffic, and if the
-	 * peer in question also has bulk traffic, its bandwidth available for realtime 
-	 * transfers will be:
-	 * B_peer_realtime = B_total / (2*N)
-	 * Therefore, the average interval between block sends (which are 1KB) will be:
-	 * t = B_total / B_peer_realtime
-	 * = B_total / (B_total / (2*N))
-	 * = 1 / (1 / (2*N))
-	 * = 2*N
-	 * 
-	 * This is unacceptable! We have a timeout of 5 seconds for realtime transfers, and 
-	 * 30 seconds for bulk transfers (to which the above math also applies but twice the
-	 * final value because of 120 not 60 for the number of seconds we allow transfers to 
-	 * take in the first formula).
-	 * 
-	 * So, we allow one peer to use at most B_total / (N / 2). This makes:
-	 * t = (B_total / (N / 2)) / (B_total / (2*N))
-	 * = (1 / (N / 2)) / (1 / (2*N))
-	 * = (1 / (N * 0.5)) / (1 / (N * 2))
-	 * = 2 / 0.5
-	 * = 4 seconds at most; 16 for bulk.
-	 */
+	public int calculateMaxTransfersOut(PeerNode peer, boolean realTime,
+			double nonOverheadFraction) {
+		if(peer == null) return Integer.MAX_VALUE;
+		else return peer.calculateMaxTransfersOut(realTime ? 1 : 5, nonOverheadFraction);
+	}
+
 	static final double ONE_PEER_MAX_PEERS_EQUIVALENT = 2.0;
 	
 	public double getLowerLimit(double upperLimit, int peerCount) {
-		return Math.min(upperLimit / 2, upperLimit * (ONE_PEER_MAX_PEERS_EQUIVALENT / peerCount));
+		// Bandwidth scheduling is now unfair, based on deadlines.
+		// Therefore we can allocate a large chunk of our capacity to a single peer.
+		return upperLimit / 2;
 	}
 
 	public int outwardTransfersPerInsert() {
@@ -1152,6 +1165,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * 
 	 * @param bandwidthAvailableOutputUpperLimit The overall upper limit, already calculated.
 	 * @param requestsSnapshot The requests running.
+	 * @param peerRequestsSnapshot 
 	 * @param input True if this is input bandwidth, false if it is output bandwidth.
 	 * @param limit The limit period in seconds.
 	 * @param source The source of the request.
@@ -1167,8 +1181,8 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @return A string explaining why, or null if we can accept the request.
 	 */
 	private String checkBandwidthLiability(double bandwidthAvailableOutputUpperLimit,
-			RunningRequestsSnapshot requestsSnapshot, boolean input, long limit,
-			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag) {
+			RunningRequestsSnapshot requestsSnapshot, RunningRequestsSnapshot peerRequestsSnapshot, boolean input, long limit,
+			PeerNode source, boolean isLocal, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean hasInStore, int transfersPerInsert, boolean realTimeFlag, int maxOutputTransfers) {
 		String name = input ? "Input" : "Output";
 		int peers = node.peers.countConnectedPeers();
 		
@@ -1178,7 +1192,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		// Calculate the peer limit so the peer gets notified, even if we are going to ignore it.
 		
-		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert, realTimeFlag, peers);
+		double thisAllocation = getPeerLimit(source, bandwidthAvailableOutputUpperLimit - bandwidthAvailableOutputLowerLimit, input, false, transfersPerInsert, realTimeFlag, peers, maxOutputTransfers);
 		
 		// Ignore the upper limit.
 		// Because we reassignToSelf() in various tricky timeout conditions, it is possible to exceed it.
@@ -1196,7 +1210,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 			if(logMINOR)
 				Logger.minor(this, "Allocation ("+name+") for "+source+" is "+thisAllocation+" total usage is "+bandwidthLiabilityOutput+" of lower limit"+bandwidthAvailableOutputLowerLimit+" upper limit is "+bandwidthAvailableOutputUpperLimit);
 			
-			double peerUsedBytes = getPeerBandwidthLiability(source, isSSK, isInsert, isOfferReply, ignoreLocalVsRemoteBandwidthLiability, hasInStore, transfersPerInsert, input, realTimeFlag);
+			double peerUsedBytes = getPeerBandwidthLiability(peerRequestsSnapshot, source, isSSK, isInsert, isOfferReply, ignoreLocalVsRemoteBandwidthLiability, hasInStore, transfersPerInsert, input, realTimeFlag);
 			if(peerUsedBytes > thisAllocation) {
 				rejected(name+" bandwidth liability: fairness between peers", isLocal);
 				return name+" bandwidth liability: fairness between peers (peer "+source+" used "+peerUsedBytes+" allowed "+thisAllocation+")";
@@ -1222,7 +1236,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	 * @param peers
 	 * @return
 	 */
-	private double getPeerLimit(PeerNode source, double totalGuaranteedBandwidth, boolean input, boolean dontTellPeer, int transfersPerInsert, boolean realTimeFlag, int peers) {
+	private double getPeerLimit(PeerNode source, double totalGuaranteedBandwidth, boolean input, boolean dontTellPeer, int transfersPerInsert, boolean realTimeFlag, int peers, int maxOutputTransfers) {
 		
 		double thisAllocation;
 		
@@ -1243,19 +1257,16 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		
 		if(SEND_LOAD_STATS_NOTICES && source != null && !dontTellPeer) {
 			// FIXME tell local as well somehow?
-			source.onSetPeerAllocation(input, (int)thisAllocation, transfersPerInsert, realTimeFlag);
+			if(!input)
+				source.onSetMaxOutputTransfers(realTimeFlag, maxOutputTransfers);
+			source.onSetPeerAllocation(input, (int)thisAllocation, transfersPerInsert, maxOutputTransfers, realTimeFlag);
 		}
 		
 		return thisAllocation;
 		
 	}
 
-	private double getPeerBandwidthLiability(PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean ignoreLocalVsRemote, boolean hasInStore, int transfersOutPerInsert, boolean input, boolean realTimeFlag) {
-		RunningRequestsSnapshot requestsSnapshot = new RunningRequestsSnapshot(node, source, false, ignoreLocalVsRemote, transfersOutPerInsert, realTimeFlag);
-		
-		if(source != null) {
-			requestsSnapshot.decrement(isSSK, isInsert, isOfferReply, transfersOutPerInsert, hasInStore);
-		}
+	private double getPeerBandwidthLiability(RunningRequestsSnapshot requestsSnapshot, PeerNode source, boolean isSSK, boolean isInsert, boolean isOfferReply, boolean ignoreLocalVsRemote, boolean hasInStore, int transfersOutPerInsert, boolean input, boolean realTimeFlag) {
 		
 		requestsSnapshot.log(source);
 		
@@ -2530,20 +2541,39 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		(isRealtime ? localCHKFetchTimeAverageRT : localCHKFetchTimeAverageBulk).report(rtt);
 	}
 
+	public void reportSSKOutcome(long rtt, boolean successful, boolean isRealtime) {
+		if (successful) {
+			(isRealtime ? successfulLocalSSKFetchTimeAverageRT : successfulLocalSSKFetchTimeAverageBulk).report(rtt);
+		} else {
+			(isRealtime ? unsuccessfulLocalSSKFetchTimeAverageRT : unsuccessfulLocalSSKFetchTimeAverageBulk).report(rtt);
+		}
+		(isRealtime ? localSSKFetchTimeAverageRT : localSSKFetchTimeAverageBulk).report(rtt);
+	}
+
 	public void fillDetailedTimingsBox(HTMLNode html) {
 		HTMLNode table = html.addChild("table");
 		HTMLNode row = table.addChild("tr");
-		row.addChild("td", "Successful");
+		row.addChild("td");
+		row.addChild("td", "colspan", "2", "CHK");
+		row.addChild("td", "colspan", "2", "SSK");
+		row = table.addChild("tr");
+		row.addChild("td", l10n("successfulHeader"));
 		row.addChild("td", TimeUtil.formatTime((long)successfulLocalCHKFetchTimeAverageBulk.currentValue(), 2, true));
 		row.addChild("td", TimeUtil.formatTime((long)successfulLocalCHKFetchTimeAverageRT.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)successfulLocalSSKFetchTimeAverageBulk.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)successfulLocalSSKFetchTimeAverageRT.currentValue(), 2, true));
 		row = table.addChild("tr");
-		row.addChild("td", "Unsuccessful");
+		row.addChild("td", l10n("unsuccessfulHeader"));
 		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalCHKFetchTimeAverageBulk.currentValue(), 2, true));
 		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalCHKFetchTimeAverageRT.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalSSKFetchTimeAverageBulk.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalSSKFetchTimeAverageRT.currentValue(), 2, true));
 		row = table.addChild("tr");
-		row.addChild("td", "Average");
+		row.addChild("td", l10n("averageHeader"));
 		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverageBulk.currentValue(), 2, true));
 		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverageRT.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)localSSKFetchTimeAverageBulk.currentValue(), 2, true));
+		row.addChild("td", TimeUtil.formatTime((long)localSSKFetchTimeAverageRT.currentValue(), 2, true));
 	}
 
 	private HourlyStats hourlyStatsRT;
@@ -2909,9 +2939,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 
 		public int compareTo(TimedStats o) {
-			if(avgTime < o.avgTime)
+			if(totalTime < o.totalTime)
 				return 1;
-			else if(avgTime == o.avgTime)
+			else if(totalTime == o.totalTime)
 				return 0;
 			else
 				return -1;

@@ -699,12 +699,14 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	            	next.noLongerRoutingTo(thisTag, false);
 					return null;
 				} else {
+					if(logMINOR) Logger.minor(this, "Relaying non-local rejected overload on "+this);
 					forwardRejectedOverload();
 				}
 				continue;
 			}
 			
 			if (msg.getSpec() == DMT.FNPRejectedLoop) {
+				if(logMINOR) Logger.minor(this, "Rejected loop on "+this+" from "+next);
 				next.successNotOverload(realTimeFlag);
 				// Loop - we don't want to send the data to this one
             	next.noLongerRoutingTo(thisTag, false);

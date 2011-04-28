@@ -186,7 +186,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(o == null) { // ran out of htl?
 			Message dnf = DMT.createFNPDataNotFound(uid);
 			status = RequestSender.DATA_NOT_FOUND; // for byte logging
-			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.REJECT_TIME, source);
+			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.RECENTLY_FAILED_TIME, FailureTable.REJECT_TIME, source);
 			sendTerminal(dnf);
 			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble(), realTimeFlag, false);
 			return;
@@ -380,7 +380,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		if(tooLate) {
 			// Offer the data if there is any.
-			node.failureTable.onFinalFailure(key, null, htl, htl, -1, source);
+			node.failureTable.onFinalFailure(key, null, htl, htl, -1, -1, source);
 			PeerNode routedLast = rs == null ? null : rs.routedLast();
 			// A certain number of these are normal.
 			Logger.normal(this, "requestsender took too long to respond to requestor (" + TimeUtil.formatTime((now - searchStartTime), 2, true) + "/" + (rs == null ? "null" : rs.getStatusString()) + ") routed to " + (routedLast == null ? "null" : routedLast.shortToString()));

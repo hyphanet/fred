@@ -403,12 +403,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	 */
 	protected final LinkedList<byte[]> jfkNoncesSent = new LinkedList<byte[]>();
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(LogLevel.MINOR, this);
+				logDEBUG = Logger.shouldLog(LogLevel.DEBUG, this);
 			}
 		});
 	}
@@ -1425,7 +1427,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from curTracker less than now");
-			if(kt.packets.hasPacketsToResend()) return now;
+			if(kt.packets.hasPacketsToResend()) {
+				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
+				return now;
+			}
 		}
 		kt = prev;
 		if(kt != null) {
@@ -1433,18 +1438,24 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from prevTracker less than now");
-			if(kt.packets.hasPacketsToResend()) return now;
+			if(kt.packets.hasPacketsToResend()) {
+				// We could use the original packet send time, but I don't think it matters that much: Old peers with heavy packet loss are probably going to have problems anyway...
+				return now;
+			}
 		}
 		if(pf != null) {
-			if(cur != null && pf.canSend(cur)) { // New messages are only sent on cur.
-				long l = messageQueue.getNextUrgentTime(t, now);
+			boolean canSend = cur != null && pf.canSend(cur);
+			if(canSend) { // New messages are only sent on cur.
+				long l = messageQueue.getNextUrgentTime(t, 0); // Need an accurate value even if in the past.
 				if(t >= now && l < now && logMINOR)
 					Logger.minor(this, "Next urgent time from message queue less than now");
+				else if(logDEBUG)
+					Logger.debug(this, "Next urgent time is "+(l-now)+"ms on "+this);
 				t = l;
 			}
-			long l = pf.timeNextUrgent();
+			long l = pf.timeNextUrgent(canSend);
 			if(l < now && logMINOR)
-				Logger.minor(this, "Next urgent time from packet format less than now");
+				Logger.minor(this, "Next urgent time from packet format less than now on "+this);
 			t = Math.min(t, l);
 		}
 		return t;
@@ -1484,6 +1495,16 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		if(logMINOR) Logger.minor(this, "shouldSendHandshake(): final = "+tempShouldSendHandshake);
 		return tempShouldSendHandshake;
 	}
+	
+	public long timeSendHandshake(long now) {
+		if(hasLiveHandshake(now)) return Long.MAX_VALUE;
+		synchronized(this) {
+			if(disconnecting) return Long.MAX_VALUE;
+			if(handshakeIPs == null) return Long.MAX_VALUE;
+			if(!(isRekeying || !isConnected())) return Long.MAX_VALUE;
+			return sendHandshakeTime;
+		}
+	}
 
 	/**
 	* Does the node have a live handshake in progress?
@@ -1494,8 +1515,8 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		synchronized(this) {
 			c = ctx;
 		}
-		if(c != null && logMINOR)
-			Logger.minor(this, "Last used: " + (now - c.lastUsedTime()));
+		if(c != null && logDEBUG)
+			Logger.minor(this, "Last used (handshake): " + (now - c.lastUsedTime()));
 		return !((c == null) || (now - c.lastUsedTime() > Node.HANDSHAKE_TIMEOUT));
 	}
 	boolean firstHandshake = true;
@@ -2347,8 +2368,10 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		Logger.minor(this, "Stopping ARK fetcher for " + this + " : " + myARK);
 		// FIXME any way to reduce locking here?
 		synchronized(arkFetcherSync) {
-			if(arkFetcher == null)
+			if(arkFetcher == null) {
+				if(logMINOR) Logger.minor(this, "ARK fetcher not running for "+this);
 				return;
+			}
 			node.clientCore.uskManager.unsubscribeContent(myARK, this.arkFetcher, true);
 			arkFetcher = null;
 		}
@@ -2788,26 +2811,6 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				}
 		}
 		return sent;
-	}
-
-	void checkTrackerTimeout() {
-		long now = System.currentTimeMillis();
-		SessionKey prev = null;
-		SessionKey cur = null;
-		synchronized(this) {
-			if(previousTracker == null) return;
-			if(currentTracker == null) return;
-			cur = currentTracker;
-			prev = previousTracker;
-		}
-		if(prev.packets == cur.packets) return;
-		long t = prev.packets.getNextUrgentTime();
-		if(!(t > -1 && prev.packets.timeLastDecodedPacket() > 0 && (now - prev.packets.timeLastDecodedPacket()) > 60*1000 &&
-				cur.packets.timeLastDecodedPacket() > 0 && (now - cur.packets.timeLastDecodedPacket() < 30*1000) &&
-				(prev.packets.countAckRequests() > 0 || prev.packets.countResendRequests() > 0)))
-			return;
-		Logger.error(this, "No packets decoded on "+prev+" for 60 seconds, deprecating in favour of cur: "+cur);
-		prev.packets.completelyDeprecated(cur);
 	}
 
 	/**
@@ -3364,6 +3367,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		return Math.max(
 				Math.max(routingBackedOffUntilRT, routingBackedOffUntilBulk),
 				Math.max(transferBackedOffUntilRT, transferBackedOffUntilBulk));
+	}
+	
+	public synchronized long getRoutingBackedOffUntilRT() {
+		return Math.max(routingBackedOffUntilRT, transferBackedOffUntilRT);
+	}
+	
+	public synchronized long getRoutingBackedOffUntilBulk() {
+		return Math.max(routingBackedOffUntilBulk, transferBackedOffUntilBulk);
 	}
 
 	public synchronized String getLastBackoffReason(boolean realTime) {
@@ -4713,6 +4724,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 
 		private int lastSentAllocationInput;
 		private int lastSentAllocationOutput;
+		private int lastSentMaxOutputTransfers = Integer.MAX_VALUE;
 		private long timeLastSentAllocationNotice;
 		private long countAllocationNotices;
 		private PeerLoadStats lastFullStats;
@@ -4744,11 +4756,23 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 			if(!mustSend) return;
 		}
 		
+		public void onSetMaxOutputTransfers(int maxOutputTransfers) {
+			synchronized(this) {
+				if(maxOutputTransfers == lastSentMaxOutputTransfers) return;
+				if(lastSentMaxOutputTransfers == Integer.MAX_VALUE || lastSentMaxOutputTransfers == 0) {
+					sendASAP = true;
+				} else if(maxOutputTransfers > lastSentMaxOutputTransfers * 1.05 || maxOutputTransfers < lastSentMaxOutputTransfers * 0.9) {
+					sendASAP = true;
+				}
+			}
+		}
+		
 		Message makeLoadStats(long now, int transfersPerInsert, boolean noRemember) {
 			PeerLoadStats stats = node.nodeStats.createPeerLoadStats(PeerNode.this, transfersPerInsert, realTimeFlag);
 			synchronized(this) {
 				lastSentAllocationInput = (int) stats.inputBandwidthPeerLimit;
 				lastSentAllocationOutput = (int) stats.outputBandwidthPeerLimit;
+				lastSentMaxOutputTransfers = (int) stats.maxTransfersOut;
 				if(!noRemember) {
 					if(lastFullStats != null && lastFullStats.equals(stats)) return null;
 					lastFullStats = stats;
@@ -4770,13 +4794,18 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		public synchronized void setSendASAP() {
 			sendASAP = true;
 		}
+
 	}
 	
 	void removeUIDsFromMessageQueues(Long[] list) {
 		this.messageQueue.removeUIDsFromMessageQueues(list);
 	}
+
+	public void onSetMaxOutputTransfers(boolean realTime, int maxOutputTransfers) {
+		(realTime ? loadSenderRealTime : loadSenderBulk).onSetMaxOutputTransfers(maxOutputTransfers);
+	}
 	
-	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, boolean realTime) {
+	public void onSetPeerAllocation(boolean input, int thisAllocation, int transfersPerInsert, int maxOutputTransfers, boolean realTime) {
 		(realTime ? loadSenderRealTime : loadSenderBulk).onSetPeerAllocation(input, thisAllocation, transfersPerInsert);
 	}
 
@@ -5280,5 +5309,34 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		lastIncomingRekey = now;
 		return false;
 	}
-	
+
+	public boolean fullPacketQueued() {
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return false;
+		}
+		return pf.fullPacketQueued(getMaxPacketSize());
+	}
+
+	public long timeSendAcks() {
+		PacketFormat pf;
+		synchronized(this) {
+			pf = packetFormat;
+			if(pf == null) return Long.MAX_VALUE;
+		}
+		return pf.timeSendAcks();
+	}
+
+	/** Calculate the maximum number of outgoing transfers to this peer that we
+	 * will accept in requests and inserts. */
+	public int calculateMaxTransfersOut(int timeout, double nonOverheadFraction) {
+		double bandwidth = (getThrottle().getBandwidth()+1.0);
+		if(shouldThrottle())
+			bandwidth = Math.min(bandwidth, node.getOutputBandwidthLimit() / 2);
+		bandwidth *= nonOverheadFraction;
+		double kilobytesPerSecond = bandwidth / 1024.0;
+		return (int)Math.max(1, Math.min(kilobytesPerSecond * timeout, Integer.MAX_VALUE));
+	}
+
 }

@@ -949,6 +949,17 @@ public class PacketTracker {
 		return earliestTime;
 	}
 
+	public long timeSendAcks() {
+		long earliestTime = Long.MAX_VALUE;
+		synchronized(ackQueue) {
+			if(!ackQueue.isEmpty()) {
+				QueuedAck qa = ackQueue.get(0);
+				earliestTime = qa.urgentTime;
+			}
+		}
+		return earliestTime;
+	}
+	
 	/**
 	 * @return The last sent new packet number.
 	 */

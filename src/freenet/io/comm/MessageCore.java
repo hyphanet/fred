@@ -439,13 +439,21 @@ public class MessageCore {
 	/**
 	 * Wait for a filter to trigger, or timeout. Blocks until either the trigger is activated, or it times
 	 * out, or the peer is disconnected.
-	 * @param filter The filter to wait for.
+	 * @param filter The filter to wait for. This filter must not have a callback.
 	 * @param ctr Byte counter to add bytes from the message to.
+	 *
 	 * @return Either a message, or null if the filter timed out.
+	 *
 	 * @throws DisconnectedException If the single peer being waited for disconnects.
+	 * @throws IllegalArgumentException If {@code filter} has a callback
 	 */
 	public Message waitFor(MessageFilter filter, ByteCounter ctr) throws DisconnectedException {
 		if(logDEBUG) Logger.debug(this, "Waiting for "+filter);
+
+		if(filter.hasCallback()) {
+			throw new IllegalArgumentException("waitFor called with a filter that has a callback");
+		}
+
 		long startTime = System.currentTimeMillis();
 		if(filter.matched()) {
 			Logger.error(this, "waitFor() on a filter which is already matched: "+filter, new Exception("error"));
@@ -555,7 +563,7 @@ public class MessageCore {
 			// Fortunately, it will be close to the beginning of the filters list, having
 			// just timed out. That is assuming it hasn't already been removed; in that
 			// case, this will be slower.
-			_filters.remove(_filters);
+			_filters.remove(filter);
 			// A filter being waitFor()'ed cannot have any callbacks, so we don't need to call onMatched().
 		}
 		

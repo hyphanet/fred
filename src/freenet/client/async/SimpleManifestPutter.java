@@ -58,6 +58,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	// Only implements PutCompletionCallback for the final metadata insert
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 
+		/**
+		 * zero arg c'tor for db4o on jamvm
+		 */
+		@SuppressWarnings("unused")
+		private PutHandler() {
+			persistent = false;
+			data = null;
+			containerHandle = null;
+		}
+
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly, boolean persistent) {
 			super(smp.priorityClass, smp.client);
 			this.persistent = persistent;
@@ -606,9 +616,44 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	final byte[] forceCryptoKey;
 	final byte cryptoAlgorithm;
 
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private SimpleManifestPutter() {
+		metadataPuttersUnfetchable = null;
+		metadataPuttersByMetadata = null;
+		getCHKOnly = false;
+		forceCryptoKey = null;
+		earlyEncode = false;
+		defaultName = null;
+		ctx = null;
+		cryptoAlgorithm = 0;
+		cb = null;
+	}
+
 	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, ObjectContainer container, ClientContext context) {
+		this(cb, manifestElements, prioClass, target, defaultName, ctx, getCHKOnly, clientContext, earlyEncode, persistent, Key.ALGO_AES_PCFB_256_SHA256, getRandomSplitfileKeys(target, ctx, persistent, container, context), container, context);
+
+	}
+		
+	private static byte[] getRandomSplitfileKeys(FreenetURI target,
+			InsertContext ctx, boolean persistent, ObjectContainer container, ClientContext context) {
+		boolean randomiseSplitfileKeys = ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container);
+		if(randomiseSplitfileKeys) {
+			byte[] forceCryptoKey = new byte[32];
+			context.random.nextBytes(forceCryptoKey);
+			return forceCryptoKey;
+		} else {
+			return null;
+		}
+	}
+
+	public SimpleManifestPutter(ClientPutCallback cb,
+			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode, boolean persistent, byte cryptoAlgorithm, byte[] forceCryptoKey, ObjectContainer container, ClientContext context) {
 		super(prioClass, clientContext);
 		this.defaultName = defaultName;
 		
@@ -618,19 +663,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			checkDefaultName(manifestElements, defaultName);
 		}
 		
-		this.cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+		this.cryptoAlgorithm = cryptoAlgorithm;
 
 		if(client.persistent())
 			this.targetURI = target.clone();
 		else
 			this.targetURI = target;
-		boolean randomiseSplitfileKeys = ClientPutter.randomiseSplitfileKeys(target, ctx, persistent, container);
-		if(randomiseSplitfileKeys) {
-			forceCryptoKey = new byte[32];
-			context.random.nextBytes(forceCryptoKey);
-		} else {
-			forceCryptoKey = null;
-		}
+		this.forceCryptoKey = forceCryptoKey;
 		this.cb = cb;
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly;

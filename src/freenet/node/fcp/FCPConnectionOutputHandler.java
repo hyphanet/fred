@@ -99,6 +99,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 					}
 				}
 				if(shouldFlush) {
+					if(logMINOR) Logger.minor(this, "Flushing");
 					os.flush();
 					flushed = true;
 					continue;
@@ -113,6 +114,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 					return;
 				}
 			} else {
+				if(logMINOR) Logger.minor(this, "Sending "+msg);
 				msg.send(os);
 				flushed = false;
 			}

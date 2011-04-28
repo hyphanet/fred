@@ -96,6 +96,41 @@ public class SplitFileInserter implements ClientPutState {
 		return hashCode;
 	}
 
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private SplitFileInserter() {
+		topSize = 0;
+		topCompressedSize = 0;
+		token = null;
+		splitfileAlgorithm = 0;
+		specifySplitfileKeyInMetadata = false;
+		segments = null;
+		segmentSize = 0;
+		persistent = false;
+		parent = null;
+		isMetadata = false;
+		hashes = null;
+		hashThisLayerOnly = null;
+		hashCode = 0;
+		getCHKOnly = false;
+		deductBlocksFromSegments = 0;
+		decompressedLength = 0;
+		dataLength = 0;
+		ctx = null;
+		crossSegments = null;
+		crossCheckBlocks = 0;
+		countDataBlocks = 0;
+		countCheckBlocks = 0;
+		compressionCodec = null;
+		cm = null;
+		checkSegmentSize = 0;
+		cb = null;
+		archiveType = null;
+		realTimeFlag = false;
+	}
+
 	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, boolean realTimeFlag, ObjectContainer container, ClientContext context, HashResult[] hashes, byte[] hashThisLayerOnly, long origTopSize, long origTopCompressedSize, byte cryptoAlgorithm, byte[] splitfileKey) throws InsertException {
 		hashCode = super.hashCode();
 		if(put == null) throw new NullPointerException();

@@ -45,7 +45,16 @@ public class InsertException extends Exception {
 			}
 		});
 	}
-	
+
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private InsertException() {
+		mode = 0;
+		extra = null;
+	}
+
 	public InsertException(int m, String msg, FreenetURI expectedURI) {
 		super(getMessage(m)+": "+msg);
 		if(m == 0)
@@ -76,6 +85,21 @@ public class InsertException extends Exception {
 
 	public InsertException(int mode, Throwable e, FreenetURI expectedURI) {
 		super(getMessage(mode)+": "+e.getMessage());
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
+		extra = e.getMessage();
+		this.mode = mode;
+		errorCodes = null;
+		initCause(e);
+		this.uri = expectedURI;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(logMINOR) 
+			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, this);
+	}
+
+	public InsertException(int mode, String message, Throwable e, FreenetURI expectedURI) {
+		super(getMessage(mode)+": "+message+": "+e.getMessage());
 		if(mode == 0)
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = e.getMessage();
