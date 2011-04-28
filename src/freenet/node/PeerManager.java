@@ -1190,7 +1190,7 @@ public class PeerManager {
 								check = checkBackoffsForRecentlyFailed(peers, best, target, bestDistance, myLoc, prevLoc, now, entry, outgoingHTL);
 							if(check > now + MIN_DELTA) {
 								if(check < until) {
-									if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+until+"ms to "+check+"ms because of check for peers to wakeup");
+									if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+(until-now)+"ms to "+(check-now)+"ms because of check for peers to wakeup");
 									until = check;
 								}
 								recentlyFailed.fail(countWaiting, soonestTimeoutWakeup);
