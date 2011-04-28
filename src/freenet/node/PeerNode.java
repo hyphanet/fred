@@ -5331,7 +5331,7 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 	/** Calculate the maximum number of outgoing transfers to this peer that we
 	 * will accept in requests and inserts. */
 	public int calculateMaxTransfersOut(int timeout, double nonOverheadFraction) {
-		double bandwidth = (getThrottle().getBandwidth()+1.0);
+		double bandwidth = (getOldThrottle().getBandwidth()+1.0);
 		if(shouldThrottle())
 			bandwidth = Math.min(bandwidth, node.getOutputBandwidthLimit() / 2);
 		bandwidth *= nonOverheadFraction;
