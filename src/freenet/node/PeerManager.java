@@ -1189,7 +1189,10 @@ public class PeerManager {
 								// A node waking up from backoff or FailureTable might well change the decision, which limits the length of a RecentlyFailed.
 								check = checkBackoffsForRecentlyFailed(peers, best, target, bestDistance, myLoc, prevLoc, now, entry, outgoingHTL);
 							if(check > now + MIN_DELTA) {
-								until = Math.min(until, check);
+								if(check < until) {
+									if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+until+"ms to "+check+"ms because of check for peers to wakeup");
+									until = check;
+								}
 								recentlyFailed.fail(countWaiting, soonestTimeoutWakeup);
 								return null;
 							} else {
@@ -1300,9 +1303,10 @@ public class PeerManager {
 				wakeup = Math.max(wakeup, rtBackoff);
 			else if(bulkBackoff > now && rtBackoff > now)
 				wakeup = Math.max(wakeup, Math.min(bulkBackoff, rtBackoff));
-			if(wakeup > now)
+			if(wakeup > now) {
+				if(logMINOR) Logger.minor(this, "Peer "+p+" will wake up from backoff, failure table and recentlyfailed in "+(wakeup-now)+"ms");
 				overallWakeup = Math.min(overallWakeup, wakeup);
-			else {
+			} else {
 				// Race condition??? Just come out of backoff and we used the other one?
 				// Don't take it into account.
 				if(logMINOR) Logger.minor(this, "Better node in check backoffs for RecentlyFailed??? "+p);
