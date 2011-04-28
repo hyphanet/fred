@@ -548,7 +548,7 @@ public class PeerManager {
 	 */
 	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge, boolean dumpMessagesNow, final boolean remove, int timeout) {
 		if(logMINOR)
-			Logger.minor(this, "Disconnecting " + pn.shortToString());
+			Logger.minor(this, "Disconnecting " + pn.shortToString(), new Exception("debug"));
 		synchronized(this) {
 			if(!havePeer(pn))
 				return;
@@ -875,7 +875,7 @@ public class PeerManager {
 
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
 	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime) {
-		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime);
+		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, false, System.currentTimeMillis());
 	}
 
 	/**
@@ -892,9 +892,20 @@ public class PeerManager {
 	 * @param isLocal We don't just check pn == null because in some cases pn can be null here: If an insert is forked, for
 	 * a remote requests, we can route back to the originator, so we set pn to null. Whereas for stats we want to know 
 	 * accurately whether this was originated remotely.
+	 * @param recentlyFailed If non-null, we should check for recently failed: If we have routed to, and got
+	 * a failed response from, and are still connected to and within the timeout for, our top two routing choices,
+	 * *and* the same is true of at least 3 nodes, we fill in this object and return null. This will cause a
+	 * RecentlyFailed message to be returned to the originator, allowing them to retry in a little while. Note that the
+	 * scheduler is not clever enough to retry immediately when that timeout elapses, and even if it was, it probably
+	 * wouldn't be a good idea due to introducing a round-trip-to-request-originator; FIXME consider this.
 	 */
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
-	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime) {
+	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL, int ignoreBackoffUnder, boolean isLocal, boolean realTime,
+	        RecentlyFailedReturn recentlyFailed, boolean ignoreTimeout, long now) {
+		
+		int countWaiting = 0;
+		long soonestTimeoutWakeup = Long.MAX_VALUE;
+		
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = connectedPeers;
@@ -902,7 +913,7 @@ public class PeerManager {
 		if(!node.enablePerNodeFailureTables)
 			key = null;
 		if(logMINOR)
-			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length);
+			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length+" key "+key);
 		
 		double myLoc = node.getLocation();
 		
@@ -937,16 +948,17 @@ public class PeerManager {
 
 		PeerNode leastRecentlyTimedOut = null;
 		long timeLeastRecentlyTimedOut = Long.MAX_VALUE;
+		double leastRecentlyTimedOutDistance = Double.MAX_VALUE;
 
 		PeerNode leastRecentlyTimedOutBackedOff = null;
 		long timeLeastRecentlyTimedOutBackedOff = Long.MAX_VALUE;
+		double leastRecentlyTimedOutBackedOffDistance = Double.MAX_VALUE;
 		
 		TimedOutNodesList entry = null;
 
 		if(key != null)
 			entry = node.failureTable.getTimedOutNodesList(key);
 
-		long now = System.currentTimeMillis();
 		int count = 0;
 		
 		double[] selectionRates = new double[peers.length];
@@ -993,10 +1005,18 @@ public class PeerManager {
 				}
 			}
 			
-			long timeout = -1;
-			if(entry != null)
-				timeout = entry.getTimeoutTime(p, outgoingHTL, now);
-			boolean timedOut = timeout > now;
+			/** For RecentlyFailed i.e. request quenching */
+			long timeoutRF = -1;
+			/** For per-node failure tables i.e. routing */
+			long timeoutFT = -1;
+			if(entry != null && !ignoreTimeout) {
+				timeoutFT = entry.getTimeoutTime(p, outgoingHTL, now, true);
+				timeoutRF = entry.getTimeoutTime(p, outgoingHTL, now, false);
+				if(timeoutRF > now)
+					soonestTimeoutWakeup = Math.min(soonestTimeoutWakeup, timeoutRF);
+			}
+			boolean timedOut = timeoutFT > now;
+			if(timedOut) countWaiting++;
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
 			double loc = p.getLocation();
 			boolean direct = true;
@@ -1067,14 +1087,16 @@ public class PeerManager {
 			}
 			if(timedOut)
 				if(!backedOff) {
-					if(timeout < timeLeastRecentlyTimedOut) {
-						timeLeastRecentlyTimedOut = timeout;
+					if(timeoutFT < timeLeastRecentlyTimedOut) {
+						timeLeastRecentlyTimedOut = timeoutFT;
 						leastRecentlyTimedOut = p;
+						leastRecentlyTimedOutDistance = diff;
 					}
 				} else
-					if(timeout < timeLeastRecentlyTimedOutBackedOff) {
-						timeLeastRecentlyTimedOutBackedOff = timeout;
+					if(timeoutFT < timeLeastRecentlyTimedOutBackedOff) {
+						timeLeastRecentlyTimedOutBackedOff = timeoutFT;
 						leastRecentlyTimedOutBackedOff = p;
+						leastRecentlyTimedOutBackedOffDistance = diff;
 					}
 			if(addUnpickedLocsTo != null && !chosen) {
 				Double d = new Double(loc);
@@ -1085,7 +1107,8 @@ public class PeerManager {
 		}
 
 		PeerNode best = closestNotBackedOff;
-
+		double bestDistance = closestNotBackedOffDistance;
+		
 		/**
 		 * Various things are "advisory" i.e. they are taken into account but do not cause a request not to be routed at all:
 		 * - Backoff: A node is backed off for a period after it rejects a request; 
@@ -1112,16 +1135,77 @@ public class PeerManager {
 			if(leastRecentlyTimedOut != null) {
 				// FIXME downgrade to DEBUG
 				best = leastRecentlyTimedOut;
+				bestDistance = leastRecentlyTimedOutDistance;
 				if(logMINOR)
 					Logger.minor(this, "Using least recently failed in-timeout-period peer for key: " + best.shortToString() + " for " + key);
 			} else if(closestBackedOff != null) {
 				best = closestBackedOff;
+				bestDistance = closestBackedOffDistance;
 				if(logMINOR)
 					Logger.minor(this, "Using best backed-off peer for key: " + best.shortToString());
 			} else if(leastRecentlyTimedOutBackedOff != null) {
 				best = leastRecentlyTimedOutBackedOff;
+				bestDistance = leastRecentlyTimedOutBackedOffDistance;
 				if(logMINOR)
 					Logger.minor(this, "Using least recently failed in-timeout-period backed-off peer for key: " + best.shortToString() + " for " + key);
+			}
+		}
+		
+		if(recentlyFailed != null && logMINOR)
+			Logger.minor(this, "Count waiting: "+countWaiting);
+		if(recentlyFailed != null && countWaiting >= 3) {
+			// Recently failed is possible.
+			// Route twice, each time ignoring timeout.
+			// If both return a node which is in timeout, we should do RecentlyFailed.
+			PeerNode first = closerPeer(pn, routedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now);
+			if(first != null) {
+				long firstTime;
+				long secondTime;
+				if((firstTime = entry.getTimeoutTime(first, outgoingHTL, now, false)) > now) {
+					if(logMINOR) Logger.minor(this, "First choice is past now");
+					HashSet<PeerNode> newRoutedTo = new HashSet<PeerNode>(routedTo);
+					newRoutedTo.add(first);
+					PeerNode second = closerPeer(pn, newRoutedTo, target, ignoreSelf, false, minVersion, null, maxDistance, key, outgoingHTL, ignoreBackoffUnder, isLocal, realTime, null, true, now);
+					if(second != null) {
+						if((secondTime = entry.getTimeoutTime(first, outgoingHTL, now, false)) > now) {
+							if(logMINOR) Logger.minor(this, "Second choice is past now");
+							// Recently failed!
+							// Return the time at which this will change.
+							// This is the sooner of the two top nodes' timeouts.
+							// We also take into account the sooner of any timed out node, IF there are exactly 3 nodes waiting.
+							long until = Math.min(secondTime, firstTime);
+							if(countWaiting == 3) {
+								// Count the others as well if there are only 3.
+								// If there are more than that they won't matter.
+								until = Math.min(until, soonestTimeoutWakeup);
+								if(logMINOR) Logger.minor(this, "Recently failed: "+(int)Math.min(Integer.MAX_VALUE, (soonestTimeoutWakeup - now))+"ms");
+							}
+							
+							long check;
+							if(best == closestNotBackedOff)
+								// We are routing to the perfect node, so no node coming out of backoff/FailureTable will make any difference; don't check.
+								check = Long.MAX_VALUE;
+							else
+								// A node waking up from backoff or FailureTable might well change the decision, which limits the length of a RecentlyFailed.
+								check = checkBackoffsForRecentlyFailed(peers, best, target, bestDistance, myLoc, prevLoc, now, entry, outgoingHTL);
+							if(check > now + MIN_DELTA) {
+								if(check < until) {
+									if(logMINOR) Logger.minor(this, "Reducing RecentlyFailed from "+(until-now)+"ms to "+(check-now)+"ms because of check for peers to wakeup");
+									until = check;
+								}
+								recentlyFailed.fail(countWaiting, soonestTimeoutWakeup);
+								return null;
+							} else {
+								// Waking up too soon. Don't RecentlyFailed.
+								if(logMINOR) Logger.minor(this, "Not sending RecentlyFailed because will wake up in "+(check-now)+"ms");
+							}
+						}
+					} else {
+						if(logMINOR) Logger.minor(this, "Second choice is not in timeout (for recentlyfailed): "+second);
+					}
+				} else {
+					if(logMINOR) Logger.minor(this, "First choice is not in timeout (for recentlyfailed): "+first);
+				}
 			}
 		}
 
@@ -1147,6 +1231,88 @@ public class PeerManager {
 		}
 		
 		return best;
+	}
+
+	static final int MIN_DELTA = 2000;
+	
+	/** Check whether the routing situation will change soon because of a node coming out of backoff or of
+	 * a FailureTable timeout.
+	 * 
+	 * If we have routed to a backed off node, or a node due to a failure-table timeout, there is a good
+	 * chance that the ideal node will change shortly.
+	 * 
+	 * @return The time at which there will be a different best location to route to for this key, or
+	 * Long.MAX_VALUE if we cannot predict a better peer after any amount of time.
+	 */
+	private long checkBackoffsForRecentlyFailed(PeerNode[] peers, PeerNode best, double target, double bestDistance, double myLoc, double prevLoc, long now, TimedOutNodesList entry, short outgoingHTL) {
+		long overallWakeup = Long.MAX_VALUE;
+		for(PeerNode p : peers) {
+			if(p == best) continue;
+			if(!p.isRoutable()) continue;
+			
+			// Is it further from the target than what we've chosen?
+			// It probably is, but if there is backoff or failure tables involved it might not be.
+			
+			double loc = p.getLocation();
+			double realDiff = Location.distance(loc, target);
+			double diff = realDiff;
+			
+			double[] peersLocation = p.getPeersLocation();
+			if((peersLocation != null) && (p.shallWeRouteAccordingToOurPeersLocation())) {
+				for(double l : peersLocation) {
+					boolean ignoreLoc = false; // Because we've already been there
+					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
+							Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
+						continue;
+					// For purposes of recently failed, we haven't routed anywhere else.
+					// However we do need to check for our location, and the source's location.
+					if(ignoreLoc) continue;
+					double newDiff = Location.distance(l, target);
+					if(newDiff < diff) {
+						loc = l;
+						diff = newDiff;
+					}
+				}
+				if(logMINOR)
+					Logger.minor(this, "The peer "+p+" has published his peer's locations and the closest we have found to the target is "+diff+" away.");
+			}
+			
+			if(diff >= bestDistance) continue;
+			
+			// The peer is of interest.
+			// It will be relevant to routing at max(wakeup from backoff, failure table timeout, recentlyfailed timeout).
+			
+			long wakeup = 0;
+			
+			long timeoutFT = entry.getTimeoutTime(p, outgoingHTL, now, true);
+			long timeoutRF = entry.getTimeoutTime(p, outgoingHTL, now, false);
+			
+			if(timeoutFT > now)
+				wakeup = Math.max(wakeup, timeoutFT);
+			if(timeoutRF > now)
+				wakeup = Math.max(wakeup, timeoutRF);
+			
+			long bulkBackoff = p.getRoutingBackedOffUntilBulk();
+			long rtBackoff = p.getRoutingBackedOffUntilRT();
+			
+			// Whichever backoff is sooner, but ignore if not backed off.
+			
+			if(bulkBackoff > now && rtBackoff <= now)
+				wakeup = Math.max(wakeup, bulkBackoff);
+			else if(bulkBackoff <= now && rtBackoff > now)
+				wakeup = Math.max(wakeup, rtBackoff);
+			else if(bulkBackoff > now && rtBackoff > now)
+				wakeup = Math.max(wakeup, Math.min(bulkBackoff, rtBackoff));
+			if(wakeup > now) {
+				if(logMINOR) Logger.minor(this, "Peer "+p+" will wake up from backoff, failure table and recentlyfailed in "+(wakeup-now)+"ms");
+				overallWakeup = Math.min(overallWakeup, wakeup);
+			} else {
+				// Race condition??? Just come out of backoff and we used the other one?
+				// Don't take it into account.
+				if(logMINOR) Logger.minor(this, "Better node in check backoffs for RecentlyFailed??? "+p);
+			}
+		}
+		return overallWakeup;
 	}
 
 	/**

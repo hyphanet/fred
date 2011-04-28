@@ -203,6 +203,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 
 	public void arm(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Arming "+this);
 		boolean allDone;
 		boolean allGotBlocks;
 		synchronized(this) {
@@ -331,9 +332,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(!waitingFor.isEmpty())
 			Logger.error(this, "waitingFor not empty in removeFrom() on "+this+" : "+waitingFor);
 		if(!waitingForBlockSet.isEmpty())
-			Logger.error(this, "waitingForBlockSet not empty in removeFrom() on "+this+" : "+waitingFor);
+			Logger.error(this, "waitingForBlockSet not empty in removeFrom() on "+this+" : "+waitingForBlockSet);
 		if(!waitingForFetchable.isEmpty())
-			Logger.error(this, "waitingForFetchable not empty in removeFrom() on "+this+" : "+waitingFor);
+			Logger.error(this, "waitingForFetchable not empty in removeFrom() on "+this+" : "+waitingForFetchable);
 		container.delete(waitingFor);
 		container.delete(waitingForBlockSet);
 		container.delete(waitingForFetchable);

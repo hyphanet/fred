@@ -233,4 +233,12 @@ public class FailureCodeTracker {
 		// Must store to at least depth 2 because of map.
 		container.ext().store(this, 5);
 	}
+
+	public synchronized boolean isDataFound() {
+		for(Map.Entry<Integer, Item> entry : map.entrySet()) {
+			if(entry.getValue().x <= 0) continue;
+			if(FetchException.isDataFound(entry.getKey(), null)) return true;
+		}
+		return false;
+	}
 }

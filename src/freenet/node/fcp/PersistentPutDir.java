@@ -18,6 +18,7 @@ import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NullBucket;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
+import freenet.support.io.PersistentTempFileBucket;
 
 public class PersistentPutDir extends FCPMessage {
 
@@ -106,7 +107,7 @@ public class PersistentPutDir extends FCPMessage {
 				} else if(data instanceof FileBucket) {
 					subset.putSingle("UploadFrom", "disk");
 					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
-				} else if (data instanceof PaddedEphemerallyEncryptedBucket || data instanceof NullBucket) {
+				} else if (data instanceof PaddedEphemerallyEncryptedBucket || data instanceof NullBucket || data instanceof PersistentTempFileBucket) {
 					subset.putSingle("UploadFrom", "direct");
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);

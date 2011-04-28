@@ -8,7 +8,6 @@ import java.io.IOException;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
-import freenet.client.FetchContext;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertContext.CompatibilityMode;
@@ -66,6 +65,23 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		});
 	}
 	
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private ClientPutter() {
+		targetURI = null;
+		targetFilename = null;
+		overrideSplitfileCrypto = null;
+		isMetadata = false;
+		getCHKOnly = false;
+		data = null;
+		ctx = null;
+		cm = null;
+		client = null;
+		binaryBlob = false;
+	}
+
 	/**
 	 * @param client The object to call back when we complete, or don't.
 	 * @param data The data to insert. This will not be freed by ClientPutter, the callback must do that. However,
@@ -387,6 +403,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public Bucket getData() {
 		return data;
+	}
+	
+	/**
+	 * Get the target URI with which this insert was started.
+	 */
+	public FreenetURI getTargetURI() {
+		return targetURI;
 	}
 
 	/** Get the final URI to the inserted data */

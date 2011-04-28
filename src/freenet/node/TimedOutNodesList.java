@@ -14,8 +14,12 @@ public interface TimedOutNodesList {
 	 * @param peer The peer we are proposing to route to.
 	 * @param htl Timeouts with lower HTL than this will be ignored.
 	 * @param now The current time from System.currentTimeMillis().
+	 * @param forPerNodeFailureTables If true, return the timeout for purposes of
+	 * per-node failure tables i.e. which to route to (paranoid high); if false,
+	 * return the timeout for purposes of RecentlyFailed request quenching 
+	 * (trusting low).
 	 * @return The time at which the timeout ends for the node in question.
 	 * -1 if there is no timeout. */
-	long getTimeoutTime(PeerNode peer, short htl, long now);
+	long getTimeoutTime(PeerNode peer, short htl, long now, boolean forPerNodeFailureTables);
 
 }

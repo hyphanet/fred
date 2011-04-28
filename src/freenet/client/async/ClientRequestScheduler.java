@@ -123,7 +123,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						context.getSskFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
 					else
 						context.getChkFetchScheduler(listener.isRealTime()).addPersistentPendingKeys(listener);
-					System.err.println("Loaded request key listener: "+listener+" for "+l);
+					if(logMINOR) Logger.minor(ClientRequestScheduler.class, "Loaded request key listener: "+listener+" for "+l);
 				}
 			} catch (KeyListenerConstructionException e) {
 				System.err.println("FAILED TO LOAD REQUEST BLOOM FILTERS:");
@@ -322,8 +322,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 						// Just check isCancelled, we have already checked the cooldown.
 						if(!(getter.isCancelled(container))) {
 							wereAnyValid = true;
-							getter.preRegister(container, clientContext, true);
-							schedCore.innerRegister(getter, random, container, clientContext, getters);
+							if(!getter.preRegister(container, clientContext, true)) {
+								schedCore.innerRegister(getter, random, container, clientContext, getters);
+							}
 						} else
 							getter.preRegister(container, clientContext, false);
 
@@ -344,8 +345,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if((!anyValid) || getters[i].isCancelled(null)) {
 					getters[i].preRegister(container, clientContext, false);
 					continue;
-				} else
-					getters[i].preRegister(container, clientContext, true);
+				} else {
+					if(getters[i].preRegister(container, clientContext, true)) continue;
+				}
 				if(!getters[i].isCancelled(null))
 					schedTransient.innerRegister(getters[i], random, null, clientContext, getters);
 			}
@@ -661,7 +663,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		boolean addedMore = false;
 		while(true) {
-			SelectorReturn r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
+			SelectorReturn r;
+			// Must synchronize on scheduler to avoid problems with cooldown queue. See notes on CooldownTracker.clearCachedWakeup, which also applies to other cooldown operations.
+			synchronized(this) {
+				r = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, isRTScheduler, context, container, now);
+			}
 			SendableRequest request = null;
 			if(r != null && r.req != null) request = r.req;
 			else {
@@ -923,13 +929,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	/**
-	 * MUST be called from database thread!
-	 */
-	public long queueCooldown(ClientKey key, SendableGet getter, ObjectContainer container) {
-		return System.currentTimeMillis() + COOLDOWN_PERIOD;
-	}
-
-	/**
 	 * Restore keys from the given cooldown queue. Find any keys that are due to be
 	 * restored, restore all requests both persistent and non-persistent for those keys.
 	 * @param queue
@@ -1146,6 +1145,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public byte[] saltKey(boolean persistent, Key key) {
 		return persistent ? schedCore.saltKey(key) : schedTransient.saltKey(key);
+	}
+
+	/** Only used in rare special cases e.g. ClientRequestSelector.
+	 * FIXME add some interfaces to get rid of this gross layer violation. */
+	Node getNode() {
+		return node;
 	}
 	
 }

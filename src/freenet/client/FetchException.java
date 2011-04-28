@@ -390,7 +390,7 @@ public class FetchException extends Exception {
 	public static final int INVALID_METADATA = 4;
 	/** Got an ArchiveFailureException */
 	public static final int ARCHIVE_FAILURE = 5;
-	/** Failed to decode a block */
+	/** Failed to decode a block. But we found it i.e. it is valid on the network level. */
 	public static final int BLOCK_DECODE_ERROR = 6;
 	/** Too many split metadata levels */
 	@Deprecated // not used
@@ -540,4 +540,52 @@ public class FetchException extends Exception {
 	public FetchException clone() {
 		return new FetchException(this);
 	}
+
+	public boolean isDataFound() {
+		return isDataFound(mode, errorCodes);
+	}
+	
+	public static boolean isDataFound(int mode, FailureCodeTracker errorCodes) {
+		switch(mode) {
+		case TOO_DEEP_ARCHIVE_RECURSION:
+		case UNKNOWN_SPLITFILE_METADATA:
+		case TOO_MANY_REDIRECTS:
+		case UNKNOWN_METADATA:
+		case INVALID_METADATA:
+		case ARCHIVE_FAILURE:
+		case BLOCK_DECODE_ERROR:
+		case TOO_MANY_METADATA_LEVELS:
+		case TOO_MANY_ARCHIVE_RESTARTS:
+		case TOO_MUCH_RECURSION:
+		case NOT_IN_ARCHIVE:
+		case TOO_MANY_PATH_COMPONENTS:
+		case TOO_BIG:
+		case TOO_BIG_METADATA:
+		case TOO_MANY_BLOCKS_PER_SEGMENT:
+		case NOT_ENOUGH_PATH_COMPONENTS:
+		case ARCHIVE_RESTART:
+		case CONTENT_VALIDATION_FAILED:
+		case CONTENT_VALIDATION_UNKNOWN_MIME:
+		case CONTENT_VALIDATION_BAD_MIME:
+		case CONTENT_HASH_FAILED:
+		case SPLITFILE_DECODE_ERROR:
+			return true;
+		case SPLITFILE_ERROR:
+			return errorCodes.isDataFound();
+		default:
+			return false;
+		}
+	}
+	
+	public boolean isDNF() {
+		switch(mode) {
+		case DATA_NOT_FOUND:
+		case ALL_DATA_NOT_FOUND:
+		case RECENTLY_FAILED:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 }

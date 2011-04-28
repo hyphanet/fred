@@ -10,13 +10,12 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
-import freenet.client.async.ClientGetter;
 import freenet.client.async.USKCallback;
 import freenet.clients.http.FProxyToadlet;
 import freenet.keys.FreenetURI;
@@ -28,8 +27,8 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.Logger.LogLevel;
+import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -48,14 +47,14 @@ public class BookmarkManager implements RequestClient {
 		SimpleFieldSet defaultBookmarks = null;
 		InputStream in = null;
 		try {
-			ClassLoader loader = ClassLoader.getSystemClassLoader();
+			ClassLoader loader = BookmarkManager.class.getClassLoader();
 
 			// Returns null on lookup failures:
 			in = loader.getResourceAsStream(name);
 			if(in != null)
 				defaultBookmarks = SimpleFieldSet.readFrom(in, false, false);
 		} catch(Exception e) {
-			Logger.error("BookmarkManager", "Error while loading the default bookmark file from " + name + " :" + e.getMessage(), e);
+			Logger.error(BookmarkManager.class, "Error while loading the default bookmark file from " + name + " :" + e.getMessage(), e);
 		} finally {
 			Closer.close(in);
 			DEFAULT_BOOKMARKS = defaultBookmarks;
@@ -116,7 +115,7 @@ public class BookmarkManager implements RequestClient {
 		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(!newKnownGood) {
 				FreenetURI uri = key.copy(edition).getURI();
-				node.makeClient(PRIORITY_PROGRESS).prefetch(uri, 60*60*1000, FProxyToadlet.MAX_LENGTH, null, PRIORITY);
+				node.makeClient(PRIORITY_PROGRESS, false, false).prefetch(uri, 60*60*1000, FProxyToadlet.MAX_LENGTH, null, PRIORITY_PROGRESS);
 				return;
 			}
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
@@ -350,8 +349,8 @@ public class BookmarkManager implements RequestClient {
 		_innerReadBookmarks("", category, sfs);
 	}
 
-	static final short PRIORITY = RequestStarter.UPDATE_PRIORITY_CLASS;
-	static final short PRIORITY_PROGRESS = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+	static final short PRIORITY = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
+	static final short PRIORITY_PROGRESS = RequestStarter.UPDATE_PRIORITY_CLASS;
 
 	private void subscribeToUSK(BookmarkItem item) {
 		if("USK".equals(item.getKeyType()))

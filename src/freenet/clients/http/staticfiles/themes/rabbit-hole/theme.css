@@ -1,0 +1,837 @@
+/* rabbit-hole */
+
+/* Basic CSS functions */
+@import url(/static/base.css);
+
+/* Bookmarks & bookmark editor */
+@import url(/static/bookmark.css);
+
+/* Base theme; commented out, since it is not really compatible. TODO: Get everything therein to here and integrate it. */
+/* First: Progress bars */
+/* @import url(/static/themes/clean/theme.css); */
+
+/* alerts */
+
+.alert-error {
+	color: darkred;
+}
+
+.alert-warning {
+	color: blue;
+}
+
+.alert-minor {
+	color: green;
+}
+
+/* infoboxes */
+
+div.infobox div.infobox-header {
+	min-height: 32px;
+	font-weight: bold;
+	font-size: 11pt;
+	background-repeat: no-repeat;
+	background-position: right;
+	color: orange;
+}
+
+div.infobox-information div.infobox-header {
+	color: silver;
+	background-image: url(information.gif);
+}
+
+div.infobox-warning div.infobox-header {
+	color: silver;
+	background-image: url(warning.gif);
+}
+
+div.infobox-alert {
+}
+
+div.infobox-alert div.infobox-header {
+	color: red;
+	background-image: url(alert.gif);
+}
+
+div.infobox-error {
+}
+
+div.infobox-error div.infobox-header {
+	color: red;
+	background-image: url(error.gif);
+}
+
+div.infobox-query div.infobox-header {
+	background-image: url(query.gif);
+}
+
+div.infobox-success div.infobox-header {
+    color: green;
+    background-image: url(success.gif);
+}
+
+ul.alert-summary {
+	list-style-type: none;
+	text-indent: 20px;
+}
+
+li.alert-summary-text-error {
+	background: url(error-16.gif) left center no-repeat;
+}
+
+li.alert-summary-text-alert {
+	background: url(alert-16.gif) left center no-repeat;
+}
+
+li.alert-summary-text-warning {
+	background: url(warning-16.gif) left center no-repeat;
+}
+
+li.alert-summary-text-minor {
+	background: url(information-16.gif) left center no-repeat;
+}
+
+
+/* statusbar */
+
+div#statusbar-container {
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0px;
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    z-index:18;
+    min-height: 51px;
+    background-image: url(logo_solid.png);
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+}
+
+
+div#statusbar {
+    position: absolute;
+    z-index:20;
+    background-image: url(semi-transparent.png);
+    margin-left: 66px;
+    padding-left: 0.1em;
+    padding-right: 0.1em;
+    white-space: nowrap;
+    top: 0em;
+    font-size: small;
+    color: gray;
+}
+
+div#statusbar:hover {
+    background-color: white;
+    background-image: none;
+}
+
+div#statusbar a {
+    color: gray;
+}
+
+div#statusbar:hover a {
+    color: gray;
+}
+
+div#statusbar div {
+	display: inline;
+}
+
+div#statusbar div.progressbar {
+	display: inline-block;
+	margin-bottom: -3px;
+}
+
+div#statusbar div.separator {
+	display: inline-block;
+	background-color: #d0d0d0;
+	width: 1px;
+	margin-left: 9px;
+	margin-right: 9px;
+}
+
+div#statusbar div.infobox-header {
+	display: none;
+}
+
+
+/* progress bar */
+
+.progressbar {
+	position: relative;
+	font-size: x-small;
+	height: 12px;
+	width: 130px;
+	border: solid 1px #444444;
+	background-color: #e8e8e8;
+}
+
+.progressbar-done {
+	float: left;
+	height: 12px;
+	background-color: #44cc44;
+}
+
+.progressbar-min {
+	float: left;
+	height: 12px;
+	background-color: #cce8cc;
+}
+
+.progressbar-failed {
+	float: left;
+	height: 12px;
+	background-color: #ffcccc;
+}
+
+.progressbar-failed2 {
+	float: left;
+	height: 12px;
+	background-color: #ff4444;
+}
+
+.progress_fraction_finalized {
+	position: absolute;
+	left: 5px;
+	font-weight: bold;
+}
+
+.progress_fraction_not_finalized {
+	position: absolute;
+	left: 5px;
+	font-style: italic;
+}
+
+/* misc status colors */
+
+tr.priority0, td.priority0 {
+/*	background-color: #eb613d;*/
+	background-color: #ffb7b7;
+}
+
+tr.priority1, td.priority1 {
+/*	background-color: #007ee0;*/
+	background-color: #ffcea7;
+}
+
+tr.priority2, td.priority2 {
+/*	background-color: #00e0ce;*/
+	background-color: #ffeba7;
+}
+
+tr.priority3, td.priority3 {
+/*	background-color: #00e094;*/
+	background-color: #ddffa7;
+}
+
+tr.priority4, td.priority4 {
+/*	background-color: #00e069;*/
+	background-color: #a7ffbc;
+}
+
+tr.priority5, td.priority5 {
+/*	background-color: #00e010;*/
+	background-color: #a7fff8;
+}
+
+tr.priority6, td.priority6 {
+/*	background-color: grey;*/
+	background-color: #a7caff;
+}
+
+div.n2ntm-message-text {
+	margin: 10px;
+	padding: 10px;
+	background-color: #ffffff;
+}
+
+td.n2ntm-send-sent {
+	background-color: #a7ffbc;
+}
+
+td.n2ntm-send-delayed {
+	background-color: #ffeba7;
+}
+
+td.n2ntm-send-queued {
+	background-color: #ffa7a7;
+}
+
+td.n2ntm-send-failed {
+	background-color: #ffb7b7;
+}
+
+/* translation */
+
+.translate_d {
+	background-color: #f0fef0;
+}
+
+.interfacelink {
+	color: #000000;
+	text-decoration: underline;
+}
+
+#activity {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* plugins page */
+
+table.plugins th, table.plugins td {
+	font-size: 8pt;
+}
+
+table.plugins span {
+	font-weight: bold;
+	font-size: 8pt;
+}
+
+table.plugins form {
+	display: inline;
+}
+
+/* configuration page */
+
+td.config_navigation {
+	border-style: none;
+}
+
+ul.config {
+	margin: 0 0 5px 0;
+	padding: 0;
+	border-top: 1px solid #d0d0d0;
+	border-right: 1px solid #d0d0d0;
+	border-left: 1px solid #d0d0d0;
+}
+
+ul.config li {
+	margin: 0;
+	padding: 15px 10px 15px 10px;
+	list-style: none;
+	text-align: left;
+	border-bottom: 1px solid #d0d0d0;
+}
+
+ul.config{
+	margin: 0;
+	padding: 10px 35px 10px 10px;
+	display: block;
+	border-bottom: 1px dotted #a0a0a0;
+	font-weight: bold;
+	background-color: #e8e8e8;
+}
+
+div.configprefix {
+	font-weight: bold;
+	font-variant: small-caps;
+}
+
+ul.config span.configshortdesc {
+	text-align: left;
+	font-weight: bold;
+	float: left;
+	width: 30%;
+}
+
+ul.config span.configlongdesc {
+	display: block;
+	text-align: left;
+	padding-top: 15px;
+}
+
+ul.config input[type=text] {
+	width: 70%;
+}
+
+/* darknet page */
+
+table.column span {
+	text-transform: uppercase;
+}
+
+span.peer_connected {
+	color: #008000;
+}
+
+span.peer_backed_off {
+	color: #ff8c00;
+}
+
+span.peer_too_new {
+	color: #ff0000;
+}
+
+span.peer_too_old {
+	color: #d0a0d0;
+}
+
+span.peer_disconnected {
+	color: #d0d0d0;
+}
+
+span.peer_routing_disabled {
+        color: #7b68ee;
+}
+
+span.peer_never_connected {
+	color: #a0a0a0;
+}
+
+span.peer_disabled {
+	color: #a0a0a0;
+}
+
+span.peer_bursting {
+	color: #a0a0a0;
+}
+
+span.peer_listening {
+	color: #a0a0a0;
+}
+
+span.peer_listen_only {
+	color: #a0a0a0;
+}
+
+span.peer_version_problem {
+	color: #d07070;
+}
+
+span.peer_idle_old {
+	color: #d07070;
+}
+
+tr.messagetypes {
+	text-align: center;
+}
+
+tr.darknet_connections_warning {
+	background-color: #ffff00;
+}
+
+table.sentmessagetypes {
+	display: inline;
+}
+
+table.receivedmessagetypes {
+	display: inline;
+}
+
+table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes th, table.receivedmessagetypes td {
+	font-size: 7pt;
+}
+
+/* statistics page */
+
+div.peercircle {
+  margin: 0 auto;
+}
+
+div.peercircle span.mark {
+  color: #d0d0d0;
+}
+
+div.peercircle span.me {
+  color: #0080ff;
+  font-weight: bold;
+}
+
+div.peercircle span.connected {
+  color: #008000;
+  font-weight: bold;
+}
+
+div.peercircle span.backed_off {
+  color: #008000;
+  font-weight: bold;
+}
+
+div.peercircle span.disconnected {
+  color: #d0d0d0;
+  font-weight: bold;
+}
+
+div.histogramLabel {
+  margin-left: 3px;
+  margin-right: 3px;
+  font-size: 60%;
+}
+
+div.histogramConnected {
+  background-color: #008000;
+}
+
+div.histogramDisconnected {
+  background-color: #d0d0d0;
+}
+
+/* queue page */
+
+table.queue th, table.queue td {
+	font-size: 8pt;
+}
+
+div.queue_tabletitle {
+	margin: 0;
+	padding: 10px 0 10px 0;
+	font-size: 10pt;
+}
+
+table.queue span {
+	font-size: 8pt;
+}
+
+table.queue span.failure_reason_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.failure_reason_is {
+}
+
+table.queue span.progress_fraction_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.number_of_files {
+}
+
+table.queue span.filename_direct {
+	color: #d0d0d0;
+}
+
+table.queue span.filename_none {
+	color: #d0d0d0;
+}
+
+table.queue span.filename_is {
+}
+
+table.queue span.identifier_with_uri {
+}
+
+table.queue span.persistence_none {
+}
+
+table.queue span.persistence_reboot {
+	color: #0000ff;
+}
+
+table.queue span.persistence_forever {
+	color: #00b000;
+}
+
+table.queue span.mimetype_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.mimetype_is {
+}
+
+table.queue span.filesize_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.filesize_is {
+}
+
+table.queue span.key_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.key_is {
+}
+
+
+/* stuff */
+
+
+div#content {
+    position: inherit;
+    margin: 5px;
+    margin-left: 83px;
+    margin-right: 83px;
+}
+
+}
+
+/* rabbit hole */
+/* HTML5 tags for HTML 4.01 */
+header, section, footer, aside, nav, article, figure {
+    display: block;
+}
+
+/* Different look for toggleables */
+.toggleable {
+    color: gray;
+}
+
+.toggleable .hidden {
+    background-color: silver;
+    color: navy;
+    padding-left: 1em;
+    padding-right: 1em;
+    border: gray 1px dashed;
+}
+
+aside .hidden {
+    display: none;
+    background-color: silver;
+    padding-left: 1em;
+    padding-right: 1em;
+    border: gray 1px dashed;
+}
+
+aside:hover .hidden {
+    display: block;
+}
+
+aside .hidden:hover {
+    display: block;
+}
+
+.gray {
+    color: gray;
+}
+
+.looking-glass {
+    float: left; 
+    margin-left: -1em; 
+    margin-top: 0.1em; 
+    margin-right: 0.2em;
+}
+
+body {
+    background-image: url(kaninchenspur.png);
+    background-repeat: no-repeat;
+    background-position: 90px 2.5em;
+}
+
+section {
+    background-color: white;
+}
+
+#topbar {
+    max-width: 34%;
+    margin: 0px;
+    min-height: 41px; /* as big as the rabbit */
+}
+
+#topbar h1 {
+    color: gray;
+    padding-left: 85px;
+    margin-top: 1em;
+    font-size: large;
+}
+
+.rabbit {
+    position: fixed;
+    left: 0px;
+    top: 0.1em;
+}
+
+img {
+    border-style: none;
+}
+
+.status {
+    position: absolute;
+    left: 66px;
+    top: 0em;
+    font-size: small;
+    color: gray;
+}
+
+.language {
+    position: absolute;
+    left: 15px;
+    top: 3.2em;
+    font-size: small;
+    color: gray;
+}
+
+div #navbar {
+    position: absolute;
+    right: 0px;
+    top: 0em;
+    width: 100%;
+    padding-right: 0.3em;
+    min-height: 2.6em;
+    text-align: right;
+    color: gray;
+    background-image: url(line.png);
+    background-repeat: repeat-x;
+    background-position: 0em 2.45em;
+}
+
+#navlist {
+    position: absolute;
+    z-index:19; /* above status */
+    right: 0px;
+    top: 0.35em;
+    width: 65%;
+    white-space: nowrap;
+    text-align: right;
+    color: gray;
+}
+
+#navlist li {
+    display: inline;
+    list-style-type: none;
+    padding-right: 0.3em;
+}
+
+#navlist li a {
+    text-decoration: none;
+}
+
+#navlist li a:visited {
+    color: gray;
+}
+
+.main-nav-line {
+    position: absolute;
+    top: 2.5em;
+    z-index: -1;
+    width: 100%;
+    right: 0px;
+    height: 2px;
+    background-image: url(line.png);
+}
+
+.navlist-not-selected{
+    z-index: 1000;
+}
+
+.navlist-not-selected:hover {
+    z-index: 1000;
+    width: 100%;  
+    height: 2.2em;
+    background-image: url(glass.png);
+    background-position: center 2px;
+    background-repeat: no-repeat;
+}
+
+.navlist-not-selected ul{
+    z-index: 1000;
+    display: none;
+}
+
+.navlist-not-selected:hover ul{
+    z-index: 1000;
+    display: block;
+    position: absolute;
+    top: 1.18em;
+    padding-top: 0.15em;
+    right: 0px;
+    width: 100%; /* note change in width*/
+    height: 2.7em;
+    background-image: url(nav-lower-bg.png);
+    background-position: center top;
+    background-repeat: repeat-x;
+}
+
+.navlist-not-selected ul li{
+    z-index: 1000;
+    display: inline;
+    list-style: none;
+    white-space: normal;
+    top: 2.0em;
+    margin-top: 0.1em;
+}
+
+.navlist-not-selected ul li:after {
+    content: " ";
+}
+
+.navlist-not-selected ul li a span{
+    z-index: 1000;
+    display: inline;
+    visibility: hidden; /* BUG: In Mozilla, if this is display: none a render bug happens. */
+}
+
+
+#navlist-selected{
+	z-index: 0;
+	width: 100%; /* note change in width*/
+	height: 2em;
+	background-image: url(glass.png);
+	background-position: center 2px;
+	background-repeat: no-repeat;
+}
+
+#navlist-selected ul{
+	z-index: 0;
+	display: block;
+	position: absolute;
+	top: 1.18em;
+	padding-top: 0.15em;
+	right: 0px;
+	/*background-color: #AFAFC0;*/
+	height: 1.5em;
+	width: 100%; /* note change in width*/
+}
+
+#navlist-selected ul li{
+    z-index: 0;
+    display: inline;
+    list-style: none;
+    white-space: normal;
+    top: 2em;
+    margin-top: 0.1em;
+}
+
+#navlist-selected ul li:after {
+    content: " ";
+}
+
+#navlist-selected ul li a span{
+    z-index: 0;
+    display: inline;
+    visibility: hidden; /* BUG: In Mozilla, if this is display: none a render bug happens. */
+}
+
+
+/* Content styling */
+
+.content {
+    margin-top: 5em;
+    margin-left: 83px;
+    margin-right: 5em;
+}
+
+/* From greyandblue */
+/* infoboxes */
+
+div.infobox {
+	margin: 0 0 5px 0;
+	padding: 10px;
+/*	background-color: #f0f0f0;*/
+	border:0px none #676767;
+}
+
+div.infobox div.infobox-header {
+	font-style: italic;
+	padding: 10px 0px 0px 0.5em;
+	font-family: verdana;
+	font-weight: bold;
+	font-size: 14pt;
+	background-repeat: no-repeat;
+	background-position: right;
+}
+
+div.infobox div.infobox-content {
+    color: navy;
+    padding: 10px;
+    /*background-color:navy;*/
+    border: 1px dashed silver;
+}
+
+#selected-subnavbar {
+    display: none
+}

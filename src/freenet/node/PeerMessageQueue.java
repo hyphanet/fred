@@ -52,15 +52,17 @@ public class PeerMessageQueue {
 	
 	private class PrioQueue {
 		
+		// FIXME refactor into PrioQueue and RoundRobinByUIDPrioQueue
 		PrioQueue(int timeout, boolean timeoutSinceLastSend) {
 			this.timeout = timeout;
-			this.timeoutSinceLastSend = timeoutSinceLastSend;
+			this.roundRobinBetweenUIDs = timeoutSinceLastSend;
 		}
 		
 		/** The timeout, period after which messages become urgent. */
 		final int timeout;
-		/** If true, the timeout is relative to the last send. */
-		final boolean timeoutSinceLastSend;
+		/** If true, do round-robin between UID's, and count the timeout relative
+		 * to the last send. Block transfers need this - both realtime and bulk. */
+		final boolean roundRobinBetweenUIDs;
 		
 		private class Items extends DoublyLinkedListImpl.Item<Items> {
 			/** List of messages to send. Stuff to send first is at the beginning. */
@@ -110,8 +112,10 @@ public class PeerMessageQueue {
 		/** Add a new message, to the end of the lists, i.e. in first-in-first-out order,
 		 * which will wait for the existing messages to be sent first. */
 		public void addLast(MessageItem item) {
+			// Clear the deadline for the item.
+			item.clearDeadline();
 			if(logMINOR) checkOrder();
-			if(timeoutSinceLastSend) {
+			if(roundRobinBetweenUIDs) {
 				long id = item.getID();
 				if(itemsByID != null) {
 					Items it = itemsByID.get(id);
@@ -126,6 +130,10 @@ public class PeerMessageQueue {
 					}
 				}
 			}
+			addToNonUrgent(item);
+		}
+		
+		private void addToNonUrgent(MessageItem item) {
 			if(itemsNonUrgent == null)
 				itemsNonUrgent = new LinkedList<MessageItem>();
 			ListIterator<MessageItem> it = itemsNonUrgent.listIterator(itemsNonUrgent.size());
@@ -146,7 +154,7 @@ public class PeerMessageQueue {
 				}
 			}
 		}
-		
+
 		private void moveToUrgent(long now) {
 			if(logMINOR) checkOrder();
 			if(itemsNonUrgent == null) return;
@@ -159,7 +167,7 @@ public class PeerMessageQueue {
 				if(itemsByID != null)
 					list = itemsByID.get(id);
 				boolean moveIt = false;
-				if(list != null && timeoutSinceLastSend) {
+				if(list != null && roundRobinBetweenUIDs) {
 					if(list.timeLastSent + timeout <= now)
 						moveIt = true;
 				}
@@ -207,7 +215,7 @@ public class PeerMessageQueue {
 					it.remove();
 					moved++;
 					if(logMINOR) checkOrder();
-				} else if(!timeoutSinceLastSend)
+				} else if(!roundRobinBetweenUIDs)
 					break;
 			}
 			if(logDEBUG && moved > 0)
@@ -280,6 +288,11 @@ public class PeerMessageQueue {
 		/** Add a new message to the beginning i.e. send it as soon as possible (e.g. if
 		 * we tried to send it and failed); it is assumed to already be urgent. */
 		public void addFirst(MessageItem item) {
+			// Keep the old deadline for the item.
+			if(!roundRobinBetweenUIDs) {
+				addToNonUrgent(item);
+				return;
+			}
 			if(logMINOR) checkOrder();
 			long id = item.getID();
 			Items list;
@@ -361,36 +374,31 @@ public class PeerMessageQueue {
 
 		/** Note that this does NOT consider the length of the queue, which can trigger a
 		 * send. This is intentional, and is relied upon by the bulk-or-realtime logic in
-		 * addMessages(). */
-		public long getNextUrgentTime(long t, long now) {
-			if(!timeoutSinceLastSend) {
+		 * addMessages().
+		 * @param t The initial urgent time. What we return must be less than or 
+		 * equal to this. Convenient for chaining. 
+		 * @param stopIfBeforeTime If the next urgent time is <= to this time, 
+		 * return immediately.
+		 */
+		public long getNextUrgentTime(long t, long stopIfBeforeTime) {
+			if(!roundRobinBetweenUIDs) {
 				if(itemsNonUrgent != null && !itemsNonUrgent.isEmpty()) {
 					t = Math.min(t, itemsNonUrgent.getFirst().submitted + timeout);
-					if(t <= now) return t;
+					if(t <= stopIfBeforeTime) return t;
 				}
-				if(nonEmptyItemsWithID != null) {
-					for(Items items : nonEmptyItemsWithID) {
-						if(items.items.size() == 0) continue;
-						// Generally anything in nonEmptyItemsWithID is urgent.
-						// But it is possible that something requeued isn't urgent, so check anyway.
-						long thisTimeout = items.items.getFirst().submitted + timeout;
-						if(thisTimeout <= now) return thisTimeout;
-						else if(thisTimeout < t) t = thisTimeout;
-						// Check all slots until we find something that is urgent.
-						// It won't take long.
-					}
-				}
+				assert(nonEmptyItemsWithID == null);
+				assert(itemsByID == null);
 			} else {
 				if(nonEmptyItemsWithID != null) {
 					for(Items items : nonEmptyItemsWithID) {
 						if(items.items.size() == 0) continue;
 						if(items.timeLastSent > 0) {
 							t = Math.min(t, items.timeLastSent + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 						} else {
 							// It is possible that something requeued isn't urgent, so check anyway.
 							t = Math.min(t, items.items.getFirst().submitted + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 						}
 					}
 				}
@@ -400,10 +408,10 @@ public class PeerMessageQueue {
 						Items items = itemsByID == null ? null : itemsByID.get(uid);
 						if(items != null && items.timeLastSent > 0) {
 							t = Math.min(t, items.timeLastSent + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 						} else {
 							t = Math.min(t, item.submitted + timeout);
-							if(t <= now) return t;
+							if(t <= stopIfBeforeTime) return t;
 							if(itemsByID == null) break; // Only the first one matters, since none have been sent.
 						}
 					}
@@ -466,6 +474,7 @@ public class PeerMessageQueue {
 				}
 				size += 2 + thisSize;
 				items.remove();
+				item.setDeadline(item.submitted + timeout);
 				messages.add(item);
 				if(itemsByID != null) {
 					long id = item.getID();
@@ -605,6 +614,7 @@ public class PeerMessageQueue {
 					// Move to end of list.
 					Items prev = list.getPrev();
 					nonEmptyItemsWithID.remove(list);
+					item.setDeadline(list.timeLastSent + timeout);
 					list.timeLastSent = now;
 					if(!list.items.isEmpty()) {
 						if(logDEBUG) Logger.debug(this, "Moving "+list+" to end of non empty list in addUrgentMessages");
@@ -680,9 +690,14 @@ public class PeerMessageQueue {
 					} else if(logDEBUG)
 						Logger.debug(this, "Items: non empty "+nonEmpty+" empty "+empty+" by ID "+byID+" on "+this);
 				}
-				moveToUrgent(now);
+				if(roundRobinBetweenUIDs)
+					moveToUrgent(now);
 				clearOldNonUrgent(now);
-				size = addUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
+				if(roundRobinBetweenUIDs) {
+					size = addUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
+				} else {
+					assert(itemsByID == null);
+				}
 				if(size < 0) {
 					size = -size;
 					incomplete.value = true;
@@ -691,11 +706,11 @@ public class PeerMessageQueue {
 					if(messages.size() >= maxMessages)
 						return size;
 					// If no more urgent messages, try to add some non-urgent messages too.
-					size = addNonUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
-					if(size < 0) {
-						size = -size;
-						incomplete.value = true;
-					}
+						size = addNonUrgentMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, maxMessages);
+						if(size < 0) {
+							size = -size;
+							incomplete.value = true;
+						}
 				}
 			}
 			return size;
@@ -802,8 +817,13 @@ public class PeerMessageQueue {
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
 		for(int i=0;i<queuesByPriority.length;i++) {
 			if(i == DMT.PRIORITY_BULK_DATA)
+				// Bulk: round-robin between UID's (timeout since last sent), long timeout.
 				queuesByPriority[i] = new PrioQueue(PacketSender.MAX_COALESCING_DELAY_BULK, true);
+			else if(i == DMT.PRIORITY_REALTIME_DATA)
+				// Realtime: round-robin between UID's (timeout since last sent), short timeout.
+				queuesByPriority[i] = new PrioQueue(PacketSender.MAX_COALESCING_DELAY, true);
 			else
+				// Everything else: Still round-robin between UID's, but timeout on submitted.
 				queuesByPriority[i] = new PrioQueue(PacketSender.MAX_COALESCING_DELAY, false);
 		}
 	}
@@ -893,15 +913,18 @@ public class PeerMessageQueue {
 	 * Get the time at which the next message must be sent. If any message is
 	 * overdue, we will return a value less than now, which may not be completely
 	 * accurate.
-	 * @param t
-	 * @param now
-	 * @return
+	 * @param t The current next urgent time. The return value will be no greater
+	 * than this.
+	 * @param returnIfBefore The current time. If the next urgent time is less than 
+	 * this we return immediately rather than computing an accurate past value. 
+	 * Set to Long.MAX_VALUE if you want an accurate value.
+	 * @return The next urgent time, but can be too high if it is less than now.
 	 */
-	public synchronized long getNextUrgentTime(long t, long now) {
+	public synchronized long getNextUrgentTime(long t, long returnIfBefore) {
 		for(int i=0;i<queuesByPriority.length;i++) {
 			PrioQueue queue = queuesByPriority[i];
-			t = Math.min(t, queue.getNextUrgentTime(t, now));
-			if(t <= now) return t; // How much in the past doesn't matter, as long as it's in the past.
+			t = Math.min(t, queue.getNextUrgentTime(t, returnIfBefore));
+			if(t <= returnIfBefore) return t; // How much in the past doesn't matter, as long as it's in the past.
 		}
 		return t;
 	}
@@ -1004,7 +1027,6 @@ public class PeerMessageQueue {
 		
 		MutableBoolean incomplete = new MutableBoolean();
 
-		// Do not allow realtime data to starve bulk data
 		for(int i=0;i<DMT.PRIORITY_REALTIME_DATA;i++) {
 			if(i < minPriority) continue;
 			if(logMINOR) Logger.minor(this, "Adding from priority "+i);
@@ -1018,15 +1040,9 @@ public class PeerMessageQueue {
 			}
 		}
 		
-		boolean tryRealtimeFirst = true;
+		// Include bulk or realtime, whichever is more urgent.
 		
-		// Most of the time there will only be bulk data.
-		// Bulk data has a long timeout - 30 seconds per block - so we can wait if necessary.
-		// Realtime is supposed to be bursty. 
-		// Realtime data is supposed to be urgent - it should be sent immediately.
-		// So when there is realtime data, we should give it preferential treatment.
-		// However, we do not want to starve the bulk data.
-		// So we should send realtime if there is realtime, unless the bulk data is older than 5000ms.
+		boolean tryRealtimeFirst = true;
 		
 		// LOCKING: Must lock while calling getNextUrgentTime, and also while accessing lastSentRealTime.
 		// However, we need to be (or needed to be in the FNP era anyway) flexible with addPriorityMessages,
@@ -1034,22 +1050,21 @@ public class PeerMessageQueue {
 		// FIXME: All this can go away when FNP goes away and we can just lock the whole function.
 		
 		synchronized(this) {
-		
-			if((!queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) &&
-					(!queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty())) {
-				// There is realtime data, and there is bulk data.
-				if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, now) <= now) {
-					// The bulk data is urgent.
-					// The realtime data is assumed to be urgent because it is realtime.
-					// So alternate.
-					tryRealtimeFirst = !lastSentRealTime;
-				} else {
-					// The bulk data is not urgent.
-					// So we should send the realtime data.
-					// This should not prejudice future decisions.
-					tryRealtimeFirst = true;
-				}
+			
+			// If one is empty, try the other.
+			// Otherwise try whichever is more urgent, favouring realtime if there is a draw.
+			// Realtime is supposed to be bursty.
+			
+			if(queuesByPriority[DMT.PRIORITY_REALTIME_DATA].isEmpty()) {
+				tryRealtimeFirst = false;
+			} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].isEmpty()) {
+				tryRealtimeFirst = true;
+			} else if(queuesByPriority[DMT.PRIORITY_BULK_DATA].getNextUrgentTime(Long.MAX_VALUE, 0) >= queuesByPriority[DMT.PRIORITY_REALTIME_DATA].getNextUrgentTime(Long.MAX_VALUE, 0)) {
+				tryRealtimeFirst = true;
+			} else {
+				tryRealtimeFirst = false;
 			}
+			
 		}
 		
 		// FIXME token bucket?
@@ -1058,9 +1073,6 @@ public class PeerMessageQueue {
 			if(logMINOR) Logger.minor(this, "Trying realtime first");
 			int s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
-				synchronized(this) {
-					lastSentRealTime = true;
-				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -1073,9 +1085,6 @@ public class PeerMessageQueue {
 			s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				synchronized(this) {
-					lastSentRealTime = false;
-				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -1090,9 +1099,6 @@ public class PeerMessageQueue {
 			int s = queuesByPriority[DMT.PRIORITY_BULK_DATA].addPriorityMessages(Math.abs(size), minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				synchronized(this) {
-					lastSentRealTime = false;
-				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -1105,9 +1111,6 @@ public class PeerMessageQueue {
 			s = queuesByPriority[DMT.PRIORITY_REALTIME_DATA].addPriorityMessages(size, minSize, maxSize, now, messages, addPeerLoadStatsRT, addPeerLoadStatsBulk, incomplete, maxMessages);
 			if(s != size) {
 				size = s;
-				synchronized(this) {
-					lastSentRealTime = true;
-				}
 			}
 			if(incomplete.value || messages.size() >= maxMessages) {
 				if(addPeerLoadStatsRT.value && maxMessages > 1)
@@ -1155,7 +1158,5 @@ public class PeerMessageQueue {
 			queue.removeUIDs(list);
 		}
 	}
-
-	private boolean lastSentRealTime;
 }
 

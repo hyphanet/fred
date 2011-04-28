@@ -208,8 +208,10 @@ public class ConnectivityToadlet extends Toadlet {
 		return NodeL10n.getBase().getString("ConnectivityToadlet."+key);
 	}
 
+	public static final String PATH = "/connectivity/";
+	
 	@Override
 	public String path() {
-		return "/connectivity/";
+		return PATH;
 	}
 }

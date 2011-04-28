@@ -29,6 +29,9 @@ public class InsertFreesiteToadlet extends Toadlet {
 		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode, "freesite-insert", true);
 		
 		contentBox.addChild("p", l10n("content1"));
+		
+		NodeL10n.getBase().addL10nSubstitution(contentBox.addChild("p"), "InsertFreesiteToadlet.contentFlogHelper", new String[] { "plugins" }, new HTMLNode[] { HTMLNode.link(PproxyToadlet.PATH) }); 
+		
 		NodeL10n.getBase().addL10nSubstitution(contentBox.addChild("p"), "InsertFreesiteToadlet.content2", new String[] { "jsite-http", "jsite-freenet", "jsite-freenet-version", "jsite-info" },
 				new HTMLNode[] { HTMLNode.link("/?_CHECKED_HTTP_=http://downloads.freenetproject.org/alpha/jSite/"),
 					HTMLNode.link("/CHK@2gVK8i-oJ9bqmXOZfkRN1hqgveSUrOdzSxtkndMbLu8,OPKeK9ySG7RcKXadzNN4npe8KSDb9EbGXSiH1Me~6rQ,AAIC--8/jSite.jar"),

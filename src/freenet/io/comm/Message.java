@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import freenet.node.Version;
 import freenet.support.ByteBufferInputStream;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
@@ -136,8 +137,10 @@ public class Message {
 		    }
 		} catch (EOFException e) {
 			String msg = peer.getPeer()+" sent a message packet that ends prematurely while deserialising "+mspec.getName();
-			if(inSubMessage)
-				Logger.minor(Message.class, msg+" in sub-message", e);
+			if(inSubMessage) {
+				if(logMINOR) Logger.minor(Message.class, msg+" in sub-message", e);
+			} else if(mspec.getName().startsWith("FNPPeerLoadStatus"))
+				Logger.warning(Message.class, msg, e); // FIXME remove this after all the old builds have gone away
 			else
 				Logger.error(Message.class, msg, e);
 		    return null;
