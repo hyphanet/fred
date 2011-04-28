@@ -99,6 +99,7 @@ public class PacketThrottle {
 		// See [freenet-dev] Major weakness in our current link-level congestion control
         int windowSize = (int)getWindowSize();
         if(_packetSeqWindowFullChecked + windowSize < _packetSeq) {
+        	// FIXME this is only relevant for old packet format, which uses sendThrottledMessage(), get rid of it when we get rid of old packet format.
         	if(_packetSeqWindowFull < _packetSeqWindowFullChecked) {
         		// We haven't used the full window once since we last checked.
         		_windowSize *= PACKET_DROP_DECREASE_MULTIPLE;
