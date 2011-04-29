@@ -1067,10 +1067,9 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 				source, isLocal, isSSK, isInsert, isOfferReply, hasInStore, transfersPerInsert, realTimeFlag, maxOutputTransfers, maxTransfersOutPeerLimit);  
 		if(ret != null) return new RejectReason(ret, true);
 		
-		if(peerRequestsSnapshot.totalOutTransfers() > maxOutputTransfers) {
-			// Can't handle that many transfers with current bandwidth.
-			return new RejectReason("CongestionControl", true);
-		}
+		ret = checkMaxOutputTransfers(maxOutputTransfers, maxTransfersOutUpperLimit, maxTransfersOutLowerLimit, maxTransfersOutPeerLimit,
+				requestsSnapshot, peerRequestsSnapshot);
+		if(ret != null) return new RejectReason(ret, true);
 		
 		// Do we have the bandwidth?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
@@ -1269,6 +1268,31 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		}
 		return null;
 	}
+	
+	private String checkMaxOutputTransfers(int maxOutputTransfers,
+			int maxTransfersOutUpperLimit, int maxTransfersOutLowerLimit,
+			int maxTransfersOutPeerLimit,
+			RunningRequestsSnapshot requestsSnapshot,
+			RunningRequestsSnapshot peerRequestsSnapshot) {
+		int peerOutTransfers = peerRequestsSnapshot.totalOutTransfers();
+		int totalOutTransfers = requestsSnapshot.totalOutTransfers();
+		if(peerOutTransfers > maxOutputTransfers) {
+			// Can't handle that many transfers with current bandwidth.
+			return "TooManyTransfers: Congestion control";
+		}
+		if(totalOutTransfers <= maxTransfersOutLowerLimit) {
+			// If the total is below the lower limit, then fine, go for it.
+			return null;
+		}
+		if(peerOutTransfers <= maxTransfersOutPeerLimit) {
+			// The total is above the lower limit, but the per-peer is below the peer limit.
+			// It is within its guaranteed space, so we accept it.
+			return null;
+		}
+		return "TooManyTransfers: Fair sharing between peers";
+	}
+
+
 
 	static final boolean SEND_LOAD_STATS_NOTICES = true;
 	
