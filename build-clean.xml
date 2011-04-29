@@ -218,7 +218,7 @@ build-dependency on ant-optional, libbsf-java and rhino.
 	</target>
 
 	<target name="package-only" depends="build">
-		<jar jarfile="${main.dst}/freenet.jar" basedir="${main.make}">
+		<jar jarfile="${main.dst}/freenet-testnet.jar" basedir="${main.make}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet/node/Node"/>
 				<attribute name="Built-By" value="${user.name}"/>
