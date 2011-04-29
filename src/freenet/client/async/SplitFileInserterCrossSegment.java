@@ -8,7 +8,9 @@ import freenet.client.FECJob;
 import freenet.client.FECQueue;
 import freenet.client.SplitfileBlock;
 import freenet.keys.CHKBlock;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LogLevel;
 import freenet.support.api.Bucket;
 
 public class SplitFileInserterCrossSegment implements FECCallback {
@@ -28,6 +30,17 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 	
 	private transient FECCodec codec;
 	
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(LogLevel.MINOR, SplitFileInserterCrossSegment.class);
+			}
+		});
+	}
+	
 	SplitFileInserterCrossSegment(boolean persistent, int dataBlocks, int crossCheckBlocks, ClientRequester parent, short splitfileType, SplitFileInserter parentInserter, int segNum) {
 		this.persistent = persistent;
 		this.dataBlocks = dataBlocks;
@@ -42,7 +55,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 	}
 	
 	public void addDataBlock(SplitFileInserterSegment seg, int blockNum) {
-		System.out.println("Allocated "+counter+" blocks: block "+blockNum+" on segment "+seg.segNo+" to "+this);
+		if(logMINOR) Logger.minor(this, "Allocated "+counter+" blocks: block "+blockNum+" on segment "+seg.segNo);
 		segments[counter] = seg;
 		blockNumbers[counter] = blockNum;
 		counter++;
@@ -50,7 +63,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 
 	/** Start the encode */
 	public void start(ObjectContainer container, ClientContext context) {
-		System.out.println("Scheduling encode for cross segment "+this);
+		if(logMINOR) Logger.minor(this, "Scheduling encode for cross segment");
 		// Schedule encode job.
 		SplitfileBlock[] decodeData = new SplitfileBlock[dataBlocks];
 		SplitfileBlock[] decodeCheck = new SplitfileBlock[segments.length - dataBlocks];
@@ -113,7 +126,7 @@ public class SplitFileInserterCrossSegment implements FECCallback {
 			dataBlocks[i].clearData();
 			if(persistent) container.delete(dataBlocks[i]);
 		}
-		System.out.println("Completed encode for cross segment "+this);
+		if(logMINOR) Logger.minor(this, "Completed encode for cross segment");
 		if(persistent) container.activate(parentInserter, 1);
 		parentInserter.clearCrossSegment(segNum, this, container, context);
 		if(persistent) container.deactivate(parentInserter, 1);

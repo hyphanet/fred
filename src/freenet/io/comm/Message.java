@@ -137,10 +137,10 @@ public class Message {
 		    }
 		} catch (EOFException e) {
 			String msg = peer.getPeer()+" sent a message packet that ends prematurely while deserialising "+mspec.getName();
-			if(inSubMessage ||
-					// FIXME remove this part of the condition
-					(mspec.getName().startsWith("FNPPeerLoadStatus") && Version.lastGoodBuild() < 1365))
-				Logger.minor(Message.class, msg+" in sub-message", e);
+			if(inSubMessage) {
+				if(logMINOR) Logger.minor(Message.class, msg+" in sub-message", e);
+			} else if(mspec.getName().startsWith("FNPPeerLoadStatus"))
+				Logger.warning(Message.class, msg, e); // FIXME remove this after all the old builds have gone away
 			else
 				Logger.error(Message.class, msg, e);
 		    return null;

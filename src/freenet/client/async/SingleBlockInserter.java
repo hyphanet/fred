@@ -93,7 +93,29 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	final int extraInserts;
 	final byte[] cryptoKey;
 	final byte cryptoAlgorithm;
-	
+
+	/**
+	 * zero arg c'tor for db4o on jamvm
+	 */
+	@SuppressWarnings("unused")
+	private SingleBlockInserter() {
+		uri = null;
+		tokenObject = null;
+		token = 0;
+		sourceLength = 0;
+		parent = null;
+		isMetadata = false;
+		getCHKOnly = false;
+		extraInserts = 0;
+		errors = null;
+		dontSendEncoded = false;
+		ctx = null;
+		cryptoKey = null;
+		cryptoAlgorithm = 0;
+		compressionCodec = 0;
+		cb = null;
+	}
+
 	/**
 	 * Create a SingleBlockInserter.
 	 * @param parent The parent. Must be activated.

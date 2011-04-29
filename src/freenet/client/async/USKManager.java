@@ -18,6 +18,7 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.NullClientCallback;
 import freenet.clients.http.FProxyToadlet;
+import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
@@ -712,5 +713,32 @@ public class USKManager {
 
 	ClientContext getContext() {
 		return context;
+	}
+
+	public void checkUSK(FreenetURI uri, boolean persistent,
+			ObjectContainer container, boolean isMetadata) {
+		try {
+			if(persistent) container.activate(uri, 5);
+			FreenetURI uu;
+			if(uri.isSSK() && uri.isSSKForUSK()) {
+				uu = uri.setMetaString(null).uskForSSK();
+			} else if(uri.isUSK()) {
+				uu = uri;
+			} else {
+				return;
+			}
+			USK usk = USK.create(uu);
+			if(!isMetadata)
+				context.uskManager.updateKnownGood(usk, uu.getSuggestedEdition(), context);
+			else
+				// We don't know whether the metadata is fetchable.
+				// FIXME add a callback so if the rest of the request completes we updateKnownGood().
+				context.uskManager.updateSlot(usk, uu.getSuggestedEdition(), context);
+		} catch (MalformedURLException e) {
+			Logger.error(this, "Caught "+e, e);
+		} catch (Throwable t) {
+			// Don't let the USK hint cause us to not succeed on the block.
+			Logger.error(this, "Caught "+t, t);
+		}
 	}
 }

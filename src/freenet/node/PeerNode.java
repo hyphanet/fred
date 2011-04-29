@@ -3368,6 +3368,14 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 				Math.max(routingBackedOffUntilRT, routingBackedOffUntilBulk),
 				Math.max(transferBackedOffUntilRT, transferBackedOffUntilBulk));
 	}
+	
+	public synchronized long getRoutingBackedOffUntilRT() {
+		return Math.max(routingBackedOffUntilRT, transferBackedOffUntilRT);
+	}
+	
+	public synchronized long getRoutingBackedOffUntilBulk() {
+		return Math.max(routingBackedOffUntilBulk, transferBackedOffUntilBulk);
+	}
 
 	public synchronized String getLastBackoffReason(boolean realTime) {
 		return realTime ? lastRoutingBackoffReasonRT : lastRoutingBackoffReasonBulk;
@@ -5330,5 +5338,5 @@ public abstract class PeerNode implements USKRetrieverCallback, BasePeerNode {
 		double kilobytesPerSecond = bandwidth / 1024.0;
 		return (int)Math.max(1, Math.min(kilobytesPerSecond * timeout, Integer.MAX_VALUE));
 	}
-	
+
 }
