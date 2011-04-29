@@ -1199,7 +1199,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 		// FIXME refactor with getOutputBandwidthUpperLimit so we can avoid calling it twice.
 		double outputAvailablePerSecond = node.getOutputBandwidthLimit() * nonOverheadFraction;
 		
-		return (int)Math.max(1,  outputAvailablePerSecond / 1024.0);
+		return (int)Math.max(1, (getAcceptableBlockTime(realTime) * outputAvailablePerSecond) / 1024.0);
 	}
 
 	/** Should the request be rejected due to bandwidth liability?
