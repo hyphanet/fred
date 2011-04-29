@@ -76,13 +76,31 @@ or so, Internet Explorer had much worse problems. The most fundamental thing is 
 history probing via CSS. This can be turned off globally and will improve your privacy,
 see e.g. http://whattheinternetknowsaboutyou.com/ - but it is probably still safer to
 use a separate browser, and the fact that you have turned it off will likely be
-detectable.
+detectable. If you do use a separate browser, you can do some helpful tricks such as
+turning off javascript, not loading any addons or plugins, turning off the cache and
+history, and setting 127.0.0.1:8888 as a proxy server (it won't serve anything external).
 
 Freenet will warn you when you try to download a file which may not be safe. Many file
 formats, for instance PDFs, word processor documents, and some types of video, can give
 away your identity. In some cases (such as HTML, PNGs, JPEGs and MP3s), Freenet can
 automatically make the content safe; a few file formats (such as plain text .txt's) are
 safe as-is. Freenet will warn you in all other cases.
+
+You are responsible for your computer's physical security. In many hostile environments
+the most likely attack is people busting down your door and stealing your computer -
+perhaps because they know you are using Freenet, or perhaps because they got your name
+from one of your friends who was also a troublemaker! Freenet can encrypt your caches
+and active downloads/uploads, with a password if you set one, and with a panic button to
+get rid of the evidence quickly, but as soon as anything is saved to disk, Freenet can't
+do anything about it. Freenet can download files to encrypted temporary space ("Fetch"
+instead of "Download"), to limit this, but it will use a bit more disk space and is less
+convenient. If you can encrypt your whole hard drive, e.g. with Truecrypt, that is
+strongly recommended. Even if you can't, we strongly recommend you encrypt your swapfile
+(try "fsutil behavior set encryptpagingfile 1" on Windows 7), or turn it off. Note also
+that many types of file will be automatically saved to disk by your browser without you
+asking it to - mostly these are the kind of files that Freenet will warn you about anyway,
+but there might be exceptions depending on what you are using; it's always going to be
+safest to encrypt everything.
 
 MORE SECURITY:
 If your life or liberty depends on Freenet protecting your anonymity, you should
@@ -93,11 +111,18 @@ implemented; there are several known attacks which future versions will greatly
 reduce, and there are likely to be (and have been) serious bugs. If you do 
 choose to use Freenet under such circumstances, you  should enable the MAXIMUM 
 network security level and add connections to your friends on the Friends page; 
-connecting only to friends considerably improves your security against a variety 
-of attacks, but you should only connect to them if you know them or have some 
-reason to (at least minimally) trust them; connecting to random strangers might
-end up with you adding the bad guys as Friends, and apart from that it damages
-the network topology.
+connecting only to friends greatly improves your security, making it very hard to
+trace content back to you, and reasonably difficult to find out that you are even
+running Freenet, but you should only connect to people you actually know: You are
+vulnerable to those nodes you are connected to (hence in low/normal security, aka
+opennet mode, you have much less security). Plus, connecting to random strangers
+will reduce performance for the network as a whole.
+
+A reasonably detailed explanation of how to use Freenet securely is included in
+the first-time wizard, which you see when you first install Freenet, at the bottom
+of the page asking whether to connect to strangers or just to friends. Mouse over
+it to read it. If you have already installed Freenet you can still see it here:
+http://127.0.0.1:8888/wizard/?step=OPENNET
 
 CHANGES FROM 0.5:
 This is the 0.7 rewrite of Freenet. This is largely rewritten from scratch, 
