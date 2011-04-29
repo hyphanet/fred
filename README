@@ -69,6 +69,16 @@ scanning or similar attacks, or possibly even time loads of specific pages from 
 from the browser you use for the web; this last attack is unconfirmed at the time of 
 writing.
 
+There are many potentially dangerous features in most browsers which you can disable.
+Most of them will be turned off by privacy/incognito mode, hopefully. Candidates include
+location-based services (geo.enabled) and GoBrowsing (keyword.enabled) in firefox, and 
+probably a number of plugins. Note that this is not unique to firefox - until version 9
+or so, Internet Explorer had much worse problems. The most fundamental thing is browser
+history probing via CSS. This can be turned off globally and will improve your privacy,
+see e.g. http://whattheinternetknowsaboutyou.com/ - but it is probably still safer to
+use a separate browser, and the fact that you have turned it off will likely be
+detectable.
+
 MORE SECURITY:
 If your life or liberty depends on Freenet protecting your anonymity, you should
 seriously evaluate your options, including the option of not posting whatever
