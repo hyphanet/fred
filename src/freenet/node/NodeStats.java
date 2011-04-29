@@ -1120,7 +1120,7 @@ public class NodeStats implements Persistable, BlockTimeCallback {
 	}
 
 	private int getAcceptableBlockTime(boolean realTime) {
-		return realTime ? 1 : 5;
+		return realTime ? 2 : 15;
 	}
 
 	static final double ONE_PEER_MAX_PEERS_EQUIVALENT = 2.0;
